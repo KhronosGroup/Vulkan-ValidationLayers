@@ -980,26 +980,6 @@ VkLayerTest::VkLayerTest() {
             printf("             Did not find VK_LAYER_LUNARG_device_simulation layer so it will not be enabled.\n");
         }
     }
-    if (m_enableWSI) {
-        m_instance_extension_names.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-#ifdef NEED_TO_TEST_THIS_ON_PLATFORM
-#if defined(VK_USE_PLATFORM_ANDROID_KHR)
-        m_instance_extension_names.push_back(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
-#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
-        m_instance_extension_names.push_back(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME);
-#endif  // VK_USE_PLATFORM_WAYLAND_KHR
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-        m_instance_extension_names.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-#endif  // VK_USE_PLATFORM_WIN32_KHR
-#endif  // NEED_TO_TEST_THIS_ON_PLATFORM
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-        m_instance_extension_names.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
-#elif defined(VK_USE_PLATFORM_XLIB_KHR)
-        m_instance_extension_names.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
-#endif  // VK_USE_PLATFORM_XLIB_KHR
-    }
 
     this->app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     this->app_info.pNext = NULL;
@@ -1019,6 +999,66 @@ VkLayerTest::VkLayerTest() {
         m_instance_api_version = VK_API_VERSION_1_0;
     }
     m_target_api_version = app_info.apiVersion;
+}
+
+bool VkLayerTest::AddSurfaceInstanceExtension() {
+    m_enableWSI = true;
+    if (!InstanceExtensionSupported(VK_KHR_SURFACE_EXTENSION_NAME)) {
+        printf("%s VK_KHR_SURFACE_EXTENSION_NAME extension not supported\n", kSkipPrefix);
+        return false;
+    }
+    m_instance_extension_names.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+    if (!InstanceExtensionSupported(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME)) {
+        printf("%s VK_KHR_ANDROID_SURFACE_EXTENSION_NAME extension not supported\n", kSkipPrefix);
+        return false;
+    }
+    m_instance_extension_names.push_back(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
+
+#elif defined(VK_USE_PLATFORM_WIN32_KHR)
+    if (!InstanceExtensionSupported(VK_KHR_WIN32_SURFACE_EXTENSION_NAME)) {
+        printf("%s VK_KHR_WIN32_SURFACE_EXTENSION_NAME extension not supported\n", kSkipPrefix);
+        return false;
+    }
+    m_instance_extension_names.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+
+#elif defined(VK_USE_PLATFORM_XLIB_KHR)
+    if (!InstanceExtensionSupported(VK_KHR_XLIB_SURFACE_EXTENSION_NAME)) {
+        printf("%s VK_KHR_XLIB_SURFACE_EXTENSION_NAME extension not supported\n", kSkipPrefix);
+        return false;
+    }
+    m_instance_extension_names.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+
+#elif defined(VK_USE_PLATFORM_XCB_KHR)
+    if (!InstanceExtensionSupported(VK_KHR_XCB_SURFACE_EXTENSION_NAME)) {
+        printf("%s VK_KHR_XCB_SURFACE_EXTENSION_NAME extension not supported\n", kSkipPrefix);
+        return false;
+    }
+    m_instance_extension_names.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
+
+#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
+    m_instance_extension_names.push_back(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME);
+    if (!InstanceExtensionSupported(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME)) {
+        printf("%s VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME extension not supported\n", kSkipPrefix);
+        return false;
+    }
+    m_instance_extension_names.push_back(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME);
+
+#else
+    printf("%s No platform's surface extension not supported\n", kSkipPrefix);
+    return false;
+#endif
+    return true;
+}
+
+bool VkLayerTest::AddSwapchainDeviceExtension() {
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
+        printf("%s VK_KHR_SWAPCHAIN_EXTENSION_NAME extension not supported\n", kSkipPrefix);
+        return false;
+    }
+    m_device_extension_names.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    return true;
 }
 
 uint32_t VkLayerTest::SetTargetApiVersion(uint32_t target_api_version) {
