@@ -1488,6 +1488,18 @@ static std::string string_descriptorTypes(const std::set<uint32_t> &descriptor_t
     return ss.str();
 }
 
+static bool RequirePropertyFlag(debug_report_data const *report_data, VkBool32 check, char const *flag, char const *structure) {
+    if (!check) {
+        if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    kVUID_Core_Shader_ExceedDeviceLimit, "Shader requires flag %s set in %s but it is not set on the device", flag,
+                    structure)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 static bool RequireFeature(debug_report_data const *report_data, VkBool32 feature, char const *feature_name) {
     if (!feature) {
         if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -1511,8 +1523,7 @@ static bool RequireExtension(debug_report_data const *report_data, bool extensio
     return false;
 }
 
-bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkShaderStageFlagBits stage,
-                                            bool has_writable_descriptor) {
+bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkShaderStageFlagBits stage) {
     bool skip = false;
 
     struct FeaturePointer {
@@ -1696,9 +1707,85 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
                     extension_names += "]";
                     skip |= RequireExtension(report_data, has_ext, extension_names.c_str());
                 }
+            } else {  // Do group non-uniform checks
+                const VkSubgroupFeatureFlags supportedOperations = phys_dev_ext_props.subgroup_props.supportedOperations;
+                const VkSubgroupFeatureFlags supportedStages = phys_dev_ext_props.subgroup_props.supportedStages;
+
+                switch (insn.word(1)) {
+                    default:
+                        break;
+                    case spv::CapabilityGroupNonUniform:
+                    case spv::CapabilityGroupNonUniformVote:
+                    case spv::CapabilityGroupNonUniformArithmetic:
+                    case spv::CapabilityGroupNonUniformBallot:
+                    case spv::CapabilityGroupNonUniformShuffle:
+                    case spv::CapabilityGroupNonUniformShuffleRelative:
+                    case spv::CapabilityGroupNonUniformClustered:
+                    case spv::CapabilityGroupNonUniformQuad:
+                    case spv::CapabilityGroupNonUniformPartitionedNV:
+                        RequirePropertyFlag(report_data, supportedStages & stage, string_VkShaderStageFlagBits(stage),
+                                            "VkPhysicalDeviceSubgroupProperties::supportedStages");
+                        break;
+                }
+
+                switch (insn.word(1)) {
+                    default:
+                        break;
+                    case spv::CapabilityGroupNonUniform:
+                        RequirePropertyFlag(report_data, supportedOperations & VK_SUBGROUP_FEATURE_BASIC_BIT,
+                                            "VK_SUBGROUP_FEATURE_BASIC_BIT",
+                                            "VkPhysicalDeviceSubgroupProperties::supportedOperations");
+                        break;
+                    case spv::CapabilityGroupNonUniformVote:
+                        RequirePropertyFlag(report_data, supportedOperations & VK_SUBGROUP_FEATURE_VOTE_BIT,
+                                            "VK_SUBGROUP_FEATURE_VOTE_BIT",
+                                            "VkPhysicalDeviceSubgroupProperties::supportedOperations");
+                        break;
+                    case spv::CapabilityGroupNonUniformArithmetic:
+                        RequirePropertyFlag(report_data, supportedOperations & VK_SUBGROUP_FEATURE_ARITHMETIC_BIT,
+                                            "VK_SUBGROUP_FEATURE_ARITHMETIC_BIT",
+                                            "VkPhysicalDeviceSubgroupProperties::supportedOperations");
+                        break;
+                    case spv::CapabilityGroupNonUniformBallot:
+                        RequirePropertyFlag(report_data, supportedOperations & VK_SUBGROUP_FEATURE_BALLOT_BIT,
+                                            "VK_SUBGROUP_FEATURE_BALLOT_BIT",
+                                            "VkPhysicalDeviceSubgroupProperties::supportedOperations");
+                        break;
+                    case spv::CapabilityGroupNonUniformShuffle:
+                        RequirePropertyFlag(report_data, supportedOperations & VK_SUBGROUP_FEATURE_SHUFFLE_BIT,
+                                            "VK_SUBGROUP_FEATURE_SHUFFLE_BIT",
+                                            "VkPhysicalDeviceSubgroupProperties::supportedOperations");
+                        break;
+                    case spv::CapabilityGroupNonUniformShuffleRelative:
+                        RequirePropertyFlag(report_data, supportedOperations & VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT,
+                                            "VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT",
+                                            "VkPhysicalDeviceSubgroupProperties::supportedOperations");
+                        break;
+                    case spv::CapabilityGroupNonUniformClustered:
+                        RequirePropertyFlag(report_data, supportedOperations & VK_SUBGROUP_FEATURE_CLUSTERED_BIT,
+                                            "VK_SUBGROUP_FEATURE_CLUSTERED_BIT",
+                                            "VkPhysicalDeviceSubgroupProperties::supportedOperations");
+                        break;
+                    case spv::CapabilityGroupNonUniformQuad:
+                        RequirePropertyFlag(report_data, supportedOperations & VK_SUBGROUP_FEATURE_QUAD_BIT,
+                                            "VK_SUBGROUP_FEATURE_QUAD_BIT",
+                                            "VkPhysicalDeviceSubgroupProperties::supportedOperations");
+                        break;
+                    case spv::CapabilityGroupNonUniformPartitionedNV:
+                        RequirePropertyFlag(report_data, supportedOperations & VK_SUBGROUP_FEATURE_PARTITIONED_BIT_NV,
+                                            "VK_SUBGROUP_FEATURE_PARTITIONED_BIT_NV",
+                                            "VkPhysicalDeviceSubgroupProperties::supportedOperations");
+                        break;
+                }
             }
         }
     }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateShaderStageWritableDescriptor(VkShaderStageFlagBits stage, bool has_writable_descriptor) {
+    bool skip = false;
 
     if (has_writable_descriptor) {
         switch (stage) {
@@ -1720,6 +1807,32 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
             default:
                 skip |= RequireFeature(report_data, enabled_features.core.vertexPipelineStoresAndAtomics,
                                        "vertexPipelineStoresAndAtomics");
+                break;
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const *module, VkShaderStageFlagBits stage,
+                                                    std::unordered_set<uint32_t> const &accessible_ids) {
+    bool skip = false;
+
+    auto const subgroup_props = phys_dev_ext_props.subgroup_props;
+
+    for (uint32_t id : accessible_ids) {
+        auto inst = module->get_def(id);
+
+        // Check the quad operations.
+        switch (inst.opcode()) {
+            default:
+                break;
+            case spv::OpGroupNonUniformQuadBroadcast:
+            case spv::OpGroupNonUniformQuadSwap:
+                if ((stage != VK_SHADER_STAGE_FRAGMENT_BIT) && (stage != VK_SHADER_STAGE_COMPUTE_BIT)) {
+                    skip |= RequireFeature(report_data, subgroup_props.quadOperationsInAllStages,
+                                           "VkPhysicalDeviceSubgroupProperties::quadOperationsInAllStages");
+                }
                 break;
         }
     }
@@ -2560,8 +2673,10 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     auto descriptor_uses = CollectInterfaceByDescriptorSlot(report_data, module, accessible_ids, &has_writable_descriptor);
 
     // Validate shader capabilities against enabled device features
-    skip |= ValidateShaderCapabilities(module, pStage->stage, has_writable_descriptor);
+    skip |= ValidateShaderCapabilities(module, pStage->stage);
+    skip |= ValidateShaderStageWritableDescriptor(pStage->stage, has_writable_descriptor);
     skip |= ValidateShaderStageInputOutputLimits(module, pStage, pipeline, entrypoint);
+    skip |= ValidateShaderStageGroupNonUniform(module, pStage->stage, accessible_ids);
     skip |= ValidateExecutionModes(module, entrypoint);
     skip |= ValidateSpecializationOffsets(report_data, pStage);
     skip |= ValidatePushConstantUsage(report_data, pipeline->pipeline_layout.push_constant_ranges.get(), module, accessible_ids,
