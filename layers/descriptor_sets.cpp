@@ -751,7 +751,7 @@ bool cvdescriptorset::ValidateDrawState(const DescriptorSet *descriptor_set, con
                         //  as "invalid" (updated = false) at DestroyImageView() time and detect this error at bind time
                         std::stringstream error_str;
                         error_str << "Descriptor in binding #" << binding << " index " << index << " is using imageView "
-                                  << image_view << " that has been destroyed.";
+                                  << device_data->report_data->FormatHandle(image_view).c_str() << " that has been destroyed.";
                         *error = error_str.str();
                         return false;
                     }
@@ -1302,7 +1302,7 @@ bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout 
     auto iv_state = dev_data->GetImageViewState(image_view);
     if (!iv_state) {
         std::stringstream error_str;
-        error_str << "Invalid VkImageView: " << image_view;
+        error_str << "Invalid VkImageView: " << dev_data->report_data->FormatHandle(image_view).c_str();
         *error_msg = error_str.str();
         return false;
     }
@@ -1339,7 +1339,8 @@ bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout 
     // First validate that format and layout are compatible
     if (format == VK_FORMAT_MAX_ENUM) {
         std::stringstream error_str;
-        error_str << "Invalid image (" << image << ") in imageView (" << image_view << ").";
+        error_str << "Invalid image (" << dev_data->report_data->FormatHandle(image).c_str() << ") in imageView ("
+                  << dev_data->report_data->FormatHandle(image_view).c_str() << ").";
         *error_msg = error_str.str();
         return false;
     }
@@ -1352,7 +1353,7 @@ bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout 
             if ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != VK_IMAGE_ASPECT_COLOR_BIT) {
                 std::stringstream error_str;
                 error_str
-                    << "ImageView (" << image_view
+                    << "ImageView (" << dev_data->report_data->FormatHandle(image_view).c_str()
                     << ") uses layout VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL but does not have VK_IMAGE_ASPECT_COLOR_BIT set.";
                 *error_msg = error_str.str();
                 return false;
@@ -1360,7 +1361,7 @@ bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout 
             // format must NOT be DS
             if (ds) {
                 std::stringstream error_str;
-                error_str << "ImageView (" << image_view
+                error_str << "ImageView (" << dev_data->report_data->FormatHandle(image_view).c_str()
                           << ") uses layout VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL but the image format is "
                           << string_VkFormat(format) << " which is not a color format.";
                 *error_msg = error_str.str();
@@ -1374,23 +1375,25 @@ bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout 
                 if (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) {
                     // both  must NOT be set
                     std::stringstream error_str;
-                    error_str << "ImageView (" << image_view << ") has both STENCIL and DEPTH aspects set";
+                    error_str << "ImageView (" << dev_data->report_data->FormatHandle(image_view).c_str()
+                              << ") has both STENCIL and DEPTH aspects set";
                     *error_msg = error_str.str();
                     return false;
                 }
             } else if (!(aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT)) {
                 // Neither were set
                 std::stringstream error_str;
-                error_str << "ImageView (" << image_view << ") has layout " << string_VkImageLayout(image_layout)
-                          << " but does not have STENCIL or DEPTH aspects set";
+                error_str << "ImageView (" << dev_data->report_data->FormatHandle(image_view).c_str() << ") has layout "
+                          << string_VkImageLayout(image_layout) << " but does not have STENCIL or DEPTH aspects set";
                 *error_msg = error_str.str();
                 return false;
             }
             // format must be DS
             if (!ds) {
                 std::stringstream error_str;
-                error_str << "ImageView (" << image_view << ") has layout " << string_VkImageLayout(image_layout)
-                          << " but the image format is " << string_VkFormat(format) << " which is not a depth/stencil format.";
+                error_str << "ImageView (" << dev_data->report_data->FormatHandle(image_view).c_str() << ") has layout "
+                          << string_VkImageLayout(image_layout) << " but the image format is " << string_VkFormat(format)
+                          << " which is not a depth/stencil format.";
                 *error_msg = error_str.str();
                 return false;
             }
@@ -1402,8 +1405,9 @@ bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout 
                     if (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) {
                         // both  must NOT be set
                         std::stringstream error_str;
-                        error_str << "ImageView (" << image_view << ") has layout " << string_VkImageLayout(image_layout)
-                                  << " and is using depth/stencil image of format " << string_VkFormat(format)
+                        error_str << "ImageView (" << dev_data->report_data->FormatHandle(image_view).c_str() << ") has layout "
+                                  << string_VkImageLayout(image_layout) << " and is using depth/stencil image of format "
+                                  << string_VkFormat(format)
                                   << " but it has both STENCIL and DEPTH aspects set, which is illegal. When using a depth/stencil "
                                      "image in a descriptor set, please only set either VK_IMAGE_ASPECT_DEPTH_BIT or "
                                      "VK_IMAGE_ASPECT_STENCIL_BIT depending on whether it will be used for depth reads or stencil "
@@ -1438,7 +1442,7 @@ bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout 
                 // TODO : Need to create custom enum error codes for these cases
                 if (image_node->shared_presentable) {
                     if (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != image_layout) {
-                        error_str << "ImageView (" << image_view
+                        error_str << "ImageView (" << dev_data->report_data->FormatHandle(image_view).c_str()
                                   << ") of VK_DESCRIPTOR_TYPE_STORAGE_IMAGE type with a front-buffered image is being updated with "
                                      "layout "
                                   << string_VkImageLayout(image_layout)
@@ -1449,7 +1453,7 @@ bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout 
                         return false;
                     }
                 } else if (VK_IMAGE_LAYOUT_GENERAL != image_layout) {
-                    error_str << "ImageView (" << image_view
+                    error_str << "ImageView (" << dev_data->report_data->FormatHandle(image_view).c_str()
                               << ") of VK_DESCRIPTOR_TYPE_STORAGE_IMAGE type is being updated with layout "
                               << string_VkImageLayout(image_layout)
                               << " but according to spec section 13.1 Descriptor Types, 'Load and store operations on storage "
@@ -1471,7 +1475,7 @@ bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout 
     }
     if (error_usage_bit) {
         std::stringstream error_str;
-        error_str << "ImageView (" << image_view << ") with usage mask 0x" << usage
+        error_str << "ImageView (" << dev_data->report_data->FormatHandle(image_view).c_str() << ") with usage mask 0x" << usage
                   << " being used for a descriptor update of type " << string_VkDescriptorType(type) << " does not have "
                   << error_usage_bit << " set.";
         *error_msg = error_str.str();
@@ -1853,12 +1857,14 @@ void CoreChecks::PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet desc
 
 std::string cvdescriptorset::DescriptorSet::StringifySetAndLayout() const {
     std::string out;
-    uint64_t layout_handle = HandleToUint64(p_layout_->GetDescriptorSetLayout());
+    auto layout_handle = p_layout_->GetDescriptorSetLayout();
     if (IsPushDescriptor()) {
-        string_sprintf(&out, "Push Descriptors defined with VkDescriptorSetLayout 0x%" PRIxLEAST64, layout_handle);
+        string_sprintf(&out, "Push Descriptors defined with VkDescriptorSetLayout %s",
+                       device_data_->report_data->FormatHandle(layout_handle).c_str());
     } else {
-        string_sprintf(&out, "VkDescriptorSet 0x%" PRIxLEAST64 " allocated with VkDescriptorSetLayout 0x%" PRIxLEAST64,
-                       HandleToUint64(set_), layout_handle);
+        string_sprintf(&out, "VkDescriptorSet %s allocated with VkDescriptorSetLayout %s",
+                       device_data_->report_data->FormatHandle(set_).c_str(),
+                       device_data_->report_data->FormatHandle(layout_handle).c_str());
     }
     return out;
 };
