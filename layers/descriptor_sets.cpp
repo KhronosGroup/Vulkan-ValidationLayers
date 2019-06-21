@@ -1504,7 +1504,9 @@ bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout 
             *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01403";
             std::stringstream error_str;
             error_str << "Descriptor update with descriptorType " << string_VkDescriptorType(type)
-                      << " is being updated with invalid imageLayout " << string_VkImageLayout(image_layout)
+                      << " is being updated with invalid imageLayout " << string_VkImageLayout(image_layout) << " for image "
+                      << dev_data->report_data->FormatHandle(image).c_str() << " in imageView "
+                      << dev_data->report_data->FormatHandle(image_view).c_str()
                       << ". Allowed layouts are: VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
                       << "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL";
             for (auto &ext_layout : extended_layouts) {
