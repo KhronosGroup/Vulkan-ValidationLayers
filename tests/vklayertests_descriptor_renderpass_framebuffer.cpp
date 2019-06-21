@@ -5255,7 +5255,7 @@ TEST_F(VkLayerTest, DescriptorIndexingSetLayout) {
 
     if (!(CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names, m_device_extension_names, NULL,
                                                          m_errorMonitor))) {
-        printf("Descriptor indexing or one of its dependencies not supported, skipping tests\n");
+        printf("%s Descriptor indexing or one of its dependencies not supported, skipping tests\n.", kSkipPrefix);
         return;
     }
 

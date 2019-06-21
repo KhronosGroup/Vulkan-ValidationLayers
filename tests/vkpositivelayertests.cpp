@@ -7032,15 +7032,15 @@ TEST_F(VkPositiveLayerTest, ViewportArray2NV) {
     ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&available_features));
 
     if (!available_features.multiViewport) {
-        printf("VkPhysicalDeviceFeatures::multiViewport is not supported, skipping tests\n");
+        printf("%s VkPhysicalDeviceFeatures::multiViewport is not supported, skipping tests\n", kSkipPrefix);
         return;
     }
     if (!available_features.tessellationShader) {
-        printf("VkPhysicalDeviceFeatures::tessellationShader is not supported, skipping tests\n");
+        printf("%s VkPhysicalDeviceFeatures::tessellationShader is not supported, skipping tests\n", kSkipPrefix);
         return;
     }
     if (!available_features.geometryShader) {
-        printf("VkPhysicalDeviceFeatures::geometryShader is not supported, skipping tests\n");
+        printf("%s VkPhysicalDeviceFeatures::geometryShader is not supported, skipping tests\n", kSkipPrefix);
         return;
     }
 
