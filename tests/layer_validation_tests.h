@@ -662,6 +662,9 @@ class ExtensionChain {
 // PushDescriptorProperties helper
 VkPhysicalDevicePushDescriptorPropertiesKHR GetPushDescriptorProperties(VkInstance instance, VkPhysicalDevice gpu);
 
+// Subgroup properties helper
+VkPhysicalDeviceSubgroupProperties GetSubgroupProperties(VkInstance instance, VkPhysicalDevice gpu);
+
 class BarrierQueueFamilyTestHelper {
    public:
     struct QueueFamilyObjs {

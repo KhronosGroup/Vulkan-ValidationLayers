@@ -122,6 +122,14 @@ VkPhysicalDevicePushDescriptorPropertiesKHR GetPushDescriptorProperties(VkInstan
     return push_descriptor_prop;
 }
 
+VkPhysicalDeviceSubgroupProperties GetSubgroupProperties(VkInstance instance, VkPhysicalDevice gpu) {
+    auto subgroup_prop = lvl_init_struct<VkPhysicalDeviceSubgroupProperties>();
+
+    auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&subgroup_prop);
+    vkGetPhysicalDeviceProperties2(gpu, &prop2);
+    return subgroup_prop;
+}
+
 bool operator==(const VkDebugUtilsLabelEXT &rhs, const VkDebugUtilsLabelEXT &lhs) {
     bool is_equal = (rhs.color[0] == lhs.color[0]) && (rhs.color[1] == lhs.color[1]) && (rhs.color[2] == lhs.color[2]) &&
                     (rhs.color[3] == lhs.color[3]);
