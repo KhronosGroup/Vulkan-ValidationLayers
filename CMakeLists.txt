@@ -291,40 +291,6 @@ endif()
 
 set(SCRIPTS_DIR "${PROJECT_SOURCE_DIR}/scripts")
 
-# Generate a source file from vk.xml
-macro(GenerateFromVkXml dependency output)
-    add_custom_command(OUTPUT ${output}
-                       COMMAND ${PYTHON_EXECUTABLE} ${SCRIPTS_DIR}/lvl_genvk.py -registry ${VulkanRegistry_DIR}/vk.xml -scripts
-                               ${VulkanRegistry_DIR} ${output}
-                       DEPENDS ${VulkanRegistry_DIR}/vk.xml
-                               ${VulkanRegistry_DIR}/generator.py
-                               ${SCRIPTS_DIR}/${dependency}
-                               ${SCRIPTS_DIR}/lvl_genvk.py
-                               ${VulkanRegistry_DIR}/reg.py)
-endmacro()
-
-# Add rules to generate XML-derived source files.
-GenerateFromVkXml(layer_dispatch_table_generator.py vk_layer_dispatch_table.h)
-GenerateFromVkXml(dispatch_table_helper_generator.py vk_dispatch_table_helper.h)
-GenerateFromVkXml(helper_file_generator.py vk_safe_struct.h)
-GenerateFromVkXml(helper_file_generator.py vk_safe_struct.cpp)
-GenerateFromVkXml(helper_file_generator.py vk_enum_string_helper.h)
-GenerateFromVkXml(helper_file_generator.py vk_object_types.h)
-GenerateFromVkXml(helper_file_generator.py vk_extension_helper.h)
-GenerateFromVkXml(helper_file_generator.py vk_typemap_helper.h)
-
-# This target causes the source files to be generated.
-add_custom_target(VulkanVL_generate_helper_files
-                  DEPENDS vk_enum_string_helper.h
-                          vk_safe_struct.h
-                          vk_safe_struct.cpp
-                          vk_object_types.h
-                          vk_layer_dispatch_table.h
-                          vk_dispatch_table_helper.h
-                          vk_extension_helper.h
-                          vk_typemap_helper.h)
-set_target_properties(VulkanVL_generate_helper_files PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
-
 # VkLayer_utils library ----------------------------------------------------------------------------------------------------------
 # For Windows, we use a static lib because the Windows loader has a fairly restrictive loader search path that can't be easily
 # modified to point it to the same directory that contains the layers. TODO: This should not be a library -- in future, include
@@ -342,10 +308,10 @@ if(WIN32)
 endif()
 install(TARGETS VkLayer_utils DESTINATION ${CMAKE_INSTALL_LIBDIR})
 set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
-add_dependencies(VkLayer_utils VulkanVL_generate_helper_files)
 target_include_directories(VkLayer_utils
                            PUBLIC ${VulkanHeaders_INCLUDE_DIR}
-				  ${CMAKE_CURRENT_SOURCE_DIR}/layers
+                                  ${CMAKE_CURRENT_SOURCE_DIR}/layers
+                                  ${CMAKE_CURRENT_SOURCE_DIR}/layers/generated
                                   ${CMAKE_CURRENT_BINARY_DIR}
                                   ${CMAKE_CURRENT_BINARY_DIR}/layers
                                   ${PROJECT_BINARY_DIR})
