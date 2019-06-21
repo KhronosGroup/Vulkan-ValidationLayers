@@ -622,7 +622,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
             cmd_enum = ['    ' + cmd_prefix + 'NONE = 0']
 
             cmd_ordinal = 1
-            for vuid, db_text in cmd_dict.items():
+            for vuid, db_text in sorted(cmd_dict.items()):
                 cmd_match = cmd_regex.match(vuid)
                 if cmd_match.group(1) == "End":
                     end = "END"
