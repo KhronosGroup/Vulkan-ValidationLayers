@@ -106,7 +106,7 @@ add_executable(vk_layer_validation_tests
                layer_validation_tests.cpp
                ../layers/vk_format_utils.cpp
                ../layers/convert_to_renderpass2.cpp
-               ${PROJECT_BINARY_DIR}/vk_safe_struct.cpp
+               ../layers/generated/vk_safe_struct.cpp
                ${COMMON_CPP})
 add_test(NAME vk_layer_validation_tests COMMAND vk_layer_validation_tests)
 add_dependencies(vk_layer_validation_tests Vulkan::Vulkan VkLayer_khronos_validation VkLayer_khronos_validation-json)
@@ -117,6 +117,7 @@ endif()
 target_include_directories(vk_layer_validation_tests
                            PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
                                   ${PROJECT_SOURCE_DIR}/layers
+                                  ${PROJECT_SOURCE_DIR}/layers/generated
                                   ${GLSLANG_SPIRV_INCLUDE_DIR}
                                   ${SPIRV_TOOLS_INCLUDE_DIR}
                                   ${CMAKE_CURRENT_BINARY_DIR}
