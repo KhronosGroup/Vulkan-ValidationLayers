@@ -1298,12 +1298,8 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
                                      const char *func_name, std::string *error_code, std::string *error_msg) {
     *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00326";
     auto iv_state = GetImageViewState(image_view);
-    if (!iv_state) {
-        std::stringstream error_str;
-        error_str << "Invalid VkImageView: " << report_data->FormatHandle(image_view).c_str();
-        *error_msg = error_str.str();
-        return false;
-    }
+    assert(iv_state);
+
     // Note that when an imageview is created, we validated that memory is bound so no need to re-check here
     // Validate that imageLayout is compatible with aspect_mask and image format
     //  and validate that image usage bits are correct for given usage
@@ -1312,38 +1308,31 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     VkFormat format = VK_FORMAT_MAX_ENUM;
     VkImageUsageFlags usage = 0;
     auto image_node = GetImageState(image);
-    if (image_node) {
-        format = image_node->createInfo.format;
-        usage = image_node->createInfo.usage;
-        // Validate that memory is bound to image
-        // TODO: This should have its own valid usage id apart from 2524 which is from CreateImageView case. The only
-        //  the error here occurs is if memory bound to a created imageView has been freed.
-        if (ValidateMemoryIsBoundToImage(image_node, func_name, "VUID-VkImageViewCreateInfo-image-01020")) {
-            *error_code = "VUID-VkImageViewCreateInfo-image-01020";
-            *error_msg = "No memory bound to image.";
-            return false;
-        }
+    assert(image_node);
 
-        // KHR_maintenance1 allows rendering into 2D or 2DArray views which slice a 3D image,
-        // but not binding them to descriptor sets.
-        if (image_node->createInfo.imageType == VK_IMAGE_TYPE_3D &&
-            (iv_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_2D ||
-             iv_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY)) {
-            *error_code = "VUID-VkDescriptorImageInfo-imageView-00343";
-            *error_msg = "ImageView must not be a 2D or 2DArray view of a 3D image";
-            return false;
-        }
-    }
-    // First validate that format and layout are compatible
-    if (format == VK_FORMAT_MAX_ENUM) {
-        std::stringstream error_str;
-        error_str << "Invalid image (" << report_data->FormatHandle(image).c_str() << ") in imageView ("
-                  << report_data->FormatHandle(image_view).c_str() << ").";
-        *error_msg = error_str.str();
+    format = image_node->createInfo.format;
+    usage = image_node->createInfo.usage;
+    // Validate that memory is bound to image
+    // TODO: This should have its own valid usage id apart from 2524 which is from CreateImageView case. The only
+    //  the error here occurs is if memory bound to a created imageView has been freed.
+    if (ValidateMemoryIsBoundToImage(image_node, func_name, "VUID-VkImageViewCreateInfo-image-01020")) {
+        *error_code = "VUID-VkImageViewCreateInfo-image-01020";
+        *error_msg = "No memory bound to image.";
         return false;
     }
+
+    // KHR_maintenance1 allows rendering into 2D or 2DArray views which slice a 3D image,
+    // but not binding them to descriptor sets.
+    if (image_node->createInfo.imageType == VK_IMAGE_TYPE_3D && (iv_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_2D ||
+                                                                 iv_state->create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY)) {
+        *error_code = "VUID-VkDescriptorImageInfo-imageView-00343";
+        *error_msg = "ImageView must not be a 2D or 2DArray view of a 3D image";
+        return false;
+    }
+
     // TODO : The various image aspect and format checks here are based on general spec language in 11.5 Image Views section under
     // vkCreateImageView(). What's the best way to create unique id for these cases?
+    *error_code = "UNASSIGNED-CoreValidation-DrawState-InvalidImageView";
     bool ds = FormatIsDepthOrStencil(format);
     switch (image_layout) {
         case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
