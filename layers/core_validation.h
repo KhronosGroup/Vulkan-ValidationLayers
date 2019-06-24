@@ -982,9 +982,6 @@ class CoreChecks : public ValidationStateTracker {
 
     bool ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice device, const VkRenderPassCreateInfo2KHR* pCreateInfo);
 
-    bool ValidateMapImageLayouts(VkDevice device, DEVICE_MEMORY_STATE const* mem_info, VkDeviceSize offset,
-                                 VkDeviceSize end_offset);
-
     bool ValidateImageUsageFlags(IMAGE_STATE const* image_state, VkFlags desired, bool strict, const char* msgCode,
                                  char const* func_name, char const* usage_string);
 
