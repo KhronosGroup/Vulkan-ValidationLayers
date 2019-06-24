@@ -4495,8 +4495,8 @@ void CoreChecks::PreCallRecordDestroySampler(VkDevice device, VkSampler sampler,
     samplerMap.erase(sampler);
 }
 
-void CoreChecks::PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
-                                                         const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
+                                                                     const VkAllocationCallbacks *pAllocator) {
     if (!descriptorSetLayout) return;
     auto layout_it = descriptorSetLayoutMap.find(descriptorSetLayout);
     if (layout_it != descriptorSetLayoutMap.end()) {
@@ -4517,8 +4517,8 @@ bool CoreChecks::PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescrip
     return skip;
 }
 
-void CoreChecks::PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
-                                                    const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
+                                                                const VkAllocationCallbacks *pAllocator) {
     if (!descriptorPool) return;
     DESCRIPTOR_POOL_STATE *desc_pool_state = GetDescriptorPoolState(descriptorPool);
     const VulkanTypedHandle obj_struct(descriptorPool, kVulkanObjectTypeDescriptorPool);
@@ -5058,9 +5058,10 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
         &phys_dev_ext_props.inline_uniform_block_props);
 }
 
-void CoreChecks::PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
-                                                         const VkAllocationCallbacks *pAllocator, VkDescriptorSetLayout *pSetLayout,
-                                                         VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateDescriptorSetLayout(VkDevice device,
+                                                                     const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
+                                                                     const VkAllocationCallbacks *pAllocator,
+                                                                     VkDescriptorSetLayout *pSetLayout, VkResult result) {
     if (VK_SUCCESS != result) return;
     descriptorSetLayoutMap[*pSetLayout] = std::make_shared<cvdescriptorset::DescriptorSetLayout>(pCreateInfo, *pSetLayout);
 }
@@ -5775,9 +5776,9 @@ void CoreChecks::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPip
     pipelineLayoutMap[*pPipelineLayout] = std::move(pipeline_layout_state);
 }
 
-void CoreChecks::PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
-                                                    const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool,
-                                                    VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
+                                                                const VkAllocationCallbacks *pAllocator,
+                                                                VkDescriptorPool *pDescriptorPool, VkResult result) {
     if (VK_SUCCESS != result) return;
     descriptorPoolMap[*pDescriptorPool] =
         std::unique_ptr<DESCRIPTOR_POOL_STATE>(new DESCRIPTOR_POOL_STATE(*pDescriptorPool, pCreateInfo));

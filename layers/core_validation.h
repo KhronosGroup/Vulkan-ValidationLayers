@@ -344,6 +344,7 @@ class ValidationStateTracker : public ValidationObject {
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState();
 
     // State update functions
+    // Create/Destroy
     void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                     const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, VkResult result);
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator);
@@ -356,6 +357,16 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView, const VkAllocationCallbacks* pAllocator);
     void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkImage* pImage, VkResult result);
+    void PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
+                                            const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
+                                            VkResult result);
+    void PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
+                                            const VkAllocationCallbacks* pAllocator);
+    void PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator, VkDescriptorSetLayout* pSetLayout,
+                                                 VkResult result);
+    void PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
+                                                 const VkAllocationCallbacks* pAllocator);
     void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator);
     void PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkImageView* pView, VkResult result);
@@ -364,6 +375,8 @@ class ValidationStateTracker : public ValidationObject {
                                           const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule, VkResult result,
                                           void* csm_state);
     void PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule, const VkAllocationCallbacks* pAllocator);
+
+    // Allocate/Free
 
     // State Utilty functions
     void ClearMemoryObjectBindings(const VulkanTypedHandle& typed_handle);
@@ -1274,12 +1287,8 @@ class CoreChecks : public ValidationStateTracker {
                                             const VkAllocationCallbacks* pAllocator);
     bool PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks* pAllocator);
     void PreCallRecordDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks* pAllocator);
-    void PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
-                                                 const VkAllocationCallbacks* pAllocator);
     bool PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                               const VkAllocationCallbacks* pAllocator);
-    void PreCallRecordDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
-                                            const VkAllocationCallbacks* pAllocator);
     bool PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
                                            const VkCommandBuffer* pCommandBuffers);
     void PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
@@ -1306,12 +1315,6 @@ class CoreChecks : public ValidationStateTracker {
                                      const VkAllocationCallbacks* pAllocator, VkSampler* pSampler, VkResult result);
     bool PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkDescriptorSetLayout* pSetLayout);
-    void PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
-                                                 const VkAllocationCallbacks* pAllocator, VkDescriptorSetLayout* pSetLayout,
-                                                 VkResult result);
-    void PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
-                                            const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
-                                            VkResult result);
     bool PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags);
     void PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags,
                                            VkResult result);
