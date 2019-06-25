@@ -4713,13 +4713,10 @@ void CoreChecks::PostCallRecordResetFences(VkDevice device, uint32_t fenceCount,
 }
 
 // For given cb_nodes, invalidate them and track object causing invalidation
-void CoreChecks::InvalidateCommandBuffers(std::unordered_set<CMD_BUFFER_STATE *> const &cb_nodes, const VulkanTypedHandle &obj) {
+void ValidationStateTracker::InvalidateCommandBuffers(std::unordered_set<CMD_BUFFER_STATE *> const &cb_nodes,
+                                                      const VulkanTypedHandle &obj) {
     for (auto cb_node : cb_nodes) {
         if (cb_node->state == CB_RECORDING) {
-            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                    HandleToUint64(cb_node->commandBuffer), kVUID_Core_DrawState_InvalidCommandBuffer,
-                    "Invalidating a command buffer that's currently being recorded: %s.",
-                    report_data->FormatHandle(cb_node->commandBuffer).c_str());
             cb_node->state = CB_INVALID_INCOMPLETE;
         } else if (cb_node->state == CB_RECORDED) {
             cb_node->state = CB_INVALID_COMPLETE;
@@ -6841,8 +6838,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
                     // TODO move the validation (like this) that doesn't need descriptor set state to the DSL object so we
                     // don't have to do this.
                     cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, VK_NULL_HANDLE, dsl, 0, this);
-                    skip |=
-                        ValidatePushDescriptorsUpdate(&proxy_ds, report_data, descriptorWriteCount, pDescriptorWrites, func_name);
+                    skip |= ValidatePushDescriptorsUpdate(&proxy_ds, descriptorWriteCount, pDescriptorWrites, func_name);
                 }
             }
         } else {
@@ -12493,7 +12489,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
         cvdescriptorset::DecodedTemplateUpdate decoded_template(this, VK_NULL_HANDLE, template_state, pData,
                                                                 dsl->GetDescriptorSetLayout());
         // Validate the decoded update against the proxy_ds
-        skip |= ValidatePushDescriptorsUpdate(&proxy_ds, report_data, static_cast<uint32_t>(decoded_template.desc_writes.size()),
+        skip |= ValidatePushDescriptorsUpdate(&proxy_ds, static_cast<uint32_t>(decoded_template.desc_writes.size()),
                                               decoded_template.desc_writes.data(), func_name);
     }
 
