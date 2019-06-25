@@ -11114,128 +11114,127 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
                     HandleToUint64(physical_device), kVUID_Core_DrawState_SwapchainCreateBeforeQuery,
                     "%s: surface capabilities not retrieved for this physical device", func_name))
             return true;
-    } else {  // have valid capabilities
-        auto &capabilities = physical_device_state->surfaceCapabilities;
-        // Validate pCreateInfo->minImageCount against VkSurfaceCapabilitiesKHR::{min|max}ImageCount:
-        if (pCreateInfo->minImageCount < capabilities.minImageCount) {
-            if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        "VUID-VkSwapchainCreateInfoKHR-minImageCount-01271",
-                        "%s called with minImageCount = %d, which is outside the bounds returned by "
-                        "vkGetPhysicalDeviceSurfaceCapabilitiesKHR() (i.e. minImageCount = %d, maxImageCount = %d).",
-                        func_name, pCreateInfo->minImageCount, capabilities.minImageCount, capabilities.maxImageCount))
-                return true;
-        }
+    }
 
-        if ((capabilities.maxImageCount > 0) && (pCreateInfo->minImageCount > capabilities.maxImageCount)) {
-            if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        "VUID-VkSwapchainCreateInfoKHR-minImageCount-01272",
-                        "%s called with minImageCount = %d, which is outside the bounds returned by "
-                        "vkGetPhysicalDeviceSurfaceCapabilitiesKHR() (i.e. minImageCount = %d, maxImageCount = %d).",
-                        func_name, pCreateInfo->minImageCount, capabilities.minImageCount, capabilities.maxImageCount))
-                return true;
-        }
+    VkSurfaceCapabilitiesKHR capabilities{};
+    DispatchGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_state->phys_device, pCreateInfo->surface, &capabilities);
+    // Validate pCreateInfo->minImageCount against VkSurfaceCapabilitiesKHR::{min|max}ImageCount:
+    if (pCreateInfo->minImageCount < capabilities.minImageCount) {
+        if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                    "VUID-VkSwapchainCreateInfoKHR-minImageCount-01271",
+                    "%s called with minImageCount = %d, which is outside the bounds returned by "
+                    "vkGetPhysicalDeviceSurfaceCapabilitiesKHR() (i.e. minImageCount = %d, maxImageCount = %d).",
+                    func_name, pCreateInfo->minImageCount, capabilities.minImageCount, capabilities.maxImageCount))
+            return true;
+    }
 
-        // Validate pCreateInfo->imageExtent against VkSurfaceCapabilitiesKHR::{current|min|max}ImageExtent:
-        if ((pCreateInfo->imageExtent.width < capabilities.minImageExtent.width) ||
-            (pCreateInfo->imageExtent.width > capabilities.maxImageExtent.width) ||
-            (pCreateInfo->imageExtent.height < capabilities.minImageExtent.height) ||
-            (pCreateInfo->imageExtent.height > capabilities.maxImageExtent.height)) {
-            if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        "VUID-VkSwapchainCreateInfoKHR-imageExtent-01274",
-                        "%s called with imageExtent = (%d,%d), which is outside the bounds returned by "
-                        "vkGetPhysicalDeviceSurfaceCapabilitiesKHR(): currentExtent = (%d,%d), minImageExtent = (%d,%d), "
-                        "maxImageExtent = (%d,%d).",
-                        func_name, pCreateInfo->imageExtent.width, pCreateInfo->imageExtent.height,
-                        capabilities.currentExtent.width, capabilities.currentExtent.height, capabilities.minImageExtent.width,
-                        capabilities.minImageExtent.height, capabilities.maxImageExtent.width, capabilities.maxImageExtent.height))
-                return true;
-        }
-        // pCreateInfo->preTransform should have exactly one bit set, and that bit must also be set in
-        // VkSurfaceCapabilitiesKHR::supportedTransforms.
-        if (!pCreateInfo->preTransform || (pCreateInfo->preTransform & (pCreateInfo->preTransform - 1)) ||
-            !(pCreateInfo->preTransform & capabilities.supportedTransforms)) {
-            // This is an error situation; one for which we'd like to give the developer a helpful, multi-line error message.  Build
-            // it up a little at a time, and then log it:
-            std::string errorString = "";
-            char str[1024];
-            // Here's the first part of the message:
-            sprintf(str, "%s called with a non-supported pCreateInfo->preTransform (i.e. %s).  Supported values are:\n", func_name,
-                    string_VkSurfaceTransformFlagBitsKHR(pCreateInfo->preTransform));
-            errorString += str;
-            for (int i = 0; i < 32; i++) {
-                // Build up the rest of the message:
-                if ((1 << i) & capabilities.supportedTransforms) {
-                    const char *newStr = string_VkSurfaceTransformFlagBitsKHR((VkSurfaceTransformFlagBitsKHR)(1 << i));
-                    sprintf(str, "    %s\n", newStr);
-                    errorString += str;
-                }
+    if ((capabilities.maxImageCount > 0) && (pCreateInfo->minImageCount > capabilities.maxImageCount)) {
+        if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                    "VUID-VkSwapchainCreateInfoKHR-minImageCount-01272",
+                    "%s called with minImageCount = %d, which is outside the bounds returned by "
+                    "vkGetPhysicalDeviceSurfaceCapabilitiesKHR() (i.e. minImageCount = %d, maxImageCount = %d).",
+                    func_name, pCreateInfo->minImageCount, capabilities.minImageCount, capabilities.maxImageCount))
+            return true;
+    }
+
+    // Validate pCreateInfo->imageExtent against VkSurfaceCapabilitiesKHR::{current|min|max}ImageExtent:
+    if ((pCreateInfo->imageExtent.width < capabilities.minImageExtent.width) ||
+        (pCreateInfo->imageExtent.width > capabilities.maxImageExtent.width) ||
+        (pCreateInfo->imageExtent.height < capabilities.minImageExtent.height) ||
+        (pCreateInfo->imageExtent.height > capabilities.maxImageExtent.height)) {
+        if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                    "VUID-VkSwapchainCreateInfoKHR-imageExtent-01274",
+                    "%s called with imageExtent = (%d,%d), which is outside the bounds returned by "
+                    "vkGetPhysicalDeviceSurfaceCapabilitiesKHR(): currentExtent = (%d,%d), minImageExtent = (%d,%d), "
+                    "maxImageExtent = (%d,%d).",
+                    func_name, pCreateInfo->imageExtent.width, pCreateInfo->imageExtent.height, capabilities.currentExtent.width,
+                    capabilities.currentExtent.height, capabilities.minImageExtent.width, capabilities.minImageExtent.height,
+                    capabilities.maxImageExtent.width, capabilities.maxImageExtent.height))
+            return true;
+    }
+    // pCreateInfo->preTransform should have exactly one bit set, and that bit must also be set in
+    // VkSurfaceCapabilitiesKHR::supportedTransforms.
+    if (!pCreateInfo->preTransform || (pCreateInfo->preTransform & (pCreateInfo->preTransform - 1)) ||
+        !(pCreateInfo->preTransform & capabilities.supportedTransforms)) {
+        // This is an error situation; one for which we'd like to give the developer a helpful, multi-line error message.  Build
+        // it up a little at a time, and then log it:
+        std::string errorString = "";
+        char str[1024];
+        // Here's the first part of the message:
+        sprintf(str, "%s called with a non-supported pCreateInfo->preTransform (i.e. %s).  Supported values are:\n", func_name,
+                string_VkSurfaceTransformFlagBitsKHR(pCreateInfo->preTransform));
+        errorString += str;
+        for (int i = 0; i < 32; i++) {
+            // Build up the rest of the message:
+            if ((1 << i) & capabilities.supportedTransforms) {
+                const char *newStr = string_VkSurfaceTransformFlagBitsKHR((VkSurfaceTransformFlagBitsKHR)(1 << i));
+                sprintf(str, "    %s\n", newStr);
+                errorString += str;
             }
-            // Log the message that we've built up:
-            if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        "VUID-VkSwapchainCreateInfoKHR-preTransform-01279", "%s.", errorString.c_str()))
-                return true;
         }
+        // Log the message that we've built up:
+        if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                    "VUID-VkSwapchainCreateInfoKHR-preTransform-01279", "%s.", errorString.c_str()))
+            return true;
+    }
 
-        // pCreateInfo->compositeAlpha should have exactly one bit set, and that bit must also be set in
-        // VkSurfaceCapabilitiesKHR::supportedCompositeAlpha
-        if (!pCreateInfo->compositeAlpha || (pCreateInfo->compositeAlpha & (pCreateInfo->compositeAlpha - 1)) ||
-            !((pCreateInfo->compositeAlpha) & capabilities.supportedCompositeAlpha)) {
-            // This is an error situation; one for which we'd like to give the developer a helpful, multi-line error message.  Build
-            // it up a little at a time, and then log it:
-            std::string errorString = "";
-            char str[1024];
-            // Here's the first part of the message:
-            sprintf(str, "%s called with a non-supported pCreateInfo->compositeAlpha (i.e. %s).  Supported values are:\n",
-                    func_name, string_VkCompositeAlphaFlagBitsKHR(pCreateInfo->compositeAlpha));
-            errorString += str;
-            for (int i = 0; i < 32; i++) {
-                // Build up the rest of the message:
-                if ((1 << i) & capabilities.supportedCompositeAlpha) {
-                    const char *newStr = string_VkCompositeAlphaFlagBitsKHR((VkCompositeAlphaFlagBitsKHR)(1 << i));
-                    sprintf(str, "    %s\n", newStr);
-                    errorString += str;
-                }
+    // pCreateInfo->compositeAlpha should have exactly one bit set, and that bit must also be set in
+    // VkSurfaceCapabilitiesKHR::supportedCompositeAlpha
+    if (!pCreateInfo->compositeAlpha || (pCreateInfo->compositeAlpha & (pCreateInfo->compositeAlpha - 1)) ||
+        !((pCreateInfo->compositeAlpha) & capabilities.supportedCompositeAlpha)) {
+        // This is an error situation; one for which we'd like to give the developer a helpful, multi-line error message.  Build
+        // it up a little at a time, and then log it:
+        std::string errorString = "";
+        char str[1024];
+        // Here's the first part of the message:
+        sprintf(str, "%s called with a non-supported pCreateInfo->compositeAlpha (i.e. %s).  Supported values are:\n", func_name,
+                string_VkCompositeAlphaFlagBitsKHR(pCreateInfo->compositeAlpha));
+        errorString += str;
+        for (int i = 0; i < 32; i++) {
+            // Build up the rest of the message:
+            if ((1 << i) & capabilities.supportedCompositeAlpha) {
+                const char *newStr = string_VkCompositeAlphaFlagBitsKHR((VkCompositeAlphaFlagBitsKHR)(1 << i));
+                sprintf(str, "    %s\n", newStr);
+                errorString += str;
             }
-            // Log the message that we've built up:
-            if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        "VUID-VkSwapchainCreateInfoKHR-compositeAlpha-01280", "%s.", errorString.c_str()))
-                return true;
         }
-        // Validate pCreateInfo->imageArrayLayers against VkSurfaceCapabilitiesKHR::maxImageArrayLayers:
-        if (pCreateInfo->imageArrayLayers > capabilities.maxImageArrayLayers) {
-            if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        "VUID-VkSwapchainCreateInfoKHR-imageArrayLayers-01275",
-                        "%s called with a non-supported imageArrayLayers (i.e. %d).  Maximum value is %d.", func_name,
-                        pCreateInfo->imageArrayLayers, capabilities.maxImageArrayLayers))
-                return true;
-        }
-        // Validate pCreateInfo->imageUsage against VkSurfaceCapabilitiesKHR::supportedUsageFlags:
-        if (pCreateInfo->imageUsage != (pCreateInfo->imageUsage & capabilities.supportedUsageFlags)) {
-            if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        "VUID-VkSwapchainCreateInfoKHR-imageUsage-01276",
-                        "%s called with a non-supported pCreateInfo->imageUsage (i.e. 0x%08x).  Supported flag bits are 0x%08x.",
-                        func_name, pCreateInfo->imageUsage, capabilities.supportedUsageFlags))
-                return true;
-        }
+        // Log the message that we've built up:
+        if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                    "VUID-VkSwapchainCreateInfoKHR-compositeAlpha-01280", "%s.", errorString.c_str()))
+            return true;
+    }
+    // Validate pCreateInfo->imageArrayLayers against VkSurfaceCapabilitiesKHR::maxImageArrayLayers:
+    if (pCreateInfo->imageArrayLayers > capabilities.maxImageArrayLayers) {
+        if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                    "VUID-VkSwapchainCreateInfoKHR-imageArrayLayers-01275",
+                    "%s called with a non-supported imageArrayLayers (i.e. %d).  Maximum value is %d.", func_name,
+                    pCreateInfo->imageArrayLayers, capabilities.maxImageArrayLayers))
+            return true;
+    }
+    // Validate pCreateInfo->imageUsage against VkSurfaceCapabilitiesKHR::supportedUsageFlags:
+    if (pCreateInfo->imageUsage != (pCreateInfo->imageUsage & capabilities.supportedUsageFlags)) {
+        if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                    "VUID-VkSwapchainCreateInfoKHR-imageUsage-01276",
+                    "%s called with a non-supported pCreateInfo->imageUsage (i.e. 0x%08x).  Supported flag bits are 0x%08x.",
+                    func_name, pCreateInfo->imageUsage, capabilities.supportedUsageFlags))
+            return true;
+    }
 
-        if (device_extensions.vk_khr_surface_protected_capabilities &&
-            (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR)) {
-            VkPhysicalDeviceSurfaceInfo2KHR surfaceInfo = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR};
-            surfaceInfo.surface = pCreateInfo->surface;
-            VkSurfaceProtectedCapabilitiesKHR surfaceProtectedCapabilities = {VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR};
-            VkSurfaceCapabilities2KHR surfaceCapabilities = {VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR};
-            surfaceCapabilities.pNext = &surfaceProtectedCapabilities;
-            DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->phys_device, &surfaceInfo,
-                                                             &surfaceCapabilities);
+    if (device_extensions.vk_khr_surface_protected_capabilities && (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR)) {
+        VkPhysicalDeviceSurfaceInfo2KHR surfaceInfo = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR};
+        surfaceInfo.surface = pCreateInfo->surface;
+        VkSurfaceProtectedCapabilitiesKHR surfaceProtectedCapabilities = {VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR};
+        VkSurfaceCapabilities2KHR surfaceCapabilities = {VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR};
+        surfaceCapabilities.pNext = &surfaceProtectedCapabilities;
+        DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->phys_device, &surfaceInfo, &surfaceCapabilities);
 
-            if (!surfaceProtectedCapabilities.supportsProtected) {
-                if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                            HandleToUint64(device), "VUID-VkSwapchainCreateInfoKHR-flags-03187",
-                            "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR but the surface "
-                            "capabilities does not have VkSurfaceProtectedCapabilitiesKHR.supportsProtected set to VK_TRUE.",
-                            func_name))
-                    return true;
-            }
+        if (!surfaceProtectedCapabilities.supportsProtected) {
+            if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        "VUID-VkSwapchainCreateInfoKHR-flags-03187",
+                        "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR but the surface "
+                        "capabilities does not have VkSurfaceProtectedCapabilitiesKHR.supportsProtected set to VK_TRUE.",
+                        func_name))
+                return true;
         }
     }
 
