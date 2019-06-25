@@ -365,8 +365,21 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkDescriptorSetLayout* pSetLayout,
                                                  VkResult result);
+    void PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags,
+                                           VkResult result);
     void PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
                                                  const VkAllocationCallbacks* pAllocator);
+    void PostCallRecordCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
+                                                      const VkAllocationCallbacks* pAllocator,
+                                                      VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate, VkResult result);
+    void PostCallRecordCreateDescriptorUpdateTemplateKHR(VkDevice device,
+                                                         const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
+                                                         const VkAllocationCallbacks* pAllocator,
+                                                         VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate, VkResult result);
+    void PreCallRecordDestroyDescriptorUpdateTemplate(VkDevice device, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                      const VkAllocationCallbacks* pAllocator);
+    void PreCallRecordDestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                         const VkAllocationCallbacks* pAllocator);
     void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator);
     void PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkImageView* pView, VkResult result);
@@ -377,6 +390,17 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule, const VkAllocationCallbacks* pAllocator);
 
     // Allocate/Free
+    void PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                              VkDescriptorSet* pDescriptorSets, VkResult result, void* ads_state);
+    void PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
+                                         const VkDescriptorSet* pDescriptorSets);
+    void PreCallRecordUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
+                                           const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
+                                           const VkCopyDescriptorSet* pDescriptorCopies);
+    void PreCallRecordUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
+                                                      VkDescriptorUpdateTemplate descriptorUpdateTemplate, const void* pData);
+    void PreCallRecordUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
+                                                         VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
 
     // State Utilty functions
     void ClearMemoryObjectBindings(const VulkanTypedHandle& typed_handle);
@@ -384,7 +408,15 @@ class ValidationStateTracker : public ValidationObject {
     void DeleteDescriptorSetPools();
     void FreeDescriptorSet(cvdescriptorset::DescriptorSet* descriptor_set);
     void InvalidateCommandBuffers(std::unordered_set<CMD_BUFFER_STATE*> const& cb_nodes, const VulkanTypedHandle& obj);
+    void PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*, const VkDescriptorSet*,
+                                       const cvdescriptorset::AllocateDescriptorSetsData*);
+    void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE* template_state,
+                                                    const void* pData);
     void RecordCreateImageANDROID(const VkImageCreateInfo* create_info, IMAGE_STATE* is_node);
+    void RecordUpdateDescriptorSetWithTemplateState(VkDescriptorSet descriptorSet,
+                                                    VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
+    void RecordCreateDescriptorUpdateTemplateState(const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
+                                                   VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate);
     void RemoveBufferMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
     void RemoveImageMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
 
@@ -620,8 +652,6 @@ class CoreChecks : public ValidationStateTracker {
                                  VkMemoryRequirements mem_reqs);
     bool ValidateMemoryTypes(const DEVICE_MEMORY_STATE* mem_info, const uint32_t memory_type_bits, const char* funcName,
                              const char* msgCode);
-    void RecordCreateDescriptorUpdateTemplateState(const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
-                                                   VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate);
     bool ValidateCommandBufferState(CMD_BUFFER_STATE* cb_state, const char* call_source, int current_submit_count,
                                     const char* vu_id);
     bool ValidateCommandBufferSimultaneousUse(CMD_BUFFER_STATE* pCB, int current_submit_count);
@@ -643,8 +673,6 @@ class CoreChecks : public ValidationStateTracker {
                                             uint32_t image_mem_barrier_count, const VkImageMemoryBarrier* image_barriers);
     bool CheckStageMaskQueueCompatibility(VkCommandBuffer command_buffer, VkPipelineStageFlags stage_mask, VkQueueFlags queue_flags,
                                           const char* function, const char* src_or_dest, const char* error_code);
-    void RecordUpdateDescriptorSetWithTemplateState(VkDescriptorSet descriptorSet,
-                                                    VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
     bool ValidateUpdateDescriptorSetWithTemplate(VkDescriptorSet descriptorSet,
                                                  VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
     bool ValidateMemoryIsBoundToBuffer(const BUFFER_STATE*, const char*, const char*);
@@ -760,12 +788,8 @@ class CoreChecks : public ValidationStateTracker {
                               std::string* error_code, std::string* error_msg);
     bool ValidateUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE* template_state,
                                                      const void* pData);
-    void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE* template_state,
-                                                    const void* pData);
     void UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo*, cvdescriptorset::AllocateDescriptorSetsData*);
     bool ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*, const cvdescriptorset::AllocateDescriptorSetsData*);
-    void PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*, const VkDescriptorSet*,
-                                       const cvdescriptorset::AllocateDescriptorSetsData*);
     bool ValidateUpdateDescriptorSets(uint32_t write_count, const VkWriteDescriptorSet* p_wds, uint32_t copy_count,
                                       const VkCopyDescriptorSet* p_cds, const char* func_name);
 
@@ -1173,8 +1197,6 @@ class CoreChecks : public ValidationStateTracker {
                                             VkResult result);
     bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                                VkDescriptorSet* pDescriptorSets, void* ads_state);
-    void PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                              VkDescriptorSet* pDescriptorSets, VkResult result, void* ads_state);
     bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                     const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
@@ -1316,18 +1338,11 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkDescriptorSetLayout* pSetLayout);
     bool PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags);
-    void PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags,
-                                           VkResult result);
     bool PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
                                            const VkDescriptorSet* pDescriptorSets);
-    void PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
-                                         const VkDescriptorSet* pDescriptorSets);
     bool PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                              const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
                                              const VkCopyDescriptorSet* pDescriptorCopies);
-    void PreCallRecordUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
-                                           const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
-                                           const VkCopyDescriptorSet* pDescriptorCopies);
     void PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pCreateInfo,
                                               VkCommandBuffer* pCommandBuffer, VkResult result);
     bool PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo);
@@ -1648,30 +1663,15 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator,
                                                        VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate);
-    void PostCallRecordCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
-                                                      const VkAllocationCallbacks* pAllocator,
-                                                      VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate, VkResult result);
     bool PreCallValidateCreateDescriptorUpdateTemplateKHR(VkDevice device,
                                                           const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
                                                           const VkAllocationCallbacks* pAllocator,
                                                           VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate);
-    void PostCallRecordCreateDescriptorUpdateTemplateKHR(VkDevice device,
-                                                         const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
-                                                         const VkAllocationCallbacks* pAllocator,
-                                                         VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate, VkResult result);
-    void PreCallRecordDestroyDescriptorUpdateTemplate(VkDevice device, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
-                                                      const VkAllocationCallbacks* pAllocator);
-    void PreCallRecordDestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
-                                                         const VkAllocationCallbacks* pAllocator);
     bool PreCallValidateUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
                                                         VkDescriptorUpdateTemplate descriptorUpdateTemplate, const void* pData);
-    void PreCallRecordUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
-                                                      VkDescriptorUpdateTemplate descriptorUpdateTemplate, const void* pData);
     bool PreCallValidateUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
                                                            VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                            const void* pData);
-    void PreCallRecordUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
-                                                         VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
 
     bool PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
                                                             VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,

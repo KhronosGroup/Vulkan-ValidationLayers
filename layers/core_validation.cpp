@@ -628,10 +628,10 @@ std::shared_ptr<RENDER_PASS_STATE> ValidationStateTracker::GetRenderPassStateSha
     return it->second;
 }
 
-std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> const GetDescriptorSetLayout(CoreChecks const *dev_data,
+std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> const GetDescriptorSetLayout(const ValidationStateTracker *state_data,
                                                                                          VkDescriptorSetLayout dsLayout) {
-    auto it = dev_data->descriptorSetLayoutMap.find(dsLayout);
-    if (it == dev_data->descriptorSetLayoutMap.end()) {
+    auto it = state_data->descriptorSetLayoutMap.find(dsLayout);
+    if (it == state_data->descriptorSetLayoutMap.end()) {
         return nullptr;
     }
     return it->second;
@@ -5803,8 +5803,8 @@ bool CoreChecks::PreCallValidateResetDescriptorPool(VkDevice device, VkDescripto
     return skip;
 }
 
-void CoreChecks::PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
-                                                   VkDescriptorPoolResetFlags flags, VkResult result) {
+void ValidationStateTracker::PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
+                                                               VkDescriptorPoolResetFlags flags, VkResult result) {
     if (VK_SUCCESS != result) return;
     DESCRIPTOR_POOL_STATE *pPool = GetDescriptorPoolState(descriptorPool);
     // TODO: validate flags
@@ -5834,8 +5834,9 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
 }
 
 // Allocation state was good and call down chain was made so update state based on allocating descriptor sets
-void CoreChecks::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
-                                                      VkDescriptorSet *pDescriptorSets, VkResult result, void *ads_state_data) {
+void ValidationStateTracker::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
+                                                                  VkDescriptorSet *pDescriptorSets, VkResult result,
+                                                                  void *ads_state_data) {
     if (VK_SUCCESS != result) return;
     // All the updates are contained in a single cvdescriptorset function
     cvdescriptorset::AllocateDescriptorSetsData *ads_state =
@@ -5864,8 +5865,8 @@ bool CoreChecks::PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptor
     return skip;
 }
 
-void CoreChecks::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
-                                                 const VkDescriptorSet *pDescriptorSets) {
+void ValidationStateTracker::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t count,
+                                                             const VkDescriptorSet *pDescriptorSets) {
     DESCRIPTOR_POOL_STATE *pool_state = GetDescriptorPoolState(descriptorPool);
     // Update available descriptor sets in pool
     pool_state->availableSets += count;
@@ -5900,9 +5901,10 @@ bool CoreChecks::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t d
                                         "vkUpdateDescriptorSets()");
 }
 
-void CoreChecks::PreCallRecordUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
-                                                   const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
-                                                   const VkCopyDescriptorSet *pDescriptorCopies) {
+void ValidationStateTracker::PreCallRecordUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
+                                                               const VkWriteDescriptorSet *pDescriptorWrites,
+                                                               uint32_t descriptorCopyCount,
+                                                               const VkCopyDescriptorSet *pDescriptorCopies) {
     cvdescriptorset::PerformUpdateDescriptorSets(this, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount,
                                                  pDescriptorCopies);
 }
@@ -12361,41 +12363,37 @@ bool CoreChecks::PreCallValidateCreateDescriptorUpdateTemplateKHR(VkDevice devic
     return skip;
 }
 
-void CoreChecks::PreCallRecordDestroyDescriptorUpdateTemplate(VkDevice device,
-                                                              VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
-                                                              const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroyDescriptorUpdateTemplate(VkDevice device,
+                                                                          VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                                          const VkAllocationCallbacks *pAllocator) {
     if (!descriptorUpdateTemplate) return;
     desc_template_map.erase(descriptorUpdateTemplate);
 }
 
-void CoreChecks::PreCallRecordDestroyDescriptorUpdateTemplateKHR(VkDevice device,
-                                                                 VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
-                                                                 const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroyDescriptorUpdateTemplateKHR(VkDevice device,
+                                                                             VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                                             const VkAllocationCallbacks *pAllocator) {
     if (!descriptorUpdateTemplate) return;
     desc_template_map.erase(descriptorUpdateTemplate);
 }
 
-void CoreChecks::RecordCreateDescriptorUpdateTemplateState(const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
-                                                           VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
+void ValidationStateTracker::RecordCreateDescriptorUpdateTemplateState(const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
+                                                                       VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
     safe_VkDescriptorUpdateTemplateCreateInfo *local_create_info = new safe_VkDescriptorUpdateTemplateCreateInfo(pCreateInfo);
     std::unique_ptr<TEMPLATE_STATE> template_state(new TEMPLATE_STATE(*pDescriptorUpdateTemplate, local_create_info));
     desc_template_map[*pDescriptorUpdateTemplate] = std::move(template_state);
 }
 
-void CoreChecks::PostCallRecordCreateDescriptorUpdateTemplate(VkDevice device,
-                                                              const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
-                                                              const VkAllocationCallbacks *pAllocator,
-                                                              VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate,
-                                                              VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateDescriptorUpdateTemplate(
+    VkDevice device, const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+    VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate, VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordCreateDescriptorUpdateTemplateState(pCreateInfo, pDescriptorUpdateTemplate);
 }
 
-void CoreChecks::PostCallRecordCreateDescriptorUpdateTemplateKHR(VkDevice device,
-                                                                 const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
-                                                                 const VkAllocationCallbacks *pAllocator,
-                                                                 VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate,
-                                                                 VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateDescriptorUpdateTemplateKHR(
+    VkDevice device, const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+    VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate, VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordCreateDescriptorUpdateTemplateState(pCreateInfo, pDescriptorUpdateTemplate);
 }
@@ -12431,9 +12429,9 @@ bool CoreChecks::PreCallValidateUpdateDescriptorSetWithTemplateKHR(VkDevice devi
     return ValidateUpdateDescriptorSetWithTemplate(descriptorSet, descriptorUpdateTemplate, pData);
 }
 
-void CoreChecks::RecordUpdateDescriptorSetWithTemplateState(VkDescriptorSet descriptorSet,
-                                                            VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
-                                                            const void *pData) {
+void ValidationStateTracker::RecordUpdateDescriptorSetWithTemplateState(VkDescriptorSet descriptorSet,
+                                                                        VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                                        const void *pData) {
     auto const template_map_entry = desc_template_map.find(descriptorUpdateTemplate);
     if ((template_map_entry == desc_template_map.end()) || (template_map_entry->second.get() == nullptr)) {
         assert(0);
@@ -12446,15 +12444,15 @@ void CoreChecks::RecordUpdateDescriptorSetWithTemplateState(VkDescriptorSet desc
     }
 }
 
-void CoreChecks::PreCallRecordUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
-                                                              VkDescriptorUpdateTemplate descriptorUpdateTemplate,
-                                                              const void *pData) {
+void ValidationStateTracker::PreCallRecordUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet descriptorSet,
+                                                                          VkDescriptorUpdateTemplate descriptorUpdateTemplate,
+                                                                          const void *pData) {
     RecordUpdateDescriptorSetWithTemplateState(descriptorSet, descriptorUpdateTemplate, pData);
 }
 
-void CoreChecks::PreCallRecordUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
-                                                                 VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
-                                                                 const void *pData) {
+void ValidationStateTracker::PreCallRecordUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
+                                                                             VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
+                                                                             const void *pData) {
     RecordUpdateDescriptorSetWithTemplateState(descriptorSet, descriptorUpdateTemplate, pData);
 }
 

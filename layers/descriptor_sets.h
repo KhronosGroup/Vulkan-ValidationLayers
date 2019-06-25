@@ -497,7 +497,8 @@ struct AllocateDescriptorSetsData {
 bool ValidateUpdateDescriptorSets(const debug_report_data *, const CoreChecks *, uint32_t, const VkWriteDescriptorSet *, uint32_t,
                                   const VkCopyDescriptorSet *, const char *func_name);
 // "Perform" does the update with the assumption that ValidateUpdateDescriptorSets() has passed for the given update
-void PerformUpdateDescriptorSets(CoreChecks *, uint32_t, const VkWriteDescriptorSet *, uint32_t, const VkCopyDescriptorSet *);
+void PerformUpdateDescriptorSets(ValidationStateTracker *, uint32_t, const VkWriteDescriptorSet *, uint32_t,
+                                 const VkCopyDescriptorSet *);
 
 // Core Validation specific validation checks using DescriptorSet and DescriptorSetLayoutAccessors
 // TODO: migrate out of descriptor_set.cpp/h
@@ -513,8 +514,9 @@ bool ValidateBufferUsage(BUFFER_STATE const *buffer_node, VkDescriptorType type,
 struct DecodedTemplateUpdate {
     std::vector<VkWriteDescriptorSet> desc_writes;
     std::vector<VkWriteDescriptorSetInlineUniformBlockEXT> inline_infos;
-    DecodedTemplateUpdate(CoreChecks *device_data, VkDescriptorSet descriptorSet, const TEMPLATE_STATE *template_state,
-                          const void *pData, VkDescriptorSetLayout push_layout = VK_NULL_HANDLE);
+    DecodedTemplateUpdate(const ValidationStateTracker *device_data, VkDescriptorSet descriptorSet,
+                          const TEMPLATE_STATE *template_state, const void *pData,
+                          VkDescriptorSetLayout push_layout = VK_NULL_HANDLE);
 };
 
 /*
