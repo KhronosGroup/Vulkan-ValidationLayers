@@ -1723,8 +1723,9 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t write_count, const VkWrit
 //  with the same set of updates.
 // This is split from the validate code to allow validation prior to calling down the chain, and then update after
 //  calling down the chain.
-void cvdescriptorset::PerformUpdateDescriptorSets(CoreChecks *dev_data, uint32_t write_count, const VkWriteDescriptorSet *p_wds,
-                                                  uint32_t copy_count, const VkCopyDescriptorSet *p_cds) {
+void cvdescriptorset::PerformUpdateDescriptorSets(ValidationStateTracker *dev_data, uint32_t write_count,
+                                                  const VkWriteDescriptorSet *p_wds, uint32_t copy_count,
+                                                  const VkCopyDescriptorSet *p_cds) {
     // Write updates first
     uint32_t i = 0;
     for (i = 0; i < write_count; ++i) {
@@ -1746,9 +1747,9 @@ void cvdescriptorset::PerformUpdateDescriptorSets(CoreChecks *dev_data, uint32_t
     }
 }
 
-cvdescriptorset::DecodedTemplateUpdate::DecodedTemplateUpdate(CoreChecks *device_data, VkDescriptorSet descriptorSet,
-                                                              const TEMPLATE_STATE *template_state, const void *pData,
-                                                              VkDescriptorSetLayout push_layout) {
+cvdescriptorset::DecodedTemplateUpdate::DecodedTemplateUpdate(const ValidationStateTracker *device_data,
+                                                              VkDescriptorSet descriptorSet, const TEMPLATE_STATE *template_state,
+                                                              const void *pData, VkDescriptorSetLayout push_layout) {
     auto const &create_info = template_state->create_info;
     inline_infos.resize(create_info.descriptorUpdateEntryCount);  // Make sure we have one if we need it
     desc_writes.reserve(create_info.descriptorUpdateEntryCount);  // emplaced, so reserved without initialization
@@ -1835,8 +1836,8 @@ bool CoreChecks::ValidateUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet des
                                         0, NULL, "vkUpdateDescriptorSetWithTemplate()");
 }
 
-void CoreChecks::PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE *template_state,
-                                                            const void *pData) {
+void ValidationStateTracker::PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet,
+                                                                        const TEMPLATE_STATE *template_state, const void *pData) {
     // Translate the templated update into a normal update for validation...
     cvdescriptorset::DecodedTemplateUpdate decoded_update(this, descriptorSet, template_state, pData);
     cvdescriptorset::PerformUpdateDescriptorSets(this, static_cast<uint32_t>(decoded_update.desc_writes.size()),
@@ -2233,9 +2234,9 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
     return skip;
 }
 // Decrement allocated sets from the pool and insert new sets into set_map
-void CoreChecks::PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo *p_alloc_info,
-                                               const VkDescriptorSet *descriptor_sets,
-                                               const cvdescriptorset::AllocateDescriptorSetsData *ds_data) {
+void ValidationStateTracker::PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo *p_alloc_info,
+                                                           const VkDescriptorSet *descriptor_sets,
+                                                           const cvdescriptorset::AllocateDescriptorSetsData *ds_data) {
     auto pool_state = descriptorPoolMap[p_alloc_info->descriptorPool].get();
     // Account for sets and individual descriptors allocated from pool
     pool_state->availableSets -= p_alloc_info->descriptorSetCount;

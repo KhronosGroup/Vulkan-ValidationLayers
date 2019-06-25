@@ -64,6 +64,7 @@ class DescriptorSet;
 
 struct CMD_BUFFER_STATE;
 class CoreChecks;
+class ValidationStateTracker;
 
 enum CALL_STATE {
     UNCALLED,       // Function has not been called
@@ -1600,7 +1601,8 @@ enum BarrierOperationsType {
     kGeneral,     // Either no ownership operations or a mix of ownership operation types and/or non-ownership operations
 };
 
-std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> const GetDescriptorSetLayout(CoreChecks const *, VkDescriptorSetLayout);
+std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> const GetDescriptorSetLayout(const ValidationStateTracker *,
+                                                                                         VkDescriptorSetLayout);
 
 ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(CMD_BUFFER_STATE *cb_state, const IMAGE_STATE &image_state);
 const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const CMD_BUFFER_STATE *cb_state, VkImage image);
