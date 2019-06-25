@@ -1412,6 +1412,7 @@ bool cvdescriptorset::ValidateImageUpdate(VkImageView image_view, VkImageLayout 
                                      "image in a descriptor set, please only set either VK_IMAGE_ASPECT_DEPTH_BIT or "
                                      "VK_IMAGE_ASPECT_STENCIL_BIT depending on whether it will be used for depth reads or stencil "
                                      "reads respectively.";
+                        *error_code = "VUID-VkDescriptorImageInfo-imageView-01976";
                         *error_msg = error_str.str();
                         return false;
                     }

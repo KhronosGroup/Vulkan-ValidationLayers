@@ -4377,7 +4377,7 @@ TEST_F(VkLayerTest, DSAspectBitsErrors) {
 
     // TODO(whenning42): Update this check to look for a VUID when this error is
     // assigned one.
-    const char *error_msg = " please only set either VK_IMAGE_ASPECT_DEPTH_BIT or VK_IMAGE_ASPECT_STENCIL_BIT ";
+    const char *error_msg = "VUID-VkDescriptorImageInfo-imageView-01976";
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, error_msg);
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
