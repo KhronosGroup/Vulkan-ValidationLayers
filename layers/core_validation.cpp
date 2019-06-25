@@ -3964,45 +3964,6 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
     return skip;
 }
 
-void CoreChecks::PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
-                                                   size_t dataSize, void *pData, VkDeviceSize stride, VkQueryResultFlags flags,
-                                                   VkResult result) {
-    if ((VK_SUCCESS != result) && (VK_NOT_READY != result)) return;
-
-    // TODO: this has been modified but is still wasteful.
-    unordered_set<QueryObject> query_set;
-    for (uint32_t i = 0; i < queryCount; ++i) {
-        QueryObject query = {queryPool, firstQuery + i};
-        auto query_state_pair = queryToStateMap.find(query);
-        if ((query_state_pair != queryToStateMap.end()) && (query_state_pair->second == QUERYSTATE_AVAILABLE)) {
-            query_set.insert(query);
-        }
-    }
-
-    unordered_map<QueryObject, std::vector<VkCommandBuffer>> queries_in_flight;
-    for (auto &cmd_buffer : commandBufferMap) {
-        if (cmd_buffer.second->in_use.load()) {
-            for (auto query_state_pair : cmd_buffer.second->queryToStateMap) {
-                if (query_set.find(query_state_pair.first) != query_set.end()) {
-                    queries_in_flight[query_state_pair.first].push_back(cmd_buffer.first);
-                }
-            }
-        }
-    }
-
-    for (auto qif_pair : queries_in_flight) {
-        for (auto cmd_buffer : qif_pair.second) {
-            auto cb = GetCBState(cmd_buffer);
-            auto query_event_pair = cb->waitedEventsBeforeQueryReset.find(qif_pair.first);
-            if (query_event_pair != cb->waitedEventsBeforeQueryReset.end()) {
-                for (auto event : query_event_pair->second) {
-                    eventMap[event].needsSignaled = true;
-                }
-            }
-        }
-    }
-}
-
 // Return true if given ranges intersect, else false
 // Prereq : For both ranges, range->end - range->start > 0. This case should have already resulted
 //  in an error so not checking that here
@@ -10637,7 +10598,6 @@ bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event) {
 void CoreChecks::PreCallRecordSetEvent(VkDevice device, VkEvent event) {
     auto event_state = GetEventState(event);
     if (event_state) {
-        event_state->needsSignaled = false;
         event_state->stageMask = VK_PIPELINE_STAGE_HOST_BIT;
     }
     // Host setting event is visible to all queues immediately so update stageMask for any queue that's seen this event
@@ -11046,7 +11006,6 @@ void CoreChecks::PostCallRecordGetFenceFdKHR(VkDevice device, const VkFenceGetFd
 void CoreChecks::PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkEvent *pEvent, VkResult result) {
     if (VK_SUCCESS != result) return;
-    eventMap[*pEvent].needsSignaled = false;
     eventMap[*pEvent].write_in_use = 0;
     eventMap[*pEvent].stageMask = VkPipelineStageFlags(0);
 }

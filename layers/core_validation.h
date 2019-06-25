@@ -71,7 +71,6 @@ class SEMAPHORE_STATE : public BASE_NODE {
 class EVENT_STATE : public BASE_NODE {
    public:
     int write_in_use;
-    bool needsSignaled;
     VkPipelineStageFlags stageMask;
 };
 
@@ -1217,9 +1216,6 @@ class CoreChecks : public ValidationStateTracker {
     void PreCallRecordDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks* pAllocator);
     bool PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                             size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags);
-    void PostCallRecordGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
-                                           size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags,
-                                           VkResult result);
     bool PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfoKHR* pBindInfos);
     void PostCallRecordBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfoKHR* pBindInfos,
                                             VkResult result);
