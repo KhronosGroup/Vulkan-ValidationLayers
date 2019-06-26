@@ -472,7 +472,7 @@ void VkRenderFramework::InitViewport(float width, float height) {
 
 void VkRenderFramework::InitViewport() { InitViewport(m_width, m_height); }
 
-bool VkRenderFramework::InitSwapchain() { return InitSwapchain(m_width, m_height); }
+bool VkRenderFramework::InitSwapchain(VkImageUsageFlags imageUsage) { return InitSwapchain(m_width, m_height, imageUsage); }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -480,7 +480,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-bool VkRenderFramework::InitSwapchain(float width, float height) {
+bool VkRenderFramework::InitSwapchain(float width, float height, VkImageUsageFlags imageUsage) {
     VkResult err = VK_SUCCESS;
 
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
@@ -585,7 +585,7 @@ bool VkRenderFramework::InitSwapchain(float width, float height) {
     swapchain_create_info.imageColorSpace = formats[0].colorSpace;
     swapchain_create_info.imageExtent = {capabilities.minImageExtent.width, capabilities.minImageExtent.height};
     swapchain_create_info.imageArrayLayers = capabilities.maxImageArrayLayers;
-    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_create_info.imageUsage = imageUsage;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
