@@ -909,3 +909,32 @@ void ObjectLifetimes::PostCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevic
                      nullptr);
     }
 }
+
+bool ObjectLifetimes::PreCallValidateAcquirePerformanceConfigurationINTEL(
+    VkDevice device, const VkPerformanceConfigurationAcquireInfoINTEL *pAcquireInfo,
+    VkPerformanceConfigurationINTEL *pConfiguration) {
+    bool skip = false;
+    skip |= ValidateObject(device, device, kVulkanObjectTypeDevice, false,
+                           "VUID-vkAcquirePerformanceConfigurationINTEL-device-parameter", kVUIDUndefined);
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateReleasePerformanceConfigurationINTEL(VkDevice device,
+                                                                          VkPerformanceConfigurationINTEL configuration) {
+    bool skip = false;
+    skip |= ValidateObject(device, device, kVulkanObjectTypeDevice, false,
+                           "VUID-vkReleasePerformanceConfigurationINTEL-device-parameter", kVUIDUndefined);
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateQueueSetPerformanceConfigurationINTEL(VkQueue queue,
+                                                                           VkPerformanceConfigurationINTEL configuration) {
+    bool skip = false;
+    skip |=
+        ValidateObject(queue, queue, kVulkanObjectTypeQueue, false, "VUID-vkQueueSetPerformanceConfigurationINTEL-queue-parameter",
+                       "VUID-vkQueueSetPerformanceConfigurationINTEL-commonparent");
+
+    return skip;
+}

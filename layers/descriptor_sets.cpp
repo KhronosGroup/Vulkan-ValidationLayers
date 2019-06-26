@@ -2496,7 +2496,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                     } else {
                         auto iv_state = GetImageViewState(image_view);
                         if (iv_state && (iv_state->samplerConversion != VK_NULL_HANDLE)) {
-                            *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01947";
+                            *error_code = "VUID-VkWriteDescriptorSet-descriptorType-02738";
                             std::stringstream error_str;
                             error_str << "Because dstSet (" << update->dstSet << ") is bound to image view ("
                                       << iv_state->image_view

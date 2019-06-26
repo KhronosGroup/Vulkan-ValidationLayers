@@ -6282,7 +6282,7 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
-    // pImmutableSamplers = nullptr causes an error , VUID-01947.
+    // pImmutableSamplers = nullptr causes an error , VUID-VkWriteDescriptorSet-descriptorType-02738.
     // Because if pNext chains a VkSamplerYcbcrConversionInfo, the sampler has to be a immutable sampler.
     OneOffDescriptorSet descriptor_set_1947(m_device,
                                             {
@@ -6291,7 +6291,7 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     descriptor_write.dstSet = descriptor_set_1947.set_;
     descriptor_write.descriptorCount = 1;
     descriptor_write.pImageInfo = &image_infos[0];
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-01947");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-02738");
     vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 

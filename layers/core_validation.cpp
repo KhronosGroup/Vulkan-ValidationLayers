@@ -12639,8 +12639,8 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
     const char *cmd_name = "vkCmdBeginQueryIndexedEXT()";
     bool skip = ValidateBeginQuery(
         cb_state, query_obj, flags, CMD_BEGINQUERYINDEXEDEXT, cmd_name, "VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-cmdpool",
-        "VUID-vkCmdBeginQueryIndexedEXT-queryType-02338", "VUID-vkCmdBeginQueryIndexedEXT-queryType-02333",
-        "VUID-vkCmdBeginQueryIndexedEXT-queryType-02331", "VUID-vkCmdBeginQueryIndexedEXT-query-02332");
+        "VUID-vkCmdBeginQueryIndexedEXT-queryType-02338", "VUID-vkCmdBeginQueryIndexedEXT-queryType-00803",
+        "VUID-vkCmdBeginQueryIndexedEXT-queryType-00800", "VUID-vkCmdBeginQueryIndexedEXT-query-00802");
 
     // Extension specific VU's
     const auto &query_pool_ci = GetQueryPoolState(query_obj.pool)->createInfo;
