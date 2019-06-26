@@ -1474,7 +1474,6 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::unordered_set<VkEvent> waitedEvents;
     std::vector<VkEvent> writeEventsBeforeWait;
     std::vector<VkEvent> events;
-    std::unordered_map<QueryObject, std::unordered_set<VkEvent>> waitedEventsBeforeQueryReset;
     std::unordered_map<QueryObject, QueryState> queryToStateMap;
     std::unordered_set<QueryObject> activeQueries;
     std::unordered_set<QueryObject> startedQueries;

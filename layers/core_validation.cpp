@@ -1979,7 +1979,6 @@ void CoreChecks::ResetCommandBufferState(const VkCommandBuffer cb) {
         pCB->waitedEvents.clear();
         pCB->events.clear();
         pCB->writeEventsBeforeWait.clear();
-        pCB->waitedEventsBeforeQueryReset.clear();
         pCB->queryToStateMap.clear();
         pCB->activeQueries.clear();
         pCB->startedQueries.clear();
@@ -8280,7 +8279,6 @@ void CoreChecks::PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, 
 
     for (uint32_t i = 0; i < queryCount; i++) {
         QueryObject query = {queryPool, firstQuery + i};
-        cb_state->waitedEventsBeforeQueryReset[query] = cb_state->waitedEvents;
         cb_state->queryUpdates.emplace_back(
             [this, commandBuffer, query](VkQueue q) { return SetQueryState(q, commandBuffer, query, QUERYSTATE_RESET); });
     }
