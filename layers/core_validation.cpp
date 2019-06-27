@@ -11238,18 +11238,31 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         }
     }
 
+    std::vector<VkSurfaceFormatKHR> surface_formats;
+    auto surface_formats_ref = &surface_formats;
+
     // Validate pCreateInfo values with the results of vkGetPhysicalDeviceSurfaceFormatsKHR():
     if (physical_device_state->vkGetPhysicalDeviceSurfaceFormatsKHRState != QUERY_DETAILS) {
         if (log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                     kVUID_Core_DrawState_SwapchainCreateBeforeQuery,
-                    "%s called before getting format(s) from vkGetPhysicalDeviceSurfaceFormatsKHR().", func_name))
+                    "%s called before getting format(s) from vkGetPhysicalDeviceSurfaceFormatsKHR().", func_name)) {
             return true;
+        }
+        uint32_t surface_format_count = 0;
+        DispatchGetPhysicalDeviceSurfaceFormatsKHR(physical_device, pCreateInfo->surface, &surface_format_count, nullptr);
+        surface_formats.resize(surface_format_count);
+        DispatchGetPhysicalDeviceSurfaceFormatsKHR(physical_device, pCreateInfo->surface, &surface_format_count,
+                                                   &surface_formats[0]);
     } else {
+        surface_formats_ref = &physical_device_state->surface_formats;
+    }
+
+    {
         // Validate pCreateInfo->imageFormat against VkSurfaceFormatKHR::format:
         bool foundFormat = false;
         bool foundColorSpace = false;
         bool foundMatch = false;
-        for (auto const &format : physical_device_state->surface_formats) {
+        for (auto const &format : *surface_formats_ref) {
             if (pCreateInfo->imageFormat == format.format) {
                 // Validate pCreateInfo->imageColorSpace against VkSurfaceFormatKHR::colorSpace:
                 foundFormat = true;
