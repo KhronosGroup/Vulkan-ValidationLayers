@@ -20,6 +20,8 @@
 #ifndef VULKAN_SHADER_VALIDATION_H
 #define VULKAN_SHADER_VALIDATION_H
 
+#include <unordered_map>
+
 #include <SPIRV/spirv.hpp>
 #include <spirv_tools_commit_id.h>
 #include "spirv-tools/optimizer.hpp"
@@ -30,7 +32,7 @@ struct spirv_inst_iter {
     std::vector<uint32_t>::const_iterator zero;
     std::vector<uint32_t>::const_iterator it;
 
-    uint32_t len() {
+    uint32_t len() const {
         auto result = *it >> 16;
         assert(result > 0);
         return result;
@@ -38,7 +40,7 @@ struct spirv_inst_iter {
 
     uint32_t opcode() { return *it & 0x0ffffu; }
 
-    uint32_t const &word(unsigned n) {
+    uint32_t const &word(unsigned n) const {
         assert(n < len());
         return it[n];
     }
@@ -49,9 +51,9 @@ struct spirv_inst_iter {
 
     spirv_inst_iter(std::vector<uint32_t>::const_iterator zero, std::vector<uint32_t>::const_iterator it) : zero(zero), it(it) {}
 
-    bool operator==(spirv_inst_iter const &other) { return it == other.it; }
+    bool operator==(spirv_inst_iter const &other) const { return it == other.it; }
 
-    bool operator!=(spirv_inst_iter const &other) { return it != other.it; }
+    bool operator!=(spirv_inst_iter const &other) const { return it != other.it; }
 
     spirv_inst_iter operator++(int) {  // x++
         spirv_inst_iter ii = *this;
@@ -75,6 +77,11 @@ struct SHADER_MODULE_STATE {
     // A mapping of <id> to the first word of its def. this is useful because walking type
     // trees, constant expressions, etc requires jumping all over the instruction stream.
     std::unordered_map<unsigned, unsigned> def_index;
+    struct EntryPoint {
+        uint32_t offset;
+        VkShaderStageFlags stage;
+    };
+    std::unordered_multimap<std::string, EntryPoint> entry_points;
     bool has_valid_spirv;
     VkShaderModule vk_shader_module;
     uint32_t gpu_validation_shader_id;
@@ -243,7 +250,5 @@ class ValidationCache {
         }
     }
 };
-
-typedef std::pair<unsigned, unsigned> descriptor_slot_t;
 
 #endif  // VULKAN_SHADER_VALIDATION_H

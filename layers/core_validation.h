@@ -417,6 +417,8 @@ class ValidationStateTracker : public ValidationObject {
                                                     VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
     void RecordCreateDescriptorUpdateTemplateState(const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
                                                    VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate);
+    void RecordPipelineShaderStage(const VkPipelineShaderStageCreateInfo* pStage, PIPELINE_STATE* pipeline,
+                                   PIPELINE_STATE::StageState* stage_state);
     void RemoveBufferMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
     void RemoveImageMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
 
@@ -495,7 +497,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateIdleDescriptorSet(VkDescriptorSet set, const char* func_str);
     void InitializeAndTrackMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
     bool ValidatePipelineLocked(std::vector<std::unique_ptr<PIPELINE_STATE>> const& pPipelines, int pipelineIndex);
-    bool ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_STATE>> const& pPipelines, int pipelineIndex);
+    bool ValidatePipelineUnlocked(const PIPELINE_STATE* pPipeline, uint32_t pipelineIndex);
     bool ValidImageBufferQueue(CMD_BUFFER_STATE* cb_node, const VulkanTypedHandle& object, VkQueue queue, uint32_t count,
                                const uint32_t* indices);
     bool ValidateFenceForSubmit(FENCE_STATE* pFence);
@@ -794,26 +796,26 @@ class CoreChecks : public ValidationStateTracker {
                                       const VkCopyDescriptorSet* p_cds, const char* func_name);
 
     // Stuff from shader_validation
-    bool ValidateAndCapturePipelineShaderState(PIPELINE_STATE* pPipeline);
+    bool ValidateGraphicsPipelineShaderState(const PIPELINE_STATE* pPipeline);
     bool ValidateComputePipeline(PIPELINE_STATE* pPipeline);
     bool ValidateRayTracingPipelineNV(PIPELINE_STATE* pipeline);
     bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule);
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule, void* csm_state);
-    bool ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo const* pStage, PIPELINE_STATE* pipeline,
-                                     SHADER_MODULE_STATE const** out_module, spirv_inst_iter* out_entrypoint,
-                                     bool check_point_size);
+    bool ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo const* pStage, const PIPELINE_STATE* pipeline,
+                                     const PIPELINE_STATE::StageState& stage_state, const SHADER_MODULE_STATE* module,
+                                     const spirv_inst_iter& entrypoint, bool check_point_size);
     bool ValidatePointListShaderState(const PIPELINE_STATE* pipeline, SHADER_MODULE_STATE const* src, spirv_inst_iter entrypoint,
                                       VkShaderStageFlagBits stage);
     bool ValidateShaderCapabilities(SHADER_MODULE_STATE const* src, VkShaderStageFlagBits stage);
     bool ValidateShaderStageWritableDescriptor(VkShaderStageFlagBits stage, bool has_writable_descriptor);
     bool ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const* src, VkPipelineShaderStageCreateInfo const* pStage,
-                                              PIPELINE_STATE* pipeline, spirv_inst_iter entrypoint);
+                                              const PIPELINE_STATE* pipeline, spirv_inst_iter entrypoint);
     bool ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const* src, VkShaderStageFlagBits stage,
                                             std::unordered_set<uint32_t> const& accessible_ids);
     bool ValidateCooperativeMatrix(SHADER_MODULE_STATE const* src, VkPipelineShaderStageCreateInfo const* pStage,
-                                   PIPELINE_STATE* pipeline);
+                                   const PIPELINE_STATE* pipeline);
     bool ValidateExecutionModes(SHADER_MODULE_STATE const* src, spirv_inst_iter entrypoint);
 
     // Gpu Validation Functions
