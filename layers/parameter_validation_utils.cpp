@@ -2330,6 +2330,20 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirect(VkCommand
     return skip;
 }
 
+bool StatelessValidation::manual_PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+                                                                    const VkClearAttachment *pAttachments, uint32_t rectCount,
+                                                                    const VkClearRect *pRects) {
+    bool skip = false;
+    for (uint32_t rect = 0; rect < rectCount; rect++) {
+        if (pRects[rect].layerCount == 0) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(commandBuffer), "VUID-vkCmdClearAttachments-layerCount-01934",
+                            "CmdClearAttachments(): pRects[%d].layerCount is zero.", rect);
+        }
+    }
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage,
                                                              VkImageLayout srcImageLayout, VkImage dstImage,
                                                              VkImageLayout dstImageLayout, uint32_t regionCount,
