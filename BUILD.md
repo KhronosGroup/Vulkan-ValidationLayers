@@ -604,11 +604,14 @@ following.
 
 ### Android Build Requirements
 
+Note that the minimum supported Android SDK API Level is 26, revision
+level 3.
+
 - Install [Android Studio 2.3](https://developer.android.com/studio/index.html)
   or later.
 - From the "Welcome to Android Studio" splash screen, add the following
   components using Configure > SDK Manager:
-  - SDK Platforms > Android 6.0 and newer
+  - SDK Platforms > Android 8.0.0 and newer
   - SDK Tools > Android SDK Build-Tools
   - SDK Tools > Android SDK Platform-Tools
   - SDK Tools > Android SDK Tools
@@ -625,7 +628,7 @@ On Linux:
     export ANDROID_NDK_HOME=$HOME/Android/sdk/ndk-bundle
     export PATH=$ANDROID_SDK_HOME:$PATH
     export PATH=$ANDROID_NDK_HOME:$PATH
-    export PATH=$ANDROID_SDK_HOME/build-tools/23.0.3:$PATH
+    export PATH=$ANDROID_SDK_HOME/build-tools/26.0.3:$PATH
 
 On Windows:
 
@@ -638,7 +641,7 @@ On OSX:
     export ANDROID_SDK_HOME=$HOME/Library/Android/sdk
     export ANDROID_NDK_HOME=$HOME/Library/Android/sdk/ndk-bundle
     export PATH=$ANDROID_NDK_PATH:$PATH
-    export PATH=$ANDROID_SDK_HOME/build-tools/23.0.3:$PATH
+    export PATH=$ANDROID_SDK_HOME/build-tools/26.0.3:$PATH
 
 Note: If `jarsigner` is missing from your platform, you can find it in the
 Android Studio install or in your Java installation. If you do not have Java,
