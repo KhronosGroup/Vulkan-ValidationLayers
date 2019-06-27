@@ -1119,8 +1119,26 @@ static inline bool CompatForSet(uint32_t set, const PIPELINE_LAYOUT_STATE *a, co
     return result;
 }
 
+// Shader typedefs needed to store StageStage below
+struct interface_var {
+    uint32_t id;
+    uint32_t type_id;
+    uint32_t offset;
+    bool is_patch;
+    bool is_block_member;
+    bool is_relaxed_precision;
+    // TODO: collect the name, too? Isn't required to be present.
+};
+typedef std::pair<unsigned, unsigned> descriptor_slot_t;
+
 class PIPELINE_STATE : public BASE_NODE {
    public:
+    struct StageState {
+        std::unordered_set<uint32_t> accessible_ids;
+        std::vector<std::pair<descriptor_slot_t, interface_var>> descriptor_uses;
+        bool has_writable_descriptor;
+    };
+
     VkPipeline pipeline;
     safe_VkGraphicsPipelineCreateInfo graphicsPipelineCI;
     safe_VkComputePipelineCreateInfo computePipelineCI;
@@ -1132,6 +1150,8 @@ class PIPELINE_STATE : public BASE_NODE {
     uint32_t duplicate_shaders;
     // Capture which slots (set#->bindings) are actually used by the shaders of this pipeline
     std::unordered_map<uint32_t, std::map<uint32_t, descriptor_req>> active_slots;
+    // Additional metadata needed by pipeline_state initialization and validation
+    std::vector<StageState> stage_state;
     // Vtx input info (if any)
     std::vector<VkVertexInputBindingDescription> vertex_binding_descriptions_;
     std::vector<VkVertexInputAttributeDescription> vertex_attribute_descriptions_;
@@ -1166,102 +1186,13 @@ class PIPELINE_STATE : public BASE_NODE {
         computePipelineCI.initialize(&emptyComputeCI);
         VkRayTracingPipelineCreateInfoNV emptyRayTracingCI = {};
         raytracingPipelineCI.initialize(&emptyRayTracingCI);
+        stage_state.clear();
     }
 
-    void initGraphicsPipeline(const VkGraphicsPipelineCreateInfo *pCreateInfo, std::shared_ptr<RENDER_PASS_STATE> &&rpstate) {
-        reset();
-        bool uses_color_attachment = false;
-        bool uses_depthstencil_attachment = false;
-        if (pCreateInfo->subpass < rpstate->createInfo.subpassCount) {
-            const auto &subpass = rpstate->createInfo.pSubpasses[pCreateInfo->subpass];
-
-            for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
-                if (subpass.pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) {
-                    uses_color_attachment = true;
-                    break;
-                }
-            }
-
-            if (subpass.pDepthStencilAttachment && subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
-                uses_depthstencil_attachment = true;
-            }
-        }
-        graphicsPipelineCI.initialize(pCreateInfo, uses_color_attachment, uses_depthstencil_attachment);
-        for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
-            const VkPipelineShaderStageCreateInfo *pPSSCI = &pCreateInfo->pStages[i];
-            this->duplicate_shaders |= this->active_shaders & pPSSCI->stage;
-            this->active_shaders |= pPSSCI->stage;
-        }
-        if (graphicsPipelineCI.pVertexInputState) {
-            const auto pVICI = graphicsPipelineCI.pVertexInputState;
-            if (pVICI->vertexBindingDescriptionCount) {
-                this->vertex_binding_descriptions_ = std::vector<VkVertexInputBindingDescription>(
-                    pVICI->pVertexBindingDescriptions, pVICI->pVertexBindingDescriptions + pVICI->vertexBindingDescriptionCount);
-
-                this->vertex_binding_to_index_map_.reserve(pVICI->vertexBindingDescriptionCount);
-                for (uint32_t i = 0; i < pVICI->vertexBindingDescriptionCount; ++i) {
-                    this->vertex_binding_to_index_map_[pVICI->pVertexBindingDescriptions[i].binding] = i;
-                }
-            }
-            if (pVICI->vertexAttributeDescriptionCount) {
-                this->vertex_attribute_descriptions_ = std::vector<VkVertexInputAttributeDescription>(
-                    pVICI->pVertexAttributeDescriptions,
-                    pVICI->pVertexAttributeDescriptions + pVICI->vertexAttributeDescriptionCount);
-            }
-        }
-        if (graphicsPipelineCI.pColorBlendState) {
-            const auto pCBCI = graphicsPipelineCI.pColorBlendState;
-            if (pCBCI->attachmentCount) {
-                this->attachments = std::vector<VkPipelineColorBlendAttachmentState>(pCBCI->pAttachments,
-                                                                                     pCBCI->pAttachments + pCBCI->attachmentCount);
-            }
-        }
-        if (graphicsPipelineCI.pInputAssemblyState) {
-            topology_at_rasterizer = graphicsPipelineCI.pInputAssemblyState->topology;
-        }
-        rp_state = rpstate;
-    }
-
-    void initComputePipeline(const VkComputePipelineCreateInfo *pCreateInfo) {
-        reset();
-        computePipelineCI.initialize(pCreateInfo);
-        switch (computePipelineCI.stage.stage) {
-            case VK_SHADER_STAGE_COMPUTE_BIT:
-                this->active_shaders |= VK_SHADER_STAGE_COMPUTE_BIT;
-                break;
-            default:
-                // TODO : Flag error
-                break;
-        }
-    }
-
-    void initRayTracingPipelineNV(const VkRayTracingPipelineCreateInfoNV *pCreateInfo) {
-        reset();
-        raytracingPipelineCI.initialize(pCreateInfo);
-        switch (raytracingPipelineCI.pStages->stage) {
-            case VK_SHADER_STAGE_RAYGEN_BIT_NV:
-                this->active_shaders |= VK_SHADER_STAGE_RAYGEN_BIT_NV;
-                break;
-            case VK_SHADER_STAGE_ANY_HIT_BIT_NV:
-                this->active_shaders |= VK_SHADER_STAGE_ANY_HIT_BIT_NV;
-                break;
-            case VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV:
-                this->active_shaders |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
-                break;
-            case VK_SHADER_STAGE_MISS_BIT_NV:
-                this->active_shaders = VK_SHADER_STAGE_MISS_BIT_NV;
-                break;
-            case VK_SHADER_STAGE_INTERSECTION_BIT_NV:
-                this->active_shaders = VK_SHADER_STAGE_INTERSECTION_BIT_NV;
-                break;
-            case VK_SHADER_STAGE_CALLABLE_BIT_NV:
-                this->active_shaders |= VK_SHADER_STAGE_CALLABLE_BIT_NV;
-                break;
-            default:
-                // TODO : Flag error
-                break;
-        }
-    }
+    void initGraphicsPipeline(ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
+                              std::shared_ptr<RENDER_PASS_STATE> &&rpstate);
+    void initComputePipeline(ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo);
+    void initRayTracingPipelineNV(ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo);
 
     inline VkPipelineBindPoint getPipelineType() {
         if (graphicsPipelineCI.sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO)

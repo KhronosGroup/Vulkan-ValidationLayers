@@ -1155,7 +1155,7 @@ void CoreChecks::UpdateDrawState(CMD_BUFFER_STATE *cb_state, const VkPipelineBin
 bool CoreChecks::ValidatePipelineLocked(std::vector<std::unique_ptr<PIPELINE_STATE>> const &pPipelines, int pipelineIndex) {
     bool skip = false;
 
-    PIPELINE_STATE *pPipeline = pPipelines[pipelineIndex].get();
+    const PIPELINE_STATE *pPipeline = pPipelines[pipelineIndex].get();
 
     // If create derivative bit is set, check that we've specified a base
     // pipeline correctly, and that the base pipeline was created to allow
@@ -1192,12 +1192,10 @@ bool CoreChecks::ValidatePipelineLocked(std::vector<std::unique_ptr<PIPELINE_STA
 }
 
 // UNLOCKED pipeline validation. DO NOT lookup objects in the CoreChecks->* maps in this function.
-bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_STATE>> const &pPipelines, int pipelineIndex) {
+bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint32_t pipelineIndex) {
     bool skip = false;
 
-    PIPELINE_STATE *pPipeline = pPipelines[pipelineIndex].get();
-
-    // Ensure the subpass index is valid. If not, then ValidateAndCapturePipelineShaderState
+    // Ensure the subpass index is valid. If not, then ValidateGraphicsPipelineShaderState
     // produces nonsense errors that confuse users. Other layers should already
     // emit errors for renderpass being invalid.
     auto subpass_desc = &pPipeline->rp_state->createInfo.pSubpasses[pPipeline->graphicsPipelineCI.subpass];
@@ -1222,7 +1220,7 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
         }
         if (!enabled_features.core.independentBlend) {
             if (pPipeline->attachments.size() > 1) {
-                VkPipelineColorBlendAttachmentState *pAttachments = &pPipeline->attachments[0];
+                const VkPipelineColorBlendAttachmentState *const pAttachments = &pPipeline->attachments[0];
                 for (size_t i = 1; i < pPipeline->attachments.size(); i++) {
                     // Quoting the spec: "If [the independent blend] feature is not enabled, the VkPipelineColorBlendAttachmentState
                     // settings for all color attachments must be identical." VkPipelineColorBlendAttachmentState contains
@@ -1304,7 +1302,7 @@ bool CoreChecks::ValidatePipelineUnlocked(std::vector<std::unique_ptr<PIPELINE_S
         }
     }
 
-    if (ValidateAndCapturePipelineShaderState(pPipeline)) {
+    if (ValidateGraphicsPipelineShaderState(pPipeline)) {
         skip = true;
     }
     // Each shader's stage must be unique
@@ -4901,7 +4899,7 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
     cgpl_state->pipe_state.reserve(count);
     for (uint32_t i = 0; i < count; i++) {
         cgpl_state->pipe_state.push_back(std::unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
-        (cgpl_state->pipe_state)[i]->initGraphicsPipeline(&pCreateInfos[i],
+        (cgpl_state->pipe_state)[i]->initGraphicsPipeline(this, &pCreateInfos[i],
                                                           GetRenderPassStateSharedPtr(pCreateInfos[i].renderPass));
         (cgpl_state->pipe_state)[i]->pipeline_layout = *GetPipelineLayout(pCreateInfos[i].layout);
     }
@@ -4911,7 +4909,7 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
     }
 
     for (uint32_t i = 0; i < count; i++) {
-        skip |= ValidatePipelineUnlocked(cgpl_state->pipe_state, i);
+        skip |= ValidatePipelineUnlocked(cgpl_state->pipe_state[i].get(), i);
     }
 
     if (device_extensions.vk_ext_vertex_attribute_divisor) {
@@ -4967,7 +4965,7 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
         ccpl_state->pipe_state.push_back(unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
-        ccpl_state->pipe_state.back()->initComputePipeline(&pCreateInfos[i]);
+        ccpl_state->pipe_state.back()->initComputePipeline(this, &pCreateInfos[i]);
         ccpl_state->pipe_state.back()->pipeline_layout = *GetPipelineLayout(pCreateInfos[i].layout);
 
         // TODO: Add Compute Pipeline Verification
@@ -5024,7 +5022,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
     pipe_state->reserve(count);
     for (i = 0; i < count; i++) {
         pipe_state->push_back(std::unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
-        (*pipe_state)[i]->initRayTracingPipelineNV(&pCreateInfos[i]);
+        (*pipe_state)[i]->initRayTracingPipelineNV(this, &pCreateInfos[i]);
         (*pipe_state)[i]->pipeline_layout = *GetPipelineLayout(pCreateInfos[i].layout);
     }
 
@@ -13005,4 +13003,112 @@ bool CoreChecks::ValidateCmdDrawStrideWithBuffer(VkCommandBuffer commandBuffer, 
                         report_data->FormatHandle(buffer_state->buffer).c_str());
     }
     return skip;
+}
+
+void PIPELINE_STATE::initGraphicsPipeline(ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
+                                          std::shared_ptr<RENDER_PASS_STATE> &&rpstate) {
+    reset();
+    bool uses_color_attachment = false;
+    bool uses_depthstencil_attachment = false;
+    if (pCreateInfo->subpass < rpstate->createInfo.subpassCount) {
+        const auto &subpass = rpstate->createInfo.pSubpasses[pCreateInfo->subpass];
+
+        for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
+            if (subpass.pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) {
+                uses_color_attachment = true;
+                break;
+            }
+        }
+
+        if (subpass.pDepthStencilAttachment && subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
+            uses_depthstencil_attachment = true;
+        }
+    }
+    graphicsPipelineCI.initialize(pCreateInfo, uses_color_attachment, uses_depthstencil_attachment);
+    stage_state.resize(pCreateInfo->stageCount);
+    for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
+        const VkPipelineShaderStageCreateInfo *pPSSCI = &pCreateInfo->pStages[i];
+        this->duplicate_shaders |= this->active_shaders & pPSSCI->stage;
+        this->active_shaders |= pPSSCI->stage;
+        state_data->RecordPipelineShaderStage(pPSSCI, this, &stage_state[i]);
+    }
+
+    if (graphicsPipelineCI.pVertexInputState) {
+        const auto pVICI = graphicsPipelineCI.pVertexInputState;
+        if (pVICI->vertexBindingDescriptionCount) {
+            this->vertex_binding_descriptions_ = std::vector<VkVertexInputBindingDescription>(
+                pVICI->pVertexBindingDescriptions, pVICI->pVertexBindingDescriptions + pVICI->vertexBindingDescriptionCount);
+
+            this->vertex_binding_to_index_map_.reserve(pVICI->vertexBindingDescriptionCount);
+            for (uint32_t i = 0; i < pVICI->vertexBindingDescriptionCount; ++i) {
+                this->vertex_binding_to_index_map_[pVICI->pVertexBindingDescriptions[i].binding] = i;
+            }
+        }
+        if (pVICI->vertexAttributeDescriptionCount) {
+            this->vertex_attribute_descriptions_ = std::vector<VkVertexInputAttributeDescription>(
+                pVICI->pVertexAttributeDescriptions, pVICI->pVertexAttributeDescriptions + pVICI->vertexAttributeDescriptionCount);
+        }
+    }
+    if (graphicsPipelineCI.pColorBlendState) {
+        const auto pCBCI = graphicsPipelineCI.pColorBlendState;
+        if (pCBCI->attachmentCount) {
+            this->attachments =
+                std::vector<VkPipelineColorBlendAttachmentState>(pCBCI->pAttachments, pCBCI->pAttachments + pCBCI->attachmentCount);
+        }
+    }
+    if (graphicsPipelineCI.pInputAssemblyState) {
+        topology_at_rasterizer = graphicsPipelineCI.pInputAssemblyState->topology;
+    }
+    rp_state = rpstate;
+}
+
+void PIPELINE_STATE::initComputePipeline(ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo) {
+    reset();
+    computePipelineCI.initialize(pCreateInfo);
+    switch (computePipelineCI.stage.stage) {
+        case VK_SHADER_STAGE_COMPUTE_BIT:
+            this->active_shaders |= VK_SHADER_STAGE_COMPUTE_BIT;
+            stage_state.resize(1);
+            state_data->RecordPipelineShaderStage(&pCreateInfo->stage, this, &stage_state[0]);
+            break;
+        default:
+            // TODO : Flag error
+            break;
+    }
+}
+
+void PIPELINE_STATE::initRayTracingPipelineNV(ValidationStateTracker *state_data,
+                                              const VkRayTracingPipelineCreateInfoNV *pCreateInfo) {
+    reset();
+    raytracingPipelineCI.initialize(pCreateInfo);
+
+    // TODO: Determine if we should be looping over pCreateInfo::stageCount...
+    switch (raytracingPipelineCI.pStages->stage) {
+        case VK_SHADER_STAGE_RAYGEN_BIT_NV:
+            this->active_shaders |= VK_SHADER_STAGE_RAYGEN_BIT_NV;
+            break;
+        case VK_SHADER_STAGE_ANY_HIT_BIT_NV:
+            this->active_shaders |= VK_SHADER_STAGE_ANY_HIT_BIT_NV;
+            break;
+        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV:
+            this->active_shaders |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
+            break;
+        case VK_SHADER_STAGE_MISS_BIT_NV:
+            this->active_shaders = VK_SHADER_STAGE_MISS_BIT_NV;
+            break;
+        case VK_SHADER_STAGE_INTERSECTION_BIT_NV:
+            this->active_shaders = VK_SHADER_STAGE_INTERSECTION_BIT_NV;
+            break;
+        case VK_SHADER_STAGE_CALLABLE_BIT_NV:
+            this->active_shaders |= VK_SHADER_STAGE_CALLABLE_BIT_NV;
+            break;
+        default:
+            // TODO : Flag error
+            break;
+    }
+
+    if (active_shaders) {
+        stage_state.resize(1);
+        state_data->RecordPipelineShaderStage(pCreateInfo->pStages, this, &stage_state[0]);
+    }
 }
