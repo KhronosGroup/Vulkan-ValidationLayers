@@ -696,7 +696,7 @@ TEST_F(VkLayerTest, ClearColorAttachmentsOutsideRenderPass) {
     color_attachment.clearValue.color.float32[2] = 0;
     color_attachment.clearValue.color.float32[3] = 0;
     color_attachment.colorAttachment = 0;
-    VkClearRect clear_rect = {{{0, 0}, {32, 32}}};
+    VkClearRect clear_rect = {{{0, 0}, {32, 32}}, 0, 1};
     vkCmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
 
     m_errorMonitor->VerifyFound();
