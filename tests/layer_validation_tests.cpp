@@ -890,7 +890,7 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
         VkClearAttachment color_attachment = {};
         color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         color_attachment.colorAttachment = 2000000000;  // Someone who knew what they were doing would use 0 for the index;
-        VkClearRect clear_rect = {{{0, 0}, {static_cast<uint32_t>(m_width), static_cast<uint32_t>(m_height)}}, 0, 0};
+        VkClearRect clear_rect = {{{0, 0}, {static_cast<uint32_t>(m_width), static_cast<uint32_t>(m_height)}}, 0, 1};
 
         vkCmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     }
