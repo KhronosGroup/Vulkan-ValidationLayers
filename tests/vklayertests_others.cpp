@@ -4123,3 +4123,28 @@ TEST_F(VkLayerTest, ValidateStride) {
     }
     vkDestroyQueryPool(m_device->handle(), query_pool, NULL);
 }
+
+TEST_F(VkLayerTest, WarningSwapchainCreateInfoPreTransform) {
+    TEST_DESCRIPTION("Print warning when preTransform doesn't match curretTransform");
+
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (!AddSwapchainDeviceExtension()) {
+        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-CoreValidation-SwapchainPreTransform");
+    m_errorMonitor->SetUnexpectedError("VUID-VkSwapchainCreateInfoKHR-preTransform-01279");
+    InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_INHERIT_BIT_KHR);
+    m_errorMonitor->VerifyFound();
+}
