@@ -4041,7 +4041,7 @@ TEST_F(VkLayerTest, SecondaryCommandBufferClearColorAttachmentsRenderArea) {
     color_attachment.clearValue.color.float32[3] = 0;
     color_attachment.colorAttachment = 0;
     // x extent of 257 exceeds render area of 256
-    VkClearRect clear_rect = {{{0, 0}, {257, 32}}};
+    VkClearRect clear_rect = {{{0, 0}, {257, 32}}, 0, 1};
     vkCmdClearAttachments(secondary_command_buffer, 1, &color_attachment, 1, &clear_rect);
     vkEndCommandBuffer(secondary_command_buffer);
     m_commandBuffer->begin();
