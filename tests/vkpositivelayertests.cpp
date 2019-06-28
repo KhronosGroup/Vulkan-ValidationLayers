@@ -1735,7 +1735,7 @@ TEST_F(VkPositiveLayerTest, SecondaryCommandBufferClearColorAttachments) {
     color_attachment.clearValue.color.float32[2] = 0;
     color_attachment.clearValue.color.float32[3] = 0;
     color_attachment.colorAttachment = 0;
-    VkClearRect clear_rect = {{{0, 0}, {32, 32}}};
+    VkClearRect clear_rect = {{{0, 0}, {32, 32}}, 0, 1};
     vkCmdClearAttachments(secondary_command_buffer, 1, &color_attachment, 1, &clear_rect);
     vkEndCommandBuffer(secondary_command_buffer);
     m_commandBuffer->begin();
