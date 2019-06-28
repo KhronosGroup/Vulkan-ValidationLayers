@@ -11199,6 +11199,17 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     }
 
     auto physical_device_state = GetPhysicalDeviceState();
+    bool skip = false;
+    VkSurfaceTransformFlagBitsKHR currentTransform = physical_device_state->surfaceCapabilities.currentTransform;
+    if ((pCreateInfo->preTransform & currentTransform) != pCreateInfo->preTransform) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+                        HandleToUint64(physical_device), kVUID_Core_Swapchain_PreTransform,
+                        "%s: pCreateInfo->preTransform (0x%" PRIx32 ") doesn't match the currentTransform (0x%" PRIx32
+                        ") returned by vkGetPhysicalDeviceSurfaceCapabilitiesKHR, the presentation engine will transform the image "
+                        "content as part of the presentation operation.",
+                        func_name, pCreateInfo->preTransform, currentTransform);
+    }
+
     if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState == UNCALLED) {
         if (log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
                     HandleToUint64(physical_device), kVUID_Core_DrawState_SwapchainCreateBeforeQuery,
@@ -11470,14 +11481,14 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     }
 
     if ((pCreateInfo->imageSharingMode == VK_SHARING_MODE_CONCURRENT) && pCreateInfo->pQueueFamilyIndices) {
-        bool skip =
+        bool skip1 =
             ValidateQueueFamilies(pCreateInfo->queueFamilyIndexCount, pCreateInfo->pQueueFamilyIndices, "vkCreateBuffer",
                                   "pCreateInfo->pQueueFamilyIndices", "VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01428",
                                   "VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01428", false);
-        if (skip) return true;
+        if (skip1) return true;
     }
 
-    return false;
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
