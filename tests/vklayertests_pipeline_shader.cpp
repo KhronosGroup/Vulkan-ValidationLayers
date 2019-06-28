@@ -2492,7 +2492,7 @@ TEST_F(VkLayerTest, CmdClearAttachmentTests) {
     // baseLayer >= view layers
     clear_rect.rect.extent.width = (uint32_t)m_width;
     clear_rect.baseArrayLayer = 1;
-    clear_rect.layerCount = 0;
+    clear_rect.layerCount = 1;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdClearAttachments-pRects-00017");
     vkCmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
