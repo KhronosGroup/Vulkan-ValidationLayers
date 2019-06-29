@@ -5089,7 +5089,13 @@ TEST_F(VkLayerTest, SubgroupSupportedOperations) {
             module_create_info.codeSize = spv.size() * sizeof(unsigned int);
             module_create_info.flags = 0;
 
-            vkCreateShaderModule(m_device->handle(), &module_create_info, NULL, &shader_module[i]);
+            VkResult result = vkCreateShaderModule(m_device->handle(), &module_create_info, NULL, &shader_module[i]);
+
+            // NOTE: It appears that for the case of invalid capabilities some drivers (recent AMD) fail at CreateShaderModule time.
+            //       Likely the capability test should be moved up to CSM time, implementing ShaderModuleCreateInfo-pCode-01090
+            //       Note(2) -- yes I truncated the above VUID s.t. the VUID checking tools would not catch it.
+            if (result != VK_SUCCESS) shader_module[i] = VK_NULL_HANDLE;
+
             stage[i].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
             stage[i].pNext = nullptr;
             stage[i].flags = 0;
@@ -5110,48 +5116,52 @@ TEST_F(VkLayerTest, SubgroupSupportedOperations) {
         pipeline_info.stage = stage[0];
         pipeline_info.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
 
-        if (!(subgroup_prop.supportedOperations & capability.second)) {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                 "VkPhysicalDeviceSubgroupProperties::supportedOperations");
-        }
-        if (!(subgroup_prop.supportedStages & VK_SHADER_STAGE_COMPUTE_BIT)) {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                 "VkPhysicalDeviceSubgroupProperties::supportedStages");
+        if (pipeline_info.stage.module != VK_NULL_HANDLE) {
+            if (!(subgroup_prop.supportedOperations & capability.second)) {
+                m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                     "VkPhysicalDeviceSubgroupProperties::supportedOperations");
+            }
+            if (!(subgroup_prop.supportedStages & VK_SHADER_STAGE_COMPUTE_BIT)) {
+                m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                     "VkPhysicalDeviceSubgroupProperties::supportedStages");
+            }
+
+            VkPipeline cs_pipeline;
+            vkCreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &cs_pipeline);
+            vkDestroyPipeline(device(), cs_pipeline, nullptr);
+
+            m_errorMonitor->VerifyFound();
         }
 
-        VkPipeline cs_pipeline;
-        vkCreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &cs_pipeline);
-        vkDestroyPipeline(device(), cs_pipeline, nullptr);
+        if ((stage[1].module != VK_NULL_HANDLE) && (stage[2].module != VK_NULL_HANDLE)) {
+            stage[1].stage = VK_SHADER_STAGE_VERTEX_BIT;
+            stage[2].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-        m_errorMonitor->VerifyFound();
+            VkPipelineObj pipe(m_device);
+            pipe.AddShader(stage[1]);
+            pipe.AddShader(stage[2]);
+            pipe.AddDefaultColorAttachment();
 
-        stage[1].stage = VK_SHADER_STAGE_VERTEX_BIT;
-        stage[2].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+            if (!(subgroup_prop.supportedOperations & capability.second)) {
+                m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                     "VkPhysicalDeviceSubgroupProperties::supportedOperations");
+            }
+            if (!(subgroup_prop.supportedStages & VK_SHADER_STAGE_VERTEX_BIT)) {
+                m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                     "VkPhysicalDeviceSubgroupProperties::supportedStages");
+            }
+            if (!(subgroup_prop.supportedOperations & capability.second)) {
+                m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                     "VkPhysicalDeviceSubgroupProperties::supportedOperations");
+            }
+            if (!(subgroup_prop.supportedStages & VK_SHADER_STAGE_FRAGMENT_BIT)) {
+                m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                     "VkPhysicalDeviceSubgroupProperties::supportedStages");
+            }
+            pipe.CreateVKPipeline(pipeline_layout, renderPass());
 
-        VkPipelineObj pipe(m_device);
-        pipe.AddShader(stage[1]);
-        pipe.AddShader(stage[2]);
-        pipe.AddDefaultColorAttachment();
-
-        if (!(subgroup_prop.supportedOperations & capability.second)) {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                 "VkPhysicalDeviceSubgroupProperties::supportedOperations");
+            m_errorMonitor->VerifyFound();
         }
-        if (!(subgroup_prop.supportedStages & VK_SHADER_STAGE_VERTEX_BIT)) {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                 "VkPhysicalDeviceSubgroupProperties::supportedStages");
-        }
-        if (!(subgroup_prop.supportedOperations & capability.second)) {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                 "VkPhysicalDeviceSubgroupProperties::supportedOperations");
-        }
-        if (!(subgroup_prop.supportedStages & VK_SHADER_STAGE_FRAGMENT_BIT)) {
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                 "VkPhysicalDeviceSubgroupProperties::supportedStages");
-        }
-        pipe.CreateVKPipeline(pipeline_layout, renderPass());
-
-        m_errorMonitor->VerifyFound();
 
         vkDestroyShaderModule(device(), shader_module[0], nullptr);
         vkDestroyShaderModule(device(), shader_module[1], nullptr);
@@ -5311,6 +5321,11 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderImageFootprintEnabled) {
     TEST_DESCRIPTION("Create a pipeline requiring the shader image footprint feature which has not enabled on the device.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_NV_SHADER_IMAGE_FOOTPRINT_EXTENSION_NAME)) {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_NV_SHADER_IMAGE_FOOTPRINT_EXTENSION_NAME);
+        return;
+    }
 
     std::vector<const char *> device_extension_names;
     auto features = m_device->phy().features();
