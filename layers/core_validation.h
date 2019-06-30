@@ -40,6 +40,7 @@
 #include <vector>
 #include <list>
 #include <deque>
+#include <map>
 
 enum SyncScope {
     kSyncScopeInternal,
@@ -79,7 +80,7 @@ class QUEUE_STATE {
     VkQueue queue;
     uint32_t queueFamilyIndex;
     std::unordered_map<VkEvent, VkPipelineStageFlags> eventToStageMap;
-    std::unordered_map<QueryObject, QueryState> queryToStateMap;
+    std::map<QueryObject, QueryState> queryToStateMap;
 
     uint64_t seq;
     std::deque<CB_SUBMISSION> submissions;
@@ -203,7 +204,7 @@ class ValidationStateTracker : public ValidationObject {
 
     std::unordered_set<VkQueue> queues;  // All queues under given device
     unordered_map<VkImage, std::vector<ImageSubresourcePair>> imageSubresourceMap;
-    unordered_map<QueryObject, QueryState> queryToStateMap;
+    std::map<QueryObject, QueryState> queryToStateMap;
     unordered_map<VkSamplerYcbcrConversion, uint64_t> ycbcr_conversion_ahb_fmt_map;
 
     // Traits for State function resolution.  Specializations defined in the macro.
