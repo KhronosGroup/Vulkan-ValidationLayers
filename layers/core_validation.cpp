@@ -2372,6 +2372,12 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         core_checks->enabled_features.shader_image_footprint_features = *shader_image_footprint_features;
     }
 
+    const auto *fragment_shader_interlock_features =
+        lvl_find_in_chain<VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT>(pCreateInfo->pNext);
+    if (fragment_shader_interlock_features) {
+        core_checks->enabled_features.fragment_shader_interlock_features = *fragment_shader_interlock_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &core_checks->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &core_checks->phys_dev_props);
