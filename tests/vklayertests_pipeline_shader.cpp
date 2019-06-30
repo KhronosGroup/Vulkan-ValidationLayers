@@ -5482,3 +5482,50 @@ TEST_F(VkLayerTest, CreatePipelineCheckComputeShaderDerivativesEnabled) {
     vkDestroyPipeline(test_device.device(), pipe, nullptr);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, CreatePipelineCheckFragmentShaderInterlockEnabled) {
+    TEST_DESCRIPTION("Create a pipeline requiring the fragment shader interlock feature which has not enabled on the device.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    std::vector<const char *> device_extension_names;
+    auto features = m_device->phy().features();
+
+    // Disable the fragment shader interlock feature.
+    auto fragment_shader_interlock_features = lvl_init_struct<VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT>();
+    fragment_shader_interlock_features.fragmentShaderSampleInterlock = VK_FALSE;
+    fragment_shader_interlock_features.fragmentShaderPixelInterlock = VK_FALSE;
+    fragment_shader_interlock_features.fragmentShaderShadingRateInterlock = VK_FALSE;
+
+    VkDeviceObj test_device(0, gpu(), device_extension_names, &features, &fragment_shader_interlock_features);
+
+    char const *fsSource =
+        "#version 450\n"
+        "#extension GL_ARB_fragment_shader_interlock : require\n"
+        "layout(sample_interlock_ordered) in;\n"
+        "void main(){\n"
+        "}\n";
+
+    VkShaderObj vs(&test_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(&test_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkRenderpassObj render_pass(&test_device);
+
+    VkPipelineObj pipe(&test_device);
+    pipe.AddDefaultColorAttachment();
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+
+    const VkPipelineLayoutObj pipeline_layout(&test_device);
+
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "Shader requires VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::fragmentShaderSampleInterlock but is not enabled on "
+        "the device");
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "Shader requires extension VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::fragmentShaderSampleInterlock but is not "
+        "enabled on the device");
+    pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
+    m_errorMonitor->VerifyFound();
+}
