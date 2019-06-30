@@ -958,11 +958,12 @@ static inline int vasprintf(char **strp, char const *fmt, va_list ap) {
 // needs to be logged
 #ifndef WIN32
 static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
-                           uint64_t src_object, std::string vuid_text, const char *format, ...)
+                           uint64_t src_object, const std::string &vuid_text, const char *format, ...)
     __attribute__((format(printf, 6, 7)));
 #endif
 static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
-                           uint64_t src_object, std::string vuid_text, const char *format, ...) {
+                           uint64_t src_object, const std::string &vuid_text, const char *format, ...) {
+    return false;
     if (!debug_data) return false;
     std::unique_lock<std::mutex> lock(debug_data->debug_report_mutex);
     VkFlags local_severity = 0;
