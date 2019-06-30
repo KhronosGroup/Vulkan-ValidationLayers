@@ -975,6 +975,7 @@ struct QueryObject {
     bool indexed;
     QueryObject(VkQueryPool pool_, uint32_t query_) : pool(pool_), query(query_), index(0), indexed(false) {}
     QueryObject(VkQueryPool pool_, uint32_t query_, uint32_t index_) : pool(pool_), query(query_), index(index_), indexed(true) {}
+    bool operator<(const QueryObject &rhs) const { return (pool == rhs.pool) ? index < rhs.index : pool < rhs.pool; }
 };
 
 enum QueryState {
@@ -1477,7 +1478,7 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::unordered_set<VkEvent> waitedEvents;
     std::vector<VkEvent> writeEventsBeforeWait;
     std::vector<VkEvent> events;
-    std::unordered_map<QueryObject, QueryState> queryToStateMap;
+    std::map<QueryObject, QueryState> queryToStateMap;
     std::unordered_set<QueryObject> activeQueries;
     std::unordered_set<QueryObject> startedQueries;
     typedef std::unordered_map<VkImage, std::unique_ptr<ImageSubresourceLayoutMap>> ImageLayoutMap;
