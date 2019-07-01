@@ -975,7 +975,7 @@ struct QueryObject {
     bool indexed;
     QueryObject(VkQueryPool pool_, uint32_t query_) : pool(pool_), query(query_), index(0), indexed(false) {}
     QueryObject(VkQueryPool pool_, uint32_t query_, uint32_t index_) : pool(pool_), query(query_), index(index_), indexed(true) {}
-    bool operator<(const QueryObject& rhs) const {
+    bool operator<(const QueryObject &rhs) const {
         return (pool == rhs.pool) ? index < rhs.index : pool < rhs.pool;
     }
 };
