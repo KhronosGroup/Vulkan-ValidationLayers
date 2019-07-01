@@ -1518,7 +1518,7 @@ static bool RequireExtension(debug_report_data const *report_data, bool extensio
     return false;
 }
 
-bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkShaderStageFlagBits stage) {
+bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkShaderStageFlagBits stage) const {
     bool skip = false;
 
     struct FeaturePointer {
@@ -1791,7 +1791,7 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
     return skip;
 }
 
-bool CoreChecks::ValidateShaderStageWritableDescriptor(VkShaderStageFlagBits stage, bool has_writable_descriptor) {
+bool CoreChecks::ValidateShaderStageWritableDescriptor(VkShaderStageFlagBits stage, bool has_writable_descriptor) const {
     bool skip = false;
 
     if (has_writable_descriptor) {
@@ -1822,7 +1822,7 @@ bool CoreChecks::ValidateShaderStageWritableDescriptor(VkShaderStageFlagBits sta
 }
 
 bool CoreChecks::ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const *module, VkShaderStageFlagBits stage,
-                                                    std::unordered_set<uint32_t> const &accessible_ids) {
+                                                    std::unordered_set<uint32_t> const &accessible_ids) const {
     bool skip = false;
 
     auto const subgroup_props = phys_dev_ext_props.subgroup_props;
@@ -1848,7 +1848,7 @@ bool CoreChecks::ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const *m
 }
 
 bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const *src, VkPipelineShaderStageCreateInfo const *pStage,
-                                                      const PIPELINE_STATE *pipeline, spirv_inst_iter entrypoint) {
+                                                      const PIPELINE_STATE *pipeline, spirv_inst_iter entrypoint) const {
     if (pStage->stage == VK_SHADER_STAGE_COMPUTE_BIT || pStage->stage == VK_SHADER_STAGE_ALL_GRAPHICS ||
         pStage->stage == VK_SHADER_STAGE_ALL) {
         return false;
@@ -2101,7 +2101,7 @@ VkComponentTypeNV GetComponentType(spirv_inst_iter insn, SHADER_MODULE_STATE con
 // Validate SPV_NV_cooperative_matrix behavior that can't be statically validated
 // in SPIRV-Tools (e.g. due to specialization constant usage).
 bool CoreChecks::ValidateCooperativeMatrix(SHADER_MODULE_STATE const *src, VkPipelineShaderStageCreateInfo const *pStage,
-                                           const PIPELINE_STATE *pipeline) {
+                                           const PIPELINE_STATE *pipeline) const {
     bool skip = false;
 
     // Map SPIR-V result ID to specialization constant id (SpecId decoration value)
@@ -2305,7 +2305,7 @@ bool CoreChecks::ValidateCooperativeMatrix(SHADER_MODULE_STATE const *src, VkPip
     return skip;
 }
 
-bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint) {
+bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint) const {
     auto entrypoint_id = entrypoint.word(2);
 
     // The first denorm execution mode encountered, along with its bit width.
@@ -2606,7 +2606,7 @@ static void ProcessExecutionModes(SHADER_MODULE_STATE const *src, const spirv_in
 //        - If shaderTessellationAndGeometryPointSize feature is disabled:
 //            * gl_PointSize must NOT be written and a default of 1.0 is assumed
 bool CoreChecks::ValidatePointListShaderState(const PIPELINE_STATE *pipeline, SHADER_MODULE_STATE const *src,
-                                              spirv_inst_iter entrypoint, VkShaderStageFlagBits stage) {
+                                              spirv_inst_iter entrypoint, VkShaderStageFlagBits stage) const {
     if (pipeline->topology_at_rasterizer != VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
         return false;
     }
@@ -2678,7 +2678,7 @@ void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCrea
 
 bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo const *pStage, const PIPELINE_STATE *pipeline,
                                              const PIPELINE_STATE::StageState &stage_state, const SHADER_MODULE_STATE *module,
-                                             const spirv_inst_iter &entrypoint, bool check_point_size) {
+                                             const spirv_inst_iter &entrypoint, bool check_point_size) const {
     bool skip = false;
 
     // Check the module
@@ -2898,7 +2898,7 @@ static inline uint32_t DetermineFinalGeomStage(const PIPELINE_STATE *pipeline, c
 
 // Validate that the shaders used by the given pipeline and store the active_slots
 //  that are actually used by the pipeline into pPipeline->active_slots
-bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipeline) {
+bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipeline) const {
     auto pCreateInfo = pipeline->graphicsPipelineCI.ptr();
     int vertex_stage = GetShaderStageId(VK_SHADER_STAGE_VERTEX_BIT);
     int fragment_stage = GetShaderStageId(VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -2963,7 +2963,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
     return skip;
 }
 
-bool CoreChecks::ValidateComputePipeline(PIPELINE_STATE *pipeline) {
+bool CoreChecks::ValidateComputePipeline(PIPELINE_STATE *pipeline) const {
     const auto &stage = *pipeline->computePipelineCI.stage.ptr();
 
     const SHADER_MODULE_STATE *module = GetShaderModuleState(stage.module);
@@ -2972,7 +2972,7 @@ bool CoreChecks::ValidateComputePipeline(PIPELINE_STATE *pipeline) {
     return ValidatePipelineShaderStage(&stage, pipeline, pipeline->stage_state[0], module, entrypoint, false);
 }
 
-bool CoreChecks::ValidateRayTracingPipelineNV(PIPELINE_STATE *pipeline) {
+bool CoreChecks::ValidateRayTracingPipelineNV(PIPELINE_STATE *pipeline) const {
     const auto &stage = pipeline->raytracingPipelineCI.ptr()->pStages[0];
 
     const SHADER_MODULE_STATE *module = GetShaderModuleState(stage.module);
@@ -3082,7 +3082,7 @@ void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, c
     shaderModuleMap[*pShaderModule] = std::move(new_shader_module);
 }
 
-bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader) {
+bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader) const {
     bool skip = false;
     uint32_t local_size_x = 0;
     uint32_t local_size_y = 0;

@@ -1152,7 +1152,7 @@ void CoreChecks::UpdateDrawState(CMD_BUFFER_STATE *cb_state, const VkPipelineBin
     }
 }
 
-bool CoreChecks::ValidatePipelineLocked(std::vector<std::unique_ptr<PIPELINE_STATE>> const &pPipelines, int pipelineIndex) {
+bool CoreChecks::ValidatePipelineLocked(std::vector<std::unique_ptr<PIPELINE_STATE>> const &pPipelines, int pipelineIndex) const {
     bool skip = false;
 
     const PIPELINE_STATE *pPipeline = pPipelines[pipelineIndex].get();
@@ -1161,7 +1161,7 @@ bool CoreChecks::ValidatePipelineLocked(std::vector<std::unique_ptr<PIPELINE_STA
     // pipeline correctly, and that the base pipeline was created to allow
     // derivatives.
     if (pPipeline->graphicsPipelineCI.flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
-        PIPELINE_STATE *pBasePipeline = nullptr;
+        const PIPELINE_STATE *pBasePipeline = nullptr;
         if (!((pPipeline->graphicsPipelineCI.basePipelineHandle != VK_NULL_HANDLE) ^
               (pPipeline->graphicsPipelineCI.basePipelineIndex != -1))) {
             // This check is a superset of "VUID-VkGraphicsPipelineCreateInfo-flags-00724" and
@@ -1192,7 +1192,7 @@ bool CoreChecks::ValidatePipelineLocked(std::vector<std::unique_ptr<PIPELINE_STA
 }
 
 // UNLOCKED pipeline validation. DO NOT lookup objects in the CoreChecks->* maps in this function.
-bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint32_t pipelineIndex) {
+bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint32_t pipelineIndex) const {
     bool skip = false;
 
     // Ensure the subpass index is valid. If not, then ValidateGraphicsPipelineShaderState
@@ -4821,7 +4821,7 @@ void SetPipelineState(PIPELINE_STATE *pPipe) {
 }
 
 bool CoreChecks::ValidatePipelineVertexDivisors(std::vector<std::unique_ptr<PIPELINE_STATE>> const &pipe_state_vec,
-                                                const uint32_t count, const VkGraphicsPipelineCreateInfo *pipe_cis) {
+                                                const uint32_t count, const VkGraphicsPipelineCreateInfo *pipe_cis) const {
     bool skip = false;
     const VkPhysicalDeviceLimits *device_limits = &phys_dev_props.limits;
 
