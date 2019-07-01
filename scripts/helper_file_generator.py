@@ -377,6 +377,27 @@ class HelperFileOutputGenerator(OutputGenerator):
         outstring += '            return "Unhandled %s";\n' % groupName
         outstring += '    }\n'
         outstring += '}\n'
+
+        bitsIndex = groupName.find('Bits')
+        if (bitsIndex != -1):
+            outstring += '\n'
+            flagsName = groupName[0:bitsIndex] + "s" +  groupName[bitsIndex+4:]
+            outstring += 'static inline std::string string_%s(%s input_value)\n' % (flagsName, flagsName)
+            outstring += '{\n'
+            outstring += '    std::string ret;\n'
+            outstring += '    int index = 0;\n'
+            outstring += '    while(input_value) {\n'
+            outstring += '        if (input_value & 1) {\n'
+            outstring += '            if( !ret.empty()) ret.append("|");\n'
+            outstring += '            ret.append(string_%s(static_cast<%s>(1 << index)));\n' % (groupName, groupName)
+            outstring += '        }\n'
+            outstring += '        ++index;\n'
+            outstring += '        input_value >>= 1;\n'
+            outstring += '    }\n'
+            outstring += '    if( ret.empty()) ret.append(string_%s(static_cast<%s>(0)));\n' % (groupName, groupName)
+            outstring += '    return ret;\n'
+            outstring += '}\n'
+
         if self.featureExtraProtect is not None:
             outstring += '#endif // %s\n' % self.featureExtraProtect
         return outstring
