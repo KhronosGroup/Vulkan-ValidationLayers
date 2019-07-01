@@ -74,7 +74,7 @@ if(BUILD_LAYER_SUPPORT_FILES)
         vk_layer_utils.cpp
         vk_loader_layer.h
         vk_loader_platform.h
-        vk_validation_error_messages.h
+        generated/vk_validation_error_messages.h
         generated/vk_layer_dispatch_table.h
         generated/vk_dispatch_table_helper.h
         generated/vk_safe_struct.h
