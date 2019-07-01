@@ -11204,10 +11204,11 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     if ((pCreateInfo->preTransform & currentTransform) != pCreateInfo->preTransform) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
                         HandleToUint64(physical_device), kVUID_Core_Swapchain_PreTransform,
-                        "%s: pCreateInfo->preTransform (0x%" PRIx32 ") doesn't match the currentTransform (0x%" PRIx32
-                        ") returned by vkGetPhysicalDeviceSurfaceCapabilitiesKHR, the presentation engine will transform the image "
+                        "%s: pCreateInfo->preTransform (%s) doesn't match the currentTransform (%s) returned by "
+                        "vkGetPhysicalDeviceSurfaceCapabilitiesKHR, the presentation engine will transform the image "
                         "content as part of the presentation operation.",
-                        func_name, pCreateInfo->preTransform, currentTransform);
+                        func_name, string_VkSurfaceTransformFlagBitsKHR(pCreateInfo->preTransform),
+                        string_VkSurfaceTransformFlagBitsKHR(currentTransform));
     }
 
     if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState == UNCALLED) {
