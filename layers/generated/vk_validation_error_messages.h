@@ -1,7 +1,5 @@
 /* THIS FILE IS GENERATED - DO NOT EDIT (scripts/vk_validation_stats.py) */
 /* Vulkan specification version: 1.1.112 */
-/* Header generated: 2019-06-26 09:22:58 */
-
 /*
  * Vulkan
  *
