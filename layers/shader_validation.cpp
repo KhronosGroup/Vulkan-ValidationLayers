@@ -2973,12 +2973,16 @@ bool CoreChecks::ValidateComputePipeline(PIPELINE_STATE *pipeline) const {
 }
 
 bool CoreChecks::ValidateRayTracingPipelineNV(PIPELINE_STATE *pipeline) const {
-    const auto &stage = pipeline->raytracingPipelineCI.ptr()->pStages[0];
+    bool skip = false;
+    for (uint32_t stage_index = 0; stage_index < pipeline->raytracingPipelineCI.stageCount; stage_index++) {
+        const auto &stage = pipeline->raytracingPipelineCI.ptr()->pStages[stage_index];
 
-    const SHADER_MODULE_STATE *module = GetShaderModuleState(stage.module);
-    const spirv_inst_iter entrypoint = FindEntrypoint(module, stage.pName, stage.stage);
+        const SHADER_MODULE_STATE *module = GetShaderModuleState(stage.module);
+        const spirv_inst_iter entrypoint = FindEntrypoint(module, stage.pName, stage.stage);
 
-    return ValidatePipelineShaderStage(&stage, pipeline, pipeline->stage_state[0], module, entrypoint, false);
+        skip |= ValidatePipelineShaderStage(&stage, pipeline, pipeline->stage_state[stage_index], module, entrypoint, false);
+    }
+    return skip;
 }
 
 uint32_t ValidationCache::MakeShaderHash(VkShaderModuleCreateInfo const *smci) { return XXH32(smci->pCode, smci->codeSize, 0); }

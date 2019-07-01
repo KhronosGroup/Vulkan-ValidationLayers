@@ -13082,33 +13082,32 @@ void PIPELINE_STATE::initRayTracingPipelineNV(ValidationStateTracker *state_data
     reset();
     raytracingPipelineCI.initialize(pCreateInfo);
 
-    // TODO: Determine if we should be looping over pCreateInfo::stageCount...
-    switch (raytracingPipelineCI.pStages->stage) {
-        case VK_SHADER_STAGE_RAYGEN_BIT_NV:
-            this->active_shaders |= VK_SHADER_STAGE_RAYGEN_BIT_NV;
-            break;
-        case VK_SHADER_STAGE_ANY_HIT_BIT_NV:
-            this->active_shaders |= VK_SHADER_STAGE_ANY_HIT_BIT_NV;
-            break;
-        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV:
-            this->active_shaders |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
-            break;
-        case VK_SHADER_STAGE_MISS_BIT_NV:
-            this->active_shaders = VK_SHADER_STAGE_MISS_BIT_NV;
-            break;
-        case VK_SHADER_STAGE_INTERSECTION_BIT_NV:
-            this->active_shaders = VK_SHADER_STAGE_INTERSECTION_BIT_NV;
-            break;
-        case VK_SHADER_STAGE_CALLABLE_BIT_NV:
-            this->active_shaders |= VK_SHADER_STAGE_CALLABLE_BIT_NV;
-            break;
-        default:
-            // TODO : Flag error
-            break;
-    }
-
-    if (active_shaders) {
-        stage_state.resize(1);
-        state_data->RecordPipelineShaderStage(pCreateInfo->pStages, this, &stage_state[0]);
+    stage_state.resize(pCreateInfo->stageCount);
+    for (uint32_t stage_index = 0; stage_index < pCreateInfo->stageCount; stage_index++) {
+        const auto &shader_stage = pCreateInfo->pStages[stage_index];
+        switch (shader_stage.stage) {
+            case VK_SHADER_STAGE_RAYGEN_BIT_NV:
+                this->active_shaders |= VK_SHADER_STAGE_RAYGEN_BIT_NV;
+                break;
+            case VK_SHADER_STAGE_ANY_HIT_BIT_NV:
+                this->active_shaders |= VK_SHADER_STAGE_ANY_HIT_BIT_NV;
+                break;
+            case VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV:
+                this->active_shaders |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
+                break;
+            case VK_SHADER_STAGE_MISS_BIT_NV:
+                this->active_shaders |= VK_SHADER_STAGE_MISS_BIT_NV;
+                break;
+            case VK_SHADER_STAGE_INTERSECTION_BIT_NV:
+                this->active_shaders |= VK_SHADER_STAGE_INTERSECTION_BIT_NV;
+                break;
+            case VK_SHADER_STAGE_CALLABLE_BIT_NV:
+                this->active_shaders |= VK_SHADER_STAGE_CALLABLE_BIT_NV;
+                break;
+            default:
+                // TODO : Flag error
+                break;
+        }
+        state_data->RecordPipelineShaderStage(&shader_stage, this, &stage_state[stage_index]);
     }
 }
