@@ -44,18 +44,6 @@ else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
 
-# Custom targets for generated validation layer helper file dependencies
-add_custom_target(spirv_tools_revision_file DEPENDS spirv_tools_commit_id.h)
-set_target_properties(spirv_tools_revision_file PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
-
-if(BUILD_LAYERS)
-    # generate header file containing commit IDs of external dependencies
-    add_custom_command(OUTPUT spirv_tools_commit_id.h
-                       COMMAND ${PYTHON_EXECUTABLE} ${SCRIPTS_DIR}/external_revision_generator.py
-                               --from_uuid -s SPIRV_TOOLS_COMMIT_ID -o spirv_tools_commit_id.h
-                       DEPENDS ${SCRIPTS_DIR}/external_revision_generator.py)
-endif()
-
 # Configure installation of source files that are dependencies of other repos.
 if(BUILD_LAYER_SUPPORT_FILES)
     set(LAYER_UTIL_FILES
@@ -223,11 +211,9 @@ if(BUILD_LAYERS)
     target_include_directories(VkLayer_core_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})
     target_include_directories(VkLayer_core_validation PRIVATE ${SPIRV_TOOLS_INCLUDE_DIR})
     target_link_libraries(VkLayer_core_validation PRIVATE ${SPIRV_TOOLS_LIBRARIES})
-    add_dependencies(VkLayer_core_validation spirv_tools_revision_file)
     target_include_directories(VkLayer_khronos_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})
     target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_INCLUDE_DIR})
     target_link_libraries(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_LIBRARIES})
-    add_dependencies(VkLayer_khronos_validation spirv_tools_revision_file)
 
     # The output file needs Unix "/" separators or Windows "\" separators On top of that, Windows separators actually need to be doubled
     # because the json format uses backslash escapes
