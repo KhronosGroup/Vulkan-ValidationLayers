@@ -1156,45 +1156,20 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
     TEST_DESCRIPTION("Invalid deviceMask.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
-    bool support_surface = false;
-#ifdef VK_USE_PLATFORM_WIN32_KHR
-    if (InstanceExtensionSupported(VK_KHR_WIN32_SURFACE_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-        support_surface = true;
-    } else {
-        printf("%s VK_KHR_WIN32_SURFACE_EXTENSION_NAME extension not supported, skipping VkAcquireNextImageInfoKHR test\n",
-               kSkipPrefix);
+    bool support_surface = true;
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping VkAcquireNextImageInfoKHR test\n", kSkipPrefix);
+        support_surface = false;
     }
-#elif VK_USE_PLATFORM_XLIB_KHR
-    if (InstanceExtensionSupported(VK_KHR_XLIB_SURFACE_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
-        support_surface = true;
-    } else {
-        printf("%s VK_KHR_XLIB_SURFACE_EXTENSION_NAME extension not supported, skipping VkAcquireNextImageInfoKHR test\n",
-               kSkipPrefix);
-    }
-#elif defined(VK_USE_PLATFORM_ANDROID_KHR) && defined(VALIDATION_APK)
-    if (InstanceExtensionSupported(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME)) {
-        m_instance_extension_names.push_back(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
-        support_surface = true;
-    } else {
-        printf("%s VK_KHR_ANDROID_SURFACE_EXTENSION_NAME extension not supported, skipping VkAcquireNextImageInfoKHR test\n",
-               kSkipPrefix);
-    }
-#else
-    printf("%s VkSurface not supported, skipping VkAcquireNextImageInfoKHR test\n", kSkipPrefix);
-#endif
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
 
     if (support_surface) {
-        if (InstanceExtensionSupported(VK_KHR_SURFACE_EXTENSION_NAME)) {
-            m_instance_extension_names.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
-        } else {
-            printf("%s VK_KHR_SURFACE_EXTENSION_NAM extension not supported, skipping VkAcquireNextImageInfoKHR test\n",
-                   kSkipPrefix);
+        if (!AddSwapchainDeviceExtension()) {
+            printf("%s swapchain extensions not supported, skipping BindSwapchainImageMemory test\n", kSkipPrefix);
             support_surface = false;
         }
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         printf("%s Device Groups requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
@@ -1208,16 +1183,6 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
         return;
     }
 
-    if (support_surface) {
-        if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
-            m_device_extension_names.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-        } else {
-            printf("%s VK_KHR_SWAPCHAIN_EXTENSION_NAME extension not supported, skipping VkAcquireNextImageInfoKHR test\n",
-                   kSkipPrefix);
-            support_surface = false;
-        }
-    }
-
     std::vector<VkPhysicalDeviceGroupProperties> physical_device_group(physical_device_group_count,
                                                                        {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
     vkEnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, physical_device_group.data());
@@ -1227,6 +1192,11 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
     create_device_pnext.pPhysicalDevices = physical_device_group[0].physicalDevices;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &create_device_pnext, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (!InitSwapchain()) {
+        printf("%s Cannot create surface or swapchain, skipping VkAcquireNextImageInfoKHR test\n", kSkipPrefix);
+        support_surface = false;
+    }
 
     // Test VkMemoryAllocateFlagsInfo
     VkMemoryAllocateFlagsInfo alloc_flags_info = {};
@@ -1328,8 +1298,6 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
 
     if (support_surface) {
         // Test VkAcquireNextImageInfoKHR
-        ASSERT_NO_FATAL_FAILURE(InitSwapchain());
-
         uint32_t imageIndex = 0;
         VkAcquireNextImageInfoKHR acquire_next_image_info = {};
         acquire_next_image_info.sType = VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR;

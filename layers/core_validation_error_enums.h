@@ -101,6 +101,7 @@ static const char DECORATE_UNUSED *kVUID_Core_DrawState_SwapchainUnsupportedQueu
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_ViewportScissorMismatch = "UNASSIGNED-CoreValidation-DrawState-ViewportScissorMismatch";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_VtxIndexOutOfBounds = "UNASSIGNED-CoreValidation-DrawState-VtxIndexOutOfBounds";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidVtxAttributeAlignment = "UNASSIGNED-CoreValidation-DrawState-InvalidVtxAttributeAlignment";
+static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidImageView = "UNASSIGNED-CoreValidation-DrawState-InvalidImageView";
 // Previously defined but unused - uncomment as needed
 //static const char DECORATE_UNUSED *kVUID_Core_DrawState_BeginCommandBufferInvalidState = "UNASSIGNED-CoreValidation-DrawState-BeginCommandBufferInvalidState";
 //static const char DECORATE_UNUSED *kVUID_Core_DrawState_BlendNotBound = "UNASSIGNED-CoreValidation-DrawState-BlendNotBound";

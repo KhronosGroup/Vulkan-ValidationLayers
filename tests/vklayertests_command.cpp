@@ -4115,7 +4115,7 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
     const uint32_t transfer_only_qfi =
         m_device->QueueFamilyMatching(VK_QUEUE_TRANSFER_BIT, (VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT));
     if ((UINT32_MAX == transfer_only_qfi) && (UINT32_MAX == no_gfx_qfi)) {
-        printf("%s No compute or transfer only queue family, skipping bindpoint and queue tests.", kSkipPrefix);
+        printf("%s No compute or transfer only queue family, skipping bindpoint and queue tests.\n", kSkipPrefix);
     } else {
         const uint32_t err_qfi = (UINT32_MAX == no_gfx_qfi) ? transfer_only_qfi : no_gfx_qfi;
 

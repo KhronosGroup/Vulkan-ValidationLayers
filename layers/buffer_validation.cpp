@@ -65,6 +65,9 @@ IMAGE_STATE::IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
       has_ahb_format(false),
       ahb_format(0),
       full_range{},
+      create_from_swapchain(VK_NULL_HANDLE),
+      bind_swapchain(VK_NULL_HANDLE),
+      bind_swapchain_imageIndex(0),
       sparse_requirements{} {
     if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
         uint32_t *pQueueFamilyIndices = new uint32_t[createInfo.queueFamilyIndexCount];
@@ -1463,6 +1466,10 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
     IMAGE_STATE *is_node = new IMAGE_STATE(*pImage, pCreateInfo);
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
         RecordCreateImageANDROID(pCreateInfo, is_node);
+    }
+    const auto swapchain_info = lvl_find_in_chain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
+    if (swapchain_info) {
+        is_node->create_from_swapchain = swapchain_info->swapchain;
     }
     imageMap.insert(std::make_pair(*pImage, std::unique_ptr<IMAGE_STATE>(is_node)));
     ImageSubresourcePair subpair{*pImage, false, VkImageSubresource()};
@@ -3284,10 +3291,21 @@ bool CoreChecks::ValidateCmdBufImageLayouts(
         const auto image = layout_map_entry.first;
         const auto *image_state = GetImageState(image);
         if (!image_state) continue;  // Can't check layouts of a dead image
-        const auto &subres_map = layout_map_entry.second;
+        auto subres_map = layout_map_entry.second.get();
         ImageSubresourcePair isr_pair;
         isr_pair.image = image;
         isr_pair.hasSubresource = true;
+
+        std::string bind_swapchain_msg = "";
+        if (image_state->bind_swapchain) {
+            auto swapchain_node = GetSwapchainState(image_state->bind_swapchain);
+            const auto swapchain_image = swapchain_node->images[image_state->bind_swapchain_imageIndex];
+            isr_pair.image = swapchain_image;
+
+            string_sprintf(&bind_swapchain_msg, "bind %s imageIndex %d (%s)",
+                           report_data->FormatHandle(image_state->bind_swapchain).c_str(), image_state->bind_swapchain_imageIndex,
+                           report_data->FormatHandle(swapchain_image).c_str());
+        }
 
         // Validate the initial_uses for each subresource referenced
         for (auto it_init = subres_map->BeginInitialUse(); !it_init.AtEnd(); ++it_init) {
@@ -3304,15 +3322,14 @@ bool CoreChecks::ValidateCmdBufImageLayouts(
                     bool matches = ImageLayoutMatches(initial_layout_state->aspect_mask, image_layout, initial_layout);
                     if (!matches) {
                         std::string formatted_label = FormatDebugLabel(" ", pCB->debug_label);
-                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                                        HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidImageLayout,
-                                        "Submitted command buffer expects %s  (subresource: aspectMask 0x%X array layer %u, "
-                                        "mip level %u) "
-                                        "to be in layout %s--instead, current layout is %s.%s",
-                                        report_data->FormatHandle(image).c_str(), isr_pair.subresource.aspectMask,
-                                        isr_pair.subresource.arrayLayer, isr_pair.subresource.mipLevel,
-                                        string_VkImageLayout(initial_layout), string_VkImageLayout(image_layout),
-                                        formatted_label.c_str());
+                        skip |= log_msg(
+                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidImageLayout,
+                            "Submitted command buffer expects %s %s (subresource: aspectMask 0x%X array layer %u, mip level %u) "
+                            "to be in layout %s--instead, current layout is %s.%s",
+                            report_data->FormatHandle(image).c_str(), bind_swapchain_msg.c_str(), isr_pair.subresource.aspectMask,
+                            isr_pair.subresource.arrayLayer, isr_pair.subresource.mipLevel, string_VkImageLayout(initial_layout),
+                            string_VkImageLayout(image_layout), formatted_label.c_str());
                     }
                 }
             }
@@ -3596,36 +3613,6 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                                                               attach_index, pCreateInfo->pAttachments[attach_index]);
             }
             attach_first_use[attach_index] = false;
-        }
-    }
-    return skip;
-}
-
-// For any image objects that overlap mapped memory, verify that their layouts are PREINIT or GENERAL
-bool CoreChecks::ValidateMapImageLayouts(VkDevice device, DEVICE_MEMORY_STATE const *mem_info, VkDeviceSize offset,
-                                         VkDeviceSize end_offset) {
-    bool skip = false;
-    // Iterate over all bound image ranges and verify that for any that overlap the map ranges, the layouts are
-    // VK_IMAGE_LAYOUT_PREINITIALIZED or VK_IMAGE_LAYOUT_GENERAL
-    // TODO : This can be optimized if we store ranges based on starting address and early exit when we pass our range
-    for (auto image_handle : mem_info->bound_images) {
-        auto img_it = mem_info->bound_ranges.find(image_handle);
-        if (img_it != mem_info->bound_ranges.end()) {
-            if (RangesIntersect(&img_it->second, offset, end_offset)) {
-                std::vector<VkImageLayout> layouts;
-                if (FindLayouts(VkImage(image_handle), layouts)) {
-                    for (auto layout : layouts) {
-                        if (layout != VK_IMAGE_LAYOUT_PREINITIALIZED && layout != VK_IMAGE_LAYOUT_GENERAL) {
-                            skip |=
-                                log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
-                                        HandleToUint64(mem_info->mem), kVUID_Core_DrawState_InvalidImageLayout,
-                                        "Mapping an image with layout %s can result in undefined behavior if this memory is used "
-                                        "by the device. Only GENERAL or PREINITIALIZED should be used.",
-                                        string_VkImageLayout(layout));
-                        }
-                    }
-                }
-            }
         }
     }
     return skip;

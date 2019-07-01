@@ -472,7 +472,7 @@ void VkRenderFramework::InitViewport(float width, float height) {
 
 void VkRenderFramework::InitViewport() { InitViewport(m_width, m_height); }
 
-void VkRenderFramework::InitSwapchain() { InitSwapchain(m_width, m_height); }
+bool VkRenderFramework::InitSwapchain(VkImageUsageFlags imageUsage) { return InitSwapchain(m_width, m_height, imageUsage); }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -480,10 +480,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
-void VkRenderFramework::InitSwapchain(float width, float height) {
+bool VkRenderFramework::InitSwapchain(float width, float height, VkImageUsageFlags imageUsage) {
     VkResult err = VK_SUCCESS;
 
-#ifdef VK_USE_PLATFORM_WIN32_KHR
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
     HINSTANCE window_instance = GetModuleHandle(nullptr);
     const char class_name[] = "test";
     WNDCLASS wc = {};
@@ -499,10 +499,11 @@ void VkRenderFramework::InitSwapchain(float width, float height) {
     surface_create_info.hinstance = window_instance;
     surface_create_info.hwnd = window;
     err = vkCreateWin32SurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
-    ASSERT_VK_SUCCESS(err);
+    if (err != VK_SUCCESS) return false;
 
-#elif VK_USE_PLATFORM_XLIB_KHR
+#elif defined(VK_USE_PLATFORM_XLIB_KHR)
     Display *d = XOpenDisplay(NULL);
+    if (!d) return false;
     int s = DefaultScreen(d);
     Window w = XCreateSimpleWindow(d, RootWindow(d, s), 0, 0, (int)m_width, (int)m_height, 1, BlackPixel(d, s), WhitePixel(d, s));
     VkXlibSurfaceCreateInfoKHR surface_create_info = {};
@@ -510,17 +511,45 @@ void VkRenderFramework::InitSwapchain(float width, float height) {
     surface_create_info.dpy = d;
     surface_create_info.window = w;
     err = vkCreateXlibSurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
-    ASSERT_VK_SUCCESS(err);
+    if (err != VK_SUCCESS) return false;
+
+#elif defined(VK_USE_PLATFORM_XCB_KHR)
+    xcb_connection_t *connection = xcb_connect(NULL, NULL);
+    if (!connection) return false;
+    xcb_window_t window = xcb_generate_id(connection);
+
+    VkXcbSurfaceCreateInfoKHR surface_create_info = {};
+    surface_create_info.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+    surface_create_info.connection = connection;
+    surface_create_info.window = window;
+
+    err = vkCreateXcbSurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
+    if (err != VK_SUCCESS) return false;
+
+#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
+    wl_display *display = wl_display_connect(NULL);
+    if (!display) return false;
+
+    wl_surface *surface = wl_compositor_create_surface(compositor);
+    if (!surface) return false;
+
+    VkWaylandSurfaceCreateInfoKHR surface_create_info = {};
+    surface_create_info.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR;
+    surface_create_info.display = display;
+    surface_create_info.surface = surface;
+
+    err = vkCreateWaylandSurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
+    if (err != VK_SUCCESS) return false;
 
 #elif defined(VK_USE_PLATFORM_ANDROID_KHR) && defined(VALIDATION_APK)
     VkAndroidSurfaceCreateInfoKHR surface_create_info = {};
     surface_create_info.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
     surface_create_info.window = VkTestFramework::window;
     err = vkCreateAndroidSurfaceKHR(instance(), &surface_create_info, nullptr, &m_surface);
-    ASSERT_VK_SUCCESS(err);
+    if (err != VK_SUCCESS) return false;
 
 #else
-    return;
+    return false;
 #endif
 
     for (size_t i = 0; i < m_device->queue_props.size(); ++i) {
@@ -556,7 +585,7 @@ void VkRenderFramework::InitSwapchain(float width, float height) {
     swapchain_create_info.imageColorSpace = formats[0].colorSpace;
     swapchain_create_info.imageExtent = {capabilities.minImageExtent.width, capabilities.minImageExtent.height};
     swapchain_create_info.imageArrayLayers = capabilities.maxImageArrayLayers;
-    swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_create_info.imageUsage = imageUsage;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     swapchain_create_info.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
@@ -567,8 +596,18 @@ void VkRenderFramework::InitSwapchain(float width, float height) {
     swapchain_create_info.presentMode = present_modes[0];
     swapchain_create_info.clipped = VK_FALSE;
     swapchain_create_info.oldSwapchain = 0;
+
     err = vkCreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
-    ASSERT_VK_SUCCESS(err);
+    if (err != VK_SUCCESS) {
+        vkDestroySurfaceKHR(instance(), m_surface, nullptr);
+        return false;
+    }
+    uint32_t imageCount = 0;
+    vkGetSwapchainImagesKHR(device(), m_swapchain, &imageCount, nullptr);
+    std::vector<VkImage> swapchainImages;
+    swapchainImages.resize(imageCount);
+    vkGetSwapchainImagesKHR(device(), m_swapchain, &imageCount, swapchainImages.data());
+    return true;
 }
 
 void VkRenderFramework::DestroySwapchain() {

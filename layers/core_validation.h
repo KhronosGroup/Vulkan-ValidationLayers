@@ -331,6 +331,7 @@ class ValidationStateTracker : public ValidationObject {
     EVENT_STATE* GetEventState(VkEvent event);
     QUEUE_STATE* GetQueueState(VkQueue queue);
     BINDABLE* GetObjectMemBinding(const VulkanTypedHandle& typed_handle);
+    void InvalidateCommandBuffers(std::unordered_set<CMD_BUFFER_STATE*> const& cb_nodes, const VulkanTypedHandle& obj);
 
     // Used for instance versions of this object
     unordered_map<VkPhysicalDevice, PHYSICAL_DEVICE_STATE> physical_device_map;
@@ -522,8 +523,8 @@ class CoreChecks : public ValidationStateTracker {
                                const std::vector<DAGNode>& subpass_to_node, bool& skip);
     bool CheckPreserved(const VkRenderPassCreateInfo2KHR* pCreateInfo, const int index, const uint32_t attachment,
                         const std::vector<DAGNode>& subpass_to_node, int depth, bool& skip);
-    bool ValidateBindImageMemory(VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset, const char* api_name);
-    void UpdateBindImageMemoryState(VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset);
+    bool ValidateBindImageMemory(const VkBindImageMemoryInfo& bindInfo, const char* api_name);
+    void UpdateBindImageMemoryState(const VkBindImageMemoryInfo& bindInfo);
     void RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                             void* pProperties);
     bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
@@ -609,7 +610,6 @@ class CoreChecks : public ValidationStateTracker {
     void AddCommandBufferBindingBufferView(CMD_BUFFER_STATE*, BUFFER_VIEW_STATE*);
     bool ValidateObjectNotInUse(BASE_NODE* obj_node, const VulkanTypedHandle& obj_struct, const char* caller_name,
                                 const char* error_code);
-    void InvalidateCommandBuffers(std::unordered_set<CMD_BUFFER_STATE*> const& cb_nodes, const VulkanTypedHandle& obj);
     void RemoveImageMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
     void RemoveBufferMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
     void ClearMemoryObjectBindings(const VulkanTypedHandle& typed_handle);
@@ -690,8 +690,31 @@ class CoreChecks : public ValidationStateTracker {
                                                const VkValidationCacheEXT* pSrcCaches);
     VkResult CoreLayerGetValidationCacheDataEXT(VkDevice device, VkValidationCacheEXT validationCache, size_t* pDataSize,
                                                 void* pData);
-
+    // For given bindings validate state at time of draw is correct, returning false on error and writing error details into string*
+    bool ValidateDrawState(const cvdescriptorset::DescriptorSet* descriptor_set, const std::map<uint32_t, descriptor_req>& bindings,
+                           const std::vector<uint32_t>& dynamic_offsets, CMD_BUFFER_STATE* cb_node, const char* caller,
+                           std::string* error);
+    // Validate contents of a CopyUpdate
+    using DescriptorSet = cvdescriptorset::DescriptorSet;
+    bool ValidateCopyUpdate(const VkCopyDescriptorSet* update, const DescriptorSet* dst_set, const DescriptorSet* src_set,
+                            const char* func_name, std::string* error_code, std::string* error_msg);
+    bool VerifyCopyUpdateContents(const VkCopyDescriptorSet* update, const DescriptorSet* src_set, VkDescriptorType type,
+                                  uint32_t index, const char* func_name, std::string* error_code, std::string* error_msg);
+    // Validate contents of a WriteUpdate
+    bool ValidateWriteUpdate(const DescriptorSet* descriptor_set, const VkWriteDescriptorSet* update, const char* func_name,
+                             std::string* error_code, std::string* error_msg);
+    bool VerifyWriteUpdateContents(const DescriptorSet* dest_set, const VkWriteDescriptorSet* update, const uint32_t index,
+                                   const char* func_name, std::string* error_code, std::string* error_msg);
+    // Shared helper functions - These are useful because the shared sampler image descriptor type
+    //  performs common functions with both sampler and image descriptors so they can share their common functions
+    bool ValidateImageUpdate(VkImageView, VkImageLayout, VkDescriptorType, const char* func_name, std::string*, std::string*);
+    // Validate contents of a push descriptor update
+    bool ValidatePushDescriptorsUpdate(const DescriptorSet* push_set, uint32_t write_count, const VkWriteDescriptorSet* p_wds,
+                                       const char* func_name);
     // Descriptor Set Validation Functions
+    bool ValidateSampler(VkSampler) const;
+    bool ValidateBufferUpdate(VkDescriptorBufferInfo const* buffer_info, VkDescriptorType type, const char* func_name,
+                              std::string* error_code, std::string* error_msg);
     bool ValidateUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE* template_state,
                                                      const void* pData);
     void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE* template_state,
@@ -981,9 +1004,6 @@ class CoreChecks : public ValidationStateTracker {
                                                const VkAttachmentDescription2KHR& attachment_description);
 
     bool ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice device, const VkRenderPassCreateInfo2KHR* pCreateInfo);
-
-    bool ValidateMapImageLayouts(VkDevice device, DEVICE_MEMORY_STATE const* mem_info, VkDeviceSize offset,
-                                 VkDeviceSize end_offset);
 
     bool ValidateImageUsageFlags(IMAGE_STATE const* image_state, VkFlags desired, bool strict, const char* msgCode,
                                  char const* func_name, char const* usage_string);

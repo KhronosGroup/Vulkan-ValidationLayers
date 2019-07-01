@@ -35,6 +35,7 @@
 #include <vector>
 
 class CoreChecks;
+class ValidationStateTracker;
 
 // Descriptor Data structures
 namespace cvdescriptorset {
@@ -369,11 +370,7 @@ class Descriptor {
     bool updated;  // Has descriptor been updated?
     DescriptorClass descriptor_class;
 };
-// Shared helper functions - These are useful because the shared sampler image descriptor type
-//  performs common functions with both sampler and image descriptors so they can share their common functions
-bool ValidateSampler(const VkSampler, CoreChecks *);
-bool ValidateImageUpdate(VkImageView, VkImageLayout, VkDescriptorType, CoreChecks *, const char *func_name, std::string *,
-                         std::string *);
+
 // Return true if this layout is compatible with passed in layout from a pipelineLayout,
 //   else return false and update error_msg with description of incompatibility
 bool VerifySetLayoutCompatibility(DescriptorSetLayout const *lh_ds_layout, DescriptorSetLayout const *rh_ds_layout,
@@ -508,31 +505,9 @@ void PerformUpdateDescriptorSets(CoreChecks *, uint32_t, const VkWriteDescriptor
 // updated, verify that for any binding boundaries crossed, the update is consistent
 bool VerifyUpdateConsistency(DescriptorSetLayout::ConstBindingIterator current_binding, uint32_t offset, uint32_t update_count,
                              const char *type, const VkDescriptorSet set, std::string *error_msg);
-// Validate contents of a WriteUpdate
-bool ValidateWriteUpdate(const DescriptorSet *descriptor_set, const debug_report_data *report_data,
-                         const VkWriteDescriptorSet *update, const char *func_name, std::string *error_code,
-                         std::string *error_msg);
-bool VerifyWriteUpdateContents(const DescriptorSet *dest_set, const VkWriteDescriptorSet *update, const uint32_t index,
-                               const char *func_name, std::string *error_code, std::string *error_msg);
-// For given bindings validate state at time of draw is correct, returning false on error and writing error details into string*
-bool ValidateDrawState(const DescriptorSet *descriptor_set, const std::map<uint32_t, descriptor_req> &bindings,
-                       const std::vector<uint32_t> &dynamic_offsets, CMD_BUFFER_STATE *cb_node, const char *caller,
-                       std::string *error);
-// Validate contents of a CopyUpdate
-bool ValidateCopyUpdate(const debug_report_data *report_data, const VkCopyDescriptorSet *update, const DescriptorSet *dst_set,
-                        const DescriptorSet *src_set, const char *func_name, std::string *error_code, std::string *error_msg);
-// Validate contents of a push descriptor update
-bool ValidatePushDescriptorsUpdate(const DescriptorSet *push_set, const debug_report_data *report_data, uint32_t write_count,
-                                   const VkWriteDescriptorSet *p_wds, const char *func_name);
 
 // Validate buffer descriptor update info
 bool ValidateBufferUsage(BUFFER_STATE const *buffer_node, VkDescriptorType type, std::string *error_code, std::string *error_msg);
-bool ValidateBufferUpdate(CoreChecks *device_data, VkDescriptorBufferInfo const *buffer_info, VkDescriptorType type,
-                          const char *func_name, std::string *error_code, std::string *error_msg);
-
-bool VerifyCopyUpdateContents(CoreChecks *device_data, const VkCopyDescriptorSet *update, const DescriptorSet *src_set,
-                              VkDescriptorType type, uint32_t index, const char *func_name, std::string *error_code,
-                              std::string *error_msg);
 
 // Helper class to encapsulate the descriptor update template decoding logic
 struct DecodedTemplateUpdate {
@@ -562,8 +537,9 @@ struct DecodedTemplateUpdate {
  */
 class DescriptorSet : public BASE_NODE {
    public:
+    using StateTracker = ValidationStateTracker;
     DescriptorSet(const VkDescriptorSet, const VkDescriptorPool, const std::shared_ptr<DescriptorSetLayout const> &,
-                  uint32_t variable_count, CoreChecks *);
+                  uint32_t variable_count, StateTracker *);
     ~DescriptorSet();
     // A number of common Get* functions that return data based on layout from which this set was created
     uint32_t GetTotalDescriptorCount() const { return p_layout_->GetTotalDescriptorCount(); };
@@ -646,9 +622,6 @@ class DescriptorSet : public BASE_NODE {
     DESCRIPTOR_POOL_STATE *GetPoolState() const { return pool_state_; }
     const Descriptor *GetDescriptorFromGlobalIndex(const uint32_t index) const { return descriptors_[index].get(); }
 
-    // TODO: Clean up the const cleaness here.  Getting  non-const CoreChecks from a const DescriptorSet is probably not okay.
-    CoreChecks *GetDeviceData() const { return device_data_; }
-
    private:
     // Private helper to set all bound cmd buffers to INVALID state
     void InvalidateBoundCmdBuffers();
@@ -657,7 +630,7 @@ class DescriptorSet : public BASE_NODE {
     DESCRIPTOR_POOL_STATE *pool_state_;
     const std::shared_ptr<DescriptorSetLayout const> p_layout_;
     std::vector<std::unique_ptr<Descriptor>> descriptors_;
-    CoreChecks *device_data_;
+    StateTracker *state_data_;
     uint32_t variable_count_;
 
     // Cached binding and validation support:

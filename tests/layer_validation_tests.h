@@ -300,6 +300,8 @@ class VkLayerTest : public VkRenderFramework {
 
     void Init(VkPhysicalDeviceFeatures *features = nullptr, VkPhysicalDeviceFeatures2 *features2 = nullptr,
               const VkCommandPoolCreateFlags flags = 0, void *instance_pnext = nullptr);
+    bool AddSurfaceInstanceExtension();
+    bool AddSwapchainDeviceExtension();
     ErrorMonitor *Monitor();
     VkCommandBufferObj *CommandBuffer();
 

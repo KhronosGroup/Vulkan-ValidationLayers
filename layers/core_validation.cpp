@@ -421,7 +421,16 @@ bool CoreChecks::VerifyBoundMemoryIsValid(VkDeviceMemory mem, const VulkanTypedH
 // Check to see if memory was ever bound to this image
 bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, const char *api_name, const char *error_code) {
     bool result = false;
-    if (0 == (static_cast<uint32_t>(image_state->createInfo.flags) & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
+    if (image_state->create_from_swapchain != VK_NULL_HANDLE) {
+        if (image_state->bind_swapchain == VK_NULL_HANDLE) {
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                    HandleToUint64(image_state->image), error_code,
+                    "%s: %s is created by %s, and the image should be bound by calling vkBindImageMemory2(), and the pNext chain "
+                    "includes VkBindImageMemorySwapchainInfoKHR.",
+                    api_name, report_data->FormatHandle(image_state->image).c_str(),
+                    report_data->FormatHandle(image_state->create_from_swapchain).c_str());
+        }
+    } else if (0 == (static_cast<uint32_t>(image_state->createInfo.flags) & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
         result = VerifyBoundMemoryIsValid(image_state->binding.mem, VulkanTypedHandle(image_state->image, kVulkanObjectTypeImage),
                                           api_name, error_code);
     }
@@ -2403,7 +2412,7 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(gpu, &numCooperativeMatrixProperties,
                                                                                core_checks->cooperative_matrix_properties.data());
     }
-    if (core_checks->phys_dev_props.apiVersion >= VK_API_VERSION_1_1) {
+    if (core_checks->api_version >= VK_API_VERSION_1_1) {
         // Get the needed subgroup limits
         auto subgroup_prop = lvl_init_struct<VkPhysicalDeviceSubgroupProperties>();
         auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&subgroup_prop);
@@ -4673,13 +4682,10 @@ void CoreChecks::PostCallRecordResetFences(VkDevice device, uint32_t fenceCount,
 }
 
 // For given cb_nodes, invalidate them and track object causing invalidation
-void CoreChecks::InvalidateCommandBuffers(std::unordered_set<CMD_BUFFER_STATE *> const &cb_nodes, const VulkanTypedHandle &obj) {
+void ValidationStateTracker::InvalidateCommandBuffers(std::unordered_set<CMD_BUFFER_STATE *> const &cb_nodes,
+                                                      const VulkanTypedHandle &obj) {
     for (auto cb_node : cb_nodes) {
         if (cb_node->state == CB_RECORDING) {
-            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                    HandleToUint64(cb_node->commandBuffer), kVUID_Core_DrawState_InvalidCommandBuffer,
-                    "Invalidating a command buffer that's currently being recorded: %s.",
-                    report_data->FormatHandle(cb_node->commandBuffer).c_str());
             cb_node->state = CB_INVALID_INCOMPLETE;
         } else if (cb_node->state == CB_RECORDED) {
             cb_node->state = CB_INVALID_COMPLETE;
@@ -6801,8 +6807,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
                     // TODO move the validation (like this) that doesn't need descriptor set state to the DSL object so we
                     // don't have to do this.
                     cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, VK_NULL_HANDLE, dsl, 0, this);
-                    skip |=
-                        ValidatePushDescriptorsUpdate(&proxy_ds, report_data, descriptorWriteCount, pDescriptorWrites, func_name);
+                    skip |= ValidatePushDescriptorsUpdate(&proxy_ds, descriptorWriteCount, pDescriptorWrites, func_name);
                 }
             }
         } else {
@@ -10251,8 +10256,6 @@ bool CoreChecks::PreCallValidateMapMemory(VkDevice device, VkDeviceMemory mem, V
     bool skip = false;
     DEVICE_MEMORY_STATE *mem_info = GetDevMemState(mem);
     if (mem_info) {
-        auto end_offset = (VK_WHOLE_SIZE == size) ? mem_info->alloc_info.allocationSize - 1 : offset + size - 1;
-        skip |= ValidateMapImageLayouts(device, mem_info, offset, end_offset);
         if ((phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].propertyFlags &
              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0) {
             skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
@@ -10441,13 +10444,13 @@ bool CoreChecks::PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDev
     return skip;
 }
 
-bool CoreChecks::ValidateBindImageMemory(VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset, const char *api_name) {
+bool CoreChecks::ValidateBindImageMemory(const VkBindImageMemoryInfo &bindInfo, const char *api_name) {
     bool skip = false;
-    IMAGE_STATE *image_state = GetImageState(image);
+    IMAGE_STATE *image_state = GetImageState(bindInfo.image);
     if (image_state) {
         // Track objects tied to memory
-        uint64_t image_handle = HandleToUint64(image);
-        skip = ValidateSetMemBinding(mem, VulkanTypedHandle(image, kVulkanObjectTypeImage), api_name);
+        uint64_t image_handle = HandleToUint64(bindInfo.image);
+        skip = ValidateSetMemBinding(bindInfo.memory, VulkanTypedHandle(bindInfo.image, kVulkanObjectTypeImage), api_name);
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
         if (image_state->external_format_android) {
             if (image_state->memory_requirements_checked) {
@@ -10455,7 +10458,7 @@ bool CoreChecks::ValidateBindImageMemory(VkImage image, VkDeviceMemory mem, VkDe
                                 kVUID_Core_DrawState_InvalidImage,
                                 "%s: Must not call vkGetImageMemoryRequirements on %s that will be bound to an external "
                                 "Android hardware buffer.",
-                                api_name, report_data->FormatHandle(image).c_str());
+                                api_name, report_data->FormatHandle(bindInfo.image).c_str());
             }
             return skip;
         }
@@ -10467,55 +10470,84 @@ bool CoreChecks::ValidateBindImageMemory(VkImage image, VkDeviceMemory mem, VkDe
             skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
                             kVUID_Core_DrawState_InvalidImage,
                             "%s: Binding memory to %s but vkGetImageMemoryRequirements() has not been called on that image.",
-                            api_name, report_data->FormatHandle(image).c_str());
+                            api_name, report_data->FormatHandle(bindInfo.image).c_str());
             // Make the call for them so we can verify the state
-            DispatchGetImageMemoryRequirements(device, image, &image_state->requirements);
+            DispatchGetImageMemoryRequirements(device, bindInfo.image, &image_state->requirements);
         }
 
         // Validate bound memory range information
-        auto mem_info = GetDevMemState(mem);
+        auto mem_info = GetDevMemState(bindInfo.memory);
         if (mem_info) {
-            skip |= ValidateInsertImageMemoryRange(image, mem_info, memoryOffset, image_state->requirements,
+            skip |= ValidateInsertImageMemoryRange(bindInfo.image, mem_info, bindInfo.memoryOffset, image_state->requirements,
                                                    image_state->createInfo.tiling == VK_IMAGE_TILING_LINEAR, api_name);
             skip |= ValidateMemoryTypes(mem_info, image_state->requirements.memoryTypeBits, api_name,
                                         "VUID-vkBindImageMemory-memory-01047");
         }
 
         // Validate memory requirements alignment
-        if (SafeModulo(memoryOffset, image_state->requirements.alignment) != 0) {
+        if (SafeModulo(bindInfo.memoryOffset, image_state->requirements.alignment) != 0) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
                             "VUID-vkBindImageMemory-memoryOffset-01048",
                             "%s: memoryOffset is 0x%" PRIxLEAST64
                             " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
                             ", returned from a call to vkGetImageMemoryRequirements with image.",
-                            api_name, memoryOffset, image_state->requirements.alignment);
+                            api_name, bindInfo.memoryOffset, image_state->requirements.alignment);
         }
 
         if (mem_info) {
             // Validate memory requirements size
-            if (image_state->requirements.size > mem_info->alloc_info.allocationSize - memoryOffset) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
-                                "VUID-vkBindImageMemory-size-01049",
-                                "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
-                                " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
-                                ", returned from a call to vkGetImageMemoryRequirements with image.",
-                                api_name, mem_info->alloc_info.allocationSize - memoryOffset, image_state->requirements.size);
+            if (image_state->requirements.size > mem_info->alloc_info.allocationSize - bindInfo.memoryOffset) {
+                skip |=
+                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
+                            "VUID-vkBindImageMemory-size-01049",
+                            "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
+                            " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
+                            ", returned from a call to vkGetImageMemoryRequirements with image.",
+                            api_name, mem_info->alloc_info.allocationSize - bindInfo.memoryOffset, image_state->requirements.size);
             }
 
             // Validate dedicated allocation
-            if (mem_info->is_dedicated && ((mem_info->dedicated_image != image) || (memoryOffset != 0))) {
+            if (mem_info->is_dedicated && ((mem_info->dedicated_image != bindInfo.image) || (bindInfo.memoryOffset != 0))) {
                 // TODO: Add vkBindImageMemory2KHR error message when added to spec.
                 auto validation_error = kVUIDUndefined;
                 if (strcmp(api_name, "vkBindImageMemory()") == 0) {
                     validation_error = "VUID-vkBindImageMemory-memory-01509";
                 }
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, image_handle,
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
                                 validation_error,
-                                "%s: for dedicated memory allocation %s, VkMemoryDedicatedAllocateInfoKHR::%s must be equal "
+                                "%s: for dedicated memory allocation %s, VkMemoryDedicatedAllocateInfoKHR:: %s must be equal "
                                 "to %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
-                                api_name, report_data->FormatHandle(mem).c_str(),
+                                api_name, report_data->FormatHandle(bindInfo.memory).c_str(),
                                 report_data->FormatHandle(mem_info->dedicated_image).c_str(),
-                                report_data->FormatHandle(image).c_str(), memoryOffset);
+                                report_data->FormatHandle(bindInfo.image).c_str(), bindInfo.memoryOffset);
+            }
+        }
+
+        const auto swapchain_info = lvl_find_in_chain<VkBindImageMemorySwapchainInfoKHR>(bindInfo.pNext);
+        if (swapchain_info) {
+            if (bindInfo.memory != VK_NULL_HANDLE) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
+                                "VUID-VkBindImageMemoryInfo-pNext-01631", "%s: %s is not VK_NULL_HANDLE.", api_name,
+                                report_data->FormatHandle(bindInfo.memory).c_str());
+            }
+            const auto swapchain_state = GetSwapchainState(swapchain_info->swapchain);
+            if (swapchain_state && swapchain_state->images.size() <= swapchain_info->imageIndex) {
+                skip |=
+                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
+                            "VUID-VkBindImageMemorySwapchainInfoKHR-imageIndex-01644",
+                            "%s: imageIndex (%i) is out of bounds of %s images (size: %i)", api_name, swapchain_info->imageIndex,
+                            report_data->FormatHandle(swapchain_info->swapchain).c_str(), (int)swapchain_state->images.size());
+            }
+        } else {
+            if (image_state->create_from_swapchain) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
+                                "VUID-VkBindImageMemoryInfo-image-01630",
+                                "%s: pNext of VkBindImageMemoryInfo doesn't include VkBindImageMemorySwapchainInfoKHR.", api_name);
+            }
+            if (!mem_info) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
+                                "VUID-VkBindImageMemoryInfo-pNext-01632", "%s: %s is invalid.", api_name,
+                                report_data->FormatHandle(bindInfo.memory).c_str());
             }
         }
     }
@@ -10523,28 +10555,45 @@ bool CoreChecks::ValidateBindImageMemory(VkImage image, VkDeviceMemory mem, VkDe
 }
 
 bool CoreChecks::PreCallValidateBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset) {
-    return ValidateBindImageMemory(image, mem, memoryOffset, "vkBindImageMemory()");
+    VkBindImageMemoryInfo bindInfo = {};
+    bindInfo.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
+    bindInfo.image = image;
+    bindInfo.memory = mem;
+    bindInfo.memoryOffset = memoryOffset;
+    return ValidateBindImageMemory(bindInfo, "vkBindImageMemory()");
 }
 
-void CoreChecks::UpdateBindImageMemoryState(VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset) {
-    IMAGE_STATE *image_state = GetImageState(image);
+void CoreChecks::UpdateBindImageMemoryState(const VkBindImageMemoryInfo &bindInfo) {
+    IMAGE_STATE *image_state = GetImageState(bindInfo.image);
     if (image_state) {
-        // Track bound memory range information
-        auto mem_info = GetDevMemState(mem);
-        if (mem_info) {
-            InsertImageMemoryRange(image, mem_info, memoryOffset, image_state->requirements,
-                                   image_state->createInfo.tiling == VK_IMAGE_TILING_LINEAR);
-        }
+        const auto swapchain_info = lvl_find_in_chain<VkBindImageMemorySwapchainInfoKHR>(bindInfo.pNext);
+        if (swapchain_info) {
+            image_state->bind_swapchain = swapchain_info->swapchain;
+            image_state->bind_swapchain_imageIndex = swapchain_info->imageIndex;
+        } else {
+            // Track bound memory range information
+            auto mem_info = GetDevMemState(bindInfo.memory);
+            if (mem_info) {
+                InsertImageMemoryRange(bindInfo.image, mem_info, bindInfo.memoryOffset, image_state->requirements,
+                                       image_state->createInfo.tiling == VK_IMAGE_TILING_LINEAR);
+            }
 
-        // Track objects tied to memory
-        SetMemBinding(mem, image_state, memoryOffset, VulkanTypedHandle(image, kVulkanObjectTypeImage));
+            // Track objects tied to memory
+            SetMemBinding(bindInfo.memory, image_state, bindInfo.memoryOffset,
+                          VulkanTypedHandle(bindInfo.image, kVulkanObjectTypeImage));
+        }
     }
 }
 
 void CoreChecks::PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset,
                                                VkResult result) {
     if (VK_SUCCESS != result) return;
-    UpdateBindImageMemoryState(image, mem, memoryOffset);
+    VkBindImageMemoryInfo bindInfo = {};
+    bindInfo.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
+    bindInfo.image = image;
+    bindInfo.memory = mem;
+    bindInfo.memoryOffset = memoryOffset;
+    UpdateBindImageMemoryState(bindInfo);
 }
 
 bool CoreChecks::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoCount,
@@ -10553,7 +10602,7 @@ bool CoreChecks::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindI
     char api_name[128];
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         sprintf(api_name, "vkBindImageMemory2() pBindInfos[%u]", i);
-        skip |= ValidateBindImageMemory(pBindInfos[i].image, pBindInfos[i].memory, pBindInfos[i].memoryOffset, api_name);
+        skip |= ValidateBindImageMemory(pBindInfos[i], api_name);
     }
     return skip;
 }
@@ -10564,7 +10613,7 @@ bool CoreChecks::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bi
     char api_name[128];
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         sprintf(api_name, "vkBindImageMemory2KHR() pBindInfos[%u]", i);
-        skip |= ValidateBindImageMemory(pBindInfos[i].image, pBindInfos[i].memory, pBindInfos[i].memoryOffset, api_name);
+        skip |= ValidateBindImageMemory(pBindInfos[i], api_name);
     }
     return skip;
 }
@@ -10573,7 +10622,7 @@ void CoreChecks::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindIn
                                                 VkResult result) {
     if (VK_SUCCESS != result) return;
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        UpdateBindImageMemoryState(pBindInfos[i].image, pBindInfos[i].memory, pBindInfos[i].memoryOffset);
+        UpdateBindImageMemoryState(pBindInfos[i]);
     }
 }
 
@@ -10581,7 +10630,7 @@ void CoreChecks::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bin
                                                    const VkBindImageMemoryInfoKHR *pBindInfos, VkResult result) {
     if (VK_SUCCESS != result) return;
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        UpdateBindImageMemoryState(pBindInfos[i].image, pBindInfos[i].memory, pBindInfos[i].memoryOffset);
+        UpdateBindImageMemoryState(pBindInfos[i]);
     }
 }
 
@@ -11061,147 +11110,159 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
 
     auto physical_device_state = GetPhysicalDeviceState();
     if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState == UNCALLED) {
-        if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+        if (log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
                     HandleToUint64(physical_device), kVUID_Core_DrawState_SwapchainCreateBeforeQuery,
                     "%s: surface capabilities not retrieved for this physical device", func_name))
             return true;
-    } else {  // have valid capabilities
-        auto &capabilities = physical_device_state->surfaceCapabilities;
-        // Validate pCreateInfo->minImageCount against VkSurfaceCapabilitiesKHR::{min|max}ImageCount:
-        if (pCreateInfo->minImageCount < capabilities.minImageCount) {
-            if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        "VUID-VkSwapchainCreateInfoKHR-minImageCount-01271",
-                        "%s called with minImageCount = %d, which is outside the bounds returned by "
-                        "vkGetPhysicalDeviceSurfaceCapabilitiesKHR() (i.e. minImageCount = %d, maxImageCount = %d).",
-                        func_name, pCreateInfo->minImageCount, capabilities.minImageCount, capabilities.maxImageCount))
-                return true;
-        }
+    }
 
-        if ((capabilities.maxImageCount > 0) && (pCreateInfo->minImageCount > capabilities.maxImageCount)) {
-            if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        "VUID-VkSwapchainCreateInfoKHR-minImageCount-01272",
-                        "%s called with minImageCount = %d, which is outside the bounds returned by "
-                        "vkGetPhysicalDeviceSurfaceCapabilitiesKHR() (i.e. minImageCount = %d, maxImageCount = %d).",
-                        func_name, pCreateInfo->minImageCount, capabilities.minImageCount, capabilities.maxImageCount))
-                return true;
-        }
+    VkSurfaceCapabilitiesKHR capabilities{};
+    DispatchGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_state->phys_device, pCreateInfo->surface, &capabilities);
+    // Validate pCreateInfo->minImageCount against VkSurfaceCapabilitiesKHR::{min|max}ImageCount:
+    if (pCreateInfo->minImageCount < capabilities.minImageCount) {
+        if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                    "VUID-VkSwapchainCreateInfoKHR-minImageCount-01271",
+                    "%s called with minImageCount = %d, which is outside the bounds returned by "
+                    "vkGetPhysicalDeviceSurfaceCapabilitiesKHR() (i.e. minImageCount = %d, maxImageCount = %d).",
+                    func_name, pCreateInfo->minImageCount, capabilities.minImageCount, capabilities.maxImageCount))
+            return true;
+    }
 
-        // Validate pCreateInfo->imageExtent against VkSurfaceCapabilitiesKHR::{current|min|max}ImageExtent:
-        if ((pCreateInfo->imageExtent.width < capabilities.minImageExtent.width) ||
-            (pCreateInfo->imageExtent.width > capabilities.maxImageExtent.width) ||
-            (pCreateInfo->imageExtent.height < capabilities.minImageExtent.height) ||
-            (pCreateInfo->imageExtent.height > capabilities.maxImageExtent.height)) {
-            if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        "VUID-VkSwapchainCreateInfoKHR-imageExtent-01274",
-                        "%s called with imageExtent = (%d,%d), which is outside the bounds returned by "
-                        "vkGetPhysicalDeviceSurfaceCapabilitiesKHR(): currentExtent = (%d,%d), minImageExtent = (%d,%d), "
-                        "maxImageExtent = (%d,%d).",
-                        func_name, pCreateInfo->imageExtent.width, pCreateInfo->imageExtent.height,
-                        capabilities.currentExtent.width, capabilities.currentExtent.height, capabilities.minImageExtent.width,
-                        capabilities.minImageExtent.height, capabilities.maxImageExtent.width, capabilities.maxImageExtent.height))
-                return true;
-        }
-        // pCreateInfo->preTransform should have exactly one bit set, and that bit must also be set in
-        // VkSurfaceCapabilitiesKHR::supportedTransforms.
-        if (!pCreateInfo->preTransform || (pCreateInfo->preTransform & (pCreateInfo->preTransform - 1)) ||
-            !(pCreateInfo->preTransform & capabilities.supportedTransforms)) {
-            // This is an error situation; one for which we'd like to give the developer a helpful, multi-line error message.  Build
-            // it up a little at a time, and then log it:
-            std::string errorString = "";
-            char str[1024];
-            // Here's the first part of the message:
-            sprintf(str, "%s called with a non-supported pCreateInfo->preTransform (i.e. %s).  Supported values are:\n", func_name,
-                    string_VkSurfaceTransformFlagBitsKHR(pCreateInfo->preTransform));
-            errorString += str;
-            for (int i = 0; i < 32; i++) {
-                // Build up the rest of the message:
-                if ((1 << i) & capabilities.supportedTransforms) {
-                    const char *newStr = string_VkSurfaceTransformFlagBitsKHR((VkSurfaceTransformFlagBitsKHR)(1 << i));
-                    sprintf(str, "    %s\n", newStr);
-                    errorString += str;
-                }
+    if ((capabilities.maxImageCount > 0) && (pCreateInfo->minImageCount > capabilities.maxImageCount)) {
+        if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                    "VUID-VkSwapchainCreateInfoKHR-minImageCount-01272",
+                    "%s called with minImageCount = %d, which is outside the bounds returned by "
+                    "vkGetPhysicalDeviceSurfaceCapabilitiesKHR() (i.e. minImageCount = %d, maxImageCount = %d).",
+                    func_name, pCreateInfo->minImageCount, capabilities.minImageCount, capabilities.maxImageCount))
+            return true;
+    }
+
+    // Validate pCreateInfo->imageExtent against VkSurfaceCapabilitiesKHR::{current|min|max}ImageExtent:
+    if ((pCreateInfo->imageExtent.width < capabilities.minImageExtent.width) ||
+        (pCreateInfo->imageExtent.width > capabilities.maxImageExtent.width) ||
+        (pCreateInfo->imageExtent.height < capabilities.minImageExtent.height) ||
+        (pCreateInfo->imageExtent.height > capabilities.maxImageExtent.height)) {
+        if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                    "VUID-VkSwapchainCreateInfoKHR-imageExtent-01274",
+                    "%s called with imageExtent = (%d,%d), which is outside the bounds returned by "
+                    "vkGetPhysicalDeviceSurfaceCapabilitiesKHR(): currentExtent = (%d,%d), minImageExtent = (%d,%d), "
+                    "maxImageExtent = (%d,%d).",
+                    func_name, pCreateInfo->imageExtent.width, pCreateInfo->imageExtent.height, capabilities.currentExtent.width,
+                    capabilities.currentExtent.height, capabilities.minImageExtent.width, capabilities.minImageExtent.height,
+                    capabilities.maxImageExtent.width, capabilities.maxImageExtent.height))
+            return true;
+    }
+    // pCreateInfo->preTransform should have exactly one bit set, and that bit must also be set in
+    // VkSurfaceCapabilitiesKHR::supportedTransforms.
+    if (!pCreateInfo->preTransform || (pCreateInfo->preTransform & (pCreateInfo->preTransform - 1)) ||
+        !(pCreateInfo->preTransform & capabilities.supportedTransforms)) {
+        // This is an error situation; one for which we'd like to give the developer a helpful, multi-line error message.  Build
+        // it up a little at a time, and then log it:
+        std::string errorString = "";
+        char str[1024];
+        // Here's the first part of the message:
+        sprintf(str, "%s called with a non-supported pCreateInfo->preTransform (i.e. %s).  Supported values are:\n", func_name,
+                string_VkSurfaceTransformFlagBitsKHR(pCreateInfo->preTransform));
+        errorString += str;
+        for (int i = 0; i < 32; i++) {
+            // Build up the rest of the message:
+            if ((1 << i) & capabilities.supportedTransforms) {
+                const char *newStr = string_VkSurfaceTransformFlagBitsKHR((VkSurfaceTransformFlagBitsKHR)(1 << i));
+                sprintf(str, "    %s\n", newStr);
+                errorString += str;
             }
-            // Log the message that we've built up:
-            if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        "VUID-VkSwapchainCreateInfoKHR-preTransform-01279", "%s.", errorString.c_str()))
-                return true;
         }
+        // Log the message that we've built up:
+        if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                    "VUID-VkSwapchainCreateInfoKHR-preTransform-01279", "%s.", errorString.c_str()))
+            return true;
+    }
 
-        // pCreateInfo->compositeAlpha should have exactly one bit set, and that bit must also be set in
-        // VkSurfaceCapabilitiesKHR::supportedCompositeAlpha
-        if (!pCreateInfo->compositeAlpha || (pCreateInfo->compositeAlpha & (pCreateInfo->compositeAlpha - 1)) ||
-            !((pCreateInfo->compositeAlpha) & capabilities.supportedCompositeAlpha)) {
-            // This is an error situation; one for which we'd like to give the developer a helpful, multi-line error message.  Build
-            // it up a little at a time, and then log it:
-            std::string errorString = "";
-            char str[1024];
-            // Here's the first part of the message:
-            sprintf(str, "%s called with a non-supported pCreateInfo->compositeAlpha (i.e. %s).  Supported values are:\n",
-                    func_name, string_VkCompositeAlphaFlagBitsKHR(pCreateInfo->compositeAlpha));
-            errorString += str;
-            for (int i = 0; i < 32; i++) {
-                // Build up the rest of the message:
-                if ((1 << i) & capabilities.supportedCompositeAlpha) {
-                    const char *newStr = string_VkCompositeAlphaFlagBitsKHR((VkCompositeAlphaFlagBitsKHR)(1 << i));
-                    sprintf(str, "    %s\n", newStr);
-                    errorString += str;
-                }
+    // pCreateInfo->compositeAlpha should have exactly one bit set, and that bit must also be set in
+    // VkSurfaceCapabilitiesKHR::supportedCompositeAlpha
+    if (!pCreateInfo->compositeAlpha || (pCreateInfo->compositeAlpha & (pCreateInfo->compositeAlpha - 1)) ||
+        !((pCreateInfo->compositeAlpha) & capabilities.supportedCompositeAlpha)) {
+        // This is an error situation; one for which we'd like to give the developer a helpful, multi-line error message.  Build
+        // it up a little at a time, and then log it:
+        std::string errorString = "";
+        char str[1024];
+        // Here's the first part of the message:
+        sprintf(str, "%s called with a non-supported pCreateInfo->compositeAlpha (i.e. %s).  Supported values are:\n", func_name,
+                string_VkCompositeAlphaFlagBitsKHR(pCreateInfo->compositeAlpha));
+        errorString += str;
+        for (int i = 0; i < 32; i++) {
+            // Build up the rest of the message:
+            if ((1 << i) & capabilities.supportedCompositeAlpha) {
+                const char *newStr = string_VkCompositeAlphaFlagBitsKHR((VkCompositeAlphaFlagBitsKHR)(1 << i));
+                sprintf(str, "    %s\n", newStr);
+                errorString += str;
             }
-            // Log the message that we've built up:
-            if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        "VUID-VkSwapchainCreateInfoKHR-compositeAlpha-01280", "%s.", errorString.c_str()))
-                return true;
         }
-        // Validate pCreateInfo->imageArrayLayers against VkSurfaceCapabilitiesKHR::maxImageArrayLayers:
-        if (pCreateInfo->imageArrayLayers > capabilities.maxImageArrayLayers) {
-            if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        "VUID-VkSwapchainCreateInfoKHR-imageArrayLayers-01275",
-                        "%s called with a non-supported imageArrayLayers (i.e. %d).  Maximum value is %d.", func_name,
-                        pCreateInfo->imageArrayLayers, capabilities.maxImageArrayLayers))
-                return true;
-        }
-        // Validate pCreateInfo->imageUsage against VkSurfaceCapabilitiesKHR::supportedUsageFlags:
-        if (pCreateInfo->imageUsage != (pCreateInfo->imageUsage & capabilities.supportedUsageFlags)) {
-            if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        "VUID-VkSwapchainCreateInfoKHR-imageUsage-01276",
-                        "%s called with a non-supported pCreateInfo->imageUsage (i.e. 0x%08x).  Supported flag bits are 0x%08x.",
-                        func_name, pCreateInfo->imageUsage, capabilities.supportedUsageFlags))
-                return true;
-        }
+        // Log the message that we've built up:
+        if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                    "VUID-VkSwapchainCreateInfoKHR-compositeAlpha-01280", "%s.", errorString.c_str()))
+            return true;
+    }
+    // Validate pCreateInfo->imageArrayLayers against VkSurfaceCapabilitiesKHR::maxImageArrayLayers:
+    if (pCreateInfo->imageArrayLayers > capabilities.maxImageArrayLayers) {
+        if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                    "VUID-VkSwapchainCreateInfoKHR-imageArrayLayers-01275",
+                    "%s called with a non-supported imageArrayLayers (i.e. %d).  Maximum value is %d.", func_name,
+                    pCreateInfo->imageArrayLayers, capabilities.maxImageArrayLayers))
+            return true;
+    }
+    // Validate pCreateInfo->imageUsage against VkSurfaceCapabilitiesKHR::supportedUsageFlags:
+    if (pCreateInfo->imageUsage != (pCreateInfo->imageUsage & capabilities.supportedUsageFlags)) {
+        if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                    "VUID-VkSwapchainCreateInfoKHR-imageUsage-01276",
+                    "%s called with a non-supported pCreateInfo->imageUsage (i.e. 0x%08x).  Supported flag bits are 0x%08x.",
+                    func_name, pCreateInfo->imageUsage, capabilities.supportedUsageFlags))
+            return true;
+    }
 
-        if (device_extensions.vk_khr_surface_protected_capabilities &&
-            (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR)) {
-            VkPhysicalDeviceSurfaceInfo2KHR surfaceInfo = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR};
-            surfaceInfo.surface = pCreateInfo->surface;
-            VkSurfaceProtectedCapabilitiesKHR surfaceProtectedCapabilities = {VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR};
-            VkSurfaceCapabilities2KHR surfaceCapabilities = {VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR};
-            surfaceCapabilities.pNext = &surfaceProtectedCapabilities;
-            DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->phys_device, &surfaceInfo,
-                                                             &surfaceCapabilities);
+    if (device_extensions.vk_khr_surface_protected_capabilities && (pCreateInfo->flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR)) {
+        VkPhysicalDeviceSurfaceInfo2KHR surfaceInfo = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR};
+        surfaceInfo.surface = pCreateInfo->surface;
+        VkSurfaceProtectedCapabilitiesKHR surfaceProtectedCapabilities = {VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR};
+        VkSurfaceCapabilities2KHR surfaceCapabilities = {VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR};
+        surfaceCapabilities.pNext = &surfaceProtectedCapabilities;
+        DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->phys_device, &surfaceInfo, &surfaceCapabilities);
 
-            if (!surfaceProtectedCapabilities.supportsProtected) {
-                if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                            HandleToUint64(device), "VUID-VkSwapchainCreateInfoKHR-flags-03187",
-                            "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR but the surface "
-                            "capabilities does not have VkSurfaceProtectedCapabilitiesKHR.supportsProtected set to VK_TRUE.",
-                            func_name))
-                    return true;
-            }
+        if (!surfaceProtectedCapabilities.supportsProtected) {
+            if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        "VUID-VkSwapchainCreateInfoKHR-flags-03187",
+                        "%s: pCreateInfo->flags contains VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR but the surface "
+                        "capabilities does not have VkSurfaceProtectedCapabilitiesKHR.supportsProtected set to VK_TRUE.",
+                        func_name))
+                return true;
         }
     }
 
+    std::vector<VkSurfaceFormatKHR> surface_formats;
+    auto surface_formats_ref = &surface_formats;
+
     // Validate pCreateInfo values with the results of vkGetPhysicalDeviceSurfaceFormatsKHR():
     if (physical_device_state->vkGetPhysicalDeviceSurfaceFormatsKHRState != QUERY_DETAILS) {
-        if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+        if (log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                     kVUID_Core_DrawState_SwapchainCreateBeforeQuery,
-                    "%s called before getting format(s) from vkGetPhysicalDeviceSurfaceFormatsKHR().", func_name))
+                    "%s called before getting format(s) from vkGetPhysicalDeviceSurfaceFormatsKHR().", func_name)) {
             return true;
+        }
+        uint32_t surface_format_count = 0;
+        DispatchGetPhysicalDeviceSurfaceFormatsKHR(physical_device, pCreateInfo->surface, &surface_format_count, nullptr);
+        surface_formats.resize(surface_format_count);
+        DispatchGetPhysicalDeviceSurfaceFormatsKHR(physical_device, pCreateInfo->surface, &surface_format_count,
+                                                   &surface_formats[0]);
     } else {
+        surface_formats_ref = &physical_device_state->surface_formats;
+    }
+
+    {
         // Validate pCreateInfo->imageFormat against VkSurfaceFormatKHR::format:
         bool foundFormat = false;
         bool foundColorSpace = false;
         bool foundMatch = false;
-        for (auto const &format : physical_device_state->surface_formats) {
+        for (auto const &format : *surface_formats_ref) {
             if (pCreateInfo->imageFormat == format.format) {
                 // Validate pCreateInfo->imageColorSpace against VkSurfaceFormatKHR::colorSpace:
                 foundFormat = true;
@@ -11237,8 +11298,8 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     if (physical_device_state->vkGetPhysicalDeviceSurfacePresentModesKHRState != QUERY_DETAILS) {
         // FIFO is required to always be supported
         if (pCreateInfo->presentMode != VK_PRESENT_MODE_FIFO_KHR) {
-            if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        kVUID_Core_DrawState_SwapchainCreateBeforeQuery,
+            if (log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                        HandleToUint64(device), kVUID_Core_DrawState_SwapchainCreateBeforeQuery,
                         "%s called before getting present mode(s) from vkGetPhysicalDeviceSurfacePresentModesKHR().", func_name))
                 return true;
         }
@@ -12450,7 +12511,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
         cvdescriptorset::DecodedTemplateUpdate decoded_template(this, VK_NULL_HANDLE, template_state, pData,
                                                                 dsl->GetDescriptorSetLayout());
         // Validate the decoded update against the proxy_ds
-        skip |= ValidatePushDescriptorsUpdate(&proxy_ds, report_data, static_cast<uint32_t>(decoded_template.desc_writes.size()),
+        skip |= ValidatePushDescriptorsUpdate(&proxy_ds, static_cast<uint32_t>(decoded_template.desc_writes.size()),
                                               decoded_template.desc_writes.data(), func_name);
     }
 
@@ -12578,8 +12639,8 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
     const char *cmd_name = "vkCmdBeginQueryIndexedEXT()";
     bool skip = ValidateBeginQuery(
         cb_state, query_obj, flags, CMD_BEGINQUERYINDEXEDEXT, cmd_name, "VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-cmdpool",
-        "VUID-vkCmdBeginQueryIndexedEXT-queryType-02338", "VUID-vkCmdBeginQueryIndexedEXT-queryType-02333",
-        "VUID-vkCmdBeginQueryIndexedEXT-queryType-02331", "VUID-vkCmdBeginQueryIndexedEXT-query-02332");
+        "VUID-vkCmdBeginQueryIndexedEXT-queryType-02338", "VUID-vkCmdBeginQueryIndexedEXT-queryType-00803",
+        "VUID-vkCmdBeginQueryIndexedEXT-queryType-00800", "VUID-vkCmdBeginQueryIndexedEXT-query-00802");
 
     // Extension specific VU's
     const auto &query_pool_ci = GetQueryPoolState(query_obj.pool)->createInfo;

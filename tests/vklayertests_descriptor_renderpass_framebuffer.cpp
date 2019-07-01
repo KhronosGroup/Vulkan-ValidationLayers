@@ -3997,17 +3997,17 @@ TEST_F(VkLayerTest, DSUsageBitsErrors) {
 
     // These error messages align with VkDescriptorType struct
     std::string error_codes[] = {
-        "VUID-VkWriteDescriptorSet-descriptorType-00326",  // placeholder, no error for SAMPLER descriptor
-        "VUID-VkWriteDescriptorSet-descriptorType-00326",  // COMBINED_IMAGE_SAMPLER
-        "VUID-VkWriteDescriptorSet-descriptorType-00326",  // SAMPLED_IMAGE
-        "VUID-VkWriteDescriptorSet-descriptorType-00326",  // STORAGE_IMAGE
-        "VUID-VkWriteDescriptorSet-descriptorType-00334",  // UNIFORM_TEXEL_BUFFER
-        "VUID-VkWriteDescriptorSet-descriptorType-00335",  // STORAGE_TEXEL_BUFFER
-        "VUID-VkWriteDescriptorSet-descriptorType-00330",  // UNIFORM_BUFFER
-        "VUID-VkWriteDescriptorSet-descriptorType-00331",  // STORAGE_BUFFER
-        "VUID-VkWriteDescriptorSet-descriptorType-00330",  // UNIFORM_BUFFER_DYNAMIC
-        "VUID-VkWriteDescriptorSet-descriptorType-00331",  // STORAGE_BUFFER_DYNAMIC
-        "VUID-VkWriteDescriptorSet-descriptorType-00326"   // INPUT_ATTACHMENT
+        "UNASSIGNED-CoreValidation-DrawState-InvalidImageView",  // placeholder, no error for SAMPLER descriptor
+        "UNASSIGNED-CoreValidation-DrawState-InvalidImageView",  // COMBINED_IMAGE_SAMPLER
+        "UNASSIGNED-CoreValidation-DrawState-InvalidImageView",  // SAMPLED_IMAGE
+        "UNASSIGNED-CoreValidation-DrawState-InvalidImageView",  // STORAGE_IMAGE
+        "VUID-VkWriteDescriptorSet-descriptorType-00334",        // UNIFORM_TEXEL_BUFFER
+        "VUID-VkWriteDescriptorSet-descriptorType-00335",        // STORAGE_TEXEL_BUFFER
+        "VUID-VkWriteDescriptorSet-descriptorType-00330",        // UNIFORM_BUFFER
+        "VUID-VkWriteDescriptorSet-descriptorType-00331",        // STORAGE_BUFFER
+        "VUID-VkWriteDescriptorSet-descriptorType-00330",        // UNIFORM_BUFFER_DYNAMIC
+        "VUID-VkWriteDescriptorSet-descriptorType-00331",        // STORAGE_BUFFER_DYNAMIC
+        "UNASSIGNED-CoreValidation-DrawState-InvalidImageView"   // INPUT_ATTACHMENT
     };
     // Start loop at 1 as SAMPLER desc type has no usage bit error
     for (uint32_t i = 1; i < VK_DESCRIPTOR_TYPE_RANGE_SIZE; ++i) {
@@ -4375,9 +4375,7 @@ TEST_F(VkLayerTest, DSAspectBitsErrors) {
     ASSERT_VK_SUCCESS(err);
     descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
 
-    // TODO(whenning42): Update this check to look for a VUID when this error is
-    // assigned one.
-    const char *error_msg = " please only set either VK_IMAGE_ASPECT_DEPTH_BIT or VK_IMAGE_ASPECT_STENCIL_BIT ";
+    const char *error_msg = "VUID-VkDescriptorImageInfo-imageView-01976";
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, error_msg);
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
@@ -5255,7 +5253,7 @@ TEST_F(VkLayerTest, DescriptorIndexingSetLayout) {
 
     if (!(CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names, m_device_extension_names, NULL,
                                                          m_errorMonitor))) {
-        printf("Descriptor indexing or one of its dependencies not supported, skipping tests\n");
+        printf("%s Descriptor indexing or one of its dependencies not supported, skipping tests\n.", kSkipPrefix);
         return;
     }
 
