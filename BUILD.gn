@@ -19,15 +19,6 @@ import("//build_overrides/vulkan_validation_layers.gni")
 # to build it from upstream sources.
 assert(!is_fuchsia)
 
-vulkan_registry_script_files = [
-  "$vulkan_headers_dir/registry/cgenerator.py",
-  "$vulkan_headers_dir/registry/conventions.py",
-  "$vulkan_headers_dir/registry/generator.py",
-  "$vulkan_headers_dir/registry/reg.py",
-  "$vulkan_headers_dir/registry/vkconventions.py",
-  "$vulkan_headers_dir/registry/vk.xml",
-]
-
 vulkan_undefine_configs = []
 if (is_win) {
   vulkan_undefine_configs += [
@@ -36,8 +27,6 @@ if (is_win) {
   ]
 }
 
-raw_vulkan_headers_dir = rebase_path("$vulkan_headers_dir", root_build_dir)
-
 vulkan_gen_dir = "$target_gen_dir/$vulkan_gen_subdir"
 raw_vulkan_gen_dir = rebase_path(vulkan_gen_dir, root_build_dir)
 
@@ -45,139 +34,6 @@ vulkan_data_dir = "$root_out_dir/$vulkan_data_subdir"
 raw_vulkan_data_dir = rebase_path(vulkan_data_dir, root_build_dir)
 
 raw_root_out_dir = rebase_path(root_out_dir, root_build_dir)
-
-# Vulkan helper scripts
-# ---------------------
-
-helper_script_and_deps = [
-  [
-    "vulkan_gen_dispatch_table_helper_h",
-    "vk_dispatch_table_helper.h",
-    "dispatch_table_helper_generator.py",
-  ],
-  [
-    "vulkan_gen_enum_string_helper",
-    "vk_enum_string_helper.h",
-    "helper_file_generator.py",
-  ],
-  [
-    "vulkan_gen_extension_helper",
-    "vk_extension_helper.h",
-    "helper_file_generator.py",
-  ],
-  [
-    "vulkan_gen_layer_dispatch_table_h",
-    "vk_layer_dispatch_table.h",
-    "layer_dispatch_table_generator.py",
-  ],
-  [
-    "vulkan_gen_object_types_h",
-    "vk_object_types.h",
-    "helper_file_generator.py",
-  ],
-  [
-    "vulkan_gen_safe_struct_cpp",
-    "vk_safe_struct.cpp",
-    "helper_file_generator.py",
-  ],
-  [
-    "vulkan_gen_safe_struct_h",
-    "vk_safe_struct.h",
-    "helper_file_generator.py",
-  ],
-  [
-    "vulkan_gen_thread_safety_h",
-    "thread_safety.h",
-    "thread_safety_generator.py",
-  ],
-  [
-    "vulkan_gen_thread_safety_cpp",
-    "thread_safety.cpp",
-    "thread_safety_generator.py",
-  ],
-  [
-    "vulkan_gen_typemap_helper",
-    "vk_typemap_helper.h",
-    "helper_file_generator.py",
-  ],
-  [
-    "vulkan_gen_object_tracker_h",
-    "object_tracker.h",
-    "object_tracker_generator.py",
-  ],
-  [
-    "vulkan_gen_object_tracker_cpp",
-    "object_tracker.cpp",
-    "object_tracker_generator.py",
-  ],
-  [
-    "vulkan_gen_parameter_validation_cpp",
-    "parameter_validation.cpp",
-    "parameter_validation_generator.py",
-  ],
-  [
-    "vulkan_gen_parameter_validation_h",
-    "parameter_validation.h",
-    "parameter_validation_generator.py",
-  ],
-  [
-    "vulkan_gen_layer_chassis_h",
-    "chassis.h",
-    "layer_chassis_generator.py",
-  ],
-  [
-    "vulkan_gen_layer_chassis_cpp",
-    "chassis.cpp",
-    "layer_chassis_generator.py",
-  ],
-  [
-    "vulkan_gen_layer_chassis_dispatch_h",
-    "layer_chassis_dispatch.h",
-    "layer_chassis_dispatch_generator.py",
-  ],
-  [
-    "vulkan_gen_layer_chassis_dispatch_cpp",
-    "layer_chassis_dispatch.cpp",
-    "layer_chassis_dispatch_generator.py",
-  ],
-]
-
-# Python scripts needed for codegen, copy them to a temp dir
-# so that all dependencies are together
-copy("python_gen_deps") {
-  sources = vulkan_registry_script_files + [
-              "scripts/common_codegen.py",
-              "scripts/dispatch_table_helper_generator.py",
-              "scripts/helper_file_generator.py",
-              "scripts/layer_dispatch_table_generator.py",
-              "scripts/lvl_genvk.py",
-              "scripts/object_tracker_generator.py",
-              "scripts/parameter_validation_generator.py",
-              "scripts/thread_safety_generator.py",
-              "scripts/layer_chassis_generator.py",
-              "scripts/layer_chassis_dispatch_generator.py",
-            ]
-  outputs = [
-    "$vulkan_gen_dir/{{source_file_part}}",
-  ]
-}
-
-# This special action is needed to remove previously-generated header files.
-# Otherwise the cpp files can pick up the old header files and cause build
-# failures.
-action("vulkan_clean_gen_headers") {
-  script = "build-gn/remove_files.py"
-  deps = [
-    ":python_gen_deps",
-  ]
-  outputs = [
-    "$vulkan_gen_dir/vk_validation_error_messages_h_is_removed",
-  ]
-  args = [
-    "$raw_vulkan_gen_dir/vk_validation_error_messages_h_is_removed",
-    "$raw_vulkan_gen_dir/vk_validation_error_messages.h",
-  ]
-}
 
 # This special action is needed to remove old VVL objects that are now renamed.
 action("vulkan_clean_old_validation_layer_objects") {
@@ -196,90 +52,6 @@ action("vulkan_clean_old_validation_layer_objects") {
     "$raw_root_out_dir/VkLayer*",
     "$raw_vulkan_data_dir/VkLayer*.json",
   ]
-}
-
-foreach(script_and_dep, helper_script_and_deps) {
-  target_name = script_and_dep[0]
-  file = script_and_dep[1]
-  dep = script_and_dep[2]
-  target("action", target_name) {
-    public_deps = [
-      ":python_gen_deps",
-      ":vulkan_clean_gen_headers",
-      ":vulkan_clean_old_validation_layer_objects",
-    ]
-    script = "$vulkan_gen_dir/lvl_genvk.py"
-    inputs = [
-      "$vulkan_gen_dir/$dep",
-      "$vulkan_gen_dir/common_codegen.py",
-      "layers/vk_validation_error_messages.h",
-    ]
-    outputs = [
-      "$vulkan_gen_dir/$file",
-    ]
-    args = [
-      "-o",
-      raw_vulkan_gen_dir,
-      "-registry",
-      "$raw_vulkan_headers_dir/registry/vk.xml",
-      "-scripts",
-      "$raw_vulkan_headers_dir/registry",
-      "$file",
-      "-quiet",
-    ]
-  }
-}
-
-raw_spirv_tools_dir = rebase_path("${vvl_spirv_tools_dir}", root_build_dir)
-
-spirv_git_is_present = exec_script("build-gn/commit_id.py",
-                                   [
-                                     "check",
-                                     raw_spirv_tools_dir,
-                                   ],
-                                   "value")
-
-# This could be generalized to a foreach if other revisions are added.
-action("spirv_tools_external_revision_generate") {
-  script = "scripts/external_revision_generator.py"
-  public_deps = [
-    "${vvl_spirv_tools_dir}:spvtools",
-    "${vvl_spirv_tools_dir}:spvtools_opt",
-    "${vvl_spirv_tools_dir}:spvtools_val",
-  ]
-  outputs = [
-    "$vulkan_gen_dir/spirv_tools_commit_id.h",
-  ]
-  args = [
-    "-s",
-    "SPIRV_TOOLS_COMMIT_ID",
-    "-o",
-    "$raw_vulkan_gen_dir/spirv_tools_commit_id.h",
-  ]
-  if (spirv_git_is_present == 1) {
-    args += [
-      "--git_dir",
-      "$raw_spirv_tools_dir",
-    ]
-  } else {
-    args += [ "--from_uuid" ]
-  }
-}
-
-config("vulkan_generated_files_config") {
-  include_dirs = [ vulkan_gen_dir ]
-}
-
-group("vulkan_generate_helper_files") {
-  public_deps = [
-    ":spirv_tools_external_revision_generate",
-    "$vulkan_headers_dir:vulkan_headers",
-  ]
-  public_configs = [ ":vulkan_generated_files_config" ]
-  foreach(script_and_dep, helper_script_and_deps) {
-    target_name = script_and_dep[0]
-    public_deps += [ ":$target_name" ]
-  }
 }
 
 config("vulkan_internal_config") {
@@ -303,13 +75,16 @@ config("vulkan_internal_config") {
 # ---------------------
 
 config("vulkan_layer_config") {
-  include_dirs = [ "layers" ]
+  include_dirs = [
+    "layers",
+    "layers/generated",
+  ]
 }
 
 core_validation_sources = [
   # This file is manually included in the layer
-  # "$vulkan_gen_dir/vk_safe_struct.cpp",
-  "$vulkan_gen_dir/vk_safe_struct.h",
+  # "layers/generated/vk_safe_struct.cpp",
+  "layers/generated/vk_safe_struct.h",
   "layers/buffer_validation.cpp",
   "layers/buffer_validation.h",
   "layers/core_validation.cpp",
@@ -327,83 +102,60 @@ core_validation_sources = [
 ]
 
 object_lifetimes_sources = [
-  "$vulkan_gen_dir/object_tracker.cpp",
-  "$vulkan_gen_dir/object_tracker.h",
+  "layers/generated/object_tracker.cpp",
+  "layers/generated/object_tracker.h",
   "layers/object_tracker_utils.cpp",
 ]
 
 stateless_validation_sources = [
-  "$vulkan_gen_dir/parameter_validation.cpp",
-  "$vulkan_gen_dir/parameter_validation.h",
+  "layers/generated/parameter_validation.cpp",
+  "layers/generated/parameter_validation.h",
   "layers/parameter_validation_utils.cpp",
 ]
 
 thread_safety_sources = [
-  "$vulkan_gen_dir/thread_safety.cpp",
-  "$vulkan_gen_dir/thread_safety.h",
+  "layers/generated/thread_safety.cpp",
+  "layers/generated/thread_safety.h",
 ]
 
 unique_objects_sources = []
 
 chassis_sources = [
-  "$vulkan_gen_dir/chassis.cpp",
-  "$vulkan_gen_dir/chassis.h",
-  "$vulkan_gen_dir/layer_chassis_dispatch.cpp",
-  "$vulkan_gen_dir/layer_chassis_dispatch.h",
-]
-
-core_validation_deps = [ ":vulkan_core_validation_glslang" ]
-
-object_lifetimes_deps = [
-  ":vulkan_gen_object_tracker_cpp",
-  ":vulkan_gen_object_tracker_h",
-]
-
-stateless_validation_deps = [ ":vulkan_gen_stateless_validation" ]
-
-thread_safety_deps = [
-  ":vulkan_gen_thread_safety_cpp",
-  ":vulkan_gen_thread_safety_h",
-]
-
-unique_objects_deps = []
-
-chassis_deps = [
-  ":vulkan_gen_layer_chassis_cpp",
-  ":vulkan_gen_layer_chassis_h",
-  ":vulkan_gen_layer_chassis_dispatch_cpp",
-  ":vulkan_gen_layer_chassis_dispatch_h",
+  "layers/generated/chassis.cpp",
+  "layers/generated/chassis.h",
+  "layers/generated/layer_chassis_dispatch.cpp",
+  "layers/generated/layer_chassis_dispatch.h",
 ]
 
 layers = [
   [
     "core_validation",
     core_validation_sources + chassis_sources,
-    core_validation_deps + chassis_deps,
+    [ ":vulkan_core_validation_glslang" ],
     [ "BUILD_CORE_VALIDATION" ],
   ],
   [
     "object_lifetimes",
     object_lifetimes_sources + chassis_sources,
-    object_lifetimes_deps + chassis_deps,
+    [],
     [ "BUILD_OBJECT_TRACKER" ],
   ],
   [
     "stateless_validation",
     stateless_validation_sources + chassis_sources,
-    stateless_validation_deps + chassis_deps,
+    [],
     [ "BUILD_PARAMETER_VALIDATION" ],
   ],
   [
     "thread_safety",
     thread_safety_sources + chassis_sources,
-    thread_safety_deps + chassis_deps,
+    [],
     [ "BUILD_THREAD_SAFETY" ],
   ],
   [
     "unique_objects",
     unique_objects_sources + chassis_sources,
-    unique_objects_deps + chassis_deps,
+    [],
     [ "LAYER_CHASSIS_CAN_WRAP_HANDLES" ],
   ],
   [
@@ -411,8 +163,7 @@ layers = [
     core_validation_sources + object_lifetimes_sources +
         stateless_validation_sources + thread_safety_sources +
         unique_objects_sources + chassis_sources,
-    core_validation_deps + object_lifetimes_deps + stateless_validation_deps +
-        thread_safety_deps + unique_objects_deps + chassis_deps,
+    [ ":vulkan_core_validation_glslang" ],
     [
       "BUILD_KHRONOS_VALIDATION",
       "BUILD_CORE_VALIDATION",
@@ -458,7 +209,10 @@ if (!is_android) {
 }
 
 source_set("vulkan_layer_utils") {
-  include_dirs = [ "layers" ]
+  include_dirs = [
+    "layers",
+    "layers/generated",
+  ]
   sources = [
     "layers/vk_format_utils.cpp",
     "layers/vk_format_utils.h",
@@ -475,9 +229,7 @@ source_set("vulkan_layer_utils") {
   ]
   configs -= [ "//build/config/compiler:chromium_code" ]
   configs += [ "//build/config/compiler:no_chromium_code" ]
-  public_deps = [
-    ":vulkan_generate_helper_files",
-  ]
+  public_deps = []
   configs -= vulkan_undefine_configs
 }
 
@@ -501,14 +253,6 @@ config("vulkan_stateless_validation_config") {
   if (is_clang) {
     cflags_cc = [ "-Wno-unused-const-variable" ]
   }
-}
-
-source_set("vulkan_gen_stateless_validation") {
-  deps = [
-    ":vulkan_gen_parameter_validation_cpp",
-    ":vulkan_gen_parameter_validation_h",
-  ]
-  public_configs = [ ":vulkan_stateless_validation_config" ]
 }
 
 foreach(layer_info, layers) {
