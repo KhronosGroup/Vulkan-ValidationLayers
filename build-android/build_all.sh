@@ -60,7 +60,6 @@ function create_APK() {
 # build layers
 #
 ./update_external_sources_android.sh --no-build
-./android-generate.sh
 ndk-build -j $cores
 
 #
