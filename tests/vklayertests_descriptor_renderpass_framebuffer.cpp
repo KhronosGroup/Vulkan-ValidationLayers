@@ -286,9 +286,22 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         "void main(){\n"
         "   uFragColor = colors[index].val;\n"
         "}\n";
+    char const *gsSource =
+        "#version 450\n"
+        "#extension GL_EXT_nonuniform_qualifier : enable\n "
+        "layout(triangles) in;\n"
+        "layout(triangle_strip, max_vertices=3) out;\n"
+        "layout(location=0) in VertexData { vec4 x; } gs_in[];\n"
+        "layout(std140, set = 0, binding = 0) uniform ufoo { uint index; } uniform_index_buffer;\n"
+        "layout(set = 0, binding = 1) buffer bfoo { vec4 val; } adds[];\n"
+        "void main() {\n"
+        "   gl_Position = gs_in[0].x + adds[uniform_index_buffer.index].val.x;\n"
+        "   EmitVertex();\n"
+        "}\n";
     struct TestCase {
         char const *vertex_source;
         char const *fragment_source;
+        char const *geometry_source;
         bool debug;
         const VkPipelineLayoutObj *pipeline_layout;
         const OneOffDescriptorSet *descriptor_set;
@@ -297,33 +310,41 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBGraphicsShaders) {
     };
 
     std::vector<TestCase> tests;
-    tests.push_back({vsSource_vert, fsSource_vert, false, &pipeline_layout, &descriptor_set, 25,
+    tests.push_back({vsSource_vert, fsSource_vert, nullptr, false, &pipeline_layout, &descriptor_set, 25,
                      "Index of 25 used to index descriptor array of length 6."});
-    tests.push_back({vsSource_frag, fsSource_frag, false, &pipeline_layout, &descriptor_set, 25,
+    tests.push_back({vsSource_frag, fsSource_frag, nullptr, false, &pipeline_layout, &descriptor_set, 25,
                      "Index of 25 used to index descriptor array of length 6."});
 #if !defined(ANDROID)
     // The Android test framework uses shaderc for online compilations.  Even when configured to compile with debug info,
     // shaderc seems to drop the OpLine instructions from the shader binary.  This causes the following two tests to fail
     // on Android platforms.  Skip these tests until the shaderc issue is understood/resolved.
-    tests.push_back({vsSource_vert, fsSource_vert, true, &pipeline_layout, &descriptor_set, 25,
+    tests.push_back({vsSource_vert, fsSource_vert, nullptr, true, &pipeline_layout, &descriptor_set, 25,
                      "gl_Position += 1e-30 * texture(tex[uniform_index_buffer.tex_index[0]], vec2(0, 0));"});
-    tests.push_back({vsSource_frag, fsSource_frag, true, &pipeline_layout, &descriptor_set, 25,
+    tests.push_back({vsSource_frag, fsSource_frag, nullptr, true, &pipeline_layout, &descriptor_set, 25,
                      "uFragColor = texture(tex[index], vec2(0, 0));"});
 #endif
     if (descriptor_indexing) {
-        tests.push_back({vsSource_frag, fsSource_frag_runtime, false, &pipeline_layout, &descriptor_set, 25,
+        tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, false, &pipeline_layout, &descriptor_set, 25,
                          "Index of 25 used to index descriptor array of length 6."});
-        tests.push_back({vsSource_frag, fsSource_frag_runtime, false, &pipeline_layout, &descriptor_set, 5,
+        tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, false, &pipeline_layout, &descriptor_set, 5,
                          "Descriptor index 5 is uninitialized"});
         // Pick 6 below because it is less than the maximum specified, but more than the actual specified
-        tests.push_back({vsSource_frag, fsSource_frag_runtime, false, &pipeline_layout_variable, &descriptor_set_variable, 6,
+        tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, false, &pipeline_layout_variable, &descriptor_set_variable, 6,
                          "Index of 6 used to index descriptor array of length 6."});
-        tests.push_back({vsSource_frag, fsSource_frag_runtime, false, &pipeline_layout_variable, &descriptor_set_variable, 5,
-                         "Descriptor index 5 is uninitialized"});
-        tests.push_back({vsSource_frag, fsSource_buffer, false, &pipeline_layout_buffer, &descriptor_set_buffer, 25,
+        tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, false, &pipeline_layout_variable, &descriptor_set_variable,
+                         5, "Descriptor index 5 is uninitialized"});
+        tests.push_back({vsSource_frag, fsSource_buffer, nullptr, false, &pipeline_layout_buffer, &descriptor_set_buffer, 25,
                          "Index of 25 used to index descriptor array of length 6."});
-        tests.push_back({vsSource_frag, fsSource_buffer, false, &pipeline_layout_buffer, &descriptor_set_buffer, 5,
+        tests.push_back({vsSource_frag, fsSource_buffer, nullptr, false, &pipeline_layout_buffer, &descriptor_set_buffer, 5,
                          "Descriptor index 5 is uninitialized"});
+        if (m_device->phy().features().geometryShader) {
+            // OOB Geometry
+            tests.push_back({bindStateVertShaderText, bindStateFragShaderText, gsSource, false, &pipeline_layout_buffer,
+                             &descriptor_set_buffer, 25, "Stage = Geometry"});
+            // Uninitialized Geometry
+            tests.push_back({bindStateVertShaderText, bindStateFragShaderText, gsSource, false, &pipeline_layout_buffer,
+                             &descriptor_set_buffer, 5, "Stage = Geometry"});
+        }
     }
 
     VkViewport viewport = m_viewports[0];
@@ -339,9 +360,14 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, iter.expected_error);
         VkShaderObj vs(m_device, iter.vertex_source, VK_SHADER_STAGE_VERTEX_BIT, this, "main", iter.debug);
         VkShaderObj fs(m_device, iter.fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, this, "main", iter.debug);
+        VkShaderObj *gs = nullptr;
         VkPipelineObj pipe(m_device);
         pipe.AddShader(&vs);
         pipe.AddShader(&fs);
+        if (iter.geometry_source) {
+            gs = new VkShaderObj(m_device, iter.geometry_source, VK_SHADER_STAGE_GEOMETRY_BIT, this, "main", iter.debug);
+            pipe.AddShader(gs);
+        }
         pipe.AddDefaultColorAttachment();
         err = pipe.CreateVKPipeline(iter.pipeline_layout->handle(), renderPass());
         ASSERT_VK_SUCCESS(err);
@@ -361,6 +387,9 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
         vkQueueWaitIdle(m_device->m_queue);
         m_errorMonitor->VerifyFound();
+        if (gs) {
+            delete gs;
+        }
     }
     auto c_queue = m_device->GetDefaultComputeQueue();
     if (c_queue && descriptor_indexing) {
