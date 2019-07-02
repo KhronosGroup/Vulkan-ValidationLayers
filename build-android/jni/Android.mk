@@ -27,7 +27,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_layer_extension_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_layer_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/vk_format_utils.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
-                    $(LOCAL_PATH)/$(LAYER_DIR)/include \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers
 LOCAL_CPPFLAGS += -std=c++11 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
 LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -DVK_PROTOTYPES -fvisibility=hidden
@@ -42,17 +42,17 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/buffer_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/shader_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/convert_to_renderpass2.cpp
-LOCAL_SRC_FILES += $(LAYER_DIR)/include/layer_chassis_dispatch.cpp
-LOCAL_SRC_FILES += $(LAYER_DIR)/include/chassis.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/layer_chassis_dispatch.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/chassis.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/xxhash.c
-LOCAL_SRC_FILES += $(LAYER_DIR)/include/parameter_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/parameter_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/parameter_validation_utils.cpp
-LOCAL_SRC_FILES += $(LAYER_DIR)/include/object_tracker.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/object_tracker.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/object_tracker_utils.cpp
-LOCAL_SRC_FILES += $(LAYER_DIR)/include/thread_safety.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/thread_safety.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
-                    $(LOCAL_PATH)/$(LAYER_DIR)/include
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/generated
 LOCAL_STATIC_LIBRARIES += layer_utils glslang SPIRV-Tools SPIRV-Tools-opt
 LOCAL_CPPFLAGS += -std=c++11 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
 LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -DVK_PROTOTYPES -fvisibility=hidden -DBUILD_KHRONOS_VALIDATION -DBUILD_CORE_VALIDATION -DBUILD_PARAMETER_VALIDATION -DBUILD_OBJECT_TRACKER -DBUILD_THREAD_SAFETY -DLAYER_CHASSIS_CAN_WRAP_HANDLES
@@ -71,12 +71,12 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/buffer_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/shader_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/convert_to_renderpass2.cpp
-LOCAL_SRC_FILES += $(LAYER_DIR)/include/layer_chassis_dispatch.cpp
-LOCAL_SRC_FILES += $(LAYER_DIR)/include/chassis.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/layer_chassis_dispatch.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/chassis.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/xxhash.c
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
-                    $(LOCAL_PATH)/$(LAYER_DIR)/include
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/generated
 LOCAL_STATIC_LIBRARIES += layer_utils glslang SPIRV-Tools SPIRV-Tools-opt
 LOCAL_CPPFLAGS += -std=c++11 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
 LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -DVK_PROTOTYPES -fvisibility=hidden -DBUILD_CORE_VALIDATION
@@ -87,12 +87,12 @@ include $(BUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := VkLayer_parameter_validation
-LOCAL_SRC_FILES += $(LAYER_DIR)/include/parameter_validation.cpp
-LOCAL_SRC_FILES += $(LAYER_DIR)/include/layer_chassis_dispatch.cpp
-LOCAL_SRC_FILES += $(LAYER_DIR)/include/chassis.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/parameter_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/layer_chassis_dispatch.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/chassis.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/parameter_validation_utils.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
-                    $(LOCAL_PATH)/$(LAYER_DIR)/include \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers
 LOCAL_STATIC_LIBRARIES += layer_utils
 LOCAL_CPPFLAGS += -std=c++11 -DVK_PROTOTYPES -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
@@ -104,13 +104,13 @@ include $(BUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := VkLayer_object_tracker
-LOCAL_SRC_FILES += $(LAYER_DIR)/include/object_tracker.cpp
-LOCAL_SRC_FILES += $(LAYER_DIR)/include/layer_chassis_dispatch.cpp
-LOCAL_SRC_FILES += $(LAYER_DIR)/include/chassis.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/object_tracker.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/layer_chassis_dispatch.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/chassis.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/object_tracker_utils.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
-                    $(LOCAL_PATH)/$(LAYER_DIR)/include
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/generated
 LOCAL_STATIC_LIBRARIES += layer_utils
 LOCAL_CPPFLAGS += -std=c++11 -DVK_PROTOTYPES -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
 LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -fvisibility=hidden -DBUILD_OBJECT_TRACKER
@@ -121,12 +121,12 @@ include $(BUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := VkLayer_threading
-LOCAL_SRC_FILES += $(LAYER_DIR)/include/thread_safety.cpp
-LOCAL_SRC_FILES += $(LAYER_DIR)/include/layer_chassis_dispatch.cpp
-LOCAL_SRC_FILES += $(LAYER_DIR)/include/chassis.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/thread_safety.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/layer_chassis_dispatch.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/chassis.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
-                    $(LOCAL_PATH)/$(LAYER_DIR)/include
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/generated
 LOCAL_STATIC_LIBRARIES += layer_utils
 LOCAL_CPPFLAGS += -std=c++11 -DVK_PROTOTYPES -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
 LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -fvisibility=hidden -DBUILD_THREAD_SAFETY
@@ -137,11 +137,11 @@ include $(BUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := VkLayer_unique_objects
-LOCAL_SRC_FILES += $(LAYER_DIR)/include/layer_chassis_dispatch.cpp
-LOCAL_SRC_FILES += $(LAYER_DIR)/include/chassis.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/layer_chassis_dispatch.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/chassis.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
-                    $(LOCAL_PATH)/$(LAYER_DIR)/include
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/generated
 LOCAL_STATIC_LIBRARIES += layer_utils
 LOCAL_CPPFLAGS += -std=c++11 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
 LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -DVK_PROTOTYPES -fvisibility=hidden -DLAYER_CHASSIS_CAN_WRAP_HANDLES
@@ -163,10 +163,10 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vktestframeworkandroid.cpp \
                    $(SRC_DIR)/tests/vkrenderframework.cpp \
                    $(SRC_DIR)/layers/convert_to_renderpass2.cpp \
-                   $(LAYER_DIR)/include/vk_safe_struct.cpp \
+                   $(SRC_DIR)/layers/generated/vk_safe_struct.cpp \
                    $(THIRD_PARTY)/Vulkan-Tools/common/vulkan_wrapper.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
-                    $(LOCAL_PATH)/$(LAYER_DIR)/include \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(SRC_DIR)/libs \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/Vulkan-Tools/common
@@ -193,10 +193,10 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vktestframeworkandroid.cpp \
                    $(SRC_DIR)/tests/vkrenderframework.cpp \
                    $(SRC_DIR)/layers/convert_to_renderpass2.cpp \
-                   $(LAYER_DIR)/include/vk_safe_struct.cpp \
+                   $(SRC_DIR)/layers/generated/vk_safe_struct.cpp \
                    $(THIRD_PARTY)/Vulkan-Tools/common/vulkan_wrapper.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
-                    $(LOCAL_PATH)/$(LAYER_DIR)/include \
+                    $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers \
                     $(LOCAL_PATH)/$(SRC_DIR)/libs \
                     $(LOCAL_PATH)/$(THIRD_PARTY)/Vulkan-Tools/common
