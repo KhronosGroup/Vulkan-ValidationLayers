@@ -6967,6 +6967,14 @@ TEST_F(VkLayerTest, BindImageMemorySwapchain) {
 TEST_F(VkLayerTest, TransferImageToSwapchainWithInvalidLayoutDeviceGroup) {
     TEST_DESCRIPTION("Transfer an image to a swapchain's image with a invalid layout between device group");
 
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+    printf(
+        "%s According to VUID-01631, VkBindImageMemoryInfo-memory should be NULL. But Android will crash if memory is NULL, "
+        "skipping test\n",
+        kSkipPrefix);
+    return;
+#endif
+
     SetTargetApiVersion(VK_API_VERSION_1_1);
 
     if (!AddSurfaceInstanceExtension()) {
