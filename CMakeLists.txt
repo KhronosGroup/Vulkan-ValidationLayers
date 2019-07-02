@@ -38,7 +38,7 @@ add_definitions(-DAPI_NAME="${API_NAME}")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-find_package(PythonInterp 3 REQUIRED)
+find_package(PythonInterp 3 QUIET)
 
 if (TARGET Vulkan::Headers)
     message(STATUS "Using Vulkan headers from Vulkan::Headers target")
@@ -336,6 +336,17 @@ if(${len} EQUAL 1)
                  ${lines})
 else()
     message(FATAL_ERROR "Unable to fetch version from vulkan_core.h")
+endif()
+
+# Optional codegen target --------------------------------------------------------------------------------------------------------
+if(PYTHONINTERP_FOUND)
+    add_custom_target(VulkanVL_generated_source
+                      COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/generate_source.py
+                              ${VulkanRegistry_DIR} --incremental
+                      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/layers/generated
+                      )
+else()
+    message("WARNING: VulkanVL_generated_source target requires python 3")
 endif()
 
 # Add subprojects ----------------------------------------------------------------------------------------------------------------
