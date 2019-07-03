@@ -143,6 +143,15 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
         layer_create_messenger_callback(report_data, default_layer_callback, &dbgCreateInfo, pAllocator, &messenger);
         logging_messenger.push_back(messenger);
     }
+
+    messenger = VK_NULL_HANDLE;
+
+    if (debug_action & VK_DBG_LAYER_ACTION_BREAK) {
+        dbgCreateInfo.pfnUserCallback = MessengerBreakCallback;
+        dbgCreateInfo.pUserData = NULL;
+        layer_create_messenger_callback(report_data, default_layer_callback, &dbgCreateInfo, pAllocator, &messenger);
+        logging_messenger.push_back(messenger);
+    }
 }
 
 // NOTE: This function has been deprecated, and the above function (layer_debug_messenger_actions) should be
