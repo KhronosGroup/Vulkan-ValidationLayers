@@ -753,6 +753,7 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
         bool updated = false;
         updated |= layouts_.initial.Merge(from.layouts_.initial);
         updated |= layouts_.current.Merge(from.layouts_.current);
+        initial_layout_state_map_.Merge(from.initial_layout_state_map_);
 
         return updated;
     }
