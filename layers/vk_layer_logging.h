@@ -1066,6 +1066,19 @@ static inline VKAPI_ATTR VkBool32 VKAPI_CALL DebugBreakCallback(VkFlags msgFlags
     return false;
 }
 
+static inline VKAPI_ATTR VkBool32 VKAPI_CALL MessengerBreakCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+                                                                    VkDebugUtilsMessageTypeFlagsEXT message_type,
+                                                                    const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
+                                                                    void *user_data) {
+#ifdef WIN32
+    DebugBreak();
+#else
+    raise(SIGTRAP);
+#endif
+
+    return false;
+}
+
 static inline VKAPI_ATTR VkBool32 VKAPI_CALL messenger_log_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                                                                     VkDebugUtilsMessageTypeFlagsEXT message_type,
                                                                     const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
