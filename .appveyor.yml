@@ -14,6 +14,9 @@ max_jobs: 4
 os:
   - Visual Studio 2015
 
+init:
+  - git config --global core.autocrlf true
+
 environment:
   PYTHON_PATH: "C:/Python35"
   PYTHON_PACKAGE_PATH: "C:/Python35/Scripts"
@@ -41,6 +44,8 @@ before_build:
   - git checkout tags/release-1.8.1
   - cd %APPVEYOR_BUILD_FOLDER%
   - python scripts/update_deps.py --dir=external --arch=%PLATFORM% --config=%CONFIGURATION% 
+  - echo Verifying consistency between source file generators and output
+  - python scripts/generate_source.py --verify external/Vulkan-Headers/registry
   - echo Generating Vulkan-ValidationLayers CMake files for %PLATFORM% %CONFIGURATION%
   - mkdir build
   - cd build

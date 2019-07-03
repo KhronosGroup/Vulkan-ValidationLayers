@@ -109,6 +109,12 @@ script:
     fi
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
+      # Verify consistency between source file generators and output
+      echo Verifying consistency between source file generators and output
+      python3 ${TRAVIS_BUILD_DIR}/scripts/generate_source.py --verify ${TRAVIS_BUILD_DIR}/external/Vulkan-Headers/registry
+    fi
+  - |
+    if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
       # Build Vulkan-ValidationLayers
       cd ${TRAVIS_BUILD_DIR}
       mkdir build
@@ -154,7 +160,6 @@ script:
     if [[ "$VULKAN_BUILD_TARGET" == "ANDROID" ]]; then
       pushd build-android
       ./update_external_sources_android.sh --abi $ANDROID_ABI --no-build
-      ./android-generate.sh
       USE_CCACHE=1 NDK_CCACHE=ccache ndk-build APP_ABI=$ANDROID_ABI -j $core_count
       popd
     fi
