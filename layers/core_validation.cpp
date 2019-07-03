@@ -4460,16 +4460,22 @@ bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipe
     return skip;
 }
 
-void CoreChecks::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline,
+                                                          const VkAllocationCallbacks *pAllocator) {
     if (!pipeline) return;
     PIPELINE_STATE *pipeline_state = GetPipelineState(pipeline);
     const VulkanTypedHandle obj_struct(pipeline, kVulkanObjectTypePipeline);
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(pipeline_state->cb_bindings, obj_struct);
-    if (enabled.gpu_validation) {
+    pipelineMap.erase(pipeline);
+}
+
+void CoreChecks::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator) {
+    if (pipeline && enabled.gpu_validation) {
         GpuPreCallRecordDestroyPipeline(pipeline);
     }
-    pipelineMap.erase(pipeline);
+
+    StateTracker::PreCallRecordDestroyPipeline(device, pipeline, pAllocator);
 }
 
 void CoreChecks::PreCallRecordDestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout,
@@ -4890,12 +4896,13 @@ bool CoreChecks::ValidatePipelineVertexDivisors(std::vector<std::unique_ptr<PIPE
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                        const VkGraphicsPipelineCreateInfo *pCreateInfos,
-                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                        void *cgpl_state_data) {
-    bool skip = false;
+bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                                    const VkGraphicsPipelineCreateInfo *pCreateInfos,
+                                                                    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                                    void *cgpl_state_data) {
+    // Set up the state that CoreChecks, gpu_validation and later StateTracker Record will use.
     create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
+    cgpl_state->pCreateInfos = pCreateInfos;  // GPU validation can alter this, so we have to set a default value for the Chassis
     cgpl_state->pipe_state.reserve(count);
     for (uint32_t i = 0; i < count; i++) {
         cgpl_state->pipe_state.push_back(std::unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
@@ -4903,6 +4910,16 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
                                                           GetRenderPassStateSharedPtr(pCreateInfos[i].renderPass));
         (cgpl_state->pipe_state)[i]->pipeline_layout = *GetPipelineLayout(pCreateInfos[i].layout);
     }
+    return false;
+}
+
+bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                        const VkGraphicsPipelineCreateInfo *pCreateInfos,
+                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                        void *cgpl_state_data) {
+    bool skip = StateTracker::PreCallValidateCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator,
+                                                                     pPipelines, cgpl_state_data);
+    create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
 
     for (uint32_t i = 0; i < count; i++) {
         skip |= ValidatePipelineLocked(cgpl_state->pipe_state, i);
@@ -4924,20 +4941,19 @@ void CoreChecks::PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelin
                                                       const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                       void *cgpl_state_data) {
-    create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
-    cgpl_state->pCreateInfos = pCreateInfos;
     // GPU Validation may replace instrumented shaders with non-instrumented ones, so allow it to modify the createinfos.
     if (enabled.gpu_validation) {
+        create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
         cgpl_state->gpu_create_infos = GpuPreCallRecordCreateGraphicsPipelines(pipelineCache, count, pCreateInfos, pAllocator,
                                                                                pPipelines, cgpl_state->pipe_state);
         cgpl_state->pCreateInfos = reinterpret_cast<VkGraphicsPipelineCreateInfo *>(cgpl_state->gpu_create_infos.data());
     }
 }
 
-void CoreChecks::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                       const VkGraphicsPipelineCreateInfo *pCreateInfos,
-                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                       VkResult result, void *cgpl_state_data) {
+void ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                                   const VkGraphicsPipelineCreateInfo *pCreateInfos,
+                                                                   const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                                   VkResult result, void *cgpl_state_data) {
     create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
     // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
@@ -4946,28 +4962,49 @@ void CoreChecks::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipeli
             pipelineMap[pPipelines[i]] = std::move((cgpl_state->pipe_state)[i]);
         }
     }
-    // GPU val needs clean up regardless of result
-    if (enabled.gpu_validation) {
-        GpuPostCallRecordCreateGraphicsPipelines(count, pCreateInfos, pAllocator, pPipelines);
-        cgpl_state->gpu_create_infos.clear();
-    }
     cgpl_state->pipe_state.clear();
 }
 
-bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                       const VkComputePipelineCreateInfo *pCreateInfos,
+void CoreChecks::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                       const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                       void *ccpl_state_data) {
+                                                       VkResult result, void *cgpl_state_data) {
+    StateTracker::PostCallRecordCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, result,
+                                                        cgpl_state_data);
+    // GPU val needs clean up regardless of result
+    if (enabled.gpu_validation) {
+        create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
+        GpuPostCallRecordCreateGraphicsPipelines(count, pCreateInfos, pAllocator, pPipelines);
+        cgpl_state->gpu_create_infos.clear();
+    }
+}
+
+bool ValidationStateTracker::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                                   const VkComputePipelineCreateInfo *pCreateInfos,
+                                                                   const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                                   void *ccpl_state_data) {
     bool skip = false;
     auto *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
-
+    ccpl_state->pCreateInfos = pCreateInfos;  // GPU validation can alter this, so we have to set a default value for the Chassis
     ccpl_state->pipe_state.reserve(count);
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
         ccpl_state->pipe_state.push_back(unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
         ccpl_state->pipe_state.back()->initComputePipeline(this, &pCreateInfos[i]);
         ccpl_state->pipe_state.back()->pipeline_layout = *GetPipelineLayout(pCreateInfos[i].layout);
+    }
+    return skip;
+}
 
+bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                       const VkComputePipelineCreateInfo *pCreateInfos,
+                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                       void *ccpl_state_data) {
+    bool skip = StateTracker::PreCallValidateCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator,
+                                                                    pPipelines, ccpl_state_data);
+
+    auto *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
+    for (uint32_t i = 0; i < count; i++) {
         // TODO: Add Compute Pipeline Verification
         skip |= ValidateComputePipeline(ccpl_state->pipe_state.back().get());
     }
@@ -4978,20 +5015,19 @@ void CoreChecks::PreCallRecordCreateComputePipelines(VkDevice device, VkPipeline
                                                      const VkComputePipelineCreateInfo *pCreateInfos,
                                                      const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                      void *ccpl_state_data) {
-    auto *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
-    ccpl_state->pCreateInfos = pCreateInfos;
     // GPU Validation may replace instrumented shaders with non-instrumented ones, so allow it to modify the createinfos.
     if (enabled.gpu_validation) {
+        auto *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
         ccpl_state->gpu_create_infos = GpuPreCallRecordCreateComputePipelines(pipelineCache, count, pCreateInfos, pAllocator,
                                                                               pPipelines, ccpl_state->pipe_state);
         ccpl_state->pCreateInfos = reinterpret_cast<VkComputePipelineCreateInfo *>(ccpl_state->gpu_create_infos.data());
     }
 }
 
-void CoreChecks::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                      const VkComputePipelineCreateInfo *pCreateInfos,
-                                                      const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                      VkResult result, void *ccpl_state_data) {
+void ValidationStateTracker::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                                  const VkComputePipelineCreateInfo *pCreateInfos,
+                                                                  const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                                  VkResult result, void *ccpl_state_data) {
     create_compute_pipeline_api_state *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
 
     // This API may create pipelines regardless of the return value
@@ -5001,42 +5037,62 @@ void CoreChecks::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelin
             pipelineMap[pPipelines[i]] = std::move((ccpl_state->pipe_state)[i]);
         }
     }
+    ccpl_state->pipe_state.clear();
+}
+
+void CoreChecks::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                      const VkComputePipelineCreateInfo *pCreateInfos,
+                                                      const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                      VkResult result, void *ccpl_state_data) {
+    StateTracker::PostCallRecordCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, result,
+                                                       ccpl_state_data);
+
     // GPU val needs clean up regardless of result
     if (enabled.gpu_validation) {
+        create_compute_pipeline_api_state *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
         GpuPostCallRecordCreateComputePipelines(count, pCreateInfos, pAllocator, pPipelines);
+        ccpl_state->gpu_create_infos.clear();
     }
+}
+
+bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache,
+                                                                        uint32_t count,
+                                                                        const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
+                                                                        const VkAllocationCallbacks *pAllocator,
+                                                                        VkPipeline *pPipelines, void *pipe_state_data) {
+    // The order of operations here is a little convoluted but gets the job done
+    //  1. Pipeline create state is first shadowed into PIPELINE_STATE struct
+    //  2. Create state is then validated (which uses flags setup during shadowing)
+    //  3. If everything looks good, we'll then create the pipeline and add NODE to pipelineMap
+    vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state =
+        reinterpret_cast<vector<std::unique_ptr<PIPELINE_STATE>> *>(pipe_state_data);
+    pipe_state->reserve(count);
+    for (uint32_t i = 0; i < count; i++) {
+        pipe_state->push_back(std::unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
+        (*pipe_state)[i]->initRayTracingPipelineNV(this, &pCreateInfos[i]);
+        (*pipe_state)[i]->pipeline_layout = *GetPipelineLayout(pCreateInfos[i].layout);
+    }
+    return false;
 }
 
 bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                             const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                             void *pipe_state_data) {
-    bool skip = false;
-    // The order of operations here is a little convoluted but gets the job done
-    //  1. Pipeline create state is first shadowed into PIPELINE_STATE struct
-    //  2. Create state is then validated (which uses flags setup during shadowing)
-    //  3. If everything looks good, we'll then create the pipeline and add NODE to pipelineMap
-    uint32_t i = 0;
+    bool skip = StateTracker::PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator,
+                                                                         pPipelines, pipe_state_data);
     vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state =
         reinterpret_cast<vector<std::unique_ptr<PIPELINE_STATE>> *>(pipe_state_data);
-    pipe_state->reserve(count);
-    for (i = 0; i < count; i++) {
-        pipe_state->push_back(std::unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
-        (*pipe_state)[i]->initRayTracingPipelineNV(this, &pCreateInfos[i]);
-        (*pipe_state)[i]->pipeline_layout = *GetPipelineLayout(pCreateInfos[i].layout);
-    }
-
-    for (i = 0; i < count; i++) {
+    for (uint32_t i = 0; i < count; i++) {
         skip |= ValidateRayTracingPipelineNV((*pipe_state)[i].get());
     }
 
     return skip;
 }
 
-void CoreChecks::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                           const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
-                                                           const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                           VkResult result, void *pipe_state_data) {
+void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(
+    VkDevice device, VkPipelineCache pipelineCache, uint32_t count, const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
+    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, VkResult result, void *pipe_state_data) {
     vector<std::unique_ptr<PIPELINE_STATE>> *pipe_state =
         reinterpret_cast<vector<std::unique_ptr<PIPELINE_STATE>> *>(pipe_state_data);
     // This API may create pipelines regardless of the return value
@@ -5046,6 +5102,7 @@ void CoreChecks::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPi
             pipelineMap[pPipelines[i]] = std::move((*pipe_state)[i]);
         }
     }
+    pipe_state->clear();
 }
 
 void CoreChecks::PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
