@@ -380,10 +380,33 @@ class ValidationStateTracker : public ValidationObject {
                                                       const VkAllocationCallbacks* pAllocator);
     void PreCallRecordDestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                          const VkAllocationCallbacks* pAllocator);
+    bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                               const VkComputePipelineCreateInfo* pCreateInfos,
+                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, void* pipe_state);
+    void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                              const VkComputePipelineCreateInfo* pCreateInfos,
+                                              const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
+                                              void* pipe_state);
+    bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                const VkGraphicsPipelineCreateInfo* pCreateInfos,
+                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, void* cgpl_state);
+    void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                               const VkGraphicsPipelineCreateInfo* pCreateInfos,
+                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
+                                               void* cgpl_state);
     void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator);
     void PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkImageView* pView, VkResult result);
     void PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator);
+    void PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* pAllocator);
+    bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                    const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
+                                                    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                    void* pipe_state);
+    void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                   const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
+                                                   const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
+                                                   void* pipe_state);
     void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule, VkResult result,
                                           void* csm_state);
@@ -1203,10 +1226,6 @@ class CoreChecks : public ValidationStateTracker {
                                                     const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                     void* pipe_state);
-    void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                   const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
-                                                   const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
-                                                   void* pipe_state);
     void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                       VkInstance* pInstance, VkResult result);
     bool PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
