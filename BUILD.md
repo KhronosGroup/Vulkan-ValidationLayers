@@ -197,6 +197,13 @@ specific requirements for configuring and building these components.
 - Please use `update_deps.py --help` to list additional options and read the
   internal documentation in `update_deps.py` for further information.
 
+### Generated source code
+
+This repository contains generated source code in the `layers/generated`
+directory which is not intended to be modified directly.  Instead, changes should be 
+made to the corresponding generator in the `scripts` directory.  The source files can 
+then be regenerated using `scripts/generate_source.py`.
+
 ### Build Options
 
 When generating native platform build files through CMake, several options can
@@ -696,7 +703,6 @@ Follow the setup steps for Linux or OSX above, then from your terminal:
 
     cd build-android
     ./update_external_sources_android.sh --no-build
-    ./android-generate.sh
     ndk-build -j4
 
 #### Windows
@@ -706,7 +712,6 @@ for VS2015:
 
     cd build-android
     update_external_sources_android.bat
-    android-generate.bat
     ndk-build
 
 ### Android Tests and Demos
