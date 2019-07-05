@@ -721,13 +721,13 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCmdQueueFlags(const CMD_BUFFER_STATE* cb_node, const char* caller_name, VkQueueFlags flags,
                                const char* error_code) const;
     bool InsideRenderPass(const CMD_BUFFER_STATE* pCB, const char* apiName, const char* msgCode) const;
-    bool OutsideRenderPass(CMD_BUFFER_STATE* pCB, const char* apiName, const char* msgCode);
+    bool OutsideRenderPass(const CMD_BUFFER_STATE* pCB, const char* apiName, const char* msgCode) const;
 
     void SetLayout(std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE>& imageLayoutMap, ImageSubresourcePair imgpair,
                    VkImageLayout layout);
 
-    bool ValidateImageSampleCount(IMAGE_STATE* image_state, VkSampleCountFlagBits sample_count, const char* location,
-                                  const std::string& msgCode);
+    bool ValidateImageSampleCount(const IMAGE_STATE* image_state, VkSampleCountFlagBits sample_count, const char* location,
+                                  const std::string& msgCode) const;
     bool ValidateCmdSubpassState(const CMD_BUFFER_STATE* pCB, const CMD_TYPE cmd_type) const;
     bool ValidateCmd(const CMD_BUFFER_STATE* cb_state, const CMD_TYPE cmd, const char* caller_name) const;
 
@@ -915,10 +915,10 @@ class CoreChecks : public ValidationStateTracker {
     }
     bool ValidateCopyImageTransferGranularityRequirements(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* src_img,
                                                           const IMAGE_STATE* dst_img, const VkImageCopy* region, const uint32_t i,
-                                                          const char* function);
+                                                          const char* function) const;
     bool ValidateIdleBuffer(VkBuffer buffer);
     bool ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 strict, const VulkanTypedHandle& typed_handle,
-                            const char* msgCode, char const* func_name, char const* usage_str);
+                            const char* msgCode, char const* func_name, char const* usage_str) const;
     bool ValidateImageSubresourceRange(const uint32_t image_mip_count, const uint32_t image_layer_count,
                                        const VkImageSubresourceRange& subresourceRange, const char* cmd_name,
                                        const char* param_name, const char* image_layer_count_var_name, const uint64_t image_handle,
@@ -950,40 +950,41 @@ class CoreChecks : public ValidationStateTracker {
 
     bool ValidateImageAttributes(const IMAGE_STATE* image_state, const VkImageSubresourceRange& range) const;
 
-    bool ValidateClearAttachmentExtent(VkCommandBuffer command_buffer, uint32_t attachment_index, FRAMEBUFFER_STATE* framebuffer,
-                                       uint32_t fb_attachment, const VkRect2D& render_area, uint32_t rect_count,
-                                       const VkClearRect* clear_rects);
+    bool ValidateClearAttachmentExtent(VkCommandBuffer command_buffer, uint32_t attachment_index,
+                                       const FRAMEBUFFER_STATE* framebuffer, uint32_t fb_attachment, const VkRect2D& render_area,
+                                       uint32_t rect_count, const VkClearRect* clear_rects) const;
     bool ValidateImageCopyData(const uint32_t regionCount, const VkImageCopy* ic_regions, const IMAGE_STATE* src_state,
-                               const IMAGE_STATE* dst_state);
+                               const IMAGE_STATE* dst_state) const;
 
     bool VerifyClearImageLayout(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* image_state,
                                 const VkImageSubresourceRange& range, VkImageLayout dest_image_layout, const char* func_name) const;
 
-    bool VerifyImageLayout(CMD_BUFFER_STATE const* cb_node, IMAGE_STATE* image_state, const VkImageSubresourceRange& range,
+    bool VerifyImageLayout(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* image_state, const VkImageSubresourceRange& range,
                            VkImageAspectFlags view_aspect, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
                            const char* caller, const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code,
-                           bool* error);
+                           bool* error) const;
 
-    bool VerifyImageLayout(CMD_BUFFER_STATE const* cb_node, IMAGE_STATE* image_state, const VkImageSubresourceRange& range,
+    bool VerifyImageLayout(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* image_state, const VkImageSubresourceRange& range,
                            VkImageLayout explicit_layout, VkImageLayout optimal_layout, const char* caller,
-                           const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code, bool* error) {
+                           const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code, bool* error) const {
         return VerifyImageLayout(cb_node, image_state, range, 0, explicit_layout, optimal_layout, caller, layout_invalid_msg_code,
                                  layout_mismatch_msg_code, error);
     }
 
-    bool VerifyImageLayout(CMD_BUFFER_STATE const* cb_node, IMAGE_STATE* image_state, const VkImageSubresourceLayers& subLayers,
-                           VkImageLayout explicit_layout, VkImageLayout optimal_layout, const char* caller,
-                           const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code, bool* error);
+    bool VerifyImageLayout(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* image_state,
+                           const VkImageSubresourceLayers& subLayers, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
+                           const char* caller, const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code,
+                           bool* error) const;
 
     bool CheckItgExtent(const CMD_BUFFER_STATE* cb_node, const VkExtent3D* extent, const VkOffset3D* offset,
                         const VkExtent3D* granularity, const VkExtent3D* subresource_extent, const VkImageType image_type,
-                        const uint32_t i, const char* function, const char* member, const char* vuid);
+                        const uint32_t i, const char* function, const char* member, const char* vuid) const;
 
     bool CheckItgOffset(const CMD_BUFFER_STATE* cb_node, const VkOffset3D* offset, const VkExtent3D* granularity, const uint32_t i,
-                        const char* function, const char* member, const char* vuid);
-    VkExtent3D GetScaledItg(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* img);
+                        const char* function, const char* member, const char* vuid) const;
+    VkExtent3D GetScaledItg(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* img) const;
     bool CopyImageMultiplaneValidation(VkCommandBuffer command_buffer, const IMAGE_STATE* src_image_state,
-                                       const IMAGE_STATE* dst_image_state, const VkImageCopy region);
+                                       const IMAGE_STATE* dst_image_state, const VkImageCopy region) const;
     void RecordRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2KHR* pCreateInfo,
                              RENDER_PASS_STATE* render_pass);
     void RecordCreateRenderPassState(RenderPassCreateVersion rp_version, std::shared_ptr<RENDER_PASS_STATE>& render_pass,
@@ -1042,12 +1043,6 @@ class CoreChecks : public ValidationStateTracker {
 
     void TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE*, const RENDER_PASS_STATE*, FRAMEBUFFER_STATE*);
 
-    bool ValidateImageAspectLayout(CMD_BUFFER_STATE const* pCB, const VkImageMemoryBarrier* mem_barrier, uint32_t level,
-                                   uint32_t layer, VkImageAspectFlags aspect);
-
-    void TransitionImageAspectLayout(CMD_BUFFER_STATE* pCB, const VkImageMemoryBarrier* mem_barrier, uint32_t level, uint32_t layer,
-                                     VkImageAspectFlags aspect_mask, VkImageAspectFlags aspect);
-
     bool ValidateBarrierLayoutToImageUsage(const VkImageMemoryBarrier* img_barrier, bool new_not_old, VkImageUsageFlags usage,
                                            const char* func_name);
 
@@ -1101,13 +1096,13 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice device, const VkRenderPassCreateInfo2KHR* pCreateInfo);
 
     bool ValidateImageUsageFlags(IMAGE_STATE const* image_state, VkFlags desired, bool strict, const char* msgCode,
-                                 char const* func_name, char const* usage_string);
+                                 char const* func_name, char const* usage_string) const;
 
     bool ValidateImageFormatFeatureFlags(IMAGE_STATE const* image_state, VkFormatFeatureFlags desired, char const* func_name,
                                          const char* linear_vuid, const char* optimal_vuid) const;
 
     bool ValidateImageSubresourceLayers(const CMD_BUFFER_STATE* cb_node, const VkImageSubresourceLayers* subresource_layers,
-                                        char const* func_name, char const* member, uint32_t i);
+                                        char const* func_name, char const* member, uint32_t i) const;
 
     bool ValidateBufferUsageFlags(BUFFER_STATE const* buffer_state, VkFlags desired, bool strict, const char* msgCode,
                                   char const* func_name, char const* usage_string);
@@ -1142,11 +1137,11 @@ class CoreChecks : public ValidationStateTracker {
                                                                 const char* function, const char* vuid);
 
     bool ValidateImageMipLevel(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* img, uint32_t mip_level, const uint32_t i,
-                               const char* function, const char* member, const char* vuid);
+                               const char* function, const char* member, const char* vuid) const;
 
     bool ValidateImageArrayLayerRange(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* img, const uint32_t base_layer,
                                       const uint32_t layer_count, const uint32_t i, const char* function, const char* member,
-                                      const char* vuid);
+                                      const char* vuid) const;
 
     void PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions);

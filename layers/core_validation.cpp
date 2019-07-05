@@ -2105,7 +2105,7 @@ bool CoreChecks::InsideRenderPass(const CMD_BUFFER_STATE *pCB, const char *apiNa
 
 // Flags validation error if the associated call is made outside a render pass. The apiName
 // routine should ONLY be called inside a render pass.
-bool CoreChecks::OutsideRenderPass(CMD_BUFFER_STATE *pCB, const char *apiName, const char *msgCode) {
+bool CoreChecks::OutsideRenderPass(const CMD_BUFFER_STATE *pCB, const char *apiName, const char *msgCode) const {
     bool outside = false;
     if (((pCB->createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) && (!pCB->activeRenderPass)) ||
         ((pCB->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) && (!pCB->activeRenderPass) &&
@@ -7036,8 +7036,8 @@ void CoreChecks::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuffer
 }
 
 // Validate that an image's sampleCount matches the requirement for a specific API call
-bool CoreChecks::ValidateImageSampleCount(IMAGE_STATE *image_state, VkSampleCountFlagBits sample_count, const char *location,
-                                          const std::string &msgCode) {
+bool CoreChecks::ValidateImageSampleCount(const IMAGE_STATE *image_state, VkSampleCountFlagBits sample_count, const char *location,
+                                          const std::string &msgCode) const {
     bool skip = false;
     if (image_state->createInfo.samples != sample_count) {
         skip =
