@@ -1056,10 +1056,10 @@ void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t mem
     }
 }
 
-bool CoreChecks::VerifyImageLayout(CMD_BUFFER_STATE const *cb_node, IMAGE_STATE *image_state, const VkImageSubresourceRange &range,
-                                   VkImageAspectFlags aspect_mask, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
-                                   const char *caller, const char *layout_invalid_msg_code, const char *layout_mismatch_msg_code,
-                                   bool *error) {
+bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *image_state,
+                                   const VkImageSubresourceRange &range, VkImageAspectFlags aspect_mask,
+                                   VkImageLayout explicit_layout, VkImageLayout optimal_layout, const char *caller,
+                                   const char *layout_invalid_msg_code, const char *layout_mismatch_msg_code, bool *error) const {
     assert(cb_node);
     assert(image_state);
     const auto image = image_state->image;
@@ -1118,10 +1118,10 @@ bool CoreChecks::VerifyImageLayout(CMD_BUFFER_STATE const *cb_node, IMAGE_STATE 
     }
     return skip;
 }
-bool CoreChecks::VerifyImageLayout(CMD_BUFFER_STATE const *cb_node, IMAGE_STATE *image_state,
+bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *image_state,
                                    const VkImageSubresourceLayers &subLayers, VkImageLayout explicit_layout,
                                    VkImageLayout optimal_layout, const char *caller, const char *layout_invalid_msg_code,
-                                   const char *layout_mismatch_msg_code, bool *error) {
+                                   const char *layout_mismatch_msg_code, bool *error) const {
     return VerifyImageLayout(cb_node, image_state, RangeFromLayers(subLayers), explicit_layout, optimal_layout, caller,
                              layout_invalid_msg_code, layout_mismatch_msg_code, error);
 }
@@ -1916,7 +1916,7 @@ static inline bool IsExtentSizeZero(const VkExtent3D *extent) {
 }
 
 // Returns the image transfer granularity for a specific image scaled by compressed block size if necessary.
-VkExtent3D CoreChecks::GetScaledItg(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *img) {
+VkExtent3D CoreChecks::GetScaledItg(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *img) const {
     // Default to (0, 0, 0) granularity in case we can't find the real granularity for the physical device.
     VkExtent3D granularity = {0, 0, 0};
     auto pPool = GetCommandPoolState(cb_node->createInfo.commandPool);
@@ -1943,7 +1943,7 @@ static inline bool IsExtentAligned(const VkExtent3D *extent, const VkExtent3D *g
 
 // Check elements of a VkOffset3D structure against a queue family's Image Transfer Granularity values
 bool CoreChecks::CheckItgOffset(const CMD_BUFFER_STATE *cb_node, const VkOffset3D *offset, const VkExtent3D *granularity,
-                                const uint32_t i, const char *function, const char *member, const char *vuid) {
+                                const uint32_t i, const char *function, const char *member, const char *vuid) const {
     bool skip = false;
     VkExtent3D offset_extent = {};
     offset_extent.width = static_cast<uint32_t>(abs(offset->x));
@@ -1976,7 +1976,7 @@ bool CoreChecks::CheckItgOffset(const CMD_BUFFER_STATE *cb_node, const VkOffset3
 // Check elements of a VkExtent3D structure against a queue family's Image Transfer Granularity values
 bool CoreChecks::CheckItgExtent(const CMD_BUFFER_STATE *cb_node, const VkExtent3D *extent, const VkOffset3D *offset,
                                 const VkExtent3D *granularity, const VkExtent3D *subresource_extent, const VkImageType image_type,
-                                const uint32_t i, const char *function, const char *member, const char *vuid) {
+                                const uint32_t i, const char *function, const char *member, const char *vuid) const {
     bool skip = false;
     if (IsExtentAllZeroes(granularity)) {
         // If the queue family image transfer granularity is (0, 0, 0), then the extent must always match the image
@@ -2032,7 +2032,7 @@ bool CoreChecks::CheckItgExtent(const CMD_BUFFER_STATE *cb_node, const VkExtent3
 }
 
 bool CoreChecks::ValidateImageMipLevel(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *img, uint32_t mip_level,
-                                       const uint32_t i, const char *function, const char *member, const char *vuid) {
+                                       const uint32_t i, const char *function, const char *member, const char *vuid) const {
     bool skip = false;
     if (mip_level >= img->createInfo.mipLevels) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -2045,7 +2045,7 @@ bool CoreChecks::ValidateImageMipLevel(const CMD_BUFFER_STATE *cb_node, const IM
 
 bool CoreChecks::ValidateImageArrayLayerRange(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *img, const uint32_t base_layer,
                                               const uint32_t layer_count, const uint32_t i, const char *function,
-                                              const char *member, const char *vuid) {
+                                              const char *member, const char *vuid) const {
     bool skip = false;
     if (base_layer >= img->createInfo.arrayLayers || layer_count > img->createInfo.arrayLayers ||
         (base_layer + layer_count) > img->createInfo.arrayLayers) {
@@ -2075,7 +2075,7 @@ bool CoreChecks::ValidateCopyBufferImageTransferGranularityRequirements(const CM
 // Check valid usage Image Transfer Granularity requirements for elements of a VkImageCopy structure
 bool CoreChecks::ValidateCopyImageTransferGranularityRequirements(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *src_img,
                                                                   const IMAGE_STATE *dst_img, const VkImageCopy *region,
-                                                                  const uint32_t i, const char *function) {
+                                                                  const uint32_t i, const char *function) const {
     bool skip = false;
     // Source image checks
     VkExtent3D granularity = GetScaledItg(cb_node, src_img);
@@ -2101,7 +2101,7 @@ bool CoreChecks::ValidateCopyImageTransferGranularityRequirements(const CMD_BUFF
 
 // Validate contents of a VkImageCopy struct
 bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const VkImageCopy *ic_regions, const IMAGE_STATE *src_state,
-                                       const IMAGE_STATE *dst_state) {
+                                       const IMAGE_STATE *dst_state) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < regionCount; i++) {
@@ -2354,7 +2354,7 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const VkImage
 
 // vkCmdCopyImage checks that only apply if the multiplane extension is enabled
 bool CoreChecks::CopyImageMultiplaneValidation(VkCommandBuffer command_buffer, const IMAGE_STATE *src_image_state,
-                                               const IMAGE_STATE *dst_image_state, const VkImageCopy region) {
+                                               const IMAGE_STATE *dst_image_state, const VkImageCopy region) const {
     bool skip = false;
 
     // Neither image is multiplane
@@ -2425,9 +2425,9 @@ bool CoreChecks::CopyImageMultiplaneValidation(VkCommandBuffer command_buffer, c
 bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                              VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                              const VkImageCopy *pRegions) {
-    auto cb_node = GetCBState(commandBuffer);
-    auto src_image_state = GetImageState(srcImage);
-    auto dst_image_state = GetImageState(dstImage);
+    const auto *cb_node = GetCBState(commandBuffer);
+    const auto *src_image_state = GetImageState(srcImage);
+    const auto *dst_image_state = GetImageState(dstImage);
     bool skip = false;
 
     skip = ValidateImageCopyData(regionCount, pRegions, src_image_state, dst_image_state);
@@ -2719,8 +2719,9 @@ static inline bool ContainsRect(VkRect2D rect, VkRect2D sub_rect) {
 }
 
 bool CoreChecks::ValidateClearAttachmentExtent(VkCommandBuffer command_buffer, uint32_t attachment_index,
-                                               FRAMEBUFFER_STATE *framebuffer, uint32_t fb_attachment, const VkRect2D &render_area,
-                                               uint32_t rect_count, const VkClearRect *clear_rects) {
+                                               const FRAMEBUFFER_STATE *framebuffer, uint32_t fb_attachment,
+                                               const VkRect2D &render_area, uint32_t rect_count,
+                                               const VkClearRect *clear_rects) const {
     bool skip = false;
     const IMAGE_VIEW_STATE *image_view_state = nullptr;
     if (framebuffer && (fb_attachment != VK_ATTACHMENT_UNUSED) && (fb_attachment < framebuffer->createInfo.attachmentCount)) {
@@ -2784,7 +2785,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         const VkRenderPassCreateInfo2KHR *renderpass_create_info = cb_node->activeRenderPass->createInfo.ptr();
         const uint32_t renderpass_attachment_count = renderpass_create_info->attachmentCount;
         const VkSubpassDescription2KHR *subpass_desc = &renderpass_create_info->pSubpasses[cb_node->activeSubpass];
-        auto framebuffer = GetFramebufferState(cb_node->activeFramebuffer);
+        const auto *framebuffer = GetFramebufferState(cb_node->activeFramebuffer);
         const auto &render_area = cb_node->activeRenderPassBeginInfo.renderArea;
         std::shared_ptr<std::vector<VkClearRect>> clear_rect_copy;
 
@@ -2883,9 +2884,9 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
 bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                 VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                                 const VkImageResolve *pRegions) {
-    auto cb_node = GetCBState(commandBuffer);
-    auto src_image_state = GetImageState(srcImage);
-    auto dst_image_state = GetImageState(dstImage);
+    const auto *cb_node = GetCBState(commandBuffer);
+    const auto *src_image_state = GetImageState(srcImage);
+    const auto *dst_image_state = GetImageState(dstImage);
 
     bool skip = false;
     if (cb_node && src_image_state && dst_image_state) {
@@ -2989,9 +2990,9 @@ void CoreChecks::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkI
 bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                              VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                              const VkImageBlit *pRegions, VkFilter filter) {
-    auto cb_node = GetCBState(commandBuffer);
-    auto src_image_state = GetImageState(srcImage);
-    auto dst_image_state = GetImageState(dstImage);
+    const auto *cb_node = GetCBState(commandBuffer);
+    const auto *src_image_state = GetImageState(srcImage);
+    const auto *dst_image_state = GetImageState(dstImage);
 
     bool skip = false;
     if (cb_node) {
@@ -3659,7 +3660,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
 // Helper function to validate correct usage bits set for buffers or images. Verify that (actual & desired) flags != 0 or, if strict
 // is true, verify that (actual & desired) flags == desired
 bool CoreChecks::ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 strict, const VulkanTypedHandle &typed_handle,
-                                    const char *msgCode, char const *func_name, char const *usage_str) {
+                                    const char *msgCode, char const *func_name, char const *usage_str) const {
     bool correct_usage = false;
     bool skip = false;
     const char *type_str = object_string[typed_handle.type];
@@ -3688,7 +3689,7 @@ bool CoreChecks::ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 st
 // Helper function to validate usage flags for buffers. For given buffer_state send actual vs. desired usage off to helper above
 // where an error will be flagged if usage is not correct
 bool CoreChecks::ValidateImageUsageFlags(IMAGE_STATE const *image_state, VkFlags desired, bool strict, const char *msgCode,
-                                         char const *func_name, char const *usage_string) {
+                                         char const *func_name, char const *usage_string) const {
     return ValidateUsageFlags(image_state->createInfo.usage, desired, strict,
                               VulkanTypedHandle(image_state->image, kVulkanObjectTypeImage), msgCode, func_name, usage_string);
 }
@@ -3718,7 +3719,7 @@ bool CoreChecks::ValidateImageFormatFeatureFlags(IMAGE_STATE const *image_state,
 }
 
 bool CoreChecks::ValidateImageSubresourceLayers(const CMD_BUFFER_STATE *cb_node, const VkImageSubresourceLayers *subresource_layers,
-                                                char const *func_name, char const *member, uint32_t i) {
+                                                char const *func_name, char const *member, uint32_t i) const {
     bool skip = false;
     // layerCount must not be zero
     if (subresource_layers->layerCount == 0) {
