@@ -342,6 +342,7 @@ class ValidationStateTracker : public ValidationObject {
 
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(VkPhysicalDevice phys);
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState();
+    const PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState() const;
 
     // State update functions
     // Create/Destroy
@@ -546,7 +547,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateRenderPassCompatibility(const char* type1_string, const RENDER_PASS_STATE* rp1_state, const char* type2_string,
                                          const RENDER_PASS_STATE* rp2_state, const char* caller, const char* error_code);
     void UpdateDrawState(CMD_BUFFER_STATE* cb_state, const VkPipelineBindPoint bind_point);
-    bool ReportInvalidCommandBuffer(const CMD_BUFFER_STATE* cb_state, const char* call_source);
+    bool ReportInvalidCommandBuffer(const CMD_BUFFER_STATE* cb_state, const char* call_source) const;
     void InitGpuValidation();
     bool ValidateQueueFamilyIndex(const PHYSICAL_DEVICE_STATE* pd_state, uint32_t requested_queue_family, const char* err_code,
                                   const char* cmd_name, const char* queue_family_var_name);
@@ -701,7 +702,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateUpdateDescriptorSetWithTemplate(VkDescriptorSet descriptorSet,
                                                  VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
     bool ValidateMemoryIsBoundToBuffer(const BUFFER_STATE*, const char*, const char*);
-    bool ValidateMemoryIsBoundToImage(const IMAGE_STATE*, const char*, const char*);
+    bool ValidateMemoryIsBoundToImage(const IMAGE_STATE*, const char*, const char*) const;
     void AddCommandBufferBindingSampler(CMD_BUFFER_STATE*, SAMPLER_STATE*);
     void AddCommandBufferBindingImage(CMD_BUFFER_STATE*, IMAGE_STATE*);
     void AddCommandBufferBindingImageView(CMD_BUFFER_STATE*, IMAGE_VIEW_STATE*);
@@ -710,8 +711,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateObjectNotInUse(BASE_NODE* obj_node, const VulkanTypedHandle& obj_struct, const char* caller_name,
                                 const char* error_code);
     bool ValidateCmdQueueFlags(const CMD_BUFFER_STATE* cb_node, const char* caller_name, VkQueueFlags flags,
-                               const char* error_code);
-    bool InsideRenderPass(const CMD_BUFFER_STATE* pCB, const char* apiName, const char* msgCode);
+                               const char* error_code) const;
+    bool InsideRenderPass(const CMD_BUFFER_STATE* pCB, const char* apiName, const char* msgCode) const;
     bool OutsideRenderPass(CMD_BUFFER_STATE* pCB, const char* apiName, const char* msgCode);
 
     void SetLayout(std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE>& imageLayoutMap, ImageSubresourcePair imgpair,
@@ -719,8 +720,8 @@ class CoreChecks : public ValidationStateTracker {
 
     bool ValidateImageSampleCount(IMAGE_STATE* image_state, VkSampleCountFlagBits sample_count, const char* location,
                                   const std::string& msgCode);
-    bool ValidateCmdSubpassState(const CMD_BUFFER_STATE* pCB, const CMD_TYPE cmd_type);
-    bool ValidateCmd(const CMD_BUFFER_STATE* cb_state, const CMD_TYPE cmd, const char* caller_name);
+    bool ValidateCmdSubpassState(const CMD_BUFFER_STATE* pCB, const CMD_TYPE cmd_type) const;
+    bool ValidateCmd(const CMD_BUFFER_STATE* cb_state, const CMD_TYPE cmd, const char* caller_name) const;
 
     bool ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, VkDebugReportObjectTypeEXT VUID_handle_type,
                                                  uint64_t VUID_handle, const char* VUID);
@@ -732,7 +733,7 @@ class CoreChecks : public ValidationStateTracker {
                                         uint64_t VUID_handle, const char* VUID);
 
     // Prototypes for CoreChecks accessor functions
-    VkFormatProperties GetPDFormatProperties(const VkFormat format);
+    VkFormatProperties GetPDFormatProperties(const VkFormat format) const;
     VkResult GetPDImageFormatProperties(const VkImageCreateInfo*, VkImageFormatProperties*);
     VkResult GetPDImageFormatProperties2(const VkPhysicalDeviceImageFormatInfo2*, VkImageFormatProperties2*);
     const VkPhysicalDeviceMemoryProperties* GetPhysicalDeviceMemoryProperties();
@@ -913,7 +914,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateImageSubresourceRange(const uint32_t image_mip_count, const uint32_t image_layer_count,
                                        const VkImageSubresourceRange& subresourceRange, const char* cmd_name,
                                        const char* param_name, const char* image_layer_count_var_name, const uint64_t image_handle,
-                                       SubresourceRangeErrorCodes errorCodes);
+                                       SubresourceRangeErrorCodes errorCodes) const;
     void SetImageLayout(CMD_BUFFER_STATE* cb_node, const IMAGE_STATE& image_state,
                         const VkImageSubresourceRange& image_subresource_range, VkImageLayout layout,
                         VkImageLayout expected_layout = kInvalidLayout);
@@ -939,7 +940,7 @@ class CoreChecks : public ValidationStateTracker {
 
     bool PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* pAllocator);
 
-    bool ValidateImageAttributes(IMAGE_STATE* image_state, VkImageSubresourceRange range);
+    bool ValidateImageAttributes(const IMAGE_STATE* image_state, const VkImageSubresourceRange& range) const;
 
     bool ValidateClearAttachmentExtent(VkCommandBuffer command_buffer, uint32_t attachment_index, FRAMEBUFFER_STATE* framebuffer,
                                        uint32_t fb_attachment, const VkRect2D& render_area, uint32_t rect_count,
@@ -947,8 +948,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateImageCopyData(const uint32_t regionCount, const VkImageCopy* ic_regions, const IMAGE_STATE* src_state,
                                const IMAGE_STATE* dst_state);
 
-    bool VerifyClearImageLayout(CMD_BUFFER_STATE* cb_node, IMAGE_STATE* image_state, VkImageSubresourceRange range,
-                                VkImageLayout dest_image_layout, const char* func_name);
+    bool VerifyClearImageLayout(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* image_state,
+                                const VkImageSubresourceRange& range, VkImageLayout dest_image_layout, const char* func_name) const;
 
     bool VerifyImageLayout(CMD_BUFFER_STATE const* cb_node, IMAGE_STATE* image_state, const VkImageSubresourceRange& range,
                            VkImageAspectFlags view_aspect, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
@@ -1086,7 +1087,7 @@ class CoreChecks : public ValidationStateTracker {
     void UpdateCmdBufImageLayouts(CMD_BUFFER_STATE* pCB);
 
     bool VerifyBoundMemoryIsValid(VkDeviceMemory mem, const VulkanTypedHandle& typed_handle, const char* api_name,
-                                  const char* error_code);
+                                  const char* error_code) const;
 
     bool ValidateLayoutVsAttachmentDescription(const debug_report_data* report_data, RenderPassCreateVersion rp_version,
                                                const VkImageLayout first_layout, const uint32_t attachment,
@@ -1098,7 +1099,7 @@ class CoreChecks : public ValidationStateTracker {
                                  char const* func_name, char const* usage_string);
 
     bool ValidateImageFormatFeatureFlags(IMAGE_STATE const* image_state, VkFormatFeatureFlags desired, char const* func_name,
-                                         const char* linear_vuid, const char* optimal_vuid);
+                                         const char* linear_vuid, const char* optimal_vuid) const;
 
     bool ValidateImageSubresourceLayers(const CMD_BUFFER_STATE* cb_node, const VkImageSubresourceLayers* subresource_layers,
                                         char const* func_name, char const* member, uint32_t i);
@@ -1120,7 +1121,7 @@ class CoreChecks : public ValidationStateTracker {
                                                  const VkImageSubresourceRange& subresourceRange);
 
     bool ValidateCmdClearColorSubresourceRange(const IMAGE_STATE* image_state, const VkImageSubresourceRange& subresourceRange,
-                                               const char* param_name);
+                                               const char* param_name) const;
 
     bool ValidateCmdClearDepthSubresourceRange(const IMAGE_STATE* image_state, const VkImageSubresourceRange& subresourceRange,
                                                const char* param_name);

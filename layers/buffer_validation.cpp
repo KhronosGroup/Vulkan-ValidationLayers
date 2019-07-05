@@ -1529,7 +1529,7 @@ void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const
     StateTracker::PreCallRecordDestroyImage(device, image, pAllocator);
 }
 
-bool CoreChecks::ValidateImageAttributes(IMAGE_STATE *image_state, VkImageSubresourceRange range) {
+bool CoreChecks::ValidateImageAttributes(const IMAGE_STATE *image_state, const VkImageSubresourceRange &range) const {
     bool skip = false;
 
     if (range.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT) {
@@ -1574,8 +1574,9 @@ uint32_t ResolveRemainingLayers(const VkImageSubresourceRange *range, uint32_t l
     return array_layer_count;
 }
 
-bool CoreChecks::VerifyClearImageLayout(CMD_BUFFER_STATE *cb_node, IMAGE_STATE *image_state, VkImageSubresourceRange range,
-                                        VkImageLayout dest_image_layout, const char *func_name) {
+bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *image_state,
+                                        const VkImageSubresourceRange &range, VkImageLayout dest_image_layout,
+                                        const char *func_name) const {
     bool skip = false;
 
     if (dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
@@ -1618,7 +1619,7 @@ bool CoreChecks::VerifyClearImageLayout(CMD_BUFFER_STATE *cb_node, IMAGE_STATE *
     }
 
     // Cast to const to prevent creation at validate time.
-    const auto *subresource_map = GetImageSubresourceLayoutMap(static_cast<const CMD_BUFFER_STATE *>(cb_node), image_state->image);
+    const auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image_state->image);
     if (subresource_map) {
         bool subres_skip = false;
         LayoutUseCheckAndMessage layout_check(subresource_map);
@@ -1652,8 +1653,8 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
                                                    const VkImageSubresourceRange *pRanges) {
     bool skip = false;
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
-    auto cb_node = GetCBState(commandBuffer);
-    auto image_state = GetImageState(image);
+    const auto *cb_node = GetCBState(commandBuffer);
+    const auto *image_state = GetImageState(image);
     if (cb_node && image_state) {
         skip |= ValidateMemoryIsBoundToImage(image_state, "vkCmdClearColorImage()", "VUID-vkCmdClearColorImage-image-00003");
         skip |= ValidateCmdQueueFlags(cb_node, "vkCmdClearColorImage()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -3671,7 +3672,7 @@ bool CoreChecks::ValidateImageUsageFlags(IMAGE_STATE const *image_state, VkFlags
 }
 
 bool CoreChecks::ValidateImageFormatFeatureFlags(IMAGE_STATE const *image_state, VkFormatFeatureFlags desired,
-                                                 char const *func_name, const char *linear_vuid, const char *optimal_vuid) {
+                                                 char const *func_name, const char *linear_vuid, const char *optimal_vuid) const {
     VkFormatProperties format_properties = GetPDFormatProperties(image_state->createInfo.format);
     bool skip = false;
     if (image_state->createInfo.tiling == VK_IMAGE_TILING_LINEAR) {
@@ -3978,7 +3979,7 @@ bool CoreChecks::ValidateImageAspectMask(VkImage image, VkFormat format, VkImage
 bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, const uint32_t image_layer_count,
                                                const VkImageSubresourceRange &subresourceRange, const char *cmd_name,
                                                const char *param_name, const char *image_layer_count_var_name,
-                                               const uint64_t image_handle, SubresourceRangeErrorCodes errorCodes) {
+                                               const uint64_t image_handle, SubresourceRangeErrorCodes errorCodes) const {
     bool skip = false;
 
     // Validate mip levels
@@ -4066,7 +4067,8 @@ bool CoreChecks::ValidateCreateImageViewSubresourceRange(const IMAGE_STATE *imag
 }
 
 bool CoreChecks::ValidateCmdClearColorSubresourceRange(const IMAGE_STATE *image_state,
-                                                       const VkImageSubresourceRange &subresourceRange, const char *param_name) {
+                                                       const VkImageSubresourceRange &subresourceRange,
+                                                       const char *param_name) const {
     SubresourceRangeErrorCodes subresourceRangeErrorCodes = {};
     subresourceRangeErrorCodes.base_mip_err = "VUID-vkCmdClearColorImage-baseMipLevel-01470";
     subresourceRangeErrorCodes.mip_count_err = "VUID-vkCmdClearColorImage-pRanges-01692";
