@@ -5489,6 +5489,16 @@ TEST_F(VkLayerTest, CreatePipelineCheckFragmentShaderInterlockEnabled) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
     std::vector<const char *> device_extension_names;
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_SHADER_INTERLOCK_EXTENSION_NAME)) {
+        // Note: we intentionally do not add the required extension to the device extension list.
+        //       in order to create the error below
+    } else {
+        // We skip this test if the extension is not supported by the driver as in some cases this will cause
+        // the vkCreateShaderModule to fail without generating an error message
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_FRAGMENT_SHADER_INTERLOCK_EXTENSION_NAME);
+        return;
+    }
+
     auto features = m_device->phy().features();
 
     // Disable the fragment shader interlock feature.
