@@ -2693,9 +2693,23 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
     return skip;
 }
 
+void ValidationStateTracker::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage,
+                                                       VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout,
+                                                       uint32_t regionCount, const VkImageCopy *pRegions) {
+    auto cb_node = GetCBState(commandBuffer);
+    auto src_image_state = GetImageState(srcImage);
+    auto dst_image_state = GetImageState(dstImage);
+
+    // Update bindings between images and cmd buffer
+    AddCommandBufferBindingImage(cb_node, src_image_state);
+    AddCommandBufferBindingImage(cb_node, dst_image_state);
+}
+
 void CoreChecks::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                            VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                            const VkImageCopy *pRegions) {
+    StateTracker::PreCallRecordCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
+                                            pRegions);
     auto cb_node = GetCBState(commandBuffer);
     auto src_image_state = GetImageState(srcImage);
     auto dst_image_state = GetImageState(dstImage);
@@ -2705,9 +2719,6 @@ void CoreChecks::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImag
         SetImageInitialLayout(cb_node, *src_image_state, pRegions[i].srcSubresource, srcImageLayout);
         SetImageInitialLayout(cb_node, *dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
     }
-    // Update bindings between images and cmd buffer
-    AddCommandBufferBindingImage(cb_node, src_image_state);
-    AddCommandBufferBindingImage(cb_node, dst_image_state);
 }
 
 // Returns true if sub_rect is entirely contained within rect
@@ -2975,9 +2986,10 @@ bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, V
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                              VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                              const VkImageResolve *pRegions) {
+void ValidationStateTracker::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage,
+                                                          VkImageLayout srcImageLayout, VkImage dstImage,
+                                                          VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                          const VkImageResolve *pRegions) {
     auto cb_node = GetCBState(commandBuffer);
     auto src_image_state = GetImageState(srcImage);
     auto dst_image_state = GetImageState(dstImage);
@@ -3303,9 +3315,23 @@ bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkIm
     return skip;
 }
 
+void ValidationStateTracker::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage,
+                                                       VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout,
+                                                       uint32_t regionCount, const VkImageBlit *pRegions, VkFilter filter) {
+    auto cb_node = GetCBState(commandBuffer);
+    auto src_image_state = GetImageState(srcImage);
+    auto dst_image_state = GetImageState(dstImage);
+
+    // Update bindings between images and cmd buffer
+    AddCommandBufferBindingImage(cb_node, src_image_state);
+    AddCommandBufferBindingImage(cb_node, dst_image_state);
+}
+
 void CoreChecks::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                            VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                            const VkImageBlit *pRegions, VkFilter filter) {
+    StateTracker::PreCallRecordCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount,
+                                            pRegions, filter);
     auto cb_node = GetCBState(commandBuffer);
     auto src_image_state = GetImageState(srcImage);
     auto dst_image_state = GetImageState(dstImage);
@@ -3315,9 +3341,6 @@ void CoreChecks::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImag
         SetImageInitialLayout(cb_node, *src_image_state, pRegions[i].srcSubresource, srcImageLayout);
         SetImageInitialLayout(cb_node, *dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
     }
-    // Update bindings between images and cmd buffer
-    AddCommandBufferBindingImage(cb_node, src_image_state);
-    AddCommandBufferBindingImage(cb_node, dst_image_state);
 }
 
 // This validates that the initial layout specified in the command buffer for the IMAGE is the same as the global IMAGE layout
