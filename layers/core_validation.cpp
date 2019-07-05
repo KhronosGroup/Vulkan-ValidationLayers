@@ -158,6 +158,7 @@ PHYSICAL_DEVICE_STATE *ValidationStateTracker::GetPhysicalDeviceState(VkPhysical
 }
 
 PHYSICAL_DEVICE_STATE *ValidationStateTracker::GetPhysicalDeviceState() { return physical_device_state; }
+const PHYSICAL_DEVICE_STATE *ValidationStateTracker::GetPhysicalDeviceState() const { return physical_device_state; }
 
 // Return ptr to memory binding for given handle of specified type
 BINDABLE *ValidationStateTracker::GetObjectMemBinding(const VulkanTypedHandle &typed_handle) {
@@ -401,7 +402,7 @@ void ValidationStateTracker::ClearMemoryObjectBindings(const VulkanTypedHandle &
 
 // For given mem object, verify that it is not null or UNBOUND, if it is, report error. Return skip value.
 bool CoreChecks::VerifyBoundMemoryIsValid(VkDeviceMemory mem, const VulkanTypedHandle &typed_handle, const char *api_name,
-                                          const char *error_code) {
+                                          const char *error_code) const {
     bool result = false;
     auto type_name = object_string[typed_handle.type];
     if (VK_NULL_HANDLE == mem) {
@@ -419,7 +420,7 @@ bool CoreChecks::VerifyBoundMemoryIsValid(VkDeviceMemory mem, const VulkanTypedH
 }
 
 // Check to see if memory was ever bound to this image
-bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, const char *api_name, const char *error_code) {
+bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, const char *api_name, const char *error_code) const {
     bool result = false;
     if (image_state->create_from_swapchain != VK_NULL_HANDLE) {
         if (image_state->bind_swapchain == VK_NULL_HANDLE) {
@@ -1744,7 +1745,7 @@ void ValidationStateTracker::DeleteDescriptorSetPools() {
 }
 
 // If a renderpass is active, verify that the given command type is appropriate for current subpass state
-bool CoreChecks::ValidateCmdSubpassState(const CMD_BUFFER_STATE *pCB, const CMD_TYPE cmd_type) {
+bool CoreChecks::ValidateCmdSubpassState(const CMD_BUFFER_STATE *pCB, const CMD_TYPE cmd_type) const {
     if (!pCB->activeRenderPass) return false;
     bool skip = false;
     if (pCB->activeSubpassContents == VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS &&
@@ -1762,7 +1763,7 @@ bool CoreChecks::ValidateCmdSubpassState(const CMD_BUFFER_STATE *pCB, const CMD_
 }
 
 bool CoreChecks::ValidateCmdQueueFlags(const CMD_BUFFER_STATE *cb_node, const char *caller_name, VkQueueFlags required_flags,
-                                       const char *error_code) {
+                                       const char *error_code) const {
     auto pool = GetCommandPoolState(cb_node->createInfo.commandPool);
     if (pool) {
         VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[pool->queueFamilyIndex].queueFlags;
@@ -1791,7 +1792,7 @@ static char const *GetCauseStr(VulkanTypedHandle obj) {
     return "destroyed";
 }
 
-bool CoreChecks::ReportInvalidCommandBuffer(const CMD_BUFFER_STATE *cb_state, const char *call_source) {
+bool CoreChecks::ReportInvalidCommandBuffer(const CMD_BUFFER_STATE *cb_state, const char *call_source) const {
     bool skip = false;
     for (auto obj : cb_state->broken_bindings) {
         const char *cause_str = GetCauseStr(obj);
@@ -1812,7 +1813,7 @@ static const std::array<const char *, CMD_RANGE_SIZE> must_be_recording_list = {
 
 // Validate the given command being added to the specified cmd buffer, flagging errors if CB is not in the recording state or if
 // there's an issue with the Cmd ordering
-bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE *cb_state, const CMD_TYPE cmd, const char *caller_name) {
+bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE *cb_state, const CMD_TYPE cmd, const char *caller_name) const {
     switch (cb_state->state) {
         case CB_RECORDING:
             return ValidateCmdSubpassState(cb_state, cmd);
@@ -2092,7 +2093,7 @@ CBStatusFlags MakeStaticStateMask(VkPipelineDynamicStateCreateInfo const *ds) {
 
 // Flags validation error if the associated call is made inside a render pass. The apiName routine should ONLY be called outside a
 // render pass.
-bool CoreChecks::InsideRenderPass(const CMD_BUFFER_STATE *pCB, const char *apiName, const char *msgCode) {
+bool CoreChecks::InsideRenderPass(const CMD_BUFFER_STATE *pCB, const char *apiName, const char *msgCode) const {
     bool inside = false;
     if (pCB->activeRenderPass) {
         inside = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -4775,7 +4776,7 @@ void CoreChecks::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass re
 }
 
 // Access helper functions for external modules
-VkFormatProperties CoreChecks::GetPDFormatProperties(const VkFormat format) {
+VkFormatProperties CoreChecks::GetPDFormatProperties(const VkFormat format) const {
     VkFormatProperties format_properties;
     DispatchGetPhysicalDeviceFormatProperties(physical_device, format, &format_properties);
     return format_properties;
