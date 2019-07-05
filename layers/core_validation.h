@@ -427,12 +427,20 @@ class ValidationStateTracker : public ValidationObject {
                                                          VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
 
     // Recorded Commands
+    void PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                                   VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions,
+                                   VkFilter filter);
     void PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                          const VkClearColorValue* pColor, uint32_t rangeCount,
                                          const VkImageSubresourceRange* pRanges);
     void PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                 const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
                                                 const VkImageSubresourceRange* pRanges);
+    void PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                                   VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions);
+    void PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                      VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                      const VkImageResolve* pRegions);
 
     // State Utilty functions
     void AddCommandBufferBindingImage(CMD_BUFFER_STATE*, IMAGE_STATE*);
@@ -1067,10 +1075,6 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                         VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                         const VkImageResolve* pRegions);
-
-    void PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                      VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                      const VkImageResolve* pRegions);
 
     bool PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                      VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
