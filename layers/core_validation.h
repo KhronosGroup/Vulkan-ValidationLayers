@@ -426,7 +426,16 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
                                                          VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
 
+    // Recorded Commands
+    void PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                         const VkClearColorValue* pColor, uint32_t rangeCount,
+                                         const VkImageSubresourceRange* pRanges);
+    void PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
+                                                const VkImageSubresourceRange* pRanges);
+
     // State Utilty functions
+    void AddCommandBufferBindingImage(CMD_BUFFER_STATE*, IMAGE_STATE*);
     void ClearMemoryObjectBindings(const VulkanTypedHandle& typed_handle);
     void ClearMemoryObjectBinding(const VulkanTypedHandle& typed_handle, VkDeviceMemory mem);
     void DeleteDescriptorSetPools();
@@ -704,7 +713,6 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateMemoryIsBoundToBuffer(const BUFFER_STATE*, const char*, const char*);
     bool ValidateMemoryIsBoundToImage(const IMAGE_STATE*, const char*, const char*) const;
     void AddCommandBufferBindingSampler(CMD_BUFFER_STATE*, SAMPLER_STATE*);
-    void AddCommandBufferBindingImage(CMD_BUFFER_STATE*, IMAGE_STATE*);
     void AddCommandBufferBindingImageView(CMD_BUFFER_STATE*, IMAGE_VIEW_STATE*);
     void AddCommandBufferBindingBuffer(CMD_BUFFER_STATE*, BUFFER_STATE*);
     void AddCommandBufferBindingBufferView(CMD_BUFFER_STATE*, BUFFER_VIEW_STATE*);
@@ -981,9 +989,6 @@ class CoreChecks : public ValidationStateTracker {
     void RecordCreateRenderPassState(RenderPassCreateVersion rp_version, std::shared_ptr<RENDER_PASS_STATE>& render_pass,
                                      VkRenderPass* pRenderPass);
 
-    void RecordClearImageLayout(CMD_BUFFER_STATE* cb_node, VkImage image, VkImageSubresourceRange range,
-                                VkImageLayout dest_image_layout);
-
     bool PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                            const VkClearColorValue* pColor, uint32_t rangeCount,
                                            const VkImageSubresourceRange* pRanges);
@@ -1124,7 +1129,7 @@ class CoreChecks : public ValidationStateTracker {
                                                const char* param_name) const;
 
     bool ValidateCmdClearDepthSubresourceRange(const IMAGE_STATE* image_state, const VkImageSubresourceRange& subresourceRange,
-                                               const char* param_name);
+                                               const char* param_name) const;
 
     bool ValidateImageBarrierSubresourceRange(const IMAGE_STATE* image_state, const VkImageSubresourceRange& subresourceRange,
                                               const char* cmd_name, const char* param_name);

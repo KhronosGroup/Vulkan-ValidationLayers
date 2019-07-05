@@ -1676,13 +1676,24 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                 const VkClearColorValue *pColor, uint32_t rangeCount,
-                                                 const VkImageSubresourceRange *pRanges) {
+void ValidationStateTracker::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image,
+                                                             VkImageLayout imageLayout, const VkClearColorValue *pColor,
+                                                             uint32_t rangeCount, const VkImageSubresourceRange *pRanges) {
     auto cb_node = GetCBState(commandBuffer);
     auto image_state = GetImageState(image);
     if (cb_node && image_state) {
         AddCommandBufferBindingImage(cb_node, image_state);
+    }
+}
+
+void CoreChecks::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                 const VkClearColorValue *pColor, uint32_t rangeCount,
+                                                 const VkImageSubresourceRange *pRanges) {
+    StateTracker::PreCallRecordCmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
+
+    auto cb_node = GetCBState(commandBuffer);
+    auto image_state = GetImageState(image);
+    if (cb_node && image_state) {
         for (uint32_t i = 0; i < rangeCount; ++i) {
             SetImageInitialLayout(cb_node, image, pRanges[i], imageLayout);
         }
@@ -1695,8 +1706,8 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     bool skip = false;
 
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
-    auto cb_node = GetCBState(commandBuffer);
-    auto image_state = GetImageState(image);
+    const auto *cb_node = GetCBState(commandBuffer);
+    const auto *image_state = GetImageState(image);
     if (cb_node && image_state) {
         skip |= ValidateMemoryIsBoundToImage(image_state, "vkCmdClearDepthStencilImage()",
                                              "VUID-vkCmdClearDepthStencilImage-image-00010");
@@ -1739,13 +1750,24 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                        const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
-                                                        const VkImageSubresourceRange *pRanges) {
+void ValidationStateTracker::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image,
+                                                                    VkImageLayout imageLayout,
+                                                                    const VkClearDepthStencilValue *pDepthStencil,
+                                                                    uint32_t rangeCount, const VkImageSubresourceRange *pRanges) {
     auto cb_node = GetCBState(commandBuffer);
     auto image_state = GetImageState(image);
     if (cb_node && image_state) {
         AddCommandBufferBindingImage(cb_node, image_state);
+    }
+}
+
+void CoreChecks::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                        const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
+                                                        const VkImageSubresourceRange *pRanges) {
+    StateTracker::PreCallRecordCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
+    auto cb_node = GetCBState(commandBuffer);
+    auto image_state = GetImageState(image);
+    if (cb_node && image_state) {
         for (uint32_t i = 0; i < rangeCount; ++i) {
             SetImageInitialLayout(cb_node, image, pRanges[i], imageLayout);
         }
@@ -4081,7 +4103,8 @@ bool CoreChecks::ValidateCmdClearColorSubresourceRange(const IMAGE_STATE *image_
 }
 
 bool CoreChecks::ValidateCmdClearDepthSubresourceRange(const IMAGE_STATE *image_state,
-                                                       const VkImageSubresourceRange &subresourceRange, const char *param_name) {
+                                                       const VkImageSubresourceRange &subresourceRange,
+                                                       const char *param_name) const {
     SubresourceRangeErrorCodes subresourceRangeErrorCodes = {};
     subresourceRangeErrorCodes.base_mip_err = "VUID-vkCmdClearDepthStencilImage-baseMipLevel-01474";
     subresourceRangeErrorCodes.mip_count_err = "VUID-vkCmdClearDepthStencilImage-pRanges-01694";
