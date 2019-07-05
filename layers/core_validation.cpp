@@ -284,7 +284,7 @@ void CoreChecks::AddCommandBufferBindingSampler(CMD_BUFFER_STATE *cb_node, SAMPL
 }
 
 // Create binding link between given image node and command buffer node
-void CoreChecks::AddCommandBufferBindingImage(CMD_BUFFER_STATE *cb_node, IMAGE_STATE *image_state) {
+void ValidationStateTracker::AddCommandBufferBindingImage(CMD_BUFFER_STATE *cb_node, IMAGE_STATE *image_state) {
     // Skip validation if this image was created through WSI
     if (image_state->binding.mem != MEMTRACKER_SWAP_CHAIN_IMAGE_KEY) {
         // First update cb binding for image
