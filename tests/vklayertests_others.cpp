@@ -128,6 +128,11 @@ TEST_F(VkLayerTest, RequiredParameter) {
     submitInfo.pWaitDstStageMask = &stageFlags;
     vkQueueSubmit(m_device->m_queue, 1, &submitInfo, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCreateRenderPass-pCreateInfo-parameter");
+    VkRenderPass render_pass;
+    vkCreateRenderPass(device(), nullptr, nullptr, &render_pass);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, PnextOnlyStructValidation) {
