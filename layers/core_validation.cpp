@@ -8979,22 +8979,11 @@ void CoreChecks::RecordRenderPassDAG(RenderPassCreateVersion rp_version, const V
     }
 }
 
-bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2KHR *pCreateInfo,
-                                       RENDER_PASS_STATE *render_pass) {
-    // Shorthand...
-    auto &subpass_to_node = render_pass->subpassToNode;
-    subpass_to_node.resize(pCreateInfo->subpassCount);
-    auto &self_dependencies = render_pass->self_dependencies;
-    self_dependencies.resize(pCreateInfo->subpassCount);
-
+bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2KHR *pCreateInfo) {
     bool skip = false;
     const char *vuid;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
 
-    for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
-        subpass_to_node[i].pass = i;
-        self_dependencies[i].clear();
-    }
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
         const VkSubpassDependency2KHR &dependency = pCreateInfo->pDependencies[i];
         VkPipelineStageFlags exclude_graphics_pipeline_stages =
@@ -9111,12 +9100,7 @@ bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const
                     report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                     "Dependency %u specifies a self-dependency from logically-later stage (%s) to a logically-earlier stage (%s).",
                     i, string_VkPipelineStageFlagBits(latest_src_stage), string_VkPipelineStageFlagBits(earliest_dst_stage));
-            } else {
-                self_dependencies[dependency.srcSubpass].push_back(i);
             }
-        } else {
-            subpass_to_node[dependency.dstSubpass].prev.push_back(dependency.srcSubpass);
-            subpass_to_node[dependency.srcSubpass].next.push_back(dependency.dstSubpass);
         }
     }
     return skip;
@@ -9427,7 +9411,7 @@ static void MarkAttachmentFirstUse(RENDER_PASS_STATE *render_pass, uint32_t inde
 }
 
 bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersion rp_version,
-                                          const VkRenderPassCreateInfo2KHR *pCreateInfo, RENDER_PASS_STATE *render_pass) {
+                                          const VkRenderPassCreateInfo2KHR *pCreateInfo) {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
     const char *vuid;
@@ -9437,8 +9421,7 @@ bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersi
     //       ValidateLayouts.
     skip |= ValidateRenderpassAttachmentUsage(rp_version, pCreateInfo);
 
-    render_pass->renderPass = VK_NULL_HANDLE;
-    skip |= ValidateRenderPassDAG(rp_version, pCreateInfo, render_pass);
+    skip |= ValidateRenderPassDAG(rp_version, pCreateInfo);
 
     // Validate multiview correlation and view masks
     bool viewMaskZero = false;
@@ -9570,8 +9553,9 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
     }
 
     if (!skip) {
-        auto render_pass = std::unique_ptr<RENDER_PASS_STATE>(new RENDER_PASS_STATE(pCreateInfo));
-        skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_1, render_pass->createInfo.ptr(), render_pass.get());
+        safe_VkRenderPassCreateInfo2KHR create_info_2khr;
+        ConvertVkRenderPassCreateInfoToV2KHR(pCreateInfo, &create_info_2khr);
+        skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_1, create_info_2khr.ptr());
     }
 
     return skip;
@@ -9762,8 +9746,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRe
         skip |= ValidateDepthStencilResolve(report_data, phys_dev_ext_props.depth_stencil_resolve_props, pCreateInfo);
     }
 
-    auto render_pass = std::make_shared<RENDER_PASS_STATE>(pCreateInfo);
-    skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_2, render_pass->createInfo.ptr(), render_pass.get());
+    skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_2, pCreateInfo);
 
     return skip;
 }

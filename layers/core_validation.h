@@ -553,8 +553,7 @@ class CoreChecks : public ValidationStateTracker {
                                       const char* tess_error_id, const char* mesh_error_id, const char* task_error_id);
     bool ValidateMapMemRange(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size);
     bool ValidatePushConstantRange(const uint32_t offset, const uint32_t size, const char* caller_name, uint32_t index);
-    bool ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2KHR* pCreateInfo,
-                               RENDER_PASS_STATE* render_pass);
+    bool ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2KHR* pCreateInfo);
     bool ValidateAttachmentCompatibility(const char* type1_string, const RENDER_PASS_STATE* rp1_state, const char* type2_string,
                                          const RENDER_PASS_STATE* rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
                                          const char* caller, const char* error_code);
@@ -708,7 +707,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateAttachmentIndex(RenderPassCreateVersion rp_version, uint32_t attachment, uint32_t attachment_count,
                                  const char* type);
     bool ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersion rp_version,
-                                  const VkRenderPassCreateInfo2KHR* pCreateInfo, RENDER_PASS_STATE* render_pass);
+                                  const VkRenderPassCreateInfo2KHR* pCreateInfo);
     bool ValidateRenderPassPipelineBarriers(const char* funcName, CMD_BUFFER_STATE* cb_state, VkPipelineStageFlags src_stage_mask,
                                             VkPipelineStageFlags dst_stage_mask, VkDependencyFlags dependency_flags,
                                             uint32_t mem_barrier_count, const VkMemoryBarrier* mem_barriers,
