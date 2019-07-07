@@ -78,6 +78,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         OutputGenerator.__init__(self, errFile, warnFile, diagFile)
         # Internal state - accumulators for different inner block text
         self.enum_output = ''                             # string built up of enum string routines
+        self.bitmask_output = ''                          # string built up of bitmask string routines
         # Internal state - accumulators for different inner block text
         self.structNames = []                             # List of Vulkan struct typenames
         self.structTypes = dict()                         # Map of Vulkan struct typename to required VkStructureType
@@ -227,6 +228,10 @@ class HelperFileOutputGenerator(OutputGenerator):
         elif (category == 'struct' or category == 'union'):
             self.structNames.append(name)
             self.genStruct(typeinfo, name, alias)
+        elif category == 'bitmask':
+            bitsName = typeElem.get('requires')
+            if bitsName is not None:
+                self.bitmask_output += self.GenerateBitmaskStringConversion(name, bitsName)
     #
     # Check if the parameter passed in is a pointer
     def paramIsPointer(self, param):
@@ -402,6 +407,30 @@ class HelperFileOutputGenerator(OutputGenerator):
             outstring += '#endif // %s\n' % self.featureExtraProtect
         return outstring
     #
+    # Enum_string_header: Create a routine to convert an bitmask value into a string
+    def GenerateBitmaskStringConversion(self, bitmaskName, bitsName):
+        outstring = '\n'
+        if self.featureExtraProtect is not None:
+            outstring += '\n#ifdef %s\n\n' % self.featureExtraProtect
+        outstring += 'static inline std::string string_%s(%s input_value) {\n' % (bitmaskName, bitmaskName)
+        outstring += '    if(input_value == 0) return "0";\n'
+        outstring += '\n'
+        outstring += '    std::ostringstream out;\n'
+        outstring += '    for (uint32_t bit_i = 0; bit_i < 32; ++bit_i) {\n'
+        outstring += '        const uint32_t bit = (uint32_t)0x1 << bit_i;\n'
+        outstring += '        bool first = true;\n'
+        outstring += '        if (input_value & bit) {\n'
+        outstring += '            out << string_%s((%s)bit);\n' % (bitsName, bitsName)
+        outstring += '            if(!first) out << " | ";\n'
+        outstring += '            else first = false;\n'
+        outstring += '        }\n'
+        outstring += '    }\n'
+        outstring += '    return out.str();\n'
+        outstring += '}\n'
+        if self.featureExtraProtect is not None:
+            outstring += '#endif // %s\n' % self.featureExtraProtect
+        return outstring
+    #
     # Tack on a helper which, given an index into a VkPhysicalDeviceFeatures structure, will print the corresponding feature name
     def DeIndexPhysDevFeatures(self):
         pdev_members = None
@@ -427,9 +456,12 @@ class HelperFileOutputGenerator(OutputGenerator):
             enum_string_helper_header += '#pragma warning( disable : 4065 )\n'
             enum_string_helper_header += '#endif\n'
             enum_string_helper_header += '\n'
+            enum_string_helper_header += '#include <string>\n'
+            enum_string_helper_header += '#include <sstream>\n'
             enum_string_helper_header += '#include <vulkan/vulkan.h>\n'
             enum_string_helper_header += '\n'
             enum_string_helper_header += self.enum_output
+            enum_string_helper_header += self.bitmask_output
             enum_string_helper_header += self.DeIndexPhysDevFeatures()
             return enum_string_helper_header
     #
