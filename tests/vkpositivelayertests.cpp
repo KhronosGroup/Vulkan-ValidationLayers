@@ -722,6 +722,69 @@ TEST_F(VkPositiveLayerTest, DestroyPipelineRenderPass) {
     vkQueueWaitIdle(m_device->m_queue);
 }
 
+TEST_F(VkPositiveLayerTest, BasicQuery) {
+    TEST_DESCRIPTION("Use a couple occlusion queries");
+    m_errorMonitor->ExpectSuccess();
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    uint32_t qfi = 0;
+    VkBufferCreateInfo bci = {};
+    bci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    bci.size = 4 * sizeof(uint64_t);
+    bci.queueFamilyIndexCount = 1;
+    bci.pQueueFamilyIndices = &qfi;
+    VkBufferObj buffer;
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    buffer.init(*m_device, bci, mem_props);
+
+    VkQueryPool query_pool;
+    VkQueryPoolCreateInfo query_pool_info;
+    query_pool_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    query_pool_info.pNext = NULL;
+    query_pool_info.queryType = VK_QUERY_TYPE_OCCLUSION;
+    query_pool_info.flags = 0;
+    query_pool_info.queryCount = 2;
+    query_pool_info.pipelineStatistics = 0;
+
+    VkResult res = vkCreateQueryPool(m_device->handle(), &query_pool_info, NULL, &query_pool);
+    assert(res == VK_SUCCESS);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    vkCmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 2);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vkCmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+    vkCmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vkCmdBeginQuery(m_commandBuffer->handle(), query_pool, 1, 0);
+    vkCmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vkCmdEndRenderPass(m_commandBuffer->handle());
+    vkCmdEndQuery(m_commandBuffer->handle(), query_pool, 1);
+    vkCmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 2, buffer.handle(), 0, sizeof(uint64_t),
+                              VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+    m_commandBuffer->end();
+
+    VkSubmitInfo submit_info = {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+
+    vkQueueWaitIdle(m_device->m_queue);
+    uint64_t samples_passed[4];
+    res = vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 2, sizeof(samples_passed), samples_passed, sizeof(uint64_t),
+                                VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+    assert(res == VK_SUCCESS);
+    m_errorMonitor->VerifyNotFound();
+    vkDestroyQueryPool(m_device->handle(), query_pool, NULL);
+}
+
 TEST_F(VkPositiveLayerTest, MultiplaneGetImageSubresourceLayout) {
     TEST_DESCRIPTION("Positive test, query layout of a single plane of a multiplane image. (repro Github #2530)");
 
