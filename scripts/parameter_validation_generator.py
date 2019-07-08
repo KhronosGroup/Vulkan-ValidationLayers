@@ -1276,6 +1276,12 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 func_sig = func_sig.split('VKAPI_CALL vk')[1]
                 cmdDef = 'bool StatelessValidation::PreCallValidate' + func_sig
                 cmdDef += '%sbool skip = false;\n' % indent
+                for line in lines:
+                    if type(line) is list:
+                        for sub in line:
+                            cmdDef += indent + sub
+                    else:
+                        cmdDef += indent + line
                 # Insert call to custom-written function if present
                 if command.name in self.functions_with_manual_checks:
                     # Generate parameter list for manual fcn and down-chain calls
@@ -1284,12 +1290,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                         params_text += '%s, ' % param.name
                     params_text = params_text[:-2] + ');\n'
                     cmdDef += '    skip |= manual_PreCallValidate'+ command.name[2:] + '(' + params_text
-                for line in lines:
-                    if type(line) is list:
-                        for sub in line:
-                            cmdDef += indent + sub
-                    else:
-                        cmdDef += indent + line
                 cmdDef += '%sreturn skip;\n' % indent
                 cmdDef += '}\n'
                 self.validation.append(cmdDef)
