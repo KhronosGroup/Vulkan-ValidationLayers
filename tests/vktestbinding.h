@@ -555,6 +555,31 @@ class ImageView : public internal::NonDispHandle<VkImageView> {
     void init(const Device &dev, const VkImageViewCreateInfo &info);
 };
 
+class AccelerationStructure : public internal::NonDispHandle<VkAccelerationStructureNV> {
+   public:
+    explicit AccelerationStructure(const Device &dev, const VkAccelerationStructureCreateInfoNV &info, bool init_memory = true) {
+        init(dev, info, init_memory);
+    }
+    ~AccelerationStructure();
+
+    // vkCreateAccelerationStructureNV
+    void init(const Device &dev, const VkAccelerationStructureCreateInfoNV &info, bool init_memory = true);
+
+    // vkGetAccelerationStructureMemoryRequirementsNV()
+    VkMemoryRequirements2 memory_requirements() const;
+    VkMemoryRequirements2 build_scratch_memory_requirements() const;
+
+    const VkAccelerationStructureInfoNV &info() const { return info_; }
+
+    const VkDevice &dev() const { return device(); }
+
+    void create_scratch_buffer(const Device &dev, Buffer *buffer);
+
+   private:
+    VkAccelerationStructureInfoNV info_;
+    DeviceMemory memory_;
+};
+
 class ShaderModule : public internal::NonDispHandle<VkShaderModule> {
    public:
     ~ShaderModule();

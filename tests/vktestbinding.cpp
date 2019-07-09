@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2016 The Khronos Group Inc.
- * Copyright (c) 2015-2016 Valve Corporation
- * Copyright (c) 2015-2016 LunarG, Inc.
+ * Copyright (c) 2015-2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2019 Valve Corporation
+ * Copyright (c) 2015-2019 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -603,6 +603,83 @@ NON_DISPATCHABLE_HANDLE_DTOR(ImageView, vkDestroyImageView)
 
 void ImageView::init(const Device &dev, const VkImageViewCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vkCreateImageView, dev, &info);
+}
+
+AccelerationStructure::~AccelerationStructure() {
+    if (initialized()) {
+        PFN_vkDestroyAccelerationStructureNV vkDestroyAccelerationStructureNV =
+            (PFN_vkDestroyAccelerationStructureNV)vkGetDeviceProcAddr(device(), "vkDestroyAccelerationStructureNV");
+        assert(vkDestroyAccelerationStructureNV != nullptr);
+
+        vkDestroyAccelerationStructureNV(device(), handle(), nullptr);
+    }
+}
+
+VkMemoryRequirements2 AccelerationStructure::memory_requirements() const {
+    PFN_vkGetAccelerationStructureMemoryRequirementsNV vkGetAccelerationStructureMemoryRequirementsNV =
+        (PFN_vkGetAccelerationStructureMemoryRequirementsNV)vkGetDeviceProcAddr(device(),
+                                                                                "vkGetAccelerationStructureMemoryRequirementsNV");
+    assert(vkGetAccelerationStructureMemoryRequirementsNV != nullptr);
+
+    VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo = {};
+    memoryRequirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
+    memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
+    memoryRequirementsInfo.accelerationStructure = handle();
+
+    VkMemoryRequirements2 memoryRequirements = {};
+    vkGetAccelerationStructureMemoryRequirementsNV(device(), &memoryRequirementsInfo, &memoryRequirements);
+    return memoryRequirements;
+}
+
+VkMemoryRequirements2 AccelerationStructure::build_scratch_memory_requirements() const {
+    PFN_vkGetAccelerationStructureMemoryRequirementsNV vkGetAccelerationStructureMemoryRequirementsNV =
+        (PFN_vkGetAccelerationStructureMemoryRequirementsNV)vkGetDeviceProcAddr(device(),
+                                                                                "vkGetAccelerationStructureMemoryRequirementsNV");
+    assert(vkGetAccelerationStructureMemoryRequirementsNV != nullptr);
+
+    VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo = {};
+    memoryRequirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
+    memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
+    memoryRequirementsInfo.accelerationStructure = handle();
+
+    VkMemoryRequirements2 memoryRequirements = {};
+    vkGetAccelerationStructureMemoryRequirementsNV(device(), &memoryRequirementsInfo, &memoryRequirements);
+    return memoryRequirements;
+}
+
+void AccelerationStructure::init(const Device &dev, const VkAccelerationStructureCreateInfoNV &info, bool init_memory) {
+    PFN_vkCreateAccelerationStructureNV vkCreateAccelerationStructureNV =
+        (PFN_vkCreateAccelerationStructureNV)vkGetDeviceProcAddr(dev.handle(), "vkCreateAccelerationStructureNV");
+    assert(vkCreateAccelerationStructureNV != nullptr);
+
+    NON_DISPATCHABLE_HANDLE_INIT(vkCreateAccelerationStructureNV, dev, &info);
+
+    info_ = info.info;
+
+    if (init_memory) {
+        memory_.init(dev, DeviceMemory::get_resource_alloc_info(dev, memory_requirements().memoryRequirements,
+                                                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+
+        PFN_vkBindAccelerationStructureMemoryNV vkBindAccelerationStructureMemoryNV =
+            (PFN_vkBindAccelerationStructureMemoryNV)vkGetDeviceProcAddr(dev.handle(), "vkBindAccelerationStructureMemoryNV");
+        assert(vkBindAccelerationStructureMemoryNV != nullptr);
+
+        VkBindAccelerationStructureMemoryInfoNV bind_info = {};
+        bind_info.sType = VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_NV;
+        bind_info.accelerationStructure = handle();
+        bind_info.memory = memory_.handle();
+        EXPECT(vkBindAccelerationStructureMemoryNV(dev.handle(), 1, &bind_info) == VK_SUCCESS);
+    }
+}
+
+void AccelerationStructure::create_scratch_buffer(const Device &dev, Buffer *buffer) {
+    VkMemoryRequirements scratch_buffer_memory_requirements = build_scratch_memory_requirements().memoryRequirements;
+
+    VkBufferCreateInfo create_info = {};
+    create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    create_info.size = scratch_buffer_memory_requirements.size;
+    create_info.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
+    return buffer->init(dev, create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(ShaderModule, vkDestroyShaderModule)
