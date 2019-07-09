@@ -695,6 +695,8 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 if 'CreateGraphicsPipelines' in proto.text or 'CreateComputePipelines' in proto.text or 'CreateRayTracingPipelines' in proto.text:
                     is_create_pipelines = True
                     create_obj_code += '%sif (VK_ERROR_VALIDATION_FAILED_EXT == result) return;\n' % indent
+                create_obj_code += '%sif (%s) {\n' % (indent, handle_name.text)
+                indent = self.incIndent(indent)
                 countispointer = ''
                 if 'uint32_t*' in cmd_info[-2].cdecl:
                     countispointer = '*'
@@ -709,7 +711,10 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             if object_array == True:
                 indent = self.decIndent(indent)
                 create_obj_code += '%s}\n' % indent
+                indent = self.decIndent(indent)
+                create_obj_code += '%s}\n' % indent
             indent = self.decIndent(indent)
+
         return create_obj_code
     #
     # Generate source for destroying a non-dispatchable object
@@ -751,9 +756,14 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         if parent_vuid == 'kVUIDUndefined':
             parent_vuid = self.GetVuid(parent_name, 'commonparent')
         if obj_count is not None:
+
+            pre_call_code += '%sif (%s%s) {\n' % (indent, prefix, obj_name)
+            indent = self.incIndent(indent)
             pre_call_code += '%sfor (uint32_t %s = 0; %s < %s; ++%s) {\n' % (indent, index, index, obj_count, index)
             indent = self.incIndent(indent)
             pre_call_code += '%sskip |= ValidateObject(%s, %s%s[%s], %s, %s, %s, %s);\n' % (indent, disp_name, prefix, obj_name, index, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
+            indent = self.decIndent(indent)
+            pre_call_code += '%s}\n' % indent
             indent = self.decIndent(indent)
             pre_call_code += '%s}\n' % indent
         else:
