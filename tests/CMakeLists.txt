@@ -109,7 +109,7 @@ add_executable(vk_layer_validation_tests
                ${PROJECT_BINARY_DIR}/vk_safe_struct.cpp
                ${COMMON_CPP})
 add_test(NAME vk_layer_validation_tests COMMAND vk_layer_validation_tests)
-add_dependencies(vk_layer_validation_tests Vulkan::Vulkan)
+add_dependencies(vk_layer_validation_tests Vulkan::Vulkan VkLayer_khronos_validation VkLayer_khronos_validation-json)
 if(NOT GTEST_IS_STATIC_LIB)
     set_target_properties(vk_layer_validation_tests PROPERTIES COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
 endif()
