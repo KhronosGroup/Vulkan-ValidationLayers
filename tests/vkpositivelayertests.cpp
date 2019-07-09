@@ -749,7 +749,7 @@ TEST_F(VkPositiveLayerTest, BasicQuery) {
     query_pool_info.pipelineStatistics = 0;
 
     VkResult res = vkCreateQueryPool(m_device->handle(), &query_pool_info, NULL, &query_pool);
-    assert(res == VK_SUCCESS);
+    ASSERT_VK_SUCCESS(res);
 
     CreatePipelineHelper pipe(*this);
     pipe.InitInfo();
@@ -780,7 +780,7 @@ TEST_F(VkPositiveLayerTest, BasicQuery) {
     uint64_t samples_passed[4];
     res = vkGetQueryPoolResults(m_device->handle(), query_pool, 0, 2, sizeof(samples_passed), samples_passed, sizeof(uint64_t),
                                 VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
-    assert(res == VK_SUCCESS);
+    ASSERT_VK_SUCCESS(res);
     m_errorMonitor->VerifyNotFound();
     vkDestroyQueryPool(m_device->handle(), query_pool, NULL);
 }
