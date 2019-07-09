@@ -332,6 +332,27 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
     IMAGE_VIEW_STATE(const IMAGE_VIEW_STATE &rh_obj) = delete;
 };
 
+class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
+   public:
+    VkAccelerationStructureNV acceleration_structure;
+    safe_VkAccelerationStructureCreateInfoNV create_info;
+    bool memory_requirements_checked = false;
+    VkMemoryRequirements2KHR memory_requirements;
+    bool build_scratch_memory_requirements_checked = false;
+    VkMemoryRequirements2KHR build_scratch_memory_requirements;
+    bool update_scratch_memory_requirements_checked = false;
+    VkMemoryRequirements2KHR update_scratch_memory_requirements;
+    bool built = false;
+    safe_VkAccelerationStructureInfoNV build_info;
+    ACCELERATION_STRUCTURE_STATE(VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci)
+        : acceleration_structure(as),
+          create_info(ci),
+          memory_requirements{},
+          build_scratch_memory_requirements_checked{},
+          update_scratch_memory_requirements_checked{} {}
+    ACCELERATION_STRUCTURE_STATE(const ACCELERATION_STRUCTURE_STATE &rh_obj) = delete;
+};
+
 struct MemRange {
     VkDeviceSize offset;
     VkDeviceSize size;
@@ -369,9 +390,10 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
     VkExternalMemoryHandleTypeFlags export_handle_type_flags;
     std::unordered_set<VulkanTypedHandle> obj_bindings;       // objects bound to this memory
     std::unordered_map<uint64_t, MEMORY_RANGE> bound_ranges;  // Map of object to its binding range
-    // Convenience vectors image/buff handles to speed up iterating over images or buffers independently
+    // Convenience vectors of handles to speed up iterating over objects independently
     std::unordered_set<uint64_t> bound_images;
     std::unordered_set<uint64_t> bound_buffers;
+    std::unordered_set<uint64_t> bound_acceleration_structures;
 
     MemRange mem_range;
     void *shadow_copy_base;    // Base of layer's allocation for guard band, data, and alignment space
