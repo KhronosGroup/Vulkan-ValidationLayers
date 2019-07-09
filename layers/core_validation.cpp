@@ -9845,59 +9845,12 @@ bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const
     }
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
         const VkSubpassDependency2KHR &dependency = pCreateInfo->pDependencies[i];
-        VkPipelineStageFlags exclude_graphics_pipeline_stages =
-            ~(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | ExpandPipelineStageFlags(device_extensions, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT));
         VkPipelineStageFlagBits latest_src_stage = GetLogicallyLatestGraphicsPipelineStage(dependency.srcStageMask);
         VkPipelineStageFlagBits earliest_dst_stage = GetLogicallyEarliestGraphicsPipelineStage(dependency.dstStageMask);
 
-        // This VU is actually generalised  to *any* pipeline - not just graphics - but only graphics render passes are
-        // currently supported by the spec - so only that pipeline is checked here.
-        // If that is ever relaxed, this check should be extended to cover those pipelines.
-        if (dependency.srcSubpass == dependency.dstSubpass && (dependency.srcStageMask & exclude_graphics_pipeline_stages) != 0u &&
-            (dependency.dstStageMask & exclude_graphics_pipeline_stages) != 0u) {
-            vuid = use_rp2 ? "VUID-VkSubpassDependency2KHR-srcSubpass-02244" : "VUID-VkSubpassDependency-srcSubpass-01989";
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                "Dependency %u is a self-dependency, but specifies stage masks that contain stages not in the GRAPHICS pipeline.",
-                i);
-        } else if (dependency.srcSubpass != VK_SUBPASS_EXTERNAL && (dependency.srcStageMask & VK_PIPELINE_STAGE_HOST_BIT)) {
-            vuid = use_rp2 ? "VUID-VkSubpassDependency2KHR-srcSubpass-03078" : "VUID-VkSubpassDependency-srcSubpass-00858";
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                            "Dependency %u specifies a dependency from subpass %u, but includes HOST_BIT in the source stage mask.",
-                            i, dependency.srcSubpass);
-        } else if (dependency.dstSubpass != VK_SUBPASS_EXTERNAL && (dependency.dstStageMask & VK_PIPELINE_STAGE_HOST_BIT)) {
-            vuid = use_rp2 ? "VUID-VkSubpassDependency2KHR-dstSubpass-03079" : "VUID-VkSubpassDependency-dstSubpass-00859";
-            skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                        "Dependency %u specifies a dependency to subpass %u, but includes HOST_BIT in the destination stage mask.",
-                        i, dependency.dstSubpass);
-        }
-        // These next two VUs are actually generalised  to *any* pipeline - not just graphics - but only graphics render passes are
-        // currently supported by the spec - so only that pipeline is checked here.
-        // If that is ever relaxed, these next two checks should be extended to cover those pipelines.
-        else if (dependency.srcSubpass != VK_SUBPASS_EXTERNAL &&
-                 pCreateInfo->pSubpasses[dependency.srcSubpass].pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS &&
-                 (dependency.srcStageMask & exclude_graphics_pipeline_stages) != 0u) {
-            vuid =
-                use_rp2 ? "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03054" : "VUID-VkRenderPassCreateInfo-pDependencies-00837";
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                            "Dependency %u specifies a source stage mask that contains stages not in the GRAPHICS pipeline as used "
-                            "by the source subpass %u.",
-                            i, dependency.srcSubpass);
-        } else if (dependency.dstSubpass != VK_SUBPASS_EXTERNAL &&
-                   pCreateInfo->pSubpasses[dependency.dstSubpass].pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS &&
-                   (dependency.dstStageMask & exclude_graphics_pipeline_stages) != 0u) {
-            vuid =
-                use_rp2 ? "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03055" : "VUID-VkRenderPassCreateInfo-pDependencies-00838";
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                            "Dependency %u specifies a destination stage mask that contains stages not in the GRAPHICS pipeline as "
-                            "used by the destination subpass %u.",
-                            i, dependency.dstSubpass);
-        }
         // The first subpass here serves as a good proxy for "is multiview enabled" - since all view masks need to be non-zero if
         // any are, which enables multiview.
-        else if (use_rp2 && (dependency.dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) &&
-                 (pCreateInfo->pSubpasses[0].viewMask == 0)) {
+        if (use_rp2 && (dependency.dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) && (pCreateInfo->pSubpasses[0].viewMask == 0)) {
             skip |= log_msg(
                 report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                 "VUID-VkRenderPassCreateInfo2KHR-viewMask-03059",

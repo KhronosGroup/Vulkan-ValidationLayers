@@ -822,6 +822,42 @@ class StatelessValidation : public ValidationObject {
     enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
 
     template <typename RenderPassCreateInfoGeneric>
+    bool ValidateSubpassGraphicsFlags(const debug_report_data *report_data, const RenderPassCreateInfoGeneric *pCreateInfo,
+                                      uint32_t dependency_index, uint32_t subpass, VkPipelineStageFlags stages, const char *vuid,
+                                      const char *target) {
+        const VkPipelineStageFlags kGraphicsStages =
+            VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT | VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT |
+            VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV | VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV | VK_PIPELINE_STAGE_VERTEX_INPUT_BIT |
+            VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
+            VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT | VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |
+            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+            VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT | VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT |
+            VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT | VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV |
+            VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT;
+
+        bool skip = false;
+        const bool is_all_graphics_stages = (stages & ~kGraphicsStages) == 0;
+        const auto IsGraphics = [pCreateInfo](uint32_t subpass) {
+            if (subpass == VK_SUBPASS_EXTERNAL)
+                return false;
+            else
+                return pCreateInfo->pSubpasses[subpass].pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
+        };
+
+        if (IsGraphics(subpass) && !is_all_graphics_stages) {
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT, 0, vuid,
+                        "Dependency pDependencies[%" PRIu32
+                        "] specifies a %sStageMask that contains stages (%s) that are not part "
+                        "of the Graphics pipeline, as specified by the %sSubpass (= %" PRIu32 ") in pipelineBindPoint.",
+                        dependency_index, target, string_VkPipelineStageFlags(stages & ~kGraphicsStages).c_str(), target, subpass);
+        }
+
+        return skip;
+    };
+
+    template <typename RenderPassCreateInfoGeneric>
     bool CreateRenderPassGeneric(VkDevice device, const RenderPassCreateInfoGeneric *pCreateInfo,
                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                  RenderPassCreateVersion rp_version) {
@@ -860,6 +896,22 @@ class StatelessValidation : public ValidationObject {
                                 pCreateInfo->pSubpasses[i].colorAttachmentCount, max_color_attachments);
             }
         }
+
+        for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
+            const auto &dependency = pCreateInfo->pDependencies[i];
+
+            // Spec currently only supports Graphics pipeline in render pass -- so only that pipeline is currently checked
+            vuid =
+                use_rp2 ? "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03054" : "VUID-VkRenderPassCreateInfo-pDependencies-00837";
+            skip |= ValidateSubpassGraphicsFlags(report_data, pCreateInfo, i, dependency.srcSubpass, dependency.srcStageMask, vuid,
+                                                 "src");
+
+            vuid =
+                use_rp2 ? "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03055" : "VUID-VkRenderPassCreateInfo-pDependencies-00838";
+            skip |= ValidateSubpassGraphicsFlags(report_data, pCreateInfo, i, dependency.dstSubpass, dependency.dstStageMask, vuid,
+                                                 "dst");
+        }
+
         return skip;
     }
 
