@@ -345,6 +345,14 @@ class ValidationStateTracker : public ValidationObject {
     const PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState() const;
 
     // State update functions
+    // Enumerations
+    void PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
+                                                     VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties,
+                                                     VkResult result);
+    void PostCallRecordEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
+                                                        VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties,
+                                                        VkResult result);
+
     // Create/Destroy
     void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                     const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, VkResult result);
@@ -436,13 +444,23 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                 const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
                                                 const VkImageSubresourceRange* pRanges);
+    void PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
+                                    const VkBufferCopy* pRegions);
+    void PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                           VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions);
     void PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions);
+    void PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                           VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions);
+    void PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
+                                    uint32_t data);
     void PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                       const VkImageResolve* pRegions);
 
     // State Utilty functions
+    void AddCommandBufferBindingBuffer(CMD_BUFFER_STATE*, BUFFER_STATE*);
+    void AddCommandBufferBindingBufferView(CMD_BUFFER_STATE*, BUFFER_VIEW_STATE*);
     void AddCommandBufferBindingImage(CMD_BUFFER_STATE*, IMAGE_STATE*);
     void ClearMemoryObjectBindings(const VulkanTypedHandle& typed_handle);
     void ClearMemoryObjectBinding(const VulkanTypedHandle& typed_handle, VkDeviceMemory mem);
@@ -454,6 +472,8 @@ class ValidationStateTracker : public ValidationObject {
     void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE* template_state,
                                                     const void* pData);
     void RecordCreateImageANDROID(const VkImageCreateInfo* create_info, IMAGE_STATE* is_node);
+    void RecordEnumeratePhysicalDeviceGroupsState(uint32_t* pPhysicalDeviceGroupCount,
+                                                  VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
     void RecordUpdateDescriptorSetWithTemplateState(VkDescriptorSet descriptorSet,
                                                     VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
     void RecordCreateDescriptorUpdateTemplateState(const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
@@ -679,8 +699,6 @@ class CoreChecks : public ValidationStateTracker {
     void RecordCreateSwapchainState(VkResult result, const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR* pSwapchain,
                                     SURFACE_STATE* surface_state, SWAPCHAIN_NODE* old_swapchain_state);
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
-    void PostRecordEnumeratePhysicalDeviceGroupsState(uint32_t* pPhysicalDeviceGroupCount,
-                                                      VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
     bool ValidateInsertMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize memoryOffset,
                                    VkMemoryRequirements memRequirements, bool is_image, bool is_linear, const char* api_name);
     void InsertMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize memoryOffset,
@@ -722,8 +740,6 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateMemoryIsBoundToImage(const IMAGE_STATE*, const char*, const char*) const;
     void AddCommandBufferBindingSampler(CMD_BUFFER_STATE*, SAMPLER_STATE*);
     void AddCommandBufferBindingImageView(CMD_BUFFER_STATE*, IMAGE_VIEW_STATE*);
-    void AddCommandBufferBindingBuffer(CMD_BUFFER_STATE*, BUFFER_STATE*);
-    void AddCommandBufferBindingBufferView(CMD_BUFFER_STATE*, BUFFER_VIEW_STATE*);
     bool ValidateObjectNotInUse(BASE_NODE* obj_node, const VulkanTypedHandle& obj_struct, const char* caller_name,
                                 const char* error_code);
     bool ValidateCmdQueueFlags(const CMD_BUFFER_STATE* cb_node, const char* caller_name, VkQueueFlags flags,
@@ -1028,8 +1044,6 @@ class CoreChecks : public ValidationStateTracker {
 
     void SetGlobalLayout(ImageSubresourcePair imgpair, const VkImageLayout& layout);
 
-    void SetImageViewLayout(CMD_BUFFER_STATE* pCB, VkImageView imageView, const VkImageLayout& layout);
-
     void SetImageViewLayout(CMD_BUFFER_STATE* cb_node, const IMAGE_VIEW_STATE& view_state, VkImageLayout layout);
     void SetImageViewInitialLayout(CMD_BUFFER_STATE* cb_node, const IMAGE_VIEW_STATE& view_state, VkImageLayout layout);
 
@@ -1152,10 +1166,6 @@ class CoreChecks : public ValidationStateTracker {
 
     bool PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
                                       const VkBufferCopy* pRegions);
-
-    void PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
-                                    const VkBufferCopy* pRegions);
-
     bool PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator);
 
     bool PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator);
@@ -1166,9 +1176,6 @@ class CoreChecks : public ValidationStateTracker {
 
     bool PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
                                       uint32_t data);
-
-    void PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
-                                    uint32_t data);
 
     bool PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                              VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions);
@@ -1680,12 +1687,6 @@ class CoreChecks : public ValidationStateTracker {
     void PreCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo);
     void PostCallRecordCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer);
     void PreCallRecordCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo);
-    void PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
-                                                     VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties,
-                                                     VkResult result);
-    void PostCallRecordEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
-                                                        VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties,
-                                                        VkResult result);
     bool PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator,
                                                        VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate);

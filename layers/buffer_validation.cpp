@@ -4394,8 +4394,8 @@ bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkB
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
-                                            uint32_t regionCount, const VkBufferCopy *pRegions) {
+void ValidationStateTracker::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
+                                                        uint32_t regionCount, const VkBufferCopy *pRegions) {
     auto cb_node = GetCBState(commandBuffer);
     auto src_buffer_state = GetBufferState(srcBuffer);
     auto dst_buffer_state = GetBufferState(dstBuffer);
@@ -4520,8 +4520,8 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                            VkDeviceSize size, uint32_t data) {
+void ValidationStateTracker::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                                        VkDeviceSize size, uint32_t data) {
     auto cb_node = GetCBState(commandBuffer);
     auto buffer_state = GetBufferState(dstBuffer);
     // Update bindings between buffer and cmd buffer
@@ -4895,19 +4895,27 @@ bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuff
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                   VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
+void ValidationStateTracker::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage,
+                                                               VkImageLayout srcImageLayout, VkBuffer dstBuffer,
+                                                               uint32_t regionCount, const VkBufferImageCopy *pRegions) {
     auto cb_node = GetCBState(commandBuffer);
     auto src_image_state = GetImageState(srcImage);
     auto dst_buffer_state = GetBufferState(dstBuffer);
 
+    // Update bindings between buffer/image and cmd buffer
+    AddCommandBufferBindingImage(cb_node, src_image_state);
+    AddCommandBufferBindingBuffer(cb_node, dst_buffer_state);
+}
+void CoreChecks::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                                   VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
+    StateTracker::PreCallRecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
+
+    auto cb_node = GetCBState(commandBuffer);
+    auto src_image_state = GetImageState(srcImage);
     // Make sure that all image slices record referenced layout
     for (uint32_t i = 0; i < regionCount; ++i) {
         SetImageInitialLayout(cb_node, *src_image_state, pRegions[i].imageSubresource, srcImageLayout);
     }
-    // Update bindings between buffer/image and cmd buffer
-    AddCommandBufferBindingImage(cb_node, src_image_state);
-    AddCommandBufferBindingBuffer(cb_node, dst_buffer_state);
 }
 
 bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
@@ -4974,19 +4982,28 @@ bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuff
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                                   VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                   const VkBufferImageCopy *pRegions) {
+void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                                               VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                               const VkBufferImageCopy *pRegions) {
     auto cb_node = GetCBState(commandBuffer);
     auto src_buffer_state = GetBufferState(srcBuffer);
     auto dst_image_state = GetImageState(dstImage);
 
+    AddCommandBufferBindingBuffer(cb_node, src_buffer_state);
+    AddCommandBufferBindingImage(cb_node, dst_image_state);
+}
+
+void CoreChecks::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                                   VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                   const VkBufferImageCopy *pRegions) {
+    StateTracker::PreCallRecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
+
+    auto cb_node = GetCBState(commandBuffer);
+    auto dst_image_state = GetImageState(dstImage);
     // Make sure that all image slices are record referenced layout
     for (uint32_t i = 0; i < regionCount; ++i) {
         SetImageInitialLayout(cb_node, *dst_image_state, pRegions[i].imageSubresource, dstImageLayout);
     }
-    AddCommandBufferBindingBuffer(cb_node, src_buffer_state);
-    AddCommandBufferBindingImage(cb_node, dst_image_state);
 }
 
 bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource *pSubresource,
