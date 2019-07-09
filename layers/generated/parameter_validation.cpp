@@ -9383,6 +9383,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructureNV(
     skip |= validate_bool32("vkCmdBuildAccelerationStructureNV", "update", update);
     skip |= validate_required_handle("vkCmdBuildAccelerationStructureNV", "dst", dst);
     skip |= validate_required_handle("vkCmdBuildAccelerationStructureNV", "scratch", scratch);
+    skip |= manual_PreCallValidateCmdBuildAccelerationStructureNV(commandBuffer, pInfo, instanceData, instanceOffset, update, dst, src, scratch, scratchOffset);
     return skip;
 }
 
@@ -9547,6 +9548,7 @@ bool StatelessValidation::PreCallValidateGetAccelerationStructureHandleNV(
     if (!device_extensions.vk_nv_ray_tracing) skip |= OutputExtensionError("vkGetAccelerationStructureHandleNV", VK_NV_RAY_TRACING_EXTENSION_NAME);
     skip |= validate_required_handle("vkGetAccelerationStructureHandleNV", "accelerationStructure", accelerationStructure);
     skip |= validate_array("vkGetAccelerationStructureHandleNV", "dataSize", "pData", dataSize, &pData, true, true, "VUID-vkGetAccelerationStructureHandleNV-dataSize-arraylength", "VUID-vkGetAccelerationStructureHandleNV-pData-parameter");
+    skip |= manual_PreCallValidateGetAccelerationStructureHandleNV(device, accelerationStructure, dataSize, pData);
     return skip;
 }
 

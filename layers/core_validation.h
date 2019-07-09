@@ -243,6 +243,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkFence, FENCE_STATE, fenceMap)
     VALSTATETRACK_MAP_AND_TRAITS(VkQueryPool, QUERY_POOL_STATE, queryPoolMap)
     VALSTATETRACK_MAP_AND_TRAITS(VkSemaphore, SEMAPHORE_STATE, semaphoreMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE, accelerationStructureMap)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, SURFACE_STATE, surface_map)
 
    public:
@@ -321,6 +322,12 @@ class ValidationStateTracker : public ValidationObject {
     QUERY_POOL_STATE* GetQueryPoolState(VkQueryPool query_pool) { return Get<QUERY_POOL_STATE>(query_pool); }
     const SEMAPHORE_STATE* GetSemaphoreState(VkSemaphore semaphore) const { return Get<SEMAPHORE_STATE>(semaphore); }
     SEMAPHORE_STATE* GetSemaphoreState(VkSemaphore semaphore) { return Get<SEMAPHORE_STATE>(semaphore); }
+    const ACCELERATION_STRUCTURE_STATE* GetAccelerationStructureState(VkAccelerationStructureNV as) const {
+        return Get<ACCELERATION_STRUCTURE_STATE>(as);
+    }
+    ACCELERATION_STRUCTURE_STATE* GetAccelerationStructureState(VkAccelerationStructureNV as) {
+        return Get<ACCELERATION_STRUCTURE_STATE>(as);
+    }
     const SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface) const { return Get<SURFACE_STATE>(surface); }
     SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface) { return Get<SURFACE_STATE>(surface); }
 
@@ -505,6 +512,7 @@ class ValidationStateTracker : public ValidationObject {
                                    PIPELINE_STATE::StageState* stage_state);
     void RemoveBufferMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
     void RemoveImageMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
+    void RemoveAccelerationStructureMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
 
     DeviceFeatures enabled_features = {};
     // Device specific data
@@ -524,6 +532,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceCooperativeMatrixPropertiesNV cooperative_matrix_props;
         VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
         VkPhysicalDeviceSubgroupProperties subgroup_props;
+        VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;
@@ -722,9 +731,10 @@ class CoreChecks : public ValidationStateTracker {
                                     SURFACE_STATE* surface_state, SWAPCHAIN_NODE* old_swapchain_state);
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
     bool ValidateInsertMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize memoryOffset,
-                                   VkMemoryRequirements memRequirements, bool is_image, bool is_linear, const char* api_name);
+                                   VkMemoryRequirements memRequirements, VulkanObjectType object_type, bool is_linear,
+                                   const char* api_name);
     void InsertMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize memoryOffset,
-                           VkMemoryRequirements memRequirements, bool is_image, bool is_linear);
+                           VkMemoryRequirements memRequirements, VulkanObjectType object_type, bool is_linear);
     bool ValidateInsertImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset,
                                         VkMemoryRequirements mem_reqs, bool is_linear, const char* api_name);
     void InsertImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset,
@@ -733,6 +743,12 @@ class CoreChecks : public ValidationStateTracker {
                                          VkMemoryRequirements mem_reqs, const char* api_name);
     void InsertBufferMemoryRange(VkBuffer buffer, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset,
                                  VkMemoryRequirements mem_reqs);
+    bool ValidateInsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, DEVICE_MEMORY_STATE* mem_info,
+                                                        VkDeviceSize mem_offset, VkMemoryRequirements mem_reqs,
+                                                        const char* api_name);
+    void InsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, DEVICE_MEMORY_STATE* mem_info,
+                                                VkDeviceSize mem_offset, VkMemoryRequirements mem_reqs);
+
     bool ValidateMemoryTypes(const DEVICE_MEMORY_STATE* mem_info, const uint32_t memory_type_bits, const char* funcName,
                              const char* msgCode);
     bool ValidateCommandBufferState(CMD_BUFFER_STATE* cb_state, const char* call_source, int current_submit_count,
@@ -760,8 +776,10 @@ class CoreChecks : public ValidationStateTracker {
                                                  VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
     bool ValidateMemoryIsBoundToBuffer(const BUFFER_STATE*, const char*, const char*) const;
     bool ValidateMemoryIsBoundToImage(const IMAGE_STATE*, const char*, const char*) const;
+    bool ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION_STRUCTURE_STATE*, const char*, const char*) const;
     void AddCommandBufferBindingSampler(CMD_BUFFER_STATE*, SAMPLER_STATE*);
     void AddCommandBufferBindingImageView(CMD_BUFFER_STATE*, IMAGE_VIEW_STATE*);
+    void AddCommandBufferBindingAccelerationStructure(CMD_BUFFER_STATE*, ACCELERATION_STRUCTURE_STATE*);
     bool ValidateObjectNotInUse(const BASE_NODE* obj_node, const VulkanTypedHandle& obj_struct, const char* caller_name,
                                 const char* error_code) const;
     bool ValidateCmdQueueFlags(const CMD_BUFFER_STATE* cb_node, const char* caller_name, VkQueueFlags flags,
@@ -1414,6 +1432,33 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                            uint32_t viewportCount,
                                                            const VkShadingRatePaletteNV* pShadingRatePalettes);
+    void PostCallRecordCreateAccelerationStructureNV(VkDevice device, const VkAccelerationStructureCreateInfoNV* pCreateInfo,
+                                                     const VkAllocationCallbacks* pAllocator,
+                                                     VkAccelerationStructureNV* pAccelerationStructure, VkResult result);
+    void PostCallRecordGetAccelerationStructureMemoryRequirementsNV(VkDevice device,
+                                                                    const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
+                                                                    VkMemoryRequirements2KHR* pMemoryRequirements);
+    bool PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
+                                                          const VkBindAccelerationStructureMemoryInfoNV* pBindInfos);
+    void PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
+                                                         const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
+                                                         VkResult result);
+    bool PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
+                                                        VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
+                                                        VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
+                                                        VkBuffer scratch, VkDeviceSize scratchOffset);
+    void PostCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
+                                                       VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
+                                                       VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
+                                                       VkBuffer scratch, VkDeviceSize scratchOffset);
+    bool PreCallValidateCmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAccelerationStructureNV dst,
+                                                       VkAccelerationStructureNV src, VkCopyAccelerationStructureModeNV mode);
+    void PostCallRecordCmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAccelerationStructureNV dst,
+                                                      VkAccelerationStructureNV src, VkCopyAccelerationStructureModeNV mode);
+    bool PreCallValidateDestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
+                                                       const VkAllocationCallbacks* pAllocator);
+    void PreCallRecordDestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
+                                                     const VkAllocationCallbacks* pAllocator);
     bool PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth);
     bool PreCallValidateCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
                                         float depthBiasSlopeFactor);

@@ -97,6 +97,7 @@ class StatelessValidation : public ValidationObject {
     struct DeviceExtensionProperties {
         VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
         VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props;
+        VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
 
@@ -899,6 +900,8 @@ class StatelessValidation : public ValidationObject {
     bool ValidateDeviceQueueFamily(uint32_t queue_family, const char *cmd_name, const char *parameter_name,
                                    const std::string &error_code, bool optional);
 
+    bool ValidateAccelerationStructureInfoNV(const VkAccelerationStructureInfoNV &info);
+
     bool OutputExtensionError(const std::string &api_name, const std::string &extension_name);
 
     void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
@@ -949,7 +952,7 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                                     const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
                                                     const VkCopyDescriptorSet *pDescriptorCopies);
-    ;
+
     bool manual_PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
                                                   const VkDescriptorSet *pDescriptorSets);
 
@@ -1051,6 +1054,13 @@ class StatelessValidation : public ValidationObject {
                                                              const VkAccelerationStructureCreateInfoNV *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator,
                                                              VkAccelerationStructureNV *pAccelerationStructure);
+    bool manual_PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer,
+                                                               const VkAccelerationStructureInfoNV *pInfo, VkBuffer instanceData,
+                                                               VkDeviceSize instanceOffset, VkBool32 update,
+                                                               VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
+                                                               VkBuffer scratch, VkDeviceSize scratchOffset);
+    bool manual_PreCallValidateGetAccelerationStructureHandleNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
+                                                                size_t dataSize, void *pData);
     bool manual_PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                            const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                            const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines);
