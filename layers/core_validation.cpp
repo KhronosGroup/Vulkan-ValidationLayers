@@ -324,7 +324,7 @@ void CoreChecks::AddCommandBufferBindingImageView(CMD_BUFFER_STATE *cb_node, IMA
 }
 
 // Create binding link between given buffer node and command buffer node
-void CoreChecks::AddCommandBufferBindingBuffer(CMD_BUFFER_STATE *cb_node, BUFFER_STATE *buffer_state) {
+void ValidationStateTracker::AddCommandBufferBindingBuffer(CMD_BUFFER_STATE *cb_node, BUFFER_STATE *buffer_state) {
     // First update cb binding for buffer
     auto buffer_inserted = cb_node->object_bindings.emplace(buffer_state->buffer, kVulkanObjectTypeBuffer);
     if (buffer_inserted.second) {
@@ -346,7 +346,7 @@ void CoreChecks::AddCommandBufferBindingBuffer(CMD_BUFFER_STATE *cb_node, BUFFER
 }
 
 // Create binding link between given buffer view node and its buffer with command buffer node
-void CoreChecks::AddCommandBufferBindingBufferView(CMD_BUFFER_STATE *cb_node, BUFFER_VIEW_STATE *view_state) {
+void ValidationStateTracker::AddCommandBufferBindingBufferView(CMD_BUFFER_STATE *cb_node, BUFFER_VIEW_STATE *view_state) {
     // First add bindings for bufferView
     auto inserted = cb_node->object_bindings.emplace(view_state->buffer_view, kVulkanObjectTypeBufferView);
     if (inserted.second) {
@@ -12339,8 +12339,8 @@ void CoreChecks::PreCallRecordCmdInsertDebugUtilsLabelEXT(VkCommandBuffer comman
     cb_state->debug_label = LoggingLabel(pLabelInfo);
 }
 
-void CoreChecks::PostRecordEnumeratePhysicalDeviceGroupsState(uint32_t *pPhysicalDeviceGroupCount,
-                                                              VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
+void ValidationStateTracker::RecordEnumeratePhysicalDeviceGroupsState(
+    uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties) {
     if (NULL != pPhysicalDeviceGroupProperties) {
         for (uint32_t i = 0; i < *pPhysicalDeviceGroupCount; i++) {
             for (uint32_t j = 0; j < pPhysicalDeviceGroupProperties[i].physicalDeviceCount; j++) {
@@ -12354,18 +12354,18 @@ void CoreChecks::PostRecordEnumeratePhysicalDeviceGroupsState(uint32_t *pPhysica
     }
 }
 
-void CoreChecks::PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
-                                                             VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties,
-                                                             VkResult result) {
+void ValidationStateTracker::PostCallRecordEnumeratePhysicalDeviceGroups(
+    VkInstance instance, uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties,
+    VkResult result) {
     if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
-    PostRecordEnumeratePhysicalDeviceGroupsState(pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
+    RecordEnumeratePhysicalDeviceGroupsState(pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
 }
 
-void CoreChecks::PostCallRecordEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t *pPhysicalDeviceGroupCount,
-                                                                VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties,
-                                                                VkResult result) {
+void ValidationStateTracker::PostCallRecordEnumeratePhysicalDeviceGroupsKHR(
+    VkInstance instance, uint32_t *pPhysicalDeviceGroupCount, VkPhysicalDeviceGroupPropertiesKHR *pPhysicalDeviceGroupProperties,
+    VkResult result) {
     if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
-    PostRecordEnumeratePhysicalDeviceGroupsState(pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
+    RecordEnumeratePhysicalDeviceGroupsState(pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties);
 }
 
 bool CoreChecks::ValidateDescriptorUpdateTemplate(const char *func_name,
