@@ -180,9 +180,9 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
             extension = "VK_VERSION" not in self.featureName
             promoted = not extension and "VK_VERSION_1_0" != self.featureName
             if promoted or extension:
+                # We want feature written for all promoted entrypoints, in addition to extensions
                 self.device_stub_list.append([name, self.featureName])
-                if extension:
-                    self.device_extension_list.append([name, self.featureName])
+                self.device_extension_list.append([name, self.featureName])
                 # Build up stub function
                 return_type = ''
                 decl = self.makeCDecls(cmdinfo.elem)[1]
