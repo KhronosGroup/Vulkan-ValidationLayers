@@ -2203,10 +2203,10 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
 
-    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
-    bool multiviewSupported = rp2Supported;
+    bool rp2_supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
+    bool multiviewSupported = rp2_supported;
 
-    if (!rp2Supported && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
+    if (!rp2_supported && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
         multiviewSupported = true;
     }
@@ -2227,92 +2227,96 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
 
     VkSubpassDependency dependency;
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 0, nullptr, 2, subpasses, 1, &dependency};
-    // dependency = { 0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0 };
 
-    // Source subpass is not EXTERNAL, so source stage mask must not include HOST
-    dependency = {0, 1, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
+    // Non graphics stages in subpass dependency
+    dependency = {0, 1, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT,
+                  VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported,
+                         "VUID-VkRenderPassCreateInfo-pDependencies-00837", "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03054");
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-srcSubpass-00858",
-                         "VUID-VkSubpassDependency2KHR-srcSubpass-03078");
+    dependency = {0, 1, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, 0};
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported,
+                         "VUID-VkRenderPassCreateInfo-pDependencies-00837", "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03054");
 
-    // Destination subpass is not EXTERNAL, so destination stage mask must not include HOST
+    dependency = {0, 1, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, 0};
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported,
+                         "VUID-VkRenderPassCreateInfo-pDependencies-00837", "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03054");
+
+    dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                  VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT};
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported,
+                         "VUID-VkRenderPassCreateInfo-pDependencies-00838", "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03055");
+
     dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0, 0, 0};
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported,
+                         "VUID-VkRenderPassCreateInfo-pDependencies-00838", "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03055");
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-dstSubpass-00859",
-                         "VUID-VkSubpassDependency2KHR-dstSubpass-03079");
+    dependency = {0, VK_SUBPASS_EXTERNAL, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, 0};
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported,
+                         "VUID-VkRenderPassCreateInfo-pDependencies-00837", "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03054");
+
+    dependency = {VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, 0};
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported,
+                         "VUID-VkRenderPassCreateInfo-pDependencies-00838", "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03055");
+
+    dependency = {0, 0, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported,
+                         "VUID-VkRenderPassCreateInfo-pDependencies-00837", "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03054");
 
     // Geometry shaders not enabled source
     dependency = {0, 1, VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-srcStageMask-00860",
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-srcStageMask-00860",
                          "VUID-VkSubpassDependency2KHR-srcStageMask-03080");
 
     // Geometry shaders not enabled destination
     dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-dstStageMask-00861",
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-dstStageMask-00861",
                          "VUID-VkSubpassDependency2KHR-dstStageMask-03081");
 
     // Tessellation not enabled source
     dependency = {0, 1, VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-srcStageMask-00862",
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-srcStageMask-00862",
                          "VUID-VkSubpassDependency2KHR-srcStageMask-03082");
 
     // Tessellation not enabled destination
     dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-dstStageMask-00863",
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-dstStageMask-00863",
                          "VUID-VkSubpassDependency2KHR-dstStageMask-03083");
 
     // Potential cyclical dependency
     dependency = {1, 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-srcSubpass-00864",
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-srcSubpass-00864",
                          "VUID-VkSubpassDependency2KHR-srcSubpass-03084");
 
     // EXTERNAL to EXTERNAL dependency
     dependency = {
         VK_SUBPASS_EXTERNAL, VK_SUBPASS_EXTERNAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-srcSubpass-00865",
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-srcSubpass-00865",
                          "VUID-VkSubpassDependency2KHR-srcSubpass-03085");
-
-    // Source compute stage not part of subpass 0's GRAPHICS pipeline
-    dependency = {0, VK_SUBPASS_EXTERNAL, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, 0};
-
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pDependencies-00837",
-                         "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03054");
-
-    // Destination compute stage not part of subpass 0's GRAPHICS pipeline
-    dependency = {VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, 0};
-
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pDependencies-00838",
-                         "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03055");
-
-    // Non graphics stage in self dependency
-    dependency = {0, 0, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, 0};
-
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-srcSubpass-01989",
-                         "VUID-VkSubpassDependency2KHR-srcSubpass-02244");
 
     // Logically later source stages in self dependency
     dependency = {0, 0, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-srcSubpass-00867",
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-srcSubpass-00867",
                          "VUID-VkSubpassDependency2KHR-srcSubpass-03087");
 
     // Source access mask mismatch with source stage mask
     dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_ACCESS_UNIFORM_READ_BIT, 0, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-srcAccessMask-00868",
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-srcAccessMask-00868",
                          "VUID-VkSubpassDependency2KHR-srcAccessMask-03088");
 
     // Destination access mask mismatch with destination stage mask
     dependency = {
         0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0};
 
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-dstAccessMask-00869",
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-dstAccessMask-00869",
                          "VUID-VkSubpassDependency2KHR-dstAccessMask-03089");
 
     if (multiviewSupported) {
@@ -2320,7 +2324,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
         dependency = {0, 1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
                       0, 0, VK_DEPENDENCY_VIEW_LOCAL_BIT};
 
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, nullptr,
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, nullptr,
                              "VUID-VkRenderPassCreateInfo2KHR-viewMask-03059");
 
         // Enable multiview
@@ -2352,13 +2356,13 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
         rpmvci.dependencyCount = 0;
 
         // View offset with no view local bit
-        if (rp2Supported) {
+        if (rp2_supported) {
             dependency = {0, VK_SUBPASS_EXTERNAL, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
             rpmvci.pViewOffsets = pViewOffsets;
             pViewOffsets[0] = 1;
             rpmvci.dependencyCount = 1;
 
-            TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, nullptr,
+            TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, nullptr,
                                  "VUID-VkSubpassDependency2KHR-dependencyFlags-03092");
 
             rpmvci.dependencyCount = 0;
@@ -2368,7 +2372,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
         dependency = {VK_SUBPASS_EXTERNAL,         1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
                       VK_DEPENDENCY_VIEW_LOCAL_BIT};
 
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported,
                              "VUID-VkSubpassDependency-dependencyFlags-02520",
                              "VUID-VkSubpassDependency2KHR-dependencyFlags-03090");
 
@@ -2376,14 +2380,14 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
         dependency = {0, VK_SUBPASS_EXTERNAL,         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
                       0, VK_DEPENDENCY_VIEW_LOCAL_BIT};
 
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported,
                              "VUID-VkSubpassDependency-dependencyFlags-02521",
                              "VUID-VkSubpassDependency2KHR-dependencyFlags-03091");
 
         // Multiple views but no view local bit in self-dependency
         dependency = {0, 0, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, 0};
 
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkSubpassDependency-srcSubpass-00872",
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-srcSubpass-00872",
                              "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03060");
     }
 }
