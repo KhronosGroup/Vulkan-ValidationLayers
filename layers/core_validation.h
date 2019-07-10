@@ -474,6 +474,8 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordCmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                          uint32_t viewportCount,
                                                          const VkShadingRatePaletteNV* pShadingRatePalettes);
+    void PostCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                       VkDeviceSize dataSize, const void* pData);
 
     // State Utilty functions
     void AddCommandBufferBindingBuffer(CMD_BUFFER_STATE*, BUFFER_STATE*);
@@ -753,7 +755,7 @@ class CoreChecks : public ValidationStateTracker {
                                           const char* function, const char* src_or_dest, const char* error_code);
     bool ValidateUpdateDescriptorSetWithTemplate(VkDescriptorSet descriptorSet,
                                                  VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
-    bool ValidateMemoryIsBoundToBuffer(const BUFFER_STATE*, const char*, const char*);
+    bool ValidateMemoryIsBoundToBuffer(const BUFFER_STATE*, const char*, const char*) const;
     bool ValidateMemoryIsBoundToImage(const IMAGE_STATE*, const char*, const char*) const;
     void AddCommandBufferBindingSampler(CMD_BUFFER_STATE*, SAMPLER_STATE*);
     void AddCommandBufferBindingImageView(CMD_BUFFER_STATE*, IMAGE_VIEW_STATE*);
@@ -1140,7 +1142,7 @@ class CoreChecks : public ValidationStateTracker {
                                         char const* func_name, char const* member, uint32_t i) const;
 
     bool ValidateBufferUsageFlags(BUFFER_STATE const* buffer_state, VkFlags desired, bool strict, const char* msgCode,
-                                  char const* func_name, char const* usage_string);
+                                  char const* func_name, char const* usage_string) const;
 
     bool PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer);
@@ -1266,8 +1268,6 @@ class CoreChecks : public ValidationStateTracker {
                                     const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, VkResult result);
     bool PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                         VkDeviceSize dataSize, const void* pData);
-    void PostCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                       VkDeviceSize dataSize, const void* pData);
     void PostCallRecordCreateFence(VkDevice device, const VkFenceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkFence* pFence, VkResult result);
     bool PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue);

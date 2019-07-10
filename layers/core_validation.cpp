@@ -439,7 +439,8 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, co
 }
 
 // Check to see if memory was bound to this buffer
-bool CoreChecks::ValidateMemoryIsBoundToBuffer(const BUFFER_STATE *buffer_state, const char *api_name, const char *error_code) {
+bool CoreChecks::ValidateMemoryIsBoundToBuffer(const BUFFER_STATE *buffer_state, const char *api_name,
+                                               const char *error_code) const {
     bool result = false;
     if (0 == (static_cast<uint32_t>(buffer_state->createInfo.flags) & VK_BUFFER_CREATE_SPARSE_BINDING_BIT)) {
         result = VerifyBoundMemoryIsValid(buffer_state->binding.mem,
@@ -7053,9 +7054,9 @@ bool CoreChecks::ValidateImageSampleCount(const IMAGE_STATE *image_state, VkSamp
 
 bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                 VkDeviceSize dataSize, const void *pData) {
-    auto cb_state = GetCBState(commandBuffer);
+    const auto cb_state = GetCBState(commandBuffer);
     assert(cb_state);
-    auto dst_buffer_state = GetBufferState(dstBuffer);
+    const auto dst_buffer_state = GetBufferState(dstBuffer);
     assert(dst_buffer_state);
 
     bool skip = false;
@@ -7072,8 +7073,8 @@ bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
     return skip;
 }
 
-void CoreChecks::PostCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                               VkDeviceSize dataSize, const void *pData) {
+void ValidationStateTracker::PostCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer,
+                                                           VkDeviceSize dstOffset, VkDeviceSize dataSize, const void *pData) {
     auto cb_state = GetCBState(commandBuffer);
     auto dst_buffer_state = GetBufferState(dstBuffer);
 
