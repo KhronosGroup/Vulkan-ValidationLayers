@@ -3771,7 +3771,7 @@ bool CoreChecks::ValidateImageSubresourceLayers(const CMD_BUFFER_STATE *cb_node,
 // Helper function to validate usage flags for buffers. For given buffer_state send actual vs. desired usage off to helper above
 // where an error will be flagged if usage is not correct
 bool CoreChecks::ValidateBufferUsageFlags(BUFFER_STATE const *buffer_state, VkFlags desired, bool strict, const char *msgCode,
-                                          char const *func_name, char const *usage_string) {
+                                          char const *func_name, char const *usage_string) const {
     return ValidateUsageFlags(buffer_state->createInfo.usage, desired, strict,
                               VulkanTypedHandle(buffer_state->buffer, kVulkanObjectTypeBuffer), msgCode, func_name, usage_string);
 }
