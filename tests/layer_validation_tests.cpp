@@ -178,7 +178,7 @@ extern "C" void *ReleaseNullFence(void *arg) {
 }
 
 void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo *create_info,
-                          bool rp2Supported, const char *rp1_vuid, const char *rp2_vuid) {
+                          bool rp2_supported, const char *rp1_vuid, const char *rp2_vuid) {
     VkRenderPass render_pass = VK_NULL_HANDLE;
     VkResult err;
 
@@ -189,7 +189,7 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, co
         error_monitor->VerifyFound();
     }
 
-    if (rp2Supported && rp2_vuid) {
+    if (rp2_supported && rp2_vuid) {
         PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
             (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
         safe_VkRenderPassCreateInfo2KHR create_info2;
@@ -199,6 +199,29 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, co
         err = vkCreateRenderPass2KHR(device, create_info2.ptr(), nullptr, &render_pass);
         if (err == VK_SUCCESS) vkDestroyRenderPass(device, render_pass, nullptr);
         error_monitor->VerifyFound();
+    }
+}
+
+void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, const VkRenderPassCreateInfo *create_info,
+                                  bool rp2_supported) {
+    VkRenderPass render_pass = VK_NULL_HANDLE;
+    VkResult err;
+
+    error_monitor->ExpectSuccess();
+    err = vkCreateRenderPass(device, create_info, nullptr, &render_pass);
+    if (err == VK_SUCCESS) vkDestroyRenderPass(device, render_pass, nullptr);
+    error_monitor->VerifyNotFound();
+
+    if (rp2_supported) {
+        PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
+            (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
+        safe_VkRenderPassCreateInfo2KHR create_info2;
+        ConvertVkRenderPassCreateInfoToV2KHR(create_info, &create_info2);
+
+        error_monitor->ExpectSuccess();
+        err = vkCreateRenderPass2KHR(device, create_info2.ptr(), nullptr, &render_pass);
+        if (err == VK_SUCCESS) vkDestroyRenderPass(device, render_pass, nullptr);
+        error_monitor->VerifyNotFound();
     }
 }
 
