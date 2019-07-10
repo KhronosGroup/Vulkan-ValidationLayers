@@ -212,6 +212,22 @@ static VKAPI_ATTR void VKAPI_CALL StubResetQueryPoolEXT(VkDevice device, VkQuery
 
 
 const std::unordered_map<std::string, std::string> api_extension_map {
+    {"vkBindBufferMemory2", "VK_VERSION_1_1"},
+    {"vkBindImageMemory2", "VK_VERSION_1_1"},
+    {"vkGetDeviceGroupPeerMemoryFeatures", "VK_VERSION_1_1"},
+    {"vkCmdSetDeviceMask", "VK_VERSION_1_1"},
+    {"vkCmdDispatchBase", "VK_VERSION_1_1"},
+    {"vkGetImageMemoryRequirements2", "VK_VERSION_1_1"},
+    {"vkGetBufferMemoryRequirements2", "VK_VERSION_1_1"},
+    {"vkGetImageSparseMemoryRequirements2", "VK_VERSION_1_1"},
+    {"vkTrimCommandPool", "VK_VERSION_1_1"},
+    {"vkGetDeviceQueue2", "VK_VERSION_1_1"},
+    {"vkCreateSamplerYcbcrConversion", "VK_VERSION_1_1"},
+    {"vkDestroySamplerYcbcrConversion", "VK_VERSION_1_1"},
+    {"vkCreateDescriptorUpdateTemplate", "VK_VERSION_1_1"},
+    {"vkDestroyDescriptorUpdateTemplate", "VK_VERSION_1_1"},
+    {"vkUpdateDescriptorSetWithTemplate", "VK_VERSION_1_1"},
+    {"vkGetDescriptorSetLayoutSupport", "VK_VERSION_1_1"},
     {"vkCreateSwapchainKHR", "VK_KHR_swapchain"},
     {"vkDestroySwapchainKHR", "VK_KHR_swapchain"},
     {"vkGetSwapchainImagesKHR", "VK_KHR_swapchain"},

@@ -488,6 +488,10 @@ class HelperFileOutputGenerator(OutputGenerator):
     # Generate extension helper header file
     def GenerateExtensionHelperHeader(self):
 
+        V_1_1_level_feature_set = [
+            'VK_VERSION_1_1',
+            ]
+
         V_1_0_instance_extensions_promoted_to_core = [
             'vk_khr_device_group_creation',
             'vk_khr_external_fence_capabilities',
@@ -552,6 +556,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             extension_items = sorted(extension_dict.items())
 
             field_name = { ext_name: re.sub('_extension_name', '', info['define'].lower()) for ext_name, info in extension_items }
+
             if type == 'Instance':
                 instance_field_name = field_name
                 instance_extension_dict = extension_dict
@@ -563,6 +568,7 @@ class HelperFileOutputGenerator(OutputGenerator):
 
             # Output the data member list
             struct  = [struct_decl]
+            struct.extend([ '    bool vk_feature_version_1_1{false};'])
             struct.extend([ '    bool %s{false};' % field_name[ext_name] for ext_name, info in extension_items])
 
             # Construct the extension information map -- mapping name to data member (field), and required extensions
@@ -587,6 +593,8 @@ class HelperFileOutputGenerator(OutputGenerator):
                 '    typedef std::unordered_map<std::string,%s> %s;' % (info_type, info_map_type),
                 '    static const %s &get_info(const char *name) {' %info_type,
                 '        static const %s info_map = {' % info_map_type ])
+            struct.extend([
+                '            std::make_pair("VK_VERSION_1_1", %sInfo(&%sExtensions::vk_feature_version_1_1, {})),' % (type, type)])
 
             field_format = '&' + struct_type + '::%s'
             req_format = '{' + field_format+ ', %s}'
@@ -633,6 +641,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                 '',
                 '        static const std::vector<const char *> V_1_0_promoted_%s_extensions = {' % type.lower() ])
             struct.extend(['            %s_EXTENSION_NAME,' % ext_name.upper() for ext_name in promoted_ext_list])
+            struct.extend(['            "VK_VERSION_1_1",'])
             struct.extend([
                 '        };',
                 '',

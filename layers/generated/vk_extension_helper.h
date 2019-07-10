@@ -42,6 +42,7 @@
 #include <vulkan/vulkan.h>
 
 struct InstanceExtensions {
+    bool vk_feature_version_1_1{false};
     bool vk_ext_acquire_xlib_display{false};
     bool vk_ext_debug_report{false};
     bool vk_ext_debug_utils{false};
@@ -88,6 +89,7 @@ struct InstanceExtensions {
     typedef std::unordered_map<std::string,InstanceInfo> InstanceInfoMap;
     static const InstanceInfo &get_info(const char *name) {
         static const InstanceInfoMap info_map = {
+            std::make_pair("VK_VERSION_1_1", InstanceInfo(&InstanceExtensions::vk_feature_version_1_1, {})),
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
             std::make_pair(VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_ext_acquire_xlib_display, {{
                            {&InstanceExtensions::vk_ext_direct_mode_display, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME}}})),
@@ -189,6 +191,7 @@ struct InstanceExtensions {
             VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
             VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
             VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+            "VK_VERSION_1_1",
         };
 
         // Initialize struct data, robust to invalid pCreateInfo
@@ -270,6 +273,7 @@ static const std::set<std::string> kInstanceExtensionNames = {
 };
 
 struct DeviceExtensions : public InstanceExtensions {
+    bool vk_feature_version_1_1{false};
     bool vk_amd_buffer_marker{false};
     bool vk_amd_display_native_hdr{false};
     bool vk_amd_draw_indirect_count{false};
@@ -427,6 +431,7 @@ struct DeviceExtensions : public InstanceExtensions {
     typedef std::unordered_map<std::string,DeviceInfo> DeviceInfoMap;
     static const DeviceInfo &get_info(const char *name) {
         static const DeviceInfoMap info_map = {
+            std::make_pair("VK_VERSION_1_1", DeviceInfo(&DeviceExtensions::vk_feature_version_1_1, {})),
             std::make_pair(VK_AMD_BUFFER_MARKER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_buffer_marker, {})),
             std::make_pair(VK_AMD_DISPLAY_NATIVE_HDR_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_display_native_hdr, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
@@ -734,6 +739,7 @@ struct DeviceExtensions : public InstanceExtensions {
             VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
             VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME,
             VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME,
+            "VK_VERSION_1_1",
         };
 
         // Initialize struct data, robust to invalid pCreateInfo
