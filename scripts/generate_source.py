@@ -19,6 +19,7 @@
 # Author: Mike Schuchardt <mikes@lunarg.com>
 
 import argparse
+import common_codegen
 import filecmp
 import os
 import shutil
@@ -29,10 +30,6 @@ import tempfile
 # files to exclude from --verify check
 verify_exclude = ['.clang-format']
 
-# helper to define paths relative to this file
-def script_relative(path):
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), path))
-
 def main(argv):
     parser = argparse.ArgumentParser(description='Generate source code for this repository')
     parser.add_argument('registry', metavar='REGISTRY_PATH', help='path to the Vulkan-Headers registry directory')
@@ -41,7 +38,7 @@ def main(argv):
     group.add_argument('-v', '--verify', action='store_true', help='verify repo files match generator output')
     args = parser.parse_args(argv)
 
-    gen_cmds = [*[[script_relative('lvl_genvk.py'),
+    gen_cmds = [*[[common_codegen.repo_relative('scripts/lvl_genvk.py'),
                    '-registry', os.path.abspath(os.path.join(args.registry,  'vk.xml')),
                    '-quiet',
                    filename] for filename in ["chassis.cpp",
@@ -62,15 +59,15 @@ def main(argv):
                                               "vk_safe_struct.cpp",
                                               "vk_safe_struct.h",
                                               "vk_typemap_helper.h"]],
-                [script_relative('vk_validation_stats.py'),
+                [common_codegen.repo_relative('scripts/vk_validation_stats.py'),
                  os.path.abspath(os.path.join(args.registry, 'validusage.json')),
                  '-export_header'],
-                [script_relative('external_revision_generator.py'),
-                 '--rev_file', script_relative('known_good.json'),
+                [common_codegen.repo_relative('scripts/external_revision_generator.py'),
+                 '--rev_file', common_codegen.repo_relative('scripts/known_good.json'),
                  '-s', 'SPIRV_TOOLS_COMMIT_ID',
                  '-o', 'spirv_tools_commit_id.h']]
 
-    repo_dir = script_relative('../layers/generated')
+    repo_dir = common_codegen.repo_relative('layers/generated')
 
     # get directory where generators will run
     if args.verify or args.incremental:
