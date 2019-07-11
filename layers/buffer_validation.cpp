@@ -119,6 +119,9 @@ bool IMAGE_STATE::IsCompatibleAliasing(IMAGE_STATE *other_image_state) {
         IsCreateInfoEqual(other_image_state->createInfo)) {
         return true;
     }
+    if ((bind_swapchain == other_image_state->bind_swapchain) && (bind_swapchain != VK_NULL_HANDLE)) {
+        return true;
+    }
     return false;
 }
 
