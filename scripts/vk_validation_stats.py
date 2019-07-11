@@ -23,6 +23,7 @@
 import argparse
 import common_codegen
 import csv
+import glob
 import html
 import json
 import operator
@@ -61,15 +62,7 @@ layer_source_files = [common_codegen.repo_relative(path) for path in [
     'layers/generated/object_tracker.cpp',
 ]]
 
-test_source_files = [common_codegen.repo_relative(path) for path in [
-    'tests/layer_validation_tests.cpp',
-    'tests/vklayertests_buffer_image_memory_sampler.cpp',
-    'tests/vklayertests_command.cpp',
-    'tests/vklayertests_descriptor_renderpass_framebuffer.cpp',
-    'tests/vklayertests_others.cpp',
-    'tests/vklayertests_pipeline_shader.cpp',
-    'tests/vkpositivelayertests.cpp',
-]]
+test_source_files = glob.glob(os.path.join(common_codegen.repo_relative('tests'), '*.cpp'))
 
 # This needs to be updated as new extensions roll in
 khr_aliases = {
