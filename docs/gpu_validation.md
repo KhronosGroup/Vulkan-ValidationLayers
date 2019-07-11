@@ -256,7 +256,7 @@ It isn't necessarily required for using the feature.
 
 In general, the implementation does:
 
-* For each draw call, allocate a buffer with enough device memory to hold a single debug output record written by the
+* For each draw, dispatch, and trace rays call, allocate a buffer with enough device memory to hold a single debug output record written by the
     instrumented shader code.
     If descriptor indexing is enabled, calculate the amount of memory needed to describe the descriptor arrays sizes and
     write states and allocate device memory and a buffer for input to the instrumented shader.
@@ -271,7 +271,7 @@ In general, the implementation does:
     An alternative design allocates this block on a per-device or per-queue basis and should work.
     However, it is not possible to identify the command buffer that causes the error if multiple command buffers
     are submitted at once.
-* For each draw call, allocate a descriptor set and update it to point to the block of device memory just allocated.
+* For each draw, dispatch, and trace rays call, allocate a descriptor set and update it to point to the block of device memory just allocated.
     If descriptor indexing is enabled, also update the descriptor set to point to the allocated input buffer.
     Fill the input buffer with the size and write state information for each descriptor array.
     There is a descriptor set manager to handle this efficiently.
@@ -297,13 +297,13 @@ In general, the implementation does:
     Instead, the layer leaves the layout alone and later replaces the instrumented shaders with
     non-instrumented ones when the pipeline layout is later used to create a graphics pipeline.
     The layer issues an error message to report this condition.
-* When creating a GraphicsPipeline, check to see if the pipeline is using the debug binding index.
+* When creating a GraphicsPipeline, ComputePipeline, or RayTracingPipeline, check to see if the pipeline is using the debug binding index.
     If it is, replace the instrumented shaders in the pipeline with non-instrumented ones.
 * Before calling QueueSubmit, if descriptor indexing is enabled, check to see if there were any unwritten descriptors that were declared
     update-after-bind.
     If there were, update the write state of those elements.
 * After calling QueueSubmit, perform a wait on the queue to allow the queue to finish executing.
-    Then map and examine the device memory block for each draw that was submitted.
+    Then map and examine the device memory block for each draw or trace ray command that was submitted.
     If any debug record is found, generate a validation error message for each record found.
 
 The above describes only the high-level details of GPU-Assisted Validation operation.
@@ -426,7 +426,7 @@ The design of each hooked function follows:
 
 #### GpuAllocateValidationResources
 
-* For each Draw or Dispatch call:
+* For each Draw, Dispatch, or TraceRays call:
   * Get a descriptor set from the descriptor set manager
   * Get an output buffer and associated memory from VMA
   * If descriptor indexing is enabled, get an input buffer and fill with descriptor array information
@@ -434,7 +434,7 @@ The design of each hooked function follows:
   * Check to see if the layout for the pipeline just bound is using our selected bind index
   * If no conflict, add an additional command to the command buffer to bind our descriptor set at our selected index
 * Record the above objects in the per-CB state
-Note that the Draw and Dispatch calls include vkCmdDraw, vkCmdDrawIndexed, vkCmdDrawIndirect, vkCmdDrawIndexedIndirect, vkCmdDispatch, and vkCmdDispatchIndirect.
+Note that the Draw and Dispatch calls include vkCmdDraw, vkCmdDrawIndexed, vkCmdDrawIndirect, vkCmdDrawIndexedIndirect, vkCmdDispatch, vkCmdDispatchIndirect, and vkCmdTraceRaysNV.
 
 #### GpuPreCallRecordFreeCommandBuffers
 
@@ -653,29 +653,41 @@ The Instruction Index is the instruction within the original function at which t
 For bindless, this will be the instruction which consumes the descriptor in question,
 or the instruction that consumes the OpSampledImage that consumes the descriptor.
 
-The Stage is the integer value used in SPIR-V for each of the Graphics Execution Models:
+The Stage is the integer value used in SPIR-V for each of the Execution Models:
 
-| Stage  | Value |
-|--------|:-----:|
-|Vertex  |0      |
-|TessCtrl|1      |
-|TessEval|2      |
-|Geometry|3      |
-|Fragment|4      |
-|Compute |5      |
+| Stage         | Value |
+|---------------|:-----:|
+|Vertex         |0      |
+|TessCtrl       |1      |
+|TessEval       |2      |
+|Geometry       |3      |
+|Fragment       |4      |
+|Compute        |5      |
+|RayGenerationNV|5313   |
+|IntersectionNV |5314   |
+|AnyHitNV       |5315   |
+|ClosestHitNV   |5316   |
+|MissNV         |5317   |
+|CallableNV     |5318   |
 
 ### Stage Specific Words
 
 These are words that identify which "instance" of the shader the validation error occurred in.
 Here are words for each stage:
 
-| Stage  | Word 0           | Word 1     |
-|--------|------------------|------------|
-|Vertex  |VertexID          |InstanceID  |
-|Tess*   |InvocationID      |unused      |
-|Geometry|PrimitiveID       |InvocationID|
-|Fragment|FragCoord.x       |FragCoord.y |
-|Compute |GlobalInvocationID|unused      |
+| Stage         | Word 0           | Word 1     | World 2    |
+|---------------|------------------|------------|------------|
+|Vertex         |VertexID          |InstanceID  | unused     |
+|Tess*          |InvocationID      |unused      | unused     |
+|Geometry       |PrimitiveID       |InvocationID| unused     |
+|Fragment       |FragCoord.x       |FragCoord.y | unused     |
+|Compute        |GlobalInvocationID|unused      | unused     |
+|RayGenerationNV|LaunchIdNV.x      |LaunchIdNV.y|LaunchIdNV.z|
+|IntersectionNV |LaunchIdNV.x      |LaunchIdNV.y|LaunchIdNV.z|
+|AnyHitNV       |LaunchIdNV.x      |LaunchIdNV.y|LaunchIdNV.z|
+|ClosestHitNV   |LaunchIdNV.x      |LaunchIdNV.y|LaunchIdNV.z|
+|MissNV         |LaunchIdNV.x      |LaunchIdNV.y|LaunchIdNV.z|
+|CallableNV     |LaunchIdNV.x      |LaunchIdNV.y|LaunchIdNV.z|
 
 "unused" means not relevant, but still present.
 
