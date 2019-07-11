@@ -37,6 +37,7 @@
 #include <unordered_map>
 #include <utility>
 #include <set>
+#include <vector>
 
 #include <vulkan/vulkan.h>
 
@@ -72,8 +73,6 @@ struct InstanceExtensions {
     bool vk_mvk_macos_surface{false};
     bool vk_nn_vi_surface{false};
     bool vk_nv_external_memory_capabilities{false};
-
-    std::unordered_set<std::string> device_extension_set;
 
     struct InstanceReq {
         const bool InstanceExtensions::* enabled;
@@ -183,11 +182,6 @@ struct InstanceExtensions {
     }
 
     uint32_t InitFromInstanceCreateInfo(uint32_t requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {
-
-        // Save pCreateInfo device extension list
-        for (uint32_t extn = 0; extn < pCreateInfo->enabledExtensionCount; extn++) {
-           device_extension_set.insert(pCreateInfo->ppEnabledExtensionNames[extn]);
-        }
 
         static const std::vector<const char *> V_1_0_promoted_instance_extensions = {
             VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME,
@@ -720,11 +714,6 @@ struct DeviceExtensions : public InstanceExtensions {
         assert(instance_extensions);
         *this = DeviceExtensions(*instance_extensions);
 
-
-        // Save pCreateInfo device extension list
-        for (uint32_t extn = 0; extn < pCreateInfo->enabledExtensionCount; extn++) {
-           device_extension_set.insert(pCreateInfo->ppEnabledExtensionNames[extn]);
-        }
 
         static const std::vector<const char *> V_1_0_promoted_device_extensions = {
             VK_KHR_16BIT_STORAGE_EXTENSION_NAME,

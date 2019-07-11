@@ -123,6 +123,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         preamble += '#include <unordered_set>\n'
         preamble += '#include <unordered_map>\n'
         preamble += '#include "vk_layer_dispatch_table.h"\n'
+        preamble += '#include "vk_extension_helper.h"\n'
 
         write(copyright, file=self.outFile)
         write(preamble, file=self.outFile)
@@ -231,12 +232,13 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         ext_fcn += '//   o  Determine if the API has an associated extension\n'
         ext_fcn += '//   o  If it does, determine if that extension name is present in the passed-in set of enabled_ext_names \n'
         ext_fcn += '//   If the APIname has no parent extension, OR its parent extension name is IN the set, return TRUE, else FALSE\n'
-        ext_fcn += 'static inline bool ApiParentExtensionEnabled(const std::string api_name, const std::unordered_set<std::string> &enabled_ext_names) {\n'
+        ext_fcn += 'static inline bool ApiParentExtensionEnabled(const std::string api_name, const DeviceExtensions *device_extension_info) {\n'
         ext_fcn += '    auto has_ext = api_extension_map.find(api_name);\n'
-        ext_fcn += '    // Is this API part of an extension?\n'
+        ext_fcn += '    // Is this API part of an extension or feature group?\n'
         ext_fcn += '    if (has_ext != api_extension_map.end()) {\n'
         ext_fcn += '        // Was the extension for this API enabled in the CreateDevice call?\n'
-        ext_fcn += '        if (enabled_ext_names.find(has_ext->second) == enabled_ext_names.end()) {\n'
+        ext_fcn += '        auto info = device_extension_info->get_info(has_ext->second.c_str());\n'
+        ext_fcn += '        if ((!info.state) || (device_extension_info->*(info.state) != true)) {\n'
         ext_fcn += '            return false;\n'
         ext_fcn += '        }\n'
         ext_fcn += '    }\n'
