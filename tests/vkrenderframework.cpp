@@ -1845,6 +1845,19 @@ void VkCommandBufferObj::ClearDepthStencilImage(VkImage image, VkImageLayout ima
     vkCmdClearDepthStencilImage(handle(), image, imageLayout, pColor, rangeCount, pRanges);
 }
 
+void VkCommandBufferObj::BuildAccelerationStructure(VkAccelerationStructureObj *as, VkBuffer scratchBuffer) {
+    BuildAccelerationStructure(as, scratchBuffer, VK_NULL_HANDLE);
+}
+
+void VkCommandBufferObj::BuildAccelerationStructure(VkAccelerationStructureObj *as, VkBuffer scratchBuffer, VkBuffer instanceData) {
+    PFN_vkCmdBuildAccelerationStructureNV vkCmdBuildAccelerationStructureNV =
+        (PFN_vkCmdBuildAccelerationStructureNV)vkGetDeviceProcAddr(as->dev(), "vkCmdBuildAccelerationStructureNV");
+    assert(vkCmdBuildAccelerationStructureNV != nullptr);
+
+    vkCmdBuildAccelerationStructureNV(handle(), &as->info(), instanceData, 0, VK_FALSE, as->handle(), VK_NULL_HANDLE, scratchBuffer,
+                                      0);
+}
+
 void VkCommandBufferObj::PrepareAttachments(const vector<std::unique_ptr<VkImageObj>> &color_atts,
                                             VkDepthStencilObj *depth_stencil_att) {
     for (const auto &color_att : color_atts) {

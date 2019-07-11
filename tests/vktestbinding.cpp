@@ -669,6 +669,11 @@ void AccelerationStructure::init(const Device &dev, const VkAccelerationStructur
         bind_info.accelerationStructure = handle();
         bind_info.memory = memory_.handle();
         EXPECT(vkBindAccelerationStructureMemoryNV(dev.handle(), 1, &bind_info) == VK_SUCCESS);
+
+        PFN_vkGetAccelerationStructureHandleNV vkGetAccelerationStructureHandleNV =
+            (PFN_vkGetAccelerationStructureHandleNV)vkGetDeviceProcAddr(dev.handle(), "vkGetAccelerationStructureHandleNV");
+        assert(vkGetAccelerationStructureHandleNV != nullptr);
+        EXPECT(vkGetAccelerationStructureHandleNV(dev.handle(), handle(), sizeof(uint64_t), &opaque_handle_) == VK_SUCCESS);
     }
 }
 
