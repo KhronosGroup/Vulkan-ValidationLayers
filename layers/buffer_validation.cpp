@@ -3467,22 +3467,10 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const I
         const auto image = layout_map_entry.first;
         const auto *image_state = GetImageState(image);
         if (!image_state) continue;  // Can't check layouts of a dead image
-        auto subres_map = layout_map_entry.second.get();
+        const auto &subres_map = layout_map_entry.second;
         ImageSubresourcePair isr_pair;
         isr_pair.image = image;
         isr_pair.hasSubresource = true;
-
-        std::string bind_swapchain_msg = "";
-        if (image_state->bind_swapchain) {
-            auto swapchain_node = GetSwapchainState(image_state->bind_swapchain);
-            const auto swapchain_image = swapchain_node->images[image_state->bind_swapchain_imageIndex];
-            isr_pair.image = swapchain_image;
-
-            string_sprintf(&bind_swapchain_msg, "bind %s imageIndex %d (%s)",
-                           report_data->FormatHandle(image_state->bind_swapchain).c_str(), image_state->bind_swapchain_imageIndex,
-                           report_data->FormatHandle(swapchain_image).c_str());
-        }
-
         // Validate the initial_uses for each subresource referenced
         for (auto it_init = subres_map->BeginInitialUse(); !it_init.AtEnd(); ++it_init) {
             isr_pair.subresource = (*it_init).subresource;
@@ -3501,9 +3489,9 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const I
                         skip |= log_msg(
                             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidImageLayout,
-                            "Submitted command buffer expects %s %s (subresource: aspectMask 0x%X array layer %u, mip level %u) "
+                            "Submitted command buffer expects %s (subresource: aspectMask 0x%X array layer %u, mip level %u) "
                             "to be in layout %s--instead, current layout is %s.%s",
-                            report_data->FormatHandle(image).c_str(), bind_swapchain_msg.c_str(), isr_pair.subresource.aspectMask,
+                            report_data->FormatHandle(image).c_str(), isr_pair.subresource.aspectMask,
                             isr_pair.subresource.arrayLayer, isr_pair.subresource.mipLevel, string_VkImageLayout(initial_layout),
                             string_VkImageLayout(image_layout), formatted_label.c_str());
                     }
