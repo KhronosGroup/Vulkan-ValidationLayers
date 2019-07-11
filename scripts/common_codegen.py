@@ -73,7 +73,14 @@ def GetFeatureProtect(interface):
 
 # Return a dict containing the dispatchable/non-dispatchable type of every handle
 def GetHandleTypes(tree):
-    handles = OrderedDict()
+    # Extend OrderedDict with common handle operations
+    class HandleDict(OrderedDict):
+        def IsDispatchable(self, handle_type):
+            return self.get(handle_type) == 'VK_DEFINE_HANDLE'
+        def IsNonDispatchable(self, handle_type):
+            return self.get(handle_type) == 'VK_DEFINE_NON_DISPATCHABLE_HANDLE'
+
+    handles = HandleDict()
     for elem in tree.findall("types/type/[@category='handle']"):
         if not elem.get('alias'):
             name = elem.get('name')

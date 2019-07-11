@@ -301,7 +301,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         output_func += '    bool skip = false;\n'
         output_func += '    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeCommandBuffer, error_code);\n'
         for handle in self.object_types:
-            if self.isHandleTypeNonDispatchable(handle):
+            if self.handle_types.IsNonDispatchable(handle):
                 output_func += '    skip |= DeviceReportUndestroyedObjects(device, %s, error_code);\n' % (self.GetVulkanObjType(handle))
         output_func += '    return skip;\n'
         output_func += '}\n'
@@ -314,7 +314,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         output_func += 'void ObjectLifetimes::DestroyUndestroyedObjects(VkDevice device) {\n'
         output_func += '    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeCommandBuffer);\n'
         for handle in self.object_types:
-            if self.isHandleTypeNonDispatchable(handle):
+            if self.handle_types.IsNonDispatchable(handle):
                 output_func += '    DeviceDestroyUndestroyedObjects(device, %s);\n' % (self.GetVulkanObjType(handle))
         output_func += '}\n'
         return output_func
@@ -502,14 +502,6 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 ispointer = True
         return ispointer
     #
-    # Check if a parent object is dispatchable or not
-    def isHandleTypeObject(self, handletype):
-        return handletype in self.handle_types
-    #
-    # Check if a parent object is dispatchable or not
-    def isHandleTypeNonDispatchable(self, handletype):
-        return self.handle_types.get(handletype) == 'VK_DEFINE_NON_DISPATCHABLE_HANDLE'
-    #
     # Retrieve the type and name for a parameter
     def getTypeNameTuple(self, param):
         type = ''
@@ -604,7 +596,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         struct_members = struct_member_dict[struct_item]
 
         for member in struct_members:
-            if self.isHandleTypeObject(member.type):
+            if member.type in self.handle_types:
                 return True
             # recurse for member structs, guard against infinite recursion
             elif member.type in struct_member_dict and member.type != struct_item:
@@ -631,7 +623,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         else:
             member_list = item_list
         for item in member_list:
-            if self.isHandleTypeObject(paramtype.text):
+            if paramtype.text in self.handle_types:
                 object_list.add(item)
         return object_list
     #
@@ -673,7 +665,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         handle_type = params[-1].find('type')
         is_create_pipelines = False
 
-        if self.isHandleTypeObject(handle_type.text):
+        if handle_type.text in self.handle_types:
             # Check for special case where multiple handles are returned
             object_array = False
             if cmd_info[-1].len is not None:
@@ -722,7 +714,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             nullalloc_vuid_string = '%s-nullalloc' % cmd_info[param].name
             compatalloc_vuid = self.manual_vuids.get(compatalloc_vuid_string, "kVUIDUndefined")
             nullalloc_vuid = self.manual_vuids.get(nullalloc_vuid_string, "kVUIDUndefined")
-            if self.isHandleTypeObject(cmd_info[param].type) == True:
+            if cmd_info[param].type in self.handle_types:
                 if object_array == True:
                     # This API is freeing an array of handles -- add loop control
                     validate_code += 'HEY, NEED TO DESTROY AN ARRAY\n'
@@ -769,7 +761,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             # Handle objects
             if member.iscreate and first_level_param and member == members[-1]:
                 continue
-            if self.isHandleTypeObject(member.type) == True:
+            if member.type in self.handle_types:
                 count_name = member.len
                 if (count_name is not None):
                     count_name = '%s%s' % (prefix, member.len)
@@ -879,7 +871,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             isconst = True if 'const' in cdecl else False
             # Mark param as local if it is an array of objects
             islocal = False;
-            if self.isHandleTypeObject(type) == True:
+            if type in self.handle_types:
                 if (length is not None) and (isconst == True):
                     islocal = True
             # Or if it's a struct that contains an object

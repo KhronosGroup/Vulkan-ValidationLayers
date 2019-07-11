@@ -681,14 +681,6 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
                 ispointer = True
         return ispointer
 
-    # Check if an object is a non-dispatchable handle
-    def isHandleTypeNonDispatchable(self, handletype):
-        return self.handle_types.get(handletype) == 'VK_DEFINE_NON_DISPATCHABLE_HANDLE'
-
-    # Check if an object is a dispatchable handle
-    def isHandleTypeDispatchable(self, handletype):
-        return self.handle_types.get(handletype) == 'VK_DEFINE_HANDLE'
-
     def makeThreadUseBlock(self, cmd, functionprefix):
         """Generate C function pointer typedef for <command> Element"""
         paramdecl = ''
@@ -751,7 +743,7 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
                         paramtype = paramtype.text
                     else:
                         paramtype = 'None'
-                    if (self.isHandleTypeDispatchable(paramtype) or self.isHandleTypeNonDispatchable(paramtype)) and paramtype != 'VkPhysicalDevice':
+                    if paramtype in self.handle_types and paramtype != 'VkPhysicalDevice':
                         if self.paramIsArray(param) and ('pPipelines' != paramname.text):
                             # Add pointer dereference for array counts that are pointer values
                             dereference = ''
@@ -877,11 +869,8 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
     # Type generation
     def genType(self, typeinfo, name, alias):
         OutputGenerator.genType(self, typeinfo, name, alias)
-        type_elem = typeinfo.elem
-        category = type_elem.get('category')
-        if category == 'handle':
-            if self.isHandleTypeNonDispatchable(name):
-                self.non_dispatchable_types.add(name)
+        if self.handle_types.IsNonDispatchable(name):
+            self.non_dispatchable_types.add(name)
     #
     # Struct (e.g. C "struct" type) generation.
     # This is a special case of the <type> tag where the contents are

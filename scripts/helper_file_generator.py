@@ -304,17 +304,17 @@ class HelperFileOutputGenerator(OutputGenerator):
     # non-dispatchable (dispatchable = False) handle
     def TypeContainsObjectHandle(self, handle_type, dispatchable):
         if dispatchable:
-            type_key = 'VK_DEFINE_HANDLE'
+            type_check = self.handle_types.IsDispatchable
         else:
-            type_key = 'VK_DEFINE_NON_DISPATCHABLE_HANDLE'
-        if self.handle_types.get(handle_type) == type_key:
+            type_check = self.handle_types.IsNonDispatchable
+        if type_check(handle_type):
             return True
         # if handle_type is a struct, search its members
         if handle_type in self.structNames:
             member_index = next((i for i, v in enumerate(self.structMembers) if v[0] == handle_type), None)
             if member_index is not None:
                 for item in self.structMembers[member_index].members:
-                    if self.handle_types.get(item.type) == type_key:
+                    if type_check(item.type):
                         return True
         return False
     #
@@ -687,7 +687,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             type_list.append(enum_entry)
             object_type_info[enum_entry] = { 'VkType': item }
             # We'll want lists of the dispatchable and non dispatchable handles below with access to the same info
-            if self.handle_types.get(item) == 'VK_DEFINE_NON_DISPATCHABLE_HANDLE':
+            if self.handle_types.IsNonDispatchable(item):
                 non_dispatchable[item] = enum_entry
             else:
                 dispatchable[item] = enum_entry

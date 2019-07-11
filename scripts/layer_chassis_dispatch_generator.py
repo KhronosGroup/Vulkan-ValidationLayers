@@ -1183,10 +1183,6 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
                 ispointer = True
         return ispointer
     #
-    # Check if a parent object is dispatchable or not
-    def isHandleTypeNonDispatchable(self, handletype):
-        return self.handle_types.get(handletype) == 'VK_DEFINE_NON_DISPATCHABLE_HANDLE'
-    #
     # Retrieve the type and name for a parameter
     def getTypeNameTuple(self, param):
         type = ''
@@ -1284,7 +1280,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
         struct_members = struct_member_dict[struct_item]
 
         for member in struct_members:
-            if self.isHandleTypeNonDispatchable(member.type):
+            if self.handle_types.IsNonDispatchable(member.type):
                 return True
             elif member.type in struct_member_dict:
                 if self.struct_contains_ndo(member.type) == True:
@@ -1311,7 +1307,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
         else:
             member_list = item_list
         for item in member_list:
-            if self.isHandleTypeNonDispatchable(paramtype.text):
+            if self.handle_types.IsNonDispatchable(paramtype.text):
                 ndo_list.add(item)
         return ndo_list
     #
@@ -1414,7 +1410,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
     def generate_create_ndo_code(self, indent, proto, params, cmd_info):
         create_ndo_code = ''
         handle_type = params[-1].find('type')
-        if self.isHandleTypeNonDispatchable(handle_type.text):
+        if self.handle_types.IsNonDispatchable(handle_type.text):
             # Check for special case where multiple handles are returned
             ndo_array = False
             if cmd_info[-1].len is not None:
@@ -1447,7 +1443,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
                 param = -1
             else:
                 param = -2
-            if self.isHandleTypeNonDispatchable(cmd_info[param].type) == True:
+            if self.handle_types.IsNonDispatchable(cmd_info[param].type):
                 if ndo_array == True:
                     # This API is freeing an array of handles.  Remove them from the unique_id map.
                     destroy_ndo_code += '%sif ((VK_SUCCESS == result) && (%s)) {\n' % (indent, cmd_info[param].name)
@@ -1544,7 +1540,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
         for member in members:
             process_pnext = self.StructWithExtensions(member.type)
             # Handle NDOs
-            if self.isHandleTypeNonDispatchable(member.type) == True:
+            if self.handle_types.IsNonDispatchable(member.type):
                 count_name = member.len
                 if (count_name is not None):
                     if first_level_param == False:
@@ -1697,7 +1693,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
             ispointer = self.paramIsPointer(member)
             # Mark param as local if it is an array of NDOs
             islocal = False;
-            if self.isHandleTypeNonDispatchable(type) == True:
+            if self.handle_types.IsNonDispatchable(type):
                 if (len is not None) and (isconst == True):
                     islocal = True
             # Or if it's a struct that contains an NDO
