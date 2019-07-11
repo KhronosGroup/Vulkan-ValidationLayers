@@ -320,6 +320,48 @@ class IMAGE_STATE : public BINDABLE {
     IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo);
     IMAGE_STATE(IMAGE_STATE const &rh_obj) = delete;
 
+    std::unordered_set<VkImage> aliasing_images;
+    bool IsCompatibleAliasing(IMAGE_STATE *other_image_state);
+
+    bool IsCreateInfoEqual(const VkImageCreateInfo &other_createInfo) const;
+
+    inline bool IsImageTypeEqual(const VkImageCreateInfo &other_createInfo) const {
+        return createInfo.imageType == other_createInfo.imageType;
+    }
+    inline bool IsFormatEqual(const VkImageCreateInfo &other_createInfo) const {
+        return createInfo.format == other_createInfo.format;
+    }
+    inline bool IsMipLevelsEqual(const VkImageCreateInfo &other_createInfo) const {
+        return createInfo.mipLevels == other_createInfo.mipLevels;
+    }
+    inline bool IsUsageEqual(const VkImageCreateInfo &other_createInfo) const { return createInfo.usage == other_createInfo.usage; }
+    inline bool IsSamplesEqual(const VkImageCreateInfo &other_createInfo) const {
+        return createInfo.samples == other_createInfo.samples;
+    }
+    inline bool IsTilingEqual(const VkImageCreateInfo &other_createInfo) const {
+        return createInfo.tiling == other_createInfo.tiling;
+    }
+    inline bool IsArrayLayersEqual(const VkImageCreateInfo &other_createInfo) const {
+        return createInfo.arrayLayers == other_createInfo.arrayLayers;
+    }
+    inline bool IsInitialLayoutEqual(const VkImageCreateInfo &other_createInfo) const {
+        return createInfo.initialLayout == other_createInfo.initialLayout;
+    }
+    inline bool IsSharingModeEqual(const VkImageCreateInfo &other_createInfo) const {
+        return createInfo.sharingMode == other_createInfo.sharingMode;
+    }
+    inline bool IsExtentEqual(const VkImageCreateInfo &other_createInfo) const {
+        return (createInfo.extent.width == other_createInfo.extent.width) &&
+               (createInfo.extent.height == other_createInfo.extent.height) &&
+               (createInfo.extent.depth == other_createInfo.extent.depth);
+    }
+    inline bool IsQueueFamilyIndicesEqual(const VkImageCreateInfo &other_createInfo) const {
+        return (createInfo.queueFamilyIndexCount == other_createInfo.queueFamilyIndexCount) &&
+               (createInfo.queueFamilyIndexCount == 0 ||
+                memcmp(createInfo.pQueueFamilyIndices, other_createInfo.pQueueFamilyIndices,
+                       createInfo.queueFamilyIndexCount * sizeof(createInfo.pQueueFamilyIndices[0])) == 0);
+    }
+
     ~IMAGE_STATE() {
         if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
             delete[] createInfo.pQueueFamilyIndices;

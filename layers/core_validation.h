@@ -256,6 +256,10 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE, accelerationStructureMap)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, SURFACE_STATE, surface_map)
 
+    void AddAliasingImage(IMAGE_STATE* image_state);
+    void RemoveAliasingImage(IMAGE_STATE* image_state);
+    void RemoveAliasingImages(const std::unordered_set<VkImage>& bound_images);
+
   public:
     template <typename State>
     typename AccessorTraits<State>::ReturnType Get(typename AccessorTraits<State>::Handle handle) {

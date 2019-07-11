@@ -149,6 +149,58 @@ const IMAGE_VIEW_STATE *ValidationStateTracker::GetAttachmentImageViewState(cons
     return GetImageViewState(image_view);
 }
 
+void ValidationStateTracker::AddAliasingImage(IMAGE_STATE *image_state) {
+    if (!(image_state->createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT)) return;
+    std::unordered_set<VkImage> *bound_images = nullptr;
+
+    if (image_state->create_from_swapchain) {
+        auto swapchain_state = GetSwapchainState(image_state->create_from_swapchain);
+        if (swapchain_state) {
+            bound_images = &swapchain_state->bound_images;
+        }
+    } else {
+        auto mem_state = GetDevMemState(image_state->binding.mem);
+        if (mem_state) {
+            bound_images = &mem_state->bound_images;
+        }
+    }
+
+    if (bound_images) {
+        for (const auto &handle : *bound_images) {
+            if (handle != image_state->image) {
+                auto is = GetImageState(handle);
+                if (is && is->IsCompatibleAliasing(image_state)) {
+                    auto inserted = is->aliasing_images.emplace(image_state->image);
+                    if (inserted.second) {
+                        image_state->aliasing_images.emplace(handle);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void ValidationStateTracker::RemoveAliasingImage(IMAGE_STATE *image_state) {
+    for (const auto &image : image_state->aliasing_images) {
+        auto is = GetImageState(image);
+        if (is) {
+            is->aliasing_images.erase(image_state->image);
+        }
+    }
+    image_state->aliasing_images.clear();
+}
+
+void ValidationStateTracker::RemoveAliasingImages(const std::unordered_set<VkImage> &bound_images) {
+    // This is one way clear. Because the bound_images include cross references, the one way clear loop could clear the whole
+    // reference. It doesn't need two ways clear.
+    for (const auto &handle : bound_images) {
+        auto is = GetImageState(handle);
+        if (is) {
+            is->aliasing_images.clear();
+        }
+    }
+}
+
 EVENT_STATE *ValidationStateTracker::GetEventState(VkEvent event) {
     auto it = eventMap.find(event);
     if (it == eventMap.end()) {
@@ -3929,6 +3981,7 @@ void ValidationStateTracker::PreCallRecordFreeMemory(VkDevice device, VkDeviceMe
     }
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(mem_info->cb_bindings, obj_struct);
+    RemoveAliasingImages(mem_info->bound_images);
     memObjMap.erase(mem);
 }
 
@@ -12073,8 +12126,12 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
     if (image_state) {
         const auto swapchain_info = lvl_find_in_chain<VkBindImageMemorySwapchainInfoKHR>(bindInfo.pNext);
         if (swapchain_info) {
-            image_state->bind_swapchain = swapchain_info->swapchain;
-            image_state->bind_swapchain_imageIndex = swapchain_info->imageIndex;
+            auto swapchain = GetSwapchainState(swapchain_info->swapchain);
+            if (swapchain) {
+                swapchain->bound_images.insert(image_state->image);
+                image_state->bind_swapchain = swapchain_info->swapchain;
+                image_state->bind_swapchain_imageIndex = swapchain_info->imageIndex;
+            }
         } else {
             // Track bound memory range information
             auto mem_info = GetDevMemState(bindInfo.memory);
@@ -12086,6 +12143,9 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
             // Track objects tied to memory
             SetMemBinding(bindInfo.memory, image_state, bindInfo.memoryOffset,
                           VulkanTypedHandle(bindInfo.image, kVulkanObjectTypeImage));
+        }
+        if (image_state->createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT) {
+            AddAliasingImage(image_state);
         }
     }
 }
@@ -12879,7 +12939,7 @@ void ValidationStateTracker::PreCallRecordDestroySwapchainKHR(VkDevice device, V
         if (surface_state) {
             if (surface_state->swapchain == swapchain_data) surface_state->swapchain = nullptr;
         }
-
+        RemoveAliasingImages(swapchain_data->bound_images);
         swapchainMap.erase(swapchain);
     }
 }
@@ -12972,8 +13032,12 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
             imageMap[pSwapchainImages[i]] = unique_ptr<IMAGE_STATE>(new IMAGE_STATE(pSwapchainImages[i], &image_ci));
             auto &image_state = imageMap[pSwapchainImages[i]];
             image_state->valid = false;
-            image_state->binding.mem = MEMTRACKER_SWAP_CHAIN_IMAGE_KEY;
+            image_state->create_from_swapchain = swapchain;
+            image_state->bind_swapchain = swapchain;
+            image_state->bind_swapchain_imageIndex = i;
+            AddAliasingImage(image_state.get());
             swapchain_state->images[i] = pSwapchainImages[i];
+            swapchain_state->bound_images.insert(pSwapchainImages[i]);
             ImageSubresourcePair subpair = {pSwapchainImages[i], false, VkImageSubresource()};
             imageSubresourceMap[pSwapchainImages[i]].push_back(subpair);
             imageLayoutMap[subpair] = image_layout_node;
