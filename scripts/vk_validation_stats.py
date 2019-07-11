@@ -21,14 +21,15 @@
 # Author: Shannon McPherson <shannon@lunarg.com>
 
 import argparse
-import os
-import sys
-import operator
-import platform
-import json
-import re
+import common_codegen
 import csv
 import html
+import json
+import operator
+import os
+import platform
+import re
+import sys
 import time
 from collections import defaultdict
 
@@ -47,31 +48,27 @@ vuid_prefixes = ['VUID-', 'UNASSIGNED-']
 dealias_khr = True
 ignore_unassigned = True # These are not found in layer code unless they appear explicitly (most don't), so produce false positives
 
-# helper to define paths relative to this file
-def script_relative(path):
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), path))
-
-layer_source_files = [script_relative(path) for path in [
-    '../layers/buffer_validation.cpp',
-    '../layers/core_validation.cpp',
-    '../layers/descriptor_sets.cpp',
-    '../layers/drawdispatch.cpp',
-    '../layers/parameter_validation_utils.cpp',
-    '../layers/object_tracker_utils.cpp',
-    '../layers/shader_validation.cpp',
-    '../layers/stateless_validation.h',
-    '../layers/generated/parameter_validation.cpp',
-    '../layers/generated/object_tracker.cpp',
+layer_source_files = [common_codegen.repo_relative(path) for path in [
+    'layers/buffer_validation.cpp',
+    'layers/core_validation.cpp',
+    'layers/descriptor_sets.cpp',
+    'layers/drawdispatch.cpp',
+    'layers/parameter_validation_utils.cpp',
+    'layers/object_tracker_utils.cpp',
+    'layers/shader_validation.cpp',
+    'layers/stateless_validation.h',
+    'layers/generated/parameter_validation.cpp',
+    'layers/generated/object_tracker.cpp',
 ]]
 
-test_source_files = [script_relative(path) for path in [
-    '../tests/layer_validation_tests.cpp',
-    '../tests/vklayertests_buffer_image_memory_sampler.cpp',
-    '../tests/vklayertests_command.cpp',
-    '../tests/vklayertests_descriptor_renderpass_framebuffer.cpp',
-    '../tests/vklayertests_others.cpp',
-    '../tests/vklayertests_pipeline_shader.cpp',
-    '../tests/vkpositivelayertests.cpp',
+test_source_files = [common_codegen.repo_relative(path) for path in [
+    'tests/layer_validation_tests.cpp',
+    'tests/vklayertests_buffer_image_memory_sampler.cpp',
+    'tests/vklayertests_command.cpp',
+    'tests/vklayertests_descriptor_renderpass_framebuffer.cpp',
+    'tests/vklayertests_others.cpp',
+    'tests/vklayertests_pipeline_shader.cpp',
+    'tests/vkpositivelayertests.cpp',
 ]]
 
 # This needs to be updated as new extensions roll in

@@ -20,7 +20,6 @@
 
 import os,re,sys,string
 import xml.etree.ElementTree as etree
-from generator import *
 from collections import namedtuple, OrderedDict
 
 # Copyright text prefixing all headers (list of strings).
@@ -105,4 +104,9 @@ def Outdent(string_in, indent=''):
     string_out = string_out.rstrip() + '\n' # remove trailing whitespace except for a newline
     outdent = re.sub(fake_indent, indent, string_out)
     return outdent[1:]
+
+
+# helper to define paths relative to the repo root
+def repo_relative(path):
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', path))
 
