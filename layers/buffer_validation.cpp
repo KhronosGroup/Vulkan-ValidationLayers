@@ -102,6 +102,26 @@ IMAGE_STATE::IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 }
 
+bool IMAGE_STATE::IsCreateInfoEqual(const VkImageCreateInfo &other_createInfo) const {
+    bool is_equal = (createInfo.sType == other_createInfo.sType) && (createInfo.flags == other_createInfo.flags);
+    is_equal = is_equal && IsImageTypeEqual(other_createInfo) && IsFormatEqual(other_createInfo);
+    is_equal = is_equal && IsMipLevelsEqual(other_createInfo) && IsArrayLayersEqual(other_createInfo);
+    is_equal = is_equal && IsUsageEqual(other_createInfo) && IsInitialLayoutEqual(other_createInfo);
+    is_equal = is_equal && IsExtentEqual(other_createInfo) && IsTilingEqual(other_createInfo);
+    is_equal = is_equal && IsSamplesEqual(other_createInfo) && IsSharingModeEqual(other_createInfo);
+    return is_equal && IsQueueFamilyIndicesEqual(other_createInfo);
+}
+
+bool IMAGE_STATE::IsCompatibleAliasing(IMAGE_STATE *other_image_state) {
+    if (!(createInfo.flags & other_image_state->createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT)) return false;
+    if ((create_from_swapchain == VK_NULL_HANDLE) && (binding.mem == other_image_state->binding.mem) &&
+        (binding.mem != VK_NULL_HANDLE) && (binding.offset == other_image_state->binding.offset) &&
+        IsCreateInfoEqual(other_image_state->createInfo)) {
+        return true;
+    }
+    return false;
+}
+
 IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const IMAGE_STATE *image_state, VkImageView iv, const VkImageViewCreateInfo *ci)
     : image_view(iv), create_info(*ci), normalized_subresource_range(ci->subresourceRange), samplerConversion(VK_NULL_HANDLE) {
     auto *conversionInfo = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(create_info.pNext);
@@ -1537,6 +1557,14 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                                       "VUID-VkImageCreateInfo-sharingMode-01420", false);
     }
 
+    if (!FormatIsMultiplane(pCreateInfo->format) && !(pCreateInfo->flags & VK_IMAGE_CREATE_ALIAS_BIT) &&
+        (pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT)) {
+        skip |=
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    "VUID-VkImageCreateInfo-format-01577",
+                    "vkCreateImage(): format is %s and flags are %s. The flags should not include VK_IMAGE_CREATE_DISJOINT_BIT.",
+                    string_VkFormat(pCreateInfo->format), string_VkImageCreateFlags(pCreateInfo->flags).c_str());
+    }
     return skip;
 }
 
@@ -1602,6 +1630,13 @@ void ValidationStateTracker::PreCallRecordDestroyImage(VkDevice device, VkImage 
             RemoveImageMemoryRange(image, mem_info);
         }
     }
+    if (image_state->bind_swapchain) {
+        auto swapchain = GetSwapchainState(image_state->bind_swapchain);
+        if (swapchain) {
+            swapchain->bound_images.erase(image_state->image);
+        }
+    }
+    RemoveAliasingImage(image_state);
     ClearMemoryObjectBindings(obj_struct);
     // Remove image from imageMap
     imageMap.erase(image);
