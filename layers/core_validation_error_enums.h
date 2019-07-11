@@ -207,6 +207,7 @@ static const char DECORATE_UNUSED *kVUID_Core_Swapchain_GetSupportedDisplaysWith
 static const char DECORATE_UNUSED *kVUID_Core_Swapchain_InvalidCount = "UNASSIGNED-CoreValidation-SwapchainInvalidCount";
 static const char DECORATE_UNUSED *kVUID_Core_Swapchain_PriorCount = "UNASSIGNED-CoreValidation-SwapchainPriorCount";
 static const char DECORATE_UNUSED *kVUID_Core_Swapchain_PreTransform = "UNASSIGNED-CoreValidation-SwapchainPreTransform";
+static const char DECORATE_UNUSED *kVUID_Core_BindImageMemory_Swapchain = "UNASSIGNED-CoreValidation-BindImageMemory-Swapchain";
 
 // Previously defined but unused - uncomment as needed
 //static const char DECORATE_UNUSED *kVUID_Core_Swapchain_BadBool = "UNASSIGNED-CoreValidation-SwapchainBadBool";
