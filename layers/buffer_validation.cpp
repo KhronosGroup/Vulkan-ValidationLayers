@@ -1115,20 +1115,28 @@ void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t mem
 
         auto *image_state = GetImageState(mem_barrier.image);
         if (!image_state) continue;
-
-        VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, mem_barrier.subresourceRange);
-        const auto &image_create_info = image_state->createInfo;
-
-        // Special case for 3D images with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR flag bit, where <extent.depth> and
-        // <arrayLayers> can potentially alias. When recording layout for the entire image, pre-emptively record layouts
-        // for all (potential) layer sub_resources.
-        if (0 != (image_create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR)) {
-            normalized_isr.baseArrayLayer = 0;
-            normalized_isr.layerCount = image_create_info.extent.depth;  // Treat each depth slice as a layer subresource
+        RecordTransitionImageLayout(cb_state, image_state, mem_barrier);
+        for (const auto &image : image_state->aliasing_images) {
+            image_state = GetImageState(image);
+            RecordTransitionImageLayout(cb_state, image_state, mem_barrier);
         }
-
-        SetImageLayout(cb_state, *image_state, normalized_isr, mem_barrier.newLayout, mem_barrier.oldLayout);
     }
+}
+
+void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const IMAGE_STATE *image_state,
+                                             const VkImageMemoryBarrier &mem_barrier) {
+    VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, mem_barrier.subresourceRange);
+    const auto &image_create_info = image_state->createInfo;
+
+    // Special case for 3D images with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR flag bit, where <extent.depth> and
+    // <arrayLayers> can potentially alias. When recording layout for the entire image, pre-emptively record layouts
+    // for all (potential) layer sub_resources.
+    if (0 != (image_create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR)) {
+        normalized_isr.baseArrayLayer = 0;
+        normalized_isr.layerCount = image_create_info.extent.depth;  // Treat each depth slice as a layer subresource
+    }
+
+    SetImageLayout(cb_state, *image_state, normalized_isr, mem_barrier.newLayout, mem_barrier.oldLayout);
 }
 
 bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *image_state,
