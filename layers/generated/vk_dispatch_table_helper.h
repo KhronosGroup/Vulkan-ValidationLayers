@@ -31,6 +31,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include "vk_layer_dispatch_table.h"
+#include "vk_extension_helper.h"
 
 static VKAPI_ATTR VkResult VKAPI_CALL StubBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos) { return VK_SUCCESS; };
 static VKAPI_ATTR VkResult VKAPI_CALL StubBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos) { return VK_SUCCESS; };
@@ -352,12 +353,13 @@ const std::unordered_map<std::string, std::string> api_extension_map {
 //   o  Determine if the API has an associated extension
 //   o  If it does, determine if that extension name is present in the passed-in set of enabled_ext_names 
 //   If the APIname has no parent extension, OR its parent extension name is IN the set, return TRUE, else FALSE
-static inline bool ApiParentExtensionEnabled(const std::string api_name, const std::unordered_set<std::string> &enabled_ext_names) {
+static inline bool ApiParentExtensionEnabled(const std::string api_name, const DeviceExtensions *device_extension_info) {
     auto has_ext = api_extension_map.find(api_name);
-    // Is this API part of an extension?
+    // Is this API part of an extension or feature group?
     if (has_ext != api_extension_map.end()) {
         // Was the extension for this API enabled in the CreateDevice call?
-        if (enabled_ext_names.find(has_ext->second) == enabled_ext_names.end()) {
+        auto info = device_extension_info->get_info(has_ext->second.c_str());
+        if ((!info.state) || (device_extension_info->*(info.state) != true)) {
             return false;
         }
     }

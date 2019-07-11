@@ -723,7 +723,7 @@ void ProcessConfigAndEnvSettings(const char* layer_description, CHECK_ENABLED* e
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, const char *funcName) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    if (!ApiParentExtensionEnabled(funcName, layer_data->device_extensions.device_extension_set)) {
+    if (!ApiParentExtensionEnabled(funcName, &layer_data->device_extensions)) {
         return nullptr;
     }
     const auto &item = name_to_funcptr_map.find(funcName);
