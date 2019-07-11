@@ -569,6 +569,8 @@ class AccelerationStructure : public internal::NonDispHandle<VkAccelerationStruc
     VkMemoryRequirements2 memory_requirements() const;
     VkMemoryRequirements2 build_scratch_memory_requirements() const;
 
+    uint64_t opaque_handle() const { return opaque_handle_; }
+
     const VkAccelerationStructureInfoNV &info() const { return info_; }
 
     const VkDevice &dev() const { return device(); }
@@ -578,6 +580,7 @@ class AccelerationStructure : public internal::NonDispHandle<VkAccelerationStruc
    private:
     VkAccelerationStructureInfoNV info_;
     DeviceMemory memory_;
+    uint64_t opaque_handle_;
 };
 
 class ShaderModule : public internal::NonDispHandle<VkShaderModule> {

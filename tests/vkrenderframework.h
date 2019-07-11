@@ -215,6 +215,8 @@ class VkCommandBufferObj : public vk_testing::CommandBuffer {
                          const VkImageSubresourceRange *pRanges);
     void ClearDepthStencilImage(VkImage image, VkImageLayout imageLayout, const VkClearDepthStencilValue *pColor,
                                 uint32_t rangeCount, const VkImageSubresourceRange *pRanges);
+    void BuildAccelerationStructure(VkAccelerationStructureObj *as, VkBuffer scratchBuffer);
+    void BuildAccelerationStructure(VkAccelerationStructureObj *as, VkBuffer scratchBuffer, VkBuffer instanceData);
 
    protected:
     VkDeviceObj *m_device;
