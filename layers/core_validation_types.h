@@ -453,6 +453,7 @@ class SWAPCHAIN_NODE {
     safe_VkSwapchainCreateInfoKHR createInfo;
     VkSwapchainKHR swapchain;
     std::vector<VkImage> images;
+    std::unordered_set<VkImage> bound_images;
     bool retired = false;
     bool shared_presentable = false;
     CALL_STATE vkGetSwapchainImagesKHRState = UNCALLED;
