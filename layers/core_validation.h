@@ -125,6 +125,13 @@ struct create_compute_pipeline_api_state {
     const VkComputePipelineCreateInfo* pCreateInfos;
 };
 
+// This structure is used to save data across the CreateRayTracingPipelinesNV down-chain API call.
+struct create_ray_tracing_pipeline_api_state {
+    std::vector<safe_VkRayTracingPipelineCreateInfoNV> gpu_create_infos;
+    std::vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
+    const VkRayTracingPipelineCreateInfoNV* pCreateInfos;
+};
+
 // This structure is used modify parameters for the CreatePipelineLayout down-chain API call
 struct create_pipeline_layout_api_state {
     std::vector<VkDescriptorSetLayout> new_layouts;
@@ -963,21 +970,24 @@ class CoreChecks : public ValidationStateTracker {
                                                   const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines);
     void GpuPreCallRecordDestroyPipeline(const VkPipeline pipeline);
     void GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer, VkPipelineBindPoint bind_point);
-    void AnalyzeAndReportError(CMD_BUFFER_STATE* cb_node, VkQueue queue, uint32_t draw_index, uint32_t* const debug_output_buffer);
+    void AnalyzeAndReportError(CMD_BUFFER_STATE* cb_node, VkQueue queue, VkPipelineBindPoint bind_point, uint32_t operation_index,
+                               uint32_t* const debug_output_buffer);
     void ProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE* cb_node);
     void UpdateInstrumentationBuffer(CMD_BUFFER_STATE* cb_node);
     void SubmitBarrier(VkQueue queue);
     bool GpuInstrumentShader(const VkShaderModuleCreateInfo* pCreateInfo, std::vector<unsigned int>& new_pgm,
                              uint32_t* unique_shader_id);
-    void GpuPreCallRecordPipelineCreations(uint32_t count, const VkGraphicsPipelineCreateInfo* pGraphicsCreateInfos,
-                                           const VkComputePipelineCreateInfo* pComputeCreateInfos,
-                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                           std::vector<std::unique_ptr<PIPELINE_STATE>>& pipe_state,
-                                           std::vector<safe_VkGraphicsPipelineCreateInfo>* new_graphics_pipeline_create_infos,
-                                           std::vector<safe_VkComputePipelineCreateInfo>* new_compute_pipeline_create_infos,
-                                           const VkPipelineBindPoint bind_point);
+    void GpuPreCallRecordPipelineCreations(
+        uint32_t count, const VkGraphicsPipelineCreateInfo* pGraphicsCreateInfos,
+        const VkComputePipelineCreateInfo* pComputeCreateInfos, const VkRayTracingPipelineCreateInfoNV* pRayTracingCreateInfos,
+        const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, std::vector<std::unique_ptr<PIPELINE_STATE>>& pipe_state,
+        std::vector<safe_VkGraphicsPipelineCreateInfo>* new_graphics_pipeline_create_infos,
+        std::vector<safe_VkComputePipelineCreateInfo>* new_compute_pipeline_create_infos,
+        std::vector<safe_VkRayTracingPipelineCreateInfoNV>* new_ray_tracing_pipeline_create_infos,
+        const VkPipelineBindPoint bind_point);
     void GpuPostCallRecordPipelineCreations(const uint32_t count, const VkGraphicsPipelineCreateInfo* pGraphicsCreateInfos,
                                             const VkComputePipelineCreateInfo* pComputeCreateInfos,
+                                            const VkRayTracingPipelineCreateInfoNV* pRayTracingCreateInfos,
                                             const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                             const VkPipelineBindPoint bind_point);
     std::vector<safe_VkComputePipelineCreateInfo> GpuPreCallRecordCreateComputePipelines(
@@ -985,6 +995,11 @@ class CoreChecks : public ValidationStateTracker {
         const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, std::vector<std::unique_ptr<PIPELINE_STATE>>& pipe_state);
     void GpuPostCallRecordCreateComputePipelines(const uint32_t count, const VkComputePipelineCreateInfo* pCreateInfos,
                                                  const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines);
+    std::vector<safe_VkRayTracingPipelineCreateInfoNV> GpuPreCallRecordCreateRayTracingPipelinesNV(
+        VkPipelineCache pipelineCache, uint32_t count, const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
+        const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, std::vector<std::unique_ptr<PIPELINE_STATE>>& pipe_state);
+    void GpuPostCallRecordCreateRayTracingPipelinesNV(const uint32_t count, const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
+                                                      const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines);
     VkResult GpuInitializeVma();
     void ReportSetupProblem(VkDebugReportObjectTypeEXT object_type, uint64_t object_handle, const char* const specific_message);
 
@@ -1303,6 +1318,28 @@ class CoreChecks : public ValidationStateTracker {
                                                     const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                     void* pipe_state);
+    void PreCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                  const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
+                                                  const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                  void* crtpl_state_data);
+    void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                   const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
+                                                   const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
+                                                   void* crtpl_state_data);
+    void PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
+                                     VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
+                                     VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
+                                     VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
+                                     VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
+                                     VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
+                                     uint32_t width, uint32_t height, uint32_t depth);
+    void PostCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
+                                      VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
+                                      VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
+                                      VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
+                                      VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
+                                      VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
+                                      uint32_t width, uint32_t height, uint32_t depth);
     void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                       VkInstance* pInstance, VkResult result);
     bool PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,

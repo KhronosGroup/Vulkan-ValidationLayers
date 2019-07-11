@@ -361,6 +361,28 @@ void CoreChecks::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer com
     AddCommandBufferBindingBuffer(cb_state, count_buffer_state);
 }
 
+void CoreChecks::PreCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
+                                             VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
+                                             VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
+                                             VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
+                                             VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
+                                             VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
+                                             uint32_t width, uint32_t height, uint32_t depth) {
+    GpuAllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV);
+}
+
+void CoreChecks::PostCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
+                                              VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
+                                              VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
+                                              VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
+                                              VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
+                                              VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
+                                              uint32_t width, uint32_t height, uint32_t depth) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    UpdateStateCmdDrawDispatchType(cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV);
+    cb_state->hasTraceRaysCmd = true;
+}
+
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) {
     bool skip = ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWMESHTASKSNV,
                                     "vkCmdDrawMeshTasksNV()", VK_QUEUE_GRAPHICS_BIT,

@@ -33,9 +33,14 @@ struct GpuBufferInfo {
     GpuDeviceMemoryBlock input_mem_block;
     VkDescriptorSet desc_set;
     VkDescriptorPool desc_pool;
+    VkPipelineBindPoint pipeline_bind_point;
     GpuBufferInfo(GpuDeviceMemoryBlock output_mem_block, GpuDeviceMemoryBlock input_mem_block, VkDescriptorSet desc_set,
-                  VkDescriptorPool desc_pool)
-        : output_mem_block(output_mem_block), input_mem_block(input_mem_block), desc_set(desc_set), desc_pool(desc_pool){};
+                  VkDescriptorPool desc_pool, VkPipelineBindPoint pipeline_bind_point)
+        : output_mem_block(output_mem_block),
+          input_mem_block(input_mem_block),
+          desc_set(desc_set),
+          desc_pool(desc_pool),
+          pipeline_bind_point(pipeline_bind_point){};
 };
 
 // Class to encapsulate Descriptor Set allocation.  This manager creates and destroys Descriptor Pools
