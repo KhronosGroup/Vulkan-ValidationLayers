@@ -7779,7 +7779,7 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
     create_device_pnext.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
     create_device_pnext.physicalDeviceCount = physical_device_group[0].physicalDeviceCount;
     create_device_pnext.pPhysicalDevices = physical_device_group[0].physicalDevices;
-    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &create_device_pnext, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &create_device_pnext));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
     if (!InitSwapchain(VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
         printf("%s Cannot create surface or swapchain, skipping test\n", kSkipPrefix);
@@ -7852,12 +7852,6 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
     img_barrier.subresourceRange.levelCount = 1;
     vkCmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
                          nullptr, 0, nullptr, 1, &img_barrier);
-
-    m_commandBuffer->end();
-    m_commandBuffer->QueueCommandBuffer();
-
-    m_commandBuffer->reset();
-    m_commandBuffer->begin();
 
     VkImageCopy copy_region = {};
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
