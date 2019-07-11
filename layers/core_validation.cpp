@@ -512,6 +512,14 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, co
                     "includes VkBindImageMemorySwapchainInfoKHR.",
                     api_name, report_data->FormatHandle(image_state->image).c_str(),
                     report_data->FormatHandle(image_state->create_from_swapchain).c_str());
+        } else if (image_state->create_from_swapchain != image_state->bind_swapchain) {
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                    HandleToUint64(image_state->image), error_code,
+                    "%s: %s is created by %s, but the image is bound by %s. The image should be created and bound by the same "
+                    "swapchain",
+                    api_name, report_data->FormatHandle(image_state->image).c_str(),
+                    report_data->FormatHandle(image_state->create_from_swapchain).c_str(),
+                    report_data->FormatHandle(image_state->bind_swapchain).c_str());
         }
     } else if (0 == (static_cast<uint32_t>(image_state->createInfo.flags) & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
         result = VerifyBoundMemoryIsValid(image_state->binding.mem, VulkanTypedHandle(image_state->image, kVulkanObjectTypeImage),
@@ -12017,6 +12025,15 @@ bool CoreChecks::ValidateBindImageMemory(const VkBindImageMemoryInfo &bindInfo, 
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
                                 "VUID-VkBindImageMemoryInfo-pNext-01631", "%s: %s is not VK_NULL_HANDLE.", api_name,
                                 report_data->FormatHandle(bindInfo.memory).c_str());
+            }
+            if (image_state->create_from_swapchain != swapchain_info->swapchain) {
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                        HandleToUint64(image_state->image), kVUID_Core_BindImageMemory_Swapchain,
+                        "%s: %s is created by %s, but the image is bound by %s. The image should be created and bound by the same "
+                        "swapchain",
+                        api_name, report_data->FormatHandle(image_state->image).c_str(),
+                        report_data->FormatHandle(image_state->create_from_swapchain).c_str(),
+                        report_data->FormatHandle(swapchain_info->swapchain).c_str());
             }
             const auto swapchain_state = GetSwapchainState(swapchain_info->swapchain);
             if (swapchain_state && swapchain_state->images.size() <= swapchain_info->imageIndex) {
