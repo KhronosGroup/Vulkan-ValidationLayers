@@ -311,7 +311,7 @@ void ValidationStateTracker::AddCommandBufferBindingImage(CMD_BUFFER_STATE *cb_n
 }
 
 // Create binding link between given image view node and its image with command buffer node
-void CoreChecks::AddCommandBufferBindingImageView(CMD_BUFFER_STATE *cb_node, IMAGE_VIEW_STATE *view_state) {
+void ValidationStateTracker::AddCommandBufferBindingImageView(CMD_BUFFER_STATE *cb_node, IMAGE_VIEW_STATE *view_state) {
     // First add bindings for imageView
     auto inserted = cb_node->object_bindings.emplace(view_state->image_view, kVulkanObjectTypeImageView);
     if (inserted.second) {
@@ -384,7 +384,7 @@ void CoreChecks::AddCommandBufferBindingAccelerationStructure(CMD_BUFFER_STATE *
 }
 
 // For every mem obj bound to particular CB, free bindings related to that CB
-void CoreChecks::ClearCmdBufAndMemReferences(CMD_BUFFER_STATE *cb_node) {
+void ValidationStateTracker::ClearCmdBufAndMemReferences(CMD_BUFFER_STATE *cb_node) {
     if (cb_node) {
         if (cb_node->memObjs.size() > 0) {
             for (auto mem : cb_node->memObjs) {
@@ -721,7 +721,7 @@ bool CoreChecks::ValidateDrawStateFlags(CMD_BUFFER_STATE *pCB, const PIPELINE_ST
 
 bool CoreChecks::LogInvalidAttachmentMessage(const char *type1_string, const RENDER_PASS_STATE *rp1_state, const char *type2_string,
                                              const RENDER_PASS_STATE *rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
-                                             const char *msg, const char *caller, const char *error_code) {
+                                             const char *msg, const char *caller, const char *error_code) const {
     return log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
                    HandleToUint64(rp1_state->renderPass), error_code,
                    "%s: RenderPasses incompatible between %s w/ %s and %s w/ %s Attachment %u is not "
@@ -733,7 +733,7 @@ bool CoreChecks::LogInvalidAttachmentMessage(const char *type1_string, const REN
 bool CoreChecks::ValidateAttachmentCompatibility(const char *type1_string, const RENDER_PASS_STATE *rp1_state,
                                                  const char *type2_string, const RENDER_PASS_STATE *rp2_state,
                                                  uint32_t primary_attach, uint32_t secondary_attach, const char *caller,
-                                                 const char *error_code) {
+                                                 const char *error_code) const {
     bool skip = false;
     const auto &primaryPassCI = rp1_state->createInfo;
     const auto &secondaryPassCI = rp2_state->createInfo;
@@ -774,7 +774,7 @@ bool CoreChecks::ValidateAttachmentCompatibility(const char *type1_string, const
 
 bool CoreChecks::ValidateSubpassCompatibility(const char *type1_string, const RENDER_PASS_STATE *rp1_state,
                                               const char *type2_string, const RENDER_PASS_STATE *rp2_state, const int subpass,
-                                              const char *caller, const char *error_code) {
+                                              const char *caller, const char *error_code) const {
     bool skip = false;
     const auto &primary_desc = rp1_state->createInfo.pSubpasses[subpass];
     const auto &secondary_desc = rp2_state->createInfo.pSubpasses[subpass];
@@ -830,7 +830,7 @@ bool CoreChecks::ValidateSubpassCompatibility(const char *type1_string, const RE
 //  will then feed into this function
 bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const RENDER_PASS_STATE *rp1_state,
                                                  const char *type2_string, const RENDER_PASS_STATE *rp2_state, const char *caller,
-                                                 const char *error_code) {
+                                                 const char *error_code) const {
     bool skip = false;
 
     if (rp1_state->createInfo.subpassCount != rp2_state->createInfo.subpassCount) {
@@ -1910,7 +1910,7 @@ bool CoreChecks::ValidateDeviceMaskToRenderPass(const CMD_BUFFER_STATE *pCB, uin
 }
 
 // For given object struct return a ptr of BASE_NODE type for its wrapping struct
-BASE_NODE *CoreChecks::GetStateStructPtrFromObject(const VulkanTypedHandle &object_struct) {
+BASE_NODE *ValidationStateTracker::GetStateStructPtrFromObject(const VulkanTypedHandle &object_struct) {
     BASE_NODE *base_ptr = nullptr;
     switch (object_struct.type) {
         case kVulkanObjectTypeDescriptorSet: {
@@ -1990,13 +1990,13 @@ static void AddCommandBufferBinding(std::unordered_set<CMD_BUFFER_STATE *> *cb_b
     cb_node->object_bindings.insert(obj);
 }
 // For a given object, if cb_node is in that objects cb_bindings, remove cb_node
-void CoreChecks::RemoveCommandBufferBinding(VulkanTypedHandle const &object, CMD_BUFFER_STATE *cb_node) {
+void ValidationStateTracker::RemoveCommandBufferBinding(VulkanTypedHandle const &object, CMD_BUFFER_STATE *cb_node) {
     BASE_NODE *base_obj = GetStateStructPtrFromObject(object);
     if (base_obj) base_obj->cb_bindings.erase(cb_node);
 }
 // Reset the command buffer state
 //  Maintain the createInfo and set state to CB_NEW, but clear all other state
-void CoreChecks::ResetCommandBufferState(const VkCommandBuffer cb) {
+void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
     CMD_BUFFER_STATE *pCB = GetCBState(cb);
     if (pCB) {
         pCB->in_use.store(0);
@@ -2073,8 +2073,8 @@ void CoreChecks::ResetCommandBufferState(const VkCommandBuffer cb) {
         ResetCmdDebugUtilsLabel(report_data, pCB->commandBuffer);
         pCB->debug_label.Reset();
     }
-    if (enabled.gpu_validation) {
-        GpuResetCommandBuffer(cb);
+    if (command_buffer_reset_callback) {
+        (*command_buffer_reset_callback)(cb);
     }
 }
 
@@ -2295,6 +2295,8 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
         ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, LayerObjectTypeCoreValidation);
         CoreChecks *core_checks = static_cast<CoreChecks *>(validation_data);
         core_checks->GpuPostCallRecordCreateDevice(&enabled, pCreateInfo);
+        core_checks->SetCommandBufferResetCallback(
+            [core_checks](VkCommandBuffer command_buffer) -> void { core_checks->GpuResetCommandBuffer(command_buffer); });
     }
 }
 
@@ -6073,7 +6075,7 @@ void CoreChecks::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkC
 }
 
 // Add bindings between the given cmd buffer & framebuffer and the framebuffer's children
-void CoreChecks::AddFramebufferBinding(CMD_BUFFER_STATE *cb_state, FRAMEBUFFER_STATE *fb_state) {
+void ValidationStateTracker::AddFramebufferBinding(CMD_BUFFER_STATE *cb_state, FRAMEBUFFER_STATE *fb_state) {
     AddCommandBufferBinding(&fb_state->cb_bindings, VulkanTypedHandle(fb_state->framebuffer, kVulkanObjectTypeFramebuffer),
                             cb_state);
 
@@ -6087,7 +6089,7 @@ void CoreChecks::AddFramebufferBinding(CMD_BUFFER_STATE *cb_state, FRAMEBUFFER_S
 }
 
 bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     if (!cb_state) return false;
     bool skip = false;
     if (cb_state->in_use.load()) {
@@ -6108,12 +6110,13 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
         } else {
             if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
                 assert(pInfo->renderPass);
-                auto framebuffer = GetFramebufferState(pInfo->framebuffer);
+                const auto *framebuffer = GetFramebufferState(pInfo->framebuffer);
                 if (framebuffer) {
                     if (framebuffer->createInfo.renderPass != pInfo->renderPass) {
+                        const auto *render_pass = GetRenderPassState(pInfo->renderPass);
                         // renderPass that framebuffer was created with must be compatible with local renderPass
                         skip |= ValidateRenderPassCompatibility("framebuffer", framebuffer->rp_state.get(), "command buffer",
-                                                                GetRenderPassState(pInfo->renderPass), "vkBeginCommandBuffer()",
+                                                                render_pass, "vkBeginCommandBuffer()",
                                                                 "VUID-VkCommandBufferBeginInfo-flags-00055");
                     }
                 }
@@ -6128,7 +6131,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
             }
         }
         if (pInfo && pInfo->renderPass != VK_NULL_HANDLE) {
-            auto renderPass = GetRenderPassState(pInfo->renderPass);
+            const auto *renderPass = GetRenderPassState(pInfo->renderPass);
             if (renderPass) {
                 if (pInfo->subpass >= renderPass->createInfo.subpassCount) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -6149,7 +6152,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                         report_data->FormatHandle(commandBuffer).c_str());
     } else if (CB_RECORDED == cb_state->state || CB_INVALID_COMPLETE == cb_state->state) {
         VkCommandPool cmdPool = cb_state->createInfo.commandPool;
-        auto pPool = GetCommandPoolState(cmdPool);
+        const auto *pPool = GetCommandPoolState(cmdPool);
         if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pPool->createFlags)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(commandBuffer), "VUID-vkBeginCommandBuffer-commandBuffer-00050",
@@ -6170,7 +6173,8 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
     return skip;
 }
 
-void CoreChecks::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo) {
+void ValidationStateTracker::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer,
+                                                             const VkCommandBufferBeginInfo *pBeginInfo) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     if (!cb_state) return;
     // This implicitly resets the Cmd Buffer so make sure any fence is done and then clear memory references
@@ -6217,7 +6221,7 @@ void CoreChecks::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, 
 }
 
 bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     if (!cb_state) return false;
     bool skip = false;
     if ((VK_COMMAND_BUFFER_LEVEL_PRIMARY == cb_state->createInfo.level) ||
@@ -6236,7 +6240,7 @@ bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) 
     return skip;
 }
 
-void CoreChecks::PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, VkResult result) {
+void ValidationStateTracker::PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, VkResult result) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     if (!cb_state) return;
     // Cached validation is specific to a specific recording of a specific command buffer.
