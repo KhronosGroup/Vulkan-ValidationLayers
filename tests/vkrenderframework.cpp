@@ -676,7 +676,7 @@ bool VkRenderFramework::InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags i
     swapchain_create_info.imageFormat = formats[0].format;
     swapchain_create_info.imageColorSpace = formats[0].colorSpace;
     swapchain_create_info.imageExtent = {capabilities.minImageExtent.width, capabilities.minImageExtent.height};
-    swapchain_create_info.imageArrayLayers = capabilities.maxImageArrayLayers;
+    swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.imageUsage = imageUsage;
     swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     swapchain_create_info.preTransform = preTransform;

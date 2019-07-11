@@ -4173,6 +4173,7 @@ TEST_F(VkLayerTest, WarningSwapchainCreateInfoPreTransform) {
     m_errorMonitor->SetUnexpectedError("VUID-VkSwapchainCreateInfoKHR-preTransform-01279");
     InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_INHERIT_BIT_KHR);
     m_errorMonitor->VerifyFound();
+    DestroySwapchain();
 }
 
 bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, std::vector<const char *> &instance_extension_names,
