@@ -255,7 +255,7 @@ ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(CMD_BUFFER_STATE *cb_sta
     return it->second.get();
 }
 
-void CoreChecks::AddMemObjInfo(void *object, const VkDeviceMemory mem, const VkMemoryAllocateInfo *pAllocateInfo) {
+void ValidationStateTracker::AddMemObjInfo(void *object, const VkDeviceMemory mem, const VkMemoryAllocateInfo *pAllocateInfo) {
     assert(object != NULL);
 
     auto *mem_info = new DEVICE_MEMORY_STATE(object, mem, pAllocateInfo);
@@ -1833,7 +1833,7 @@ bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE *cb_state, const CMD_TYPE cm
 }
 
 bool CoreChecks::ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, VkDebugReportObjectTypeEXT VUID_handle_type,
-                                                         uint64_t VUID_handle, const char *VUID) {
+                                                         uint64_t VUID_handle, const char *VUID) const {
     bool skip = false;
     uint32_t count = 1 << physical_device_count;
     if (count <= deviceMask) {
@@ -1845,7 +1845,7 @@ bool CoreChecks::ValidateDeviceMaskToPhysicalDeviceCount(uint32_t deviceMask, Vk
 }
 
 bool CoreChecks::ValidateDeviceMaskToZero(uint32_t deviceMask, VkDebugReportObjectTypeEXT VUID_handle_type, uint64_t VUID_handle,
-                                          const char *VUID) {
+                                          const char *VUID) const {
     bool skip = false;
     if (deviceMask == 0) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VUID_handle_type, VUID_handle, VUID,
@@ -3261,7 +3261,7 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
 //
 // AHB-specific validation within non-AHB APIs
 //
-bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc_info) {
+bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc_info) const {
     bool skip = false;
     auto import_ahb_info = lvl_find_in_chain<VkImportAndroidHardwareBufferInfoANDROID>(alloc_info->pNext);
     auto exp_mem_alloc_info = lvl_find_in_chain<VkExportMemoryAllocateInfo>(alloc_info->pNext);
@@ -3395,7 +3395,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
                     ahb_desc.format, ahb_desc.usage);
             }
         } else {  // Checks specific to import with a dedicated allocation requirement
-            VkImageCreateInfo *ici = &(GetImageState(mem_ded_alloc_info->image)->createInfo);
+            const VkImageCreateInfo *ici = &(GetImageState(mem_ded_alloc_info->image)->createInfo);
 
             // The Android hardware buffer's usage must include at least one of AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT or
             // AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE
@@ -3508,10 +3508,10 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
     return skip;
 }
 
-bool CoreChecks::ValidateGetImageMemoryRequirements2ANDROID(const VkImage image) {
+bool CoreChecks::ValidateGetImageMemoryRequirements2ANDROID(const VkImage image) const {
     bool skip = false;
 
-    IMAGE_STATE *image_state = GetImageState(image);
+    const IMAGE_STATE *image_state = GetImageState(image);
     if (image_state->imported_ahb && (0 == image_state->GetBoundMemory().size())) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image),
                         "VUID-VkImageMemoryRequirementsInfo2-image-01897",
@@ -3575,7 +3575,7 @@ void CoreChecks::RecordDestroySamplerYcbcrConversionANDROID(VkSamplerYcbcrConver
 
 #else  // !VK_USE_PLATFORM_ANDROID_KHR
 
-bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc_info) { return false; }
+bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc_info) const { return false; }
 
 static bool ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(const debug_report_data *report_data,
                                                                    const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
@@ -3587,7 +3587,7 @@ bool CoreChecks::ValidateCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbc
     return false;
 }
 
-bool CoreChecks::ValidateGetImageMemoryRequirements2ANDROID(const VkImage image) { return false; }
+bool CoreChecks::ValidateGetImageMemoryRequirements2ANDROID(const VkImage image) const { return false; }
 
 void CoreChecks::RecordCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo *create_info,
                                                            VkSamplerYcbcrConversion ycbcr_conversion){};
@@ -3626,8 +3626,9 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
     return skip;
 }
 
-void CoreChecks::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
-                                              const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory, VkResult result) {
+void ValidationStateTracker::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
+                                                          const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory,
+                                                          VkResult result) {
     if (VK_SUCCESS == result) {
         AddMemObjInfo(device, *pMemory, pAllocateInfo);
     }
@@ -3635,8 +3636,8 @@ void CoreChecks::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAll
 }
 
 // For given obj node, if it is use, flag a validation error and return callback result, else return false
-bool CoreChecks::ValidateObjectNotInUse(BASE_NODE *obj_node, const VulkanTypedHandle &obj_struct, const char *caller_name,
-                                        const char *error_code) {
+bool CoreChecks::ValidateObjectNotInUse(const BASE_NODE *obj_node, const VulkanTypedHandle &obj_struct, const char *caller_name,
+                                        const char *error_code) const {
     if (disabled.object_in_use) return false;
     bool skip = false;
     if (obj_node->in_use.load()) {
@@ -3648,25 +3649,27 @@ bool CoreChecks::ValidateObjectNotInUse(BASE_NODE *obj_node, const VulkanTypedHa
 }
 
 bool CoreChecks::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks *pAllocator) {
-    DEVICE_MEMORY_STATE *mem_info = GetDevMemState(mem);
+    const DEVICE_MEMORY_STATE *mem_info = GetDevMemState(mem);
     const VulkanTypedHandle obj_struct(mem, kVulkanObjectTypeDeviceMemory);
     bool skip = false;
     if (mem_info) {
         skip |= ValidateObjectNotInUse(mem_info, obj_struct, "vkFreeMemory", "VUID-vkFreeMemory-memory-00677");
+        for (const auto &obj : mem_info->obj_bindings) {
+            log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, get_debug_report_enum[obj.type], obj.handle,
+                    kVUID_Core_MemTrack_FreedMemRef, "%s still has a reference to %s.", report_data->FormatHandle(obj).c_str(),
+                    report_data->FormatHandle(mem_info->mem).c_str());
+        }
     }
     return skip;
 }
 
-void CoreChecks::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks *pAllocator) {
     if (!mem) return;
     DEVICE_MEMORY_STATE *mem_info = GetDevMemState(mem);
     const VulkanTypedHandle obj_struct(mem, kVulkanObjectTypeDeviceMemory);
 
     // Clear mem binding for any bound objects
     for (const auto &obj : mem_info->obj_bindings) {
-        log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, get_debug_report_enum[obj.type], obj.handle,
-                kVUID_Core_MemTrack_FreedMemRef, "%s still has a reference to %s.", report_data->FormatHandle(obj).c_str(),
-                report_data->FormatHandle(mem_info->mem).c_str());
         BINDABLE *bindable_state = nullptr;
         switch (obj.type) {
             case kVulkanObjectTypeImage:
@@ -4790,7 +4793,7 @@ VkResult CoreChecks::GetPDImageFormatProperties(const VkImageCreateInfo *image_c
 }
 
 VkResult CoreChecks::GetPDImageFormatProperties2(const VkPhysicalDeviceImageFormatInfo2 *phys_dev_image_fmt_info,
-                                                 VkImageFormatProperties2 *pImageFormatProperties) {
+                                                 VkImageFormatProperties2 *pImageFormatProperties) const {
     if (!instance_extensions.vk_khr_get_physical_device_properties_2) return VK_ERROR_EXTENSION_NOT_PRESENT;
     return DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, phys_dev_image_fmt_info, pImageFormatProperties);
 }
