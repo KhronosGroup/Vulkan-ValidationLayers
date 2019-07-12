@@ -1216,7 +1216,7 @@ class PIPELINE_STATE : public BASE_NODE {
     void initComputePipeline(ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo);
     void initRayTracingPipelineNV(ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo);
 
-    inline VkPipelineBindPoint getPipelineType() {
+    inline VkPipelineBindPoint getPipelineType() const {
         if (graphicsPipelineCI.sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO)
             return VK_PIPELINE_BIND_POINT_GRAPHICS;
         else if (computePipelineCI.sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO)

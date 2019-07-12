@@ -4564,8 +4564,8 @@ void CoreChecks::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeli
     StateTracker::PreCallRecordDestroyPipeline(device, pipeline, pAllocator);
 }
 
-void CoreChecks::PreCallRecordDestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout,
-                                                    const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout,
+                                                                const VkAllocationCallbacks *pAllocator) {
     if (!pipelineLayout) return;
     pipelineLayoutMap.erase(pipelineLayout);
 }
@@ -5216,7 +5216,7 @@ void ValidationStateTracker::PostCallRecordCreateDescriptorSetLayout(VkDevice de
 // Used by CreatePipelineLayout and CmdPushConstants.
 // Note that the index argument is optional and only used by CreatePipelineLayout.
 bool CoreChecks::ValidatePushConstantRange(const uint32_t offset, const uint32_t size, const char *caller_name,
-                                           uint32_t index = 0) {
+                                           uint32_t index = 0) const {
     if (disabled.push_constant_range) return false;
     uint32_t const maxPushConstantsSize = phys_dev_props.limits.maxPushConstantsSize;
     bool skip = false;
@@ -5326,7 +5326,7 @@ enum DSL_DESCRIPTOR_GROUPS {
 // Returns an array of size DSL_NUM_DESCRIPTOR_GROUPS of the maximum number of descriptors used in any single pipeline stage
 std::valarray<uint32_t> GetDescriptorCountMaxPerStage(
     const DeviceFeatures *enabled_features,
-    const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> set_layouts, bool skip_update_after_bind) {
+    const std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> &set_layouts, bool skip_update_after_bind) {
     // Identify active pipeline stages
     std::vector<VkShaderStageFlags> stage_flags = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT,
                                                    VK_SHADER_STAGE_COMPUTE_BIT};
@@ -5895,10 +5895,17 @@ void CoreChecks::PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipe
 void CoreChecks::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                                     const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
                                                     VkResult result) {
+    StateTracker::PostCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, result);
+
     // Clean up GPU validation
     if (enabled.gpu_validation) {
         GpuPostCallCreatePipelineLayout(result);
     }
+}
+
+void ValidationStateTracker::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
+                                                                const VkAllocationCallbacks *pAllocator,
+                                                                VkPipelineLayout *pPipelineLayout, VkResult result) {
     if (VK_SUCCESS != result) return;
 
     std::unique_ptr<PIPELINE_LAYOUT_STATE> pipeline_layout_state(new PIPELINE_LAYOUT_STATE{});
@@ -6293,7 +6300,7 @@ static const char *GetPipelineTypeName(VkPipelineBindPoint pipelineBindPoint) {
 
 bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                 VkPipeline pipeline) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
 
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdBindPipeline()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -6306,7 +6313,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
 
     skip |= ValidatePipelineBindPoint(cb_state, pipelineBindPoint, "vkCmdBindPipeline()", bindpoint_errors);
 
-    auto pipeline_state = GetPipelineState(pipeline);
+    const auto *pipeline_state = GetPipelineState(pipeline);
     assert(pipeline_state);
 
     const auto &pipeline_state_bind_point = pipeline_state->getPipelineType();
@@ -6333,8 +6340,8 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                              VkPipeline pipeline) {
+void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                          VkPipeline pipeline) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
 
@@ -7310,8 +7317,8 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
 // Validates that the supplied bind point is supported for the command buffer (vis. the command pool)
 // Takes array of error codes as some of the VUID's (e.g. vkCmdBindPipeline) are written per bindpoint
 // TODO add vkCmdBindPipeline bind_point validation using this call.
-bool CoreChecks::ValidatePipelineBindPoint(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint bind_point, const char *func_name,
-                                           const std::map<VkPipelineBindPoint, std::string> &bind_errors) {
+bool CoreChecks::ValidatePipelineBindPoint(const CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint bind_point, const char *func_name,
+                                           const std::map<VkPipelineBindPoint, std::string> &bind_errors) const {
     bool skip = false;
     auto pool = GetCommandPoolState(cb_state->createInfo.commandPool);
     if (pool) {  // The loss of a pool in a recording cmd is reported in DestroyCommandPool
