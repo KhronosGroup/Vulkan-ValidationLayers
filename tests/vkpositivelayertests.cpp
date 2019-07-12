@@ -6877,18 +6877,39 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     if (mp_extensions) {
         m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     } else {
         printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Create aliased function pointers for 1.0 and 1.1 contexts
+
+    PFN_vkBindImageMemory2KHR vkBindImageMemory2Function = nullptr;
+    PFN_vkGetImageMemoryRequirements2KHR vkGetImageMemoryRequirements2Function = nullptr;
+    PFN_vkGetPhysicalDeviceMemoryProperties2KHR vkGetPhysicalDeviceMemoryProperties2Function = nullptr;
+
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+        vkBindImageMemory2Function = vkBindImageMemory2;
+        vkGetImageMemoryRequirements2Function = vkGetImageMemoryRequirements2;
+        vkGetPhysicalDeviceMemoryProperties2Function = vkGetPhysicalDeviceMemoryProperties2;
+    } else {
+        vkBindImageMemory2Function = (PFN_vkBindImageMemory2KHR)vkGetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+        vkGetImageMemoryRequirements2Function =
+            (PFN_vkGetImageMemoryRequirements2KHR)vkGetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR");
+        vkGetPhysicalDeviceMemoryProperties2Function = (PFN_vkGetPhysicalDeviceMemoryProperties2KHR)vkGetDeviceProcAddr(
+            m_device->handle(), "vkGetPhysicalDeviceMemoryProperties2KHR");
+    }
+
+    if (!vkBindImageMemory2Function || !vkGetImageMemoryRequirements2Function || !vkGetPhysicalDeviceMemoryProperties2Function) {
+        printf("%s Did not find required device extension support; test skipped.\n", kSkipPrefix);
+        return;
+    }
 
     VkImageCreateInfo ci = {};
     ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -6976,7 +6997,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
 
         // Allocate & bind memory
         VkPhysicalDeviceMemoryProperties2 phys_mem_props2 = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2};
-        vkGetPhysicalDeviceMemoryProperties2(gpu(), &phys_mem_props2);
+        vkGetPhysicalDeviceMemoryProperties2Function(gpu(), &phys_mem_props2);
         VkImagePlaneMemoryRequirementsInfo image_plane_req = {VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO};
         VkImageMemoryRequirementsInfo2 mem_req_info2 = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2};
         mem_req_info2.pNext = &image_plane_req;
@@ -6989,7 +7010,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
 
         // Plane 0
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
-        vkGetImageMemoryRequirements2(device(), &mem_req_info2, &mem_reqs2);
+        vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_reqs2);
         uint32_t mem_type = 0;
         for (mem_type = 0; mem_type < phys_mem_props2.memoryProperties.memoryTypeCount; mem_type++) {
             if ((mem_reqs2.memoryRequirements.memoryTypeBits & (1 << mem_type)) &&
@@ -7003,12 +7024,12 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
 
         // Plane 1 & 2 use same memory type
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
-        vkGetImageMemoryRequirements2(device(), &mem_req_info2, &mem_reqs2);
+        vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_reqs2);
         alloc_info.allocationSize = mem_reqs2.memoryRequirements.size;
         ASSERT_VK_SUCCESS(vkAllocateMemory(device(), &alloc_info, NULL, &p1_mem));
 
         image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
-        vkGetImageMemoryRequirements2(device(), &mem_req_info2, &mem_reqs2);
+        vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_reqs2);
         alloc_info.allocationSize = mem_reqs2.memoryRequirements.size;
         ASSERT_VK_SUCCESS(vkAllocateMemory(device(), &alloc_info, NULL, &p2_mem));
 
@@ -7025,7 +7046,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
         bind_info[2].memory = p2_mem;
 
         m_errorMonitor->ExpectSuccess();
-        vkBindImageMemory2(device(), 3, bind_info);
+        vkBindImageMemory2Function(device(), 3, bind_info);
         m_errorMonitor->VerifyNotFound();
 
         vkFreeMemory(device(), p0_mem, NULL);

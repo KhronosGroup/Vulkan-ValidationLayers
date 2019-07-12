@@ -6180,6 +6180,26 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     ycbcr_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES;
     ycbcr_features.samplerYcbcrConversion = VK_TRUE;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ycbcr_features));
+
+    PFN_vkCreateSamplerYcbcrConversionKHR vkCreateSamplerYcbcrConversionFunction = nullptr;
+    PFN_vkDestroySamplerYcbcrConversionKHR vkDestroySamplerYcbcrConversionFunction = nullptr;
+
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+        vkCreateSamplerYcbcrConversionFunction = vkCreateSamplerYcbcrConversion;
+        vkDestroySamplerYcbcrConversionFunction = vkDestroySamplerYcbcrConversion;
+    } else {
+        vkCreateSamplerYcbcrConversionFunction =
+            (PFN_vkCreateSamplerYcbcrConversionKHR)vkGetDeviceProcAddr(m_device->handle(), "vkCreateSamplerYcbcrConversionKHR");
+        vkDestroySamplerYcbcrConversionFunction =
+            (PFN_vkDestroySamplerYcbcrConversionKHR)vkGetDeviceProcAddr(m_device->handle(), "vkDestroySamplerYcbcrConversionKHR");
+    }
+
+    if (!vkCreateSamplerYcbcrConversionFunction || !vkDestroySamplerYcbcrConversionFunction) {
+        printf("%s Did not find required device extension %s; test skipped.\n", kSkipPrefix,
+               VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        return;
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -6217,9 +6237,9 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
                                                             VK_FILTER_NEAREST,
                                                             false};
     VkSamplerYcbcrConversion conversions[2];
-    vkCreateSamplerYcbcrConversion(m_device->handle(), &ycbcr_create_info, nullptr, &conversions[0]);
+    vkCreateSamplerYcbcrConversionFunction(m_device->handle(), &ycbcr_create_info, nullptr, &conversions[0]);
     ycbcr_create_info.components.r = VK_COMPONENT_SWIZZLE_ZERO;  // Just anything different than above
-    vkCreateSamplerYcbcrConversion(m_device->handle(), &ycbcr_create_info, nullptr, &conversions[1]);
+    vkCreateSamplerYcbcrConversionFunction(m_device->handle(), &ycbcr_create_info, nullptr, &conversions[1]);
 
     VkSamplerYcbcrConversionInfo ycbcr_info = {};
     ycbcr_info.sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO;
@@ -6295,8 +6315,8 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     vkUpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
-    vkDestroySamplerYcbcrConversion(m_device->device(), conversions[0], nullptr);
-    vkDestroySamplerYcbcrConversion(m_device->device(), conversions[1], nullptr);
+    vkDestroySamplerYcbcrConversionFunction(m_device->device(), conversions[0], nullptr);
+    vkDestroySamplerYcbcrConversionFunction(m_device->device(), conversions[1], nullptr);
     vkDestroyImageView(m_device->device(), view, NULL);
     vkDestroySampler(m_device->device(), samplers[0], nullptr);
     vkDestroySampler(m_device->device(), samplers[1], nullptr);
@@ -6656,6 +6676,19 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     VkDevice dev = m_device->device();
 
+    PFN_vkCreateSamplerYcbcrConversionKHR vkCreateSamplerYcbcrConversionFunction = nullptr;
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+        vkCreateSamplerYcbcrConversionFunction = vkCreateSamplerYcbcrConversion;
+    } else {
+        vkCreateSamplerYcbcrConversionFunction =
+            (PFN_vkCreateSamplerYcbcrConversionKHR)vkGetDeviceProcAddr(m_device->handle(), "vkCreateSamplerYcbcrConversionKHR");
+    }
+
+    if (!vkCreateSamplerYcbcrConversionFunction) {
+        printf("%s Did not find required device support for YcbcrSamplerConversion; test skipped.\n", kSkipPrefix);
+        return;
+    }
+
     // Verify we have the requested support
     bool ycbcr_support = (DeviceExtensionEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) ||
                           (DeviceValidationVersion() >= VK_API_VERSION_1_1));
@@ -6673,7 +6706,7 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
     sycci.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkSamplerYcbcrConversionCreateInfo-format-01649");
-    vkCreateSamplerYcbcrConversion(dev, &sycci, NULL, &ycbcr_conv);
+    vkCreateSamplerYcbcrConversionFunction(dev, &sycci, NULL, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 }
 
