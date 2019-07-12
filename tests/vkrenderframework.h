@@ -63,6 +63,7 @@ class VkDeviceObj : public vk_testing::Device {
     VkDevice device() { return handle(); }
     void SetDeviceQueue();
     VkQueueObj *GetDefaultQueue();
+    VkQueueObj *GetDefaultComputeQueue();
 
     uint32_t id;
     VkPhysicalDeviceProperties props;

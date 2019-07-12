@@ -362,6 +362,74 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         vkQueueWaitIdle(m_device->m_queue);
         m_errorMonitor->VerifyFound();
     }
+    auto c_queue = m_device->GetDefaultComputeQueue();
+    if (c_queue && descriptor_indexing) {
+        char const *csSource =
+            "#version 450\n"
+            "#extension GL_EXT_nonuniform_qualifier : enable\n "
+            "layout(set = 0, binding = 0) uniform ufoo { uint index; } u_index;"
+            "layout(set = 0, binding = 1) buffer StorageBuffer {\n"
+            "    uint data;\n"
+            "} Data[];\n"
+            "void main() {\n"
+            "   Data[(u_index.index - 1)].data = Data[u_index.index].data;\n"
+            "}\n";
+
+        auto shader_module = new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+
+        VkPipelineShaderStageCreateInfo stage;
+        stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage.pNext = nullptr;
+        stage.flags = 0;
+        stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+        stage.module = shader_module->handle();
+        stage.pName = "main";
+        stage.pSpecializationInfo = nullptr;
+
+        // CreateComputePipelines
+        VkComputePipelineCreateInfo pipeline_info = {};
+        pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+        pipeline_info.pNext = nullptr;
+        pipeline_info.flags = 0;
+        pipeline_info.layout = pipeline_layout_buffer.handle();
+        pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+        pipeline_info.basePipelineIndex = -1;
+        pipeline_info.stage = stage;
+
+        VkPipeline c_pipeline;
+        vkCreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &c_pipeline);
+        VkCommandBufferBeginInfo begin_info = {};
+        VkCommandBufferInheritanceInfo hinfo = {};
+        hinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        begin_info.pInheritanceInfo = &hinfo;
+
+        m_commandBuffer->begin(&begin_info);
+        vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, c_pipeline);
+        vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_buffer.handle(), 0, 1,
+                                &descriptor_set_buffer.set_, 0, nullptr);
+        vkCmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+        m_commandBuffer->end();
+
+        // Uninitialized
+        uint32_t *data = (uint32_t *)buffer0.memory().map();
+        data[0] = 5;
+        buffer0.memory().unmap();
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Stage = Compute");
+        vkQueueSubmit(c_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+        vkQueueWaitIdle(m_device->m_queue);
+        m_errorMonitor->VerifyFound();
+        // Out of Bounds
+        data = (uint32_t *)buffer0.memory().map();
+        data[0] = 25;
+        buffer0.memory().unmap();
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Stage = Compute");
+        vkQueueSubmit(c_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+        vkQueueWaitIdle(m_device->m_queue);
+        m_errorMonitor->VerifyFound();
+        vkDestroyPipeline(m_device->handle(), c_pipeline, NULL);
+        vkDestroyShaderModule(m_device->handle(), shader_module->handle(), NULL);
+    }
     return;
 }
 

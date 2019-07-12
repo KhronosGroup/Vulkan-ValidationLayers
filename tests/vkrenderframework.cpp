@@ -818,6 +818,12 @@ VkQueueObj *VkDeviceObj::GetDefaultQueue() {
     if (graphics_queues().empty()) return nullptr;
     return graphics_queues()[0];
 }
+
+VkQueueObj *VkDeviceObj::GetDefaultComputeQueue() {
+    if (compute_queues().empty()) return nullptr;
+    return compute_queues()[0];
+}
+
 VkDescriptorSetLayoutObj::VkDescriptorSetLayoutObj(const VkDeviceObj *device,
                                                    const std::vector<VkDescriptorSetLayoutBinding> &descriptor_set_bindings,
                                                    VkDescriptorSetLayoutCreateFlags flags, void *pNext) {
