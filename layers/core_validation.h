@@ -456,6 +456,10 @@ class ValidationStateTracker : public ValidationObject {
                                                          VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
 
     // Recorded Commands
+    void PreCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                            VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
+                                            const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
+                                            const uint32_t* pDynamicOffsets);
     void PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions,
                                    VkFilter filter);
@@ -530,6 +534,10 @@ class ValidationStateTracker : public ValidationObject {
     void RemoveBufferMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
     void RemoveImageMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
     void ResetCommandBufferState(const VkCommandBuffer cb);
+    void UpdateLastBoundDescriptorSets(CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint pipeline_bind_point,
+                                       const PIPELINE_LAYOUT_STATE* pipeline_layout, uint32_t first_set, uint32_t set_count,
+                                       const std::vector<cvdescriptorset::DescriptorSet*> descriptor_sets,
+                                       uint32_t dynamic_offset_count, const uint32_t* p_dynamic_offsets);
 
     DeviceFeatures enabled_features = {};
     // Device specific data
@@ -658,10 +666,6 @@ class CoreChecks : public ValidationStateTracker {
     void RecordCmdPushDescriptorSetState(CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
                                          uint32_t set, uint32_t descriptorWriteCount,
                                          const VkWriteDescriptorSet* pDescriptorWrites);
-    void UpdateLastBoundDescriptorSets(CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint pipeline_bind_point,
-                                       const PIPELINE_LAYOUT_STATE* pipeline_layout, uint32_t first_set, uint32_t set_count,
-                                       const std::vector<cvdescriptorset::DescriptorSet*> descriptor_sets,
-                                       uint32_t dynamic_offset_count, const uint32_t* p_dynamic_offsets);
     bool ValidatePipelineBindPoint(CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint bind_point, const char* func_name,
                                    const std::map<VkPipelineBindPoint, std::string>& bind_errors);
     bool ValidateMemoryIsMapped(const char* funcName, uint32_t memRangeCount, const VkMappedMemoryRange* pMemRanges);
@@ -1480,10 +1484,6 @@ class CoreChecks : public ValidationStateTracker {
                                               VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
                                               const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
                                               const uint32_t* pDynamicOffsets);
-    void PreCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                            VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
-                                            const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
-                                            const uint32_t* pDynamicOffsets);
     bool PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                 VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                                 const VkWriteDescriptorSet* pDescriptorWrites);
