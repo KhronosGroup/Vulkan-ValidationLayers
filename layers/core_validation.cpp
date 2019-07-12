@@ -7073,10 +7073,11 @@ void ValidationStateTracker::PreCallRecordCmdSetStencilReference(VkCommandBuffer
 }
 
 // Update pipeline_layout bind points applying the "Pipeline Layout Compatibility" rules
-void CoreChecks::UpdateLastBoundDescriptorSets(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint pipeline_bind_point,
-                                               const PIPELINE_LAYOUT_STATE *pipeline_layout, uint32_t first_set, uint32_t set_count,
-                                               const std::vector<cvdescriptorset::DescriptorSet *> descriptor_sets,
-                                               uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets) {
+void ValidationStateTracker::UpdateLastBoundDescriptorSets(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint pipeline_bind_point,
+                                                           const PIPELINE_LAYOUT_STATE *pipeline_layout, uint32_t first_set,
+                                                           uint32_t set_count,
+                                                           const std::vector<cvdescriptorset::DescriptorSet *> descriptor_sets,
+                                                           uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets) {
     // Defensive
     assert(set_count);
     if (0 == set_count) return;
@@ -7174,14 +7175,23 @@ void CoreChecks::UpdateLastBoundDescriptorSets(CMD_BUFFER_STATE *cb_state, VkPip
 }
 
 // Update the bound state for the bind point, including the effects of incompatible pipeline layouts
-void CoreChecks::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                    VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
-                                                    const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
-                                                    const uint32_t *pDynamicOffsets) {
+void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer,
+                                                                VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
+                                                                uint32_t firstSet, uint32_t setCount,
+                                                                const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
+                                                                const uint32_t *pDynamicOffsets) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     auto pipeline_layout = GetPipelineLayout(layout);
     std::vector<cvdescriptorset::DescriptorSet *> descriptor_sets;
     descriptor_sets.reserve(setCount);
+
+    // Resize binding arrays
+    uint32_t last_set_index = firstSet + setCount - 1;
+    if (last_set_index >= cb_state->lastBound[pipelineBindPoint].boundDescriptorSets.size()) {
+        cb_state->lastBound[pipelineBindPoint].boundDescriptorSets.resize(last_set_index + 1);
+        cb_state->lastBound[pipelineBindPoint].dynamicOffsets.resize(last_set_index + 1);
+        cb_state->lastBound[pipelineBindPoint].compat_id_for_set.resize(last_set_index + 1);
+    }
 
     // Construct a list of the descriptors
     bool found_non_null = false;
@@ -7221,7 +7231,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                                                       VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
                                                       const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
                                                       const uint32_t *pDynamicOffsets) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     bool skip = false;
     skip |= ValidateCmdQueueFlags(cb_state, "vkCmdBindDescriptorSets()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -7230,16 +7240,10 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
     // Track total count of dynamic descriptor types to make sure we have an offset for each one
     uint32_t total_dynamic_descriptors = 0;
     string error_string = "";
-    uint32_t last_set_index = firstSet + setCount - 1;
 
-    if (last_set_index >= cb_state->lastBound[pipelineBindPoint].boundDescriptorSets.size()) {
-        cb_state->lastBound[pipelineBindPoint].boundDescriptorSets.resize(last_set_index + 1);
-        cb_state->lastBound[pipelineBindPoint].dynamicOffsets.resize(last_set_index + 1);
-        cb_state->lastBound[pipelineBindPoint].compat_id_for_set.resize(last_set_index + 1);
-    }
-    auto pipeline_layout = GetPipelineLayout(layout);
+    const auto *pipeline_layout = GetPipelineLayout(layout);
     for (uint32_t set_idx = 0; set_idx < setCount; set_idx++) {
-        cvdescriptorset::DescriptorSet *descriptor_set = GetSetNode(pDescriptorSets[set_idx]);
+        const cvdescriptorset::DescriptorSet *descriptor_set = GetSetNode(pDescriptorSets[set_idx]);
         if (descriptor_set) {
             // Verify that set being bound is compatible with overlapping setLayout of pipelineLayout
             if (!VerifySetLayoutCompatibility(descriptor_set, pipeline_layout, set_idx + firstSet, error_string)) {
