@@ -4633,7 +4633,7 @@ void ValidationStateTracker::PreCallRecordDestroyDescriptorPool(VkDevice device,
 //  If this is a secondary command buffer, then make sure its primary is also in-flight
 //  If primary is not in-flight, then remove secondary from global in-flight set
 // This function is only valid at a point when cmdBuffer is being reset or freed
-bool CoreChecks::CheckCommandBufferInFlight(const CMD_BUFFER_STATE *cb_node, const char *action, const char *error_code) {
+bool CoreChecks::CheckCommandBufferInFlight(const CMD_BUFFER_STATE *cb_node, const char *action, const char *error_code) const {
     bool skip = false;
     if (cb_node->in_use.load()) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -4644,7 +4644,7 @@ bool CoreChecks::CheckCommandBufferInFlight(const CMD_BUFFER_STATE *cb_node, con
 }
 
 // Iterate over all cmdBuffers in given commandPool and verify that each is not in use
-bool CoreChecks::CheckCommandBuffersInFlight(COMMAND_POOL_STATE *pPool, const char *action, const char *error_code) {
+bool CoreChecks::CheckCommandBuffersInFlight(const COMMAND_POOL_STATE *pPool, const char *action, const char *error_code) const {
     bool skip = false;
     for (auto cmd_buffer : pPool->commandBuffers) {
         skip |= CheckCommandBufferInFlight(GetCBState(cmd_buffer), action, error_code);
@@ -4653,8 +4653,8 @@ bool CoreChecks::CheckCommandBuffersInFlight(COMMAND_POOL_STATE *pPool, const ch
 }
 
 // Free all command buffers in given list, removing all references/links to them using ResetCommandBufferState
-void CoreChecks::FreeCommandBufferStates(COMMAND_POOL_STATE *pool_state, const uint32_t command_buffer_count,
-                                         const VkCommandBuffer *command_buffers) {
+void ValidationStateTracker::FreeCommandBufferStates(COMMAND_POOL_STATE *pool_state, const uint32_t command_buffer_count,
+                                                     const VkCommandBuffer *command_buffers) {
     for (uint32_t i = 0; i < command_buffer_count; i++) {
         auto cb_state = GetCBState(command_buffers[i]);
         // Remove references to command buffer's state and delete
@@ -4676,7 +4676,7 @@ bool CoreChecks::PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPoo
                                                    const VkCommandBuffer *pCommandBuffers) {
     bool skip = false;
     for (uint32_t i = 0; i < commandBufferCount; i++) {
-        auto cb_node = GetCBState(pCommandBuffers[i]);
+        const auto *cb_node = GetCBState(pCommandBuffers[i]);
         // Delete CB information structure, and remove from commandBufferMap
         if (cb_node) {
             skip |= CheckCommandBufferInFlight(cb_node, "free", "VUID-vkFreeCommandBuffers-pCommandBuffers-00047");
@@ -4685,8 +4685,8 @@ bool CoreChecks::PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPoo
     return skip;
 }
 
-void CoreChecks::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
-                                                 const VkCommandBuffer *pCommandBuffers) {
+void ValidationStateTracker::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool,
+                                                             uint32_t commandBufferCount, const VkCommandBuffer *pCommandBuffers) {
     auto pPool = GetCommandPoolState(commandPool);
     FreeCommandBufferStates(pPool, commandBufferCount, pCommandBuffers);
 }
@@ -4762,12 +4762,12 @@ void CoreChecks::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool 
 }
 
 bool CoreChecks::PreCallValidateResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
-    auto command_pool_state = GetCommandPoolState(commandPool);
+    const auto *command_pool_state = GetCommandPoolState(commandPool);
     return CheckCommandBuffersInFlight(command_pool_state, "reset command pool with", "VUID-vkResetCommandPool-commandPool-00040");
 }
 
-void CoreChecks::PostCallRecordResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags,
-                                                VkResult result) {
+void ValidationStateTracker::PostCallRecordResetCommandPool(VkDevice device, VkCommandPool commandPool,
+                                                            VkCommandPoolResetFlags flags, VkResult result) {
     if (VK_SUCCESS != result) return;
     // Reset all of the CBs allocated from this pool
     auto command_pool_state = GetCommandPoolState(commandPool);
@@ -6262,10 +6262,10 @@ void ValidationStateTracker::PostCallRecordEndCommandBuffer(VkCommandBuffer comm
 
 bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags) {
     bool skip = false;
-    CMD_BUFFER_STATE *pCB = GetCBState(commandBuffer);
+    const CMD_BUFFER_STATE *pCB = GetCBState(commandBuffer);
     if (!pCB) return false;
     VkCommandPool cmdPool = pCB->createInfo.commandPool;
-    auto pPool = GetCommandPoolState(cmdPool);
+    const auto *pPool = GetCommandPoolState(cmdPool);
 
     if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pPool->createFlags)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -6279,7 +6279,8 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
     return skip;
 }
 
-void CoreChecks::PostCallRecordResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags, VkResult result) {
+void ValidationStateTracker::PostCallRecordResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags,
+                                                              VkResult result) {
     if (VK_SUCCESS == result) {
         ResetCommandBufferState(commandBuffer);
     }
