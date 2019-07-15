@@ -177,6 +177,11 @@ struct SURFACE_STATE {
     SURFACE_STATE(VkSurfaceKHR surface) : surface(surface) {}
 };
 
+struct SubpassLayout {
+    uint32_t index;
+    VkImageLayout layout;
+};
+
 using std::unordered_map;
 struct GpuValidationState;
 
@@ -981,8 +986,10 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo* pCreateInfo) const;
     bool MatchUsage(uint32_t count, const VkAttachmentReference2KHR* attachments, const VkFramebufferCreateInfo* fbci,
                     VkImageUsageFlagBits usage_flag, const char* error_code) const;
-    bool CheckDependencyExists(const uint32_t subpass, const std::vector<uint32_t>& dependent_subpasses,
-                               const std::vector<DAGNode>& subpass_to_node, bool& skip) const;
+    bool IsImageLayoutReadOnly(VkImageLayout layout) const;
+    bool CheckDependencyExists(const uint32_t subpass, const VkImageLayout layout,
+                               const std::vector<SubpassLayout>& dependent_subpasses, const std::vector<DAGNode>& subpass_to_node,
+                               bool& skip) const;
     bool CheckPreserved(const VkRenderPassCreateInfo2KHR* pCreateInfo, const int index, const uint32_t attachment,
                         const std::vector<DAGNode>& subpass_to_node, int depth, bool& skip) const;
     bool ValidateBindImageMemory(const VkBindImageMemoryInfo& bindInfo, const char* api_name) const;
