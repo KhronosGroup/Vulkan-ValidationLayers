@@ -2577,14 +2577,6 @@ void CoreChecks::IncrementResources(CMD_BUFFER_STATE *cb_node) {
     // TODO : We should be able to remove the NULL look-up checks from the code below as long as
     //  all the corresponding cases are verified to cause CB_INVALID state and the CB_INVALID state
     //  should then be flagged prior to calling this function
-    for (auto draw_data_element : cb_node->draw_data) {
-        for (auto &vertex_buffer : draw_data_element.vertex_buffer_bindings) {
-            auto buffer_state = GetBufferState(vertex_buffer.buffer);
-            if (buffer_state) {
-                buffer_state->in_use.fetch_add(1);
-            }
-        }
-    }
     for (auto event : cb_node->writeEventsBeforeWait) {
         auto event_state = GetEventState(event);
         if (event_state) event_state->write_in_use++;
@@ -2695,14 +2687,6 @@ void CoreChecks::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq) {
             }
             // First perform decrement on general case bound objects
             DecrementBoundResources(cb_node);
-            for (auto draw_data_element : cb_node->draw_data) {
-                for (auto &vertex_buffer_binding : draw_data_element.vertex_buffer_bindings) {
-                    auto buffer_state = GetBufferState(vertex_buffer_binding.buffer);
-                    if (buffer_state) {
-                        buffer_state->in_use.fetch_sub(1);
-                    }
-                }
-            }
             for (auto event : cb_node->writeEventsBeforeWait) {
                 auto eventNode = eventMap.find(event);
                 if (eventNode != eventMap.end()) {
@@ -2794,26 +2778,6 @@ bool CoreChecks::ValidateCommandBufferState(CMD_BUFFER_STATE *cb_state, const ch
     return skip;
 }
 
-bool CoreChecks::ValidateResources(CMD_BUFFER_STATE *cb_node) {
-    bool skip = false;
-
-    // TODO : We should be able to remove the NULL look-up checks from the code below as long as
-    //  all the corresponding cases are verified to cause CB_INVALID state and the CB_INVALID state
-    //  should then be flagged prior to calling this function
-    for (const auto &draw_data_element : cb_node->draw_data) {
-        for (const auto &vertex_buffer_binding : draw_data_element.vertex_buffer_bindings) {
-            auto buffer_state = GetBufferState(vertex_buffer_binding.buffer);
-            if ((vertex_buffer_binding.buffer != VK_NULL_HANDLE) && (!buffer_state)) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
-                                HandleToUint64(vertex_buffer_binding.buffer), kVUID_Core_DrawState_InvalidBuffer,
-                                "Cannot submit cmd buffer using deleted %s.",
-                                report_data->FormatHandle(vertex_buffer_binding.buffer).c_str());
-            }
-        }
-    }
-    return skip;
-}
-
 // Check that the queue family index of 'queue' matches one of the entries in pQueueFamilyIndices
 bool CoreChecks::ValidImageBufferQueue(CMD_BUFFER_STATE *cb_node, const VulkanTypedHandle &object, VkQueue queue, uint32_t count,
                                        const uint32_t *indices) {
@@ -2884,15 +2848,12 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(CMD_BUFFER_STATE *pCB, int cu
     // Track in-use for resources off of primary and any secondary CBs
     bool skip = false;
 
-    // If USAGE_SIMULTANEOUS_USE_BIT not set then CB cannot already be executing
-    // on device
+    // If USAGE_SIMULTANEOUS_USE_BIT not set then CB cannot already be executing on device
     skip |= ValidateCommandBufferSimultaneousUse(pCB, current_submit_count);
 
-    skip |= ValidateResources(pCB);
     skip |= ValidateQueuedQFOTransfers(pCB, qfo_image_scoreboards, qfo_buffer_scoreboards);
 
     for (auto pSubCB : pCB->linkedCommandBuffers) {
-        skip |= ValidateResources(pSubCB);
         skip |= ValidateQueuedQFOTransfers(pSubCB, qfo_image_scoreboards, qfo_buffer_scoreboards);
         // TODO: replace with InvalidateCommandBuffers() at recording.
         if ((pSubCB->primaryCommandBuffer != pCB->commandBuffer) &&
@@ -6237,6 +6198,7 @@ bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) 
         // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/165
         skip |= InsideRenderPass(cb_state, "vkEndCommandBuffer()", "VUID-vkEndCommandBuffer-commandBuffer-00060");
     }
+
     skip |= ValidateCmd(cb_state, CMD_ENDCOMMANDBUFFER, "vkEndCommandBuffer()");
     for (auto query : cb_state->activeQueries) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -7514,6 +7476,8 @@ void CoreChecks::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuffer
         auto &vertex_buffer_binding = cb_state->current_draw_data.vertex_buffer_bindings[i + firstBinding];
         vertex_buffer_binding.buffer = pBuffers[i];
         vertex_buffer_binding.offset = pOffsets[i];
+        // Add binding for this vertex buffer to this commandbuffer
+        AddCommandBufferBindingBuffer(cb_state, GetBufferState(pBuffers[i]));
     }
 }
 
