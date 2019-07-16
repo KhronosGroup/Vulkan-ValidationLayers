@@ -1995,7 +1995,7 @@ void CoreChecks::ResetCommandBufferState(const VkCommandBuffer cb) {
         pCB->startedQueries.clear();
         pCB->image_layout_map.clear();
         pCB->eventToStageMap.clear();
-        pCB->draw_data.clear();
+        pCB->cb_vertex_buffer_binding_info.clear();
         pCB->current_draw_data.vertex_buffer_bindings.clear();
         pCB->vertex_buffer_used = false;
         pCB->primaryCommandBuffer = VK_NULL_HANDLE;
