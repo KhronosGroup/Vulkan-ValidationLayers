@@ -135,8 +135,11 @@ fix the problem, they should do so to better assist the user.
 and reports a variety of statistics on validation completeness and correctness. Before submitting a change you should run this
 script with the consistency check (`-c`) argument to ensure that your changes have not introduced any inconsistencies in the code.
 * **Generated Source Code:** The `layers/generated` directory contains source code that is created by several
-generator scripts in the `scripts` directory. All changes to these scripts must be submitted with the
-corresponding generated output to keep the repository self-consistent. This requirement is enforced by both Travis CI and AppVeyor test configurations. Use `scripts/generate_source.py` to regenerate source files after modifying any of the generator scripts and before building and testing your changes.
+generator scripts in the `scripts` directory. All changes to these scripts _must_ be submitted with the
+corresponding generated output to keep the repository self-consistent. This requirement is enforced by both
+Travis CI and AppVeyor test configurations. Regenerate source files after modifying any of the generator
+scripts and before building and testing your changes. More details can be found in
+[BUILD.md](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/BUILD.md#generated-source-code).
 
 #### Coding Conventions for [CMake](http://cmake.org) files
 
