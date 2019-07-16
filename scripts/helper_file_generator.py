@@ -492,7 +492,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             'VK_VERSION_1_1',
             ]
 
-        V_1_0_instance_extensions_promoted_to_core = [
+        V_1_0_instance_extensions_promoted_to_V_1_1_core = [
             'vk_khr_device_group_creation',
             'vk_khr_external_fence_capabilities',
             'vk_khr_external_memory_capabilities',
@@ -500,7 +500,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             'vk_khr_get_physical_device_properties_2',
             ]
 
-        V_1_0_device_extensions_promoted_to_core = [
+        V_1_0_device_extensions_promoted_to_V_1_1_core = [
             'vk_khr_16bit_storage',
             'vk_khr_bind_memory_2',
             'vk_khr_dedicated_allocation',
@@ -545,12 +545,12 @@ class HelperFileOutputGenerator(OutputGenerator):
             struct_type = '%sExtensions' % type
             if type == 'Instance':
                 extension_dict = self.instance_extension_info
-                promoted_ext_list = V_1_0_instance_extensions_promoted_to_core
+                promoted_ext_list = V_1_0_instance_extensions_promoted_to_V_1_1_core
                 struct_decl = 'struct %s {' % struct_type
                 instance_struct_type = struct_type
             else:
                 extension_dict = self.device_extension_info
-                promoted_ext_list = V_1_0_device_extensions_promoted_to_core
+                promoted_ext_list = V_1_0_device_extensions_promoted_to_V_1_1_core
                 struct_decl = 'struct %s : public %s {' % (struct_type, instance_struct_type)
 
             extension_items = sorted(extension_dict.items())
@@ -639,7 +639,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '']),
             struct.extend([
                 '',
-                '        static const std::vector<const char *> V_1_0_promoted_%s_extensions = {' % type.lower() ])
+                '        static const std::vector<const char *> V_1_1_promoted_%s_apis = {' % type.lower() ])
             struct.extend(['            %s_EXTENSION_NAME,' % ext_name.upper() for ext_name in promoted_ext_list])
             struct.extend(['            "VK_VERSION_1_1",'])
             struct.extend([
@@ -655,7 +655,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                 '        }',
                 '        uint32_t api_version = NormalizeApiVersion(requested_api_version);',
                 '        if (api_version >= VK_API_VERSION_1_1) {',
-                '            for (auto promoted_ext : V_1_0_promoted_%s_extensions) {' % type.lower(),
+                '            for (auto promoted_ext : V_1_1_promoted_%s_apis) {' % type.lower(),
                 '                auto info = get_info(promoted_ext);',
                 '                assert(info.state);',
                 '                if (info.state) this->*(info.state) = true;',
