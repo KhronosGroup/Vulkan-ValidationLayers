@@ -42,7 +42,7 @@
 #include "core_validation.h"
 
 static inline void UpdateResourceTrackingOnDraw(CMD_BUFFER_STATE *pCB) {
-    pCB->cb_vertex_buffer_binding_info.push_back(pCB->current_draw_data);
+    pCB->cb_vertex_buffer_binding_info.push_back(pCB->current_vertex_buffer_binding_info);
 }
 
 // Generic function to handle validation for all CmdDraw* type functions

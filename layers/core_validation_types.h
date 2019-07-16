@@ -1440,7 +1440,7 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     ImageLayoutMap image_layout_map;
     std::unordered_map<VkEvent, VkPipelineStageFlags> eventToStageMap;
     std::vector<CBVertexBufferBindingInfo> cb_vertex_buffer_binding_info;
-    CBVertexBufferBindingInfo current_draw_data;
+    CBVertexBufferBindingInfo current_vertex_buffer_binding_info;
     bool vertex_buffer_used;  // Track for perf warning to make sure any bound vtx buffer used
     VkCommandBuffer primaryCommandBuffer;
     // Track images and buffers that are updated by this CB at the point of a draw
