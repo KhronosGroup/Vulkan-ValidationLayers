@@ -1049,7 +1049,7 @@ struct hash<QueryObject> {
 };
 }  // namespace std
 
-struct DrawData {
+struct CBVertexBufferBindingInfo {
     std::vector<BufferBinding> vertex_buffer_bindings;
 };
 
@@ -1439,8 +1439,8 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     typedef std::unordered_map<VkImage, std::unique_ptr<ImageSubresourceLayoutMap>> ImageLayoutMap;
     ImageLayoutMap image_layout_map;
     std::unordered_map<VkEvent, VkPipelineStageFlags> eventToStageMap;
-    std::vector<DrawData> draw_data;
-    DrawData current_draw_data;
+    std::vector<CBVertexBufferBindingInfo> draw_data;
+    CBVertexBufferBindingInfo current_draw_data;
     bool vertex_buffer_used;  // Track for perf warning to make sure any bound vtx buffer used
     VkCommandBuffer primaryCommandBuffer;
     // Track images and buffers that are updated by this CB at the point of a draw
