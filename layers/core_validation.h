@@ -831,7 +831,6 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateEventStageMask(VkQueue queue, CMD_BUFFER_STATE* pCB, uint32_t eventCount, size_t firstEventIndex,
                                 VkPipelineStageFlags sourceStageMask);
     void RetireWorkOnQueue(QUEUE_STATE* pQueue, uint64_t seq);
-    bool ValidateResources(CMD_BUFFER_STATE* cb_node);
     bool ValidateQueueFamilyIndices(CMD_BUFFER_STATE* pCB, VkQueue queue);
     VkResult CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkValidationCacheEXT* pValidationCache);
@@ -1149,7 +1148,6 @@ class CoreChecks : public ValidationStateTracker {
 
     bool PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer);
-
 
     bool PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkBufferView* pView);
