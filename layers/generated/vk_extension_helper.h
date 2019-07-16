@@ -185,7 +185,7 @@ struct InstanceExtensions {
 
     uint32_t InitFromInstanceCreateInfo(uint32_t requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {
 
-        static const std::vector<const char *> V_1_0_promoted_instance_extensions = {
+        static const std::vector<const char *> V_1_1_promoted_instance_apis = {
             VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME,
             VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME,
             VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
@@ -204,7 +204,7 @@ struct InstanceExtensions {
         }
         uint32_t api_version = NormalizeApiVersion(requested_api_version);
         if (api_version >= VK_API_VERSION_1_1) {
-            for (auto promoted_ext : V_1_0_promoted_instance_extensions) {
+            for (auto promoted_ext : V_1_1_promoted_instance_apis) {
                 auto info = get_info(promoted_ext);
                 assert(info.state);
                 if (info.state) this->*(info.state) = true;
@@ -720,7 +720,7 @@ struct DeviceExtensions : public InstanceExtensions {
         *this = DeviceExtensions(*instance_extensions);
 
 
-        static const std::vector<const char *> V_1_0_promoted_device_extensions = {
+        static const std::vector<const char *> V_1_1_promoted_device_apis = {
             VK_KHR_16BIT_STORAGE_EXTENSION_NAME,
             VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
             VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
@@ -752,7 +752,7 @@ struct DeviceExtensions : public InstanceExtensions {
         }
         uint32_t api_version = NormalizeApiVersion(requested_api_version);
         if (api_version >= VK_API_VERSION_1_1) {
-            for (auto promoted_ext : V_1_0_promoted_device_extensions) {
+            for (auto promoted_ext : V_1_1_promoted_device_apis) {
                 auto info = get_info(promoted_ext);
                 assert(info.state);
                 if (info.state) this->*(info.state) = true;
