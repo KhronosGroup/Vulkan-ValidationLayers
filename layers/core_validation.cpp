@@ -848,8 +848,8 @@ bool CoreChecks::ValidatePipelineDrawtimeState(LAST_BOUND_STATE const &state, co
     if (pPipeline->vertex_binding_descriptions_.size() > 0) {
         for (size_t i = 0; i < pPipeline->vertex_binding_descriptions_.size(); i++) {
             const auto vertex_binding = pPipeline->vertex_binding_descriptions_[i].binding;
-            if ((pCB->current_draw_data.vertex_buffer_bindings.size() < (vertex_binding + 1)) ||
-                (pCB->current_draw_data.vertex_buffer_bindings[vertex_binding].buffer == VK_NULL_HANDLE)) {
+            if ((pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings.size() < (vertex_binding + 1)) ||
+                (pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings[vertex_binding].buffer == VK_NULL_HANDLE)) {
                 skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_VtxIndexOutOfBounds,
@@ -869,11 +869,13 @@ bool CoreChecks::ValidatePipelineDrawtimeState(LAST_BOUND_STATE const &state, co
 
             const auto &vertex_binding_map_it = pPipeline->vertex_binding_to_index_map_.find(vertex_binding);
             if ((vertex_binding_map_it != pPipeline->vertex_binding_to_index_map_.cend()) &&
-                (vertex_binding < pCB->current_draw_data.vertex_buffer_bindings.size()) &&
-                (pCB->current_draw_data.vertex_buffer_bindings[vertex_binding].buffer != VK_NULL_HANDLE)) {
+                (vertex_binding < pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings.size()) &&
+                (pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings[vertex_binding].buffer != VK_NULL_HANDLE)) {
                 const auto vertex_buffer_stride = pPipeline->vertex_binding_descriptions_[vertex_binding_map_it->second].stride;
-                const auto vertex_buffer_offset = pCB->current_draw_data.vertex_buffer_bindings[vertex_binding].offset;
-                const auto buffer_state = GetBufferState(pCB->current_draw_data.vertex_buffer_bindings[vertex_binding].buffer);
+                const auto vertex_buffer_offset =
+                    pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings[vertex_binding].offset;
+                const auto buffer_state =
+                    GetBufferState(pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings[vertex_binding].buffer);
 
                 // Use only memory binding offset as base memory should be properly aligned by the driver
                 const auto buffer_binding_address = buffer_state->binding.offset + vertex_buffer_offset;
@@ -888,16 +890,18 @@ bool CoreChecks::ValidatePipelineDrawtimeState(LAST_BOUND_STATE const &state, co
                 if (SafeModulo(attrib_address, vtx_attrib_req_alignment) != 0) {
                     skip |= log_msg(
                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
-                        HandleToUint64(pCB->current_draw_data.vertex_buffer_bindings[vertex_binding].buffer),
+                        HandleToUint64(pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings[vertex_binding].buffer),
                         kVUID_Core_DrawState_InvalidVtxAttributeAlignment,
                         "Invalid attribAddress alignment for vertex attribute " PRINTF_SIZE_T_SPECIFIER " from %s and vertex %s.",
                         i, report_data->FormatHandle(state.pipeline_state->pipeline).c_str(),
-                        report_data->FormatHandle(pCB->current_draw_data.vertex_buffer_bindings[vertex_binding].buffer).c_str());
+                        report_data
+                            ->FormatHandle(pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings[vertex_binding].buffer)
+                            .c_str());
                 }
             }
         }
     } else {
-        if ((!pCB->current_draw_data.vertex_buffer_bindings.empty()) && (!pCB->vertex_buffer_used)) {
+        if ((!pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings.empty()) && (!pCB->vertex_buffer_used)) {
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_VtxIndexOutOfBounds,
@@ -1996,7 +2000,7 @@ void CoreChecks::ResetCommandBufferState(const VkCommandBuffer cb) {
         pCB->image_layout_map.clear();
         pCB->eventToStageMap.clear();
         pCB->cb_vertex_buffer_binding_info.clear();
-        pCB->current_draw_data.vertex_buffer_bindings.clear();
+        pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings.clear();
         pCB->vertex_buffer_used = false;
         pCB->primaryCommandBuffer = VK_NULL_HANDLE;
         // If secondary, invalidate any primary command buffer that may call us.
@@ -6994,12 +6998,12 @@ void CoreChecks::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuffer
     auto cb_state = GetCBState(commandBuffer);
 
     uint32_t end = firstBinding + bindingCount;
-    if (cb_state->current_draw_data.vertex_buffer_bindings.size() < end) {
-        cb_state->current_draw_data.vertex_buffer_bindings.resize(end);
+    if (cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings.size() < end) {
+        cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings.resize(end);
     }
 
     for (uint32_t i = 0; i < bindingCount; ++i) {
-        auto &vertex_buffer_binding = cb_state->current_draw_data.vertex_buffer_bindings[i + firstBinding];
+        auto &vertex_buffer_binding = cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings[i + firstBinding];
         vertex_buffer_binding.buffer = pBuffers[i];
         vertex_buffer_binding.offset = pOffsets[i];
         // Add binding for this vertex buffer to this commandbuffer
