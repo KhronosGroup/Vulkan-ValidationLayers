@@ -41,7 +41,9 @@
 #include "chassis.h"
 #include "core_validation.h"
 
-static inline void UpdateResourceTrackingOnDraw(CMD_BUFFER_STATE *pCB) { pCB->draw_data.push_back(pCB->current_draw_data); }
+static inline void UpdateResourceTrackingOnDraw(CMD_BUFFER_STATE *pCB) {
+    pCB->cb_vertex_buffer_binding_info.push_back(pCB->current_draw_data);
+}
 
 // Generic function to handle validation for all CmdDraw* type functions
 bool CoreChecks::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type,
