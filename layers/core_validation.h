@@ -830,7 +830,7 @@ class CoreChecks : public ValidationStateTracker {
     void IncrementResources(CMD_BUFFER_STATE* cb_node);
     bool ValidateEventStageMask(VkQueue queue, CMD_BUFFER_STATE* pCB, uint32_t eventCount, size_t firstEventIndex,
                                 VkPipelineStageFlags sourceStageMask);
-    void RetireWorkOnQueue(QUEUE_STATE* pQueue, uint64_t seq);
+    void RetireWorkOnQueue(QUEUE_STATE* pQueue, uint64_t seq, bool switch_finished_queries = false);
     bool ValidateResources(CMD_BUFFER_STATE* cb_node);
     bool ValidateQueueFamilyIndices(CMD_BUFFER_STATE* pCB, VkQueue queue);
     VkResult CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,

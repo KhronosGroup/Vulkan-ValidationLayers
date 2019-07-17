@@ -2620,7 +2620,7 @@ void CoreChecks::DecrementBoundResources(CMD_BUFFER_STATE const *cb_node) {
     }
 }
 
-void CoreChecks::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq) {
+void CoreChecks::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq, bool switch_finished_queries) {
     std::unordered_map<VkQueue, uint64_t> otherQueueSeqs;
 
     // Roll this queue forward, one submission at a time.
@@ -2672,7 +2672,11 @@ void CoreChecks::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq) {
                 }
             }
             for (auto queryStatePair : cb_node->queryToStateMap) {
-                queryToStateMap[queryStatePair.first] = queryStatePair.second;
+                const QueryState newState =
+                    ((queryStatePair.second == QUERYSTATE_ENDED && switch_finished_queries) ? QUERYSTATE_AVAILABLE
+                                                                                            : queryStatePair.second);
+                pQueue->queryToStateMap[queryStatePair.first] = newState;
+                queryToStateMap[queryStatePair.first] = newState;
             }
             for (auto eventStagePair : cb_node->eventToStageMap) {
                 eventMap[eventStagePair.first].stageMask = eventStagePair.second;
@@ -2692,7 +2696,7 @@ void CoreChecks::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq) {
 
     // Roll other queues forward to the highest seq we saw a wait for
     for (auto qs : otherQueueSeqs) {
-        RetireWorkOnQueue(GetQueueState(qs.first), qs.second);
+        RetireWorkOnQueue(GetQueueState(qs.first), qs.second, switch_finished_queries);
     }
 }
 
@@ -3788,7 +3792,7 @@ void CoreChecks::RetireFence(VkFence fence) {
     if (pFence && pFence->scope == kSyncScopeInternal) {
         if (pFence->signaler.first != VK_NULL_HANDLE) {
             // Fence signaller is a queue -- use this as proof that prior operations on that queue have completed.
-            RetireWorkOnQueue(GetQueueState(pFence->signaler.first), pFence->signaler.second);
+            RetireWorkOnQueue(GetQueueState(pFence->signaler.first), pFence->signaler.second, true);
         } else {
             // Fence signaller is the WSI. We're not tracking what the WSI op actually /was/ in CV yet, but we need to mark
             // the fence as retired.
@@ -3876,7 +3880,7 @@ bool CoreChecks::PreCallValidateQueueWaitIdle(VkQueue queue) {
 void CoreChecks::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) {
     if (VK_SUCCESS != result) return;
     QUEUE_STATE *queue_state = GetQueueState(queue);
-    RetireWorkOnQueue(queue_state, queue_state->seq + queue_state->submissions.size());
+    RetireWorkOnQueue(queue_state, queue_state->seq + queue_state->submissions.size(), true);
 }
 
 bool CoreChecks::PreCallValidateDeviceWaitIdle(VkDevice device) {
@@ -3890,7 +3894,7 @@ bool CoreChecks::PreCallValidateDeviceWaitIdle(VkDevice device) {
 void CoreChecks::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) {
     if (VK_SUCCESS != result) return;
     for (auto &queue : queueMap) {
-        RetireWorkOnQueue(&queue.second, queue.second.seq + queue.second.submissions.size());
+        RetireWorkOnQueue(&queue.second, queue.second.seq + queue.second.submissions.size(), true);
     }
 }
 
@@ -3983,23 +3987,14 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
     }
 
     QueryObject query_obj{queryPool, 0u};
-    QueryResultType result_type;
 
     for (uint32_t i = 0; i < queryCount; ++i) {
         query_obj.query = firstQuery + i;
-        auto query_data = queryToStateMap.find(query_obj);
-
-        if (query_data != queryToStateMap.end()) {
-            result_type = GetQueryResultType(query_data->second, flags);
-        } else {
-            result_type = QUERYRESULT_UNKNOWN;
-        }
-
-        if (result_type != QUERYRESULT_SOME_DATA) {
+        if (queryToStateMap.find(query_obj) == queryToStateMap.end()) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT,
                             HandleToUint64(queryPool), kVUID_Core_DrawState_InvalidQuery,
-                            "vkGetQueryPoolResults() on %s and query %" PRIu32 ": %s", report_data->FormatHandle(queryPool).c_str(),
-                            query_obj.query, string_QueryResultType(result_type));
+                            "vkGetQueryPoolResults() on %s and query %" PRIu32 ": unknown query",
+                            report_data->FormatHandle(queryPool).c_str(), query_obj.query);
         }
     }
 
@@ -8349,9 +8344,8 @@ bool CoreChecks::PreCallValidateCmdEndQuery(VkCommandBuffer commandBuffer, VkQue
 
 void CoreChecks::RecordCmdEndQuery(CMD_BUFFER_STATE *cb_state, const QueryObject &query_obj) {
     cb_state->activeQueries.erase(query_obj);
-    cb_state->queryUpdates.emplace_back([this, cb_state, query_obj](VkQueue q) {
-        return SetQueryState(q, cb_state->commandBuffer, query_obj, QUERYSTATE_AVAILABLE);
-    });
+    cb_state->queryUpdates.emplace_back(
+        [this, cb_state, query_obj](VkQueue q) { return SetQueryState(q, cb_state->commandBuffer, query_obj, QUERYSTATE_ENDED); });
     AddCommandBufferBinding(&GetQueryPoolState(query_obj.pool)->cb_bindings,
                             VulkanTypedHandle(query_obj.pool, kVulkanObjectTypeQueryPool), cb_state);
 }
@@ -8414,13 +8408,15 @@ QueryResultType CoreChecks::GetQueryResultType(QueryState state, VkQueryResultFl
             } else {
                 return QUERYRESULT_NO_DATA;
             }
-        case QUERYSTATE_AVAILABLE:
+        case QUERYSTATE_ENDED:
             if ((flags & VK_QUERY_RESULT_WAIT_BIT) || (flags & VK_QUERY_RESULT_PARTIAL_BIT) ||
                 (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT)) {
                 return QUERYRESULT_SOME_DATA;
             } else {
                 return QUERYRESULT_MAYBE_NO_DATA;
             }
+        case QUERYSTATE_AVAILABLE:
+            return QUERYRESULT_SOME_DATA;
     }
     assert(false);
     return QUERYRESULT_UNKNOWN;
@@ -8552,7 +8548,7 @@ void CoreChecks::PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, 
     cb_state->queryUpdates.emplace_back([this, commandBuffer, query](VkQueue q) {
         bool skip = false;
         skip |= VerifyQueryIsReset(q, commandBuffer, query);
-        skip |= SetQueryState(q, commandBuffer, query, QUERYSTATE_AVAILABLE);
+        skip |= SetQueryState(q, commandBuffer, query, QUERYSTATE_ENDED);
         return skip;
     });
     AddCommandBufferBinding(&GetQueryPoolState(queryPool)->cb_bindings, VulkanTypedHandle(queryPool, kVulkanObjectTypeQueryPool),
