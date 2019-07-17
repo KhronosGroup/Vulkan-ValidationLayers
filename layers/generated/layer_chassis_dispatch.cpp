@@ -205,6 +205,12 @@ void *CreateUnwrappedExtensionStructs(ValidationObject *layer_data, const void *
                     cur_ext_struct = reinterpret_cast<void *>(safe_struct);
                 } break;
 
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES_KHR: {
+                    safe_VkPhysicalDeviceImagelessFramebufferFeaturesKHR *safe_struct = new safe_VkPhysicalDeviceImagelessFramebufferFeaturesKHR;
+                    safe_struct->initialize(reinterpret_cast<const VkPhysicalDeviceImagelessFramebufferFeaturesKHR *>(cur_pnext));
+                    cur_ext_struct = reinterpret_cast<void *>(safe_struct);
+                } break;
+
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_FEATURES_EXT: {
                     safe_VkPhysicalDeviceInlineUniformBlockFeaturesEXT *safe_struct = new safe_VkPhysicalDeviceInlineUniformBlockFeaturesEXT;
                     safe_struct->initialize(reinterpret_cast<const VkPhysicalDeviceInlineUniformBlockFeaturesEXT *>(cur_pnext));
@@ -259,6 +265,12 @@ void *CreateUnwrappedExtensionStructs(ValidationObject *layer_data, const void *
                     cur_ext_struct = reinterpret_cast<void *>(safe_struct);
                 } break;
 
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT: {
+                    safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT *safe_struct = new safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT;
+                    safe_struct->initialize(reinterpret_cast<const VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT *>(cur_pnext));
+                    cur_ext_struct = reinterpret_cast<void *>(safe_struct);
+                } break;
+
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES: {
                     safe_VkPhysicalDeviceShaderDrawParametersFeatures *safe_struct = new safe_VkPhysicalDeviceShaderDrawParametersFeatures;
                     safe_struct->initialize(reinterpret_cast<const VkPhysicalDeviceShaderDrawParametersFeatures *>(cur_pnext));
@@ -286,6 +298,12 @@ void *CreateUnwrappedExtensionStructs(ValidationObject *layer_data, const void *
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADING_RATE_IMAGE_FEATURES_NV: {
                     safe_VkPhysicalDeviceShadingRateImageFeaturesNV *safe_struct = new safe_VkPhysicalDeviceShadingRateImageFeaturesNV;
                     safe_struct->initialize(reinterpret_cast<const VkPhysicalDeviceShadingRateImageFeaturesNV *>(cur_pnext));
+                    cur_ext_struct = reinterpret_cast<void *>(safe_struct);
+                } break;
+
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_FEATURES_EXT: {
+                    safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT *safe_struct = new safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT;
+                    safe_struct->initialize(reinterpret_cast<const VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT *>(cur_pnext));
                     cur_ext_struct = reinterpret_cast<void *>(safe_struct);
                 } break;
 
@@ -777,6 +795,12 @@ void *CreateUnwrappedExtensionStructs(ValidationObject *layer_data, const void *
                     cur_ext_struct = reinterpret_cast<void *>(safe_struct);
                 } break;
 
+            case VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO_KHR: {
+                    safe_VkFramebufferAttachmentsCreateInfoKHR *safe_struct = new safe_VkFramebufferAttachmentsCreateInfoKHR;
+                    safe_struct->initialize(reinterpret_cast<const VkFramebufferAttachmentsCreateInfoKHR *>(cur_pnext));
+                    cur_ext_struct = reinterpret_cast<void *>(safe_struct);
+                } break;
+
             case VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT: {
                     safe_VkRenderPassFragmentDensityMapCreateInfoEXT *safe_struct = new safe_VkRenderPassFragmentDensityMapCreateInfoEXT;
                     safe_struct->initialize(reinterpret_cast<const VkRenderPassFragmentDensityMapCreateInfoEXT *>(cur_pnext));
@@ -816,6 +840,17 @@ void *CreateUnwrappedExtensionStructs(ValidationObject *layer_data, const void *
             case VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO: {
                     safe_VkDeviceGroupRenderPassBeginInfo *safe_struct = new safe_VkDeviceGroupRenderPassBeginInfo;
                     safe_struct->initialize(reinterpret_cast<const VkDeviceGroupRenderPassBeginInfo *>(cur_pnext));
+                    cur_ext_struct = reinterpret_cast<void *>(safe_struct);
+                } break;
+
+            case VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO_KHR: {
+                    safe_VkRenderPassAttachmentBeginInfoKHR *safe_struct = new safe_VkRenderPassAttachmentBeginInfoKHR;
+                    safe_struct->initialize(reinterpret_cast<const VkRenderPassAttachmentBeginInfoKHR *>(cur_pnext));
+                    if (safe_struct->pAttachments) {
+                        for (uint32_t index0 = 0; index0 < safe_struct->attachmentCount; ++index0) {
+                            safe_struct->pAttachments[index0] = layer_data->Unwrap(safe_struct->pAttachments[index0]);
+                        }
+                    }
                     cur_ext_struct = reinterpret_cast<void *>(safe_struct);
                 } break;
 
@@ -1106,6 +1141,12 @@ void *CreateUnwrappedExtensionStructs(ValidationObject *layer_data, const void *
                     cur_ext_struct = reinterpret_cast<void *>(safe_struct);
                 } break;
 
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_PROPERTIES_EXT: {
+                    safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT *safe_struct = new safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT;
+                    safe_struct->initialize(reinterpret_cast<const VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT *>(cur_pnext));
+                    cur_ext_struct = reinterpret_cast<void *>(safe_struct);
+                } break;
+
             case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT_EXT: {
                     safe_VkDescriptorSetVariableDescriptorCountLayoutSupportEXT *safe_struct = new safe_VkDescriptorSetVariableDescriptorCountLayoutSupportEXT;
                     safe_struct->initialize(reinterpret_cast<const VkDescriptorSetVariableDescriptorCountLayoutSupportEXT *>(cur_pnext));
@@ -1353,6 +1394,10 @@ void FreeUnwrappedExtensionStructs(void *head) {
                 delete reinterpret_cast<safe_VkPhysicalDeviceHostQueryResetFeaturesEXT *>(header);
                 break;
 
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES_KHR:
+                delete reinterpret_cast<safe_VkPhysicalDeviceImagelessFramebufferFeaturesKHR *>(header);
+                break;
+
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INLINE_UNIFORM_BLOCK_FEATURES_EXT:
                 delete reinterpret_cast<safe_VkPhysicalDeviceInlineUniformBlockFeaturesEXT *>(header);
                 break;
@@ -1389,6 +1434,10 @@ void FreeUnwrappedExtensionStructs(void *head) {
                 delete reinterpret_cast<safe_VkPhysicalDeviceShaderAtomicInt64FeaturesKHR *>(header);
                 break;
 
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES_EXT:
+                delete reinterpret_cast<safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT *>(header);
+                break;
+
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DRAW_PARAMETERS_FEATURES:
                 delete reinterpret_cast<safe_VkPhysicalDeviceShaderDrawParametersFeatures *>(header);
                 break;
@@ -1407,6 +1456,10 @@ void FreeUnwrappedExtensionStructs(void *head) {
 
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADING_RATE_IMAGE_FEATURES_NV:
                 delete reinterpret_cast<safe_VkPhysicalDeviceShadingRateImageFeaturesNV *>(header);
+                break;
+
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_FEATURES_EXT:
+                delete reinterpret_cast<safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT *>(header);
                 break;
 
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT:
@@ -1711,6 +1764,10 @@ void FreeUnwrappedExtensionStructs(void *head) {
                 delete reinterpret_cast<safe_VkWriteDescriptorSetInlineUniformBlockEXT *>(header);
                 break;
 
+            case VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO_KHR:
+                delete reinterpret_cast<safe_VkFramebufferAttachmentsCreateInfoKHR *>(header);
+                break;
+
             case VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT:
                 delete reinterpret_cast<safe_VkRenderPassFragmentDensityMapCreateInfoEXT *>(header);
                 break;
@@ -1737,6 +1794,10 @@ void FreeUnwrappedExtensionStructs(void *head) {
 
             case VK_STRUCTURE_TYPE_DEVICE_GROUP_RENDER_PASS_BEGIN_INFO:
                 delete reinterpret_cast<safe_VkDeviceGroupRenderPassBeginInfo *>(header);
+                break;
+
+            case VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO_KHR:
+                delete reinterpret_cast<safe_VkRenderPassAttachmentBeginInfoKHR *>(header);
                 break;
 
             case VK_STRUCTURE_TYPE_RENDER_PASS_SAMPLE_LOCATIONS_BEGIN_INFO_EXT:
@@ -1927,6 +1988,10 @@ void FreeUnwrappedExtensionStructs(void *head) {
 
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT:
                 delete reinterpret_cast<safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT *>(header);
+                break;
+
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_PROPERTIES_EXT:
+                delete reinterpret_cast<safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT *>(header);
                 break;
 
             case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT_EXT:
@@ -5092,10 +5157,12 @@ void DispatchCmdBeginRenderPass(
             if (pRenderPassBegin->framebuffer) {
                 local_pRenderPassBegin->framebuffer = layer_data->Unwrap(pRenderPassBegin->framebuffer);
             }
+            local_pRenderPassBegin->pNext = CreateUnwrappedExtensionStructs(layer_data, local_pRenderPassBegin->pNext);
         }
     }
     layer_data->device_dispatch_table.CmdBeginRenderPass(commandBuffer, (const VkRenderPassBeginInfo*)local_pRenderPassBegin, contents);
     if (local_pRenderPassBegin) {
+        FreeUnwrappedExtensionStructs(const_cast<void *>(local_pRenderPassBegin->pNext));
         delete local_pRenderPassBegin;
     }
 }
@@ -6362,10 +6429,12 @@ void DispatchCmdBeginRenderPass2KHR(
             if (pRenderPassBegin->framebuffer) {
                 local_pRenderPassBegin->framebuffer = layer_data->Unwrap(pRenderPassBegin->framebuffer);
             }
+            local_pRenderPassBegin->pNext = CreateUnwrappedExtensionStructs(layer_data, local_pRenderPassBegin->pNext);
         }
     }
     layer_data->device_dispatch_table.CmdBeginRenderPass2KHR(commandBuffer, (const VkRenderPassBeginInfo*)local_pRenderPassBegin, pSubpassBeginInfo);
     if (local_pRenderPassBegin) {
+        FreeUnwrappedExtensionStructs(const_cast<void *>(local_pRenderPassBegin->pNext));
         delete local_pRenderPassBegin;
     }
 }

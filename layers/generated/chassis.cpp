@@ -5806,6 +5806,7 @@ VKAPI_ATTR void VKAPI_CALL UpdateDescriptorSetWithTemplateKHR(
 }
 
 
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateRenderPass2KHR(
     VkDevice                                    device,
     const VkRenderPassCreateInfo2KHR*           pCreateInfo,
@@ -9101,6 +9102,8 @@ VKAPI_ATTR void VKAPI_CALL ResetQueryPoolEXT(
         intercept->PostCallRecordResetQueryPoolEXT(device, queryPool, firstQuery, queryCount);
     }
 }
+
+
 
 // Map of intercepted ApiName to its associated function data
 const std::unordered_map<std::string, function_data> name_to_funcptr_map = {

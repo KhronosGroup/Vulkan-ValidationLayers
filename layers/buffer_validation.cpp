@@ -3939,14 +3939,6 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
         }
 
         const VkPhysicalDeviceLimits *device_limits = &phys_dev_props.limits;
-        // Buffer view offset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment
-        if ((pCreateInfo->offset % device_limits->minTexelBufferOffsetAlignment) != 0) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
-                            HandleToUint64(buffer_state->buffer), "VUID-VkBufferViewCreateInfo-offset-00926",
-                            "VkBufferViewCreateInfo offset (%" PRIuLEAST64
-                            ") must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment (%" PRIuLEAST64 ").",
-                            pCreateInfo->offset, device_limits->minTexelBufferOffsetAlignment);
-        }
 
         skip |= ValidateBufferViewRange(buffer_state, pCreateInfo, device_limits);
 

@@ -2780,6 +2780,74 @@ struct safe_VkPresentRegionsKHR {
     VkPresentRegionsKHR const *ptr() const { return reinterpret_cast<VkPresentRegionsKHR const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceImagelessFramebufferFeaturesKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 imagelessFramebuffer;
+    safe_VkPhysicalDeviceImagelessFramebufferFeaturesKHR(const VkPhysicalDeviceImagelessFramebufferFeaturesKHR* in_struct);
+    safe_VkPhysicalDeviceImagelessFramebufferFeaturesKHR(const safe_VkPhysicalDeviceImagelessFramebufferFeaturesKHR& src);
+    safe_VkPhysicalDeviceImagelessFramebufferFeaturesKHR& operator=(const safe_VkPhysicalDeviceImagelessFramebufferFeaturesKHR& src);
+    safe_VkPhysicalDeviceImagelessFramebufferFeaturesKHR();
+    ~safe_VkPhysicalDeviceImagelessFramebufferFeaturesKHR();
+    void initialize(const VkPhysicalDeviceImagelessFramebufferFeaturesKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceImagelessFramebufferFeaturesKHR* src);
+    VkPhysicalDeviceImagelessFramebufferFeaturesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceImagelessFramebufferFeaturesKHR *>(this); }
+    VkPhysicalDeviceImagelessFramebufferFeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceImagelessFramebufferFeaturesKHR const *>(this); }
+};
+
+struct safe_VkFramebufferAttachmentImageInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkImageCreateFlags flags;
+    VkImageUsageFlags usage;
+    uint32_t width;
+    uint32_t height;
+    uint32_t layerCount;
+    uint32_t viewFormatCount;
+    const VkFormat* pViewFormats;
+    safe_VkFramebufferAttachmentImageInfoKHR(const VkFramebufferAttachmentImageInfoKHR* in_struct);
+    safe_VkFramebufferAttachmentImageInfoKHR(const safe_VkFramebufferAttachmentImageInfoKHR& src);
+    safe_VkFramebufferAttachmentImageInfoKHR& operator=(const safe_VkFramebufferAttachmentImageInfoKHR& src);
+    safe_VkFramebufferAttachmentImageInfoKHR();
+    ~safe_VkFramebufferAttachmentImageInfoKHR();
+    void initialize(const VkFramebufferAttachmentImageInfoKHR* in_struct);
+    void initialize(const safe_VkFramebufferAttachmentImageInfoKHR* src);
+    VkFramebufferAttachmentImageInfoKHR *ptr() { return reinterpret_cast<VkFramebufferAttachmentImageInfoKHR *>(this); }
+    VkFramebufferAttachmentImageInfoKHR const *ptr() const { return reinterpret_cast<VkFramebufferAttachmentImageInfoKHR const *>(this); }
+};
+
+struct safe_VkFramebufferAttachmentsCreateInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    uint32_t attachmentImageInfoCount;
+    safe_VkFramebufferAttachmentImageInfoKHR* pAttachmentImageInfos;
+    safe_VkFramebufferAttachmentsCreateInfoKHR(const VkFramebufferAttachmentsCreateInfoKHR* in_struct);
+    safe_VkFramebufferAttachmentsCreateInfoKHR(const safe_VkFramebufferAttachmentsCreateInfoKHR& src);
+    safe_VkFramebufferAttachmentsCreateInfoKHR& operator=(const safe_VkFramebufferAttachmentsCreateInfoKHR& src);
+    safe_VkFramebufferAttachmentsCreateInfoKHR();
+    ~safe_VkFramebufferAttachmentsCreateInfoKHR();
+    void initialize(const VkFramebufferAttachmentsCreateInfoKHR* in_struct);
+    void initialize(const safe_VkFramebufferAttachmentsCreateInfoKHR* src);
+    VkFramebufferAttachmentsCreateInfoKHR *ptr() { return reinterpret_cast<VkFramebufferAttachmentsCreateInfoKHR *>(this); }
+    VkFramebufferAttachmentsCreateInfoKHR const *ptr() const { return reinterpret_cast<VkFramebufferAttachmentsCreateInfoKHR const *>(this); }
+};
+
+struct safe_VkRenderPassAttachmentBeginInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    uint32_t attachmentCount;
+    VkImageView* pAttachments;
+    safe_VkRenderPassAttachmentBeginInfoKHR(const VkRenderPassAttachmentBeginInfoKHR* in_struct);
+    safe_VkRenderPassAttachmentBeginInfoKHR(const safe_VkRenderPassAttachmentBeginInfoKHR& src);
+    safe_VkRenderPassAttachmentBeginInfoKHR& operator=(const safe_VkRenderPassAttachmentBeginInfoKHR& src);
+    safe_VkRenderPassAttachmentBeginInfoKHR();
+    ~safe_VkRenderPassAttachmentBeginInfoKHR();
+    void initialize(const VkRenderPassAttachmentBeginInfoKHR* in_struct);
+    void initialize(const safe_VkRenderPassAttachmentBeginInfoKHR* src);
+    VkRenderPassAttachmentBeginInfoKHR *ptr() { return reinterpret_cast<VkRenderPassAttachmentBeginInfoKHR *>(this); }
+    VkRenderPassAttachmentBeginInfoKHR const *ptr() const { return reinterpret_cast<VkRenderPassAttachmentBeginInfoKHR const *>(this); }
+};
+
 struct safe_VkAttachmentDescription2KHR {
     VkStructureType sType;
     const void* pNext;
@@ -6291,4 +6359,52 @@ struct safe_VkPhysicalDeviceHostQueryResetFeaturesEXT {
     void initialize(const safe_VkPhysicalDeviceHostQueryResetFeaturesEXT* src);
     VkPhysicalDeviceHostQueryResetFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceHostQueryResetFeaturesEXT *>(this); }
     VkPhysicalDeviceHostQueryResetFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceHostQueryResetFeaturesEXT const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 shaderDemoteToHelperInvocation;
+    safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT(const VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT* in_struct);
+    safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT(const safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT& src);
+    safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT& operator=(const safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT& src);
+    safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT();
+    ~safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT();
+    void initialize(const VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT* src);
+    VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT *>(this); }
+    VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 texelBufferAlignment;
+    safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT(const VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT* in_struct);
+    safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT(const safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT& src);
+    safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT& operator=(const safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT& src);
+    safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT();
+    ~safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT();
+    void initialize(const VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT* src);
+    VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT *>(this); }
+    VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT {
+    VkStructureType sType;
+    void* pNext;
+    VkDeviceSize storageTexelBufferOffsetAlignmentBytes;
+    VkBool32 storageTexelBufferOffsetSingleTexelAlignment;
+    VkDeviceSize uniformTexelBufferOffsetAlignmentBytes;
+    VkBool32 uniformTexelBufferOffsetSingleTexelAlignment;
+    safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT(const VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT* in_struct);
+    safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT(const safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT& src);
+    safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT& operator=(const safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT& src);
+    safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT();
+    ~safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT();
+    void initialize(const VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT* src);
+    VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT *>(this); }
+    VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT const *>(this); }
 };
