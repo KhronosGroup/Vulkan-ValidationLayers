@@ -436,6 +436,23 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBRayTracingShaders) {
         return;
     }
 
+    VkQueue ray_tracing_queue = m_device->m_queue;
+    uint32_t ray_tracing_queue_family_index = 0;
+
+    // If supported, run on the compute only queue.
+    uint32_t compute_only_queue_family_index = m_device->QueueFamilyMatching(VK_QUEUE_COMPUTE_BIT, VK_QUEUE_GRAPHICS_BIT);
+    if (compute_only_queue_family_index != UINT32_MAX) {
+        const auto &compute_only_queues = m_device->queue_family_queues(compute_only_queue_family_index);
+        if (!compute_only_queues.empty()) {
+            ray_tracing_queue = compute_only_queues[0]->handle();
+            ray_tracing_queue_family_index = compute_only_queue_family_index;
+        }
+    }
+
+    VkCommandPoolObj ray_tracing_command_pool(m_device, ray_tracing_queue_family_index,
+                                              VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    VkCommandBufferObj ray_tracing_command_buffer(m_device, &ray_tracing_command_pool);
+
     struct AABB {
         float min_x;
         float min_y;
@@ -459,7 +476,7 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBRayTracingShaders) {
     VkDeviceSize aabb_buffer_size = sizeof(AABB) * aabbs.size();
     VkBufferObj aabb_buffer;
     aabb_buffer.init(*m_device, aabb_buffer_size, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                     VK_BUFFER_USAGE_RAY_TRACING_BIT_NV);
+                     VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, {ray_tracing_queue_family_index});
 
     uint8_t *mapped_aabb_buffer_data = (uint8_t *)aabb_buffer.memory().map();
     std::memcpy(mapped_aabb_buffer_data, (uint8_t *)aabbs.data(), static_cast<std::size_t>(aabb_buffer_size));
@@ -512,7 +529,7 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBRayTracingShaders) {
     VkBufferObj instance_buffer;
     instance_buffer.init(*m_device, instance_buffer_size,
                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                         VK_BUFFER_USAGE_RAY_TRACING_BIT_NV);
+                         VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, {ray_tracing_queue_family_index});
 
     uint8_t *mapped_instance_buffer_data = (uint8_t *)instance_buffer.memory().map();
     std::memcpy(mapped_instance_buffer_data, (uint8_t *)instances.data(), static_cast<std::size_t>(instance_buffer_size));
@@ -535,31 +552,31 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBRayTracingShaders) {
     VkBufferObj scratch_buffer;
     scratch_buffer.init(*m_device, scratch_buffer_size, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV);
 
-    m_commandBuffer->begin();
+    ray_tracing_command_buffer.begin();
 
     // Build bot level acceleration structure
-    m_commandBuffer->BuildAccelerationStructure(&bot_level_as, scratch_buffer.handle());
+    ray_tracing_command_buffer.BuildAccelerationStructure(&bot_level_as, scratch_buffer.handle());
 
     // Barrier to prevent using scratch buffer for top level build before bottom level build finishes
     VkMemoryBarrier memory_barrier = {};
     memory_barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
     memory_barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV;
     memory_barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV;
-    m_commandBuffer->PipelineBarrier(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV,
-                                     VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV, 0, 1, &memory_barrier, 0, nullptr, 0,
-                                     nullptr);
+    ray_tracing_command_buffer.PipelineBarrier(VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV,
+                                               VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV, 0, 1, &memory_barrier, 0,
+                                               nullptr, 0, nullptr);
 
     // Build top level acceleration structure
-    m_commandBuffer->BuildAccelerationStructure(&top_level_as, scratch_buffer.handle(), instance_buffer.handle());
+    ray_tracing_command_buffer.BuildAccelerationStructure(&top_level_as, scratch_buffer.handle(), instance_buffer.handle());
 
-    m_commandBuffer->end();
+    ray_tracing_command_buffer.end();
 
     VkSubmitInfo submit_info = {};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &m_commandBuffer->handle();
-    vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-    vkQueueWaitIdle(m_device->m_queue);
+    submit_info.pCommandBuffers = &ray_tracing_command_buffer.handle();
+    vkQueueSubmit(ray_tracing_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(ray_tracing_queue);
     m_errorMonitor->VerifyNotFound();
 
     VkTextureObj texture(m_device, nullptr);
@@ -568,13 +585,13 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBRayTracingShaders) {
     VkDeviceSize storage_buffer_size = 1024;
     VkBufferObj storage_buffer;
     storage_buffer.init(*m_device, storage_buffer_size, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {ray_tracing_queue_family_index});
 
     VkDeviceSize shader_binding_table_buffer_size = ray_tracing_properties.shaderGroupHandleSize * 4ull;
     VkBufferObj shader_binding_table_buffer;
     shader_binding_table_buffer.init(*m_device, shader_binding_table_buffer_size,
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                     VK_BUFFER_USAGE_RAY_TRACING_BIT_NV);
+                                     VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, {ray_tracing_queue_family_index});
 
     // Setup descriptors!
     const VkShaderStageFlags kAllRayTracingStages = VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_ANY_HIT_BIT_NV |
@@ -1144,14 +1161,14 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBRayTracingShaders) {
         std::memcpy(mapped_shader_binding_table_data, shader_binding_table_data.data(), shader_binding_table_data.size());
         shader_binding_table_buffer.memory().unmap();
 
-        m_commandBuffer->begin();
+        ray_tracing_command_buffer.begin();
 
-        vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, pipeline);
-        vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_NV,
+        vkCmdBindPipeline(ray_tracing_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, pipeline);
+        vkCmdBindDescriptorSets(ray_tracing_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_NV,
                                 test.variable_length ? pipeline_layout_variable.handle() : pipeline_layout.handle(), 0, 1,
                                 test.variable_length ? &ds_variable.set_ : &ds.set_, 0, nullptr);
 
-        vkCmdTraceRaysNV(m_commandBuffer->handle(), shader_binding_table_buffer.handle(),
+        vkCmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
                          ray_tracing_properties.shaderGroupHandleSize * 0ull, shader_binding_table_buffer.handle(),
                          ray_tracing_properties.shaderGroupHandleSize * 1ull, ray_tracing_properties.shaderGroupHandleSize,
                          shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupHandleSize * 2ull,
@@ -1159,7 +1176,7 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBRayTracingShaders) {
                          ray_tracing_properties.shaderGroupHandleSize * 3ull, ray_tracing_properties.shaderGroupHandleSize,
                          /*width=*/1, /*height=*/1, /*depth=*/1);
 
-        m_commandBuffer->end();
+        ray_tracing_command_buffer.end();
 
         // Update the index of the texture that the shaders should read
         uint32_t *mapped_storage_buffer_data = (uint32_t *)storage_buffer.memory().map();
@@ -1177,8 +1194,8 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBRayTracingShaders) {
         mapped_storage_buffer_data[11] = 0;
         storage_buffer.memory().unmap();
 
-        vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
-        vkQueueWaitIdle(m_device->m_queue);
+        vkQueueSubmit(ray_tracing_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vkQueueWaitIdle(ray_tracing_queue);
         m_errorMonitor->VerifyFound();
 
         mapped_storage_buffer_data = (uint32_t *)storage_buffer.memory().map();

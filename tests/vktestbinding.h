@@ -388,8 +388,8 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
     void init(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props);
     void init(const Device &dev, const VkBufferCreateInfo &info) { init(dev, info, 0); }
     void init(const Device &dev, VkDeviceSize size, VkMemoryPropertyFlags mem_props,
-              VkBufferUsageFlags usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) {
-        init(dev, create_info(size, usage), mem_props);
+              VkBufferUsageFlags usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, const std::vector<uint32_t> &queue_families = {}) {
+        init(dev, create_info(size, usage, &queue_families), mem_props);
     }
     void init(const Device &dev, VkDeviceSize size) { init(dev, size, 0); }
     void init_as_src(const Device &dev, VkDeviceSize size, VkMemoryPropertyFlags &reqs,
