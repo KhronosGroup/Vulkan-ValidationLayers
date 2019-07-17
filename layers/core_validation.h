@@ -365,6 +365,19 @@ class ValidationStateTracker : public ValidationObject {
         command_buffer_reset_callback.reset(new CommandBufferResetCallback(std::forward<Fn>(fn)));
     }
 
+    using SetImageViewInitialLayoutCallback = std::function<void(CMD_BUFFER_STATE*, const IMAGE_VIEW_STATE&, VkImageLayout)>;
+    std::unique_ptr<SetImageViewInitialLayoutCallback> set_image_view_initial_layout_callback;
+    template <typename Fn>
+    void SetSetImageViewInitialLayoutCallback(Fn&& fn) {
+        set_image_view_initial_layout_callback.reset(new SetImageViewInitialLayoutCallback(std::forward<Fn>(fn)));
+    }
+
+    void CallSetImageViewInitialLayoutCallback(CMD_BUFFER_STATE* cb_node, const IMAGE_VIEW_STATE& iv_state, VkImageLayout layout) {
+        if (set_image_view_initial_layout_callback) {
+            (*set_image_view_initial_layout_callback)(cb_node, iv_state, layout);
+        }
+    }
+
     // State update functions
     // Enumerations
     void PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
@@ -494,6 +507,28 @@ class ValidationStateTracker : public ValidationObject {
                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions);
     void PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                            VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions);
+    void PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z);
+    void PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset);
+    void PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
+                               uint32_t firstInstance);
+    void PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
+                                      uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance);
+    void PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
+                                              uint32_t stride);
+    void PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
+                                       uint32_t stride);
+    void PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                     uint32_t stride);
+    void PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                              uint32_t stride);
+    void PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                      uint32_t stride);
+    void PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                 uint32_t drawCount, uint32_t stride);
+    void PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask);
     void PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
                                     uint32_t data);
     void PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
@@ -524,6 +559,7 @@ class ValidationStateTracker : public ValidationObject {
     void AddCommandBufferBindingBufferView(CMD_BUFFER_STATE*, BUFFER_VIEW_STATE*);
     void AddCommandBufferBindingImage(CMD_BUFFER_STATE*, IMAGE_STATE*);
     void AddCommandBufferBindingImageView(CMD_BUFFER_STATE*, IMAGE_VIEW_STATE*);
+    void AddCommandBufferBindingSampler(CMD_BUFFER_STATE*, SAMPLER_STATE*);
     void AddMemObjInfo(void* object, const VkDeviceMemory mem, const VkMemoryAllocateInfo* pAllocateInfo);
     void AddFramebufferBinding(CMD_BUFFER_STATE* cb_state, FRAMEBUFFER_STATE* fb_state);
     void ClearCmdBufAndMemReferences(CMD_BUFFER_STATE* cb_node);
@@ -557,6 +593,9 @@ class ValidationStateTracker : public ValidationObject {
                                        const PIPELINE_LAYOUT_STATE* pipeline_layout, uint32_t first_set, uint32_t set_count,
                                        const std::vector<cvdescriptorset::DescriptorSet*> descriptor_sets,
                                        uint32_t dynamic_offset_count, const uint32_t* p_dynamic_offsets);
+    void UpdateStateCmdDrawDispatchType(CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint bind_point);
+    void UpdateStateCmdDrawType(CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint bind_point);
+    void UpdateDrawState(CMD_BUFFER_STATE* cb_state, const VkPipelineBindPoint bind_point);
 
     DeviceFeatures enabled_features = {};
     // Device specific data
@@ -633,9 +672,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidImageBufferQueue(CMD_BUFFER_STATE* cb_node, const VulkanTypedHandle& object, VkQueue queue, uint32_t count,
                                const uint32_t* indices);
     bool ValidateFenceForSubmit(FENCE_STATE* pFence);
-    bool ValidateStatus(CMD_BUFFER_STATE* pNode, CBStatusFlags status_mask, VkFlags msg_flags, const char* fail_msg,
-                        const char* msg_code);
-    bool ValidateDrawStateFlags(CMD_BUFFER_STATE* pCB, const PIPELINE_STATE* pPipe, bool indexed, const char* msg_code);
+    bool ValidateStatus(const CMD_BUFFER_STATE* pNode, CBStatusFlags status_mask, VkFlags msg_flags, const char* fail_msg,
+                        const char* msg_code) const;
+    bool ValidateDrawStateFlags(const CMD_BUFFER_STATE* pCB, const PIPELINE_STATE* pPipe, bool indexed, const char* msg_code) const;
     bool LogInvalidAttachmentMessage(const char* type1_string, const RENDER_PASS_STATE* rp1_state, const char* type2_string,
                                      const RENDER_PASS_STATE* rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
                                      const char* msg, const char* caller, const char* error_code) const;
@@ -653,7 +692,6 @@ class CoreChecks : public ValidationStateTracker {
                                       const char* error_code) const;
     bool ValidateRenderPassCompatibility(const char* type1_string, const RENDER_PASS_STATE* rp1_state, const char* type2_string,
                                          const RENDER_PASS_STATE* rp2_state, const char* caller, const char* error_code) const;
-    void UpdateDrawState(CMD_BUFFER_STATE* cb_state, const VkPipelineBindPoint bind_point);
     bool ReportInvalidCommandBuffer(const CMD_BUFFER_STATE* cb_state, const char* call_source) const;
     void InitGpuValidation();
     bool ValidateQueueFamilyIndex(const PHYSICAL_DEVICE_STATE* pd_state, uint32_t requested_queue_family, const char* err_code,
@@ -755,9 +793,8 @@ class CoreChecks : public ValidationStateTracker {
     bool SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject object, QueryState value);
     bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type,
                              const char* caller, VkQueueFlags queue_flags, const char* queue_flag_code,
-                             const char* renderpass_msg_code, const char* pipebound_msg_code, const char* dynamic_state_msg_code);
-    void UpdateStateCmdDrawDispatchType(CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint bind_point);
-    void UpdateStateCmdDrawType(CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint bind_point);
+                             const char* renderpass_msg_code, const char* pipebound_msg_code,
+                             const char* dynamic_state_msg_code) const;
     bool ValidateCmdNextSubpass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer);
     bool RangesIntersect(MEMORY_RANGE const* range1, VkDeviceSize offset, VkDeviceSize end);
     bool RangesIntersect(MEMORY_RANGE const* range1, MEMORY_RANGE const* range2, bool* skip, bool skip_checks);
@@ -811,7 +848,6 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateMemoryIsBoundToBuffer(const BUFFER_STATE*, const char*, const char*) const;
     bool ValidateMemoryIsBoundToImage(const IMAGE_STATE*, const char*, const char*) const;
     bool ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION_STRUCTURE_STATE*, const char*, const char*) const;
-    void AddCommandBufferBindingSampler(CMD_BUFFER_STATE*, SAMPLER_STATE*);
     void AddCommandBufferBindingAccelerationStructure(CMD_BUFFER_STATE*, ACCELERATION_STRUCTURE_STATE*);
     bool ValidateObjectNotInUse(const BASE_NODE* obj_node, const VulkanTypedHandle& obj_struct, const char* caller_name,
                                 const char* error_code) const;
@@ -872,11 +908,11 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidatePrimaryCommandBufferState(CMD_BUFFER_STATE* pCB, int current_submit_count,
                                            QFOTransferCBScoreboards<VkImageMemoryBarrier>* qfo_image_scoreboards,
                                            QFOTransferCBScoreboards<VkBufferMemoryBarrier>* qfo_buffer_scoreboards);
-    bool ValidatePipelineDrawtimeState(LAST_BOUND_STATE const& state, const CMD_BUFFER_STATE* pCB, CMD_TYPE cmd_type,
-                                       PIPELINE_STATE const* pPipeline, const char* caller);
-    bool ValidateCmdBufDrawState(CMD_BUFFER_STATE* cb_node, CMD_TYPE cmd_type, const bool indexed,
+    bool ValidatePipelineDrawtimeState(const LAST_BOUND_STATE& state, const CMD_BUFFER_STATE* pCB, CMD_TYPE cmd_type,
+                                       const PIPELINE_STATE* pPipeline, const char* caller) const;
+    bool ValidateCmdBufDrawState(const CMD_BUFFER_STATE* cb_node, CMD_TYPE cmd_type, const bool indexed,
                                  const VkPipelineBindPoint bind_point, const char* function, const char* pipe_err_code,
-                                 const char* state_err_code);
+                                 const char* state_err_code) const;
     void IncrementBoundObjects(CMD_BUFFER_STATE const* cb_node);
     void IncrementResources(CMD_BUFFER_STATE* cb_node);
     bool ValidateEventStageMask(VkQueue queue, CMD_BUFFER_STATE* pCB, uint32_t eventCount, size_t firstEventIndex,
@@ -893,8 +929,8 @@ class CoreChecks : public ValidationStateTracker {
                                                 void* pData);
     // For given bindings validate state at time of draw is correct, returning false on error and writing error details into string*
     bool ValidateDrawState(const cvdescriptorset::DescriptorSet* descriptor_set, const std::map<uint32_t, descriptor_req>& bindings,
-                           const std::vector<uint32_t>& dynamic_offsets, CMD_BUFFER_STATE* cb_node, const char* caller,
-                           std::string* error);
+                           const std::vector<uint32_t>& dynamic_offsets, const CMD_BUFFER_STATE* cb_node, const char* caller,
+                           std::string* error) const;
     // Validate contents of a CopyUpdate
     using DescriptorSet = cvdescriptorset::DescriptorSet;
     bool ValidateCopyUpdate(const VkCopyDescriptorSet* update, const DescriptorSet* dst_set, const DescriptorSet* src_set,
@@ -1541,35 +1577,25 @@ class CoreChecks : public ValidationStateTracker {
                                 uint32_t firstInstance);
     void PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                               uint32_t firstInstance);
-    void PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
-                               uint32_t firstInstance);
     bool PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                        uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance);
     void PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                      uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance);
-    void PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
-                                      uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance);
     bool PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
                                                uint32_t stride);
     void PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
                                              uint32_t stride);
-    void PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
-                                              uint32_t stride);
     bool PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                        VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                        uint32_t stride);
     bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z);
     void PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z);
-    void PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z);
     bool PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset);
     void PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset);
-    void PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset);
     bool PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
                                         uint32_t stride);
     void PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
                                       uint32_t stride);
-    void PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
-                                       uint32_t stride);
     bool PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
     void PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
     bool PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
@@ -1826,24 +1852,12 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                 VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                 uint32_t stride);
-    void PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                              uint32_t stride);
-    void PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                     VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                     uint32_t stride);
     bool PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask);
-    void PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask);
     bool PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                    uint32_t drawCount, uint32_t stride);
-    void PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                 uint32_t drawCount, uint32_t stride);
     bool PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                         uint32_t stride);
-    void PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                      uint32_t stride);
     void PostCallRecordDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
                                                      const VkAllocationCallbacks* pAllocator);
     void PreCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
@@ -1864,10 +1878,10 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateQueryPoolStride(const std::string& vuid_not_64, const std::string& vuid_64, const VkDeviceSize stride,
                                  const char* parameter_name, const uint64_t parameter_value, const VkQueryResultFlags flags);
     bool ValidateCmdDrawStrideWithStruct(VkCommandBuffer commandBuffer, const std::string& vuid, const uint32_t stride,
-                                         const char* struct_name, const uint32_t struct_size);
+                                         const char* struct_name, const uint32_t struct_size) const;
     bool ValidateCmdDrawStrideWithBuffer(VkCommandBuffer commandBuffer, const std::string& vuid, const uint32_t stride,
                                          const char* struct_name, const uint32_t struct_size, const uint32_t drawCount,
-                                         const VkDeviceSize offset, const BUFFER_STATE* buffer_state);
+                                         const VkDeviceSize offset, const BUFFER_STATE* buffer_state) const;
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     bool PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,

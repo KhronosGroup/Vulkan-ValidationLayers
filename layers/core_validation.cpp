@@ -277,7 +277,7 @@ void ValidationStateTracker::AddMemObjInfo(void *object, const VkDeviceMemory me
 }
 
 // Create binding link between given sampler and command buffer node
-void CoreChecks::AddCommandBufferBindingSampler(CMD_BUFFER_STATE *cb_node, SAMPLER_STATE *sampler_state) {
+void ValidationStateTracker::AddCommandBufferBindingSampler(CMD_BUFFER_STATE *cb_node, SAMPLER_STATE *sampler_state) {
     auto inserted = cb_node->object_bindings.emplace(sampler_state->sampler, kVulkanObjectTypeSampler);
     if (inserted.second) {
         // Only need to complete the cross-reference if this is a new item
@@ -636,8 +636,8 @@ bool CoreChecks::ValidateQueueFamilies(uint32_t queue_family_count, const uint32
 }
 
 // Check object status for selected flag state
-bool CoreChecks::ValidateStatus(CMD_BUFFER_STATE *pNode, CBStatusFlags status_mask, VkFlags msg_flags, const char *fail_msg,
-                                const char *msg_code) {
+bool CoreChecks::ValidateStatus(const CMD_BUFFER_STATE *pNode, CBStatusFlags status_mask, VkFlags msg_flags, const char *fail_msg,
+                                const char *msg_code) const {
     if (!(pNode->status & status_mask)) {
         return log_msg(report_data, msg_flags, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(pNode->commandBuffer),
                        msg_code, "%s: %s..", report_data->FormatHandle(pNode->commandBuffer).c_str(), fail_msg);
@@ -681,7 +681,8 @@ static bool IsDynamic(const PIPELINE_STATE *pPipeline, const VkDynamicState stat
 }
 
 // Validate state stored as flags at time of draw call
-bool CoreChecks::ValidateDrawStateFlags(CMD_BUFFER_STATE *pCB, const PIPELINE_STATE *pPipe, bool indexed, const char *msg_code) {
+bool CoreChecks::ValidateDrawStateFlags(const CMD_BUFFER_STATE *pCB, const PIPELINE_STATE *pPipe, bool indexed,
+                                        const char *msg_code) const {
     bool result = false;
     if (pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
         pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP) {
@@ -871,8 +872,8 @@ static void ListBits(std::ostream &s, uint32_t bits) {
 }
 
 // Validate draw-time state related to the PSO
-bool CoreChecks::ValidatePipelineDrawtimeState(LAST_BOUND_STATE const &state, const CMD_BUFFER_STATE *pCB, CMD_TYPE cmd_type,
-                                               PIPELINE_STATE const *pPipeline, const char *caller) {
+bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, const CMD_BUFFER_STATE *pCB, CMD_TYPE cmd_type,
+                                               const PIPELINE_STATE *pPipeline, const char *caller) const {
     bool skip = false;
     const auto &current_vtx_bfr_binding_info = pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings;
 
@@ -1092,18 +1093,24 @@ static bool VerifySetLayoutCompatibility(const cvdescriptorset::DescriptorSet *d
 }
 
 // Validate overall state at the time of a draw call
-bool CoreChecks::ValidateCmdBufDrawState(CMD_BUFFER_STATE *cb_node, CMD_TYPE cmd_type, const bool indexed,
+bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TYPE cmd_type, const bool indexed,
                                          const VkPipelineBindPoint bind_point, const char *function, const char *pipe_err_code,
-                                         const char *state_err_code) {
-    bool result = false;
-    auto const &state = cb_node->lastBound[bind_point];
-    PIPELINE_STATE *pPipe = state.pipeline_state;
+                                         const char *state_err_code) const {
+    const auto last_bound_it = cb_node->lastBound.find(bind_point);
+    const PIPELINE_STATE *pPipe = nullptr;
+    if (last_bound_it != cb_node->lastBound.cend()) {
+        pPipe = last_bound_it->second.pipeline_state;
+    }
+
     if (nullptr == pPipe) {
         return log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                        HandleToUint64(cb_node->commandBuffer), pipe_err_code,
                        "Must not call %s on this command buffer while there is no %s pipeline bound.", function,
                        bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS ? "Graphics" : "Compute");
     }
+
+    bool result = false;
+    auto const &state = last_bound_it->second;
 
     // First check flag states
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) result = ValidateDrawStateFlags(cb_node, pPipe, indexed, state_err_code);
@@ -1138,9 +1145,8 @@ bool CoreChecks::ValidateCmdBufDrawState(CMD_BUFFER_STATE *cb_node, CMD_TYPE cmd
                 // binding validation. Take the requested binding set and prefilter it to eliminate redundant validation checks.
                 // Here, the currently bound pipeline determines whether an image validation check is redundant...
                 // for images are the "req" portion of the binding_req is indirectly (but tightly) coupled to the pipeline.
-                const cvdescriptorset::PrefilterBindRequestMap reduced_map(*descriptor_set, set_binding_pair.second, cb_node,
-                                                                           pPipe);
-                const auto &binding_req_map = reduced_map.Map();
+                cvdescriptorset::PrefilterBindRequestMap reduced_map(*descriptor_set, set_binding_pair.second);
+                const auto &binding_req_map = reduced_map.FilteredMap(*cb_node, *pPipe);
 
                 if (!ValidateDrawState(descriptor_set, binding_req_map, state.dynamicOffsets[setIndex], cb_node, function,
                                        &err_str)) {
@@ -1161,7 +1167,7 @@ bool CoreChecks::ValidateCmdBufDrawState(CMD_BUFFER_STATE *cb_node, CMD_TYPE cmd
     return result;
 }
 
-void CoreChecks::UpdateDrawState(CMD_BUFFER_STATE *cb_state, const VkPipelineBindPoint bind_point) {
+void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, const VkPipelineBindPoint bind_point) {
     auto const &state = cb_state->lastBound[bind_point];
     PIPELINE_STATE *pPipe = state.pipeline_state;
     if (VK_NULL_HANDLE != state.pipeline_layout) {
@@ -1171,8 +1177,16 @@ void CoreChecks::UpdateDrawState(CMD_BUFFER_STATE *cb_state, const VkPipelineBin
             cvdescriptorset::DescriptorSet *descriptor_set = state.boundDescriptorSets[setIndex];
             if (!descriptor_set->IsPushDescriptor()) {
                 // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor binding
-                const cvdescriptorset::PrefilterBindRequestMap reduced_map(*descriptor_set, set_binding_pair.second, cb_state);
-                const auto &binding_req_map = reduced_map.Map();
+
+                // TODO: If recreating the reduced_map here shows up in profilinging, need to find a way of sharing with the
+                // Validate pass.  Though in the case of "many" descriptors, typically the descriptor count >> binding count
+                cvdescriptorset::PrefilterBindRequestMap reduced_map(*descriptor_set, set_binding_pair.second);
+                const auto &binding_req_map = reduced_map.FilteredMap(*cb_state, *pPipe);
+
+                if (reduced_map.IsManyDescriptors()) {
+                    // Only update validate binding tags if we meet the "many" criteria in the Prefilter class
+                    descriptor_set->UpdateValidationCache(*cb_state, *pPipe, binding_req_map);
+                }
 
                 // Bind this set and its active descriptor resources to the command buffer
                 descriptor_set->UpdateDrawState(this, cb_state, binding_req_map);
@@ -2291,15 +2305,23 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
     // The state tracker sets up the device state
     StateTracker::PostCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, result);
 
+    // Add the callback hooks for the functions that are either broadly or deeply used and that the ValidationStateTracker refactor
+    // would be messier without.
+    // TODO: Find a good way to do this hooklessly.
+    ValidationObject *device_object = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
+    ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, LayerObjectTypeCoreValidation);
+    CoreChecks *core_checks = static_cast<CoreChecks *>(validation_data);
+
     if (enabled.gpu_validation) {
         // The only CoreCheck specific init is for gpu_validation
-        ValidationObject *device_object = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
-        ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, LayerObjectTypeCoreValidation);
-        CoreChecks *core_checks = static_cast<CoreChecks *>(validation_data);
         core_checks->GpuPostCallRecordCreateDevice(&enabled, pCreateInfo);
         core_checks->SetCommandBufferResetCallback(
             [core_checks](VkCommandBuffer command_buffer) -> void { core_checks->GpuResetCommandBuffer(command_buffer); });
     }
+    core_checks->SetSetImageViewInitialLayoutCallback(
+        [core_checks](CMD_BUFFER_STATE *cb_node, const IMAGE_VIEW_STATE &iv_state, VkImageLayout layout) -> void {
+            core_checks->SetImageViewInitialLayout(cb_node, iv_state, layout);
+        });
 }
 
 void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
@@ -13531,7 +13553,7 @@ bool CoreChecks::ValidateQueryPoolStride(const std::string &vuid_not_64, const s
 }
 
 bool CoreChecks::ValidateCmdDrawStrideWithStruct(VkCommandBuffer commandBuffer, const std::string &vuid, const uint32_t stride,
-                                                 const char *struct_name, const uint32_t struct_size) {
+                                                 const char *struct_name, const uint32_t struct_size) const {
     bool skip = false;
     static const int condition_multiples = 0b0011;
     if ((stride & condition_multiples) || (stride < struct_size)) {
@@ -13544,7 +13566,7 @@ bool CoreChecks::ValidateCmdDrawStrideWithStruct(VkCommandBuffer commandBuffer, 
 
 bool CoreChecks::ValidateCmdDrawStrideWithBuffer(VkCommandBuffer commandBuffer, const std::string &vuid, const uint32_t stride,
                                                  const char *struct_name, const uint32_t struct_size, const uint32_t drawCount,
-                                                 const VkDeviceSize offset, const BUFFER_STATE *buffer_state) {
+                                                 const VkDeviceSize offset, const BUFFER_STATE *buffer_state) const {
     bool skip = false;
     uint64_t validation_value = stride * (drawCount - 1) + offset + struct_size;
     if (validation_value > buffer_state->createInfo.size) {
