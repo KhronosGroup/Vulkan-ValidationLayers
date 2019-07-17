@@ -2349,6 +2349,7 @@ typedef enum ValidationCheckDisables {
     VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET,
     VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE,
     VALIDATION_CHECK_DISABLE_QUERY_VALIDATION,
+    VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT,
 } ValidationCheckDisables;
 
 
@@ -2362,6 +2363,7 @@ struct CHECK_DISABLED {
     bool idle_descriptor_set;                       // Skip check to verify that descriptor set is not in-use
     bool push_constant_range;                       // Skip push constant range checks
     bool query_validation;                          // Disable all core validation query-related checks
+    bool image_layout;                              // Disable image layout validation
     bool object_tracking;                           // Disable object lifetime validation
     bool core_checks;                               // Disable core validation checks
     bool thread_safety;                             // Disable thread safety validation
