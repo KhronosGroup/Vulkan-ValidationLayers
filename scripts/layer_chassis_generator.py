@@ -261,6 +261,7 @@ typedef enum ValidationCheckDisables {
     VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET,
     VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE,
     VALIDATION_CHECK_DISABLE_QUERY_VALIDATION,
+    VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION,
 } ValidationCheckDisables;
 
 
@@ -274,6 +275,7 @@ struct CHECK_DISABLED {
     bool idle_descriptor_set;                       // Skip check to verify that descriptor set is not in-use
     bool push_constant_range;                       // Skip push constant range checks
     bool query_validation;                          // Disable all core validation query-related checks
+    bool image_layout_validation;                   // Disable image layout validation
     bool object_tracking;                           // Disable object lifetime validation
     bool core_checks;                               // Disable core validation checks
     bool thread_safety;                             // Disable thread safety validation
@@ -550,6 +552,7 @@ static const std::unordered_map<std::string, ValidationCheckDisables> Validation
     {"VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET", VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET},
     {"VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE", VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE},
     {"VALIDATION_CHECK_DISABLE_QUERY_VALIDATION", VALIDATION_CHECK_DISABLE_QUERY_VALIDATION},
+    {"VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION", VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION},
 };
 
 // Set the local disable flag for the appropriate VALIDATION_CHECK_DISABLE enum
@@ -569,6 +572,9 @@ void SetValidationDisable(CHECK_DISABLED* disable_data, const ValidationCheckDis
             break;
         case VALIDATION_CHECK_DISABLE_QUERY_VALIDATION:
             disable_data->query_validation = true;
+            break;
+        case VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION:
+            disable_data->image_layout_validation = true;
             break;
         default:
             assert(true);
