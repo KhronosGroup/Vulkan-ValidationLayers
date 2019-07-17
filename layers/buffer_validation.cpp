@@ -1060,6 +1060,7 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_
                                    const VkImageSubresourceRange &range, VkImageAspectFlags aspect_mask,
                                    VkImageLayout explicit_layout, VkImageLayout optimal_layout, const char *caller,
                                    const char *layout_invalid_msg_code, const char *layout_mismatch_msg_code, bool *error) const {
+    if (disabled.image_layout) return false;
     assert(cb_node);
     assert(image_state);
     const auto image = image_state->image;
@@ -3347,6 +3348,7 @@ void CoreChecks::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImag
 bool CoreChecks::ValidateCmdBufImageLayouts(
     CMD_BUFFER_STATE *pCB, std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE> const &globalImageLayoutMap,
     std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE> &overlayLayoutMap) {
+    if (disabled.image_layout) return false;
     bool skip = false;
     // Iterate over the layout maps for each referenced image
     for (const auto &layout_map_entry : pCB->image_layout_map) {
