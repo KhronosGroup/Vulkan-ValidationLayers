@@ -49,9 +49,9 @@ static inline void UpdateResourceTrackingOnDraw(CMD_BUFFER_STATE *pCB) {
 bool CoreChecks::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type,
                                      const char *caller, VkQueueFlags queue_flags, const char *queue_flag_code,
                                      const char *renderpass_msg_code, const char *pipebound_msg_code,
-                                     const char *dynamic_state_msg_code) {
+                                     const char *dynamic_state_msg_code) const {
     bool skip = false;
-    CMD_BUFFER_STATE *cb_state = GetCBState(cmd_buffer);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(cmd_buffer);
     if (cb_state) {
         skip |= ValidateCmdQueueFlags(cb_state, caller, queue_flags, queue_flag_code);
         skip |= ValidateCmd(cb_state, cmd_type, caller);
@@ -64,12 +64,12 @@ bool CoreChecks::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, V
 }
 
 // Generic function to handle state update for all CmdDraw* and CmdDispatch* type functions
-void CoreChecks::UpdateStateCmdDrawDispatchType(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint bind_point) {
+void ValidationStateTracker::UpdateStateCmdDrawDispatchType(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint bind_point) {
     UpdateDrawState(cb_state, bind_point);
 }
 
 // Generic function to handle state update for all CmdDraw* type functions
-void CoreChecks::UpdateStateCmdDrawType(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint bind_point) {
+void ValidationStateTracker::UpdateStateCmdDrawType(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint bind_point) {
     UpdateStateCmdDrawDispatchType(cb_state, bind_point);
     UpdateResourceTrackingOnDraw(cb_state);
     cb_state->hasDrawCmd = true;
@@ -87,8 +87,8 @@ void CoreChecks::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t ve
     GpuAllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
-void CoreChecks::PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
-                                       uint32_t firstVertex, uint32_t firstInstance) {
+void ValidationStateTracker::PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
+                                                   uint32_t firstVertex, uint32_t firstInstance) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     UpdateStateCmdDrawType(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
@@ -127,8 +127,9 @@ void CoreChecks::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint
     GpuAllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
-void CoreChecks::PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
-                                              uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) {
+void ValidationStateTracker::PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount,
+                                                          uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset,
+                                                          uint32_t firstInstance) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     UpdateStateCmdDrawType(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
@@ -139,7 +140,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
                                     VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndirect-commandBuffer-cmdpool",
                                     "VUID-vkCmdDrawIndirect-renderpass", "VUID-vkCmdDrawIndirect-None-02700",
                                     "VUID-vkCmdDrawIndirect-commandBuffer-02701");
-    BUFFER_STATE *buffer_state = GetBufferState(buffer);
+    const BUFFER_STATE *buffer_state = GetBufferState(buffer);
     skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawIndirect()", "VUID-vkCmdDrawIndirect-buffer-02708");
     skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true, "VUID-vkCmdDrawIndirect-buffer-02709",
                                      "vkCmdDrawIndirect()", "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
@@ -160,8 +161,8 @@ void CoreChecks::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkB
     GpuAllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
-void CoreChecks::PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
-                                               uint32_t stride) {
+void ValidationStateTracker::PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                           uint32_t count, uint32_t stride) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     UpdateStateCmdDrawType(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
@@ -174,7 +175,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
         commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECT, "vkCmdDrawIndexedIndirect()",
         VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndexedIndirect-commandBuffer-cmdpool", "VUID-vkCmdDrawIndexedIndirect-renderpass",
         "VUID-vkCmdDrawIndexedIndirect-None-02700", "VUID-vkCmdDrawIndexedIndirect-commandBuffer-02701");
-    BUFFER_STATE *buffer_state = GetBufferState(buffer);
+    const BUFFER_STATE *buffer_state = GetBufferState(buffer);
     skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawIndexedIndirect()", "VUID-vkCmdDrawIndexedIndirect-buffer-02708");
     skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
                                      "VUID-vkCmdDrawIndexedIndirect-buffer-02709", "vkCmdDrawIndexedIndirect()",
@@ -197,8 +198,8 @@ void CoreChecks::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuff
     GpuAllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
-void CoreChecks::PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                      uint32_t count, uint32_t stride) {
+void ValidationStateTracker::PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                  VkDeviceSize offset, uint32_t count, uint32_t stride) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     UpdateStateCmdDrawType(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
@@ -217,7 +218,7 @@ void CoreChecks::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_
     GpuAllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE);
 }
 
-void CoreChecks::PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
+void ValidationStateTracker::PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     UpdateStateCmdDrawDispatchType(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 }
@@ -227,7 +228,7 @@ bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffe
         ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_COMPUTE, CMD_DISPATCHINDIRECT, "vkCmdDispatchIndirect()",
                             VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdDispatchIndirect-commandBuffer-cmdpool",
                             "VUID-vkCmdDispatchIndirect-renderpass", "VUID-vkCmdDispatchIndirect-None-02700", kVUIDUndefined);
-    BUFFER_STATE *buffer_state = GetBufferState(buffer);
+    const BUFFER_STATE *buffer_state = GetBufferState(buffer);
     skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDispatchIndirect()", "VUID-vkCmdDispatchIndirect-buffer-02708");
     skip |=
         ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true, "VUID-vkCmdDispatchIndirect-buffer-02709",
@@ -239,7 +240,8 @@ void CoreChecks::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer,
     GpuAllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE);
 }
 
-void CoreChecks::PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
+void ValidationStateTracker::PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                               VkDeviceSize offset) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     UpdateStateCmdDrawDispatchType(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
@@ -267,7 +269,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandB
     skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndirectCountKHR-stride-03110", stride,
                                             "VkDrawIndirectCommand", sizeof(VkDrawIndirectCommand));
     if (maxDrawCount > 1) {
-        BUFFER_STATE *buffer_state = GetBufferState(buffer);
+        const BUFFER_STATE *buffer_state = GetBufferState(buffer);
         skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawIndirectCountKHR-maxDrawCount-03111", stride,
                                                 "VkDrawIndirectCommand", sizeof(VkDrawIndirectCommand), maxDrawCount, offset,
                                                 buffer_state);
@@ -277,8 +279,8 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandB
                                 "vkCmdDrawIndirectCountKHR()", VK_QUEUE_GRAPHICS_BIT,
                                 "VUID-vkCmdDrawIndirectCountKHR-commandBuffer-cmdpool", "VUID-vkCmdDrawIndirectCountKHR-renderpass",
                                 "VUID-vkCmdDrawIndirectCountKHR-None-02700", "VUID-vkCmdDrawIndirectCountKHR-commandBuffer-02701");
-    BUFFER_STATE *buffer_state = GetBufferState(buffer);
-    BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
+    const BUFFER_STATE *buffer_state = GetBufferState(buffer);
+    const BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
     skip |=
         ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawIndirectCountKHR()", "VUID-vkCmdDrawIndirectCountKHR-buffer-02708");
     skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, "vkCmdDrawIndirectCountKHR()",
@@ -292,9 +294,10 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandB
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                      uint32_t stride) {
+void ValidationStateTracker::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                  VkDeviceSize offset, VkBuffer countBuffer,
+                                                                  VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                                  uint32_t stride) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
@@ -326,7 +329,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer c
     skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCountKHR-stride-03142", stride,
                                             "VkDrawIndirectCommand", sizeof(VkDrawIndexedIndirectCommand));
     if (maxDrawCount > 1) {
-        BUFFER_STATE *buffer_state = GetBufferState(buffer);
+        const BUFFER_STATE *buffer_state = GetBufferState(buffer);
         skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCountKHR-maxDrawCount-03143", stride,
                                                 "VkDrawIndirectCommand", sizeof(VkDrawIndexedIndirectCommand), maxDrawCount, offset,
                                                 buffer_state);
@@ -337,8 +340,8 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer c
         VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndexedIndirectCountKHR-commandBuffer-cmdpool",
         "VUID-vkCmdDrawIndexedIndirectCountKHR-renderpass", "VUID-vkCmdDrawIndexedIndirectCountKHR-None-02700",
         "VUID-vkCmdDrawIndexedIndirectCountKHR-commandBuffer-02701");
-    BUFFER_STATE *buffer_state = GetBufferState(buffer);
-    BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
+    const BUFFER_STATE *buffer_state = GetBufferState(buffer);
+    const BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
     skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawIndexedIndirectCountKHR()",
                                           "VUID-vkCmdDrawIndexedIndirectCountKHR-buffer-02708");
     skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, "vkCmdDrawIndexedIndirectCountKHR()",
@@ -352,9 +355,10 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer c
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                             VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                             uint32_t maxDrawCount, uint32_t stride) {
+void ValidationStateTracker::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                         VkDeviceSize offset, VkBuffer countBuffer,
+                                                                         VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                                         uint32_t stride) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
@@ -393,7 +397,8 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) {
+void ValidationStateTracker::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount,
+                                                             uint32_t firstTask) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     UpdateStateCmdDrawType(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
@@ -405,7 +410,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
                                     "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-cmdpool",
                                     "VUID-vkCmdDrawMeshTasksIndirectNV-renderpass", "VUID-vkCmdDrawMeshTasksIndirectNV-None-02700",
                                     "VUID-vkCmdDrawMeshTasksIndirectNV-commandBuffer-02701");
-    BUFFER_STATE *buffer_state = GetBufferState(buffer);
+    const BUFFER_STATE *buffer_state = GetBufferState(buffer);
     skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawMeshTasksIndirectNV()",
                                           "VUID-vkCmdDrawMeshTasksIndirectNV-buffer-02708");
     skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
@@ -419,8 +424,8 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                         uint32_t drawCount, uint32_t stride) {
+void ValidationStateTracker::PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                     VkDeviceSize offset, uint32_t drawCount, uint32_t stride) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     UpdateStateCmdDrawType(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
@@ -437,8 +442,8 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
         "vkCmdDrawMeshTasksIndirectCountNV()", VK_QUEUE_GRAPHICS_BIT,
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-cmdpool", "VUID-vkCmdDrawMeshTasksIndirectCountNV-renderpass",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02700", "VUID-vkCmdDrawMeshTasksIndirectCountNV-commandBuffer-02701");
-    BUFFER_STATE *buffer_state = GetBufferState(buffer);
-    BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
+    const BUFFER_STATE *buffer_state = GetBufferState(buffer);
+    const BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
     skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawMeshTasksIndirectCountNV()",
                                           "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02708");
     skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, "vkCmdDrawMeshTasksIndirectCountNV()",
@@ -459,9 +464,10 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                              uint32_t maxDrawCount, uint32_t stride) {
+void ValidationStateTracker::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                          VkDeviceSize offset, VkBuffer countBuffer,
+                                                                          VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                                          uint32_t stride) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
