@@ -1006,6 +1006,7 @@ enum QueryState {
     QUERYSTATE_UNKNOWN,    // Initial state.
     QUERYSTATE_RESET,      // After resetting.
     QUERYSTATE_RUNNING,    // Query running.
+    QUERYSTATE_ENDED,      // Query ended but results may not be available.
     QUERYSTATE_AVAILABLE,  // Results available.
 };
 
