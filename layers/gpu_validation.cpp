@@ -336,15 +336,17 @@ void CoreChecks::GpuPostCallRecordCreateDevice(const CHECK_ENABLED *enables, con
 
 // Clean up device-related resources
 void CoreChecks::GpuPreCallRecordDestroyDevice() {
-    if (gpu_validation_state->barrier_command_buffer) {
-        DispatchFreeCommandBuffers(device, gpu_validation_state->barrier_command_pool, 1,
-                                   &gpu_validation_state->barrier_command_buffer);
-        gpu_validation_state->barrier_command_buffer = VK_NULL_HANDLE;
+    for (auto &queue_barrier_command_info_kv : gpu_validation_state->queue_barrier_command_infos) {
+        GpuQueueBarrierCommandInfo &queue_barrier_command_info = queue_barrier_command_info_kv.second;
+
+        DispatchFreeCommandBuffers(device, queue_barrier_command_info.barrier_command_pool, 1,
+                                   &queue_barrier_command_info.barrier_command_buffer);
+        queue_barrier_command_info.barrier_command_buffer = VK_NULL_HANDLE;
+
+        DispatchDestroyCommandPool(device, queue_barrier_command_info.barrier_command_pool, NULL);
+        queue_barrier_command_info.barrier_command_pool = VK_NULL_HANDLE;
     }
-    if (gpu_validation_state->barrier_command_pool) {
-        DispatchDestroyCommandPool(device, gpu_validation_state->barrier_command_pool, NULL);
-        gpu_validation_state->barrier_command_pool = VK_NULL_HANDLE;
-    }
+    gpu_validation_state->queue_barrier_command_infos.clear();
     if (gpu_validation_state->debug_desc_layout) {
         DispatchDestroyDescriptorSetLayout(device, gpu_validation_state->debug_desc_layout, NULL);
         gpu_validation_state->debug_desc_layout = VK_NULL_HANDLE;
@@ -1179,74 +1181,71 @@ void CoreChecks::UpdateInstrumentationBuffer(CMD_BUFFER_STATE *cb_node) {
 // Submit a memory barrier on graphics queues.
 // Lazy-create and record the needed command buffer.
 void CoreChecks::SubmitBarrier(VkQueue queue) {
-    uint32_t queue_family_index = 0;
+    auto queue_barrier_command_info_it =
+        gpu_validation_state->queue_barrier_command_infos.emplace(queue, GpuQueueBarrierCommandInfo{});
+    if (queue_barrier_command_info_it.second) {
+        GpuQueueBarrierCommandInfo &quere_barrier_command_info = queue_barrier_command_info_it.first->second;
 
-    auto it = queueMap.find(queue);
-    if (it != queueMap.end()) {
-        queue_family_index = it->second.queueFamilyIndex;
-    }
+        uint32_t queue_family_index = 0;
 
-    // Pay attention only to queues that support graphics.
-    // This ensures that the command buffer pool is created so that it can be used on a graphics queue.
-    VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[queue_family_index].queueFlags;
-    if (!(queue_flags & VK_QUEUE_GRAPHICS_BIT)) {
-        return;
-    }
+        auto queue_state_it = queueMap.find(queue);
+        if (queue_state_it != queueMap.end()) {
+            queue_family_index = queue_state_it->second.queueFamilyIndex;
+        }
 
-    // Lazy-allocate and record the command buffer.
-    if (gpu_validation_state->barrier_command_buffer == VK_NULL_HANDLE) {
-        VkResult result;
+        VkResult result = VK_SUCCESS;
+
         VkCommandPoolCreateInfo pool_create_info = {};
         pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         pool_create_info.queueFamilyIndex = queue_family_index;
-        result = DispatchCreateCommandPool(device, &pool_create_info, nullptr, &gpu_validation_state->barrier_command_pool);
+        result = DispatchCreateCommandPool(device, &pool_create_info, nullptr, &quere_barrier_command_info.barrier_command_pool);
         if (result != VK_SUCCESS) {
             ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                                "Unable to create command pool for barrier CB.");
-            gpu_validation_state->barrier_command_pool = VK_NULL_HANDLE;
+            quere_barrier_command_info.barrier_command_pool = VK_NULL_HANDLE;
             return;
         }
 
-        VkCommandBufferAllocateInfo command_buffer_alloc_info = {};
-        command_buffer_alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        command_buffer_alloc_info.commandPool = gpu_validation_state->barrier_command_pool;
-        command_buffer_alloc_info.commandBufferCount = 1;
-        command_buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        result = DispatchAllocateCommandBuffers(device, &command_buffer_alloc_info, &gpu_validation_state->barrier_command_buffer);
+        VkCommandBufferAllocateInfo buffer_alloc_info = {};
+        buffer_alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        buffer_alloc_info.commandPool = quere_barrier_command_info.barrier_command_pool;
+        buffer_alloc_info.commandBufferCount = 1;
+        buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        result = DispatchAllocateCommandBuffers(device, &buffer_alloc_info, &quere_barrier_command_info.barrier_command_buffer);
         if (result != VK_SUCCESS) {
             ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                                "Unable to create barrier command buffer.");
-            DispatchDestroyCommandPool(device, gpu_validation_state->barrier_command_pool, nullptr);
-            gpu_validation_state->barrier_command_pool = VK_NULL_HANDLE;
-            gpu_validation_state->barrier_command_buffer = VK_NULL_HANDLE;
+            DispatchDestroyCommandPool(device, quere_barrier_command_info.barrier_command_pool, nullptr);
+            quere_barrier_command_info.barrier_command_pool = VK_NULL_HANDLE;
+            quere_barrier_command_info.barrier_command_buffer = VK_NULL_HANDLE;
             return;
         }
 
         // Hook up command buffer dispatch
-        gpu_validation_state->vkSetDeviceLoaderData(device, gpu_validation_state->barrier_command_buffer);
+        gpu_validation_state->vkSetDeviceLoaderData(device, quere_barrier_command_info.barrier_command_buffer);
 
         // Record a global memory barrier to force availability of device memory operations to the host domain.
         VkCommandBufferBeginInfo command_buffer_begin_info = {};
         command_buffer_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        result = DispatchBeginCommandBuffer(gpu_validation_state->barrier_command_buffer, &command_buffer_begin_info);
-
+        result = DispatchBeginCommandBuffer(quere_barrier_command_info.barrier_command_buffer, &command_buffer_begin_info);
         if (result == VK_SUCCESS) {
             VkMemoryBarrier memory_barrier = {};
             memory_barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
             memory_barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
             memory_barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
 
-            DispatchCmdPipelineBarrier(gpu_validation_state->barrier_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            DispatchCmdPipelineBarrier(quere_barrier_command_info.barrier_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                                        VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &memory_barrier, 0, nullptr, 0, nullptr);
-            DispatchEndCommandBuffer(gpu_validation_state->barrier_command_buffer);
+            DispatchEndCommandBuffer(quere_barrier_command_info.barrier_command_buffer);
         }
     }
 
-    if (gpu_validation_state->barrier_command_buffer) {
+    GpuQueueBarrierCommandInfo &quere_barrier_command_info = queue_barrier_command_info_it.first->second;
+    if (quere_barrier_command_info.barrier_command_buffer != VK_NULL_HANDLE) {
         VkSubmitInfo submit_info = {};
         submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &gpu_validation_state->barrier_command_buffer;
+        submit_info.pCommandBuffers = &quere_barrier_command_info.barrier_command_buffer;
         DispatchQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
     }
 }
