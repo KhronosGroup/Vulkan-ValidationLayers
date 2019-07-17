@@ -43,6 +43,11 @@ struct GpuBufferInfo {
           pipeline_bind_point(pipeline_bind_point){};
 };
 
+struct GpuQueueBarrierCommandInfo {
+    VkCommandPool barrier_command_pool = VK_NULL_HANDLE;
+    VkCommandBuffer barrier_command_buffer = VK_NULL_HANDLE;
+};
+
 // Class to encapsulate Descriptor Set allocation.  This manager creates and destroys Descriptor Pools
 // as needed to satisfy requests for descriptor sets.
 class GpuDescriptorSetManager {
@@ -74,20 +79,16 @@ struct GpuValidationState {
     uint32_t unique_shader_module_id;
     std::unordered_map<uint32_t, ShaderTracker> shader_map;
     std::unique_ptr<GpuDescriptorSetManager> desc_set_manager;
-    VkCommandPool barrier_command_pool;
-    VkCommandBuffer barrier_command_buffer;
+    std::map<VkQueue, GpuQueueBarrierCommandInfo> queue_barrier_command_infos;
     std::unordered_map<VkCommandBuffer, std::vector<GpuBufferInfo>> command_buffer_map;  // gpu_buffer_list;
     uint32_t output_buffer_size;
     VmaAllocator vmaAllocator;
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
     GpuValidationState(bool aborted = false, bool reserve_binding_slot = false, uint32_t unique_shader_module_id = 0,
-                       VkCommandPool barrier_command_pool = VK_NULL_HANDLE, VkCommandBuffer barrier_command_buffer = VK_NULL_HANDLE,
                        VmaAllocator vmaAllocator = {})
         : aborted(aborted),
           reserve_binding_slot(reserve_binding_slot),
           unique_shader_module_id(unique_shader_module_id),
-          barrier_command_pool(barrier_command_pool),
-          barrier_command_buffer(barrier_command_buffer),
           vmaAllocator(vmaAllocator){};
 
     std::vector<GpuBufferInfo> &GetGpuBufferInfo(const VkCommandBuffer command_buffer) {
