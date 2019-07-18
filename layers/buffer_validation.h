@@ -39,10 +39,4 @@ uint32_t ResolveRemainingLevels(const VkImageSubresourceRange *range, uint32_t m
 uint32_t ResolveRemainingLayers(const VkImageSubresourceRange *range, uint32_t layers);
 VkImageSubresourceRange NormalizeSubresourceRange(const IMAGE_STATE &image_state, const VkImageSubresourceRange &range);
 
-bool FindLayout(const std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE> &imageLayoutMap, ImageSubresourcePair imgpair,
-                VkImageLayout &layout, const VkImageAspectFlags aspectMask);
-
-void SetLayout(std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE> &imageLayoutMap, ImageSubresourcePair imgpair,
-               VkImageLayout layout);
-
 #endif  // CORE_VALIDATION_BUFFER_VALIDATION_H_
