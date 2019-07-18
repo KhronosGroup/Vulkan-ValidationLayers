@@ -1465,6 +1465,14 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     LoggingLabel debug_label;
 };
 
+static inline const QFOTransferBarrierSets<VkImageMemoryBarrier> &GetQFOBarrierSets(
+    const CMD_BUFFER_STATE *cb, const QFOTransferBarrier<VkImageMemoryBarrier>::Tag &type_tag) {
+    return cb->qfo_transfer_image_barriers;
+}
+static inline const QFOTransferBarrierSets<VkBufferMemoryBarrier> &GetQFOBarrierSets(
+    const CMD_BUFFER_STATE *cb, const QFOTransferBarrier<VkBufferMemoryBarrier>::Tag &type_tag) {
+    return cb->qfo_transfer_buffer_barriers;
+}
 static inline QFOTransferBarrierSets<VkImageMemoryBarrier> &GetQFOBarrierSets(
     CMD_BUFFER_STATE *cb, const QFOTransferBarrier<VkImageMemoryBarrier>::Tag &type_tag) {
     return cb->qfo_transfer_image_barriers;

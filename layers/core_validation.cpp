@@ -115,7 +115,15 @@ static const VkDeviceMemory MEMTRACKER_SWAP_CHAIN_IMAGE_KEY = (VkDeviceMemory)(-
 // 2nd special memory handle used to flag object as unbound from memory
 static const VkDeviceMemory MEMORY_UNBOUND = VkDeviceMemory(~((uint64_t)(0)) - 1);
 
-// Get the global map of pending releases
+// Get the global maps of pending releases
+const GlobalQFOTransferBarrierMap<VkImageMemoryBarrier> &CoreChecks::GetGlobalQFOReleaseBarrierMap(
+    const QFOTransferBarrier<VkImageMemoryBarrier>::Tag &type_tag) const {
+    return qfo_release_image_barrier_map;
+}
+const GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> &CoreChecks::GetGlobalQFOReleaseBarrierMap(
+    const QFOTransferBarrier<VkBufferMemoryBarrier>::Tag &type_tag) const {
+    return qfo_release_buffer_barrier_map;
+}
 GlobalQFOTransferBarrierMap<VkImageMemoryBarrier> &CoreChecks::GetGlobalQFOReleaseBarrierMap(
     const QFOTransferBarrier<VkImageMemoryBarrier>::Tag &type_tag) {
     return qfo_release_image_barrier_map;
@@ -140,6 +148,13 @@ EVENT_STATE *ValidationStateTracker::GetEventState(VkEvent event) {
     return &it->second;
 }
 
+const QUEUE_STATE *ValidationStateTracker::GetQueueState(VkQueue queue) const {
+    auto it = queueMap.find(queue);
+    if (it == queueMap.cend()) {
+        return nullptr;
+    }
+    return &it->second;
+}
 QUEUE_STATE *ValidationStateTracker::GetQueueState(VkQueue queue) {
     auto it = queueMap.find(queue);
     if (it == queueMap.end()) {
@@ -2543,7 +2558,6 @@ void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const V
     descriptorSetLayoutMap.clear();
     imageViewMap.clear();
     imageMap.clear();
-    imageLayoutMap.clear();
     bufferViewMap.clear();
     bufferMap.clear();
     // Queues persist until device is destroyed
@@ -2556,6 +2570,7 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
         GpuPreCallRecordDestroyDevice();
     }
     imageSubresourceMap.clear();
+    imageLayoutMap.clear();
 
     StateTracker::PreCallRecordDestroyDevice(device, pAllocator);
 }
@@ -2564,7 +2579,8 @@ void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationC
 //   and if Tessellation Control or Evaluation shader stages are on w/o TS being enabled, report tess_error_id.
 // Similarly for mesh and task shaders.
 bool CoreChecks::ValidateStageMaskGsTsEnables(VkPipelineStageFlags stageMask, const char *caller, const char *geo_error_id,
-                                              const char *tess_error_id, const char *mesh_error_id, const char *task_error_id) {
+                                              const char *tess_error_id, const char *mesh_error_id,
+                                              const char *task_error_id) const {
     bool skip = false;
     if (!enabled_features.core.geometryShader && (stageMask & VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, geo_error_id,
@@ -2596,7 +2612,7 @@ bool CoreChecks::ValidateStageMaskGsTsEnables(VkPipelineStageFlags stageMask, co
 }
 
 // Loop through bound objects and increment their in_use counts.
-void CoreChecks::IncrementBoundObjects(CMD_BUFFER_STATE const *cb_node) {
+void ValidationStateTracker::IncrementBoundObjects(CMD_BUFFER_STATE const *cb_node) {
     for (auto obj : cb_node->object_bindings) {
         auto base_obj = GetStateStructPtrFromObject(obj);
         if (base_obj) {
@@ -2605,7 +2621,7 @@ void CoreChecks::IncrementBoundObjects(CMD_BUFFER_STATE const *cb_node) {
     }
 }
 // Track which resources are in-flight by atomically incrementing their "in_use" count
-void CoreChecks::IncrementResources(CMD_BUFFER_STATE *cb_node) {
+void ValidationStateTracker::IncrementResources(CMD_BUFFER_STATE *cb_node) {
     cb_node->submitCount++;
     cb_node->in_use.fetch_add(1);
 
@@ -2677,7 +2693,7 @@ bool CoreChecks::VerifyQueueStateToFence(VkFence fence) {
 }
 
 // Decrement in-use count for objects bound to command buffer
-void CoreChecks::DecrementBoundResources(CMD_BUFFER_STATE const *cb_node) {
+void ValidationStateTracker::DecrementBoundResources(CMD_BUFFER_STATE const *cb_node) {
     BASE_NODE *base_obj = nullptr;
     for (auto obj : cb_node->object_bindings) {
         base_obj = GetStateStructPtrFromObject(obj);
@@ -2687,7 +2703,7 @@ void CoreChecks::DecrementBoundResources(CMD_BUFFER_STATE const *cb_node) {
     }
 }
 
-void CoreChecks::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq) {
+void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq) {
     std::unordered_map<VkQueue, uint64_t> otherQueueSeqs;
 
     // Roll this queue forward, one submission at a time.
@@ -2763,7 +2779,7 @@ static void SubmitFence(QUEUE_STATE *pQueue, FENCE_STATE *pFence, uint64_t submi
     pFence->signaler.second = pQueue->seq + pQueue->submissions.size() + submitCount;
 }
 
-bool CoreChecks::ValidateCommandBufferSimultaneousUse(CMD_BUFFER_STATE *pCB, int current_submit_count) {
+bool CoreChecks::ValidateCommandBufferSimultaneousUse(const CMD_BUFFER_STATE *pCB, int current_submit_count) const {
     bool skip = false;
     if ((pCB->in_use.load() || current_submit_count > 1) &&
         !(pCB->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
@@ -2774,8 +2790,8 @@ bool CoreChecks::ValidateCommandBufferSimultaneousUse(CMD_BUFFER_STATE *pCB, int
     return skip;
 }
 
-bool CoreChecks::ValidateCommandBufferState(CMD_BUFFER_STATE *cb_state, const char *call_source, int current_submit_count,
-                                            const char *vu_id) {
+bool CoreChecks::ValidateCommandBufferState(const CMD_BUFFER_STATE *cb_state, const char *call_source, int current_submit_count,
+                                            const char *vu_id) const {
     bool skip = false;
     if (disabled.command_buffer_state) return skip;
     // Validate ONE_TIME_SUBMIT_BIT CB is not being submitted more than once
@@ -2816,8 +2832,8 @@ bool CoreChecks::ValidateCommandBufferState(CMD_BUFFER_STATE *cb_state, const ch
 }
 
 // Check that the queue family index of 'queue' matches one of the entries in pQueueFamilyIndices
-bool CoreChecks::ValidImageBufferQueue(CMD_BUFFER_STATE *cb_node, const VulkanTypedHandle &object, VkQueue queue, uint32_t count,
-                                       const uint32_t *indices) {
+bool CoreChecks::ValidImageBufferQueue(const CMD_BUFFER_STATE *cb_node, const VulkanTypedHandle &object, VkQueue queue,
+                                       uint32_t count, const uint32_t *indices) const {
     bool found = false;
     bool skip = false;
     auto queue_state = GetQueueState(queue);
@@ -2843,7 +2859,7 @@ bool CoreChecks::ValidImageBufferQueue(CMD_BUFFER_STATE *cb_node, const VulkanTy
 
 // Validate that queueFamilyIndices of primary command buffers match this queue
 // Secondary command buffers were previously validated in vkCmdExecuteCommands().
-bool CoreChecks::ValidateQueueFamilyIndices(CMD_BUFFER_STATE *pCB, VkQueue queue) {
+bool CoreChecks::ValidateQueueFamilyIndices(const CMD_BUFFER_STATE *pCB, VkQueue queue) const {
     bool skip = false;
     auto pPool = GetCommandPoolState(pCB->createInfo.commandPool);
     auto queue_state = GetQueueState(queue);
@@ -2879,9 +2895,9 @@ bool CoreChecks::ValidateQueueFamilyIndices(CMD_BUFFER_STATE *pCB, VkQueue queue
     return skip;
 }
 
-bool CoreChecks::ValidatePrimaryCommandBufferState(CMD_BUFFER_STATE *pCB, int current_submit_count,
+bool CoreChecks::ValidatePrimaryCommandBufferState(const CMD_BUFFER_STATE *pCB, int current_submit_count,
                                                    QFOTransferCBScoreboards<VkImageMemoryBarrier> *qfo_image_scoreboards,
-                                                   QFOTransferCBScoreboards<VkBufferMemoryBarrier> *qfo_buffer_scoreboards) {
+                                                   QFOTransferCBScoreboards<VkBufferMemoryBarrier> *qfo_buffer_scoreboards) const {
     // Track in-use for resources off of primary and any secondary CBs
     bool skip = false;
 
@@ -2909,7 +2925,7 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(CMD_BUFFER_STATE *pCB, int cu
     return skip;
 }
 
-bool CoreChecks::ValidateFenceForSubmit(FENCE_STATE *pFence) {
+bool CoreChecks::ValidateFenceForSubmit(const FENCE_STATE *pFence) const {
     bool skip = false;
 
     if (pFence && pFence->scope == kSyncScopeInternal) {
@@ -2934,8 +2950,8 @@ bool CoreChecks::ValidateFenceForSubmit(FENCE_STATE *pFence) {
     return skip;
 }
 
-void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
-                                           VkResult result) {
+void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
+                                                       VkFence fence, VkResult result) {
     uint64_t early_retire_seq = 0;
     auto pQueue = GetQueueState(queue);
     auto pFence = GetFenceState(fence);
@@ -3022,13 +3038,9 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
                 cbs.push_back(submit->pCommandBuffers[i]);
                 for (auto secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
                     cbs.push_back(secondaryCmdBuffer->commandBuffer);
-                    UpdateCmdBufImageLayouts(secondaryCmdBuffer);
                     IncrementResources(secondaryCmdBuffer);
-                    RecordQueuedQFOTransfers(secondaryCmdBuffer);
                 }
-                UpdateCmdBufImageLayouts(cb_node);
                 IncrementResources(cb_node);
-                RecordQueuedQFOTransfers(cb_node);
             }
         }
         pQueue->submissions.emplace_back(cbs, semaphore_waits, semaphore_signals, semaphore_externals,
@@ -3038,14 +3050,126 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
     if (early_retire_seq) {
         RetireWorkOnQueue(pQueue, early_retire_seq);
     }
+}
+
+void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
+                                           VkResult result) {
+    StateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, result);
+
+    // The triply nested for duplicates that in the StateTracker, but avoids the need for two additional callbacks.
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        const VkSubmitInfo *submit = &pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
+            auto cb_node = GetCBState(submit->pCommandBuffers[i]);
+            if (cb_node) {
+                for (auto secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
+                    UpdateCmdBufImageLayouts(secondaryCmdBuffer);
+                    RecordQueuedQFOTransfers(secondaryCmdBuffer);
+                }
+                UpdateCmdBufImageLayouts(cb_node);
+                RecordQueuedQFOTransfers(cb_node);
+            }
+        }
+    }
 
     if (enabled.gpu_validation) {
         GpuPostCallQueueSubmit(queue, submitCount, pSubmits, fence);
     }
 }
+bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *submit,
+                                             unordered_set<VkSemaphore> *unsignaled_sema_arg,
+                                             unordered_set<VkSemaphore> *signaled_sema_arg,
+                                             unordered_set<VkSemaphore> *internal_sema_arg) const {
+    bool skip = false;
+    unordered_set<VkSemaphore> &signaled_semaphores = *signaled_sema_arg;
+    unordered_set<VkSemaphore> &unsignaled_semaphores = *unsignaled_sema_arg;
+    unordered_set<VkSemaphore> &internal_semaphores = *internal_sema_arg;
+
+    for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
+        skip |=
+            ValidateStageMaskGsTsEnables(submit->pWaitDstStageMask[i], "vkQueueSubmit()",
+                                         "VUID-VkSubmitInfo-pWaitDstStageMask-00076", "VUID-VkSubmitInfo-pWaitDstStageMask-00077",
+                                         "VUID-VkSubmitInfo-pWaitDstStageMask-02089", "VUID-VkSubmitInfo-pWaitDstStageMask-02090");
+        VkSemaphore semaphore = submit->pWaitSemaphores[i];
+        const auto *pSemaphore = GetSemaphoreState(semaphore);
+        if (pSemaphore && (pSemaphore->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
+            if (unsignaled_semaphores.count(semaphore) || (!(signaled_semaphores.count(semaphore)) && !(pSemaphore->signaled))) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
+                                HandleToUint64(semaphore), kVUID_Core_DrawState_QueueForwardProgress,
+                                "%s is waiting on %s that has no way to be signaled.", report_data->FormatHandle(queue).c_str(),
+                                report_data->FormatHandle(semaphore).c_str());
+            } else {
+                signaled_semaphores.erase(semaphore);
+                unsignaled_semaphores.insert(semaphore);
+            }
+        }
+        if (pSemaphore && pSemaphore->scope == kSyncScopeExternalTemporary) {
+            internal_semaphores.insert(semaphore);
+        }
+    }
+    for (uint32_t i = 0; i < submit->signalSemaphoreCount; ++i) {
+        VkSemaphore semaphore = submit->pSignalSemaphores[i];
+        const auto *pSemaphore = GetSemaphoreState(semaphore);
+        if (pSemaphore && (pSemaphore->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
+            if (signaled_semaphores.count(semaphore) || (!(unsignaled_semaphores.count(semaphore)) && pSemaphore->signaled)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
+                                HandleToUint64(semaphore), kVUID_Core_DrawState_QueueForwardProgress,
+                                "%s is signaling %s that was previously signaled by %s but has not since "
+                                "been waited on by any queue.",
+                                report_data->FormatHandle(queue).c_str(), report_data->FormatHandle(semaphore).c_str(),
+                                report_data->FormatHandle(pSemaphore->signaler.first).c_str());
+            } else {
+                unsignaled_semaphores.erase(semaphore);
+                signaled_semaphores.insert(semaphore);
+            }
+        }
+    }
+
+    return skip;
+}
+bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitInfo *submit,
+                                                 ImageSubresPairLayoutMap *localImageLayoutMap_arg,
+                                                 vector<VkCommandBuffer> *current_cmds_arg) const {
+    bool skip = false;
+
+    ImageSubresPairLayoutMap &localImageLayoutMap = *localImageLayoutMap_arg;
+    vector<VkCommandBuffer> &current_cmds = *current_cmds_arg;
+
+    QFOTransferCBScoreboards<VkImageMemoryBarrier> qfo_image_scoreboards;
+    QFOTransferCBScoreboards<VkBufferMemoryBarrier> qfo_buffer_scoreboards;
+
+    for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
+        const auto *cb_node = GetCBState(submit->pCommandBuffers[i]);
+        if (cb_node) {
+            skip |= ValidateCmdBufImageLayouts(cb_node, imageLayoutMap, &localImageLayoutMap);
+            current_cmds.push_back(submit->pCommandBuffers[i]);
+            skip |= ValidatePrimaryCommandBufferState(
+                cb_node, (int)std::count(current_cmds.begin(), current_cmds.end(), submit->pCommandBuffers[i]),
+                &qfo_image_scoreboards, &qfo_buffer_scoreboards);
+            skip |= ValidateQueueFamilyIndices(cb_node, queue);
+
+            // Potential early exit here as bad object state may crash in delayed function calls
+            if (skip) {
+                return true;
+            }
+
+            // Call submit-time functions to validate/update state
+            for (auto &function : cb_node->queue_submit_functions) {
+                skip |= function();
+            }
+            for (auto &function : cb_node->eventUpdates) {
+                skip |= function(queue);
+            }
+            for (auto &function : cb_node->queryUpdates) {
+                skip |= function(queue);
+            }
+        }
+    }
+    return skip;
+}
 
 bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence) {
-    auto pFence = GetFenceState(fence);
+    const auto *pFence = GetFenceState(fence);
     bool skip = ValidateFenceForSubmit(pFence);
     if (skip) {
         return true;
@@ -3055,80 +3179,13 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
     unordered_set<VkSemaphore> unsignaled_semaphores;
     unordered_set<VkSemaphore> internal_semaphores;
     vector<VkCommandBuffer> current_cmds;
-    unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE> localImageLayoutMap;
+    ImageSubresPairLayoutMap localImageLayoutMap;
     // Now verify each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
-        for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
-            skip |= ValidateStageMaskGsTsEnables(
-                submit->pWaitDstStageMask[i], "vkQueueSubmit()", "VUID-VkSubmitInfo-pWaitDstStageMask-00076",
-                "VUID-VkSubmitInfo-pWaitDstStageMask-00077", "VUID-VkSubmitInfo-pWaitDstStageMask-02089",
-                "VUID-VkSubmitInfo-pWaitDstStageMask-02090");
-            VkSemaphore semaphore = submit->pWaitSemaphores[i];
-            auto pSemaphore = GetSemaphoreState(semaphore);
-            if (pSemaphore && (pSemaphore->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
-                if (unsignaled_semaphores.count(semaphore) ||
-                    (!(signaled_semaphores.count(semaphore)) && !(pSemaphore->signaled))) {
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
-                                    HandleToUint64(semaphore), kVUID_Core_DrawState_QueueForwardProgress,
-                                    "%s is waiting on %s that has no way to be signaled.", report_data->FormatHandle(queue).c_str(),
-                                    report_data->FormatHandle(semaphore).c_str());
-                } else {
-                    signaled_semaphores.erase(semaphore);
-                    unsignaled_semaphores.insert(semaphore);
-                }
-            }
-            if (pSemaphore && pSemaphore->scope == kSyncScopeExternalTemporary) {
-                internal_semaphores.insert(semaphore);
-            }
-        }
-        for (uint32_t i = 0; i < submit->signalSemaphoreCount; ++i) {
-            VkSemaphore semaphore = submit->pSignalSemaphores[i];
-            auto pSemaphore = GetSemaphoreState(semaphore);
-            if (pSemaphore && (pSemaphore->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
-                if (signaled_semaphores.count(semaphore) || (!(unsignaled_semaphores.count(semaphore)) && pSemaphore->signaled)) {
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
-                                    HandleToUint64(semaphore), kVUID_Core_DrawState_QueueForwardProgress,
-                                    "%s is signaling %s that was previously signaled by %s but has not since "
-                                    "been waited on by any queue.",
-                                    report_data->FormatHandle(queue).c_str(), report_data->FormatHandle(semaphore).c_str(),
-                                    report_data->FormatHandle(pSemaphore->signaler.first).c_str());
-                } else {
-                    unsignaled_semaphores.erase(semaphore);
-                    signaled_semaphores.insert(semaphore);
-                }
-            }
-        }
-        QFOTransferCBScoreboards<VkImageMemoryBarrier> qfo_image_scoreboards;
-        QFOTransferCBScoreboards<VkBufferMemoryBarrier> qfo_buffer_scoreboards;
+        skip |= ValidateSemaphoresForSubmit(queue, submit, &unsignaled_semaphores, &signaled_semaphores, &internal_semaphores);
+        skip |= ValidateCommandBuffersForSubmit(queue, submit, &localImageLayoutMap, &current_cmds);
 
-        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
-            auto cb_node = GetCBState(submit->pCommandBuffers[i]);
-            if (cb_node) {
-                skip |= ValidateCmdBufImageLayouts(cb_node, imageLayoutMap, localImageLayoutMap);
-                current_cmds.push_back(submit->pCommandBuffers[i]);
-                skip |= ValidatePrimaryCommandBufferState(
-                    cb_node, (int)std::count(current_cmds.begin(), current_cmds.end(), submit->pCommandBuffers[i]),
-                    &qfo_image_scoreboards, &qfo_buffer_scoreboards);
-                skip |= ValidateQueueFamilyIndices(cb_node, queue);
-
-                // Potential early exit here as bad object state may crash in delayed function calls
-                if (skip) {
-                    return true;
-                }
-
-                // Call submit-time functions to validate/update state
-                for (auto &function : cb_node->queue_submit_functions) {
-                    skip |= function();
-                }
-                for (auto &function : cb_node->eventUpdates) {
-                    skip |= function(queue);
-                }
-                for (auto &function : cb_node->queryUpdates) {
-                    skip |= function(queue);
-                }
-            }
-        }
         auto chained_device_group_struct = lvl_find_in_chain<VkDeviceGroupSubmitInfo>(submit->pNext);
         if (chained_device_group_struct && chained_device_group_struct->commandBufferCount > 0) {
             for (uint32_t i = 0; i < chained_device_group_struct->commandBufferCount; ++i) {
