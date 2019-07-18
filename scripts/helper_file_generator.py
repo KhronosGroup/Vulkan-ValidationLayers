@@ -453,6 +453,9 @@ class HelperFileOutputGenerator(OutputGenerator):
         safe_struct_helper_header += '#pragma once\n'
         safe_struct_helper_header += '#include <vulkan/vulkan.h>\n'
         safe_struct_helper_header += '\n'
+        safe_struct_helper_header += 'void *SafePnextCopy(const void *pNext);\n'
+        safe_struct_helper_header += 'void FreePnextChain(void *head);\n'
+        safe_struct_helper_header += '\n'
         safe_struct_helper_header += self.GenerateSafeStructHeader()
         return safe_struct_helper_header
     #
