@@ -454,6 +454,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         safe_struct_helper_header += '#include <vulkan/vulkan.h>\n'
         safe_struct_helper_header += '\n'
         safe_struct_helper_header += 'void *SafePnextCopy(const void *pNext);\n'
+        safe_struct_helper_header += 'void FreePnextChain(const void *head);\n'
         safe_struct_helper_header += 'void FreePnextChain(void *head);\n'
         safe_struct_helper_header += '\n'
         safe_struct_helper_header += self.GenerateSafeStructHeader()
@@ -891,58 +892,67 @@ class HelperFileOutputGenerator(OutputGenerator):
         build_pnext_proc = '\n\n'
         build_pnext_proc += 'void *SafePnextCopy(const void *pNext) {\n'
         build_pnext_proc += '    void *cur_pnext = const_cast<void *>(pNext);\n'
-        build_pnext_proc += '    void *cur_ext_struct = NULL;\n\n'
-        build_pnext_proc += '    if (cur_pnext == nullptr) {\n'
-        build_pnext_proc += '        return nullptr;\n'
-        build_pnext_proc += '    } else {\n'
-        build_pnext_proc += '        VkBaseOutStructure *header = reinterpret_cast<VkBaseOutStructure *>(cur_pnext);\n\n'
-        build_pnext_proc += '        switch (header->sType) {\n'
+        build_pnext_proc += '    void *cur_ext_struct = NULL;\n'
+        build_pnext_proc += '    bool unrecognized_stype = true;\n\n'
+        build_pnext_proc += '    while (unrecognized_stype) {\n'
+        build_pnext_proc += '        unrecognized_stype = false;\n'
+        build_pnext_proc += '        if (cur_pnext == nullptr) {\n'
+        build_pnext_proc += '            return nullptr;\n'
+        build_pnext_proc += '        } else {\n'
+        build_pnext_proc += '            VkBaseOutStructure *header = reinterpret_cast<VkBaseOutStructure *>(cur_pnext);\n\n'
+        build_pnext_proc += '            switch (header->sType) {\n'
 
         free_pnext_proc = '\n\n'
+        free_pnext_proc += '// Free a const pNext extension chain\n'
+        free_pnext_proc += 'void FreePnextChain(const void *head) {\n'
+        free_pnext_proc += '    FreePnextChain(const_cast<void *>(head));\n'
+        free_pnext_proc += '}\n\n'
+
         free_pnext_proc += '// Free a pNext extension chain\n'
         free_pnext_proc += 'void FreePnextChain(void *head) {\n'
-        free_pnext_proc += '    VkBaseOutStructure *curr_ptr = reinterpret_cast<VkBaseOutStructure *>(head);\n'
-        free_pnext_proc += '    while (curr_ptr) {\n'
-        free_pnext_proc += '        VkBaseOutStructure *header = curr_ptr;\n'
-        free_pnext_proc += '        curr_ptr = reinterpret_cast<VkBaseOutStructure *>(header->pNext);\n\n'
-        free_pnext_proc += '        switch (header->sType) {\n';
+        free_pnext_proc += '    if (nullptr == head) return;\n'
+        free_pnext_proc += '    VkBaseOutStructure *header = reinterpret_cast<VkBaseOutStructure *>(head);\n\n'
+        free_pnext_proc += '    switch (header->sType) {\n';
 
         for item in self.structextends_list:
-            member_index = next((i for i, v in enumerate(self.structMembers) if v[0] == item), None)
-            if member_index is None:
+
+            struct = next((v for v in self.structMembers if v.name == item), None)
+            if struct is None:
                 continue
-            struct_info = self.structMembers[member_index][1]
-            feature_protect = self.structMembers[member_index][2]
+            
+            if struct.ifdef_protect is not None:
+                build_pnext_proc += '#ifdef %s\n' % struct.ifdef_protect
+                free_pnext_proc += '#ifdef %s\n' % struct.ifdef_protect
+            build_pnext_proc += '                case %s: {\n' % self.structTypes[item].value
+            build_pnext_proc += '                        safe_%s *safe_struct = new safe_%s;\n' % (item, item)
+            build_pnext_proc += '                        safe_struct->initialize(reinterpret_cast<const %s *>(cur_pnext));\n' % item
+            build_pnext_proc += '                        cur_ext_struct = reinterpret_cast<void *>(safe_struct);\n'
+            build_pnext_proc += '                    } break;\n'
 
-            if feature_protect is not None:
-                build_pnext_proc += '#ifdef %s\n' % feature_protect
-                free_pnext_proc += '#ifdef %s\n' % feature_protect
-            build_pnext_proc += '            case %s: {\n' % self.structTypes[item].value
-            build_pnext_proc += '                    safe_%s *safe_struct = new safe_%s;\n' % (item, item)
-            build_pnext_proc += '                    safe_struct->initialize(reinterpret_cast<const %s *>(cur_pnext));\n' % item
-            build_pnext_proc += '                    cur_ext_struct = reinterpret_cast<void *>(safe_struct);\n'
-            build_pnext_proc += '                } break;\n'
+            free_pnext_proc += '        case %s:\n' % self.structTypes[item].value
+            free_pnext_proc += '            delete reinterpret_cast<safe_%s *>(header);\n' % item
+            free_pnext_proc += '            break;\n'
 
-            free_pnext_proc += '            case %s:\n' % self.structTypes[item].value
-            free_pnext_proc += '                delete reinterpret_cast<safe_%s *>(header);\n' % item
-            free_pnext_proc += '                break;\n'
-
-            if feature_protect is not None:
-                build_pnext_proc += '#endif // %s\n' % feature_protect
-                free_pnext_proc += '#endif // %s\n' % feature_protect
+            if struct.ifdef_protect is not None:
+                build_pnext_proc += '#endif // %s\n' % struct.ifdef_protect
+                free_pnext_proc += '#endif // %s\n' % struct.ifdef_protect
             build_pnext_proc += '\n'
             free_pnext_proc += '\n'
 
-        build_pnext_proc += '            default:\n'
-        build_pnext_proc += '                break;\n'
+        build_pnext_proc += '                default:\n'
+        build_pnext_proc += '                    // Encountered an unknown sType -- skip (do not copy) this entry in the chain\n'
+        build_pnext_proc += '                    unrecognized_stype = true;\n'
+        build_pnext_proc += '                    cur_pnext = header->pNext;\n'
+        build_pnext_proc += '                    break;\n'
+        build_pnext_proc += '            }\n'
         build_pnext_proc += '        }\n'
         build_pnext_proc += '    }\n'
         build_pnext_proc += '    return cur_ext_struct;\n'
         build_pnext_proc += '}\n\n'
 
-        free_pnext_proc += '            default:\n'
-        free_pnext_proc += '                assert(0);\n'
-        free_pnext_proc += '        }\n'
+        free_pnext_proc += '        default:\n'
+        free_pnext_proc += '            // Do nothing -- skip unrecognized sTypes\n'
+        free_pnext_proc += '            break;\n'
         free_pnext_proc += '    }\n'
         free_pnext_proc += '}\n'
 
@@ -1136,6 +1146,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             custom_copy_txt = {
                 # VkGraphicsPipelineCreateInfo is special case because it has custom construct parameters
                 'VkGraphicsPipelineCreateInfo' :
+                    '    pNext = SafePnextCopy(src.pNext);\n'
                     '    if (stageCount && src.pStages) {\n'
                     '        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];\n'
                     '        for (uint32_t i=0; i<stageCount; ++i) {\n'
@@ -1186,6 +1197,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '        pDynamicState = NULL;\n',
                  # VkPipelineViewportStateCreateInfo is special case because it has custom construct parameters
                 'VkPipelineViewportStateCreateInfo' :
+                    '    pNext = SafePnextCopy(src.pNext);\n'
                     '    if (src.pViewports) {\n'
                     '        pViewports = new VkViewport[src.viewportCount];\n'
                     '        memcpy ((void *)pViewports, (void *)src.pViewports, sizeof(VkViewport)*src.viewportCount);\n'
@@ -1204,8 +1216,11 @@ class HelperFileOutputGenerator(OutputGenerator):
                                    '    if (pCode)\n'
                                    '        delete[] reinterpret_cast<const uint8_t *>(pCode);\n' }
 
+            copy_pnext = ''
             for member in item.members:
                 m_type = member.type
+                if member.name == 'pNext':
+                    copy_pnext = '    pNext = SafePnextCopy(in_struct->pNext);\n'
                 if member.type in self.structNames:
                     member_index = next((i for i, v in enumerate(self.structMembers) if v[0] == member.type), None)
                     if member_index is not None and self.NeedSafeStruct(self.structMembers[member_index]) == True:
@@ -1213,9 +1228,10 @@ class HelperFileOutputGenerator(OutputGenerator):
                 if member.ispointer and 'safe_' not in m_type and self.TypeContainsObjectHandle(member.type, False) == False:
                     # Ptr types w/o a safe_struct, for non-null case need to allocate new ptr and copy data in
                     if m_type in ['void', 'char']:
-                        # For these exceptions just copy initial value over for now
-                        init_list += '\n    %s(in_struct->%s),' % (member.name, member.name)
-                        init_func_txt += '    %s = in_struct->%s;\n' % (member.name, member.name)
+                        if member.name != 'pNext':
+                            # For these exceptions just copy initial value over for now
+                            init_list += '\n    %s(in_struct->%s),' % (member.name, member.name)
+                            init_func_txt += '    %s = in_struct->%s;\n' % (member.name, member.name)
                     else:
                         default_init_list += '\n    %s(nullptr),' % (member.name)
                         init_list += '\n    %s(nullptr),' % (member.name)
@@ -1223,20 +1239,19 @@ class HelperFileOutputGenerator(OutputGenerator):
                             construct_txt += '    %s = in_struct->%s;\n' % (member.name, member.name)
                         else:
                             init_func_txt += '    %s = nullptr;\n' % (member.name)
-                            if 'pNext' != member.name and 'void' not in m_type:
-                                if not member.isstaticarray and (member.len is None or '/' in member.len):
-                                    construct_txt += '    if (in_struct->%s) {\n' % member.name
-                                    construct_txt += '        %s = new %s(*in_struct->%s);\n' % (member.name, m_type, member.name)
-                                    construct_txt += '    }\n'
-                                    destruct_txt += '    if (%s)\n' % member.name
-                                    destruct_txt += '        delete %s;\n' % member.name
-                                else:
-                                    construct_txt += '    if (in_struct->%s) {\n' % member.name
-                                    construct_txt += '        %s = new %s[in_struct->%s];\n' % (member.name, m_type, member.len)
-                                    construct_txt += '        memcpy ((void *)%s, (void *)in_struct->%s, sizeof(%s)*in_struct->%s);\n' % (member.name, member.name, m_type, member.len)
-                                    construct_txt += '    }\n'
-                                    destruct_txt += '    if (%s)\n' % member.name
-                                    destruct_txt += '        delete[] %s;\n' % member.name
+                            if not member.isstaticarray and (member.len is None or '/' in member.len):
+                                construct_txt += '    if (in_struct->%s) {\n' % member.name
+                                construct_txt += '        %s = new %s(*in_struct->%s);\n' % (member.name, m_type, member.name)
+                                construct_txt += '    }\n'
+                                destruct_txt += '    if (%s)\n' % member.name
+                                destruct_txt += '        delete %s;\n' % member.name
+                            else:
+                                construct_txt += '    if (in_struct->%s) {\n' % member.name
+                                construct_txt += '        %s = new %s[in_struct->%s];\n' % (member.name, m_type, member.len)
+                                construct_txt += '        memcpy ((void *)%s, (void *)in_struct->%s, sizeof(%s)*in_struct->%s);\n' % (member.name, member.name, m_type, member.len)
+                                construct_txt += '    }\n'
+                                destruct_txt += '    if (%s)\n' % member.name
+                                destruct_txt += '        delete[] %s;\n' % member.name
                 elif member.isstaticarray or member.len is not None:
                     if member.len is None:
                         # Extract length of static array by grabbing val between []
@@ -1280,19 +1295,29 @@ class HelperFileOutputGenerator(OutputGenerator):
                     init_func_txt += '    %s = in_struct->%s;\n' % (member.name, member.name)
             if '' != init_list:
                 init_list = init_list[:-1] # hack off final comma
+
+
             if item.name in custom_construct_txt:
                 construct_txt = custom_construct_txt[item.name]
+
+            construct_txt = copy_pnext + construct_txt
+
             if item.name in custom_destruct_txt:
                 destruct_txt = custom_destruct_txt[item.name]
+
+            if copy_pnext:
+                destruct_txt += '    if (pNext)\n        FreePnextChain(pNext);\n'
+
             safe_struct_body.append("\n%s::%s(const %s* in_struct%s) :%s\n{\n%s}" % (ss_name, ss_name, item.name, self.custom_construct_params.get(item.name, ''), init_list, construct_txt))
             if '' != default_init_list:
                 default_init_list = " :%s" % (default_init_list[:-1])
             safe_struct_body.append("\n%s::%s()%s\n{}" % (ss_name, ss_name, default_init_list))
             # Create slight variation of init and construct txt for copy constructor that takes a src object reference vs. struct ptr
             copy_construct_init = init_func_txt.replace('in_struct->', 'src.')
-            copy_construct_txt = construct_txt.replace(' (in_struct->', ' (src.')     # Exclude 'if' blocks from next line
-            copy_construct_txt = copy_construct_txt.replace('(in_struct->', '(*src.') # Pass object to copy constructors
-            copy_construct_txt = copy_construct_txt.replace('in_struct->', 'src.')    # Modify remaining struct refs for src object
+            copy_construct_txt = construct_txt.replace(' (in_struct->', ' (src.')            # Exclude 'if' blocks from next line
+            copy_construct_txt = construct_txt.replace(' (in_struct->', ' (src.')               # Exclude 'if' blocks from next line
+            copy_construct_txt = re.sub('(new \\w+)\\(in_struct->', '\\1(*src.', construct_txt) # Pass object to copy constructors
+            copy_construct_txt = copy_construct_txt.replace('in_struct->', 'src.')              # Modify remaining struct refs for src object
             if item.name in custom_copy_txt:
                 copy_construct_txt = custom_copy_txt[item.name]
             copy_assign_txt = '    if (&src == this) return *this;\n\n' + destruct_txt + '\n' + copy_construct_init + copy_construct_txt + '\n    return *this;'
