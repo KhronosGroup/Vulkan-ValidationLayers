@@ -88,6 +88,8 @@ class HelperFileOutputGenerator(OutputGenerator):
         self.core_object_types = []                       # Handy copy of core_object_type enum data
         self.device_extension_info = dict()               # Dict of device extension name defines and ifdef values
         self.instance_extension_info = dict()             # Dict of instance extension name defines and ifdef values
+        self.structextends_list = []                      # List of structs which extend another struct via pNext
+
 
         # Named tuples to store struct and command data
         self.StructType = namedtuple('StructType', ['name', 'value'])
@@ -348,6 +350,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                     self.structTypes[typeName] = self.StructType(name=name, value=value)
             # Store pointer/array/string info
             isstaticarray = self.paramIsStaticArray(member)
+            structextends = False
             membersInfo.append(self.CommandParam(type=type,
                                                  name=name,
                                                  ispointer=self.paramIsPointer(member),
@@ -357,6 +360,9 @@ class HelperFileOutputGenerator(OutputGenerator):
                                                  len=self.getLen(member),
                                                  extstructs=self.registry.validextensionstructs[typeName] if name == 'pNext' else None,
                                                  cdecl=cdecl))
+        # If this struct extends another, keep its name in list for further processing
+        if typeinfo.elem.attrib.get('structextends') is not None:
+            self.structextends_list.append(typeName)
         self.structMembers.append(self.StructMemberData(name=typeName, members=membersInfo, ifdef_protect=self.featureExtraProtect))
     #
     # Enum_string_header: Create a routine to convert an enumerated value into a string
@@ -876,6 +882,70 @@ class HelperFileOutputGenerator(OutputGenerator):
 
         return object_types_header
     #
+    # Generate pNext handling function
+    def build_pnext_chain_processing_func(self):
+        # Construct helper functions to build and free pNext extension chains
+        build_pnext_proc = '\n\n'
+        build_pnext_proc += 'void *SafePnextCopy(const void *pNext) {\n'
+        build_pnext_proc += '    void *cur_pnext = const_cast<void *>(pNext);\n'
+        build_pnext_proc += '    void *cur_ext_struct = NULL;\n\n'
+        build_pnext_proc += '    if (cur_pnext == nullptr) {\n'
+        build_pnext_proc += '        return nullptr;\n'
+        build_pnext_proc += '    } else {\n'
+        build_pnext_proc += '        VkBaseOutStructure *header = reinterpret_cast<VkBaseOutStructure *>(cur_pnext);\n\n'
+        build_pnext_proc += '        switch (header->sType) {\n'
+
+        free_pnext_proc = '\n\n'
+        free_pnext_proc += '// Free a pNext extension chain\n'
+        free_pnext_proc += 'void FreePnextChain(void *head) {\n'
+        free_pnext_proc += '    VkBaseOutStructure *curr_ptr = reinterpret_cast<VkBaseOutStructure *>(head);\n'
+        free_pnext_proc += '    while (curr_ptr) {\n'
+        free_pnext_proc += '        VkBaseOutStructure *header = curr_ptr;\n'
+        free_pnext_proc += '        curr_ptr = reinterpret_cast<VkBaseOutStructure *>(header->pNext);\n\n'
+        free_pnext_proc += '        switch (header->sType) {\n';
+
+        for item in self.structextends_list:
+            member_index = next((i for i, v in enumerate(self.structMembers) if v[0] == item), None)
+            if member_index is None:
+                continue
+            struct_info = self.structMembers[member_index][1]
+            feature_protect = self.structMembers[member_index][2]
+
+            if feature_protect is not None:
+                build_pnext_proc += '#ifdef %s\n' % feature_protect
+                free_pnext_proc += '#ifdef %s\n' % feature_protect
+            build_pnext_proc += '            case %s: {\n' % self.structTypes[item].value
+            build_pnext_proc += '                    safe_%s *safe_struct = new safe_%s;\n' % (item, item)
+            build_pnext_proc += '                    safe_struct->initialize(reinterpret_cast<const %s *>(cur_pnext));\n' % item
+            build_pnext_proc += '                    cur_ext_struct = reinterpret_cast<void *>(safe_struct);\n'
+            build_pnext_proc += '                } break;\n'
+
+            free_pnext_proc += '            case %s:\n' % self.structTypes[item].value
+            free_pnext_proc += '                delete reinterpret_cast<safe_%s *>(header);\n' % item
+            free_pnext_proc += '                break;\n'
+
+            if feature_protect is not None:
+                build_pnext_proc += '#endif // %s\n' % feature_protect
+                free_pnext_proc += '#endif // %s\n' % feature_protect
+            build_pnext_proc += '\n'
+            free_pnext_proc += '\n'
+
+        build_pnext_proc += '            default:\n'
+        build_pnext_proc += '                break;\n'
+        build_pnext_proc += '        }\n'
+        build_pnext_proc += '    }\n'
+        build_pnext_proc += '    return cur_ext_struct;\n'
+        build_pnext_proc += '}\n\n'
+
+        free_pnext_proc += '            default:\n'
+        free_pnext_proc += '                assert(0);\n'
+        free_pnext_proc += '        }\n'
+        free_pnext_proc += '    }\n'
+        free_pnext_proc += '}\n'
+
+        pnext_procs = build_pnext_proc + free_pnext_proc
+        return pnext_procs
+    #
     # Determine if a structure needs a safe_struct helper function
     # That is, it has an sType or one of its members is a pointer
     def NeedSafeStruct(self, structure):
@@ -892,9 +962,12 @@ class HelperFileOutputGenerator(OutputGenerator):
     def GenerateSafeStructHelperSource(self):
         safe_struct_helper_source = '\n'
         safe_struct_helper_source += '#include "vk_safe_struct.h"\n'
+        safe_struct_helper_source += '#include <assert.h>\n'
         safe_struct_helper_source += '#include <string.h>\n'
         safe_struct_helper_source += '\n'
         safe_struct_helper_source += self.GenerateSafeStructSource()
+        safe_struct_helper_source += self.build_pnext_chain_processing_func()
+
         return safe_struct_helper_source
     #
     # safe_struct source -- create bodies of safe struct helper functions
