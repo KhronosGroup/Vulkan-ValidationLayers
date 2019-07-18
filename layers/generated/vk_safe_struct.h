@@ -34,6 +34,7 @@
 #include <vulkan/vulkan.h>
 
 void *SafePnextCopy(const void *pNext);
+void FreePnextChain(const void *head);
 void FreePnextChain(void *head);
 
 

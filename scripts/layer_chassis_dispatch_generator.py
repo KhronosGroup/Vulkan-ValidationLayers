@@ -1342,26 +1342,24 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
     def build_extension_processing_func(self):
         # Construct helper functions to build and free pNext extension chains
         pnext_proc = ''
-        pnext_proc += 'void *CreateUnwrappedExtensionStructs(ValidationObject *layer_data, const void *pNext) {\n'
+        pnext_proc += 'void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {\n'
         pnext_proc += '    void *cur_pnext = const_cast<void *>(pNext);\n'
-        pnext_proc += '    void *head_pnext = NULL;\n'
-        pnext_proc += '    void *prev_ext_struct = NULL;\n'
-        pnext_proc += '    void *cur_ext_struct = NULL;\n\n'
         pnext_proc += '    while (cur_pnext != NULL) {\n'
         pnext_proc += '        VkBaseOutStructure *header = reinterpret_cast<VkBaseOutStructure *>(cur_pnext);\n\n'
         pnext_proc += '        switch (header->sType) {\n'
         for item in self.pnext_extension_structs:
             struct_info = self.struct_member_dict[item]
+            indent = '                '
+            (tmp_decl, tmp_pre, tmp_post) = self.uniquify_members(struct_info, indent, 'safe_struct->', 0, False, False, False, False)
+            # Only process extension structs containing handles
+            if not tmp_pre:
+                continue
             if struct_info[0].feature_protect is not None:
                 pnext_proc += '#ifdef %s \n' % struct_info[0].feature_protect
             pnext_proc += '            case %s: {\n' % self.structTypes[item].value
-            pnext_proc += '                    safe_%s *safe_struct = new safe_%s;\n' % (item, item)
-            pnext_proc += '                    safe_struct->initialize(reinterpret_cast<const %s *>(cur_pnext));\n' % item
+            pnext_proc += '                    safe_%s *safe_struct = reinterpret_cast<safe_%s *>(cur_pnext);\n' % (item, item)
             # Generate code to unwrap the handles
-            indent = '                '
-            (tmp_decl, tmp_pre, tmp_post) = self.uniquify_members(struct_info, indent, 'safe_struct->', 0, False, False, False, False)
             pnext_proc += tmp_pre
-            pnext_proc += '                    cur_ext_struct = reinterpret_cast<void *>(safe_struct);\n'
             pnext_proc += '                } break;\n'
             if struct_info[0].feature_protect is not None:
                 pnext_proc += '#endif // %s \n' % struct_info[0].feature_protect
@@ -1369,17 +1367,9 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
         pnext_proc += '            default:\n'
         pnext_proc += '                break;\n'
         pnext_proc += '        }\n\n'
-        pnext_proc += '        // Save pointer to the first structure in the pNext chain\n'
-        pnext_proc += '        head_pnext = (head_pnext ? head_pnext : cur_ext_struct);\n\n'
-        pnext_proc += '        // For any extension structure but the first, link the last struct\'s pNext to the current ext struct\n'
-        pnext_proc += '        if (prev_ext_struct) {\n'
-        pnext_proc += '                reinterpret_cast<VkBaseOutStructure *>(prev_ext_struct)->pNext = reinterpret_cast<VkBaseOutStructure *>(cur_ext_struct);\n'
-        pnext_proc += '        }\n'
-        pnext_proc += '        prev_ext_struct = cur_ext_struct;\n\n'
         pnext_proc += '        // Process the next structure in the chain\n'
         pnext_proc += '        cur_pnext = header->pNext;\n'
         pnext_proc += '    }\n'
-        pnext_proc += '    return head_pnext;\n'
         pnext_proc += '}\n\n'
         pnext_proc += '// Free a pNext extension chain\n'
         pnext_proc += 'void FreeUnwrappedExtensionStructs(void *head) {\n'
@@ -1469,17 +1459,11 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
 
     #
     # Clean up local declarations
-    def cleanUpLocalDeclarations(self, indent, prefix, name, len, index, process_pnext):
+    def cleanUpLocalDeclarations(self, indent, prefix, name, len, index):
         cleanup = '%sif (local_%s%s) {\n' % (indent, prefix, name)
         if len is not None:
-            if process_pnext:
-                cleanup += '%s    for (uint32_t %s = 0; %s < %s%s; ++%s) {\n' % (indent, index, index, prefix, len, index)
-                cleanup += '%s        FreeUnwrappedExtensionStructs(const_cast<void *>(local_%s%s[%s].pNext));\n' % (indent, prefix, name, index)
-                cleanup += '%s    }\n' % indent
             cleanup += '%s    delete[] local_%s%s;\n' % (indent, prefix, name)
         else:
-            if process_pnext:
-                cleanup += '%s    FreeUnwrappedExtensionStructs(const_cast<void *>(local_%s%s->pNext));\n' % (indent, prefix, name)
             cleanup += '%s    delete local_%s%s;\n' % (indent, prefix, name)
         cleanup += "%s}\n" % (indent)
         return cleanup
@@ -1576,7 +1560,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
                         if first_level_param == True:
                             pre_code += '%s    %s[%s].initialize(&%s[%s]);\n' % (indent, new_prefix, index, member.name, index)
                             if process_pnext:
-                                pre_code += '%s    %s[%s].pNext = CreateUnwrappedExtensionStructs(layer_data, %s[%s].pNext);\n' % (indent, new_prefix, index, new_prefix, index)
+                                pre_code += '%s    WrapPnextChainHandles(layer_data, %s[%s].pNext);\n' % (indent, new_prefix, index)
                         local_prefix = '%s[%s].' % (new_prefix, index)
                         # Process sub-structs in this struct
                         (tmp_decl, tmp_pre, tmp_post) = self.uniquify_members(struct_info, indent, local_prefix, array_index, create_func, destroy_func, destroy_array, False)
@@ -1588,7 +1572,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
                         indent = self.decIndent(indent)
                         pre_code += '%s    }\n' % indent
                         if first_level_param == True:
-                            post_code += self.cleanUpLocalDeclarations(indent, prefix, member.name, member.len, index, process_pnext)
+                            post_code += self.cleanUpLocalDeclarations(indent, prefix, member.name, member.len, index)
                     # Single Struct
                     elif ispointer:
                         # Update struct prefix
@@ -1608,11 +1592,11 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
                         pre_code += tmp_pre
                         post_code += tmp_post
                         if process_pnext:
-                            pre_code += '%s    local_%s%s->pNext = CreateUnwrappedExtensionStructs(layer_data, local_%s%s->pNext);\n' % (indent, prefix, member.name, prefix, member.name)
+                            pre_code += '%s    WrapPnextChainHandles(layer_data, local_%s%s->pNext);\n' % (indent, prefix, member.name)
                         indent = self.decIndent(indent)
                         pre_code += '%s    }\n' % indent
                         if first_level_param == True:
-                            post_code += self.cleanUpLocalDeclarations(indent, prefix, member.name, member.len, index, process_pnext)
+                            post_code += self.cleanUpLocalDeclarations(indent, prefix, member.name, member.len, index)
                     else:
                         # Update struct prefix
                         if first_level_param == True:
@@ -1625,7 +1609,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
                         pre_code += tmp_pre
                         post_code += tmp_post
                         if process_pnext:
-                            pre_code += '%s    local_%s%s.pNext = CreateUnwrappedExtensionStructs(layer_data, local_%s%s.pNext);\n' % (indent, prefix, member.name, prefix, member.name)
+                            pre_code += '%s    WrapPnextChainHandles(layer_data, local_%s%s.pNext);\n' % (indent, prefix, member.name)
         return decls, pre_code, post_code
     #
     # For a particular API, generate the non-dispatchable-object wrapping/unwrapping code
