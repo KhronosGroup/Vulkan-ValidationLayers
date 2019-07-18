@@ -33,6 +33,9 @@
 #pragma once
 #include <vulkan/vulkan.h>
 
+void *SafePnextCopy(const void *pNext);
+void FreePnextChain(void *head);
+
 
 struct safe_VkApplicationInfo {
     VkStructureType sType;
