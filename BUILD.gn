@@ -84,7 +84,6 @@ config("vulkan_layer_config") {
 core_validation_sources = [
   # This file is manually included in the layer
   # "layers/generated/vk_safe_struct.cpp",
-  "layers/generated/vk_safe_struct.h",
   "layers/buffer_validation.cpp",
   "layers/buffer_validation.h",
   "layers/core_validation.cpp",
@@ -121,40 +120,45 @@ thread_safety_sources = [
 unique_objects_sources = []
 
 chassis_sources = [
+  "layers/core_validation.h",
+  "layers/generated/vk_safe_struct.h",
+  "layers/generated/thread_safety.h",
   "layers/generated/chassis.cpp",
   "layers/generated/chassis.h",
   "layers/generated/layer_chassis_dispatch.cpp",
   "layers/generated/layer_chassis_dispatch.h",
+  "$vulkan_headers_dir/include/vulkan/vk_layer.h",
+  "$vulkan_headers_dir/include/vulkan/vulkan.h",
 ]
 
 layers = [
   [
     "core_validation",
-    core_validation_sources + chassis_sources,
+    core_validation_sources + chassis_sources + thread_safety_sources,
     [ ":vulkan_core_validation_glslang" ],
     [ "BUILD_CORE_VALIDATION" ],
   ],
   [
     "object_lifetimes",
-    object_lifetimes_sources + chassis_sources,
+    object_lifetimes_sources + chassis_sources + thread_safety_sources + core_validation_sources,
     [],
     [ "BUILD_OBJECT_TRACKER" ],
   ],
   [
     "stateless_validation",
-    stateless_validation_sources + chassis_sources,
+    stateless_validation_sources + chassis_sources + core_validation_sources,
     [],
     [ "BUILD_PARAMETER_VALIDATION" ],
   ],
   [
     "thread_safety",
-    thread_safety_sources + chassis_sources,
+    thread_safety_sources + chassis_sources + core_validation_sources,
     [],
     [ "BUILD_THREAD_SAFETY" ],
   ],
   [
     "unique_objects",
-    unique_objects_sources + chassis_sources,
+    unique_objects_sources + chassis_sources + core_validation_sources,
     [],
     [ "LAYER_CHASSIS_CAN_WRAP_HANDLES" ],
   ],
@@ -192,6 +196,7 @@ if (!is_android) {
     ]
     sources = [
       "$vulkan_headers_dir/include/vulkan/vulkan_core.h",
+      "$vulkan_headers_dir/include/vulkan/vk_layer.h",
     ]
     outputs = []
     foreach(json_name, json_names) {
@@ -222,6 +227,9 @@ source_set("vulkan_layer_utils") {
     "layers/vk_layer_extension_utils.h",
     "layers/vk_layer_utils.cpp",
     "layers/vk_layer_utils.h",
+    "$vulkan_headers_dir/include/vulkan/vk_layer.h",
+    "$vulkan_headers_dir/include/vulkan/vulkan.h",
+    "$vulkan_headers_dir/include/vulkan/vk_sdk_platform.h",
   ]
   public_configs = [
     "$vulkan_headers_dir:vulkan_headers_config",
