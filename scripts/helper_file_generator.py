@@ -879,6 +879,8 @@ class HelperFileOutputGenerator(OutputGenerator):
     # Determine if a structure needs a safe_struct helper function
     # That is, it has an sType or one of its members is a pointer
     def NeedSafeStruct(self, structure):
+        if 'VkBase' in structure.name:
+            return False
         if 'sType' == structure.name:
             return True
         for member in structure.members:
