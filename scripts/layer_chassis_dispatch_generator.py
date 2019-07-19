@@ -1370,28 +1370,6 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
         pnext_proc += '        // Process the next structure in the chain\n'
         pnext_proc += '        cur_pnext = header->pNext;\n'
         pnext_proc += '    }\n'
-        pnext_proc += '}\n\n'
-        pnext_proc += '// Free a pNext extension chain\n'
-        pnext_proc += 'void FreeUnwrappedExtensionStructs(void *head) {\n'
-        pnext_proc += '    VkBaseOutStructure *curr_ptr = reinterpret_cast<VkBaseOutStructure *>(head);\n'
-        pnext_proc += '    while (curr_ptr) {\n'
-        pnext_proc += '        VkBaseOutStructure *header = curr_ptr;\n'
-        pnext_proc += '        curr_ptr = reinterpret_cast<VkBaseOutStructure *>(header->pNext);\n\n'
-        pnext_proc += '        switch (header->sType) {\n';
-        for item in self.pnext_extension_structs:
-            struct_info = self.struct_member_dict[item]
-            if struct_info[0].feature_protect is not None:
-                pnext_proc += '#ifdef %s \n' % struct_info[0].feature_protect
-            pnext_proc += '            case %s:\n' % self.structTypes[item].value
-            pnext_proc += '                delete reinterpret_cast<safe_%s *>(header);\n' % item
-            pnext_proc += '                break;\n'
-            if struct_info[0].feature_protect is not None:
-                pnext_proc += '#endif // %s \n' % struct_info[0].feature_protect
-            pnext_proc += '\n'
-        pnext_proc += '            default:\n'
-        pnext_proc += '                assert(0);\n'
-        pnext_proc += '        }\n'
-        pnext_proc += '    }\n'
         pnext_proc += '}\n'
         return pnext_proc
 
