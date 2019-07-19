@@ -176,18 +176,25 @@ PHYSICAL_DEVICE_STATE *ValidationStateTracker::GetPhysicalDeviceState() { return
 const PHYSICAL_DEVICE_STATE *ValidationStateTracker::GetPhysicalDeviceState() const { return physical_device_state; }
 
 // Return ptr to memory binding for given handle of specified type
-BINDABLE *ValidationStateTracker::GetObjectMemBinding(const VulkanTypedHandle &typed_handle) {
+template <typename State, typename Result>
+static Result GetObjectMemBindingImpl(State state, const VulkanTypedHandle &typed_handle) {
     switch (typed_handle.type) {
         case kVulkanObjectTypeImage:
-            return GetImageState(VkImage(typed_handle.handle));
+            return state->GetImageState(typed_handle.Cast<VkImage>());
         case kVulkanObjectTypeBuffer:
-            return GetBufferState(VkBuffer(typed_handle.handle));
+            return state->GetBufferState(typed_handle.Cast<VkBuffer>());
         case kVulkanObjectTypeAccelerationStructureNV:
-            return GetAccelerationStructureState(VkAccelerationStructureNV(typed_handle.handle));
+            return state->GetAccelerationStructureState(typed_handle.Cast<VkAccelerationStructureNV>());
         default:
             break;
     }
     return nullptr;
+}
+const BINDABLE *ValidationStateTracker::GetObjectMemBinding(const VulkanTypedHandle &typed_handle) const {
+    return GetObjectMemBindingImpl<const ValidationStateTracker *, const BINDABLE *>(this, typed_handle);
+}
+BINDABLE *ValidationStateTracker::GetObjectMemBinding(const VulkanTypedHandle &typed_handle) {
+    return GetObjectMemBindingImpl<ValidationStateTracker *, BINDABLE *>(this, typed_handle);
 }
 
 ImageSubresourceLayoutMap::InitialLayoutState::InitialLayoutState(const CMD_BUFFER_STATE &cb_state,
@@ -497,8 +504,8 @@ bool CoreChecks::ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION
 
 // SetMemBinding is used to establish immutable, non-sparse binding between a single image/buffer object and memory object.
 // Corresponding valid usage checks are in ValidateSetMemBinding().
-void CoreChecks::SetMemBinding(VkDeviceMemory mem, BINDABLE *mem_binding, VkDeviceSize memory_offset,
-                               const VulkanTypedHandle &typed_handle) {
+void ValidationStateTracker::SetMemBinding(VkDeviceMemory mem, BINDABLE *mem_binding, VkDeviceSize memory_offset,
+                                           const VulkanTypedHandle &typed_handle) {
     assert(mem_binding);
     mem_binding->binding.mem = mem;
     mem_binding->UpdateBoundMemorySet();  // force recreation of cached set
@@ -531,11 +538,11 @@ void CoreChecks::SetMemBinding(VkDeviceMemory mem, BINDABLE *mem_binding, VkDevi
 //  Otherwise, add reference from objectInfo to memoryInfo
 //  Add reference off of objInfo
 // TODO: We may need to refactor or pass in multiple valid usage statements to handle multiple valid usage conditions.
-bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHandle &typed_handle, const char *apiName) {
+bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHandle &typed_handle, const char *apiName) const {
     bool skip = false;
     // It's an error to bind an object to NULL memory
     if (mem != VK_NULL_HANDLE) {
-        BINDABLE *mem_binding = GetObjectMemBinding(typed_handle);
+        const BINDABLE *mem_binding = GetObjectMemBinding(typed_handle);
         assert(mem_binding);
         if (mem_binding->sparse) {
             const char *error_code = "VUID-vkBindImageMemory-image-01045";
@@ -553,9 +560,9 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHand
                             apiName, report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(typed_handle).c_str(),
                             handle_type);
         }
-        DEVICE_MEMORY_STATE *mem_info = GetDevMemState(mem);
+        const DEVICE_MEMORY_STATE *mem_info = GetDevMemState(mem);
         if (mem_info) {
-            DEVICE_MEMORY_STATE *prev_binding = GetDevMemState(mem_binding->binding.mem);
+            const DEVICE_MEMORY_STATE *prev_binding = GetDevMemState(mem_binding->binding.mem);
             if (prev_binding) {
                 const char *error_code = "VUID-vkBindImageMemory-image-01044";
                 if (typed_handle.type == kVulkanObjectTypeBuffer) {
@@ -4117,8 +4124,7 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
 // In the case where padding is required, if an alias is encountered then a validation error is reported and skip
 //  may be set by the callback function so caller should merge in skip value if padding case is possible.
 // This check can be skipped by passing skip_checks=true, for call sites outside the validation path.
-bool CoreChecks::RangesIntersect(MEMORY_RANGE const *range1, MEMORY_RANGE const *range2, bool *skip, bool skip_checks) {
-    *skip = false;
+bool ValidationStateTracker::RangesIntersect(MEMORY_RANGE const *range1, MEMORY_RANGE const *range2) const {
     auto r1_start = range1->start;
     auto r1_end = range1->end;
     auto r2_start = range2->start;
@@ -4130,37 +4136,13 @@ bool CoreChecks::RangesIntersect(MEMORY_RANGE const *range1, MEMORY_RANGE const 
     if ((r1_end & ~(pad_align - 1)) < (r2_start & ~(pad_align - 1))) return false;
     if ((r1_start & ~(pad_align - 1)) > (r2_end & ~(pad_align - 1))) return false;
 
-    if (!skip_checks && (range1->linear != range2->linear)) {
-        // In linear vs. non-linear case, warn of aliasing
-        const char *r1_linear_str = range1->linear ? "Linear" : "Non-linear";
-        const char *r2_linear_str = range2->linear ? "linear" : "non-linear";
-        auto obj_type = range1->image ? VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT : VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT;
-        *skip |= log_msg(
-            report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, obj_type, range1->handle, kVUID_Core_MemTrack_InvalidAliasing,
-            "%s %s is aliased with %s %s which may indicate a bug. For further info refer to the Buffer-Image Granularity "
-            "section of the Vulkan specification. "
-            "(https://www.khronos.org/registry/vulkan/specs/1.0-extensions/xhtml/vkspec.html#resources-bufferimagegranularity)",
-            r1_linear_str, report_data->FormatHandle(MemoryRangeTypedHandle(*range1)).c_str(), r2_linear_str,
-            report_data->FormatHandle(MemoryRangeTypedHandle(*range2)).c_str());
-    }
     // Ranges intersect
     return true;
 }
-// Simplified RangesIntersect that calls above function to check range1 for intersection with offset & end addresses
-bool CoreChecks::RangesIntersect(MEMORY_RANGE const *range1, VkDeviceSize offset, VkDeviceSize end) {
-    // Create a local MEMORY_RANGE struct to wrap offset/size
-    MEMORY_RANGE range_wrap;
-    // Synch linear with range1 to avoid padding and potential validation error case
-    range_wrap.linear = range1->linear;
-    range_wrap.start = offset;
-    range_wrap.end = end;
-    bool tmp_bool;
-    return RangesIntersect(range1, &range_wrap, &tmp_bool, true);
-}
 
-bool CoreChecks::ValidateInsertMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE *mem_info, VkDeviceSize memoryOffset,
+bool CoreChecks::ValidateInsertMemoryRange(uint64_t handle, const DEVICE_MEMORY_STATE *mem_info, VkDeviceSize memoryOffset,
                                            VkMemoryRequirements memRequirements, VulkanObjectType object_type, bool is_linear,
-                                           const char *api_name) {
+                                           const char *api_name) const {
     bool skip = false;
 
     MEMORY_RANGE range;
@@ -4177,9 +4159,22 @@ bool CoreChecks::ValidateInsertMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE 
     for (auto &obj_range_pair : mem_info->bound_ranges) {
         auto check_range = &obj_range_pair.second;
         bool intersection_error = false;
-        if (RangesIntersect(&range, check_range, &intersection_error, false)) {
+        if (RangesIntersect(&range, check_range)) {
+            if (range.linear != check_range->linear) {
+                // In linear vs. non-linear case, warn of aliasing
+                const char *r1_linear_str = range.linear ? "Linear" : "Non-linear";
+                const char *r2_linear_str = check_range->linear ? "linear" : "non-linear";
+                auto obj_type = range.image ? VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT : VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT;
+                skip |= log_msg(
+                    report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, obj_type, range.handle, kVUID_Core_MemTrack_InvalidAliasing,
+                    "%s %s is aliased with %s %s which may indicate a bug. For further info refer to the Buffer-Image Granularity "
+                    "section of the Vulkan specification. "
+                    "(https://www.khronos.org/registry/vulkan/specs/1.0-extensions/xhtml/"
+                    "vkspec.html#resources-bufferimagegranularity)",
+                    r1_linear_str, report_data->FormatHandle(MemoryRangeTypedHandle(range)).c_str(), r2_linear_str,
+                    report_data->FormatHandle(MemoryRangeTypedHandle(*check_range)).c_str());
+            }
             skip |= intersection_error;
-            range.aliases.insert(check_range);
         }
     }
 
@@ -4215,8 +4210,8 @@ bool CoreChecks::ValidateInsertMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE 
 // Return true if an error is flagged and the user callback returns "true", otherwise false
 // is_image indicates an image object, otherwise handle is for a buffer
 // is_linear indicates a buffer or linear image
-void CoreChecks::InsertMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE *mem_info, VkDeviceSize memoryOffset,
-                                   VkMemoryRequirements memRequirements, VulkanObjectType object_type, bool is_linear) {
+void ValidationStateTracker::InsertMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE *mem_info, VkDeviceSize memoryOffset,
+                                               VkMemoryRequirements memRequirements, VulkanObjectType object_type, bool is_linear) {
     MEMORY_RANGE range;
 
     range.image = object_type == kVulkanObjectTypeImage;
@@ -4233,8 +4228,7 @@ void CoreChecks::InsertMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE *mem_inf
     std::unordered_set<MEMORY_RANGE *> tmp_alias_ranges;
     for (auto &obj_range_pair : mem_info->bound_ranges) {
         auto check_range = &obj_range_pair.second;
-        bool intersection_error = false;
-        if (RangesIntersect(&range, check_range, &intersection_error, true)) {
+        if (RangesIntersect(&range, check_range)) {
             range.aliases.insert(check_range);
             tmp_alias_ranges.insert(check_range);
         }
@@ -4266,13 +4260,13 @@ void CoreChecks::InsertImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE *mem_
     InsertMemoryRange(HandleToUint64(image), mem_info, mem_offset, mem_reqs, kVulkanObjectTypeImage, is_linear);
 }
 
-bool CoreChecks::ValidateInsertBufferMemoryRange(VkBuffer buffer, DEVICE_MEMORY_STATE *mem_info, VkDeviceSize mem_offset,
-                                                 VkMemoryRequirements mem_reqs, const char *api_name) {
+bool CoreChecks::ValidateInsertBufferMemoryRange(VkBuffer buffer, const DEVICE_MEMORY_STATE *mem_info, VkDeviceSize mem_offset,
+                                                 VkMemoryRequirements mem_reqs, const char *api_name) const {
     return ValidateInsertMemoryRange(HandleToUint64(buffer), mem_info, mem_offset, mem_reqs, kVulkanObjectTypeBuffer, true,
                                      api_name);
 }
-void CoreChecks::InsertBufferMemoryRange(VkBuffer buffer, DEVICE_MEMORY_STATE *mem_info, VkDeviceSize mem_offset,
-                                         VkMemoryRequirements mem_reqs) {
+void ValidationStateTracker::InsertBufferMemoryRange(VkBuffer buffer, DEVICE_MEMORY_STATE *mem_info, VkDeviceSize mem_offset,
+                                                     VkMemoryRequirements mem_reqs) {
     InsertMemoryRange(HandleToUint64(buffer), mem_info, mem_offset, mem_reqs, kVulkanObjectTypeBuffer, true);
 }
 
@@ -4323,7 +4317,7 @@ void ValidationStateTracker::RemoveAccelerationStructureMemoryRange(uint64_t han
 }
 
 bool CoreChecks::ValidateMemoryTypes(const DEVICE_MEMORY_STATE *mem_info, const uint32_t memory_type_bits, const char *funcName,
-                                     const char *msgCode) {
+                                     const char *msgCode) const {
     bool skip = false;
     if (((1 << mem_info->alloc_info.memoryTypeIndex) & memory_type_bits) == 0) {
         skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
@@ -4336,8 +4330,9 @@ bool CoreChecks::ValidateMemoryTypes(const DEVICE_MEMORY_STATE *mem_info, const 
     return skip;
 }
 
-bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset, const char *api_name) {
-    BUFFER_STATE *buffer_state = GetBufferState(buffer);
+bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset,
+                                          const char *api_name) const {
+    const BUFFER_STATE *buffer_state = GetBufferState(buffer);
 
     bool skip = false;
     if (buffer_state) {
@@ -4345,6 +4340,8 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
         uint64_t buffer_handle = HandleToUint64(buffer);
         const VulkanTypedHandle obj_struct(buffer, kVulkanObjectTypeBuffer);
         skip = ValidateSetMemBinding(mem, obj_struct, api_name);
+        auto memory_requirements = &buffer_state->requirements;
+        VkMemoryRequirements dispatched_requirements;
         if (!buffer_state->memory_requirements_checked) {
             // There's not an explicit requirement in the spec to call vkGetBufferMemoryRequirements() prior to calling
             // BindBufferMemory, but it's implied in that memory being bound must conform with VkMemoryRequirements from
@@ -4354,36 +4351,37 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                             "%s: Binding memory to %s but vkGetBufferMemoryRequirements() has not been called on that buffer.",
                             api_name, report_data->FormatHandle(buffer).c_str());
             // Make the call for them so we can verify the state
-            DispatchGetBufferMemoryRequirements(device, buffer, &buffer_state->requirements);
+            DispatchGetBufferMemoryRequirements(device, buffer, &dispatched_requirements);
+            memory_requirements = &dispatched_requirements;
         }
 
         // Validate bound memory range information
         const auto mem_info = GetDevMemState(mem);
         if (mem_info) {
-            skip |= ValidateInsertBufferMemoryRange(buffer, mem_info, memoryOffset, buffer_state->requirements, api_name);
-            skip |= ValidateMemoryTypes(mem_info, buffer_state->requirements.memoryTypeBits, api_name,
+            skip |= ValidateInsertBufferMemoryRange(buffer, mem_info, memoryOffset, *memory_requirements, api_name);
+            skip |= ValidateMemoryTypes(mem_info, memory_requirements->memoryTypeBits, api_name,
                                         "VUID-vkBindBufferMemory-memory-01035");
         }
 
         // Validate memory requirements alignment
-        if (SafeModulo(memoryOffset, buffer_state->requirements.alignment) != 0) {
+        if (SafeModulo(memoryOffset, memory_requirements->alignment) != 0) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, buffer_handle,
                             "VUID-vkBindBufferMemory-memoryOffset-01036",
                             "%s: memoryOffset is 0x%" PRIxLEAST64
                             " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
                             ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
-                            api_name, memoryOffset, buffer_state->requirements.alignment);
+                            api_name, memoryOffset, memory_requirements->alignment);
         }
 
         if (mem_info) {
             // Validate memory requirements size
-            if (buffer_state->requirements.size > (mem_info->alloc_info.allocationSize - memoryOffset)) {
+            if (memory_requirements->size > (mem_info->alloc_info.allocationSize - memoryOffset)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, buffer_handle,
                                 "VUID-vkBindBufferMemory-size-01037",
                                 "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
                                 " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
                                 ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
-                                api_name, mem_info->alloc_info.allocationSize - memoryOffset, buffer_state->requirements.size);
+                                api_name, mem_info->alloc_info.allocationSize - memoryOffset, memory_requirements->size);
             }
 
             // Validate dedicated allocation
@@ -4411,9 +4409,13 @@ bool CoreChecks::PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffe
     return ValidateBindBufferMemory(buffer, mem, memoryOffset, api_name);
 }
 
-void CoreChecks::UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset) {
+void ValidationStateTracker::UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset) {
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     if (buffer_state) {
+        if (!buffer_state->memory_requirements_checked) {
+            // Record the memory requirements even if they weren't queried
+            DispatchGetBufferMemoryRequirements(device, buffer, &buffer_state->requirements);
+        }
         // Track bound memory range information
         auto mem_info = GetDevMemState(mem);
         if (mem_info) {
@@ -4424,8 +4426,8 @@ void CoreChecks::UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem
     }
 }
 
-void CoreChecks::PostCallRecordBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset,
-                                                VkResult result) {
+void ValidationStateTracker::PostCallRecordBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory mem,
+                                                            VkDeviceSize memoryOffset, VkResult result) {
     if (VK_SUCCESS != result) return;
     UpdateBindBufferMemoryState(buffer, mem, memoryOffset);
 }
@@ -4454,15 +4456,15 @@ bool CoreChecks::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t b
     return skip;
 }
 
-void CoreChecks::PostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
-                                                 const VkBindBufferMemoryInfoKHR *pBindInfos, VkResult result) {
+void ValidationStateTracker::PostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
+                                                             const VkBindBufferMemoryInfoKHR *pBindInfos, VkResult result) {
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         UpdateBindBufferMemoryState(pBindInfos[i].buffer, pBindInfos[i].memory, pBindInfos[i].memoryOffset);
     }
 }
 
-void CoreChecks::PostCallRecordBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount,
-                                                    const VkBindBufferMemoryInfoKHR *pBindInfos, VkResult result) {
+void ValidationStateTracker::PostCallRecordBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount,
+                                                                const VkBindBufferMemoryInfoKHR *pBindInfos, VkResult result) {
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         UpdateBindBufferMemoryState(pBindInfos[i].buffer, pBindInfos[i].memory, pBindInfos[i].memoryOffset);
     }
