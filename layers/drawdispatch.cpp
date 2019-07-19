@@ -66,6 +66,7 @@ bool CoreChecks::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, V
 // Generic function to handle state update for all CmdDraw* and CmdDispatch* type functions
 void ValidationStateTracker::UpdateStateCmdDrawDispatchType(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint bind_point) {
     UpdateDrawState(cb_state, bind_point);
+    cb_state->hasDispatchCmd = true;
 }
 
 // Generic function to handle state update for all CmdDraw* type functions
