@@ -3939,6 +3939,68 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
         }
 
         const VkPhysicalDeviceLimits *device_limits = &phys_dev_props.limits;
+        // Buffer view offset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment
+        if ((pCreateInfo->offset % device_limits->minTexelBufferOffsetAlignment) != 0 &&
+            !enabled_features.texel_buffer_alignment_features.texelBufferAlignment) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                            HandleToUint64(buffer_state->buffer), "VUID-VkBufferViewCreateInfo-offset-02749",
+                            "VkBufferViewCreateInfo offset (%" PRIuLEAST64
+                            ") must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment (%" PRIuLEAST64 ").",
+                            pCreateInfo->offset, device_limits->minTexelBufferOffsetAlignment);
+        }
+
+        if (enabled_features.texel_buffer_alignment_features.texelBufferAlignment) {
+            VkDeviceSize elementSize = FormatElementSize(pCreateInfo->format);
+            if ((elementSize % 3) == 0) {
+                elementSize /= 3;
+            }
+            if (buffer_state->createInfo.usage & VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT) {
+                VkDeviceSize alignmentRequirement =
+                    phys_dev_ext_props.texel_buffer_alignment_props.storageTexelBufferOffsetAlignmentBytes;
+                if (phys_dev_ext_props.texel_buffer_alignment_props.storageTexelBufferOffsetSingleTexelAlignment) {
+                    alignmentRequirement = std::min(alignmentRequirement, elementSize);
+                }
+                if (SafeModulo(pCreateInfo->offset, alignmentRequirement) != 0) {
+                    skip |= log_msg(
+                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                        HandleToUint64(buffer_state->buffer), "VUID-VkBufferViewCreateInfo-buffer-02750",
+                        "If buffer was created with usage containing VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, "
+                        "VkBufferViewCreateInfo offset (%" PRIuLEAST64
+                        ") must be a multiple of the lesser of "
+                        "VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT::storageTexelBufferOffsetAlignmentBytes (%" PRIuLEAST64
+                        ") or, if VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT::storageTexelBufferOffsetSingleTexelAlignment "
+                        "(%" PRId32
+                        ") is VK_TRUE, the size of a texel of the requested format. "
+                        "If the size of a texel is a multiple of three bytes, then the size of a "
+                        "single component of format is used instead",
+                        pCreateInfo->offset, phys_dev_ext_props.texel_buffer_alignment_props.storageTexelBufferOffsetAlignmentBytes,
+                        phys_dev_ext_props.texel_buffer_alignment_props.storageTexelBufferOffsetSingleTexelAlignment);
+                }
+            }
+            if (buffer_state->createInfo.usage & VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT) {
+                VkDeviceSize alignmentRequirement =
+                    phys_dev_ext_props.texel_buffer_alignment_props.uniformTexelBufferOffsetAlignmentBytes;
+                if (phys_dev_ext_props.texel_buffer_alignment_props.uniformTexelBufferOffsetSingleTexelAlignment) {
+                    alignmentRequirement = std::min(alignmentRequirement, elementSize);
+                }
+                if (SafeModulo(pCreateInfo->offset, alignmentRequirement) != 0) {
+                    skip |= log_msg(
+                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                        HandleToUint64(buffer_state->buffer), "VUID-VkBufferViewCreateInfo-buffer-02751",
+                        "If buffer was created with usage containing VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, "
+                        "VkBufferViewCreateInfo offset (%" PRIuLEAST64
+                        ") must be a multiple of the lesser of "
+                        "VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT::uniformTexelBufferOffsetAlignmentBytes (%" PRIuLEAST64
+                        ") or, if VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT::uniformTexelBufferOffsetSingleTexelAlignment "
+                        "(%" PRId32
+                        ") is VK_TRUE, the size of a texel of the requested format. "
+                        "If the size of a texel is a multiple of three bytes, then the size of a "
+                        "single component of format is used instead",
+                        pCreateInfo->offset, phys_dev_ext_props.texel_buffer_alignment_props.uniformTexelBufferOffsetAlignmentBytes,
+                        phys_dev_ext_props.texel_buffer_alignment_props.uniformTexelBufferOffsetSingleTexelAlignment);
+                }
+            }
+        }
 
         skip |= ValidateBufferViewRange(buffer_state, pCreateInfo, device_limits);
 
