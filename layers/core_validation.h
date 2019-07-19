@@ -577,6 +577,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
         VkPhysicalDeviceSubgroupProperties subgroup_props;
         VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props;
+        VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT texel_buffer_alignment_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;
