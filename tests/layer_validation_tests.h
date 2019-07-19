@@ -771,7 +771,7 @@ void CreateBufferTest(VkLayerTest &test, const VkBufferCreateInfo *pCreateInfo, 
 
 void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *pCreateInfo, std::string code = "");
 
-void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *pCreateInfo, std::string code = "");
+void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *pCreateInfo, const std::vector<std::string> &codes);
 
 void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *pCreateInfo, std::string code = "");
 

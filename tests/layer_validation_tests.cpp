@@ -473,16 +473,17 @@ void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *pCreateInfo, st
     }
 }
 
-void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *pCreateInfo, std::string code) {
+void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *pCreateInfo, const std::vector<std::string> &codes) {
     VkResult err;
     VkBufferView view = VK_NULL_HANDLE;
-    if (code.length())
-        test.Monitor()->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, code);
+    if (codes.size())
+        std::for_each(codes.begin(), codes.end(),
+                      [&](const std::string &s) { test.Monitor()->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, s); });
     else
         test.Monitor()->ExpectSuccess();
 
     err = vkCreateBufferView(test.device(), pCreateInfo, NULL, &view);
-    if (code.length())
+    if (codes.size())
         test.Monitor()->VerifyFound();
     else
         test.Monitor()->VerifyNotFound();
