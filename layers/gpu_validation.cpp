@@ -1121,7 +1121,7 @@ void CoreChecks::AnalyzeAndReportError(CMD_BUFFER_STATE *cb_node, VkQueue queue,
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
 void CoreChecks::ProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE *cb_node) {
     auto gpu_buffer_list = gpu_validation_state->GetGpuBufferInfo(cb_node->commandBuffer);
-    if (cb_node && (cb_node->hasDrawCmd || cb_node->hasTraceRaysCmd) && gpu_buffer_list.size() > 0) {
+    if (cb_node && (cb_node->hasDrawCmd || cb_node->hasTraceRaysCmd || cb_node->hasDispatchCmd) && gpu_buffer_list.size() > 0) {
         VkResult result;
         char *pData;
         uint32_t draw_index = 0;

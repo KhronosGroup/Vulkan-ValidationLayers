@@ -1399,6 +1399,7 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     VkDevice device;  // device this CB belongs to
     bool hasDrawCmd;
     bool hasTraceRaysCmd;
+    bool hasDispatchCmd;
     CB_STATE state;        // Track cmd buffer update state
     uint64_t submitCount;  // Number of times CB has been submitted
     typedef uint64_t ImageLayoutUpdateCount;

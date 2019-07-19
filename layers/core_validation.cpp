@@ -2036,6 +2036,7 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
         memset(&pCB->inheritanceInfo, 0, sizeof(VkCommandBufferInheritanceInfo));
         pCB->hasDrawCmd = false;
         pCB->hasTraceRaysCmd = false;
+        pCB->hasDispatchCmd = false;
         pCB->state = CB_NEW;
         pCB->submitCount = 0;
         pCB->image_layout_change_count = 1;  // Start at 1. 0 is insert value for validation cache versions, s.t. new == dirty
