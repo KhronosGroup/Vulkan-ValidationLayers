@@ -1072,34 +1072,6 @@ struct safe_VkRenderPassBeginInfo {
     VkRenderPassBeginInfo const *ptr() const { return reinterpret_cast<VkRenderPassBeginInfo const *>(this); }
 };
 
-struct safe_VkBaseOutStructure {
-    VkStructureType sType;
-    safe_VkBaseOutStructure* pNext;
-    safe_VkBaseOutStructure(const VkBaseOutStructure* in_struct);
-    safe_VkBaseOutStructure(const safe_VkBaseOutStructure& src);
-    safe_VkBaseOutStructure& operator=(const safe_VkBaseOutStructure& src);
-    safe_VkBaseOutStructure();
-    ~safe_VkBaseOutStructure();
-    void initialize(const VkBaseOutStructure* in_struct);
-    void initialize(const safe_VkBaseOutStructure* src);
-    VkBaseOutStructure *ptr() { return reinterpret_cast<VkBaseOutStructure *>(this); }
-    VkBaseOutStructure const *ptr() const { return reinterpret_cast<VkBaseOutStructure const *>(this); }
-};
-
-struct safe_VkBaseInStructure {
-    VkStructureType sType;
-    safe_VkBaseInStructure* pNext;
-    safe_VkBaseInStructure(const VkBaseInStructure* in_struct);
-    safe_VkBaseInStructure(const safe_VkBaseInStructure& src);
-    safe_VkBaseInStructure& operator=(const safe_VkBaseInStructure& src);
-    safe_VkBaseInStructure();
-    ~safe_VkBaseInStructure();
-    void initialize(const VkBaseInStructure* in_struct);
-    void initialize(const safe_VkBaseInStructure* src);
-    VkBaseInStructure *ptr() { return reinterpret_cast<VkBaseInStructure *>(this); }
-    VkBaseInStructure const *ptr() const { return reinterpret_cast<VkBaseInStructure const *>(this); }
-};
-
 struct safe_VkPhysicalDeviceSubgroupProperties {
     VkStructureType sType;
     void* pNext;
