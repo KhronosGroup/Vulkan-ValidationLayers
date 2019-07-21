@@ -2440,6 +2440,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.fragment_shader_interlock_features = *fragment_shader_interlock_features;
     }
 
+    const auto *demote_to_helper_invocation_features =
+        lvl_find_in_chain<VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT>(pCreateInfo->pNext);
+    if (demote_to_helper_invocation_features) {
+        state_tracker->enabled_features.demote_to_helper_invocation_features = *demote_to_helper_invocation_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);
