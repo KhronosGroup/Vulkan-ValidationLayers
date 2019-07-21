@@ -5539,3 +5539,60 @@ TEST_F(VkLayerTest, CreatePipelineCheckFragmentShaderInterlockEnabled) {
     pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, CreatePipelineCheckDemoteToHelperInvocation) {
+    TEST_DESCRIPTION("Create a pipeline requiring the demote to helper invocation feature which has not enabled on the device.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    std::vector<const char *> device_extension_names;
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME)) {
+        // Note: we intentionally do not add the required extension to the device extension list.
+        //       in order to create the error below
+    } else {
+        // We skip this test if the extension is not supported by the driver as in some cases this will cause
+        // the vkCreateShaderModule to fail without generating an error message
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_SHADER_DEMOTE_TO_HELPER_INVOCATION_EXTENSION_NAME);
+        return;
+    }
+
+    auto features = m_device->phy().features();
+
+    // Disable the demote to helper invocation feature.
+    auto demote_features = lvl_init_struct<VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT>();
+    demote_features.shaderDemoteToHelperInvocation = VK_FALSE;
+
+    VkDeviceObj test_device(0, gpu(), device_extension_names, &features, &demote_features);
+
+    char const *fsSource =
+        "#version 450\n"
+        "#extension GL_EXT_demote_to_helper_invocation : require\n"
+        "void main(){\n"
+        "    demote;\n"
+        "}\n";
+
+    VkShaderObj vs(&test_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(&test_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkRenderpassObj render_pass(&test_device);
+
+    VkPipelineObj pipe(&test_device);
+    pipe.AddDefaultColorAttachment();
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+
+    const VkPipelineLayoutObj pipeline_layout(&test_device);
+
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "Shader requires VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT::shaderDemoteToHelperInvocation but is not "
+        "enabled on "
+        "the device");
+    m_errorMonitor->SetDesiredFailureMsg(
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        "Shader requires extension VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT::shaderDemoteToHelperInvocation but "
+        "is not "
+        "enabled on the device");
+    pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
+    m_errorMonitor->VerifyFound();
+}
