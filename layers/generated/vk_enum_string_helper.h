@@ -35,6 +35,7 @@
 #pragma warning( disable : 4065 )
 #endif
 
+#include <string>
 #include <vulkan/vulkan.h>
 
 

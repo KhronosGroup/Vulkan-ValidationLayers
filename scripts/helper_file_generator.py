@@ -427,6 +427,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             enum_string_helper_header += '#pragma warning( disable : 4065 )\n'
             enum_string_helper_header += '#endif\n'
             enum_string_helper_header += '\n'
+            enum_string_helper_header += '#include <string>\n'
             enum_string_helper_header += '#include <vulkan/vulkan.h>\n'
             enum_string_helper_header += '\n'
             enum_string_helper_header += self.enum_output
