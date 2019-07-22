@@ -141,25 +141,25 @@ layers = [
   [
     "object_lifetimes",
     object_lifetimes_sources + chassis_sources + thread_safety_sources + core_validation_sources,
-    [],
+    [ ":vulkan_core_validation_glslang" ],
     [ "BUILD_OBJECT_TRACKER" ],
   ],
   [
     "stateless_validation",
     stateless_validation_sources + chassis_sources + core_validation_sources,
-    [],
+    [ ":vulkan_core_validation_glslang" ],
     [ "BUILD_PARAMETER_VALIDATION" ],
   ],
   [
     "thread_safety",
     thread_safety_sources + chassis_sources + core_validation_sources,
-    [],
+    [ ":vulkan_core_validation_glslang" ],
     [ "BUILD_THREAD_SAFETY" ],
   ],
   [
     "unique_objects",
     unique_objects_sources + chassis_sources + core_validation_sources,
-    [],
+    [ ":vulkan_core_validation_glslang" ],
     [ "LAYER_CHASSIS_CAN_WRAP_HANDLES" ],
   ],
   [
