@@ -617,7 +617,7 @@ bool CoreChecks::SetSparseMemBinding(MEM_BINDING binding, const VulkanTypedHandl
 }
 
 bool CoreChecks::ValidateDeviceQueueFamily(uint32_t queue_family, const char *cmd_name, const char *parameter_name,
-                                           const char *error_code, bool optional = false) {
+                                           const char *error_code, bool optional = false) const {
     bool skip = false;
     if (!optional && queue_family == VK_QUEUE_FAMILY_IGNORED) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
@@ -665,6 +665,14 @@ bool CoreChecks::ValidateStatus(const CMD_BUFFER_STATE *pNode, CBStatusFlags sta
                        msg_code, "%s: %s..", report_data->FormatHandle(pNode->commandBuffer).c_str(), fail_msg);
     }
     return false;
+}
+
+const RENDER_PASS_STATE *ValidationStateTracker::GetRenderPassState(VkRenderPass renderpass) const {
+    auto it = renderPassMap.find(renderpass);
+    if (it == renderPassMap.end()) {
+        return nullptr;
+    }
+    return it->second.get();
 }
 
 RENDER_PASS_STATE *ValidationStateTracker::GetRenderPassState(VkRenderPass renderpass) {
@@ -4623,7 +4631,7 @@ void ValidationStateTracker::PreCallRecordDestroyPipelineLayout(VkDevice device,
 }
 
 bool CoreChecks::PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator) {
-    SAMPLER_STATE *sampler_state = GetSamplerState(sampler);
+    const SAMPLER_STATE *sampler_state = GetSamplerState(sampler);
     const VulkanTypedHandle obj_struct(sampler, kVulkanObjectTypeSampler);
     bool skip = false;
     if (sampler_state) {
@@ -4632,7 +4640,8 @@ bool CoreChecks::PreCallValidateDestroySampler(VkDevice device, VkSampler sample
     return skip;
 }
 
-void CoreChecks::PreCallRecordDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker ::PreCallRecordDestroySampler(VkDevice device, VkSampler sampler,
+                                                          const VkAllocationCallbacks *pAllocator) {
     if (!sampler) return;
     SAMPLER_STATE *sampler_state = GetSamplerState(sampler);
     const VulkanTypedHandle obj_struct(sampler, kVulkanObjectTypeSampler);
@@ -4749,9 +4758,9 @@ bool CoreChecks::PreCallValidateCreateCommandPool(VkDevice device, const VkComma
                                      "VUID-vkCreateCommandPool-queueFamilyIndex-01937");
 }
 
-void CoreChecks::PostCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
-                                                 const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool,
-                                                 VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo *pCreateInfo,
+                                                             const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool,
+                                                             VkResult result) {
     if (VK_SUCCESS != result) return;
     std::unique_ptr<COMMAND_POOL_STATE> cmd_pool_state(new COMMAND_POOL_STATE{});
     cmd_pool_state->createFlags = pCreateInfo->flags;
@@ -4790,7 +4799,7 @@ void CoreChecks::PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoo
 
 bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
                                                    const VkAllocationCallbacks *pAllocator) {
-    COMMAND_POOL_STATE *cp_state = GetCommandPoolState(commandPool);
+    const COMMAND_POOL_STATE *cp_state = GetCommandPoolState(commandPool);
     bool skip = false;
     if (cp_state) {
         // Verify that command buffers in pool are complete (not in-flight)
@@ -4799,8 +4808,8 @@ bool CoreChecks::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPoo
     return skip;
 }
 
-void CoreChecks::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
-                                                 const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
+                                                             const VkAllocationCallbacks *pAllocator) {
     if (!commandPool) return;
     COMMAND_POOL_STATE *cp_state = GetCommandPoolState(commandPool);
     // Remove cmdpool from cmdpoolmap, after freeing layer data for the command buffers
@@ -4874,7 +4883,7 @@ void ValidationStateTracker::InvalidateCommandBuffers(std::unordered_set<CMD_BUF
 
 bool CoreChecks::PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer,
                                                    const VkAllocationCallbacks *pAllocator) {
-    FRAMEBUFFER_STATE *framebuffer_state = GetFramebufferState(framebuffer);
+    const FRAMEBUFFER_STATE *framebuffer_state = GetFramebufferState(framebuffer);
     const VulkanTypedHandle obj_struct(framebuffer, kVulkanObjectTypeFramebuffer);
     bool skip = false;
     if (framebuffer_state) {
@@ -4884,8 +4893,8 @@ bool CoreChecks::PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffe
     return skip;
 }
 
-void CoreChecks::PreCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer,
-                                                 const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroyFramebuffer(VkDevice device, VkFramebuffer framebuffer,
+                                                             const VkAllocationCallbacks *pAllocator) {
     if (!framebuffer) return;
     FRAMEBUFFER_STATE *framebuffer_state = GetFramebufferState(framebuffer);
     const VulkanTypedHandle obj_struct(framebuffer, kVulkanObjectTypeFramebuffer);
@@ -5263,8 +5272,9 @@ void CoreChecks::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPi
     }
 }
 
-void CoreChecks::PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
-                                             const VkAllocationCallbacks *pAllocator, VkSampler *pSampler, VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
+                                                         const VkAllocationCallbacks *pAllocator, VkSampler *pSampler,
+                                                         VkResult result) {
     samplerMap[*pSampler] = unique_ptr<SAMPLER_STATE>(new SAMPLER_STATE(pSampler, pCreateInfo));
 }
 
@@ -6135,8 +6145,8 @@ void ValidationStateTracker::PreCallRecordUpdateDescriptorSets(VkDevice device, 
                                                  pDescriptorCopies);
 }
 
-void CoreChecks::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pCreateInfo,
-                                                      VkCommandBuffer *pCommandBuffer, VkResult result) {
+void ValidationStateTracker::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pCreateInfo,
+                                                                  VkCommandBuffer *pCommandBuffer, VkResult result) {
     if (VK_SUCCESS != result) return;
     auto pPool = GetCommandPoolState(pCreateInfo->commandPool);
     if (pPool) {
@@ -9129,7 +9139,7 @@ void CoreChecks::PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, 
 }
 
 bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2KHR *attachments, const VkFramebufferCreateInfo *fbci,
-                            VkImageUsageFlagBits usage_flag, const char *error_code) {
+                            VkImageUsageFlagBits usage_flag, const char *error_code) const {
     bool skip = false;
 
     if (attachments) {
@@ -9183,7 +9193,7 @@ bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2KHR *att
 // 6. fb attachments use idenity swizzle
 // 7. fb attachments used by renderPass for color/input/ds have correct usage bit set
 // 8. fb dimensions are within physical device limits
-bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pCreateInfo) {
+bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pCreateInfo) const {
     bool skip = false;
 
     const VkFramebufferAttachmentsCreateInfoKHR *pFramebufferAttachmentsCreateInfo =
@@ -9568,9 +9578,9 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
     return skip;
 }
 
-void CoreChecks::PostCallRecordCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
-                                                 const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer,
-                                                 VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
+                                                             const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer,
+                                                             VkResult result) {
     if (VK_SUCCESS != result) return;
     // Shadow create info and store in map
     std::unique_ptr<FRAMEBUFFER_STATE> fb_state(
@@ -12827,7 +12837,7 @@ void CoreChecks::PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32
 }
 
 bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
-                                          VkFence fence, uint32_t *pImageIndex, const char *func_name) {
+                                          VkFence fence, uint32_t *pImageIndex, const char *func_name) const {
     bool skip = false;
     if (fence == VK_NULL_HANDLE && semaphore == VK_NULL_HANDLE) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
@@ -12898,8 +12908,8 @@ bool CoreChecks::PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAc
     return skip;
 }
 
-void CoreChecks::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
-                                             VkFence fence, uint32_t *pImageIndex) {
+void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
+                                                         VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex) {
     auto pFence = GetFenceState(fence);
     if (pFence && pFence->scope == kSyncScopeInternal) {
         // Treat as inflight since it is valid to wait on this fence, even in cases where it is technically a temporary
@@ -12928,14 +12938,15 @@ void CoreChecks::RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swa
     }
 }
 
-void CoreChecks::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
-                                                   VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex, VkResult result) {
+void ValidationStateTracker::PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
+                                                               VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex,
+                                                               VkResult result) {
     if ((VK_SUCCESS != result) && (VK_SUBOPTIMAL_KHR != result)) return;
     RecordAcquireNextImageState(device, swapchain, timeout, semaphore, fence, pImageIndex);
 }
 
-void CoreChecks::PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
-                                                    uint32_t *pImageIndex, VkResult result) {
+void ValidationStateTracker::PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
+                                                                uint32_t *pImageIndex, VkResult result) {
     if ((VK_SUCCESS != result) && (VK_SUBOPTIMAL_KHR != result)) return;
     RecordAcquireNextImageState(device, pAcquireInfo->swapchain, pAcquireInfo->timeout, pAcquireInfo->semaphore,
                                 pAcquireInfo->fence, pImageIndex);
@@ -13086,13 +13097,14 @@ void CoreChecks::PreCallRecordValidateDestroySurfaceKHR(VkInstance instance, VkS
     surface_map.erase(surface);
 }
 
-void CoreChecks::RecordVulkanSurface(VkSurfaceKHR *pSurface) {
+void ValidationStateTracker::RecordVulkanSurface(VkSurfaceKHR *pSurface) {
     surface_map[*pSurface] = std::unique_ptr<SURFACE_STATE>(new SURFACE_STATE{*pSurface});
 }
 
-void CoreChecks::PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance, const VkDisplaySurfaceCreateInfoKHR *pCreateInfo,
-                                                            const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
-                                                            VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance,
+                                                                        const VkDisplaySurfaceCreateInfoKHR *pCreateInfo,
+                                                                        const VkAllocationCallbacks *pAllocator,
+                                                                        VkSurfaceKHR *pSurface, VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordVulkanSurface(pSurface);
 }
@@ -13143,9 +13155,10 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(V
 #endif  // VK_USE_PLATFORM_WAYLAND_KHR
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-void CoreChecks::PostCallRecordCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
-                                                     const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
-                                                     VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateWin32SurfaceKHR(VkInstance instance,
+                                                                 const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
+                                                                 const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                                 VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordVulkanSurface(pSurface);
 }
