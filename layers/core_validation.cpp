@@ -4139,14 +4139,14 @@ bool ValidationStateTracker::RangesIntersect(MEMORY_RANGE const *range1, MEMORY_
     return true;
 }
 
-bool CoreChecks::ValidateInsertMemoryRange(uint64_t handle, const DEVICE_MEMORY_STATE *mem_info, VkDeviceSize memoryOffset,
-                                           VkMemoryRequirements memRequirements, VulkanObjectType object_type, bool is_linear,
+bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle, const DEVICE_MEMORY_STATE *mem_info,
+                                           VkDeviceSize memoryOffset, const VkMemoryRequirements &memRequirements, bool is_linear,
                                            const char *api_name) const {
     bool skip = false;
 
     MEMORY_RANGE range;
-    range.image = object_type == kVulkanObjectTypeImage;
-    range.handle = handle;
+    range.image = typed_handle.type == kVulkanObjectTypeImage;
+    range.handle = typed_handle.handle;
     range.linear = is_linear;
     range.memory = mem_info->mem;
     range.start = memoryOffset;
@@ -4157,7 +4157,6 @@ bool CoreChecks::ValidateInsertMemoryRange(uint64_t handle, const DEVICE_MEMORY_
     // Check for aliasing problems.
     for (auto &obj_range_pair : mem_info->bound_ranges) {
         auto check_range = &obj_range_pair.second;
-        bool intersection_error = false;
         if (RangesIntersect(&range, check_range)) {
             if (range.linear != check_range->linear) {
                 // In linear vs. non-linear case, warn of aliasing
@@ -4173,17 +4172,16 @@ bool CoreChecks::ValidateInsertMemoryRange(uint64_t handle, const DEVICE_MEMORY_
                     r1_linear_str, report_data->FormatHandle(MemoryRangeTypedHandle(range)).c_str(), r2_linear_str,
                     report_data->FormatHandle(MemoryRangeTypedHandle(*check_range)).c_str());
             }
-            skip |= intersection_error;
         }
     }
 
     if (memoryOffset >= mem_info->alloc_info.allocationSize) {
         const char *error_code = nullptr;
-        if (object_type == kVulkanObjectTypeBuffer) {
+        if (typed_handle.type == kVulkanObjectTypeBuffer) {
             error_code = "VUID-vkBindBufferMemory-memoryOffset-01031";
-        } else if (object_type == kVulkanObjectTypeImage) {
+        } else if (typed_handle.type == kVulkanObjectTypeImage) {
             error_code = "VUID-vkBindImageMemory-memoryOffset-01046";
-        } else if (object_type == kVulkanObjectTypeAccelerationStructureNV) {
+        } else if (typed_handle.type == kVulkanObjectTypeAccelerationStructureNV) {
             error_code = "VUID-VkBindAccelerationStructureMemoryInfoNV-memoryOffset-02451";
         } else {
             // Unsupported object type
@@ -4194,9 +4192,8 @@ bool CoreChecks::ValidateInsertMemoryRange(uint64_t handle, const DEVICE_MEMORY_
                        HandleToUint64(mem_info->mem), error_code,
                        "In %s, attempting to bind %s to %s, memoryOffset=0x%" PRIxLEAST64
                        " must be less than the memory allocation size 0x%" PRIxLEAST64 ".",
-                       api_name, report_data->FormatHandle(mem_info->mem).c_str(),
-                       report_data->FormatHandle(MemoryRangeTypedHandle(range)).c_str(), memoryOffset,
-                       mem_info->alloc_info.allocationSize);
+                       api_name, report_data->FormatHandle(mem_info->mem).c_str(), report_data->FormatHandle(typed_handle).c_str(),
+                       memoryOffset, mem_info->alloc_info.allocationSize);
     }
 
     return skip;
@@ -4209,12 +4206,12 @@ bool CoreChecks::ValidateInsertMemoryRange(uint64_t handle, const DEVICE_MEMORY_
 // Return true if an error is flagged and the user callback returns "true", otherwise false
 // is_image indicates an image object, otherwise handle is for a buffer
 // is_linear indicates a buffer or linear image
-void ValidationStateTracker::InsertMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE *mem_info, VkDeviceSize memoryOffset,
-                                               VkMemoryRequirements memRequirements, VulkanObjectType object_type, bool is_linear) {
+void ValidationStateTracker::InsertMemoryRange(const VulkanTypedHandle &typed_handle, DEVICE_MEMORY_STATE *mem_info,
+                                               VkDeviceSize memoryOffset, VkMemoryRequirements memRequirements, bool is_linear) {
     MEMORY_RANGE range;
 
-    range.image = object_type == kVulkanObjectTypeImage;
-    range.handle = handle;
+    range.image = typed_handle.type == kVulkanObjectTypeImage;
+    range.handle = typed_handle.handle;
     range.linear = is_linear;
     range.memory = mem_info->mem;
     range.start = memoryOffset;
@@ -4232,52 +4229,52 @@ void ValidationStateTracker::InsertMemoryRange(uint64_t handle, DEVICE_MEMORY_ST
             tmp_alias_ranges.insert(check_range);
         }
     }
-    mem_info->bound_ranges[handle] = std::move(range);
+    mem_info->bound_ranges[typed_handle.handle] = std::move(range);
     for (auto tmp_range : tmp_alias_ranges) {
-        tmp_range->aliases.insert(&mem_info->bound_ranges[handle]);
+        tmp_range->aliases.insert(&mem_info->bound_ranges[typed_handle.handle]);
     }
 
-    if (object_type == kVulkanObjectTypeImage) {
-        mem_info->bound_images.insert(handle);
-    } else if (object_type == kVulkanObjectTypeBuffer) {
-        mem_info->bound_buffers.insert(handle);
-    } else if (object_type == kVulkanObjectTypeAccelerationStructureNV) {
-        mem_info->bound_acceleration_structures.insert(handle);
+    if (typed_handle.type == kVulkanObjectTypeImage) {
+        mem_info->bound_images.insert(typed_handle.handle);
+    } else if (typed_handle.type == kVulkanObjectTypeBuffer) {
+        mem_info->bound_buffers.insert(typed_handle.handle);
+    } else if (typed_handle.type == kVulkanObjectTypeAccelerationStructureNV) {
+        mem_info->bound_acceleration_structures.insert(typed_handle.handle);
     } else {
         // Unsupported object type
         assert(false);
     }
 }
 
-bool CoreChecks::ValidateInsertImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE *mem_info, VkDeviceSize mem_offset,
-                                                VkMemoryRequirements mem_reqs, bool is_linear, const char *api_name) {
-    return ValidateInsertMemoryRange(HandleToUint64(image), mem_info, mem_offset, mem_reqs, kVulkanObjectTypeImage, is_linear,
+bool CoreChecks::ValidateInsertImageMemoryRange(VkImage image, const DEVICE_MEMORY_STATE *mem_info, VkDeviceSize mem_offset,
+                                                const VkMemoryRequirements &mem_reqs, bool is_linear, const char *api_name) const {
+    return ValidateInsertMemoryRange(VulkanTypedHandle(image, kVulkanObjectTypeImage), mem_info, mem_offset, mem_reqs, is_linear,
                                      api_name);
 }
-void CoreChecks::InsertImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE *mem_info, VkDeviceSize mem_offset,
-                                        VkMemoryRequirements mem_reqs, bool is_linear) {
-    InsertMemoryRange(HandleToUint64(image), mem_info, mem_offset, mem_reqs, kVulkanObjectTypeImage, is_linear);
+void ValidationStateTracker::InsertImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE *mem_info, VkDeviceSize mem_offset,
+                                                    VkMemoryRequirements mem_reqs, bool is_linear) {
+    InsertMemoryRange(VulkanTypedHandle(image, kVulkanObjectTypeImage), mem_info, mem_offset, mem_reqs, is_linear);
 }
 
 bool CoreChecks::ValidateInsertBufferMemoryRange(VkBuffer buffer, const DEVICE_MEMORY_STATE *mem_info, VkDeviceSize mem_offset,
-                                                 VkMemoryRequirements mem_reqs, const char *api_name) const {
-    return ValidateInsertMemoryRange(HandleToUint64(buffer), mem_info, mem_offset, mem_reqs, kVulkanObjectTypeBuffer, true,
+                                                 const VkMemoryRequirements &mem_reqs, const char *api_name) const {
+    return ValidateInsertMemoryRange(VulkanTypedHandle(buffer, kVulkanObjectTypeBuffer), mem_info, mem_offset, mem_reqs, true,
                                      api_name);
 }
 void ValidationStateTracker::InsertBufferMemoryRange(VkBuffer buffer, DEVICE_MEMORY_STATE *mem_info, VkDeviceSize mem_offset,
-                                                     VkMemoryRequirements mem_reqs) {
-    InsertMemoryRange(HandleToUint64(buffer), mem_info, mem_offset, mem_reqs, kVulkanObjectTypeBuffer, true);
+                                                     const VkMemoryRequirements &mem_reqs) {
+    InsertMemoryRange(VulkanTypedHandle(buffer, kVulkanObjectTypeBuffer), mem_info, mem_offset, mem_reqs, true);
 }
 
-bool CoreChecks::ValidateInsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, DEVICE_MEMORY_STATE *mem_info,
-                                                                VkDeviceSize mem_offset, VkMemoryRequirements mem_reqs,
-                                                                const char *api_name) {
-    return ValidateInsertMemoryRange(HandleToUint64(as), mem_info, mem_offset, mem_reqs, kVulkanObjectTypeAccelerationStructureNV,
-                                     true, api_name);
+bool CoreChecks::ValidateInsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, const DEVICE_MEMORY_STATE *mem_info,
+                                                                VkDeviceSize mem_offset, const VkMemoryRequirements &mem_reqs,
+                                                                const char *api_name) const {
+    return ValidateInsertMemoryRange(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureNV), mem_info, mem_offset,
+                                     mem_reqs, true, api_name);
 }
-void CoreChecks::InsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, DEVICE_MEMORY_STATE *mem_info,
-                                                        VkDeviceSize mem_offset, VkMemoryRequirements mem_reqs) {
-    InsertMemoryRange(HandleToUint64(as), mem_info, mem_offset, mem_reqs, kVulkanObjectTypeAccelerationStructureNV, true);
+void ValidationStateTracker::InsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, DEVICE_MEMORY_STATE *mem_info,
+                                                                    VkDeviceSize mem_offset, const VkMemoryRequirements &mem_reqs) {
+    InsertMemoryRange(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureNV), mem_info, mem_offset, mem_reqs, true);
 }
 
 // Remove MEMORY_RANGE struct for give handle from bound_ranges of mem_info
@@ -4339,48 +4336,44 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
         uint64_t buffer_handle = HandleToUint64(buffer);
         const VulkanTypedHandle obj_struct(buffer, kVulkanObjectTypeBuffer);
         skip = ValidateSetMemBinding(mem, obj_struct, api_name);
-        auto memory_requirements = &buffer_state->requirements;
-        VkMemoryRequirements dispatched_requirements;
         if (!buffer_state->memory_requirements_checked) {
             // There's not an explicit requirement in the spec to call vkGetBufferMemoryRequirements() prior to calling
             // BindBufferMemory, but it's implied in that memory being bound must conform with VkMemoryRequirements from
             // vkGetBufferMemoryRequirements()
             skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, buffer_handle,
-                            kVUID_Core_DrawState_InvalidBuffer,
+                            kVUID_Core_BindBuffer_NoMemReqQuery,
                             "%s: Binding memory to %s but vkGetBufferMemoryRequirements() has not been called on that buffer.",
                             api_name, report_data->FormatHandle(buffer).c_str());
-            // Make the call for them so we can verify the state
-            DispatchGetBufferMemoryRequirements(device, buffer, &dispatched_requirements);
-            memory_requirements = &dispatched_requirements;
+            // In the following we'll use the information we got in CreateBuffer
         }
 
         // Validate bound memory range information
         const auto mem_info = GetDevMemState(mem);
         if (mem_info) {
-            skip |= ValidateInsertBufferMemoryRange(buffer, mem_info, memoryOffset, *memory_requirements, api_name);
-            skip |= ValidateMemoryTypes(mem_info, memory_requirements->memoryTypeBits, api_name,
+            skip |= ValidateInsertBufferMemoryRange(buffer, mem_info, memoryOffset, buffer_state->requirements, api_name);
+            skip |= ValidateMemoryTypes(mem_info, buffer_state->requirements.memoryTypeBits, api_name,
                                         "VUID-vkBindBufferMemory-memory-01035");
         }
 
         // Validate memory requirements alignment
-        if (SafeModulo(memoryOffset, memory_requirements->alignment) != 0) {
+        if (SafeModulo(memoryOffset, buffer_state->requirements.alignment) != 0) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, buffer_handle,
                             "VUID-vkBindBufferMemory-memoryOffset-01036",
                             "%s: memoryOffset is 0x%" PRIxLEAST64
                             " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
                             ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
-                            api_name, memoryOffset, memory_requirements->alignment);
+                            api_name, memoryOffset, buffer_state->requirements.alignment);
         }
 
         if (mem_info) {
             // Validate memory requirements size
-            if (memory_requirements->size > (mem_info->alloc_info.allocationSize - memoryOffset)) {
+            if (buffer_state->requirements.size > (mem_info->alloc_info.allocationSize - memoryOffset)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, buffer_handle,
                                 "VUID-vkBindBufferMemory-size-01037",
                                 "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
                                 " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
                                 ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
-                                api_name, mem_info->alloc_info.allocationSize - memoryOffset, memory_requirements->size);
+                                api_name, mem_info->alloc_info.allocationSize - memoryOffset, buffer_state->requirements.size);
             }
 
             // Validate dedicated allocation
@@ -4411,10 +4404,6 @@ bool CoreChecks::PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffe
 void ValidationStateTracker::UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset) {
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     if (buffer_state) {
-        if (!buffer_state->memory_requirements_checked) {
-            // Record the memory requirements even if they weren't queried
-            DispatchGetBufferMemoryRequirements(device, buffer, &buffer_state->requirements);
-        }
         // Track bound memory range information
         auto mem_info = GetDevMemState(mem);
         if (mem_info) {
@@ -6640,6 +6629,28 @@ void CoreChecks::PostCallRecordCreateAccelerationStructureNV(VkDevice device,
                                                              VkAccelerationStructureNV *pAccelerationStructure, VkResult result) {
     if (VK_SUCCESS != result) return;
     std::unique_ptr<ACCELERATION_STRUCTURE_STATE> as_state(new ACCELERATION_STRUCTURE_STATE(*pAccelerationStructure, pCreateInfo));
+
+    // Query the requirements in case the application doesn't (to avoid bind/validation time query)
+    VkAccelerationStructureMemoryRequirementsInfoNV as_memory_requirements_info = {};
+    as_memory_requirements_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
+    as_memory_requirements_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
+    as_memory_requirements_info.accelerationStructure = as_state->acceleration_structure;
+    DispatchGetAccelerationStructureMemoryRequirementsNV(device, &as_memory_requirements_info, &as_state->memory_requirements);
+
+    VkAccelerationStructureMemoryRequirementsInfoNV scratch_memory_req_info = {};
+    scratch_memory_req_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
+    scratch_memory_req_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
+    scratch_memory_req_info.accelerationStructure = as_state->acceleration_structure;
+    DispatchGetAccelerationStructureMemoryRequirementsNV(device, &scratch_memory_req_info,
+                                                         &as_state->build_scratch_memory_requirements);
+
+    VkAccelerationStructureMemoryRequirementsInfoNV update_memory_req_info = {};
+    update_memory_req_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
+    update_memory_req_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_NV;
+    update_memory_req_info.accelerationStructure = as_state->acceleration_structure;
+    DispatchGetAccelerationStructureMemoryRequirementsNV(device, &update_memory_req_info,
+                                                         &as_state->update_scratch_memory_requirements);
+
     accelerationStructureMap[*pAccelerationStructure] = std::move(as_state);
 }
 
@@ -6659,77 +6670,84 @@ void CoreChecks::PostCallRecordGetAccelerationStructureMemoryRequirementsNV(
         }
     }
 }
+bool CoreChecks::ValidateBindAccelerationStructureMemoryNV(VkDevice device,
+                                                           const VkBindAccelerationStructureMemoryInfoNV &info) const {
+    bool skip = false;
 
+    const ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureState(info.accelerationStructure);
+    if (!as_state) {
+        return skip;
+    }
+    uint64_t as_handle = HandleToUint64(info.accelerationStructure);
+    if (!as_state->GetBoundMemory().empty()) {
+        skip |=
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT,
+                    as_handle, "VUID-VkBindAccelerationStructureMemoryInfoNV-accelerationStructure-02450",
+                    "vkBindAccelerationStructureMemoryNV(): accelerationStructure must not already be backed by a memory object.");
+    }
+
+    if (!as_state->memory_requirements_checked) {
+        // There's not an explicit requirement in the spec to call vkGetImageMemoryRequirements() prior to calling
+        // BindAccelerationStructureMemoryNV but it's implied in that memory being bound must conform with
+        // VkAccelerationStructureMemoryRequirementsInfoNV from vkGetAccelerationStructureMemoryRequirementsNV
+        skip |= log_msg(
+            report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, as_handle,
+            kVUID_Core_BindAccelNV_NoMemReqQuery,
+            "vkBindAccelerationStructureMemoryNV(): "
+            "Binding memory to %s but vkGetAccelerationStructureMemoryRequirementsNV() has not been called on that structure.",
+            report_data->FormatHandle(info.accelerationStructure).c_str());
+        // Use requirements gathered at create time for validation below...
+    }
+
+    // Validate bound memory range information
+    const auto mem_info = GetDevMemState(info.memory);
+    if (mem_info) {
+        skip |= ValidateInsertAccelerationStructureMemoryRange(info.accelerationStructure, mem_info, info.memoryOffset,
+                                                               as_state->memory_requirements.memoryRequirements,
+                                                               "vkBindAccelerationStructureMemoryNV()");
+        skip |= ValidateMemoryTypes(mem_info, as_state->memory_requirements.memoryRequirements.memoryTypeBits,
+                                    "vkBindAccelerationStructureMemoryNV()",
+                                    "VUID-VkBindAccelerationStructureMemoryInfoNV-memory-02593");
+    }
+
+    // Validate memory requirements alignment
+    if (SafeModulo(info.memoryOffset, as_state->memory_requirements.memoryRequirements.alignment) != 0) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT,
+                        as_handle, "VUID-VkBindAccelerationStructureMemoryInfoNV-memoryOffset-02594",
+                        "vkBindAccelerationStructureMemoryNV(): memoryOffset is 0x%" PRIxLEAST64
+                        " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
+                        ", returned from a call to vkGetAccelerationStructureMemoryRequirementsNV with accelerationStructure"
+                        "and type of VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV.",
+                        info.memoryOffset, as_state->memory_requirements.memoryRequirements.alignment);
+    }
+
+    if (mem_info) {
+        // Validate memory requirements size
+        if (as_state->memory_requirements.memoryRequirements.size > (mem_info->alloc_info.allocationSize - info.memoryOffset)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, as_handle,
+                            "VUID-VkBindAccelerationStructureMemoryInfoNV-size-02595",
+                            "vkBindAccelerationStructureMemoryNV(): memory size minus memoryOffset is 0x%" PRIxLEAST64
+                            " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
+                            ", returned from a call to vkGetAccelerationStructureMemoryRequirementsNV with accelerationStructure"
+                            "and type of VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV.",
+                            mem_info->alloc_info.allocationSize - info.memoryOffset,
+                            as_state->memory_requirements.memoryRequirements.size);
+        }
+    }
+
+    return skip;
+}
 bool CoreChecks::PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                                   const VkBindAccelerationStructureMemoryInfoNV *pBindInfos) {
     bool skip = false;
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        const VkBindAccelerationStructureMemoryInfoNV &info = pBindInfos[i];
-
-        ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureState(info.accelerationStructure);
-        if (!as_state) {
-            continue;
-        }
-        uint64_t as_handle = HandleToUint64(info.accelerationStructure);
-        if (!as_state->GetBoundMemory().empty()) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT, as_handle,
-                "VUID-VkBindAccelerationStructureMemoryInfoNV-accelerationStructure-02450",
-                "vkBindAccelerationStructureMemoryNV(): accelerationStructure must not already be backed by a memory object.");
-        }
-
-        if (!as_state->memory_requirements_checked) {
-            VkAccelerationStructureMemoryRequirementsInfoNV as_memory_requirements_info = {};
-            as_memory_requirements_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
-            as_memory_requirements_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
-            as_memory_requirements_info.accelerationStructure = as_state->acceleration_structure;
-            DispatchGetAccelerationStructureMemoryRequirementsNV(device, &as_memory_requirements_info,
-                                                                 &as_state->memory_requirements);
-            as_state->memory_requirements_checked = true;
-        }
-
-        // Validate bound memory range information
-        const auto mem_info = GetDevMemState(info.memory);
-        if (mem_info) {
-            skip |= ValidateInsertAccelerationStructureMemoryRange(info.accelerationStructure, mem_info, info.memoryOffset,
-                                                                   as_state->memory_requirements.memoryRequirements,
-                                                                   "vkBindAccelerationStructureMemoryNV()");
-            skip |= ValidateMemoryTypes(mem_info, as_state->memory_requirements.memoryRequirements.memoryTypeBits,
-                                        "vkBindAccelerationStructureMemoryNV()",
-                                        "VUID-VkBindAccelerationStructureMemoryInfoNV-memory-02593");
-        }
-
-        // Validate memory requirements alignment
-        if (SafeModulo(info.memoryOffset, as_state->memory_requirements.memoryRequirements.alignment) != 0) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT,
-                            as_handle, "VUID-VkBindAccelerationStructureMemoryInfoNV-memoryOffset-02594",
-                            "vkBindAccelerationStructureMemoryNV(): memoryOffset is 0x%" PRIxLEAST64
-                            " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
-                            ", returned from a call to vkGetAccelerationStructureMemoryRequirementsNV with accelerationStructure"
-                            "and type of VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV.",
-                            info.memoryOffset, as_state->memory_requirements.memoryRequirements.alignment);
-        }
-
-        if (mem_info) {
-            // Validate memory requirements size
-            if (as_state->memory_requirements.memoryRequirements.size > (mem_info->alloc_info.allocationSize - info.memoryOffset)) {
-                skip |= log_msg(
-                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, as_handle,
-                    "VUID-VkBindAccelerationStructureMemoryInfoNV-size-02595",
-                    "vkBindAccelerationStructureMemoryNV(): memory size minus memoryOffset is 0x%" PRIxLEAST64
-                    " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
-                    ", returned from a call to vkGetAccelerationStructureMemoryRequirementsNV with accelerationStructure"
-                    "and type of VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV.",
-                    mem_info->alloc_info.allocationSize - info.memoryOffset, as_state->memory_requirements.memoryRequirements.size);
-            }
-        }
+        skip |= ValidateBindAccelerationStructureMemoryNV(device, pBindInfos[i]);
     }
     return skip;
 }
 
-void CoreChecks::PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
-                                                                 const VkBindAccelerationStructureMemoryInfoNV *pBindInfos,
-                                                                 VkResult result) {
+void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(
+    VkDevice device, uint32_t bindInfoCount, const VkBindAccelerationStructureMemoryInfoNV *pBindInfos, VkResult result) {
     if (VK_SUCCESS != result) return;
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         const VkBindAccelerationStructureMemoryInfoNV &info = pBindInfos[i];
@@ -6739,16 +6757,6 @@ void CoreChecks::PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device
             // Track bound memory range information
             auto mem_info = GetDevMemState(info.memory);
             if (mem_info) {
-                if (!as_state->memory_requirements_checked) {
-                    VkAccelerationStructureMemoryRequirementsInfoNV as_memory_requirements_info = {};
-                    as_memory_requirements_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
-                    as_memory_requirements_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
-                    as_memory_requirements_info.accelerationStructure = as_state->acceleration_structure;
-                    DispatchGetAccelerationStructureMemoryRequirementsNV(device, &as_memory_requirements_info,
-                                                                         &as_state->memory_requirements);
-                    as_state->memory_requirements_checked = true;
-                }
-
                 InsertAccelerationStructureMemoryRange(info.accelerationStructure, mem_info, info.memoryOffset,
                                                        as_state->requirements);
             }
@@ -6868,16 +6876,14 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
             }
         }
         if (dst_as_state != nullptr && !dst_as_state->update_scratch_memory_requirements_checked) {
-            VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo = {};
-            memoryRequirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
-            memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_NV;
-            memoryRequirementsInfo.accelerationStructure = dst;
-            DispatchGetAccelerationStructureMemoryRequirementsNV(device, &memoryRequirementsInfo,
-                                                                 &dst_as_state->update_scratch_memory_requirements);
-            dst_as_state->update_scratch_memory_requirements_checked = true;
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT,
+                            HandleToUint64(dst), kVUID_Core_CmdBuildAccelNV_NoUpdateMemReqQuery,
+                            "vkCmdBuildAccelerationStructureNV(): Updating %s but vkGetAccelerationStructureMemoryRequirementsNV() "
+                            "has not been called for update scratch memory.",
+                            report_data->FormatHandle(dst_as_state->acceleration_structure).c_str());
+            // Use requirements fetched at create time
         }
         if (scratch_buffer_state != nullptr && dst_as_state != nullptr &&
-            dst_as_state->update_scratch_memory_requirements_checked &&
             dst_as_state->update_scratch_memory_requirements.memoryRequirements.size >
                 (scratch_buffer_state->binding.size - (scratch_buffer_state->binding.offset + scratchOffset))) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -6892,15 +6898,14 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
         }
     } else {
         if (dst_as_state != nullptr && !dst_as_state->build_scratch_memory_requirements_checked) {
-            VkAccelerationStructureMemoryRequirementsInfoNV memoryRequirementsInfo = {};
-            memoryRequirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
-            memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
-            memoryRequirementsInfo.accelerationStructure = dst;
-            DispatchGetAccelerationStructureMemoryRequirementsNV(device, &memoryRequirementsInfo,
-                                                                 &dst_as_state->build_scratch_memory_requirements);
-            dst_as_state->build_scratch_memory_requirements_checked = true;
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT,
+                            HandleToUint64(dst), kVUID_Core_CmdBuildAccelNV_NoScratchMemReqQuery,
+                            "vkCmdBuildAccelerationStructureNV(): Assigning scratch buffer to %s but "
+                            "vkGetAccelerationStructureMemoryRequirementsNV() has not been called for scratch memory.",
+                            report_data->FormatHandle(dst_as_state->acceleration_structure).c_str());
+            // Use requirements fetched at create time
         }
-        if (scratch_buffer_state != nullptr && dst_as_state != nullptr && dst_as_state->build_scratch_memory_requirements_checked &&
+        if (scratch_buffer_state != nullptr && dst_as_state != nullptr &&
             dst_as_state->build_scratch_memory_requirements.memoryRequirements.size >
                 (scratch_buffer_state->binding.size - (scratch_buffer_state->binding.offset + scratchOffset))) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -11539,9 +11544,9 @@ bool CoreChecks::PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDev
     return skip;
 }
 
-bool CoreChecks::ValidateBindImageMemory(const VkBindImageMemoryInfo &bindInfo, const char *api_name) {
+bool CoreChecks::ValidateBindImageMemory(const VkBindImageMemoryInfo &bindInfo, const char *api_name) const {
     bool skip = false;
-    IMAGE_STATE *image_state = GetImageState(bindInfo.image);
+    const IMAGE_STATE *image_state = GetImageState(bindInfo.image);
     if (image_state) {
         // Track objects tied to memory
         uint64_t image_handle = HandleToUint64(bindInfo.image);
@@ -11550,7 +11555,7 @@ bool CoreChecks::ValidateBindImageMemory(const VkBindImageMemoryInfo &bindInfo, 
         if (image_state->external_format_android) {
             if (image_state->memory_requirements_checked) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
-                                kVUID_Core_DrawState_InvalidImage,
+                                kVUID_Core_BindImage_InvalidMemReqQuery,
                                 "%s: Must not call vkGetImageMemoryRequirements on %s that will be bound to an external "
                                 "Android hardware buffer.",
                                 api_name, report_data->FormatHandle(bindInfo.image).c_str());
@@ -11563,15 +11568,14 @@ bool CoreChecks::ValidateBindImageMemory(const VkBindImageMemoryInfo &bindInfo, 
             // BindImageMemory but it's implied in that memory being bound must conform with VkMemoryRequirements from
             // vkGetImageMemoryRequirements()
             skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
-                            kVUID_Core_DrawState_InvalidImage,
+                            kVUID_Core_BindImage_NoMemReqQuery,
                             "%s: Binding memory to %s but vkGetImageMemoryRequirements() has not been called on that image.",
                             api_name, report_data->FormatHandle(bindInfo.image).c_str());
-            // Make the call for them so we can verify the state
-            DispatchGetImageMemoryRequirements(device, bindInfo.image, &image_state->requirements);
+            // Use this information fetched at CreateImage time, in validation below.
         }
 
         // Validate bound memory range information
-        auto mem_info = GetDevMemState(bindInfo.memory);
+        const auto mem_info = GetDevMemState(bindInfo.memory);
         if (mem_info) {
             skip |= ValidateInsertImageMemoryRange(bindInfo.image, mem_info, bindInfo.memoryOffset, image_state->requirements,
                                                    image_state->createInfo.tiling == VK_IMAGE_TILING_LINEAR, api_name);
@@ -11658,7 +11662,7 @@ bool CoreChecks::PreCallValidateBindImageMemory(VkDevice device, VkImage image, 
     return ValidateBindImageMemory(bindInfo, "vkBindImageMemory()");
 }
 
-void CoreChecks::UpdateBindImageMemoryState(const VkBindImageMemoryInfo &bindInfo) {
+void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryInfo &bindInfo) {
     IMAGE_STATE *image_state = GetImageState(bindInfo.image);
     if (image_state) {
         const auto swapchain_info = lvl_find_in_chain<VkBindImageMemorySwapchainInfoKHR>(bindInfo.pNext);
@@ -11680,8 +11684,8 @@ void CoreChecks::UpdateBindImageMemoryState(const VkBindImageMemoryInfo &bindInf
     }
 }
 
-void CoreChecks::PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset,
-                                               VkResult result) {
+void ValidationStateTracker::PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem,
+                                                           VkDeviceSize memoryOffset, VkResult result) {
     if (VK_SUCCESS != result) return;
     VkBindImageMemoryInfo bindInfo = {};
     bindInfo.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
@@ -11713,16 +11717,16 @@ bool CoreChecks::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bi
     return skip;
 }
 
-void CoreChecks::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfoKHR *pBindInfos,
-                                                VkResult result) {
+void ValidationStateTracker::PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount,
+                                                            const VkBindImageMemoryInfoKHR *pBindInfos, VkResult result) {
     if (VK_SUCCESS != result) return;
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         UpdateBindImageMemoryState(pBindInfos[i]);
     }
 }
 
-void CoreChecks::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount,
-                                                   const VkBindImageMemoryInfoKHR *pBindInfos, VkResult result) {
+void ValidationStateTracker::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount,
+                                                               const VkBindImageMemoryInfoKHR *pBindInfos, VkResult result) {
     if (VK_SUCCESS != result) return;
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         UpdateBindImageMemoryState(pBindInfos[i]);
