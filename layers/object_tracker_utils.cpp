@@ -938,3 +938,29 @@ bool ObjectLifetimes::PreCallValidateQueueSetPerformanceConfigurationINTEL(VkQue
 
     return skip;
 }
+
+bool ObjectLifetimes::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
+                                                       const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer) {
+    bool skip = false;
+    skip |=
+        ValidateObject(device, device, kVulkanObjectTypeDevice, false, "VUID-vkCreateFramebuffer-device-parameter", kVUIDUndefined);
+    if (pCreateInfo) {
+        skip |= ValidateObject(device, pCreateInfo->renderPass, kVulkanObjectTypeRenderPass, false,
+                               "VUID-VkFramebufferCreateInfo-renderPass-parameter", "VUID-VkFramebufferCreateInfo-commonparent");
+        if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) == 0) {
+            for (uint32_t index1 = 0; index1 < pCreateInfo->attachmentCount; ++index1) {
+                skip |= ValidateObject(device, pCreateInfo->pAttachments[index1], kVulkanObjectTypeImageView, true, kVUIDUndefined,
+                                       "VUID-VkFramebufferCreateInfo-commonparent");
+            }
+        }
+    }
+
+    return skip;
+}
+
+void ObjectLifetimes::PostCallRecordCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
+                                                      const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer,
+                                                      VkResult result) {
+    if (result != VK_SUCCESS) return;
+    CreateObject(device, *pFramebuffer, kVulkanObjectTypeFramebuffer, pAllocator);
+}

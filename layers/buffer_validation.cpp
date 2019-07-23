@@ -459,6 +459,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
     bool skip = false;
     auto const pRenderPassInfo = GetRenderPassState(pRenderPassBegin->renderPass)->createInfo.ptr();
     auto const &framebufferInfo = framebuffer_state->createInfo;
+    const VkImageView *attachments = framebufferInfo.pAttachments;
 
     auto render_pass = GetRenderPassState(pRenderPassBegin->renderPass)->renderPass;
     auto framebuffer = framebuffer_state->framebuffer;
@@ -468,116 +469,124 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
                         HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidRenderpass,
                         "You cannot start a render pass using a framebuffer with a different number of attachments.");
     }
-    const auto *const_pCB = static_cast<const CMD_BUFFER_STATE *>(pCB);
-    for (uint32_t i = 0; i < pRenderPassInfo->attachmentCount; ++i) {
-        const VkImageView &image_view = framebufferInfo.pAttachments[i];
-        auto view_state = GetImageViewState(image_view);
 
-        if (!view_state) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
-                            HandleToUint64(pRenderPassBegin->renderPass), "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
-                            "vkCmdBeginRenderPass(): %s pAttachments[%" PRIu32 "] = %s is not a valid VkImageView handle",
-                            report_data->FormatHandle(framebuffer_state->framebuffer).c_str(), i,
-                            report_data->FormatHandle(image_view).c_str());
-            continue;
-        }
-
-        const VkImage image = view_state->create_info.image;
-        const IMAGE_STATE *image_state = GetImageState(image);
-
-        if (!image_state) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
-                            HandleToUint64(pRenderPassBegin->renderPass), "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
-                            "vkCmdBeginRenderPass(): %s pAttachments[%" PRIu32 "] =  %s references non-extant %s.",
-                            report_data->FormatHandle(framebuffer_state->framebuffer).c_str(), i,
-                            report_data->FormatHandle(image_view).c_str(), report_data->FormatHandle(image).c_str());
-            continue;
-        }
-        auto attachment_initial_layout = pRenderPassInfo->pAttachments[i].initialLayout;
-        auto final_layout = pRenderPassInfo->pAttachments[i].finalLayout;
-
-        // Cast pCB to const because we don't want to create entries that don't exist here (in case the key changes to something
-        // in common with the non-const version.)
-        const ImageSubresourceLayoutMap *subresource_map =
-            (attachment_initial_layout != VK_IMAGE_LAYOUT_UNDEFINED) ? GetImageSubresourceLayoutMap(const_pCB, image) : nullptr;
-
-        if (subresource_map) {  // If no layout information for image yet, will be checked at QueueSubmit time
-            LayoutUseCheckAndMessage layout_check(subresource_map);
-            bool subres_skip = false;
-            auto subresource_cb = [this, i, attachment_initial_layout, &layout_check, &subres_skip](
-                                      const VkImageSubresource &subres, VkImageLayout layout, VkImageLayout initial_layout) {
-                if (!layout_check.Check(subres, attachment_initial_layout, layout, initial_layout)) {
-                    subres_skip |=
-                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                kVUID_Core_DrawState_InvalidRenderpass,
-                                "You cannot start a render pass using attachment %u where the render pass initial layout is %s "
-                                "and the %s layout of the attachment is %s. The layouts must match, or the render "
-                                "pass initial layout for the attachment must be VK_IMAGE_LAYOUT_UNDEFINED",
-                                i, string_VkImageLayout(attachment_initial_layout), layout_check.message,
-                                string_VkImageLayout(layout_check.layout));
-                }
-                return !subres_skip;  // quit checking subresources once we fail once
-            };
-
-            subresource_map->ForRange(view_state->normalized_subresource_range, subresource_cb);
-            skip |= subres_skip;
-        }
-
-        ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_initial_layout, image, image_view, framebuffer,
-                                                             render_pass, i, "initial layout");
-
-        ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, final_layout, image, image_view, framebuffer, render_pass,
-                                                             i, "final layout");
+    const auto *attachmentInfo = lvl_find_in_chain<VkRenderPassAttachmentBeginInfoKHR>(pRenderPassBegin->pNext);
+    if (((framebufferInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) != 0) && attachmentInfo != nullptr) {
+        attachments = attachmentInfo->pAttachments;
     }
 
-    for (uint32_t j = 0; j < pRenderPassInfo->subpassCount; ++j) {
-        auto &subpass = pRenderPassInfo->pSubpasses[j];
-        for (uint32_t k = 0; k < pRenderPassInfo->pSubpasses[j].inputAttachmentCount; ++k) {
-            auto &attachment_ref = subpass.pInputAttachments[k];
-            if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
-                auto image_view = framebufferInfo.pAttachments[attachment_ref.attachment];
-                auto view_state = GetImageViewState(image_view);
+    if (attachments != nullptr) {
+        const auto *const_pCB = static_cast<const CMD_BUFFER_STATE *>(pCB);
+        for (uint32_t i = 0; i < pRenderPassInfo->attachmentCount; ++i) {
+            auto image_view = attachments[i];
+            auto view_state = GetImageViewState(image_view);
 
-                if (view_state) {
-                    auto image = view_state->create_info.image;
-                    ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_ref.layout, image, image_view,
-                                                                         framebuffer, render_pass, attachment_ref.attachment,
-                                                                         "input attachment layout");
-                }
+            if (!view_state) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                HandleToUint64(pRenderPassBegin->renderPass), "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
+                                "vkCmdBeginRenderPass(): %s pAttachments[%" PRIu32 "] = %s is not a valid VkImageView handle",
+                                report_data->FormatHandle(framebuffer_state->framebuffer).c_str(), i,
+                                report_data->FormatHandle(image_view).c_str());
+                continue;
             }
+
+            const VkImage image = view_state->create_info.image;
+            const IMAGE_STATE *image_state = GetImageState(image);
+
+            if (!image_state) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                HandleToUint64(pRenderPassBegin->renderPass), "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
+                                "vkCmdBeginRenderPass(): %s pAttachments[%" PRIu32 "] =  %s references non-extant %s.",
+                                report_data->FormatHandle(framebuffer_state->framebuffer).c_str(), i,
+                                report_data->FormatHandle(image_view).c_str(), report_data->FormatHandle(image).c_str());
+                continue;
+            }
+            auto attachment_initial_layout = pRenderPassInfo->pAttachments[i].initialLayout;
+            auto final_layout = pRenderPassInfo->pAttachments[i].finalLayout;
+
+            // Cast pCB to const because we don't want to create entries that don't exist here (in case the key changes to something
+            // in common with the non-const version.)
+            const ImageSubresourceLayoutMap *subresource_map =
+                (attachment_initial_layout != VK_IMAGE_LAYOUT_UNDEFINED) ? GetImageSubresourceLayoutMap(const_pCB, image) : nullptr;
+
+            if (subresource_map) {  // If no layout information for image yet, will be checked at QueueSubmit time
+                LayoutUseCheckAndMessage layout_check(subresource_map);
+                bool subres_skip = false;
+                auto subresource_cb = [this, i, attachment_initial_layout, &layout_check, &subres_skip](
+                                          const VkImageSubresource &subres, VkImageLayout layout, VkImageLayout initial_layout) {
+                    if (!layout_check.Check(subres, attachment_initial_layout, layout, initial_layout)) {
+                        subres_skip |=
+                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    kVUID_Core_DrawState_InvalidRenderpass,
+                                    "You cannot start a render pass using attachment %u where the render pass initial layout is %s "
+                                    "and the %s layout of the attachment is %s. The layouts must match, or the render "
+                                    "pass initial layout for the attachment must be VK_IMAGE_LAYOUT_UNDEFINED",
+                                    i, string_VkImageLayout(attachment_initial_layout), layout_check.message,
+                                    string_VkImageLayout(layout_check.layout));
+                    }
+                    return !subres_skip;  // quit checking subresources once we fail once
+                };
+
+                subresource_map->ForRange(view_state->normalized_subresource_range, subresource_cb);
+                skip |= subres_skip;
+            }
+
+            ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_initial_layout, image, image_view,
+                                                                 framebuffer, render_pass, i, "initial layout");
+
+            ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, final_layout, image, image_view, framebuffer,
+                                                                 render_pass, i, "final layout");
         }
 
-        for (uint32_t k = 0; k < pRenderPassInfo->pSubpasses[j].colorAttachmentCount; ++k) {
-            auto &attachment_ref = subpass.pColorAttachments[k];
-            if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
-                auto image_view = framebufferInfo.pAttachments[attachment_ref.attachment];
-                auto view_state = GetImageViewState(image_view);
+        for (uint32_t j = 0; j < pRenderPassInfo->subpassCount; ++j) {
+            auto &subpass = pRenderPassInfo->pSubpasses[j];
+            for (uint32_t k = 0; k < pRenderPassInfo->pSubpasses[j].inputAttachmentCount; ++k) {
+                auto &attachment_ref = subpass.pInputAttachments[k];
+                if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
+                    auto image_view = attachments[attachment_ref.attachment];
+                    auto view_state = GetImageViewState(image_view);
 
-                if (view_state) {
-                    auto image = view_state->create_info.image;
-                    ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_ref.layout, image, image_view,
-                                                                         framebuffer, render_pass, attachment_ref.attachment,
-                                                                         "color attachment layout");
-                    if (subpass.pResolveAttachments) {
+                    if (view_state) {
+                        auto image = view_state->create_info.image;
                         ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_ref.layout, image, image_view,
                                                                              framebuffer, render_pass, attachment_ref.attachment,
-                                                                             "resolve attachment layout");
+                                                                             "input attachment layout");
                     }
                 }
             }
-        }
 
-        if (pRenderPassInfo->pSubpasses[j].pDepthStencilAttachment) {
-            auto &attachment_ref = *subpass.pDepthStencilAttachment;
-            if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
-                auto image_view = framebufferInfo.pAttachments[attachment_ref.attachment];
-                auto view_state = GetImageViewState(image_view);
+            for (uint32_t k = 0; k < pRenderPassInfo->pSubpasses[j].colorAttachmentCount; ++k) {
+                auto &attachment_ref = subpass.pColorAttachments[k];
+                if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
+                    auto image_view = attachments[attachment_ref.attachment];
+                    auto view_state = GetImageViewState(image_view);
 
-                if (view_state) {
-                    auto image = view_state->create_info.image;
-                    ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_ref.layout, image, image_view,
-                                                                         framebuffer, render_pass, attachment_ref.attachment,
-                                                                         "input attachment layout");
+                    if (view_state) {
+                        auto image = view_state->create_info.image;
+                        ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_ref.layout, image, image_view,
+                                                                             framebuffer, render_pass, attachment_ref.attachment,
+                                                                             "color attachment layout");
+                        if (subpass.pResolveAttachments) {
+                            ValidateRenderPassLayoutAgainstFramebufferImageUsage(
+                                rp_version, attachment_ref.layout, image, image_view, framebuffer, render_pass,
+                                attachment_ref.attachment, "resolve attachment layout");
+                        }
+                    }
+                }
+            }
+
+            if (pRenderPassInfo->pSubpasses[j].pDepthStencilAttachment) {
+                auto &attachment_ref = *subpass.pDepthStencilAttachment;
+                if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
+                    auto image_view = attachments[attachment_ref.attachment];
+                    auto view_state = GetImageViewState(image_view);
+
+                    if (view_state) {
+                        auto image = view_state->create_info.image;
+                        ValidateRenderPassLayoutAgainstFramebufferImageUsage(rp_version, attachment_ref.layout, image, image_view,
+                                                                             framebuffer, render_pass, attachment_ref.attachment,
+                                                                             "input attachment layout");
+                    }
                 }
             }
         }

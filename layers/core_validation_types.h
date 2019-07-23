@@ -1550,6 +1550,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT fragment_shader_interlock_features;
     VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT demote_to_helper_invocation_features;
     VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT texel_buffer_alignment_features;
+    VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_framebuffer_features;
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };

@@ -2489,6 +2489,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.texel_buffer_alignment_features = *texel_buffer_alignment_features;
     }
 
+    const auto *imageless_framebuffer_features =
+        lvl_find_in_chain<VkPhysicalDeviceImagelessFramebufferFeaturesKHR>(pCreateInfo->pNext);
+    if (imageless_framebuffer_features) {
+        state_tracker->enabled_features.imageless_framebuffer_features = *imageless_framebuffer_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);
@@ -9119,21 +9125,39 @@ bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2KHR *att
                             VkImageUsageFlagBits usage_flag, const char *error_code) {
     bool skip = false;
 
-    for (uint32_t attach = 0; attach < count; attach++) {
-        if (attachments[attach].attachment != VK_ATTACHMENT_UNUSED) {
-            // Attachment counts are verified elsewhere, but prevent an invalid access
-            if (attachments[attach].attachment < fbci->attachmentCount) {
-                const VkImageView *image_view = &fbci->pAttachments[attachments[attach].attachment];
-                auto view_state = GetImageViewState(*image_view);
-                if (view_state) {
-                    const VkImageCreateInfo *ici = &GetImageState(view_state->create_info.image)->createInfo;
-                    if (ici != nullptr) {
-                        if ((ici->usage & usage_flag) == 0) {
-                            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                            error_code,
-                                            "vkCreateFramebuffer:  Framebuffer Attachment (%d) conflicts with the image's "
-                                            "IMAGE_USAGE flags (%s).",
-                                            attachments[attach].attachment, string_VkImageUsageFlagBits(usage_flag));
+    if (attachments) {
+        for (uint32_t attach = 0; attach < count; attach++) {
+            if (attachments[attach].attachment != VK_ATTACHMENT_UNUSED) {
+                // Attachment counts are verified elsewhere, but prevent an invalid access
+                if (attachments[attach].attachment < fbci->attachmentCount) {
+                    if ((fbci->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) == 0) {
+                        const VkImageView *image_view = &fbci->pAttachments[attachments[attach].attachment];
+                        auto view_state = GetImageViewState(*image_view);
+                        if (view_state) {
+                            const VkImageCreateInfo *ici = &GetImageState(view_state->create_info.image)->createInfo;
+                            if (ici != nullptr) {
+                                if ((ici->usage & usage_flag) == 0) {
+                                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, error_code,
+                                                    "vkCreateFramebuffer:  Framebuffer Attachment (%d) conflicts with the image's "
+                                                    "IMAGE_USAGE flags (%s).",
+                                                    attachments[attach].attachment, string_VkImageUsageFlagBits(usage_flag));
+                                }
+                            }
+                        }
+                    } else {
+                        const VkFramebufferAttachmentsCreateInfoKHR *fbaci =
+                            lvl_find_in_chain<VkFramebufferAttachmentsCreateInfoKHR>(fbci->pNext);
+                        if (fbaci != nullptr && fbaci->pAttachmentImageInfos != nullptr &&
+                            fbaci->attachmentImageInfoCount > attachments[attach].attachment) {
+                            uint32_t image_usage = fbaci->pAttachmentImageInfos[attachments[attach].attachment].usage;
+                            if ((image_usage & usage_flag) == 0) {
+                                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
+                                                0, error_code,
+                                                "vkCreateFramebuffer:  Framebuffer attachment info (%d) conflicts with the image's "
+                                                "IMAGE_USAGE flags (%s).",
+                                                attachments[attach].attachment, string_VkImageUsageFlagBits(usage_flag));
+                            }
                         }
                     }
                 }
@@ -9155,6 +9179,35 @@ bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2KHR *att
 bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pCreateInfo) {
     bool skip = false;
 
+    const VkFramebufferAttachmentsCreateInfoKHR *pFramebufferAttachmentsCreateInfo =
+        lvl_find_in_chain<VkFramebufferAttachmentsCreateInfoKHR>(pCreateInfo->pNext);
+    if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) != 0) {
+        if (!enabled_features.imageless_framebuffer_features.imagelessFramebuffer) {
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        "VUID-VkFramebufferCreateInfo-flags-03189",
+                        "vkCreateFramebuffer(): VkFramebufferCreateInfo flags includes VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR, "
+                        "but the imagelessFramebuffer feature is not enabled.");
+        }
+
+        if (pFramebufferAttachmentsCreateInfo == nullptr) {
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        "VUID-VkFramebufferCreateInfo-flags-03190",
+                        "vkCreateFramebuffer(): VkFramebufferCreateInfo flags includes VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR, "
+                        "but no instance of VkFramebufferAttachmentsCreateInfoKHR is present in the pNext chain.");
+        } else {
+            if (pFramebufferAttachmentsCreateInfo->attachmentImageInfoCount != 0 &&
+                pFramebufferAttachmentsCreateInfo->attachmentImageInfoCount != pCreateInfo->attachmentCount) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkFramebufferCreateInfo-flags-03191",
+                                "vkCreateFramebuffer(): VkFramebufferCreateInfo attachmentCount is %u, but "
+                                "VkFramebufferAttachmentsCreateInfoKHR attachmentImageInfoCount is %u.",
+                                pCreateInfo->attachmentCount, pFramebufferAttachmentsCreateInfo->attachmentImageInfoCount);
+            }
+        }
+    }
+
     auto rp_state = GetRenderPassState(pCreateInfo->renderPass);
     if (rp_state) {
         const VkRenderPassCreateInfo2KHR *rpci = rp_state->createInfo.ptr();
@@ -9167,82 +9220,295 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                             report_data->FormatHandle(pCreateInfo->renderPass).c_str());
         } else {
             // attachmentCounts match, so make sure corresponding attachment details line up
-            const VkImageView *image_views = pCreateInfo->pAttachments;
-            for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
-                auto view_state = GetImageViewState(image_views[i]);
-                auto &ivci = view_state->create_info;
-                if (ivci.format != rpci->pAttachments[i].format) {
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
-                                    HandleToUint64(pCreateInfo->renderPass), "VUID-VkFramebufferCreateInfo-pAttachments-00880",
-                                    "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has format of %s that does not "
-                                    "match the format of %s used by the corresponding attachment for %s.",
-                                    i, string_VkFormat(ivci.format), string_VkFormat(rpci->pAttachments[i].format),
-                                    report_data->FormatHandle(pCreateInfo->renderPass).c_str());
+            if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) == 0) {
+                const VkImageView *image_views = pCreateInfo->pAttachments;
+                for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
+                    auto view_state = GetImageViewState(image_views[i]);
+                    if (view_state == nullptr) {
+                        skip |=
+                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT,
+                                    HandleToUint64(image_views[i]), "VUID-VkFramebufferCreateInfo-flags-03188",
+                                    "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u is not a valid VkImageView.", i);
+                    } else {
+                        auto &ivci = view_state->create_info;
+                        if (ivci.format != rpci->pAttachments[i].format) {
+                            skip |= log_msg(
+                                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                HandleToUint64(pCreateInfo->renderPass), "VUID-VkFramebufferCreateInfo-pAttachments-00880",
+                                "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has format of %s that does not "
+                                "match the format of %s used by the corresponding attachment for %s.",
+                                i, string_VkFormat(ivci.format), string_VkFormat(rpci->pAttachments[i].format),
+                                report_data->FormatHandle(pCreateInfo->renderPass).c_str());
+                        }
+                        const VkImageCreateInfo *ici = &GetImageState(ivci.image)->createInfo;
+                        if (ici->samples != rpci->pAttachments[i].samples) {
+                            skip |=
+                                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                        HandleToUint64(pCreateInfo->renderPass), "VUID-VkFramebufferCreateInfo-pAttachments-00881",
+                                        "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has %s samples that do not "
+                                        "match the %s "
+                                        "samples used by the corresponding attachment for %s.",
+                                        i, string_VkSampleCountFlagBits(ici->samples),
+                                        string_VkSampleCountFlagBits(rpci->pAttachments[i].samples),
+                                        report_data->FormatHandle(pCreateInfo->renderPass).c_str());
+                        }
+                        // Verify that view only has a single mip level
+                        if (ivci.subresourceRange.levelCount != 1) {
+                            skip |= log_msg(
+                                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkFramebufferCreateInfo-pAttachments-00883",
+                                "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has mip levelCount of %u but "
+                                "only a single mip level (levelCount ==  1) is allowed when creating a Framebuffer.",
+                                i, ivci.subresourceRange.levelCount);
+                        }
+                        const uint32_t mip_level = ivci.subresourceRange.baseMipLevel;
+                        uint32_t mip_width = max(1u, ici->extent.width >> mip_level);
+                        uint32_t mip_height = max(1u, ici->extent.height >> mip_level);
+                        if ((ivci.subresourceRange.layerCount < pCreateInfo->layers) || (mip_width < pCreateInfo->width) ||
+                            (mip_height < pCreateInfo->height)) {
+                            skip |= log_msg(
+                                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkFramebufferCreateInfo-pAttachments-00882",
+                                "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u mip level %u has dimensions "
+                                "smaller than the corresponding framebuffer dimensions. Here are the respective dimensions for "
+                                "attachment #%u, framebuffer:\n"
+                                "width: %u, %u\n"
+                                "height: %u, %u\n"
+                                "layerCount: %u, %u\n",
+                                i, ivci.subresourceRange.baseMipLevel, i, mip_width, pCreateInfo->width, mip_height,
+                                pCreateInfo->height, ivci.subresourceRange.layerCount, pCreateInfo->layers);
+                        }
+                        if (((ivci.components.r != VK_COMPONENT_SWIZZLE_IDENTITY) &&
+                             (ivci.components.r != VK_COMPONENT_SWIZZLE_R)) ||
+                            ((ivci.components.g != VK_COMPONENT_SWIZZLE_IDENTITY) &&
+                             (ivci.components.g != VK_COMPONENT_SWIZZLE_G)) ||
+                            ((ivci.components.b != VK_COMPONENT_SWIZZLE_IDENTITY) &&
+                             (ivci.components.b != VK_COMPONENT_SWIZZLE_B)) ||
+                            ((ivci.components.a != VK_COMPONENT_SWIZZLE_IDENTITY) &&
+                             (ivci.components.a != VK_COMPONENT_SWIZZLE_A))) {
+                            skip |= log_msg(
+                                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkFramebufferCreateInfo-pAttachments-00884",
+                                "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has non-identy swizzle. All "
+                                "framebuffer attachments must have been created with the identity swizzle. Here are the actual "
+                                "swizzle values:\n"
+                                "r swizzle = %s\n"
+                                "g swizzle = %s\n"
+                                "b swizzle = %s\n"
+                                "a swizzle = %s\n",
+                                i, string_VkComponentSwizzle(ivci.components.r), string_VkComponentSwizzle(ivci.components.g),
+                                string_VkComponentSwizzle(ivci.components.b), string_VkComponentSwizzle(ivci.components.a));
+                        }
+                    }
                 }
-                const VkImageCreateInfo *ici = &GetImageState(ivci.image)->createInfo;
-                if (ici->samples != rpci->pAttachments[i].samples) {
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
-                        HandleToUint64(pCreateInfo->renderPass), "VUID-VkFramebufferCreateInfo-pAttachments-00881",
-                        "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has %s samples that do not match the %s "
-                        "samples used by the corresponding attachment for %s.",
-                        i, string_VkSampleCountFlagBits(ici->samples), string_VkSampleCountFlagBits(rpci->pAttachments[i].samples),
-                        report_data->FormatHandle(pCreateInfo->renderPass).c_str());
+            } else if (pFramebufferAttachmentsCreateInfo) {
+                // VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR is set
+                for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
+                    auto &aii = pFramebufferAttachmentsCreateInfo->pAttachmentImageInfos[i];
+                    bool formatFound = false;
+                    for (uint32_t j = 0; j < aii.viewFormatCount; ++j) {
+                        if (aii.pViewFormats[j] == rpci->pAttachments[i].format) {
+                            formatFound = true;
+                        }
+                    }
+                    if (!formatFound) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                        HandleToUint64(pCreateInfo->renderPass), "VUID-VkFramebufferCreateInfo-flags-03205",
+                                        "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info #%u does not include "
+                                        "format %s used "
+                                        "by the corresponding attachment for renderPass (%s).",
+                                        i, string_VkFormat(rpci->pAttachments[i].format),
+                                        report_data->FormatHandle(pCreateInfo->renderPass).c_str());
+                    }
+
+                    const char *mismatchedLayersNoMultiviewVuid = device_extensions.vk_khr_multiview
+                                                                      ? "VUID-VkFramebufferCreateInfo-renderPass-03199"
+                                                                      : "VUID-VkFramebufferCreateInfo-renderPass-03200";
+                    if ((rpci->subpassCount == 0) || (rpci->pSubpasses[0].viewMask == 0)) {
+                        if (aii.layerCount < pCreateInfo->layers) {
+                            skip |=
+                                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                        mismatchedLayersNoMultiviewVuid,
+                                        "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info #%u has only #%u layers, "
+                                        "but framebuffer has #%u layers.",
+                                        i, aii.layerCount, pCreateInfo->layers);
+                        }
+                    }
+
+                    if (!device_extensions.vk_ext_fragment_density_map) {
+                        if (aii.width < pCreateInfo->width) {
+                            skip |= log_msg(
+                                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkFramebufferCreateInfo-flags-03192",
+                                "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info #%u has a width of only #%u, "
+                                "but framebuffer has a width of #%u.",
+                                i, aii.width, pCreateInfo->width);
+                        }
+
+                        if (aii.height < pCreateInfo->height) {
+                            skip |= log_msg(
+                                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkFramebufferCreateInfo-flags-03193",
+                                "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info #%u has a height of only #%u, "
+                                "but framebuffer has a height of #%u.",
+                                i, aii.height, pCreateInfo->height);
+                        }
+                    }
                 }
-                // Verify that view only has a single mip level
-                if (ivci.subresourceRange.levelCount != 1) {
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                    "VUID-VkFramebufferCreateInfo-pAttachments-00883",
-                                    "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has mip levelCount of %u but "
-                                    "only a single mip level (levelCount ==  1) is allowed when creating a Framebuffer.",
-                                    i, ivci.subresourceRange.levelCount);
+
+                // Validate image usage
+                uint32_t attachment_index = VK_ATTACHMENT_UNUSED;
+                for (uint32_t i = 0; i < rpci->subpassCount; ++i) {
+                    skip |= MatchUsage(rpci->pSubpasses[i].colorAttachmentCount, rpci->pSubpasses[i].pColorAttachments, pCreateInfo,
+                                       VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-flags-03201");
+                    skip |=
+                        MatchUsage(rpci->pSubpasses[i].colorAttachmentCount, rpci->pSubpasses[i].pResolveAttachments, pCreateInfo,
+                                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-flags-03201");
+                    skip |= MatchUsage(1, rpci->pSubpasses[i].pDepthStencilAttachment, pCreateInfo,
+                                       VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-flags-03202");
+                    skip |= MatchUsage(rpci->pSubpasses[i].inputAttachmentCount, rpci->pSubpasses[i].pInputAttachments, pCreateInfo,
+                                       VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-flags-03204");
+
+                    const VkSubpassDescriptionDepthStencilResolveKHR *pDepthStencilResolve =
+                        lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolveKHR>(rpci->pSubpasses[i].pNext);
+                    if (device_extensions.vk_khr_depth_stencil_resolve && pDepthStencilResolve != nullptr) {
+                        skip |= MatchUsage(1, pDepthStencilResolve->pDepthStencilResolveAttachment, pCreateInfo,
+                                           VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-flags-03203");
+                    }
                 }
-                const uint32_t mip_level = ivci.subresourceRange.baseMipLevel;
-                uint32_t mip_width = max(1u, ici->extent.width >> mip_level);
-                uint32_t mip_height = max(1u, ici->extent.height >> mip_level);
-                if ((ivci.subresourceRange.layerCount < pCreateInfo->layers) || (mip_width < pCreateInfo->width) ||
-                    (mip_height < pCreateInfo->height)) {
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                    "VUID-VkFramebufferCreateInfo-pAttachments-00882",
-                                    "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u mip level %u has dimensions "
-                                    "smaller than the corresponding framebuffer dimensions. Here are the respective dimensions for "
-                                    "attachment #%u, framebuffer:\n"
-                                    "width: %u, %u\n"
-                                    "height: %u, %u\n"
-                                    "layerCount: %u, %u\n",
-                                    i, ivci.subresourceRange.baseMipLevel, i, mip_width, pCreateInfo->width, mip_height,
-                                    pCreateInfo->height, ivci.subresourceRange.layerCount, pCreateInfo->layers);
-                }
-                if (((ivci.components.r != VK_COMPONENT_SWIZZLE_IDENTITY) && (ivci.components.r != VK_COMPONENT_SWIZZLE_R)) ||
-                    ((ivci.components.g != VK_COMPONENT_SWIZZLE_IDENTITY) && (ivci.components.g != VK_COMPONENT_SWIZZLE_G)) ||
-                    ((ivci.components.b != VK_COMPONENT_SWIZZLE_IDENTITY) && (ivci.components.b != VK_COMPONENT_SWIZZLE_B)) ||
-                    ((ivci.components.a != VK_COMPONENT_SWIZZLE_IDENTITY) && (ivci.components.a != VK_COMPONENT_SWIZZLE_A))) {
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                    "VUID-VkFramebufferCreateInfo-pAttachments-00884",
-                                    "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has non-identy swizzle. All "
-                                    "framebuffer attachments must have been created with the identity swizzle. Here are the actual "
-                                    "swizzle values:\n"
-                                    "r swizzle = %s\n"
-                                    "g swizzle = %s\n"
-                                    "b swizzle = %s\n"
-                                    "a swizzle = %s\n",
-                                    i, string_VkComponentSwizzle(ivci.components.r), string_VkComponentSwizzle(ivci.components.g),
-                                    string_VkComponentSwizzle(ivci.components.b), string_VkComponentSwizzle(ivci.components.a));
+
+                if (device_extensions.vk_khr_multiview) {
+                    if ((rpci->subpassCount > 0) && (rpci->pSubpasses[0].viewMask != 0)) {
+                        for (uint32_t i = 0; i < rpci->subpassCount; ++i) {
+                            const VkSubpassDescriptionDepthStencilResolveKHR *pDepthStencilResolve =
+                                lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolveKHR>(rpci->pSubpasses[i].pNext);
+                            uint32_t view_bits = rpci->pSubpasses[i].viewMask;
+                            uint32_t highest_view_bit = 0;
+
+                            for (int j = 0; j < 32; ++j) {
+                                if (((view_bits >> j) & 1) != 0) {
+                                    highest_view_bit = j;
+                                }
+                            }
+
+                            for (uint32_t j = 0; j < rpci->pSubpasses[i].colorAttachmentCount; ++j) {
+                                attachment_index = rpci->pSubpasses[i].pColorAttachments[j].attachment;
+                                if (attachment_index != VK_ATTACHMENT_UNUSED) {
+                                    uint32_t layer_count =
+                                        pFramebufferAttachmentsCreateInfo->pAttachmentImageInfos[attachment_index].layerCount;
+                                    if (layer_count <= highest_view_bit) {
+                                        skip |= log_msg(
+                                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                            HandleToUint64(pCreateInfo->renderPass),
+                                            "VUID-VkFramebufferCreateInfo-renderPass-03198",
+                                            "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
+                                            "only specifies %u layers, but the view mask for subpass %u in renderPass (%s) "
+                                            "includes layer %u, with that attachment specified as a color attachment %u.",
+                                            attachment_index, layer_count, i,
+                                            report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit, j);
+                                    }
+                                }
+                                if (rpci->pSubpasses[i].pResolveAttachments) {
+                                    attachment_index = rpci->pSubpasses[i].pResolveAttachments[j].attachment;
+                                    if (attachment_index != VK_ATTACHMENT_UNUSED) {
+                                        uint32_t layer_count =
+                                            pFramebufferAttachmentsCreateInfo->pAttachmentImageInfos[attachment_index].layerCount;
+                                        if (layer_count <= highest_view_bit) {
+                                            skip |= log_msg(
+                                                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                                HandleToUint64(pCreateInfo->renderPass),
+                                                "VUID-VkFramebufferCreateInfo-renderPass-03198",
+                                                "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
+                                                "only specifies %u layers, but the view mask for subpass %u in renderPass (%s) "
+                                                "includes layer %u, with that attachment specified as a resolve attachment %u.",
+                                                attachment_index, layer_count, i,
+                                                report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit, j);
+                                        }
+                                    }
+                                }
+                            }
+
+                            for (uint32_t j = 0; j < rpci->pSubpasses[i].inputAttachmentCount; ++j) {
+                                attachment_index = rpci->pSubpasses[i].pInputAttachments[j].attachment;
+                                if (attachment_index != VK_ATTACHMENT_UNUSED) {
+                                    uint32_t layer_count =
+                                        pFramebufferAttachmentsCreateInfo->pAttachmentImageInfos[attachment_index].layerCount;
+                                    if (layer_count <= highest_view_bit) {
+                                        skip |= log_msg(
+                                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                            HandleToUint64(pCreateInfo->renderPass),
+                                            "VUID-VkFramebufferCreateInfo-renderPass-03198",
+                                            "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
+                                            "only specifies %u layers, but the view mask for subpass %u in renderPass (%s) "
+                                            "includes layer %u, with that attachment specified as an input attachment %u.",
+                                            attachment_index, layer_count, i,
+                                            report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit, j);
+                                    }
+                                }
+                            }
+
+                            if (rpci->pSubpasses[i].pDepthStencilAttachment != nullptr) {
+                                attachment_index = rpci->pSubpasses[i].pDepthStencilAttachment->attachment;
+                                if (attachment_index != VK_ATTACHMENT_UNUSED) {
+                                    uint32_t layer_count =
+                                        pFramebufferAttachmentsCreateInfo->pAttachmentImageInfos[attachment_index].layerCount;
+                                    if (layer_count <= highest_view_bit) {
+                                        skip |= log_msg(
+                                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                            HandleToUint64(pCreateInfo->renderPass),
+                                            "VUID-VkFramebufferCreateInfo-renderPass-03198",
+                                            "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
+                                            "only specifies %u layers, but the view mask for subpass %u in renderPass (%s) "
+                                            "includes layer %u, with that attachment specified as a depth/stencil attachment.",
+                                            attachment_index, layer_count, i,
+                                            report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit);
+                                    }
+                                }
+
+                                if (device_extensions.vk_khr_depth_stencil_resolve && pDepthStencilResolve != nullptr &&
+                                    pDepthStencilResolve->pDepthStencilResolveAttachment != nullptr) {
+                                    attachment_index = pDepthStencilResolve->pDepthStencilResolveAttachment->attachment;
+                                    if (attachment_index != VK_ATTACHMENT_UNUSED) {
+                                        uint32_t layer_count =
+                                            pFramebufferAttachmentsCreateInfo->pAttachmentImageInfos[attachment_index].layerCount;
+                                        if (layer_count <= highest_view_bit) {
+                                            skip |= log_msg(
+                                                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                                HandleToUint64(pCreateInfo->renderPass),
+                                                "VUID-VkFramebufferCreateInfo-renderPass-03198",
+                                                "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info %u "
+                                                "only specifies %u layers, but the view mask for subpass %u in renderPass (%s) "
+                                                "includes layer %u, with that attachment specified as a depth/stencil resolve "
+                                                "attachment.",
+                                                attachment_index, layer_count, i,
+                                                report_data->FormatHandle(pCreateInfo->renderPass).c_str(), highest_view_bit);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
-        }
-        // Verify correct attachment usage flags
-        for (uint32_t subpass = 0; subpass < rpci->subpassCount; subpass++) {
-            // Verify input attachments:
-            skip |= MatchUsage(rpci->pSubpasses[subpass].inputAttachmentCount, rpci->pSubpasses[subpass].pInputAttachments,
-                               pCreateInfo, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-pAttachments-00879");
-            // Verify color attachments:
-            skip |= MatchUsage(rpci->pSubpasses[subpass].colorAttachmentCount, rpci->pSubpasses[subpass].pColorAttachments,
-                               pCreateInfo, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-pAttachments-00877");
-            // Verify depth/stencil attachments:
-            if (rpci->pSubpasses[subpass].pDepthStencilAttachment != nullptr) {
-                skip |= MatchUsage(1, rpci->pSubpasses[subpass].pDepthStencilAttachment, pCreateInfo,
+
+            if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) == 0) {
+                // Verify correct attachment usage flags
+                for (uint32_t subpass = 0; subpass < rpci->subpassCount; subpass++) {
+                    // Verify input attachments:
+                    skip |= MatchUsage(rpci->pSubpasses[subpass].inputAttachmentCount, rpci->pSubpasses[subpass].pInputAttachments,
+                                       pCreateInfo, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
+                                       "VUID-VkFramebufferCreateInfo-pAttachments-00879");
+                    // Verify color attachments:
+                    skip |= MatchUsage(rpci->pSubpasses[subpass].colorAttachmentCount, rpci->pSubpasses[subpass].pColorAttachments,
+                                       pCreateInfo, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                       "VUID-VkFramebufferCreateInfo-pAttachments-00877");
+                    // Verify depth/stencil attachments:
+                    skip |=
+                        MatchUsage(1, rpci->pSubpasses[subpass].pDepthStencilAttachment, pCreateInfo,
                                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-pAttachments-02633");
+                }
             }
         }
     }
@@ -9303,11 +9569,13 @@ void CoreChecks::PostCallRecordCreateFramebuffer(VkDevice device, const VkFrameb
     std::unique_ptr<FRAMEBUFFER_STATE> fb_state(
         new FRAMEBUFFER_STATE(*pFramebuffer, pCreateInfo, GetRenderPassStateSharedPtr(pCreateInfo->renderPass)));
 
-    for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
-        VkImageView view = pCreateInfo->pAttachments[i];
-        auto view_state = GetImageViewState(view);
-        if (!view_state) {
-            continue;
+    if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) == 0) {
+        for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
+            VkImageView view = pCreateInfo->pAttachments[i];
+            auto view_state = GetImageViewState(view);
+            if (!view_state) {
+                continue;
+            }
         }
     }
     frameBufferMap[*pFramebuffer] = std::move(fb_state);
@@ -10358,6 +10626,178 @@ bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo *pRenderPass
     return skip;
 }
 
+bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBeginInfo *pRenderPassBeginInfo) {
+    bool skip = false;
+    const VkRenderPassAttachmentBeginInfoKHR *pRenderPassAttachmentBeginInfo =
+        lvl_find_in_chain<VkRenderPassAttachmentBeginInfoKHR>(pRenderPassBeginInfo->pNext);
+
+    if (pRenderPassAttachmentBeginInfo && pRenderPassAttachmentBeginInfo->attachmentCount != 0) {
+        const safe_VkFramebufferCreateInfo *pFramebufferCreateInfo =
+            &GetFramebufferState(pRenderPassBeginInfo->framebuffer)->createInfo;
+        const VkFramebufferAttachmentsCreateInfoKHR *pFramebufferAttachmentsCreateInfo =
+            lvl_find_in_chain<VkFramebufferAttachmentsCreateInfoKHR>(pFramebufferCreateInfo->pNext);
+        if ((pFramebufferCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) == 0) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                            HandleToUint64(pRenderPassBeginInfo->renderPass), "VUID-VkRenderPassBeginInfo-framebuffer-03207",
+                            "VkRenderPassBeginInfo: Image views specified at render pass begin, but framebuffer not created with "
+                            "VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR");
+        } else if (pFramebufferAttachmentsCreateInfo) {
+            if (pFramebufferAttachmentsCreateInfo->attachmentImageInfoCount != pRenderPassAttachmentBeginInfo->attachmentCount) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                HandleToUint64(pRenderPassBeginInfo->renderPass), "VUID-VkRenderPassBeginInfo-framebuffer-03208",
+                                "VkRenderPassBeginInfo: %u image views specified at render pass begin, but framebuffer "
+                                "created expecting %u attachments",
+                                pRenderPassAttachmentBeginInfo->attachmentCount,
+                                pFramebufferAttachmentsCreateInfo->attachmentImageInfoCount);
+            } else {
+                const safe_VkRenderPassCreateInfo2KHR *pRenderPassCreateInfo =
+                    &GetRenderPassState(pRenderPassBeginInfo->renderPass)->createInfo;
+                for (uint32_t i = 0; i < pRenderPassAttachmentBeginInfo->attachmentCount; ++i) {
+                    const VkImageViewCreateInfo *pImageViewCreateInfo =
+                        &GetImageViewState(pRenderPassAttachmentBeginInfo->pAttachments[i])->create_info;
+                    const VkFramebufferAttachmentImageInfoKHR *pFramebufferAttachmentImageInfo =
+                        &pFramebufferAttachmentsCreateInfo->pAttachmentImageInfos[i];
+                    const VkImageCreateInfo *pImageCreateInfo = &GetImageState(pImageViewCreateInfo->image)->createInfo;
+
+                    if (pFramebufferAttachmentImageInfo->flags != pImageCreateInfo->flags) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                        HandleToUint64(pRenderPassBeginInfo->renderPass),
+                                        "VUID-VkRenderPassBeginInfo-framebuffer-03209",
+                                        "VkRenderPassBeginInfo: Image view #%u created from an image with flags set as 0x%X, "
+                                        "but image info #%u used to create the framebuffer had flags set as 0x%X",
+                                        i, pImageCreateInfo->flags, i, pFramebufferAttachmentImageInfo->flags);
+                    }
+
+                    if (pFramebufferAttachmentImageInfo->usage != pImageCreateInfo->usage) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                        HandleToUint64(pRenderPassBeginInfo->renderPass),
+                                        "VUID-VkRenderPassBeginInfo-framebuffer-03210",
+                                        "VkRenderPassBeginInfo: Image view #%u created from an image with usage set as 0x%X, "
+                                        "but image info #%u used to create the framebuffer had usage set as 0x%X",
+                                        i, pImageCreateInfo->usage, i, pFramebufferAttachmentImageInfo->usage);
+                    }
+
+                    if (pFramebufferAttachmentImageInfo->width != pImageCreateInfo->extent.width) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                        HandleToUint64(pRenderPassBeginInfo->renderPass),
+                                        "VUID-VkRenderPassBeginInfo-framebuffer-03211",
+                                        "VkRenderPassBeginInfo: Image view #%u created from an image with width set as %u, "
+                                        "but image info #%u used to create the framebuffer had width set as %u",
+                                        i, pImageCreateInfo->extent.width, i, pFramebufferAttachmentImageInfo->width);
+                    }
+
+                    if (pFramebufferAttachmentImageInfo->height != pImageCreateInfo->extent.height) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                        HandleToUint64(pRenderPassBeginInfo->renderPass),
+                                        "VUID-VkRenderPassBeginInfo-framebuffer-03212",
+                                        "VkRenderPassBeginInfo: Image view #%u created from an image with height set as %u, "
+                                        "but image info #%u used to create the framebuffer had height set as %u",
+                                        i, pImageCreateInfo->extent.height, i, pFramebufferAttachmentImageInfo->height);
+                    }
+
+                    if (pFramebufferAttachmentImageInfo->layerCount != pImageViewCreateInfo->subresourceRange.layerCount) {
+                        skip |= log_msg(
+                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                            HandleToUint64(pRenderPassBeginInfo->renderPass), "VUID-VkRenderPassBeginInfo-framebuffer-03213",
+                            "VkRenderPassBeginInfo: Image view #%u created with a subresource range with a layerCount of %u, "
+                            "but image info #%u used to create the framebuffer had layerCount set as %u",
+                            i, pImageViewCreateInfo->subresourceRange.layerCount, i, pFramebufferAttachmentImageInfo->layerCount);
+                    }
+
+                    const VkImageFormatListCreateInfoKHR *pImageFormatListCreateInfo =
+                        lvl_find_in_chain<VkImageFormatListCreateInfoKHR>(pImageCreateInfo->pNext);
+                    if (pImageFormatListCreateInfo) {
+                        if (pImageFormatListCreateInfo->viewFormatCount != pFramebufferAttachmentImageInfo->viewFormatCount) {
+                            skip |= log_msg(
+                                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                HandleToUint64(pRenderPassBeginInfo->renderPass), "VUID-VkRenderPassBeginInfo-framebuffer-03214",
+                                "VkRenderPassBeginInfo: Image view #%u created with an image with a viewFormatCount of %u, "
+                                "but image info #%u used to create the framebuffer had viewFormatCount set as %u",
+                                i, pImageFormatListCreateInfo->viewFormatCount, i,
+                                pFramebufferAttachmentImageInfo->viewFormatCount);
+                        }
+
+                        for (uint32_t j = 0; j < pImageFormatListCreateInfo->viewFormatCount; ++j) {
+                            bool formatFound = false;
+                            for (uint32_t k = 0; k < pFramebufferAttachmentImageInfo->viewFormatCount; ++k) {
+                                if (pImageFormatListCreateInfo->pViewFormats[j] ==
+                                    pFramebufferAttachmentImageInfo->pViewFormats[k]) {
+                                    formatFound = true;
+                                }
+                            }
+                            if (!formatFound) {
+                                skip |=
+                                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                            HandleToUint64(pRenderPassBeginInfo->renderPass),
+                                            "VUID-VkRenderPassBeginInfo-framebuffer-03215",
+                                            "VkRenderPassBeginInfo: Image view #%u created with an image including the format "
+                                            "%s in its view format list, "
+                                            "but image info #%u used to create the framebuffer does not include this format",
+                                            i, string_VkFormat(pImageFormatListCreateInfo->pViewFormats[j]), i);
+                            }
+                        }
+                    }
+
+                    if (pRenderPassCreateInfo->pAttachments[i].format != pImageViewCreateInfo->format) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                        HandleToUint64(pRenderPassBeginInfo->renderPass),
+                                        "VUID-VkRenderPassBeginInfo-framebuffer-03216",
+                                        "VkRenderPassBeginInfo: Image view #%u created with a format of %s, "
+                                        "but render pass attachment description #%u created with a format of %s",
+                                        i, string_VkFormat(pImageViewCreateInfo->format), i,
+                                        string_VkFormat(pRenderPassCreateInfo->pAttachments[i].format));
+                    }
+
+                    if (pRenderPassCreateInfo->pAttachments[i].samples != pImageCreateInfo->samples) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                        HandleToUint64(pRenderPassBeginInfo->renderPass),
+                                        "VUID-VkRenderPassBeginInfo-framebuffer-03217",
+                                        "VkRenderPassBeginInfo: Image view #%u created with an image with %s samples, "
+                                        "but render pass attachment description #%u created with %s samples",
+                                        i, string_VkSampleCountFlagBits(pImageCreateInfo->samples), i,
+                                        string_VkSampleCountFlagBits(pRenderPassCreateInfo->pAttachments[i].samples));
+                    }
+
+                    if (pImageViewCreateInfo->subresourceRange.levelCount != 1) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT,
+                                        HandleToUint64(pRenderPassAttachmentBeginInfo->pAttachments[i]),
+                                        "VUID-VkRenderPassAttachmentBeginInfoKHR-pAttachments-03218",
+                                        "VkRenderPassAttachmentBeginInfo: Image view #%u created with multiple (%u) mip levels.", i,
+                                        pImageViewCreateInfo->subresourceRange.levelCount);
+                    }
+
+                    if (((pImageViewCreateInfo->components.r != VK_COMPONENT_SWIZZLE_IDENTITY) &&
+                         (pImageViewCreateInfo->components.r != VK_COMPONENT_SWIZZLE_R)) ||
+                        ((pImageViewCreateInfo->components.g != VK_COMPONENT_SWIZZLE_IDENTITY) &&
+                         (pImageViewCreateInfo->components.g != VK_COMPONENT_SWIZZLE_G)) ||
+                        ((pImageViewCreateInfo->components.b != VK_COMPONENT_SWIZZLE_IDENTITY) &&
+                         (pImageViewCreateInfo->components.b != VK_COMPONENT_SWIZZLE_B)) ||
+                        ((pImageViewCreateInfo->components.a != VK_COMPONENT_SWIZZLE_IDENTITY) &&
+                         (pImageViewCreateInfo->components.a != VK_COMPONENT_SWIZZLE_A))) {
+                        skip |=
+                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT,
+                                    HandleToUint64(pRenderPassAttachmentBeginInfo->pAttachments[i]),
+                                    "VUID-VkRenderPassAttachmentBeginInfoKHR-pAttachments-03219",
+                                    "VkRenderPassAttachmentBeginInfo: Image view #%u created with non-identity swizzle. All "
+                                    "framebuffer attachments must have been created with the identity swizzle. Here are the actual "
+                                    "swizzle values:\n"
+                                    "r swizzle = %s\n"
+                                    "g swizzle = %s\n"
+                                    "b swizzle = %s\n"
+                                    "a swizzle = %s\n",
+                                    i, string_VkComponentSwizzle(pImageViewCreateInfo->components.r),
+                                    string_VkComponentSwizzle(pImageViewCreateInfo->components.g),
+                                    string_VkComponentSwizzle(pImageViewCreateInfo->components.b),
+                                    string_VkComponentSwizzle(pImageViewCreateInfo->components.a));
+                    }
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
 // If this is a stencil format, make sure the stencil[Load|Store]Op flag is checked, while if it is a depth/color attachment the
 // [load|store]Op flag must be checked
 // TODO: The memory valid flag in DEVICE_MEMORY_STATE should probably be split to track the validity of stencil memory separately.
@@ -10435,6 +10875,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
                             function_name, pRenderPassBegin->clearValueCount, clear_op_size,
                             report_data->FormatHandle(render_pass_state->renderPass).c_str(), clear_op_size, clear_op_size - 1);
         }
+        skip |= VerifyFramebufferAndRenderPassImageViews(pRenderPassBegin);
         skip |= VerifyRenderAreaBounds(pRenderPassBegin);
         skip |= VerifyFramebufferAndRenderPassLayouts(rp_version, cb_state, pRenderPassBegin,
                                                       GetFramebufferState(pRenderPassBegin->framebuffer));
