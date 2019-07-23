@@ -2962,7 +2962,8 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
         " 6. Framebuffer attachment where dimensions don't match\n"
         " 7. Framebuffer attachment where dimensions don't match\n"
         " 8. Framebuffer attachment w/o identity swizzle\n"
-        " 9. framebuffer dimensions exceed physical device limits\n");
+        " 9. framebuffer dimensions exceed physical device limits\n"
+        "10. null pAttachments\n");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -3216,6 +3217,16 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
     // and layers=0
     fb_info.layers = 0;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkFramebufferCreateInfo-layers-00889");
+    err = vkCreateFramebuffer(device(), &fb_info, NULL, &fb);
+    m_errorMonitor->VerifyFound();
+    if (err == VK_SUCCESS) {
+        vkDestroyFramebuffer(m_device->device(), fb, NULL);
+    }
+
+    // Try to create with pAttachments = NULL
+    fb_info.layers = 1;
+    fb_info.pAttachments = NULL;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID_Undefined");
     err = vkCreateFramebuffer(device(), &fb_info, NULL, &fb);
     m_errorMonitor->VerifyFound();
     if (err == VK_SUCCESS) {
