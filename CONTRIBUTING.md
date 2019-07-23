@@ -92,7 +92,7 @@ that to be accepted into the repository, the pull request must [pass all tests](
 -- the automatic Github Travis and AppVeyor continuous integration features will assist in enforcing this requirement.
 
 #### **Testing Your Changes**
-* Run the existing tests in the repository before and after each if your commits to check for any regressions.
+* Run the existing tests in the repository before and after each of your commits to check for any regressions.
   There are some tests that appear in all repositories.
   These tests can be found in the following folders inside of your target build directory:
 
