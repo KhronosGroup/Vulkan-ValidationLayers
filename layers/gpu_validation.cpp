@@ -440,38 +440,77 @@ std::vector<safe_VkGraphicsPipelineCreateInfo> CoreChecks::GpuPreCallRecordCreat
     VkPipelineCache pipelineCache, uint32_t count, const VkGraphicsPipelineCreateInfo *pCreateInfos,
     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, std::vector<std::unique_ptr<PIPELINE_STATE>> &pipe_state) {
     std::vector<safe_VkGraphicsPipelineCreateInfo> new_pipeline_create_infos;
-    GpuPreCallRecordPipelineCreations(count, pCreateInfos, nullptr, nullptr, pAllocator, pPipelines, pipe_state,
-                                      &new_pipeline_create_infos, nullptr, nullptr, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    GpuPreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, pipe_state, &new_pipeline_create_infos,
+                                      VK_PIPELINE_BIND_POINT_GRAPHICS);
     return new_pipeline_create_infos;
 }
 std::vector<safe_VkComputePipelineCreateInfo> CoreChecks::GpuPreCallRecordCreateComputePipelines(
     VkPipelineCache pipelineCache, uint32_t count, const VkComputePipelineCreateInfo *pCreateInfos,
     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, std::vector<std::unique_ptr<PIPELINE_STATE>> &pipe_state) {
     std::vector<safe_VkComputePipelineCreateInfo> new_pipeline_create_infos;
-    GpuPreCallRecordPipelineCreations(count, nullptr, pCreateInfos, nullptr, pAllocator, pPipelines, pipe_state, nullptr,
-                                      &new_pipeline_create_infos, nullptr, VK_PIPELINE_BIND_POINT_COMPUTE);
+    GpuPreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, pipe_state, &new_pipeline_create_infos,
+                                      VK_PIPELINE_BIND_POINT_COMPUTE);
     return new_pipeline_create_infos;
 }
 std::vector<safe_VkRayTracingPipelineCreateInfoNV> CoreChecks::GpuPreCallRecordCreateRayTracingPipelinesNV(
     VkPipelineCache pipelineCache, uint32_t count, const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, std::vector<std::unique_ptr<PIPELINE_STATE>> &pipe_state) {
     std::vector<safe_VkRayTracingPipelineCreateInfoNV> new_pipeline_create_infos;
-    GpuPreCallRecordPipelineCreations(count, nullptr, nullptr, pCreateInfos, pAllocator, pPipelines, pipe_state, nullptr, nullptr,
-                                      &new_pipeline_create_infos, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV);
+    GpuPreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, pipe_state, &new_pipeline_create_infos,
+                                      VK_PIPELINE_BIND_POINT_RAY_TRACING_NV);
     return new_pipeline_create_infos;
 }
+template <typename CreateInfo>
+struct CreatePipelineTraits {};
+template <>
+struct CreatePipelineTraits<VkGraphicsPipelineCreateInfo> {
+    using SafeType = safe_VkGraphicsPipelineCreateInfo;
+    static const SafeType &GetPipelineCI(const PIPELINE_STATE *pipeline_state) { return pipeline_state->graphicsPipelineCI; }
+    static uint32_t GetStageCount(const VkGraphicsPipelineCreateInfo &createInfo) { return createInfo.stageCount; }
+    static VkShaderModule GetShaderModule(const VkGraphicsPipelineCreateInfo &createInfo, uint32_t stage) {
+        return createInfo.pStages[stage].module;
+    }
+    static void SetShaderModule(SafeType *createInfo, VkShaderModule shader_module, uint32_t stage) {
+        createInfo->pStages[stage].module = shader_module;
+    }
+};
+
+template <>
+struct CreatePipelineTraits<VkComputePipelineCreateInfo> {
+    using SafeType = safe_VkComputePipelineCreateInfo;
+    static const SafeType &GetPipelineCI(const PIPELINE_STATE *pipeline_state) { return pipeline_state->computePipelineCI; }
+    static uint32_t GetStageCount(const VkComputePipelineCreateInfo &createInfo) { return 1; }
+    static VkShaderModule GetShaderModule(const VkComputePipelineCreateInfo &createInfo, uint32_t stage) {
+        return createInfo.stage.module;
+    }
+    static void SetShaderModule(SafeType *createInfo, VkShaderModule shader_module, uint32_t stage) {
+        assert(stage == 0);
+        createInfo->stage.module = shader_module;
+    }
+};
+template <>
+struct CreatePipelineTraits<VkRayTracingPipelineCreateInfoNV> {
+    using SafeType = safe_VkRayTracingPipelineCreateInfoNV;
+    static const SafeType &GetPipelineCI(const PIPELINE_STATE *pipeline_state) { return pipeline_state->raytracingPipelineCI; }
+    static uint32_t GetStageCount(const VkRayTracingPipelineCreateInfoNV &createInfo) { return createInfo.stageCount; }
+    static VkShaderModule GetShaderModule(const VkRayTracingPipelineCreateInfoNV &createInfo, uint32_t stage) {
+        return createInfo.pStages[stage].module;
+    }
+    static void SetShaderModule(SafeType *createInfo, VkShaderModule shader_module, uint32_t stage) {
+        createInfo->pStages[stage].module = shader_module;
+    }
+};
 
 // Examine the pipelines to see if they use the debug descriptor set binding index.
 // If any do, create new non-instrumented shader modules and use them to replace the instrumented
 // shaders in the pipeline.  Return the (possibly) modified create infos to the caller.
-void CoreChecks::GpuPreCallRecordPipelineCreations(
-    uint32_t count, const VkGraphicsPipelineCreateInfo *pGraphicsCreateInfos,
-    const VkComputePipelineCreateInfo *pComputeCreateInfos, const VkRayTracingPipelineCreateInfoNV *pRayTracingCreateInfos,
-    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, std::vector<std::unique_ptr<PIPELINE_STATE>> &pipe_state,
-    std::vector<safe_VkGraphicsPipelineCreateInfo> *new_graphics_pipeline_create_infos,
-    std::vector<safe_VkComputePipelineCreateInfo> *new_compute_pipeline_create_infos,
-    std::vector<safe_VkRayTracingPipelineCreateInfoNV> *new_ray_tracing_pipeline_create_infos,
-    const VkPipelineBindPoint bind_point) {
+template <typename CreateInfo, typename SafeCreateInfo>
+void CoreChecks::GpuPreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreateInfos,
+                                                   const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                   std::vector<std::unique_ptr<PIPELINE_STATE>> &pipe_state,
+                                                   std::vector<SafeCreateInfo> *new_pipeline_create_infos,
+                                                   const VkPipelineBindPoint bind_point) {
+    using Accessor = CreatePipelineTraits<CreateInfo>;
     if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
         bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
         return;
@@ -480,26 +519,8 @@ void CoreChecks::GpuPreCallRecordPipelineCreations(
     // Walk through all the pipelines, make a copy of each and flag each pipeline that contains a shader that uses the debug
     // descriptor set index.
     for (uint32_t pipeline = 0; pipeline < count; ++pipeline) {
-        uint32_t stageCount = 0;
-        if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-            stageCount = pGraphicsCreateInfos[pipeline].stageCount;
-        } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-            stageCount = 1;
-        } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
-            stageCount = pRayTracingCreateInfos[pipeline].stageCount;
-        } else {
-            assert(false);
-        }
-
-        if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-            new_graphics_pipeline_create_infos->push_back(pipe_state[pipeline]->graphicsPipelineCI);
-        } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-            new_compute_pipeline_create_infos->push_back(pipe_state[pipeline]->computePipelineCI);
-        } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
-            new_ray_tracing_pipeline_create_infos->push_back(pipe_state[pipeline]->raytracingPipelineCI);
-        } else {
-            assert(false);
-        }
+        uint32_t stageCount = Accessor::GetStageCount(pCreateInfos[pipeline]);
+        new_pipeline_create_infos->push_back(Accessor::GetPipelineCI(pipe_state[pipeline].get()));
 
         bool replace_shaders = false;
         if (pipe_state[pipeline]->active_slots.find(gpu_validation_state->desc_set_bind_index) !=
@@ -514,16 +535,7 @@ void CoreChecks::GpuPreCallRecordPipelineCreations(
 
         if (replace_shaders) {
             for (uint32_t stage = 0; stage < stageCount; ++stage) {
-                const SHADER_MODULE_STATE *shader = nullptr;
-                if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-                    shader = GetShaderModuleState(pGraphicsCreateInfos[pipeline].pStages[stage].module);
-                } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-                    shader = GetShaderModuleState(pComputeCreateInfos[pipeline].stage.module);
-                } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
-                    shader = GetShaderModuleState(pRayTracingCreateInfos[pipeline].pStages[stage].module);
-                } else {
-                    assert(false);
-                }
+                const SHADER_MODULE_STATE *shader = GetShaderModuleState(Accessor::GetShaderModule(pCreateInfos[pipeline], stage));
 
                 VkShaderModuleCreateInfo create_info = {};
                 VkShaderModule shader_module;
@@ -532,26 +544,9 @@ void CoreChecks::GpuPreCallRecordPipelineCreations(
                 create_info.codeSize = shader->words.size() * sizeof(uint32_t);
                 VkResult result = DispatchCreateShaderModule(device, &create_info, pAllocator, &shader_module);
                 if (result == VK_SUCCESS) {
-                    if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-                        new_graphics_pipeline_create_infos[pipeline].data()->pStages[stage].module = shader_module;
-                    } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-                        new_compute_pipeline_create_infos[pipeline].data()->stage.module = shader_module;
-                    } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
-                        new_ray_tracing_pipeline_create_infos[pipeline].data()->pStages[stage].module = shader_module;
-                    } else {
-                        assert(false);
-                    }
+                    Accessor::SetShaderModule(new_pipeline_create_infos[pipeline].data(), shader_module, stage);
                 } else {
-                    uint64_t moduleHandle = 0;
-                    if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-                        moduleHandle = HandleToUint64(pGraphicsCreateInfos[pipeline].pStages[stage].module);
-                    } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-                        moduleHandle = HandleToUint64(pComputeCreateInfos[pipeline].stage.module);
-                    } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
-                        moduleHandle = HandleToUint64(pRayTracingCreateInfos[pipeline].pStages[stage].module);
-                    } else {
-                        assert(false);
-                    }
+                    uint64_t moduleHandle = HandleToUint64(Accessor::GetShaderModule(pCreateInfos[pipeline], stage));
                     ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT, moduleHandle,
                                        "Unable to replace instrumented shader with non-instrumented one.  "
                                        "Device could become unstable.");
@@ -563,19 +558,16 @@ void CoreChecks::GpuPreCallRecordPipelineCreations(
 
 void CoreChecks::GpuPostCallRecordCreateGraphicsPipelines(const uint32_t count, const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                           const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
-    GpuPostCallRecordPipelineCreations(count, pCreateInfos, nullptr, nullptr, pAllocator, pPipelines,
-                                       VK_PIPELINE_BIND_POINT_GRAPHICS);
+    GpuPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 void CoreChecks::GpuPostCallRecordCreateComputePipelines(const uint32_t count, const VkComputePipelineCreateInfo *pCreateInfos,
                                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
-    GpuPostCallRecordPipelineCreations(count, nullptr, pCreateInfos, nullptr, pAllocator, pPipelines,
-                                       VK_PIPELINE_BIND_POINT_COMPUTE);
+    GpuPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_COMPUTE);
 }
 void CoreChecks::GpuPostCallRecordCreateRayTracingPipelinesNV(const uint32_t count,
                                                               const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                               const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
-    GpuPostCallRecordPipelineCreations(count, nullptr, nullptr, pCreateInfos, pAllocator, pPipelines,
-                                       VK_PIPELINE_BIND_POINT_RAY_TRACING_NV);
+    GpuPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV);
 }
 
 // For every pipeline:
@@ -584,11 +576,11 @@ void CoreChecks::GpuPostCallRecordCreateRayTracingPipelinesNV(const uint32_t cou
 //     - Destroy it since it has been bound into the pipeline by now.  This is our only chance to delete it.
 //   - Track the shader in the shader_map
 //   - Save the shader binary if it contains debug code
-void CoreChecks::GpuPostCallRecordPipelineCreations(const uint32_t count, const VkGraphicsPipelineCreateInfo *pGraphicsCreateInfos,
-                                                    const VkComputePipelineCreateInfo *pComputeCreateInfos,
-                                                    const VkRayTracingPipelineCreateInfoNV *pRayTracingCreateInfos,
+template <typename CreateInfo>
+void CoreChecks::GpuPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo *pCreateInfos,
                                                     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                     const VkPipelineBindPoint bind_point) {
+    using Accessor = CreatePipelineTraits<CreateInfo>;
     if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
         bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
         return;
@@ -611,16 +603,7 @@ void CoreChecks::GpuPostCallRecordPipelineCreations(const uint32_t count, const 
         for (uint32_t stage = 0; stage < stageCount; ++stage) {
             if (pipeline_state->active_slots.find(gpu_validation_state->desc_set_bind_index) !=
                 pipeline_state->active_slots.end()) {
-                if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-                    DispatchDestroyShaderModule(device, pGraphicsCreateInfos->pStages[stage].module, pAllocator);
-                } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-                    assert(stage == 0);
-                    DispatchDestroyShaderModule(device, pComputeCreateInfos->stage.module, pAllocator);
-                } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
-                    DispatchDestroyShaderModule(device, pRayTracingCreateInfos->pStages[stage].module, pAllocator);
-                } else {
-                    assert(false);
-                }
+                DispatchDestroyShaderModule(device, Accessor::GetShaderModule(pCreateInfos[pipeline], stage), pAllocator);
             }
 
             const SHADER_MODULE_STATE *shader_state = nullptr;
