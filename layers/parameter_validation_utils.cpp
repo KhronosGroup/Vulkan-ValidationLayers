@@ -3159,3 +3159,15 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(V
     return skip;
 }
 #endif
+
+bool StatelessValidation::manual_PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
+                                                                  const VkAllocationCallbacks *pAllocator,
+                                                                  VkFramebuffer *pFramebuffer) {
+    // Validation for pAttachments which is excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
+    bool skip = false;
+    if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) == 0) {
+        skip |= validate_array("vkCreateFramebuffer", "attachmentCount", "pAttachments", pCreateInfo->attachmentCount,
+                               &pCreateInfo->pAttachments, false, true, kVUIDUndefined, kVUIDUndefined);
+    }
+    return skip;
+}

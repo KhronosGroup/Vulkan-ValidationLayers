@@ -180,6 +180,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCreateAccelerationStructureNV',
             'vkGetAccelerationStructureHandleNV',
             'vkCmdBuildAccelerationStructureNV',
+            'vkCreateFramebuffer',
             ]
 
         # Commands to ignore
@@ -927,6 +928,9 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         if lenValue:
             count_required_vuid = self.GetVuid(vuid_tag_name, "%s-arraylength" % (lenValue.name))
             array_required_vuid = self.GetVuid(vuid_tag_name, "%s-parameter" % (value.name))
+            # TODO: Remove workaround for missing optional tag in vk.xml
+            if array_required_vuid == '"VUID-VkFramebufferCreateInfo-pAttachments-parameter"':
+                return []
             # This is an array with a pointer to a count value
             if lenValue.ispointer:
                 # If count and array parameters are optional, there will be no validation
