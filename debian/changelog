@@ -1,8 +1,14 @@
-vulkan-validationlayers (1.1.108.0~rc1-1) UNRELEASED; urgency=medium
+vulkan-validationlayers (1.1.114.0~rc1-1) UNRELEASED; urgency=medium
+
+  * New 1.1.114.0~rc1 SDK
+
+ -- John Zupin <john@odin>  Tue, 23 Jul 2019 09:22:47 -0600
+
+vulkan-validationlayers (1.1.108.0~rc1-1) unstable; urgency=medium
 
   * New 1.1.108.0~rc1 SDK
 
- -- John Zupin <john@odin>  Tue, 11 Jun 2019 16:39:34 -0600
+ -- John Zupin <john@odin>  Tue, 23 Jul 2019 09:22:47 -0600
 
 vulkan-validationlayers (1.1.106.0~rc2-1lunarg16.04.1.1) xenial; urgency=medium
 
