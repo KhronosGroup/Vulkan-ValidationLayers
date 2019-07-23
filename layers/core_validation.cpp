@@ -163,6 +163,15 @@ QUEUE_STATE *ValidationStateTracker::GetQueueState(VkQueue queue) {
     return &it->second;
 }
 
+const PHYSICAL_DEVICE_STATE *ValidationStateTracker::GetPhysicalDeviceState(VkPhysicalDevice phys) const {
+    auto *phys_dev_map = ((physical_device_map.size() > 0) ? &physical_device_map : &instance_state->physical_device_map);
+    auto it = phys_dev_map->find(phys);
+    if (it == phys_dev_map->end()) {
+        return nullptr;
+    }
+    return &it->second;
+}
+
 PHYSICAL_DEVICE_STATE *ValidationStateTracker::GetPhysicalDeviceState(VkPhysicalDevice phys) {
     auto *phys_dev_map = ((physical_device_map.size() > 0) ? &physical_device_map : &instance_state->physical_device_map);
     auto it = phys_dev_map->find(phys);
@@ -12915,7 +12924,8 @@ void CoreChecks::PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uin
 }
 
 // Common function to handle validation for GetPhysicalDeviceQueueFamilyProperties & 2KHR version
-static bool ValidateCommonGetPhysicalDeviceQueueFamilyProperties(debug_report_data *report_data, PHYSICAL_DEVICE_STATE *pd_state,
+static bool ValidateCommonGetPhysicalDeviceQueueFamilyProperties(debug_report_data *report_data,
+                                                                 const PHYSICAL_DEVICE_STATE *pd_state,
                                                                  uint32_t requested_queue_family_property_count, bool qfp_null,
                                                                  const char *caller_name) {
     bool skip = false;
@@ -12939,7 +12949,6 @@ static bool ValidateCommonGetPhysicalDeviceQueueFamilyProperties(debug_report_da
                 "previously obtained by calling %s with NULL pQueueFamilyProperties.",
                 caller_name, requested_queue_family_property_count, pd_state->queue_family_known_count, caller_name, caller_name);
         }
-        pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState = QUERY_DETAILS;
     }
 
     return skip;
@@ -12948,7 +12957,7 @@ static bool ValidateCommonGetPhysicalDeviceQueueFamilyProperties(debug_report_da
 bool CoreChecks::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
                                                                        uint32_t *pQueueFamilyPropertyCount,
                                                                        VkQueueFamilyProperties *pQueueFamilyProperties) {
-    auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
+    const auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     assert(physical_device_state);
     return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(report_data, physical_device_state, *pQueueFamilyPropertyCount,
                                                                 (nullptr == pQueueFamilyProperties),
@@ -12958,7 +12967,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysica
 bool CoreChecks::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
                                                                         uint32_t *pQueueFamilyPropertyCount,
                                                                         VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {
-    auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
+    const auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     assert(physical_device_state);
     return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(report_data, physical_device_state, *pQueueFamilyPropertyCount,
                                                                 (nullptr == pQueueFamilyProperties),
@@ -12993,9 +13002,9 @@ static void StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(PHYSICAL_DEV
     }
 }
 
-void CoreChecks::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
-                                                                      uint32_t *pQueueFamilyPropertyCount,
-                                                                      VkQueueFamilyProperties *pQueueFamilyProperties) {
+void ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
+                                                                                  uint32_t *pQueueFamilyPropertyCount,
+                                                                                  VkQueueFamilyProperties *pQueueFamilyProperties) {
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     assert(physical_device_state);
     VkQueueFamilyProperties2KHR *pqfp = nullptr;
@@ -13012,18 +13021,16 @@ void CoreChecks::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysical
     StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(physical_device_state, *pQueueFamilyPropertyCount, pqfp);
 }
 
-void CoreChecks::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
-                                                                       uint32_t *pQueueFamilyPropertyCount,
-                                                                       VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {
+void ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(
+    VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     assert(physical_device_state);
     StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(physical_device_state, *pQueueFamilyPropertyCount,
                                                             pQueueFamilyProperties);
 }
 
-void CoreChecks::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                                          uint32_t *pQueueFamilyPropertyCount,
-                                                                          VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {
+void ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(
+    VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     assert(physical_device_state);
     StateUpdateCommonGetPhysicalDeviceQueueFamilyProperties(physical_device_state, *pQueueFamilyPropertyCount,
@@ -13158,28 +13165,29 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPh
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
-void CoreChecks::PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                       VkSurfaceCapabilitiesKHR *pSurfaceCapabilities,
-                                                                       VkResult result) {
+void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice,
+                                                                                   VkSurfaceKHR surface,
+                                                                                   VkSurfaceCapabilitiesKHR *pSurfaceCapabilities,
+                                                                                   VkResult result) {
     if (VK_SUCCESS != result) return;
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
     physical_device_state->surfaceCapabilities = *pSurfaceCapabilities;
 }
 
-void CoreChecks::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
-                                                                        const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                                        VkSurfaceCapabilities2KHR *pSurfaceCapabilities,
-                                                                        VkResult result) {
+void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+    VkSurfaceCapabilities2KHR *pSurfaceCapabilities, VkResult result) {
     if (VK_SUCCESS != result) return;
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
     physical_device_state->surfaceCapabilities = pSurfaceCapabilities->surfaceCapabilities;
 }
 
-void CoreChecks::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                        VkSurfaceCapabilities2EXT *pSurfaceCapabilities,
-                                                                        VkResult result) {
+void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice,
+                                                                                    VkSurfaceKHR surface,
+                                                                                    VkSurfaceCapabilities2EXT *pSurfaceCapabilities,
+                                                                                    VkResult result) {
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
     physical_device_state->surfaceCapabilities.minImageCount = pSurfaceCapabilities->minImageCount;
@@ -13202,16 +13210,19 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDev
                                     "vkGetPhysicalDeviceSurfaceSupportKHR", "queueFamilyIndex");
 }
 
-void CoreChecks::PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-                                                                  VkSurfaceKHR surface, VkBool32 *pSupported, VkResult result) {
+void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice,
+                                                                              uint32_t queueFamilyIndex, VkSurfaceKHR surface,
+                                                                              VkBool32 *pSupported, VkResult result) {
     if (VK_SUCCESS != result) return;
     auto surface_state = GetSurfaceState(surface);
     surface_state->gpu_queue_support[{physicalDevice, queueFamilyIndex}] = (*pSupported == VK_TRUE);
 }
 
-void CoreChecks::PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                       uint32_t *pPresentModeCount, VkPresentModeKHR *pPresentModes,
-                                                                       VkResult result) {
+void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice,
+                                                                                   VkSurfaceKHR surface,
+                                                                                   uint32_t *pPresentModeCount,
+                                                                                   VkPresentModeKHR *pPresentModes,
+                                                                                   VkResult result) {
     if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
 
     // TODO: This isn't quite right -- available modes may differ by surface AND physical device.
@@ -13235,8 +13246,8 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDev
                                                                    uint32_t *pSurfaceFormatCount,
                                                                    VkSurfaceFormatKHR *pSurfaceFormats) {
     if (!pSurfaceFormats) return false;
-    auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
-    auto &call_state = physical_device_state->vkGetPhysicalDeviceSurfaceFormatsKHRState;
+    const auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
+    const auto &call_state = physical_device_state->vkGetPhysicalDeviceSurfaceFormatsKHRState;
     bool skip = false;
     switch (call_state) {
         case UNCALLED:
@@ -13262,9 +13273,10 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDev
     return skip;
 }
 
-void CoreChecks::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                  uint32_t *pSurfaceFormatCount,
-                                                                  VkSurfaceFormatKHR *pSurfaceFormats, VkResult result) {
+void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                              uint32_t *pSurfaceFormatCount,
+                                                                              VkSurfaceFormatKHR *pSurfaceFormats,
+                                                                              VkResult result) {
     if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
 
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
@@ -13283,10 +13295,11 @@ void CoreChecks::PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevi
     }
 }
 
-void CoreChecks::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
-                                                                   const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                                   uint32_t *pSurfaceFormatCount,
-                                                                   VkSurfaceFormat2KHR *pSurfaceFormats, VkResult result) {
+void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
+                                                                               const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                                               uint32_t *pSurfaceFormatCount,
+                                                                               VkSurfaceFormat2KHR *pSurfaceFormats,
+                                                                               VkResult result) {
     if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
 
     auto physicalDeviceState = GetPhysicalDeviceState(physicalDevice);
@@ -13609,8 +13622,8 @@ void CoreChecks::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffe
     }
 }
 
-void CoreChecks::RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                                    void *pProperties) {
+void ValidationStateTracker::RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice,
+                                                                                uint32_t *pPropertyCount, void *pProperties) {
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     if (*pPropertyCount) {
         if (physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState < QUERY_COUNT) {
@@ -13625,25 +13638,26 @@ void CoreChecks::RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDe
     }
 }
 
-void CoreChecks::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                                          VkDisplayPlanePropertiesKHR *pProperties,
-                                                                          VkResult result) {
+void ValidationStateTracker::PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice,
+                                                                                      uint32_t *pPropertyCount,
+                                                                                      VkDisplayPlanePropertiesKHR *pProperties,
+                                                                                      VkResult result) {
     if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
     RecordGetPhysicalDeviceDisplayPlanePropertiesState(physicalDevice, pPropertyCount, pProperties);
 }
 
-void CoreChecks::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                                           uint32_t *pPropertyCount,
-                                                                           VkDisplayPlaneProperties2KHR *pProperties,
-                                                                           VkResult result) {
+void ValidationStateTracker::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                                       uint32_t *pPropertyCount,
+                                                                                       VkDisplayPlaneProperties2KHR *pProperties,
+                                                                                       VkResult result) {
     if ((VK_SUCCESS != result) && (VK_INCOMPLETE != result)) return;
     RecordGetPhysicalDeviceDisplayPlanePropertiesState(physicalDevice, pPropertyCount, pProperties);
 }
 
 bool CoreChecks::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
-                                                                         const char *api_name) {
+                                                                         const char *api_name) const {
     bool skip = false;
-    auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
+    const auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     if (physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState == UNCALLED) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
                         HandleToUint64(physicalDevice), kVUID_Core_Swapchain_GetSupportedDisplaysWithoutQuery,
