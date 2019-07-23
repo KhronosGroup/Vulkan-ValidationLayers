@@ -15,7 +15,8 @@ override_dh_auto_configure:
 	dh_auto_configure -- \
 	-DCMAKE_BUILD_TYPE=Release \
 	-DGLSLANG_INSTALL_DIR=/usr/bin \
-        -DCMAKE_INSTALL_INCLUDEDIR=/usr/include/vulkan/
+        -DCMAKE_INSTALL_INCLUDEDIR=/usr/include/vulkan/ \
+        -DBUILD_LAYER_SUPPORT_FILES=ON
 
 override_dh_auto_install:
 	dh_auto_install --destdir=debian/tmp
