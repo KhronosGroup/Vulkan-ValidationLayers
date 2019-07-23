@@ -1029,17 +1029,13 @@ class CoreChecks : public ValidationStateTracker {
     void SubmitBarrier(VkQueue queue);
     bool GpuInstrumentShader(const VkShaderModuleCreateInfo* pCreateInfo, std::vector<unsigned int>& new_pgm,
                              uint32_t* unique_shader_id);
-    void GpuPreCallRecordPipelineCreations(
-        uint32_t count, const VkGraphicsPipelineCreateInfo* pGraphicsCreateInfos,
-        const VkComputePipelineCreateInfo* pComputeCreateInfos, const VkRayTracingPipelineCreateInfoNV* pRayTracingCreateInfos,
-        const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, std::vector<std::unique_ptr<PIPELINE_STATE>>& pipe_state,
-        std::vector<safe_VkGraphicsPipelineCreateInfo>* new_graphics_pipeline_create_infos,
-        std::vector<safe_VkComputePipelineCreateInfo>* new_compute_pipeline_create_infos,
-        std::vector<safe_VkRayTracingPipelineCreateInfoNV>* new_ray_tracing_pipeline_create_infos,
-        const VkPipelineBindPoint bind_point);
-    void GpuPostCallRecordPipelineCreations(const uint32_t count, const VkGraphicsPipelineCreateInfo* pGraphicsCreateInfos,
-                                            const VkComputePipelineCreateInfo* pComputeCreateInfos,
-                                            const VkRayTracingPipelineCreateInfoNV* pRayTracingCreateInfos,
+    template <typename CreateInfo, typename SafeCreateInfo>
+    void GpuPreCallRecordPipelineCreations(uint32_t count, const CreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator,
+                                           VkPipeline* pPipelines, std::vector<std::unique_ptr<PIPELINE_STATE>>& pipe_state,
+                                           std::vector<SafeCreateInfo>* new_pipeline_create_infos,
+                                           const VkPipelineBindPoint bind_point);
+    template <typename CreateInfo>
+    void GpuPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo* pCreateInfos,
                                             const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                             const VkPipelineBindPoint bind_point);
     std::vector<safe_VkComputePipelineCreateInfo> GpuPreCallRecordCreateComputePipelines(
