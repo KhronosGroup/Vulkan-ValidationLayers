@@ -1298,36 +1298,6 @@ void ObjectLifetimes::PostCallRecordCreateDescriptorPool(
 
 }
 
-bool ObjectLifetimes::PreCallValidateCreateFramebuffer(
-    VkDevice                                    device,
-    const VkFramebufferCreateInfo*              pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkFramebuffer*                              pFramebuffer) {
-    bool skip = false;
-    skip |= ValidateObject(device, device, kVulkanObjectTypeDevice, false, "VUID-vkCreateFramebuffer-device-parameter", kVUIDUndefined);
-    if (pCreateInfo) {
-        skip |= ValidateObject(device, pCreateInfo->renderPass, kVulkanObjectTypeRenderPass, false, "VUID-VkFramebufferCreateInfo-renderPass-parameter", "VUID-VkFramebufferCreateInfo-commonparent");
-        if (pCreateInfo->pAttachments) {
-            for (uint32_t index1 = 0; index1 < pCreateInfo->attachmentCount; ++index1) {
-                skip |= ValidateObject(device, pCreateInfo->pAttachments[index1], kVulkanObjectTypeImageView, false, "VUID-VkFramebufferCreateInfo-pAttachments-parameter", "VUID-VkFramebufferCreateInfo-commonparent");
-            }
-        }
-    }
-
-    return skip;
-}
-
-void ObjectLifetimes::PostCallRecordCreateFramebuffer(
-    VkDevice                                    device,
-    const VkFramebufferCreateInfo*              pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkFramebuffer*                              pFramebuffer,
-    VkResult                                    result) {
-    if (result != VK_SUCCESS) return;
-    CreateObject(device, *pFramebuffer, kVulkanObjectTypeFramebuffer, pAllocator);
-
-}
-
 bool ObjectLifetimes::PreCallValidateDestroyFramebuffer(
     VkDevice                                    device,
     VkFramebuffer                               framebuffer,
