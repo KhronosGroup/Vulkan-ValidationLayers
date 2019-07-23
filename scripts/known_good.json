@@ -83,7 +83,7 @@
       "sub_dir" : "Vulkan-Tools",
       "build_dir" : "Vulkan-Tools/build",
       "install_dir" : "Vulkan-Tools/build/install",
-      "commit" : "v1.1.114",
+      "commit" : "b26f1d802a7162c2b55fbacf7168e65d7e130d35",
       "deps" : [
         {
           "var_name" : "VULKAN_HEADERS_INSTALL_DIR",
