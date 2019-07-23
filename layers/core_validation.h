@@ -353,8 +353,9 @@ class ValidationStateTracker : public ValidationObject {
     PHYSICAL_DEVICE_STATE* physical_device_state;
 
     // Link for derived device objects back to their parent instance object
-    CoreChecks* instance_state;
+    ValidationStateTracker* instance_state;
 
+    const PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(VkPhysicalDevice phys) const;
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState(VkPhysicalDevice phys);
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState();
     const PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState() const;
@@ -380,13 +381,43 @@ class ValidationStateTracker : public ValidationObject {
     }
 
     // State update functions
-    // Enumerations
+    // Gets/Enumerations
     void PostCallRecordEnumeratePhysicalDeviceGroups(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
                                                      VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties,
                                                      VkResult result);
     void PostCallRecordEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
                                                         VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties,
                                                         VkResult result);
+    void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+                                                                  VkDisplayPlanePropertiesKHR* pProperties, VkResult result);
+    void PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+                                                                   VkDisplayPlaneProperties2KHR* pProperties, VkResult result);
+    void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
+                                                              VkQueueFamilyProperties* pQueueFamilyProperties);
+    void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
+                                                               VkQueueFamilyProperties2KHR* pQueueFamilyProperties);
+    void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                  uint32_t* pQueueFamilyPropertyCount,
+                                                                  VkQueueFamilyProperties2KHR* pQueueFamilyProperties);
+    void PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                               VkSurfaceCapabilitiesKHR* pSurfaceCapabilities, VkResult result);
+    void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                                const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                                VkSurfaceCapabilities2KHR* pSurfaceCapabilities, VkResult result);
+    void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                VkSurfaceCapabilities2EXT* pSurfaceCapabilities, VkResult result);
+    void PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                          uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats,
+                                                          VkResult result);
+    void PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
+                                                           const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
+                                                           uint32_t* pSurfaceFormatCount, VkSurfaceFormat2KHR* pSurfaceFormats,
+                                                           VkResult result);
+    void PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                               uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes,
+                                                               VkResult result);
+    void PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                          VkSurfaceKHR surface, VkBool32* pSupported, VkResult result);
 
     // Create/Destroy/Bind
     void PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
@@ -634,6 +665,8 @@ class ValidationStateTracker : public ValidationObject {
     void RecordCreateImageANDROID(const VkImageCreateInfo* create_info, IMAGE_STATE* is_node);
     void RecordEnumeratePhysicalDeviceGroupsState(uint32_t* pPhysicalDeviceGroupCount,
                                                   VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
+    void RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
+                                                            void* pProperties);
     void RecordUpdateDescriptorSetWithTemplateState(VkDescriptorSet descriptorSet,
                                                     VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
     void RecordCreateDescriptorUpdateTemplateState(const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
@@ -836,10 +869,8 @@ class CoreChecks : public ValidationStateTracker {
     bool CheckPreserved(const VkRenderPassCreateInfo2KHR* pCreateInfo, const int index, const uint32_t attachment,
                         const std::vector<DAGNode>& subpass_to_node, int depth, bool& skip);
     bool ValidateBindImageMemory(const VkBindImageMemoryInfo& bindInfo, const char* api_name) const;
-    void RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
-                                                            void* pProperties);
     bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
-                                                                 const char* api_name);
+                                                                 const char* api_name) const;
     bool ValidateQuery(VkQueue queue, CMD_BUFFER_STATE* pCB, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                        VkQueryResultFlags flags);
     QueryState GetQueryState(QUEUE_STATE* queue_data, VkQueryPool queryPool, uint32_t queryIndex);
@@ -1783,44 +1814,18 @@ class CoreChecks : public ValidationStateTracker {
                                                 VkPhysicalDevice* pPhysicalDevices, VkResult result);
     bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
                                                                VkQueueFamilyProperties* pQueueFamilyProperties);
-    void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
-                                                              VkQueueFamilyProperties* pQueueFamilyProperties);
     bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
                                                                 uint32_t* pQueueFamilyPropertyCount,
                                                                 VkQueueFamilyProperties2KHR* pQueueFamilyProperties);
-    void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
-                                                               VkQueueFamilyProperties2KHR* pQueueFamilyProperties);
     bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
                                                                    uint32_t* pQueueFamilyPropertyCount,
                                                                    VkQueueFamilyProperties2KHR* pQueueFamilyProperties);
-    void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                                  uint32_t* pQueueFamilyPropertyCount,
-                                                                  VkQueueFamilyProperties2KHR* pQueueFamilyProperties);
     bool PreCallValidateDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator);
     void PreCallRecordValidateDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface, const VkAllocationCallbacks* pAllocator);
-    void PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                               VkSurfaceCapabilitiesKHR* pSurfaceCapabilities, VkResult result);
-    void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysicalDevice physicalDevice,
-                                                                const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
-                                                                VkSurfaceCapabilities2KHR* pSurfaceCapabilities, VkResult result);
-    void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                                VkSurfaceCapabilities2EXT* pSurfaceCapabilities, VkResult result);
     bool PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                            VkSurfaceKHR surface, VkBool32* pSupported);
-    void PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-                                                          VkSurfaceKHR surface, VkBool32* pSupported, VkResult result);
-    void PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                               uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes,
-                                                               VkResult result);
     bool PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                            uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats);
-    void PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                          uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats,
-                                                          VkResult result);
-    void PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(VkPhysicalDevice physicalDevice,
-                                                           const VkPhysicalDeviceSurfaceInfo2KHR* pSurfaceInfo,
-                                                           uint32_t* pSurfaceFormatCount, VkSurfaceFormat2KHR* pSurfaceFormats,
-                                                           VkResult result);
     void PreCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo);
     void PostCallRecordCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer);
     void PreCallRecordCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo);
@@ -1843,10 +1848,6 @@ class CoreChecks : public ValidationStateTracker {
     void PreCallRecordCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
                                                           VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                           VkPipelineLayout layout, uint32_t set, const void* pData);
-    void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
-                                                                  VkDisplayPlanePropertiesKHR* pProperties, VkResult result);
-    void PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
-                                                                   VkDisplayPlaneProperties2KHR* pProperties, VkResult result);
     bool PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                             uint32_t* pDisplayCount, VkDisplayKHR* pDisplays);
     bool PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode, uint32_t planeIndex,
