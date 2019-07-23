@@ -1069,5 +1069,9 @@ class StatelessValidation : public ValidationObject {
     bool PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
                                                               VkDeviceGroupPresentModeFlagsKHR *pModes);
 #endif  // VK_USE_PLATFORM_WIN32_KHR
+
+    bool manual_PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
+                                                 const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer);
+
 #include "parameter_validation.h"
 };  // Class StatelessValidation

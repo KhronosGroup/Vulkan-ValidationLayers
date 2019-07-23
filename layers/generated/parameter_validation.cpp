@@ -3640,8 +3640,6 @@ bool StatelessValidation::PreCallValidateCreateFramebuffer(
         skip |= validate_flags("vkCreateFramebuffer", "pCreateInfo->flags", "VkFramebufferCreateFlagBits", AllVkFramebufferCreateFlagBits, pCreateInfo->flags, false, false, "VUID-VkFramebufferCreateInfo-flags-parameter");
 
         skip |= validate_required_handle("vkCreateFramebuffer", "pCreateInfo->renderPass", pCreateInfo->renderPass);
-
-        skip |= validate_array("vkCreateFramebuffer", "pCreateInfo->attachmentCount", "pCreateInfo->pAttachments", pCreateInfo->attachmentCount, &pCreateInfo->pAttachments, false, true, kVUIDUndefined, "VUID-VkFramebufferCreateInfo-pAttachments-parameter");
     }
     if (pAllocator != NULL)
     {
@@ -3664,6 +3662,7 @@ bool StatelessValidation::PreCallValidateCreateFramebuffer(
         }
     }
     skip |= validate_required_pointer("vkCreateFramebuffer", "pFramebuffer", pFramebuffer, "VUID-vkCreateFramebuffer-pFramebuffer-parameter");
+    skip |= manual_PreCallValidateCreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer);
     return skip;
 }
 
