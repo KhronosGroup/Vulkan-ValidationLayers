@@ -60,7 +60,7 @@ static const char DECORATE_UNUSED *kVUID_Core_DrawState_DoubleDestroy = "UNASSIG
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_ExtensionNotEnabled = "UNASSIGNED-CoreValidation-DrawState-ExtensionNotEnabled";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InternalError = "UNASSIGNED-CoreValidation-DrawState-InternalError";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidBarrier = "UNASSIGNED-CoreValidation-DrawState-InvalidBarrier";
-static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidBuffer = "UNASSIGNED-CoreValidation-DrawState-InvalidBuffer";
+//static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidBuffer = "UNASSIGNED-CoreValidation-DrawState-InvalidBuffer";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidCommandBuffer = "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBuffer";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidCommandBufferSimultaneousUse = "UNASSIGNED-CoreValidation-DrawState-InvalidCommandBufferSimultaneousUse";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidDescriptorSet = "UNASSIGNED-CoreValidation-DrawState-InvalidDescriptorSet";
@@ -68,7 +68,7 @@ static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidEvent = "UNASSIGN
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidExtents = "UNASSIGNED-CoreValidation-DrawState-InvalidExtents";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidFeature = "UNASSIGNED-CoreValidation-DrawState-InvalidFeature";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidFence = "UNASSIGNED-CoreValidation-DrawState-InvalidFence";
-static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidImage = "UNASSIGNED-CoreValidation-DrawState-InvalidImage";
+//static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidImage = "UNASSIGNED-CoreValidation-DrawState-InvalidImage";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidImageAspect = "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidImageLayout = "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_InvalidLayout = "UNASSIGNED-CoreValidation-DrawState-InvalidLayout";
@@ -239,6 +239,13 @@ static const char DECORATE_UNUSED *kVUID_Core_PushDescriptorUpdate_TemplateType 
 static const char DECORATE_UNUSED *kVUID_Core_PushDescriptorUpdate_Template_SetMismatched = "UNASSIGNED-CoreValidation-vkCmdPushDescriptorSetWithTemplateKHR-set";
 static const char DECORATE_UNUSED *kVUID_Core_PushDescriptorUpdate_Template_LayoutMismatched = "UNASSIGNED-CoreValidation-vkCmdPushDescriptorSetWithTemplateKHR-layout";
 
+static const char DECORATE_UNUSED *kVUID_Core_BindImage_InvalidMemReqQuery = "UNASSIGNED-CoreValidation-vkBindImageMemory-invalid-requirements";
+static const char DECORATE_UNUSED *kVUID_Core_BindImage_NoMemReqQuery = "UNASSIGNED-CoreValidation-vkBindImageMemory-memory-requirements";
+static const char DECORATE_UNUSED *kVUID_Core_BindBuffer_NoMemReqQuery = "UNASSIGNED-CoreValidation-vkBindBufferMemory-memory-requirements";
+
+static const char DECORATE_UNUSED *kVUID_Core_BindAccelNV_NoMemReqQuery = "UNASSIGNED-CoreValidation-vkBindAccelerationStructureMemoryNV-object-requirements";
+static const char DECORATE_UNUSED *kVUID_Core_CmdBuildAccelNV_NoScratchMemReqQuery = "UNASSIGNED-CoreValidation-vkCmdBuildAccelerationStructureNV-scratch-requirements";
+static const char DECORATE_UNUSED *kVUID_Core_CmdBuildAccelNV_NoUpdateMemReqQuery = "UNASSIGNED-CoreValidation-vkCmdBuildAccelerationStructureNV-update-requirements";
 // clang-format on
 
 #undef DECORATE_UNUSED

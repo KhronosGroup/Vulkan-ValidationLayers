@@ -1469,15 +1469,27 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkImage *pImage, VkResult result) {
     if (VK_SUCCESS != result) return;
-    IMAGE_STATE *is_node = new IMAGE_STATE(*pImage, pCreateInfo);
+    std::unique_ptr<IMAGE_STATE> is_node(new IMAGE_STATE(*pImage, pCreateInfo));
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
-        RecordCreateImageANDROID(pCreateInfo, is_node);
+        RecordCreateImageANDROID(pCreateInfo, is_node.get());
     }
     const auto swapchain_info = lvl_find_in_chain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
     if (swapchain_info) {
         is_node->create_from_swapchain = swapchain_info->swapchain;
     }
-    imageMap.insert(std::make_pair(*pImage, std::unique_ptr<IMAGE_STATE>(is_node)));
+
+    bool pre_fetch_memory_reqs = true;
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    if (is_node->external_format_android) {
+        // Do not fetch requirements for external memory images
+        pre_fetch_memory_reqs = false;
+    }
+#endif
+    // Record the memory requirements in case they won't be queried
+    if (pre_fetch_memory_reqs) {
+        DispatchGetImageMemoryRequirements(device, *pImage, &is_node->requirements);
+    }
+    imageMap.insert(std::make_pair(*pImage, std::move(is_node)));
 }
 
 void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
@@ -3921,7 +3933,12 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
                                                         VkResult result) {
     if (result != VK_SUCCESS) return;
     // TODO : This doesn't create deep copy of pQueueFamilyIndices so need to fix that if/when we want that data to be valid
-    bufferMap.insert(std::make_pair(*pBuffer, std::unique_ptr<BUFFER_STATE>(new BUFFER_STATE(*pBuffer, pCreateInfo))));
+    std::unique_ptr<BUFFER_STATE> buffer_state(new BUFFER_STATE(*pBuffer, pCreateInfo));
+
+    // Get a set of requirements in the case the app does not
+    DispatchGetBufferMemoryRequirements(device, *pBuffer, &buffer_state->requirements);
+
+    bufferMap.insert(std::make_pair(*pBuffer, std::move(buffer_state)));
 }
 
 bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,

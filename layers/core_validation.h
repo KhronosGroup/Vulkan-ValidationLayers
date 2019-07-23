@@ -388,12 +388,21 @@ class ValidationStateTracker : public ValidationObject {
                                                         VkResult result);
 
     // Create/Destroy/Bind
+    void PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
+                                                         const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
+                                                         VkResult result);
     void PostCallRecordBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset,
                                         VkResult result);
     void PostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfoKHR* pBindInfos,
                                          VkResult result);
     void PostCallRecordBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfoKHR* pBindInfos,
                                             VkResult result);
+    void PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset,
+                                       VkResult result);
+    void PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfoKHR* pBindInfos,
+                                        VkResult result);
+    void PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfoKHR* pBindInfos,
+                                           VkResult result);
     void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                     const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, VkResult result);
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator);
@@ -581,10 +590,14 @@ class ValidationStateTracker : public ValidationObject {
     BASE_NODE* GetStateStructPtrFromObject(const VulkanTypedHandle& object_struct);
     void IncrementBoundObjects(CMD_BUFFER_STATE const* cb_node);
     void IncrementResources(CMD_BUFFER_STATE* cb_node);
+    void InsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, DEVICE_MEMORY_STATE* mem_info,
+                                                VkDeviceSize mem_offset, const VkMemoryRequirements& mem_reqs);
     void InsertBufferMemoryRange(VkBuffer buffer, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset,
-                                 VkMemoryRequirements mem_reqs);
-    void InsertMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize memoryOffset,
-                           VkMemoryRequirements memRequirements, VulkanObjectType object_type, bool is_linear);
+                                 const VkMemoryRequirements& mem_reqs);
+    void InsertImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset,
+                                VkMemoryRequirements mem_reqs, bool is_linear);
+    void InsertMemoryRange(const VulkanTypedHandle& typed_handle, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize memoryOffset,
+                           VkMemoryRequirements memRequirements, bool is_linear);
     void InvalidateCommandBuffers(std::unordered_set<CMD_BUFFER_STATE*> const& cb_nodes, const VulkanTypedHandle& obj);
     void PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*, const VkDescriptorSet*,
                                        const cvdescriptorset::AllocateDescriptorSetsData*);
@@ -609,6 +622,7 @@ class ValidationStateTracker : public ValidationObject {
     void SetMemBinding(VkDeviceMemory mem, BINDABLE* mem_binding, VkDeviceSize memory_offset,
                        const VulkanTypedHandle& typed_handle);
     void UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset);
+    void UpdateBindImageMemoryState(const VkBindImageMemoryInfo& bindInfo);
     void UpdateLastBoundDescriptorSets(CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint pipeline_bind_point,
                                        const PIPELINE_LAYOUT_STATE* pipeline_layout, uint32_t first_set, uint32_t set_count,
                                        const std::vector<cvdescriptorset::DescriptorSet*> descriptor_sets,
@@ -795,8 +809,7 @@ class CoreChecks : public ValidationStateTracker {
                                const std::vector<DAGNode>& subpass_to_node, bool& skip);
     bool CheckPreserved(const VkRenderPassCreateInfo2KHR* pCreateInfo, const int index, const uint32_t attachment,
                         const std::vector<DAGNode>& subpass_to_node, int depth, bool& skip);
-    bool ValidateBindImageMemory(const VkBindImageMemoryInfo& bindInfo, const char* api_name);
-    void UpdateBindImageMemoryState(const VkBindImageMemoryInfo& bindInfo);
+    bool ValidateBindImageMemory(const VkBindImageMemoryInfo& bindInfo, const char* api_name) const;
     void RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                             void* pProperties);
     bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
@@ -827,20 +840,16 @@ class CoreChecks : public ValidationStateTracker {
     void RecordCreateSwapchainState(VkResult result, const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR* pSwapchain,
                                     SURFACE_STATE* surface_state, SWAPCHAIN_NODE* old_swapchain_state);
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
-    bool ValidateInsertMemoryRange(uint64_t handle, const DEVICE_MEMORY_STATE* mem_info, VkDeviceSize memoryOffset,
-                                   VkMemoryRequirements memRequirements, VulkanObjectType object_type, bool is_linear,
+    bool ValidateInsertMemoryRange(const VulkanTypedHandle& typed_handle, const DEVICE_MEMORY_STATE* mem_info,
+                                   VkDeviceSize memoryOffset, const VkMemoryRequirements& memRequirements, bool is_linear,
                                    const char* api_name) const;
-    bool ValidateInsertImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset,
-                                        VkMemoryRequirements mem_reqs, bool is_linear, const char* api_name);
-    void InsertImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset,
-                                VkMemoryRequirements mem_reqs, bool is_linear);
+    bool ValidateInsertImageMemoryRange(VkImage image, const DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset,
+                                        const VkMemoryRequirements& mem_reqs, bool is_linear, const char* api_name) const;
     bool ValidateInsertBufferMemoryRange(VkBuffer buffer, const DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset,
-                                         VkMemoryRequirements mem_reqs, const char* api_name) const;
-    bool ValidateInsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, DEVICE_MEMORY_STATE* mem_info,
-                                                        VkDeviceSize mem_offset, VkMemoryRequirements mem_reqs,
-                                                        const char* api_name);
-    void InsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, DEVICE_MEMORY_STATE* mem_info,
-                                                VkDeviceSize mem_offset, VkMemoryRequirements mem_reqs);
+                                         const VkMemoryRequirements& mem_reqs, const char* api_name) const;
+    bool ValidateInsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, const DEVICE_MEMORY_STATE* mem_info,
+                                                        VkDeviceSize mem_offset, const VkMemoryRequirements& mem_reqs,
+                                                        const char* api_name) const;
 
     bool ValidateMemoryTypes(const DEVICE_MEMORY_STATE* mem_info, const uint32_t memory_type_bits, const char* funcName,
                              const char* msgCode) const;
@@ -894,6 +903,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDeviceMaskToRenderPass(const CMD_BUFFER_STATE* pCB, uint32_t deviceMask,
                                         VkDebugReportObjectTypeEXT VUID_handle_type, uint64_t VUID_handle, const char* VUID);
 
+    bool ValidateBindAccelerationStructureMemoryNV(VkDevice device, const VkBindAccelerationStructureMemoryInfoNV& info) const;
     // Prototypes for CoreChecks accessor functions
     VkFormatProperties GetPDFormatProperties(const VkFormat format) const;
     VkResult GetPDImageFormatProperties(const VkImageCreateInfo*, VkImageFormatProperties*);
@@ -1538,9 +1548,6 @@ class CoreChecks : public ValidationStateTracker {
                                                                     VkMemoryRequirements2KHR* pMemoryRequirements);
     bool PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                           const VkBindAccelerationStructureMemoryInfoNV* pBindInfos);
-    void PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
-                                                         const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
-                                                         VkResult result);
     bool PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
                                                         VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
                                                         VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
@@ -1702,14 +1709,8 @@ class CoreChecks : public ValidationStateTracker {
     void PostCallRecordInvalidateMappedMemoryRanges(VkDevice device, uint32_t memRangeCount, const VkMappedMemoryRange* pMemRanges,
                                                     VkResult result);
     bool PreCallValidateBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset);
-    void PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem, VkDeviceSize memoryOffset,
-                                       VkResult result);
     bool PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfoKHR* pBindInfos);
-    void PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfoKHR* pBindInfos,
-                                        VkResult result);
     bool PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfoKHR* pBindInfos);
-    void PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfoKHR* pBindInfos,
-                                           VkResult result);
     bool PreCallValidateSetEvent(VkDevice device, VkEvent event);
     void PreCallRecordSetEvent(VkDevice device, VkEvent event);
     bool PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence);
