@@ -3671,7 +3671,7 @@ static bool ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(const debug_r
     return skip;
 }
 
-bool CoreChecks::ValidateCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo *create_info) {
+bool CoreChecks::ValidateCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo *create_info) const {
     const VkExternalFormatANDROID *ext_format_android = lvl_find_in_chain<VkExternalFormatANDROID>(create_info->pNext);
     if ((nullptr != ext_format_android) && (0 != ext_format_android->externalFormat)) {
         if (VK_FORMAT_UNDEFINED != create_info->format) {
@@ -3689,15 +3689,15 @@ bool CoreChecks::ValidateCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbc
     return false;
 }
 
-void CoreChecks::RecordCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo *create_info,
-                                                           VkSamplerYcbcrConversion ycbcr_conversion) {
+void ValidationStateTracker::RecordCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo *create_info,
+                                                                       VkSamplerYcbcrConversion ycbcr_conversion) {
     const VkExternalFormatANDROID *ext_format_android = lvl_find_in_chain<VkExternalFormatANDROID>(create_info->pNext);
     if (ext_format_android && (0 != ext_format_android->externalFormat)) {
         ycbcr_conversion_ahb_fmt_map.emplace(ycbcr_conversion, ext_format_android->externalFormat);
     }
 };
 
-void CoreChecks::RecordDestroySamplerYcbcrConversionANDROID(VkSamplerYcbcrConversion ycbcr_conversion) {
+void ValidationStateTracker::RecordDestroySamplerYcbcrConversionANDROID(VkSamplerYcbcrConversion ycbcr_conversion) {
     ycbcr_conversion_ahb_fmt_map.erase(ycbcr_conversion);
 };
 
@@ -3711,16 +3711,16 @@ static bool ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(const debug_r
     return false;
 }
 
-bool CoreChecks::ValidateCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo *create_info) {
+bool CoreChecks::ValidateCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo *create_info) const {
     return false;
 }
 
 bool CoreChecks::ValidateGetImageMemoryRequirements2ANDROID(const VkImage image) const { return false; }
 
-void CoreChecks::RecordCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo *create_info,
-                                                           VkSamplerYcbcrConversion ycbcr_conversion){};
+void ValidationStateTracker::RecordCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo *create_info,
+                                                                       VkSamplerYcbcrConversion ycbcr_conversion){};
 
-void CoreChecks::RecordDestroySamplerYcbcrConversionANDROID(VkSamplerYcbcrConversion ycbcr_conversion){};
+void ValidationStateTracker::RecordDestroySamplerYcbcrConversionANDROID(VkSamplerYcbcrConversion ycbcr_conversion){};
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
@@ -4027,7 +4027,7 @@ void CoreChecks::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) 
 }
 
 bool CoreChecks::PreCallValidateDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks *pAllocator) {
-    FENCE_STATE *fence_node = GetFenceState(fence);
+    const FENCE_STATE *fence_node = GetFenceState(fence);
     bool skip = false;
     if (fence_node) {
         if (fence_node->scope == kSyncScopeInternal && fence_node->state == FENCE_INFLIGHT) {
@@ -4039,13 +4039,13 @@ bool CoreChecks::PreCallValidateDestroyFence(VkDevice device, VkFence fence, con
     return skip;
 }
 
-void CoreChecks::PreCallRecordDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks *pAllocator) {
     if (!fence) return;
     fenceMap.erase(fence);
 }
 
 bool CoreChecks::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator) {
-    SEMAPHORE_STATE *sema_node = GetSemaphoreState(semaphore);
+    const SEMAPHORE_STATE *sema_node = GetSemaphoreState(semaphore);
     const VulkanTypedHandle obj_struct(semaphore, kVulkanObjectTypeSemaphore);
     bool skip = false;
     if (sema_node) {
@@ -4054,13 +4054,14 @@ bool CoreChecks::PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore se
     return skip;
 }
 
-void CoreChecks::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore,
+                                                           const VkAllocationCallbacks *pAllocator) {
     if (!semaphore) return;
     semaphoreMap.erase(semaphore);
 }
 
 bool CoreChecks::PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator) {
-    EVENT_STATE *event_state = GetEventState(event);
+    const EVENT_STATE *event_state = GetEventState(event);
     const VulkanTypedHandle obj_struct(event, kVulkanObjectTypeEvent);
     bool skip = false;
     if (event_state) {
@@ -4069,7 +4070,7 @@ bool CoreChecks::PreCallValidateDestroyEvent(VkDevice device, VkEvent event, con
     return skip;
 }
 
-void CoreChecks::PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks *pAllocator) {
     if (!event) return;
     EVENT_STATE *event_state = GetEventState(event);
     const VulkanTypedHandle obj_struct(event, kVulkanObjectTypeEvent);
@@ -4079,7 +4080,7 @@ void CoreChecks::PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const
 
 bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks *pAllocator) {
     if (disabled.query_validation) return false;
-    QUERY_POOL_STATE *qp_state = GetQueryPoolState(queryPool);
+    const QUERY_POOL_STATE *qp_state = GetQueryPoolState(queryPool);
     const VulkanTypedHandle obj_struct(queryPool, kVulkanObjectTypeQueryPool);
     bool skip = false;
     if (qp_state) {
@@ -4088,7 +4089,8 @@ bool CoreChecks::PreCallValidateDestroyQueryPool(VkDevice device, VkQueryPool qu
     return skip;
 }
 
-void CoreChecks::PreCallRecordDestroyQueryPool(VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroyQueryPool(VkDevice device, VkQueryPool queryPool,
+                                                           const VkAllocationCallbacks *pAllocator) {
     if (!queryPool) return;
     QUERY_POOL_STATE *qp_state = GetQueryPoolState(queryPool);
     const VulkanTypedHandle obj_struct(queryPool, kVulkanObjectTypeQueryPool);
@@ -4788,8 +4790,9 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
     return skip;
 }
 
-void CoreChecks::PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
-                                               const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool, VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
+                                                           const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool,
+                                                           VkResult result) {
     if (VK_SUCCESS != result) return;
     std::unique_ptr<QUERY_POOL_STATE> query_pool_state(new QUERY_POOL_STATE{});
     query_pool_state->createInfo = *pCreateInfo;
@@ -4945,8 +4948,8 @@ VkResult CoreChecks::GetPDImageFormatProperties2(const VkPhysicalDeviceImageForm
     return DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, phys_dev_image_fmt_info, pImageFormatProperties);
 }
 
-void CoreChecks::PostCallRecordCreateFence(VkDevice device, const VkFenceCreateInfo *pCreateInfo,
-                                           const VkAllocationCallbacks *pAllocator, VkFence *pFence, VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateFence(VkDevice device, const VkFenceCreateInfo *pCreateInfo,
+                                                       const VkAllocationCallbacks *pAllocator, VkFence *pFence, VkResult result) {
     if (VK_SUCCESS != result) return;
     std::unique_ptr<FENCE_STATE> fence_state(new FENCE_STATE{});
     fence_state->fence = *pFence;
@@ -11969,8 +11972,9 @@ void CoreChecks::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoC
     }
 }
 
-void CoreChecks::PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
-                                               const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore, VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
+                                                           const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,
+                                                           VkResult result) {
     if (VK_SUCCESS != result) return;
     std::unique_ptr<SEMAPHORE_STATE> semaphore_state(new SEMAPHORE_STATE{});
     semaphore_state->signaler.first = VK_NULL_HANDLE;
@@ -12124,8 +12128,8 @@ void CoreChecks::PostCallRecordGetFenceFdKHR(VkDevice device, const VkFenceGetFd
     RecordGetExternalFenceState(pGetFdInfo->fence, pGetFdInfo->handleType);
 }
 
-void CoreChecks::PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo *pCreateInfo,
-                                           const VkAllocationCallbacks *pAllocator, VkEvent *pEvent, VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateEvent(VkDevice device, const VkEventCreateInfo *pCreateInfo,
+                                                       const VkAllocationCallbacks *pAllocator, VkEvent *pEvent, VkResult result) {
     if (VK_SUCCESS != result) return;
     eventMap[*pEvent].write_in_use = 0;
     eventMap[*pEvent].stageMask = VkPipelineStageFlags(0);
@@ -13787,7 +13791,7 @@ bool CoreChecks::PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer command
 }
 
 bool CoreChecks::ValidateCreateSamplerYcbcrConversion(const char *func_name,
-                                                      const VkSamplerYcbcrConversionCreateInfo *create_info) {
+                                                      const VkSamplerYcbcrConversionCreateInfo *create_info) const {
     bool skip = false;
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
         skip |= ValidateCreateSamplerYcbcrConversionANDROID(create_info);
@@ -13814,38 +13818,42 @@ bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversionKHR(VkDevice device,
     return ValidateCreateSamplerYcbcrConversion("vkCreateSamplerYcbcrConversionKHR()", pCreateInfo);
 }
 
-void CoreChecks::RecordCreateSamplerYcbcrConversionState(const VkSamplerYcbcrConversionCreateInfo *create_info,
-                                                         VkSamplerYcbcrConversion ycbcr_conversion) {
+void ValidationStateTracker::RecordCreateSamplerYcbcrConversionState(const VkSamplerYcbcrConversionCreateInfo *create_info,
+                                                                     VkSamplerYcbcrConversion ycbcr_conversion) {
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
         RecordCreateSamplerYcbcrConversionANDROID(create_info, ycbcr_conversion);
     }
 }
 
-void CoreChecks::PostCallRecordCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
-                                                            const VkAllocationCallbacks *pAllocator,
-                                                            VkSamplerYcbcrConversion *pYcbcrConversion, VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateSamplerYcbcrConversion(VkDevice device,
+                                                                        const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
+                                                                        const VkAllocationCallbacks *pAllocator,
+                                                                        VkSamplerYcbcrConversion *pYcbcrConversion,
+                                                                        VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordCreateSamplerYcbcrConversionState(pCreateInfo, *pYcbcrConversion);
 }
 
-void CoreChecks::PostCallRecordCreateSamplerYcbcrConversionKHR(VkDevice device,
-                                                               const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
-                                                               const VkAllocationCallbacks *pAllocator,
-                                                               VkSamplerYcbcrConversion *pYcbcrConversion, VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateSamplerYcbcrConversionKHR(VkDevice device,
+                                                                           const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
+                                                                           const VkAllocationCallbacks *pAllocator,
+                                                                           VkSamplerYcbcrConversion *pYcbcrConversion,
+                                                                           VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordCreateSamplerYcbcrConversionState(pCreateInfo, *pYcbcrConversion);
 }
 
-void CoreChecks::PostCallRecordDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
-                                                             const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PostCallRecordDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
+                                                                         const VkAllocationCallbacks *pAllocator) {
     if (!ycbcrConversion) return;
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
         RecordDestroySamplerYcbcrConversionANDROID(ycbcrConversion);
     }
 }
 
-void CoreChecks::PostCallRecordDestroySamplerYcbcrConversionKHR(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
-                                                                const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PostCallRecordDestroySamplerYcbcrConversionKHR(VkDevice device,
+                                                                            VkSamplerYcbcrConversion ycbcrConversion,
+                                                                            const VkAllocationCallbacks *pAllocator) {
     if (!ycbcrConversion) return;
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
         RecordDestroySamplerYcbcrConversionANDROID(ycbcrConversion);
