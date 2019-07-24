@@ -677,19 +677,20 @@ The Stage is the integer value used in SPIR-V for each of the Execution Models:
 These are words that identify which "instance" of the shader the validation error occurred in.
 Here are words for each stage:
 
-| Stage         | Word 0           | Word 1     | World 2    |
-|---------------|------------------|------------|------------|
-|Vertex         |VertexID          |InstanceID  | unused     |
-|Tess*          |InvocationID      |unused      | unused     |
-|Geometry       |PrimitiveID       |InvocationID| unused     |
-|Fragment       |FragCoord.x       |FragCoord.y | unused     |
-|Compute        |GlobalInvocationID|unused      | unused     |
-|RayGenerationNV|LaunchIdNV.x      |LaunchIdNV.y|LaunchIdNV.z|
-|IntersectionNV |LaunchIdNV.x      |LaunchIdNV.y|LaunchIdNV.z|
-|AnyHitNV       |LaunchIdNV.x      |LaunchIdNV.y|LaunchIdNV.z|
-|ClosestHitNV   |LaunchIdNV.x      |LaunchIdNV.y|LaunchIdNV.z|
-|MissNV         |LaunchIdNV.x      |LaunchIdNV.y|LaunchIdNV.z|
-|CallableNV     |LaunchIdNV.x      |LaunchIdNV.y|LaunchIdNV.z|
+| Stage         | Word 0           | Word 1        | Word 2       |
+|---------------|------------------|---------------|---------------|
+|Vertex         |VertexID          |InstanceID     | unused        |
+|TessCntrl      |InvocationID      |PrimitiveID    | unused        |
+|TessEval       |PrimitiveID       |TessCoord.u    | TessCoord.v   |
+|Geometry       |PrimitiveID       |InvocationID   | unused        |
+|Fragment       |FragCoord.x       |FragCoord.y    | unused        |
+|Compute        |GlobalInvocID.x   |GlobalInvocID.y|GlobalInvocID.z|
+|RayGenerationNV|LaunchIdNV.x      |LaunchIdNV.y   |LaunchIdNV.z   |
+|IntersectionNV |LaunchIdNV.x      |LaunchIdNV.y   |LaunchIdNV.z   |
+|AnyHitNV       |LaunchIdNV.x      |LaunchIdNV.y   |LaunchIdNV.z   |
+|ClosestHitNV   |LaunchIdNV.x      |LaunchIdNV.y   |LaunchIdNV.z   |
+|MissNV         |LaunchIdNV.x      |LaunchIdNV.y   |LaunchIdNV.z   |
+|CallableNV     |LaunchIdNV.x      |LaunchIdNV.y   |LaunchIdNV.z   |
 
 "unused" means not relevant, but still present.
 
