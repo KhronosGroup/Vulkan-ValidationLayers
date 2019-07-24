@@ -13071,36 +13071,39 @@ void ValidationStateTracker::PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstan
 }
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-void CoreChecks::PostCallRecordCreateAndroidSurfaceKHR(VkInstance instance, const VkAndroidSurfaceCreateInfoKHR *pCreateInfo,
-                                                       const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
-                                                       VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateAndroidSurfaceKHR(VkInstance instance,
+                                                                   const VkAndroidSurfaceCreateInfoKHR *pCreateInfo,
+                                                                   const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                                   VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordVulkanSurface(pSurface);
 }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
 #ifdef VK_USE_PLATFORM_IOS_MVK
-void CoreChecks::PostCallRecordCreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK *pCreateInfo,
-                                                   const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
-                                                   VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateIOSSurfaceMVK(VkInstance instance, const VkIOSSurfaceCreateInfoMVK *pCreateInfo,
+                                                               const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                               VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordVulkanSurface(pSurface);
 }
 #endif  // VK_USE_PLATFORM_IOS_MVK
 
 #ifdef VK_USE_PLATFORM_MACOS_MVK
-void CoreChecks::PostCallRecordCreateMacOSSurfaceMVK(VkInstance instance, const VkMacOSSurfaceCreateInfoMVK *pCreateInfo,
-                                                     const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
-                                                     VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateMacOSSurfaceMVK(VkInstance instance,
+                                                                 const VkMacOSSurfaceCreateInfoMVK *pCreateInfo,
+                                                                 const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                                 VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordVulkanSurface(pSurface);
 }
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-void CoreChecks::PostCallRecordCreateWaylandSurfaceKHR(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR *pCreateInfo,
-                                                       const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
-                                                       VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateWaylandSurfaceKHR(VkInstance instance,
+                                                                   const VkWaylandSurfaceCreateInfoKHR *pCreateInfo,
+                                                                   const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                                   VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordVulkanSurface(pSurface);
 }
@@ -13134,9 +13137,9 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(VkP
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
-void CoreChecks::PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR *pCreateInfo,
-                                                   const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
-                                                   VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, const VkXcbSurfaceCreateInfoKHR *pCreateInfo,
+                                                               const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                               VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordVulkanSurface(pSurface);
 }
@@ -13152,9 +13155,9 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(VkPhy
 #endif  // VK_USE_PLATFORM_XCB_KHR
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
-void CoreChecks::PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR *pCreateInfo,
-                                                    const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
-                                                    VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR *pCreateInfo,
+                                                                const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                                VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordVulkanSurface(pSurface);
 }
