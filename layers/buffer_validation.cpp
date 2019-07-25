@@ -3454,7 +3454,7 @@ void CoreChecks::UpdateCmdBufImageLayouts(CMD_BUFFER_STATE *pCB) {
 // layout attachments don't have CLEAR as their loadOp.
 bool CoreChecks::ValidateLayoutVsAttachmentDescription(const debug_report_data *report_data, RenderPassCreateVersion rp_version,
                                                        const VkImageLayout first_layout, const uint32_t attachment,
-                                                       const VkAttachmentDescription2KHR &attachment_description) {
+                                                       const VkAttachmentDescription2KHR &attachment_description) const {
     bool skip = false;
     const char *vuid;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
@@ -3497,7 +3497,7 @@ bool CoreChecks::ValidateLayoutVsAttachmentDescription(const debug_report_data *
 }
 
 bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice device,
-                                 const VkRenderPassCreateInfo2KHR *pCreateInfo) {
+                                 const VkRenderPassCreateInfo2KHR *pCreateInfo) const {
     bool skip = false;
     const char *vuid;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
@@ -4045,7 +4045,7 @@ void ValidationStateTracker::PostCallRecordCreateBufferView(VkDevice device, con
 
 // For the given format verify that the aspect masks make sense
 bool CoreChecks::ValidateImageAspectMask(VkImage image, VkFormat format, VkImageAspectFlags aspect_mask, const char *func_name,
-                                         const char *vuid) {
+                                         const char *vuid) const {
     bool skip = false;
     VkDebugReportObjectTypeEXT objectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
     if (image != VK_NULL_HANDLE) {

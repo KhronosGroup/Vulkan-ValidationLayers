@@ -4912,7 +4912,7 @@ void ValidationStateTracker::PreCallRecordDestroyFramebuffer(VkDevice device, Vk
 
 bool CoreChecks::PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass renderPass,
                                                   const VkAllocationCallbacks *pAllocator) {
-    RENDER_PASS_STATE *rp_state = GetRenderPassState(renderPass);
+    const RENDER_PASS_STATE *rp_state = GetRenderPassState(renderPass);
     const VulkanTypedHandle obj_struct(renderPass, kVulkanObjectTypeRenderPass);
     bool skip = false;
     if (rp_state) {
@@ -4921,7 +4921,8 @@ bool CoreChecks::PreCallValidateDestroyRenderPass(VkDevice device, VkRenderPass 
     return skip;
 }
 
-void CoreChecks::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroyRenderPass(VkDevice device, VkRenderPass renderPass,
+                                                            const VkAllocationCallbacks *pAllocator) {
     if (!renderPass) return;
     RENDER_PASS_STATE *rp_state = GetRenderPassState(renderPass);
     const VulkanTypedHandle obj_struct(renderPass, kVulkanObjectTypeRenderPass);
@@ -9811,8 +9812,8 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
     return skip;
 }
 
-void CoreChecks::RecordRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2KHR *pCreateInfo,
-                                     RENDER_PASS_STATE *render_pass) {
+void ValidationStateTracker::RecordRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+                                                 RENDER_PASS_STATE *render_pass) {
     auto &subpass_to_node = render_pass->subpassToNode;
     subpass_to_node.resize(pCreateInfo->subpassCount);
     auto &self_dependencies = render_pass->self_dependencies;
@@ -9835,22 +9836,11 @@ void CoreChecks::RecordRenderPassDAG(RenderPassCreateVersion rp_version, const V
     }
 }
 
-bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2KHR *pCreateInfo,
-                                       RENDER_PASS_STATE *render_pass) {
-    // Shorthand...
-    auto &subpass_to_node = render_pass->subpassToNode;
-    subpass_to_node.resize(pCreateInfo->subpassCount);
-    auto &self_dependencies = render_pass->self_dependencies;
-    self_dependencies.resize(pCreateInfo->subpassCount);
-
+bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2KHR *pCreateInfo) const {
     bool skip = false;
     const char *vuid;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
 
-    for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
-        subpass_to_node[i].pass = i;
-        self_dependencies[i].clear();
-    }
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
         const VkSubpassDependency2KHR &dependency = pCreateInfo->pDependencies[i];
         VkPipelineStageFlagBits latest_src_stage = GetLogicallyLatestGraphicsPipelineStage(dependency.srcStageMask);
@@ -9920,19 +9910,14 @@ bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const
                     report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                     "Dependency %u specifies a self-dependency from logically-later stage (%s) to a logically-earlier stage (%s).",
                     i, string_VkPipelineStageFlagBits(latest_src_stage), string_VkPipelineStageFlagBits(earliest_dst_stage));
-            } else {
-                self_dependencies[dependency.srcSubpass].push_back(i);
             }
-        } else {
-            subpass_to_node[dependency.dstSubpass].prev.push_back(dependency.srcSubpass);
-            subpass_to_node[dependency.srcSubpass].next.push_back(dependency.dstSubpass);
         }
     }
     return skip;
 }
 
 bool CoreChecks::ValidateAttachmentIndex(RenderPassCreateVersion rp_version, uint32_t attachment, uint32_t attachment_count,
-                                         const char *type) {
+                                         const char *type) const {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
     const char *const function_name = use_rp2 ? "vkCreateRenderPass2KHR()" : "vkCreateRenderPass()";
@@ -9974,7 +9959,7 @@ char const *StringAttachmentType(uint8_t type) {
 
 bool CoreChecks::AddAttachmentUse(RenderPassCreateVersion rp_version, uint32_t subpass, std::vector<uint8_t> &attachment_uses,
                                   std::vector<VkImageLayout> &attachment_layouts, uint32_t attachment, uint8_t new_use,
-                                  VkImageLayout new_layout) {
+                                  VkImageLayout new_layout) const {
     if (attachment >= attachment_uses.size()) return false; /* out of range, but already reported */
 
     bool skip = false;
@@ -10006,7 +9991,7 @@ bool CoreChecks::AddAttachmentUse(RenderPassCreateVersion rp_version, uint32_t s
 }
 
 bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_version,
-                                                   const VkRenderPassCreateInfo2KHR *pCreateInfo) {
+                                                   const VkRenderPassCreateInfo2KHR *pCreateInfo) const {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
     const char *vuid;
@@ -10236,7 +10221,7 @@ static void MarkAttachmentFirstUse(RENDER_PASS_STATE *render_pass, uint32_t inde
 }
 
 bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersion rp_version,
-                                          const VkRenderPassCreateInfo2KHR *pCreateInfo, RENDER_PASS_STATE *render_pass) {
+                                          const VkRenderPassCreateInfo2KHR *pCreateInfo) const {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
     const char *vuid;
@@ -10246,8 +10231,7 @@ bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersi
     //       ValidateLayouts.
     skip |= ValidateRenderpassAttachmentUsage(rp_version, pCreateInfo);
 
-    render_pass->renderPass = VK_NULL_HANDLE;
-    skip |= ValidateRenderPassDAG(rp_version, pCreateInfo, render_pass);
+    skip |= ValidateRenderPassDAG(rp_version, pCreateInfo);
 
     // Validate multiview correlation and view masks
     bool viewMaskZero = false;
@@ -10379,15 +10363,17 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
     }
 
     if (!skip) {
-        auto render_pass = std::unique_ptr<RENDER_PASS_STATE>(new RENDER_PASS_STATE(pCreateInfo));
-        skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_1, render_pass->createInfo.ptr(), render_pass.get());
+        safe_VkRenderPassCreateInfo2KHR create_info_2;
+        ConvertVkRenderPassCreateInfoToV2KHR(pCreateInfo, &create_info_2);
+        skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_1, create_info_2.ptr());
     }
 
     return skip;
 }
 
-void CoreChecks::RecordCreateRenderPassState(RenderPassCreateVersion rp_version, std::shared_ptr<RENDER_PASS_STATE> &render_pass,
-                                             VkRenderPass *pRenderPass) {
+void ValidationStateTracker::RecordCreateRenderPassState(RenderPassCreateVersion rp_version,
+                                                         std::shared_ptr<RENDER_PASS_STATE> &render_pass,
+                                                         VkRenderPass *pRenderPass) {
     render_pass->renderPass = *pRenderPass;
     auto create_info = render_pass->createInfo.ptr();
 
@@ -10419,17 +10405,17 @@ void CoreChecks::RecordCreateRenderPassState(RenderPassCreateVersion rp_version,
 // Use of rvalue reference exceeds reccommended usage of rvalue refs in google style guide, but intentionally forces caller to move
 // or copy.  This is clearer than passing a pointer to shared_ptr and avoids the atomic increment/decrement of shared_ptr copy
 // construction or assignment.
-void CoreChecks::PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
-                                                const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
+                                                            const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                                            VkResult result) {
     if (VK_SUCCESS != result) return;
     auto render_pass_state = std::make_shared<RENDER_PASS_STATE>(pCreateInfo);
     RecordCreateRenderPassState(RENDER_PASS_VERSION_1, render_pass_state, pRenderPass);
 }
 
-void CoreChecks::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
-                                                    const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                                    VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+                                                                const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                                                VkResult result) {
     if (VK_SUCCESS != result) return;
     auto render_pass_state = std::make_shared<RENDER_PASS_STATE>(pCreateInfo);
     RecordCreateRenderPassState(RENDER_PASS_VERSION_2, render_pass_state, pRenderPass);
@@ -10571,8 +10557,8 @@ bool CoreChecks::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRe
         skip |= ValidateDepthStencilResolve(report_data, phys_dev_ext_props.depth_stencil_resolve_props, pCreateInfo);
     }
 
-    auto render_pass = std::make_shared<RENDER_PASS_STATE>(pCreateInfo);
-    skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_2, render_pass->createInfo.ptr(), render_pass.get());
+    safe_VkRenderPassCreateInfo2KHR create_info_2(pCreateInfo);
+    skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_2, create_info_2.ptr());
 
     return skip;
 }
