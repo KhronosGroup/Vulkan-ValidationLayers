@@ -4720,6 +4720,10 @@ void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, co
     // Clean up validation specific data
     EraseQFOReleaseBarriers<VkBufferMemoryBarrier>(buffer);
 
+    if (enabled.gpu_validation) {
+        GpuPreCallRecordDestroyBuffer(buffer);
+    }
+
     // Clean up generic buffer state
     StateTracker::PreCallRecordDestroyBuffer(device, buffer, pAllocator);
 }

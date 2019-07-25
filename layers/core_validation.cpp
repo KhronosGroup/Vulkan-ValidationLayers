@@ -14282,6 +14282,14 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const
 
     return skip;
 }
+void CoreChecks::PostCallRecordGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT *pInfo,
+                                                         VkDeviceAddress address) {
+    const auto buffer_state = GetBufferState(pInfo->buffer);
+    buffer_state->deviceAddress = address;
+    if (enabled.gpu_validation) {
+        GpuPostCallRecordGetBufferDeviceAddressEXT(pInfo, address);
+    }
+}
 
 bool CoreChecks::ValidateQueryRange(VkDevice device, VkQueryPool queryPool, uint32_t totalCount, uint32_t firstQuery,
                                     uint32_t queryCount, const char *vuid_badfirst, const char *vuid_badrange) const {

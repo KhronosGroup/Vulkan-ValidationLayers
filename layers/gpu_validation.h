@@ -30,14 +30,17 @@ struct GpuDeviceMemoryBlock {
 
 struct GpuBufferInfo {
     GpuDeviceMemoryBlock output_mem_block;
-    GpuDeviceMemoryBlock input_mem_block;
+    GpuDeviceMemoryBlock di_input_mem_block;   // Descriptor Indexing input
+    GpuDeviceMemoryBlock bda_input_mem_block;  // Buffer Device Address input
     VkDescriptorSet desc_set;
     VkDescriptorPool desc_pool;
     VkPipelineBindPoint pipeline_bind_point;
-    GpuBufferInfo(GpuDeviceMemoryBlock output_mem_block, GpuDeviceMemoryBlock input_mem_block, VkDescriptorSet desc_set,
-                  VkDescriptorPool desc_pool, VkPipelineBindPoint pipeline_bind_point)
+    GpuBufferInfo(GpuDeviceMemoryBlock output_mem_block, GpuDeviceMemoryBlock di_input_mem_block,
+                  GpuDeviceMemoryBlock bda_input_mem_block, VkDescriptorSet desc_set, VkDescriptorPool desc_pool,
+                  VkPipelineBindPoint pipeline_bind_point)
         : output_mem_block(output_mem_block),
-          input_mem_block(input_mem_block),
+          di_input_mem_block(di_input_mem_block),
+          bda_input_mem_block(bda_input_mem_block),
           desc_set(desc_set),
           desc_pool(desc_pool),
           pipeline_bind_point(pipeline_bind_point){};
@@ -72,6 +75,7 @@ class GpuDescriptorSetManager {
 struct GpuValidationState {
     bool aborted;
     bool reserve_binding_slot;
+    VkBool32 shaderInt64;
     VkDescriptorSetLayout debug_desc_layout;
     VkDescriptorSetLayout dummy_desc_layout;
     uint32_t adjusted_max_desc_sets;
@@ -84,6 +88,7 @@ struct GpuValidationState {
     uint32_t output_buffer_size;
     VmaAllocator vmaAllocator;
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
+    std::map<VkDeviceAddress, VkDeviceSize> buffer_map;
     GpuValidationState(bool aborted = false, bool reserve_binding_slot = false, uint32_t unique_shader_module_id = 0,
                        VmaAllocator vmaAllocator = {})
         : aborted(aborted),

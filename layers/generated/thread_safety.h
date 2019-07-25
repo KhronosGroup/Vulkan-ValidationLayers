@@ -4129,7 +4129,8 @@ void PreCallRecordGetBufferDeviceAddressEXT(
 
 void PostCallRecordGetBufferDeviceAddressEXT(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoEXT*         pInfo);
+    const VkBufferDeviceAddressInfoEXT*         pInfo,
+    VkDeviceAddress                             result);
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 

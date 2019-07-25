@@ -941,6 +941,8 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
             post_decl = pre_decl.replace('PreCallRecord', 'PostCallRecord')
             if result_type.text == 'VkResult':
                 post_decl = post_decl.replace(')', ',\n    VkResult                                    result)')
+            elif result_type.text == 'VkDeviceAddress':
+                post_decl = post_decl.replace(')', ',\n    VkDeviceAddress                             result)')
             self.appendSection('command', '')
             self.appendSection('command', post_decl)
             self.appendSection('command', "    " + "\n    ".join(str(finishthreadsafety).rstrip().split("\n")))
@@ -959,6 +961,8 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
             post_decl = pre_decl.replace('PreCallRecord', 'PostCallRecord')
             if result_type.text == 'VkResult':
                 post_decl = post_decl.replace(')', ',\n    VkResult                                    result)')
+            elif result_type.text == 'VkDeviceAddress':
+                post_decl = post_decl.replace(')', ',\n    VkDeviceAddress                             result)')
             self.appendSection('command', '')
             self.appendSection('command', post_decl)
 

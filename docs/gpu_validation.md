@@ -12,9 +12,8 @@
 [3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
 
-GPU-Assisted validation is implemented in the SPIR-V Tools optimizer and the `VK_LAYER_KHRONOS_validation layer (or, in the
-soon-to-be-deprecated `VK_LAYER_LUNARG_core_validation` layer). This document covers the design of the layer portion of the
-implementation.
+GPU-Assisted validation is implemented in the SPIR-V Tools optimizer and the `VK_LAYER_KHRONOS_validation` layer 
+This document covers the design of the layer portion of the implementation.
 
 ## Basic Operation
 
@@ -28,6 +27,9 @@ The layer then passes the resulting modified SPIR-V bytecode to the driver as pa
 
 The layer also allocates a buffer that describes the length of all descriptor arrays and the write state of each element of each array.
 It only does this if the VK_EXT_descriptor_indexing extension is enabled.
+
+The layer also allocates a buffer that describes all addresses retrieved from vkGetBufferDeviceAddressEXT and the sizes of the corresponding buffers.
+It only does this if the VK_EXT_buffer_device_address extension is enabled.
 
 As the shader is executed, the instrumented shader code performs the run-time checks.
 If a check detects an error condition, the instrumentation code writes an error record into the GPU's device memory.
@@ -49,6 +51,8 @@ for image/texel descriptor types.
 
 The second release (Apr 2019) adds validation for out-of-bounds descriptor array indexing and use of unwritten descriptors when the 
 VK_EXT_descriptor_indexing extension is enabled.  Also added (June 2019) was validation for buffer descriptors.
+
+(August 2019) Add bounds checking for pointers retrieved from vkGetBufferDeviceAddressEXT.
 
 ### Out-of-Bounds(OOB) Descriptor Array Indexing
 
@@ -89,6 +93,10 @@ that has not been written.
 
 Note that currently, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT validation is not working and all accesses are reported as valid.
 
+### Buffer device address checking
+The vkGetBufferDeviceAddressEXT routine can be used to get a GPU address that a shader can use to directly address a particular buffer.
+GPU-AV code keeps track of all such addresses, along with the size of the associated buffer, and creates an input buffer listing all such address/size pairs
+Shader code is instrumented to validate buffer_reference addresses and report any reads or writes that do no fall within the listed address/size regions._
 
 ## GPU-Assisted Validation Options
 
@@ -120,17 +128,14 @@ To turn on GPU validation, add the following to your layer settings file, which 
 named `vk_layer_settings.txt`.
 
 ```code
-khronos_validation.gpu_validation = all
+khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT 
 ```
 
 To turn on GPU validation and request to reserve a binding slot:
 
 ```code
-khronos_validation.gpu_validation = all,reserve_binding_slot
+khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT 
 ```
-
-Note: When using the core_validation layer, the above settings should use `lunarg_core_validation` in place of
-`khronos_validation`.
 
 Some platforms do not support configuration of the validation layers with this configuration file.
 Programs running on these platforms must then use the programmatic interface.
@@ -275,8 +280,9 @@ In general, the implementation does:
     are submitted at once.
 * For each draw, dispatch, and trace rays call, allocate a descriptor set and update it to point to the block of device memory just allocated.
     If descriptor indexing is enabled, also update the descriptor set to point to the allocated input buffer.
-    Fill the input buffer with the size and write state information for each descriptor array.
+    Fill the DI input buffer with the size and write state information for each descriptor array.
     There is a descriptor set manager to handle this efficiently.
+    If the buffer device address extension is enabled, allocate an input buffer to hold the address / size pairs for all addresses retrieved from vkGetBufferDeviceAddressEXT.
     Also make an additional call down the chain to create a bind descriptor set command to bind our descriptor set at the desired index.
     This has the effect of binding the device memory block belonging to this draw so that the GPU instrumentation
     writes into this buffer for when the draw is executed.
@@ -290,6 +296,7 @@ In general, the implementation does:
     Pass the desired descriptor set binding index to the optimizer via a parameter so that the instrumented
     code knows which descriptor to use for writing error report data to the memory block.
     If descriptor indexing is enabled, turn on OOB and write state checking in the instrumentation pass.
+    If the buffer_device_address extension is enabled, apply a pass to add instrumentation checking for out of bounds buffer references.
     Use the instrumented bytecode to create the ShaderModule.
 * For all pipeline layouts, add our descriptor set to the layout, at the binding index determined earlier.
     Fill any gaps with empty descriptor sets.
@@ -432,6 +439,7 @@ The design of each hooked function follows:
   * Get a descriptor set from the descriptor set manager
   * Get an output buffer and associated memory from VMA
   * If descriptor indexing is enabled, get an input buffer and fill with descriptor array information
+  * If buffer device address is enabled, get an input buffer and fill with address / size pairs for addresses retrieved from vkGetBufferDeviceAddressEXT
   * Update (write) the descriptor set with the memory info
   * Check to see if the layout for the pipeline just bound is using our selected bind index
   * If no conflict, add an additional command to the command buffer to bind our descriptor set at our selected index
@@ -705,10 +713,11 @@ For the *OutOfBounds errors, two words will follow: Word0:DescriptorIndex, Word1
 
 For the *Uninitialized errors, one word will follow: Word0:DescriptorIndex
 
-| Error                       | Code | Word 0         | Word 1                |
-|-----------------------------|:----:|----------------|-----------------------|
-|IndexOutOfBounds             |0     |Descriptor Index|Descriptor Array Length|
-|DescriptorUninitialized      |1     |Descriptor Index|unused                 |
+| Error                       | Word 0              | Word 1                |
+|-----------------------------|---------------------|-----------------------|
+|IndexOutOfBounds             |Descriptor Index     |Descriptor Array Length|
+|DescriptorUninitialized      |Descriptor Index     |unused                 |
+|BufferDeviceAddrOOB          |Out of Bounds Address|unused                 |
 
 So the words written for an image descriptor bounds error in a fragment shader is:
 
@@ -818,9 +827,9 @@ then added to the validation error message.
 For example, if the OpLine line number is 15, and there is a "#line 10" on line 40
 in the OpSource source, then line 45 in the OpSource contains the correct source line.
 
-### Shader Instrumentation Input Record Format
+### Shader Instrumentation Input Record Format for Descriptor Indexing
 
-Although the input buffer is a linear array of unsigned integers, conceptually there are arrays within the linear array
+Although the DI input buffer is a linear array of unsigned integers, conceptually there are arrays within the linear array
 
 Word 1 starts an array (denoted by sets_to_sizes) that is number_of_sets long, with an index that indicates the start of that set's entries in the sizes array
 
@@ -868,6 +877,24 @@ Input[ i + Input[ b + Input[ s + Input[ Input[0] ] ] ] ] == 0
 ```
 and the array's size = Input[ Input[ s + 1 ] + b ] 
 
+### Shader Instrumentation Input Record Format for buffer device address
+The input buffer for buffer_reference accesses consists of all addresses retrieved from vkGetBufferDeviceAddressEXT and the sizes of the corresponding buffers.
+The addresses should be sorted in ascending order.
+```
+Word 0:   Index of start of buffer sizes (X+2)
+Word 1:   0x0000000000000000
+Word 2:   Device address of first buffer
+               .
+               .
+Word X:   Device address of last buffer
+Word X+1: 0xffffffffffffffff
+Word X+2: 0 (size of pretend buffer at word 1)
+Word X+3: Size of first buffer
+               .
+               .
+Word Y:   Size of last buffer
+Word Y+1: 0  (size of pretend buffer at word X+1)
+```
 ## GPU-Assisted Validation Testing
 
 Validation Layer Tests (VLTs) exist for GPU-Assisted Validation.
