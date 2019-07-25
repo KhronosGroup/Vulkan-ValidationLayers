@@ -5745,7 +5745,8 @@ void ThreadSafety::PreCallRecordGetBufferDeviceAddressEXT(
 
 void ThreadSafety::PostCallRecordGetBufferDeviceAddressEXT(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoEXT*         pInfo) {
+    const VkBufferDeviceAddressInfoEXT*         pInfo,
+    VkDeviceAddress                             result) {
     FinishReadObject(device);
 }
 

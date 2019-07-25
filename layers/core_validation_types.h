@@ -249,6 +249,7 @@ class BUFFER_STATE : public BINDABLE {
   public:
     VkBuffer buffer;
     VkBufferCreateInfo createInfo;
+    VkDeviceAddress deviceAddress;
     BUFFER_STATE(VkBuffer buff, const VkBufferCreateInfo *pCreateInfo) : buffer(buff), createInfo(*pCreateInfo) {
         if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
             uint32_t *pQueueFamilyIndices = new uint32_t[createInfo.queueFamilyIndexCount];

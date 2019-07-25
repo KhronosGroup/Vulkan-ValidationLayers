@@ -9025,7 +9025,7 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressEXT(
     VkDeviceAddress result = DispatchGetBufferDeviceAddressEXT(device, pInfo);
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PostCallRecordGetBufferDeviceAddressEXT(device, pInfo);
+        intercept->PostCallRecordGetBufferDeviceAddressEXT(device, pInfo, result);
     }
     return result;
 }

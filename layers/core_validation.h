@@ -1304,6 +1304,8 @@ class CoreChecks : public ValidationStateTracker {
         const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, std::vector<std::unique_ptr<PIPELINE_STATE>>& pipe_state);
     void GpuPostCallRecordCreateRayTracingPipelinesNV(const uint32_t count, const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                       const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines);
+    void GpuPostCallRecordGetBufferDeviceAddressEXT(const VkBufferDeviceAddressInfoEXT* pInfo, VkDeviceAddress address);
+    void GpuPreCallRecordDestroyBuffer(VkBuffer buffer);
     VkResult GpuInitializeVma();
     void ReportSetupProblem(VkDebugReportObjectTypeEXT object_type, uint64_t object_handle, const char* const specific_message);
 
@@ -1991,6 +1993,8 @@ class CoreChecks : public ValidationStateTracker {
     void PreCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
                                                   VkPhysicalDeviceProperties* pPhysicalDeviceProperties);
     bool PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT* pInfo);
+    void PostCallRecordGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT* pInfo,
+                                                 VkDeviceAddress address);
     bool ValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask, const char* func_name) const;
     bool PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask);
     bool PreCallValidateCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask);

@@ -1688,6 +1688,8 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         resulttype = elem.find('proto/type')
         if resulttype.text == 'VkResult':
             post_call_record = post_call_record.replace(')', ', VkResult result)')
+        elif resulttype.text == 'VkDeviceAddress':
+            post_call_record = post_call_record.replace(')', ', VkDeviceAddress result)')
         return '        %s\n        %s\n        %s\n' % (pre_call_validate, pre_call_record, post_call_record)
     #
     # Command generation
@@ -1788,7 +1790,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         # Generate post-call object processing source code
         self.appendSection('command', '    %s' % self.postcallrecord_loop)
         returnparam = ''
-        if (resulttype.text == 'VkResult'):
+        if (resulttype.text == 'VkResult' or resulttype.text == 'VkDeviceAddress'):
             returnparam = ', result'
         self.appendSection('command', '        auto lock = intercept->write_lock();')
         self.appendSection('command', '        intercept->PostCallRecord%s(%s%s);' % (api_function_name[2:], paramstext, returnparam))

@@ -964,6 +964,8 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                     post_cr_func_decl = 'void PostCallRecord' + func_decl_template + ';'
                     if result_type.text == 'VkResult':
                         post_cr_func_decl = post_cr_func_decl.replace(')', ',\n    VkResult                                    result)')
+                    elif result_type.text == 'VkDeviceAddress':
+                        post_cr_func_decl = post_cr_func_decl.replace(')', ',\n    VkDeviceAddress                             result)')
                     self.appendSection('command', post_cr_func_decl)
 
             if 'object_tracker.cpp' in self.genOpts.filename:
@@ -995,6 +997,8 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                         # The two createpipelines APIs may create on failure -- skip the success result check
                         if 'CreateGraphicsPipelines' not in cmdname and 'CreateComputePipelines' not in cmdname and 'CreateRayTracingPipelines' not in cmdname:
                             post_cr_func_decl = post_cr_func_decl.replace('{', '{\n    if (result != VK_SUCCESS) return;')
+                    elif result_type.text == 'VkDeviceAddress':
+                        post_cr_func_decl = post_cr_func_decl.replace(')', ',\n    VkDeviceAddress                             result)')
                     self.appendSection('command', post_cr_func_decl)
 
                     self.appendSection('command', post_call_record)
