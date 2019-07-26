@@ -232,14 +232,24 @@ void CoreChecks::ReportSetupProblem(VkDebugReportObjectTypeEXT object_type, uint
 void CoreChecks::GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, std::unique_ptr<safe_VkDeviceCreateInfo> &create_info,
                                               VkPhysicalDeviceFeatures *supported_features) {
     if (supported_features->fragmentStoresAndAtomics || supported_features->vertexPipelineStoresAndAtomics) {
-        VkPhysicalDeviceFeatures new_features = {};
+        VkPhysicalDeviceFeatures *features = nullptr;
         if (create_info->pEnabledFeatures) {
-            new_features = *create_info->pEnabledFeatures;
+            // If pEnabledFeatures, VkPhysicalDeviceFeatures2 in pNext chain is not allowed
+            features = const_cast<VkPhysicalDeviceFeatures *>(create_info->pEnabledFeatures);
+        } else {
+            VkPhysicalDeviceFeatures2 *features2 = nullptr;
+            features2 = const_cast<VkPhysicalDeviceFeatures2 *>(lvl_find_in_chain<VkPhysicalDeviceFeatures2>(create_info->pNext));
+            if (features2) features = &features2->features;
         }
-        new_features.fragmentStoresAndAtomics = supported_features->fragmentStoresAndAtomics;
-        new_features.vertexPipelineStoresAndAtomics = supported_features->vertexPipelineStoresAndAtomics;
-        delete create_info->pEnabledFeatures;
-        create_info->pEnabledFeatures = new VkPhysicalDeviceFeatures(new_features);
+        if (features) {
+            features->fragmentStoresAndAtomics = supported_features->fragmentStoresAndAtomics;
+            features->vertexPipelineStoresAndAtomics = supported_features->vertexPipelineStoresAndAtomics;
+        } else {
+            VkPhysicalDeviceFeatures new_features = {};
+            new_features.fragmentStoresAndAtomics = supported_features->fragmentStoresAndAtomics;
+            new_features.vertexPipelineStoresAndAtomics = supported_features->vertexPipelineStoresAndAtomics;
+            create_info->pEnabledFeatures = new VkPhysicalDeviceFeatures(new_features);
+        }
     }
 }
 
