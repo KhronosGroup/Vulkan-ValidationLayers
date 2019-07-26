@@ -1638,6 +1638,15 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                            uint32_t viewportCount,
                                                            const VkShadingRatePaletteNV* pShadingRatePalettes);
+    bool ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV& triangles, VkDebugReportObjectTypeEXT object_type,
+                                     uint64_t object_handle, const char* func_name) const;
+    bool ValidateGeometryAABBNV(const VkGeometryAABBNV& geometry, VkDebugReportObjectTypeEXT object_type, uint64_t object_handle,
+                                const char* func_name) const;
+    bool ValidateGeometryNV(const VkGeometryNV& geometry, VkDebugReportObjectTypeEXT object_type, uint64_t object_handle,
+                            const char* func_name) const;
+    bool PreCallValidateCreateAccelerationStructureNV(VkDevice device, const VkAccelerationStructureCreateInfoNV* pCreateInfo,
+                                                      const VkAllocationCallbacks* pAllocator,
+                                                      VkAccelerationStructureNV* pAccelerationStructure);
     void PostCallRecordGetAccelerationStructureMemoryRequirementsNV(VkDevice device,
                                                                     const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
                                                                     VkMemoryRequirements2KHR* pMemoryRequirements);

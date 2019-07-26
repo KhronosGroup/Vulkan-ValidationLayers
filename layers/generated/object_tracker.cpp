@@ -1119,6 +1119,7 @@ bool ObjectLifetimes::PreCallValidateCreateComputePipelines(
     skip |= ValidateObject(device, pipelineCache, kVulkanObjectTypePipelineCache, true, "VUID-vkCreateComputePipelines-pipelineCache-parameter", "VUID-vkCreateComputePipelines-pipelineCache-parent");
     if (pCreateInfos) {
         for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
+            skip |= ValidateObject(device, pCreateInfos[index0].stage.module, kVulkanObjectTypeShaderModule, false, "VUID-VkPipelineShaderStageCreateInfo-module-parameter", kVUIDUndefined);
             skip |= ValidateObject(device, pCreateInfos[index0].layout, kVulkanObjectTypePipelineLayout, false, "VUID-VkComputePipelineCreateInfo-layout-parameter", "VUID-VkComputePipelineCreateInfo-commonparent");
             skip |= ValidateObject(device, pCreateInfos[index0].basePipelineHandle, kVulkanObjectTypePipeline, true, kVUIDUndefined, "VUID-VkComputePipelineCreateInfo-commonparent");
         }
@@ -4496,6 +4497,14 @@ bool ObjectLifetimes::PreCallValidateCreateAccelerationStructureNV(
     bool skip = false;
     skip |= ValidateObject(device, device, kVulkanObjectTypeDevice, false, "VUID-vkCreateAccelerationStructureNV-device-parameter", kVUIDUndefined);
     if (pCreateInfo) {
+        if (pCreateInfo->info.pGeometries) {
+            for (uint32_t index2 = 0; index2 < pCreateInfo->info.geometryCount; ++index2) {
+                skip |= ValidateObject(device, pCreateInfo->info.pGeometries[index2].geometry.triangles.vertexData, kVulkanObjectTypeBuffer, true, "VUID-VkGeometryTrianglesNV-vertexData-parameter", "VUID-VkGeometryTrianglesNV-commonparent");
+                skip |= ValidateObject(device, pCreateInfo->info.pGeometries[index2].geometry.triangles.indexData, kVulkanObjectTypeBuffer, true, "VUID-VkGeometryTrianglesNV-indexData-parameter", "VUID-VkGeometryTrianglesNV-commonparent");
+                skip |= ValidateObject(device, pCreateInfo->info.pGeometries[index2].geometry.triangles.transformData, kVulkanObjectTypeBuffer, true, "VUID-VkGeometryTrianglesNV-transformData-parameter", "VUID-VkGeometryTrianglesNV-commonparent");
+                skip |= ValidateObject(device, pCreateInfo->info.pGeometries[index2].geometry.aabbs.aabbData, kVulkanObjectTypeBuffer, true, "VUID-VkGeometryAABBNV-aabbData-parameter", kVUIDUndefined);
+            }
+        }
     }
 
     return skip;
@@ -4576,6 +4585,10 @@ bool ObjectLifetimes::PreCallValidateCmdBuildAccelerationStructureNV(
     if (pInfo) {
         if (pInfo->pGeometries) {
             for (uint32_t index1 = 0; index1 < pInfo->geometryCount; ++index1) {
+                skip |= ValidateObject(commandBuffer, pInfo->pGeometries[index1].geometry.triangles.vertexData, kVulkanObjectTypeBuffer, true, "VUID-VkGeometryTrianglesNV-vertexData-parameter", "VUID-VkGeometryTrianglesNV-commonparent");
+                skip |= ValidateObject(commandBuffer, pInfo->pGeometries[index1].geometry.triangles.indexData, kVulkanObjectTypeBuffer, true, "VUID-VkGeometryTrianglesNV-indexData-parameter", "VUID-VkGeometryTrianglesNV-commonparent");
+                skip |= ValidateObject(commandBuffer, pInfo->pGeometries[index1].geometry.triangles.transformData, kVulkanObjectTypeBuffer, true, "VUID-VkGeometryTrianglesNV-transformData-parameter", "VUID-VkGeometryTrianglesNV-commonparent");
+                skip |= ValidateObject(commandBuffer, pInfo->pGeometries[index1].geometry.aabbs.aabbData, kVulkanObjectTypeBuffer, true, "VUID-VkGeometryAABBNV-aabbData-parameter", kVUIDUndefined);
             }
         }
     }

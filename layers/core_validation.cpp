@@ -6591,6 +6591,69 @@ void ValidationStateTracker::PreCallRecordCmdSetViewportShadingRatePaletteNV(VkC
     cb_state->status |= CBSTATUS_SHADING_RATE_PALETTE_SET;
 }
 
+bool CoreChecks::ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triangles, VkDebugReportObjectTypeEXT object_type,
+                                             uint64_t object_handle, const char *func_name) const {
+    bool skip = false;
+
+    const BUFFER_STATE *vb_state = GetBufferState(triangles.vertexData);
+    if (vb_state != nullptr && vb_state->binding.size <= triangles.vertexOffset) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle,
+                        "VUID-VkGeometryTrianglesNV-vertexOffset-02428", "%s", func_name);
+    }
+
+    const BUFFER_STATE *ib_state = GetBufferState(triangles.indexData);
+    if (ib_state != nullptr && ib_state->binding.size <= triangles.indexOffset) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle,
+                        "VUID-VkGeometryTrianglesNV-indexOffset-02431", "%s", func_name);
+    }
+
+    const BUFFER_STATE *td_state = GetBufferState(triangles.transformData);
+    if (td_state != nullptr && td_state->binding.size <= triangles.transformOffset) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle,
+                        "VUID-VkGeometryTrianglesNV-transformOffset-02437", "%s", func_name);
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateGeometryAABBNV(const VkGeometryAABBNV &aabbs, VkDebugReportObjectTypeEXT object_type,
+                                        uint64_t object_handle, const char *func_name) const {
+    bool skip = false;
+
+    const BUFFER_STATE *aabb_state = GetBufferState(aabbs.aabbData);
+    if (aabb_state != nullptr && aabb_state->binding.size > 0 && aabb_state->binding.size <= aabbs.offset) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle,
+                        "VUID-VkGeometryAABBNV-offset-02439", "%s", func_name);
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateGeometryNV(const VkGeometryNV &geometry, VkDebugReportObjectTypeEXT object_type, uint64_t object_handle,
+                                    const char *func_name) const {
+    bool skip = false;
+    if (geometry.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_NV) {
+        skip = ValidateGeometryTrianglesNV(geometry.geometry.triangles, object_type, object_handle, func_name);
+    } else if (geometry.geometryType == VK_GEOMETRY_TYPE_AABBS_NV) {
+        skip = ValidateGeometryAABBNV(geometry.geometry.aabbs, object_type, object_handle, func_name);
+    }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCreateAccelerationStructureNV(VkDevice device,
+                                                              const VkAccelerationStructureCreateInfoNV *pCreateInfo,
+                                                              const VkAllocationCallbacks *pAllocator,
+                                                              VkAccelerationStructureNV *pAccelerationStructure) {
+    bool skip = false;
+    if (pCreateInfo != nullptr && pCreateInfo->info.type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV) {
+        for (uint32_t i = 0; i < pCreateInfo->info.geometryCount; i++) {
+            skip |= ValidateGeometryNV(pCreateInfo->info.pGeometries[i], VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                       HandleToUint64(device), "vkCreateAccelerationStructureNV():");
+        }
+    }
+    return skip;
+}
+
 void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevice device,
                                                                          const VkAccelerationStructureCreateInfoNV *pCreateInfo,
                                                                          const VkAllocationCallbacks *pAllocator,
@@ -6762,6 +6825,13 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
                                       "VUID-vkCmdBuildAccelerationStructureNV-commandBuffer-cmdpool");
 
     skip |= ValidateCmd(cb_state, CMD_BUILDACCELERATIONSTRUCTURENV, "vkCmdBuildAccelerationStructureNV()");
+
+    if (pInfo != nullptr && pInfo->type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV) {
+        for (uint32_t i = 0; i < pInfo->geometryCount; i++) {
+            skip |= ValidateGeometryNV(pInfo->pGeometries[i], VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT,
+                                       HandleToUint64(device), "vkCmdBuildAccelerationStructureNV():");
+        }
+    }
 
     if (pInfo != nullptr && pInfo->geometryCount > phys_dev_ext_props.ray_tracing_props.maxGeometryCount) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,

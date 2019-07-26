@@ -953,7 +953,14 @@ class StatelessValidation : public ValidationObject {
     bool ValidateDeviceQueueFamily(uint32_t queue_family, const char *cmd_name, const char *parameter_name,
                                    const std::string &error_code, bool optional);
 
-    bool ValidateAccelerationStructureInfoNV(const VkAccelerationStructureInfoNV &info);
+    bool ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triangles, VkDebugReportObjectTypeEXT object_type,
+                                     uint64_t object_handle, const char *func_name) const;
+    bool ValidateGeometryAABBNV(const VkGeometryAABBNV &geometry, VkDebugReportObjectTypeEXT object_type, uint64_t object_handle,
+                                const char *func_name) const;
+    bool ValidateGeometryNV(const VkGeometryNV &geometry, VkDebugReportObjectTypeEXT object_type, uint64_t object_handle,
+                            const char *func_name) const;
+    bool ValidateAccelerationStructureInfoNV(const VkAccelerationStructureInfoNV &info, VkDebugReportObjectTypeEXT object_type,
+                                             uint64_t object_handle, const char *func_nam) const;
 
     bool OutputExtensionError(const std::string &api_name, const std::string &extension_name);
 
