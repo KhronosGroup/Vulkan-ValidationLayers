@@ -80,6 +80,9 @@ bool wrap_handles = false;
 #if BUILD_CORE_VALIDATION
 #include "core_validation.h"
 #endif
+#if BUILD_BEST_PRACTICES
+#include "best_practices.h"
+#endif
 
 namespace vulkan_layer_chassis {
 
@@ -445,6 +448,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     core_checks->container_type = LayerObjectTypeCoreValidation;
     core_checks->api_version = api_version;
 #endif
+#if BUILD_BEST_PRACTICES
+    auto best_practices = new BestPractices;
+    if (local_enables.best_practices) {
+        local_object_dispatch.emplace_back(best_practices);
+    }
+    best_practices->container_type = LayerObjectTypeBestPractices;
+    best_practices->api_version = api_version;
+#endif
 
     // If handle wrapping is disabled via the ValidationFeatures extension, override build flag
     if (local_disables.handle_wrapping) {
@@ -503,6 +514,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     core_checks->enabled = framework->enabled;
     core_checks->disabled = framework->disabled;
     core_checks->instance_state = core_checks;
+#endif
+#if BUILD_BEST_PRACTICES
+    best_practices->report_data = framework->report_data;
+    best_practices->instance_dispatch_table = framework->instance_dispatch_table;
+    best_practices->enabled = framework->enabled;
+    best_practices->disabled = framework->disabled;
 #endif
 
     for (auto intercept : framework->object_dispatch) {
@@ -642,6 +659,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         core_checks->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeCoreValidation));
     if (!instance_interceptor->disabled.core_checks) {
         device_interceptor->object_dispatch.emplace_back(core_checks);
+    }
+#endif
+#if BUILD_BEST_PRACTICES
+    auto best_practices = new BestPractices;
+    best_practices->container_type = LayerObjectTypeBestPractices;
+    if (instance_interceptor->enabled.best_practices) {
+        device_interceptor->object_dispatch.emplace_back(best_practices);
     }
 #endif
 
