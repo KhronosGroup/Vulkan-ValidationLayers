@@ -3019,35 +3019,123 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
     return skip;
 }
 
-bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerationStructureInfoNV &info) {
+bool StatelessValidation::ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triangles,
+                                                      VkDebugReportObjectTypeEXT object_type, uint64_t object_handle,
+                                                      const char *func_name) const {
+    bool skip = false;
+
+    if (triangles.vertexFormat != VK_FORMAT_R32G32B32_SFLOAT && triangles.vertexFormat != VK_FORMAT_R16G16B16_SFLOAT &&
+        triangles.vertexFormat != VK_FORMAT_R16G16B16_SNORM && triangles.vertexFormat != VK_FORMAT_R32G32_SFLOAT &&
+        triangles.vertexFormat != VK_FORMAT_R16G16_SFLOAT && triangles.vertexFormat != VK_FORMAT_R16G16_SNORM) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle,
+                        "VUID-VkGeometryTrianglesNV-vertexFormat-02430", "%s", func_name);
+    } else {
+        uint32_t vertex_component_size = 0;
+        if (triangles.vertexFormat == VK_FORMAT_R32G32B32_SFLOAT || triangles.vertexFormat == VK_FORMAT_R32G32_SFLOAT) {
+            vertex_component_size = 4;
+        } else if (triangles.vertexFormat == VK_FORMAT_R16G16B16_SFLOAT || triangles.vertexFormat == VK_FORMAT_R16G16B16_SNORM ||
+                   triangles.vertexFormat == VK_FORMAT_R16G16_SFLOAT || triangles.vertexFormat == VK_FORMAT_R16G16_SNORM) {
+            vertex_component_size = 2;
+        }
+        if (vertex_component_size > 0 && SafeModulo(triangles.vertexOffset, vertex_component_size) != 0) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle,
+                            "VUID-VkGeometryTrianglesNV-vertexOffset-02429", "%s", func_name);
+        }
+    }
+
+    if (triangles.indexType != VK_INDEX_TYPE_UINT32 && triangles.indexType != VK_INDEX_TYPE_UINT16 &&
+        triangles.indexType != VK_INDEX_TYPE_NONE_NV) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle,
+                        "VUID-VkGeometryTrianglesNV-indexType-02433", "%s", func_name);
+    } else {
+        uint32_t index_element_size = 0;
+        if (triangles.indexType == VK_INDEX_TYPE_UINT32) {
+            index_element_size = 4;
+        } else if (triangles.indexType == VK_INDEX_TYPE_UINT16) {
+            index_element_size = 2;
+        }
+        if (index_element_size > 0 && SafeModulo(triangles.indexOffset, index_element_size) != 0) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle,
+                            "VUID-VkGeometryTrianglesNV-indexOffset-02432", "%s", func_name);
+        }
+    }
+    if (triangles.indexType == VK_INDEX_TYPE_NONE_NV) {
+        if (triangles.indexCount != 0) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle,
+                            "VUID-VkGeometryTrianglesNV-indexCount-02436", "%s", func_name);
+        }
+        if (triangles.indexData != VK_NULL_HANDLE) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle,
+                            "VUID-VkGeometryTrianglesNV-indexData-02434", "%s", func_name);
+        }
+    }
+
+    if (SafeModulo(triangles.transformOffset, 16) != 0) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle,
+                        "VUID-VkGeometryTrianglesNV-transformOffset-02438", "%s", func_name);
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::ValidateGeometryAABBNV(const VkGeometryAABBNV &aabbs, VkDebugReportObjectTypeEXT object_type,
+                                                 uint64_t object_handle, const char *func_name) const {
+    bool skip = false;
+
+    if (SafeModulo(aabbs.offset, 8) != 0) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle,
+                        "VUID-VkGeometryAABBNV-offset-02440", "%s", func_name);
+    }
+    if (SafeModulo(aabbs.stride, 8) != 0) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle,
+                        "VUID-VkGeometryAABBNV-stride-02441", "%s", func_name);
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::ValidateGeometryNV(const VkGeometryNV &geometry, VkDebugReportObjectTypeEXT object_type,
+                                             uint64_t object_handle, const char *func_name) const {
+    bool skip = false;
+    if (geometry.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_NV) {
+        skip = ValidateGeometryTrianglesNV(geometry.geometry.triangles, object_type, object_handle, func_name);
+    } else if (geometry.geometryType == VK_GEOMETRY_TYPE_AABBS_NV) {
+        skip = ValidateGeometryAABBNV(geometry.geometry.aabbs, object_type, object_handle, func_name);
+    }
+    return skip;
+}
+
+bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerationStructureInfoNV &info,
+                                                              VkDebugReportObjectTypeEXT object_type, uint64_t object_handle,
+                                                              const char *func_name) const {
     bool skip = false;
     if (info.type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV && info.geometryCount != 0) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT, 0,
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle,
                         "VUID-VkAccelerationStructureInfoNV-type-02425",
                         "VkAccelerationStructureInfoNV: If type is VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV then "
                         "geometryCount must be 0.");
     }
     if (info.type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV && info.instanceCount != 0) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT, 0,
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle,
                         "VUID-VkAccelerationStructureInfoNV-type-02426",
                         "VkAccelerationStructureInfoNV: If type is VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV then "
                         "instanceCount must be 0.");
     }
     if (info.flags & VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV &&
         info.flags & VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_NV) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT, 0,
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle,
                         "VUID-VkAccelerationStructureInfoNV-flags-02592",
                         "VkAccelerationStructureInfoNV: If flags has the VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV"
                         "bit set, then it must not have the VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_NV bit set.");
     }
     if (info.geometryCount > phys_dev_ext_props.ray_tracing_props.maxGeometryCount) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT, 0,
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle,
                         "VUID-VkAccelerationStructureInfoNV-geometryCount-02422",
                         "VkAccelerationStructureInfoNV: geometryCount must be less than or equal to "
                         "VkPhysicalDeviceRayTracingPropertiesNV::maxGeometryCount.");
     }
     if (info.instanceCount > phys_dev_ext_props.ray_tracing_props.maxInstanceCount) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT, 0,
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle,
                         "VUID-VkAccelerationStructureInfoNV-instanceCount-02423",
                         "VkAccelerationStructureInfoNV: instanceCount must be less than or equal to "
                         "VkPhysicalDeviceRayTracingPropertiesNV::maxInstanceCount.");
@@ -3056,14 +3144,17 @@ bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerati
         uint64_t total_triangle_count = 0;
         for (uint32_t i = 0; i < info.geometryCount; i++) {
             const VkGeometryNV &geometry = info.pGeometries[i];
+
+            skip |= ValidateGeometryNV(geometry, object_type, object_handle, func_name);
+
             if (geometry.geometryType != VK_GEOMETRY_TYPE_TRIANGLES_NV) {
                 continue;
             }
             total_triangle_count += geometry.geometry.triangles.indexCount / 3;
         }
         if (total_triangle_count > phys_dev_ext_props.ray_tracing_props.maxTriangleCount) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT,
-                            0, "VUID-VkAccelerationStructureInfoNV-maxTriangleCount-02424",
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle,
+                            "VUID-VkAccelerationStructureInfoNV-maxTriangleCount-02424",
                             "VkAccelerationStructureInfoNV: The total number of triangles in all geometries must be less than "
                             "or equal to VkPhysicalDeviceRayTracingPropertiesNV::maxTriangleCount.");
         }
@@ -3086,7 +3177,8 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureNV(
                             pCreateInfo->compactedSize, pCreateInfo->info.geometryCount, pCreateInfo->info.instanceCount);
         }
 
-        skip |= ValidateAccelerationStructureInfoNV(pCreateInfo->info);
+        skip |= ValidateAccelerationStructureInfoNV(pCreateInfo->info, VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT, 0,
+                                                    "vkCreateAccelerationStructureNV()");
     }
 
     return skip;
@@ -3098,7 +3190,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructureNV(
     bool skip = false;
 
     if (pInfo != nullptr) {
-        skip |= ValidateAccelerationStructureInfoNV(*pInfo);
+        skip |= ValidateAccelerationStructureInfoNV(*pInfo, VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT,
+                                                    HandleToUint64(dst), "vkCmdBuildAccelerationStructureNV()");
     }
 
     return skip;

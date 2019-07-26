@@ -792,7 +792,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                         pre_code += '%s}\n' % indent
                         indent = self.decIndent(indent)
                         pre_code += '%s}\n' % indent
-                    # Single Struct
+                    # Single Struct Pointer
                     elif ispointer:
                         # Update struct prefix
                         new_prefix = '%s%s->' % (prefix, member.name)
@@ -804,6 +804,13 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                         pre_code += tmp_pre
                         indent = self.decIndent(indent)
                         pre_code += '%s}\n' % indent
+                    # Single Nested Struct
+                    else:
+                        # Update struct prefix
+                        new_prefix = '%s%s.' % (prefix, member.name)
+                        # Process sub-structs
+                        tmp_pre = self.validate_objects(struct_info, indent, new_prefix, array_index, disp_name, member.type, False)
+                        pre_code += tmp_pre
         return pre_code
     #
     # For a particular API, generate the object handling code
@@ -838,7 +845,6 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
     #
     # Capture command parameter info needed to create, destroy, and validate objects
     def genCmd(self, cmdinfo, cmdname, alias):
-
         # Add struct-member type information to command parameter information
         OutputGenerator.genCmd(self, cmdinfo, cmdname, alias)
         members = cmdinfo.elem.findall('.//param')
@@ -858,7 +864,6 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
 
         # Generate member info
         membersInfo = []
-        constains_extension_structs = False
         allocator = 'nullptr'
         for member in members:
             # Get type and name of member
