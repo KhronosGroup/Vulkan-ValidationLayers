@@ -6642,10 +6642,11 @@ void ValidationStateTracker::PreCallRecordCmdSetViewportShadingRatePaletteNV(VkC
     cb_state->status |= CBSTATUS_SHADING_RATE_PALETTE_SET;
 }
 
-void CoreChecks::PostCallRecordCreateAccelerationStructureNV(VkDevice device,
-                                                             const VkAccelerationStructureCreateInfoNV *pCreateInfo,
-                                                             const VkAllocationCallbacks *pAllocator,
-                                                             VkAccelerationStructureNV *pAccelerationStructure, VkResult result) {
+void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevice device,
+                                                                         const VkAccelerationStructureCreateInfoNV *pCreateInfo,
+                                                                         const VkAllocationCallbacks *pAllocator,
+                                                                         VkAccelerationStructureNV *pAccelerationStructure,
+                                                                         VkResult result) {
     if (VK_SUCCESS != result) return;
     std::unique_ptr<ACCELERATION_STRUCTURE_STATE> as_state(new ACCELERATION_STRUCTURE_STATE(*pAccelerationStructure, pCreateInfo));
 
@@ -7011,7 +7012,7 @@ void CoreChecks::PostCallRecordCmdCopyAccelerationStructureNV(VkCommandBuffer co
 
 bool CoreChecks::PreCallValidateDestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
                                                                const VkAllocationCallbacks *pAllocator) {
-    ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureState(accelerationStructure);
+    const ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureState(accelerationStructure);
     const VulkanTypedHandle obj_struct(accelerationStructure, kVulkanObjectTypeAccelerationStructureNV);
     bool skip = false;
     if (as_state) {
@@ -7021,8 +7022,9 @@ bool CoreChecks::PreCallValidateDestroyAccelerationStructureNV(VkDevice device, 
     return skip;
 }
 
-void CoreChecks::PreCallRecordDestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
-                                                             const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroyAccelerationStructureNV(VkDevice device,
+                                                                         VkAccelerationStructureNV accelerationStructure,
+                                                                         const VkAllocationCallbacks *pAllocator) {
     if (!accelerationStructure) return;
     auto *as_state = GetAccelerationStructureState(accelerationStructure);
     if (as_state) {
