@@ -199,6 +199,7 @@ const std::vector<VkCoverageReductionModeNV> AllVkCoverageReductionModeNVEnums =
 const std::vector<VkFullScreenExclusiveEXT> AllVkFullScreenExclusiveEXTEnums = {VK_FULL_SCREEN_EXCLUSIVE_DEFAULT_EXT, VK_FULL_SCREEN_EXCLUSIVE_ALLOWED_EXT, VK_FULL_SCREEN_EXCLUSIVE_DISALLOWED_EXT, VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT, };
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
+
 bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure* header) {
     bool skip = false;
     switch(header->sType) {
