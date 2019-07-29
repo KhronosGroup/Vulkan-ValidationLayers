@@ -611,7 +611,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                         enum_entry += '%s, ' % name
                 enum_entry += '};\n'
                 if self.featureExtraProtect is not None:
-                    enum_entry += '#endif // %s' % self.featureExtraProtect
+                    enum_entry += '#endif // %s\n' % self.featureExtraProtect
                 self.enumValueLists += enum_entry
     #
     # Capture command parameter info to be used for param check code generation.
