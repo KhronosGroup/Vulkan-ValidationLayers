@@ -298,10 +298,22 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         "   gl_Position = gs_in[0].x + adds[uniform_index_buffer.index].val.x;\n"
         "   EmitVertex();\n"
         "}\n";
+    static const char *tesSource =
+        "#version 450\n"
+        "#extension GL_EXT_nonuniform_qualifier : enable\n "
+        "layout(std140, set = 0, binding = 0) uniform ufoo { uint index; } uniform_index_buffer;\n"
+        "layout(set = 0, binding = 1) buffer bfoo { vec4 val; } adds[];\n"
+        "layout(triangles, equal_spacing, cw) in;\n"
+        "void main() {\n"
+        "    gl_Position = adds[uniform_index_buffer.index].val;\n"
+        "}\n";
+
     struct TestCase {
         char const *vertex_source;
         char const *fragment_source;
         char const *geometry_source;
+        char const *tess_ctrl_source;
+        char const *tess_eval_source;
         bool debug;
         const VkPipelineLayoutObj *pipeline_layout;
         const OneOffDescriptorSet *descriptor_set;
@@ -310,40 +322,46 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBGraphicsShaders) {
     };
 
     std::vector<TestCase> tests;
-    tests.push_back({vsSource_vert, fsSource_vert, nullptr, false, &pipeline_layout, &descriptor_set, 25,
+    tests.push_back({vsSource_vert, fsSource_vert, nullptr, nullptr, nullptr, false, &pipeline_layout, &descriptor_set, 25,
                      "Index of 25 used to index descriptor array of length 6."});
-    tests.push_back({vsSource_frag, fsSource_frag, nullptr, false, &pipeline_layout, &descriptor_set, 25,
+    tests.push_back({vsSource_frag, fsSource_frag, nullptr, nullptr, nullptr, false, &pipeline_layout, &descriptor_set, 25,
                      "Index of 25 used to index descriptor array of length 6."});
 #if !defined(ANDROID)
     // The Android test framework uses shaderc for online compilations.  Even when configured to compile with debug info,
     // shaderc seems to drop the OpLine instructions from the shader binary.  This causes the following two tests to fail
     // on Android platforms.  Skip these tests until the shaderc issue is understood/resolved.
-    tests.push_back({vsSource_vert, fsSource_vert, nullptr, true, &pipeline_layout, &descriptor_set, 25,
+    tests.push_back({vsSource_vert, fsSource_vert, nullptr, nullptr, nullptr, true, &pipeline_layout, &descriptor_set, 25,
                      "gl_Position += 1e-30 * texture(tex[uniform_index_buffer.tex_index[0]], vec2(0, 0));"});
-    tests.push_back({vsSource_frag, fsSource_frag, nullptr, true, &pipeline_layout, &descriptor_set, 25,
+    tests.push_back({vsSource_frag, fsSource_frag, nullptr, nullptr, nullptr, true, &pipeline_layout, &descriptor_set, 25,
                      "uFragColor = texture(tex[index], vec2(0, 0));"});
 #endif
     if (descriptor_indexing) {
-        tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, false, &pipeline_layout, &descriptor_set, 25,
-                         "Index of 25 used to index descriptor array of length 6."});
-        tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, false, &pipeline_layout, &descriptor_set, 5,
-                         "Descriptor index 5 is uninitialized"});
-        // Pick 6 below because it is less than the maximum specified, but more than the actual specified
-        tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, false, &pipeline_layout_variable, &descriptor_set_variable, 6,
-                         "Index of 6 used to index descriptor array of length 6."});
-        tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, false, &pipeline_layout_variable, &descriptor_set_variable,
+        tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, false, &pipeline_layout, &descriptor_set,
+                         25, "Index of 25 used to index descriptor array of length 6."});
+        tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, false, &pipeline_layout, &descriptor_set,
                          5, "Descriptor index 5 is uninitialized"});
-        tests.push_back({vsSource_frag, fsSource_buffer, nullptr, false, &pipeline_layout_buffer, &descriptor_set_buffer, 25,
-                         "Index of 25 used to index descriptor array of length 6."});
-        tests.push_back({vsSource_frag, fsSource_buffer, nullptr, false, &pipeline_layout_buffer, &descriptor_set_buffer, 5,
-                         "Descriptor index 5 is uninitialized"});
+        // Pick 6 below because it is less than the maximum specified, but more than the actual specified
+        tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, false, &pipeline_layout_variable,
+                         &descriptor_set_variable, 6, "Index of 6 used to index descriptor array of length 6."});
+        tests.push_back({vsSource_frag, fsSource_frag_runtime, nullptr, nullptr, nullptr, false, &pipeline_layout_variable,
+                         &descriptor_set_variable, 5, "Descriptor index 5 is uninitialized"});
+        tests.push_back({vsSource_frag, fsSource_buffer, nullptr, nullptr, nullptr, false, &pipeline_layout_buffer,
+                         &descriptor_set_buffer, 25, "Index of 25 used to index descriptor array of length 6."});
+        tests.push_back({vsSource_frag, fsSource_buffer, nullptr, nullptr, nullptr, false, &pipeline_layout_buffer,
+                         &descriptor_set_buffer, 5, "Descriptor index 5 is uninitialized"});
         if (m_device->phy().features().geometryShader) {
             // OOB Geometry
-            tests.push_back({bindStateVertShaderText, bindStateFragShaderText, gsSource, false, &pipeline_layout_buffer,
-                             &descriptor_set_buffer, 25, "Stage = Geometry"});
+            tests.push_back({bindStateVertShaderText, bindStateFragShaderText, gsSource, nullptr, nullptr, false,
+                             &pipeline_layout_buffer, &descriptor_set_buffer, 25, "Stage = Geometry"});
             // Uninitialized Geometry
-            tests.push_back({bindStateVertShaderText, bindStateFragShaderText, gsSource, false, &pipeline_layout_buffer,
-                             &descriptor_set_buffer, 5, "Stage = Geometry"});
+            tests.push_back({bindStateVertShaderText, bindStateFragShaderText, gsSource, nullptr, nullptr, false,
+                             &pipeline_layout_buffer, &descriptor_set_buffer, 5, "Stage = Geometry"});
+        }
+        if (m_device->phy().features().tessellationShader) {
+            tests.push_back({bindStateVertShaderText, bindStateFragShaderText, nullptr, bindStateTscShaderText, tesSource, false,
+                             &pipeline_layout_buffer, &descriptor_set_buffer, 25, "Stage = Tessellation Eval"});
+            tests.push_back({bindStateVertShaderText, bindStateFragShaderText, nullptr, bindStateTscShaderText, tesSource, false,
+                             &pipeline_layout_buffer, &descriptor_set_buffer, 5, "Stage = Tessellation Eval"});
         }
     }
 
@@ -361,12 +379,32 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         VkShaderObj vs(m_device, iter.vertex_source, VK_SHADER_STAGE_VERTEX_BIT, this, "main", iter.debug);
         VkShaderObj fs(m_device, iter.fragment_source, VK_SHADER_STAGE_FRAGMENT_BIT, this, "main", iter.debug);
         VkShaderObj *gs = nullptr;
+        VkShaderObj *tcs = nullptr;
+        VkShaderObj *tes = nullptr;
         VkPipelineObj pipe(m_device);
         pipe.AddShader(&vs);
         pipe.AddShader(&fs);
         if (iter.geometry_source) {
             gs = new VkShaderObj(m_device, iter.geometry_source, VK_SHADER_STAGE_GEOMETRY_BIT, this, "main", iter.debug);
             pipe.AddShader(gs);
+        }
+        if (iter.tess_ctrl_source && iter.tess_eval_source) {
+            tcs = new VkShaderObj(m_device, iter.tess_ctrl_source, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, this, "main",
+                                  iter.debug);
+            tes = new VkShaderObj(m_device, iter.tess_eval_source, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, this, "main",
+                                  iter.debug);
+            pipe.AddShader(tcs);
+            pipe.AddShader(tes);
+            VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
+                                                         VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
+            VkPipelineTessellationDomainOriginStateCreateInfo tessellationDomainOriginStateInfo = {
+                VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO, VK_NULL_HANDLE,
+                VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT};
+
+            VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO,
+                                                       &tessellationDomainOriginStateInfo, 0, 3};
+            pipe.SetTessellation(&tsci);
+            pipe.SetInputAssembly(&iasci);
         }
         pipe.AddDefaultColorAttachment();
         err = pipe.CreateVKPipeline(iter.pipeline_layout->handle(), renderPass());
@@ -389,6 +427,10 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         m_errorMonitor->VerifyFound();
         if (gs) {
             delete gs;
+        }
+        if (tcs && tes) {
+            delete tcs;
+            delete tes;
         }
     }
     auto c_queue = m_device->GetDefaultComputeQueue();
