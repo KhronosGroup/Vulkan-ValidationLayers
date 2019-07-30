@@ -155,7 +155,7 @@ target_link_libraries(VkLayer_object_tracker PRIVATE log layer_utils)
 add_library(VkLayer_threading SHARED
         ${COMMON_DIR}/include/thread_safety.cpp
         ${COMMON_DIR}/include/layer_chassis_dispatch.cpp
-        ${COMMON_DIR}/include/chassis.cpp
+        ${COMMON_DIR}/include/chassis.cpp)
 target_compile_definitions(VkLayer_threading PUBLIC "BUILD_THREAD_SAFETY")
 target_include_directories(VkLayer_threading PRIVATE
         ${SRC_DIR}/include
@@ -165,7 +165,7 @@ target_include_directories(VkLayer_threading PRIVATE
 target_link_libraries(VkLayer_threading PRIVATE log layer_utils)
 
 add_library(VkLayer_unique_objects SHARED
-        ${COMMON_DIR}/include/layer_chassis_dispatch.cpp)
+        ${COMMON_DIR}/include/layer_chassis_dispatch.cpp
         ${COMMON_DIR}/include/chassis.cpp)
 target_compile_definitions(VkLayer_object_tracker PUBLIC "LAYER_CHASSIS_CAN_WRAP_HANDLES")
 target_include_directories(VkLayer_unique_objects PRIVATE
