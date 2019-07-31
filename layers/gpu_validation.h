@@ -58,6 +58,7 @@ class GpuDescriptorSetManager {
     GpuDescriptorSetManager(CoreChecks *dev_data);
     ~GpuDescriptorSetManager();
 
+    VkResult GetDescriptorSet(VkDescriptorPool *desc_pool, VkDescriptorSet *desc_sets);
     VkResult GetDescriptorSets(uint32_t count, VkDescriptorPool *pool, std::vector<VkDescriptorSet> *desc_sets);
     void PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set);
 
@@ -70,6 +71,33 @@ class GpuDescriptorSetManager {
 
     CoreChecks *dev_data_;
     std::unordered_map<VkDescriptorPool, struct PoolTracker> desc_pool_map_;
+};
+
+struct GpuAccelerationStructureBuildValidationBufferInfo {
+    // The acceleration structure that is being built.
+    VkAccelerationStructureNV acceleration_structure = VK_NULL_HANDLE;
+
+    // The descriptor pool and descriptor set being used to validate a given build.
+    VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
+    VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
+
+    // The storage buffer used by the validating compute shader whichcontains info about
+    // the valid handles and which is written to communicate found invalid handles.
+    VkBuffer validation_buffer = VK_NULL_HANDLE;
+    VmaAllocation validation_buffer_allocation = VK_NULL_HANDLE;
+};
+
+struct GpuAccelerationStructureBuildValidationState {
+    bool initialized = false;
+
+    VkPipeline pipeline = VK_NULL_HANDLE;
+    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+
+    VkAccelerationStructureNV replacement_as = VK_NULL_HANDLE;
+    VmaAllocation replacement_as_allocation = VK_NULL_HANDLE;
+    uint64_t replacement_as_handle = 0;
+
+    std::unordered_map<VkCommandBuffer, std::vector<GpuAccelerationStructureBuildValidationBufferInfo>> validation_buffers;
 };
 
 struct GpuValidationState {
@@ -89,6 +117,7 @@ struct GpuValidationState {
     VmaAllocator vmaAllocator;
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
     std::map<VkDeviceAddress, VkDeviceSize> buffer_map;
+    GpuAccelerationStructureBuildValidationState acceleration_struction_validation_state;
     GpuValidationState(bool aborted = false, bool reserve_binding_slot = false, uint32_t unique_shader_module_id = 0,
                        VmaAllocator vmaAllocator = {})
         : aborted(aborted),
