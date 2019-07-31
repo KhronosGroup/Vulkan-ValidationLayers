@@ -143,6 +143,7 @@ class LayerChassisOutputGenerator(OutputGenerator):
         'vkCreatePipelineLayout',
         'vkCreateShaderModule',
         'vkAllocateDescriptorSets',
+        'vkCreateBuffer',
         # ValidationCache functions do not get dispatched
         'vkCreateValidationCacheEXT',
         'vkDestroyValidationCacheEXT',
@@ -1306,7 +1307,39 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(
     return result;
 }
 
+// This API needs the ability to modify a down-chain parameter
+VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(
+    VkDevice                                    device,
+    const VkBufferCreateInfo*                   pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkBuffer*                                   pBuffer) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
 
+#ifndef BUILD_CORE_VALIDATION
+    struct create_buffer_api_state {
+        VkBufferCreateInfo modified_create_info;
+    };
+#endif
+    create_buffer_api_state cb_state{};
+    cb_state.modified_create_info = *pCreateInfo;
+
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        skip |= intercept->PreCallValidateCreateBuffer(device, pCreateInfo, pAllocator, pBuffer);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, &cb_state);
+    }
+    VkResult result = DispatchCreateBuffer(device, &cb_state.modified_create_info, pAllocator, pBuffer);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, result);
+    }
+    return result;
+}
 
 
 
@@ -1435,6 +1468,11 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(
         };
         virtual void PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, VkResult result, void* ads_state)  {
             PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, result);
+        };
+
+        // Allow modification of a down-chain parameter for CreateBuffer
+        virtual void PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer, void *cb_state) {
+            PreCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer);
         };
 
         // Modify a parameter to CreateDevice

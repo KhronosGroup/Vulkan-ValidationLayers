@@ -344,6 +344,7 @@ class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
     VkMemoryRequirements2KHR update_scratch_memory_requirements;
     bool built = false;
     safe_VkAccelerationStructureInfoNV build_info;
+    uint64_t opaque_handle = 0;
     ACCELERATION_STRUCTURE_STATE(VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci)
         : acceleration_structure(as),
           create_info(ci),
@@ -1400,6 +1401,7 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     VkDevice device;  // device this CB belongs to
     bool hasDrawCmd;
     bool hasTraceRaysCmd;
+    bool hasBuildAccelerationStructureCmd;
     bool hasDispatchCmd;
     CB_STATE state;        // Track cmd buffer update state
     uint64_t submitCount;  // Number of times CB has been submitted
@@ -1465,6 +1467,9 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
 
     // Cache of current insert label...
     LoggingLabel debug_label;
+
+    std::vector<uint8_t> push_constant_data;
+    PushConstantRangesId push_constant_data_ranges;
 };
 
 static inline const QFOTransferBarrierSets<VkImageMemoryBarrier> &GetQFOBarrierSets(

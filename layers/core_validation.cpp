@@ -2060,6 +2060,7 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
         memset(&pCB->inheritanceInfo, 0, sizeof(VkCommandBufferInheritanceInfo));
         pCB->hasDrawCmd = false;
         pCB->hasTraceRaysCmd = false;
+        pCB->hasBuildAccelerationStructureCmd = false;
         pCB->hasDispatchCmd = false;
         pCB->state = CB_NEW;
         pCB->submitCount = 0;
@@ -6444,6 +6445,7 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
         cb_state->static_status = MakeStaticStateMask(pipe_state->graphicsPipelineCI.ptr()->pDynamicState);
         cb_state->status |= cb_state->static_status;
     }
+    ResetCommandBufferPushConstantDataIfIncompatible(cb_state, pipe_state->pipeline_layout.layout);
     cb_state->lastBound[pipelineBindPoint].pipeline_state = pipe_state;
     SetPipelineState(pipe_state);
     AddCommandBufferBinding(&pipe_state->cb_bindings, VulkanTypedHandle(pipeline, kVulkanObjectTypePipeline), cb_state);
@@ -6783,6 +6785,11 @@ void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(
             // Track objects tied to memory
             SetMemBinding(info.memory, as_state, info.memoryOffset,
                           VulkanTypedHandle(info.accelerationStructure, kVulkanObjectTypeAccelerationStructureNV));
+
+            // GPU validation of top level acceleration structure building needs acceleration structure handles.
+            if (enabled.gpu_validation) {
+                DispatchGetAccelerationStructureHandleNV(device, info.accelerationStructure, 8, &as_state->opaque_handle);
+            }
         }
     }
 }
@@ -6942,24 +6949,38 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
     return skip;
 }
 
+void CoreChecks::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer,
+                                                              const VkAccelerationStructureInfoNV *pInfo, VkBuffer instanceData,
+                                                              VkDeviceSize instanceOffset, VkBool32 update,
+                                                              VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
+                                                              VkBuffer scratch, VkDeviceSize scratchOffset) {
+    if (enabled.gpu_validation) {
+        GpuPreCallRecordCmdBuildAccelerationStructureNV(commandBuffer, pInfo, instanceData, instanceOffset, update, dst, src,
+                                                        scratch, scratchOffset);
+    }
+}
+
 void CoreChecks::PostCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer,
                                                                const VkAccelerationStructureInfoNV *pInfo, VkBuffer instanceData,
                                                                VkDeviceSize instanceOffset, VkBool32 update,
                                                                VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
                                                                VkBuffer scratch, VkDeviceSize scratchOffset) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    if (cb_state) {
-        ACCELERATION_STRUCTURE_STATE *dst_as_state = GetAccelerationStructureState(dst);
-        ACCELERATION_STRUCTURE_STATE *src_as_state = GetAccelerationStructureState(src);
-        if (dst_as_state != nullptr) {
-            dst_as_state->built = true;
-            dst_as_state->build_info.initialize(pInfo);
-            AddCommandBufferBindingAccelerationStructure(cb_state, dst_as_state);
-        }
-        if (src_as_state != nullptr) {
-            AddCommandBufferBindingAccelerationStructure(cb_state, src_as_state);
-        }
+    if (cb_state == nullptr) {
+        return;
     }
+
+    ACCELERATION_STRUCTURE_STATE *dst_as_state = GetAccelerationStructureState(dst);
+    ACCELERATION_STRUCTURE_STATE *src_as_state = GetAccelerationStructureState(src);
+    if (dst_as_state != nullptr) {
+        dst_as_state->built = true;
+        dst_as_state->build_info.initialize(pInfo);
+        AddCommandBufferBindingAccelerationStructure(cb_state, dst_as_state);
+    }
+    if (src_as_state != nullptr) {
+        AddCommandBufferBindingAccelerationStructure(cb_state, src_as_state);
+    }
+    cb_state->hasBuildAccelerationStructureCmd = true;
 }
 
 bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAccelerationStructureNV dst,
@@ -7310,6 +7331,8 @@ void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer 
         cb_state->lastBound[pipelineBindPoint].dynamicOffsets.resize(last_set_index + 1);
         cb_state->lastBound[pipelineBindPoint].compat_id_for_set.resize(last_set_index + 1);
     }
+
+    ResetCommandBufferPushConstantDataIfIncompatible(cb_state, layout);
 
     // Construct a list of the descriptors
     bool found_non_null = false;
@@ -9122,6 +9145,40 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
         }
     }
     return skip;
+}
+
+void ValidationStateTracker::ResetCommandBufferPushConstantDataIfIncompatible(CMD_BUFFER_STATE *cb_state, VkPipelineLayout layout) {
+    if (cb_state == nullptr) {
+        return;
+    }
+
+    const PIPELINE_LAYOUT_STATE *pipeline_layout_state = GetPipelineLayout(layout);
+    if (pipeline_layout_state == nullptr) {
+        return;
+    }
+
+    if (cb_state->push_constant_data_ranges != pipeline_layout_state->push_constant_ranges) {
+        cb_state->push_constant_data_ranges = pipeline_layout_state->push_constant_ranges;
+        cb_state->push_constant_data.clear();
+        uint32_t size_needed = 0;
+        for (auto push_constant_range : *cb_state->push_constant_data_ranges) {
+            size_needed = std::max(size_needed, (push_constant_range.offset + push_constant_range.size));
+        }
+        cb_state->push_constant_data.resize(size_needed, 0);
+    }
+}
+
+void CoreChecks::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
+                                                VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
+                                                const void *pValues) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    if (cb_state != nullptr) {
+        ResetCommandBufferPushConstantDataIfIncompatible(cb_state, layout);
+
+        auto &push_constant_data = cb_state->push_constant_data;
+        assert((offset + size) <= static_cast<uint32_t>(push_constant_data.size()));
+        std::memcpy(push_constant_data.data() + offset, pValues, static_cast<std::size_t>(size));
+    }
 }
 
 bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,

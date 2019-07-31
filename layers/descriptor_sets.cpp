@@ -933,6 +933,12 @@ void cvdescriptorset::DescriptorSet::PerformPushDescriptorsUpdate(uint32_t write
     for (uint32_t i = 0; i < write_count; i++) {
         PerformWriteUpdate(&p_wds[i]);
     }
+
+    push_descriptor_set_writes.clear();
+    push_descriptor_set_writes.reserve(static_cast<std::size_t>(write_count));
+    for (uint32_t i = 0; i < write_count; i++) {
+        push_descriptor_set_writes.push_back(safe_VkWriteDescriptorSet(&p_wds[i]));
+    }
 }
 
 // Perform write update in given update struct

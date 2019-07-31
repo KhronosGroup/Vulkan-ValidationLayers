@@ -911,7 +911,39 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(
     return result;
 }
 
+// This API needs the ability to modify a down-chain parameter
+VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(
+    VkDevice                                    device,
+    const VkBufferCreateInfo*                   pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkBuffer*                                   pBuffer) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
 
+#ifndef BUILD_CORE_VALIDATION
+    struct create_buffer_api_state {
+        VkBufferCreateInfo modified_create_info;
+    };
+#endif
+    create_buffer_api_state cb_state{};
+    cb_state.modified_create_info = *pCreateInfo;
+
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        skip |= intercept->PreCallValidateCreateBuffer(device, pCreateInfo, pAllocator, pBuffer);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, &cb_state);
+    }
+    VkResult result = DispatchCreateBuffer(device, &cb_state.modified_create_info, pAllocator, pBuffer);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, result);
+    }
+    return result;
+}
 
 
 
@@ -1897,30 +1929,6 @@ VKAPI_ATTR VkResult VKAPI_CALL GetQueryPoolResults(
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
         intercept->PostCallRecordGetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags, result);
-    }
-    return result;
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(
-    VkDevice                                    device,
-    const VkBufferCreateInfo*                   pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkBuffer*                                   pBuffer) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    bool skip = false;
-    for (auto intercept : layer_data->object_dispatch) {
-        auto lock = intercept->write_lock();
-        skip |= intercept->PreCallValidateCreateBuffer(device, pCreateInfo, pAllocator, pBuffer);
-        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-    }
-    for (auto intercept : layer_data->object_dispatch) {
-        auto lock = intercept->write_lock();
-        intercept->PreCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer);
-    }
-    VkResult result = DispatchCreateBuffer(device, pCreateInfo, pAllocator, pBuffer);
-    for (auto intercept : layer_data->object_dispatch) {
-        auto lock = intercept->write_lock();
-        intercept->PostCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, result);
     }
     return result;
 }

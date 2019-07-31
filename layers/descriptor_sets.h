@@ -624,6 +624,8 @@ class DescriptorSet : public BASE_NODE {
     DESCRIPTOR_POOL_STATE *GetPoolState() const { return pool_state_; }
     const Descriptor *GetDescriptorFromGlobalIndex(const uint32_t index) const { return descriptors_[index].get(); }
 
+    const std::vector<safe_VkWriteDescriptorSet> &GetWrites() const { return push_descriptor_set_writes; }
+
    private:
     // Private helper to set all bound cmd buffers to INVALID state
     void InvalidateBoundCmdBuffers();
@@ -634,6 +636,10 @@ class DescriptorSet : public BASE_NODE {
     std::vector<std::unique_ptr<Descriptor>> descriptors_;
     StateTracker *state_data_;
     uint32_t variable_count_;
+
+    // If this descriptor set is a push descriptor set, the descriptor
+    // set writes that were last pushed.
+    std::vector<safe_VkWriteDescriptorSet> push_descriptor_set_writes;
 
     // Cached binding and validation support:
     //

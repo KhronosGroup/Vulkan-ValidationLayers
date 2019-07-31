@@ -3929,6 +3929,14 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
     return skip;
 }
 
+void CoreChecks::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
+                                           const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer, void *cb_state_data) {
+    create_buffer_api_state *cb_state = reinterpret_cast<create_buffer_api_state *>(cb_state_data);
+    if (enabled.gpu_validation) {
+        GpuPreCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, &cb_state->modified_create_info);
+    }
+}
+
 void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                                         const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
                                                         VkResult result) {
