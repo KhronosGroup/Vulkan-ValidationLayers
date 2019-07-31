@@ -42,6 +42,155 @@ static const VkShaderStageFlags kShaderStageAllRayTracing =
     VK_SHADER_STAGE_ANY_HIT_BIT_NV | VK_SHADER_STAGE_CALLABLE_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV |
     VK_SHADER_STAGE_INTERSECTION_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV | VK_SHADER_STAGE_RAYGEN_BIT_NV;
 
+// Keep in sync with the GLSL shader below.
+struct GpuAccelerationStructureBuildValidationBuffer {
+    uint32_t instances_to_validate;
+    uint32_t replacement_handle_bits_0;
+    uint32_t replacement_handle_bits_1;
+    uint32_t invalid_handle_found;
+    uint32_t invalid_handle_bits_0;
+    uint32_t invalid_handle_bits_1;
+    uint32_t valid_handles_count;
+};
+
+// This is the GLSL source for the compute shader that is used during ray tracing acceleration structure
+// building validation which inspects instance buffers for top level acceleration structure builds and
+// reports and replaces invalid bottom level acceleration structure handles with good bottom level
+// acceleration structure handle so that applications can continue without undefined behavior long enough
+// to report errors.
+//
+// #version 450
+// layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+// struct VkGeometryInstanceNV {
+//     uint unused[14];
+//     uint handle_bits_0;
+//     uint handle_bits_1;
+// };
+// layout(set=0, binding=0, std430) buffer InstanceBuffer {
+//     VkGeometryInstanceNV instances[];
+// };
+// layout(set=0, binding=1, std430) buffer ValidationBuffer {
+//     uint instances_to_validate;
+//     uint replacement_handle_bits_0;
+//     uint replacement_handle_bits_1;
+//     uint invalid_handle_found;
+//     uint invalid_handle_bits_0;
+//     uint invalid_handle_bits_1;
+//     uint valid_handles_count;
+//     uint valid_handles[];
+// };
+// void main() {
+//     for (uint instance_index = 0; instance_index < instances_to_validate; instance_index++) {
+//         uint instance_handle_bits_0 = instances[instance_index].handle_bits_0;
+//         uint instance_handle_bits_1 = instances[instance_index].handle_bits_1;
+//         bool valid = false;
+//         for (uint valid_handle_index = 0; valid_handle_index < valid_handles_count; valid_handle_index++) {
+//             if (instance_handle_bits_0 == valid_handles[2*valid_handle_index+0] &&
+//                 instance_handle_bits_1 == valid_handles[2*valid_handle_index+1]) {
+//                 valid = true;
+//                 break;
+//             }
+//         }
+//         if (!valid) {
+//             invalid_handle_found += 1;
+//             invalid_handle_bits_0 = instance_handle_bits_0;
+//             invalid_handle_bits_1 = instance_handle_bits_1;
+//             instances[instance_index].handle_bits_0 = replacement_handle_bits_0;
+//             instances[instance_index].handle_bits_1 = replacement_handle_bits_1;
+//         }
+//     }
+// }
+//
+// To regenerate the spirv below:
+//   1. Save the above GLSL source to a file called validation_shader.comp.
+//   2. Run in terminal
+//
+//      glslangValidator.exe -x -V validation_shader.comp -o validation_shader.comp.spv
+//
+//   4. Copy-paste the contents of validation_shader.comp.spv here (clang-format will fix up the alignment).
+static const uint32_t kComputeShaderSpirv[] = {
+    0x07230203, 0x00010000, 0x00080007, 0x0000006d, 0x00000000, 0x00020011, 0x00000001, 0x0006000b, 0x00000001, 0x4c534c47,
+    0x6474732e, 0x3035342e, 0x00000000, 0x0003000e, 0x00000000, 0x00000001, 0x0005000f, 0x00000005, 0x00000004, 0x6e69616d,
+    0x00000000, 0x00060010, 0x00000004, 0x00000011, 0x00000001, 0x00000001, 0x00000001, 0x00030003, 0x00000002, 0x000001c2,
+    0x00040005, 0x00000004, 0x6e69616d, 0x00000000, 0x00060005, 0x00000008, 0x74736e69, 0x65636e61, 0x646e695f, 0x00007865,
+    0x00070005, 0x00000011, 0x696c6156, 0x69746164, 0x75426e6f, 0x72656666, 0x00000000, 0x00090006, 0x00000011, 0x00000000,
+    0x74736e69, 0x65636e61, 0x6f745f73, 0x6c61765f, 0x74616469, 0x00000065, 0x000a0006, 0x00000011, 0x00000001, 0x6c706572,
+    0x6d656361, 0x5f746e65, 0x646e6168, 0x625f656c, 0x5f737469, 0x00000030, 0x000a0006, 0x00000011, 0x00000002, 0x6c706572,
+    0x6d656361, 0x5f746e65, 0x646e6168, 0x625f656c, 0x5f737469, 0x00000031, 0x00090006, 0x00000011, 0x00000003, 0x61766e69,
+    0x5f64696c, 0x646e6168, 0x665f656c, 0x646e756f, 0x00000000, 0x00090006, 0x00000011, 0x00000004, 0x61766e69, 0x5f64696c,
+    0x646e6168, 0x625f656c, 0x5f737469, 0x00000030, 0x00090006, 0x00000011, 0x00000005, 0x61766e69, 0x5f64696c, 0x646e6168,
+    0x625f656c, 0x5f737469, 0x00000031, 0x00080006, 0x00000011, 0x00000006, 0x696c6176, 0x61685f64, 0x656c646e, 0x6f635f73,
+    0x00746e75, 0x00070006, 0x00000011, 0x00000007, 0x696c6176, 0x61685f64, 0x656c646e, 0x00000073, 0x00030005, 0x00000013,
+    0x00000000, 0x00080005, 0x0000001b, 0x74736e69, 0x65636e61, 0x6e61685f, 0x5f656c64, 0x73746962, 0x0000305f, 0x00080005,
+    0x0000001e, 0x65476b56, 0x74656d6f, 0x6e497972, 0x6e617473, 0x564e6563, 0x00000000, 0x00050006, 0x0000001e, 0x00000000,
+    0x73756e75, 0x00006465, 0x00070006, 0x0000001e, 0x00000001, 0x646e6168, 0x625f656c, 0x5f737469, 0x00000030, 0x00070006,
+    0x0000001e, 0x00000002, 0x646e6168, 0x625f656c, 0x5f737469, 0x00000031, 0x00060005, 0x00000020, 0x74736e49, 0x65636e61,
+    0x66667542, 0x00007265, 0x00060006, 0x00000020, 0x00000000, 0x74736e69, 0x65636e61, 0x00000073, 0x00030005, 0x00000022,
+    0x00000000, 0x00080005, 0x00000027, 0x74736e69, 0x65636e61, 0x6e61685f, 0x5f656c64, 0x73746962, 0x0000315f, 0x00040005,
+    0x0000002d, 0x696c6176, 0x00000064, 0x00070005, 0x0000002f, 0x696c6176, 0x61685f64, 0x656c646e, 0x646e695f, 0x00007865,
+    0x00040047, 0x00000010, 0x00000006, 0x00000004, 0x00050048, 0x00000011, 0x00000000, 0x00000023, 0x00000000, 0x00050048,
+    0x00000011, 0x00000001, 0x00000023, 0x00000004, 0x00050048, 0x00000011, 0x00000002, 0x00000023, 0x00000008, 0x00050048,
+    0x00000011, 0x00000003, 0x00000023, 0x0000000c, 0x00050048, 0x00000011, 0x00000004, 0x00000023, 0x00000010, 0x00050048,
+    0x00000011, 0x00000005, 0x00000023, 0x00000014, 0x00050048, 0x00000011, 0x00000006, 0x00000023, 0x00000018, 0x00050048,
+    0x00000011, 0x00000007, 0x00000023, 0x0000001c, 0x00030047, 0x00000011, 0x00000003, 0x00040047, 0x00000013, 0x00000022,
+    0x00000000, 0x00040047, 0x00000013, 0x00000021, 0x00000001, 0x00040047, 0x0000001d, 0x00000006, 0x00000004, 0x00050048,
+    0x0000001e, 0x00000000, 0x00000023, 0x00000000, 0x00050048, 0x0000001e, 0x00000001, 0x00000023, 0x00000038, 0x00050048,
+    0x0000001e, 0x00000002, 0x00000023, 0x0000003c, 0x00040047, 0x0000001f, 0x00000006, 0x00000040, 0x00050048, 0x00000020,
+    0x00000000, 0x00000023, 0x00000000, 0x00030047, 0x00000020, 0x00000003, 0x00040047, 0x00000022, 0x00000022, 0x00000000,
+    0x00040047, 0x00000022, 0x00000021, 0x00000000, 0x00020013, 0x00000002, 0x00030021, 0x00000003, 0x00000002, 0x00040015,
+    0x00000006, 0x00000020, 0x00000000, 0x00040020, 0x00000007, 0x00000007, 0x00000006, 0x0004002b, 0x00000006, 0x00000009,
+    0x00000000, 0x0003001d, 0x00000010, 0x00000006, 0x000a001e, 0x00000011, 0x00000006, 0x00000006, 0x00000006, 0x00000006,
+    0x00000006, 0x00000006, 0x00000006, 0x00000010, 0x00040020, 0x00000012, 0x00000002, 0x00000011, 0x0004003b, 0x00000012,
+    0x00000013, 0x00000002, 0x00040015, 0x00000014, 0x00000020, 0x00000001, 0x0004002b, 0x00000014, 0x00000015, 0x00000000,
+    0x00040020, 0x00000016, 0x00000002, 0x00000006, 0x00020014, 0x00000019, 0x0004002b, 0x00000006, 0x0000001c, 0x0000000e,
+    0x0004001c, 0x0000001d, 0x00000006, 0x0000001c, 0x0005001e, 0x0000001e, 0x0000001d, 0x00000006, 0x00000006, 0x0003001d,
+    0x0000001f, 0x0000001e, 0x0003001e, 0x00000020, 0x0000001f, 0x00040020, 0x00000021, 0x00000002, 0x00000020, 0x0004003b,
+    0x00000021, 0x00000022, 0x00000002, 0x0004002b, 0x00000014, 0x00000024, 0x00000001, 0x0004002b, 0x00000014, 0x00000029,
+    0x00000002, 0x00040020, 0x0000002c, 0x00000007, 0x00000019, 0x0003002a, 0x00000019, 0x0000002e, 0x0004002b, 0x00000014,
+    0x00000036, 0x00000006, 0x0004002b, 0x00000014, 0x0000003b, 0x00000007, 0x0004002b, 0x00000006, 0x0000003c, 0x00000002,
+    0x0004002b, 0x00000006, 0x00000048, 0x00000001, 0x00030029, 0x00000019, 0x00000050, 0x0004002b, 0x00000014, 0x00000058,
+    0x00000003, 0x0004002b, 0x00000014, 0x0000005d, 0x00000004, 0x0004002b, 0x00000014, 0x00000060, 0x00000005, 0x00050036,
+    0x00000002, 0x00000004, 0x00000000, 0x00000003, 0x000200f8, 0x00000005, 0x0004003b, 0x00000007, 0x00000008, 0x00000007,
+    0x0004003b, 0x00000007, 0x0000001b, 0x00000007, 0x0004003b, 0x00000007, 0x00000027, 0x00000007, 0x0004003b, 0x0000002c,
+    0x0000002d, 0x00000007, 0x0004003b, 0x00000007, 0x0000002f, 0x00000007, 0x0003003e, 0x00000008, 0x00000009, 0x000200f9,
+    0x0000000a, 0x000200f8, 0x0000000a, 0x000400f6, 0x0000000c, 0x0000000d, 0x00000000, 0x000200f9, 0x0000000e, 0x000200f8,
+    0x0000000e, 0x0004003d, 0x00000006, 0x0000000f, 0x00000008, 0x00050041, 0x00000016, 0x00000017, 0x00000013, 0x00000015,
+    0x0004003d, 0x00000006, 0x00000018, 0x00000017, 0x000500b0, 0x00000019, 0x0000001a, 0x0000000f, 0x00000018, 0x000400fa,
+    0x0000001a, 0x0000000b, 0x0000000c, 0x000200f8, 0x0000000b, 0x0004003d, 0x00000006, 0x00000023, 0x00000008, 0x00070041,
+    0x00000016, 0x00000025, 0x00000022, 0x00000015, 0x00000023, 0x00000024, 0x0004003d, 0x00000006, 0x00000026, 0x00000025,
+    0x0003003e, 0x0000001b, 0x00000026, 0x0004003d, 0x00000006, 0x00000028, 0x00000008, 0x00070041, 0x00000016, 0x0000002a,
+    0x00000022, 0x00000015, 0x00000028, 0x00000029, 0x0004003d, 0x00000006, 0x0000002b, 0x0000002a, 0x0003003e, 0x00000027,
+    0x0000002b, 0x0003003e, 0x0000002d, 0x0000002e, 0x0003003e, 0x0000002f, 0x00000009, 0x000200f9, 0x00000030, 0x000200f8,
+    0x00000030, 0x000400f6, 0x00000032, 0x00000033, 0x00000000, 0x000200f9, 0x00000034, 0x000200f8, 0x00000034, 0x0004003d,
+    0x00000006, 0x00000035, 0x0000002f, 0x00050041, 0x00000016, 0x00000037, 0x00000013, 0x00000036, 0x0004003d, 0x00000006,
+    0x00000038, 0x00000037, 0x000500b0, 0x00000019, 0x00000039, 0x00000035, 0x00000038, 0x000400fa, 0x00000039, 0x00000031,
+    0x00000032, 0x000200f8, 0x00000031, 0x0004003d, 0x00000006, 0x0000003a, 0x0000001b, 0x0004003d, 0x00000006, 0x0000003d,
+    0x0000002f, 0x00050084, 0x00000006, 0x0000003e, 0x0000003c, 0x0000003d, 0x00050080, 0x00000006, 0x0000003f, 0x0000003e,
+    0x00000009, 0x00060041, 0x00000016, 0x00000040, 0x00000013, 0x0000003b, 0x0000003f, 0x0004003d, 0x00000006, 0x00000041,
+    0x00000040, 0x000500aa, 0x00000019, 0x00000042, 0x0000003a, 0x00000041, 0x000300f7, 0x00000044, 0x00000000, 0x000400fa,
+    0x00000042, 0x00000043, 0x00000044, 0x000200f8, 0x00000043, 0x0004003d, 0x00000006, 0x00000045, 0x00000027, 0x0004003d,
+    0x00000006, 0x00000046, 0x0000002f, 0x00050084, 0x00000006, 0x00000047, 0x0000003c, 0x00000046, 0x00050080, 0x00000006,
+    0x00000049, 0x00000047, 0x00000048, 0x00060041, 0x00000016, 0x0000004a, 0x00000013, 0x0000003b, 0x00000049, 0x0004003d,
+    0x00000006, 0x0000004b, 0x0000004a, 0x000500aa, 0x00000019, 0x0000004c, 0x00000045, 0x0000004b, 0x000200f9, 0x00000044,
+    0x000200f8, 0x00000044, 0x000700f5, 0x00000019, 0x0000004d, 0x00000042, 0x00000031, 0x0000004c, 0x00000043, 0x000300f7,
+    0x0000004f, 0x00000000, 0x000400fa, 0x0000004d, 0x0000004e, 0x0000004f, 0x000200f8, 0x0000004e, 0x0003003e, 0x0000002d,
+    0x00000050, 0x000200f9, 0x00000032, 0x000200f8, 0x0000004f, 0x000200f9, 0x00000033, 0x000200f8, 0x00000033, 0x0004003d,
+    0x00000006, 0x00000052, 0x0000002f, 0x00050080, 0x00000006, 0x00000053, 0x00000052, 0x00000024, 0x0003003e, 0x0000002f,
+    0x00000053, 0x000200f9, 0x00000030, 0x000200f8, 0x00000032, 0x0004003d, 0x00000019, 0x00000054, 0x0000002d, 0x000400a8,
+    0x00000019, 0x00000055, 0x00000054, 0x000300f7, 0x00000057, 0x00000000, 0x000400fa, 0x00000055, 0x00000056, 0x00000057,
+    0x000200f8, 0x00000056, 0x00050041, 0x00000016, 0x00000059, 0x00000013, 0x00000058, 0x0004003d, 0x00000006, 0x0000005a,
+    0x00000059, 0x00050080, 0x00000006, 0x0000005b, 0x0000005a, 0x00000048, 0x00050041, 0x00000016, 0x0000005c, 0x00000013,
+    0x00000058, 0x0003003e, 0x0000005c, 0x0000005b, 0x0004003d, 0x00000006, 0x0000005e, 0x0000001b, 0x00050041, 0x00000016,
+    0x0000005f, 0x00000013, 0x0000005d, 0x0003003e, 0x0000005f, 0x0000005e, 0x0004003d, 0x00000006, 0x00000061, 0x00000027,
+    0x00050041, 0x00000016, 0x00000062, 0x00000013, 0x00000060, 0x0003003e, 0x00000062, 0x00000061, 0x0004003d, 0x00000006,
+    0x00000063, 0x00000008, 0x00050041, 0x00000016, 0x00000064, 0x00000013, 0x00000024, 0x0004003d, 0x00000006, 0x00000065,
+    0x00000064, 0x00070041, 0x00000016, 0x00000066, 0x00000022, 0x00000015, 0x00000063, 0x00000024, 0x0003003e, 0x00000066,
+    0x00000065, 0x0004003d, 0x00000006, 0x00000067, 0x00000008, 0x00050041, 0x00000016, 0x00000068, 0x00000013, 0x00000029,
+    0x0004003d, 0x00000006, 0x00000069, 0x00000068, 0x00070041, 0x00000016, 0x0000006a, 0x00000022, 0x00000015, 0x00000067,
+    0x00000029, 0x0003003e, 0x0000006a, 0x00000069, 0x000200f9, 0x00000057, 0x000200f8, 0x00000057, 0x000200f9, 0x0000000d,
+    0x000200f8, 0x0000000d, 0x0004003d, 0x00000006, 0x0000006b, 0x00000008, 0x00050080, 0x00000006, 0x0000006c, 0x0000006b,
+    0x00000024, 0x0003003e, 0x00000008, 0x0000006c, 0x000200f9, 0x0000000a, 0x000200f8, 0x0000000c, 0x000100fd, 0x00010038};
+
 // Implementation for Descriptor Set Manager class
 GpuDescriptorSetManager::GpuDescriptorSetManager(CoreChecks *dev_data) { dev_data_ = dev_data; }
 
@@ -50,6 +199,15 @@ GpuDescriptorSetManager::~GpuDescriptorSetManager() {
         DispatchDestroyDescriptorPool(dev_data_->device, pool.first, NULL);
     }
     desc_pool_map_.clear();
+}
+
+VkResult GpuDescriptorSetManager::GetDescriptorSet(VkDescriptorPool *desc_pool, VkDescriptorSet *desc_set) {
+    std::vector<VkDescriptorSet> desc_sets;
+    VkResult result = GetDescriptorSets(1, desc_pool, &desc_sets);
+    if (result == VK_SUCCESS) {
+        *desc_set = desc_sets[0];
+    }
+    return result;
 }
 
 VkResult GpuDescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptorPool *pool,
@@ -229,6 +387,17 @@ void CoreChecks::ReportSetupProblem(VkDebugReportObjectTypeEXT object_type, uint
             "Detail: (%s)", specific_message);
 }
 
+void CoreChecks::GpuPreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
+                                              const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
+                                              VkBufferCreateInfo *modified_create_info) {
+    // Ray tracing acceleration structure instance buffers also need the storage buffer usage as
+    // acceleration structure build validation will find and replace invalid acceleration structure
+    // handles inside of a compute shader.
+    if (modified_create_info && modified_create_info->usage & VK_BUFFER_USAGE_RAY_TRACING_BIT_NV) {
+        modified_create_info->usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    }
+}
+
 // Turn on necessary device features.
 void CoreChecks::GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, safe_VkDeviceCreateInfo *modified_create_info,
                                               VkPhysicalDeviceFeatures *supported_features) {
@@ -371,6 +540,8 @@ void CoreChecks::GpuPostCallRecordCreateDevice(const CHECK_ENABLED *enables, con
         return;
     }
     gpu_validation_state->desc_set_manager = std::move(desc_set_manager);
+
+    GpuCreateAccelerationStructureBuildValidationState();
 }
 
 void CoreChecks::GpuPostCallRecordGetBufferDeviceAddressEXT(const VkBufferDeviceAddressInfoEXT *pInfo, VkDeviceAddress address) {
@@ -406,8 +577,668 @@ void CoreChecks::GpuPreCallRecordDestroyDevice() {
         gpu_validation_state->dummy_desc_layout = VK_NULL_HANDLE;
     }
     gpu_validation_state->desc_set_manager.reset();
+
+    GpuDestroyAccelerationStructureBuildValidationState();
+
     if (gpu_validation_state->vmaAllocator) {
         vmaDestroyAllocator(gpu_validation_state->vmaAllocator);
+    }
+}
+
+void CoreChecks::GpuCreateAccelerationStructureBuildValidationState() {
+    if (gpu_validation_state->aborted) {
+        return;
+    }
+
+    auto &as_validation_state = gpu_validation_state->acceleration_struction_validation_state;
+    if (as_validation_state.initialized) {
+        return;
+    }
+
+    if (!device_extensions.vk_nv_ray_tracing) {
+        return;
+    }
+
+    // Outline:
+    //   - Create valid bottom level acceleration structure which acts as replacement
+    //      - Create and load vertex buffer
+    //      - Create and load index buffer
+    //      - Create, allocate memory for, and bind memory for acceleration structure
+    //      - Query acceleration structure handle
+    //      - Create command pool and command buffer
+    //      - Record build acceleration structure command
+    //      - Submit command buffer and wait for completion
+    //      - Cleanup
+    //  - Create compute pipeline for validating instance buffers
+    //      - Create descriptor set layout
+    //      - Create pipeline layout
+    //      - Create pipeline
+    //      - Cleanup
+
+    VkResult result = VK_SUCCESS;
+
+    VkBuffer vbo = VK_NULL_HANDLE;
+    VmaAllocation vbo_allocation = VK_NULL_HANDLE;
+    if (result == VK_SUCCESS) {
+        VkBufferCreateInfo vbo_ci = {};
+        vbo_ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        vbo_ci.size = sizeof(float) * 9;
+        vbo_ci.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
+
+        VmaAllocationCreateInfo vbo_ai = {};
+        vbo_ai.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        vbo_ai.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+        result = vmaCreateBuffer(gpu_validation_state->vmaAllocator, &vbo_ci, &vbo_ai, &vbo, &vbo_allocation, nullptr);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                               "Failed to create vertex buffer for acceleration structure build validation.");
+        }
+    }
+
+    if (result == VK_SUCCESS) {
+        uint8_t *mapped_vbo_buffer = nullptr;
+        result = vmaMapMemory(gpu_validation_state->vmaAllocator, vbo_allocation, (void **)&mapped_vbo_buffer);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                               "Failed to map vertex buffer for acceleration structure build validation.");
+        } else {
+            const std::vector<float> vertices = {1.0f, 0.0f, 0.0f, 0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+            std::memcpy(mapped_vbo_buffer, (uint8_t *)vertices.data(), sizeof(float) * vertices.size());
+            vmaUnmapMemory(gpu_validation_state->vmaAllocator, vbo_allocation);
+        }
+    }
+
+    VkBuffer ibo = VK_NULL_HANDLE;
+    VmaAllocation ibo_allocation = VK_NULL_HANDLE;
+    if (result == VK_SUCCESS) {
+        VkBufferCreateInfo ibo_ci = {};
+        ibo_ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        ibo_ci.size = sizeof(uint32_t) * 3;
+        ibo_ci.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
+
+        VmaAllocationCreateInfo ibo_ai = {};
+        ibo_ai.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        ibo_ai.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+        result = vmaCreateBuffer(gpu_validation_state->vmaAllocator, &ibo_ci, &ibo_ai, &ibo, &ibo_allocation, nullptr);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                               "Failed to create index buffer for acceleration structure build validation.");
+        }
+    }
+
+    if (result == VK_SUCCESS) {
+        uint8_t *mapped_ibo_buffer = nullptr;
+        result = vmaMapMemory(gpu_validation_state->vmaAllocator, ibo_allocation, (void **)&mapped_ibo_buffer);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                               "Failed to map index buffer for acceleration structure build validation.");
+        } else {
+            const std::vector<uint32_t> indicies = {0, 1, 2};
+            std::memcpy(mapped_ibo_buffer, (uint8_t *)indicies.data(), sizeof(uint32_t) * indicies.size());
+            vmaUnmapMemory(gpu_validation_state->vmaAllocator, ibo_allocation);
+        }
+    }
+
+    VkGeometryNV geometry = {};
+    geometry.sType = VK_STRUCTURE_TYPE_GEOMETRY_NV;
+    geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
+    geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
+    geometry.geometry.triangles.vertexData = vbo;
+    geometry.geometry.triangles.vertexOffset = 0;
+    geometry.geometry.triangles.vertexCount = 3;
+    geometry.geometry.triangles.vertexStride = 12;
+    geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+    geometry.geometry.triangles.indexData = ibo;
+    geometry.geometry.triangles.indexOffset = 0;
+    geometry.geometry.triangles.indexCount = 3;
+    geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
+    geometry.geometry.triangles.transformData = VK_NULL_HANDLE;
+    geometry.geometry.triangles.transformOffset = 0;
+    geometry.geometry.aabbs = {};
+    geometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
+
+    VkAccelerationStructureCreateInfoNV as_ci = {};
+    as_ci.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
+    as_ci.info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
+    as_ci.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
+    as_ci.info.instanceCount = 0;
+    as_ci.info.geometryCount = 1;
+    as_ci.info.pGeometries = &geometry;
+    if (result == VK_SUCCESS) {
+        result = DispatchCreateAccelerationStructureNV(device, &as_ci, nullptr, &as_validation_state.replacement_as);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                               "Failed to create acceleration structure for acceleration structure build validation.");
+        }
+    }
+
+    VkMemoryRequirements2 as_mem_requirements = {};
+    if (result == VK_SUCCESS) {
+        VkAccelerationStructureMemoryRequirementsInfoNV as_mem_requirements_info = {};
+        as_mem_requirements_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
+        as_mem_requirements_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
+        as_mem_requirements_info.accelerationStructure = as_validation_state.replacement_as;
+
+        DispatchGetAccelerationStructureMemoryRequirementsNV(device, &as_mem_requirements_info, &as_mem_requirements);
+    }
+
+    VmaAllocationInfo as_memory_ai = {};
+    if (result == VK_SUCCESS) {
+        VmaAllocationCreateInfo as_memory_aci = {};
+        as_memory_aci.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+        result = vmaAllocateMemory(gpu_validation_state->vmaAllocator, &as_mem_requirements.memoryRequirements, &as_memory_aci,
+                                   &as_validation_state.replacement_as_allocation, &as_memory_ai);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                               "Failed to alloc acceleration structure memory for acceleration structure build validation.");
+        }
+    }
+
+    if (result == VK_SUCCESS) {
+        VkBindAccelerationStructureMemoryInfoNV as_bind_info = {};
+        as_bind_info.sType = VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_NV;
+        as_bind_info.accelerationStructure = as_validation_state.replacement_as;
+        as_bind_info.memory = as_memory_ai.deviceMemory;
+        as_bind_info.memoryOffset = as_memory_ai.offset;
+
+        result = DispatchBindAccelerationStructureMemoryNV(device, 1, &as_bind_info);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                               "Failed to bind acceleration structure memory for acceleration structure build validation.");
+        }
+    }
+
+    if (result == VK_SUCCESS) {
+        result = DispatchGetAccelerationStructureHandleNV(device, as_validation_state.replacement_as, sizeof(uint64_t),
+                                                          &as_validation_state.replacement_as_handle);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                               "Failed to get acceleration structure handle for acceleration structure build validation.");
+        }
+    }
+
+    VkMemoryRequirements2 scratch_mem_requirements = {};
+    if (result == VK_SUCCESS) {
+        VkAccelerationStructureMemoryRequirementsInfoNV scratch_mem_requirements_info = {};
+        scratch_mem_requirements_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
+        scratch_mem_requirements_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
+        scratch_mem_requirements_info.accelerationStructure = as_validation_state.replacement_as;
+
+        DispatchGetAccelerationStructureMemoryRequirementsNV(device, &scratch_mem_requirements_info, &scratch_mem_requirements);
+    }
+
+    VkBuffer scratch = VK_NULL_HANDLE;
+    if (result == VK_SUCCESS) {
+        VkBufferCreateInfo scratch_ci = {};
+        scratch_ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        scratch_ci.size = scratch_mem_requirements.memoryRequirements.size;
+        scratch_ci.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
+
+        result = DispatchCreateBuffer(device, &scratch_ci, nullptr, &scratch);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                               "Failed to create scratch buffer for acceleration structure build validation.");
+        }
+    }
+
+    VmaAllocation scratch_allocation = VK_NULL_HANDLE;
+    VmaAllocationInfo scratch_allocation_info = {};
+    if (result == VK_SUCCESS) {
+        VmaAllocationCreateInfo scratch_aci = {};
+        scratch_aci.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+        result = vmaAllocateMemory(gpu_validation_state->vmaAllocator, &scratch_mem_requirements.memoryRequirements, &scratch_aci,
+                                   &scratch_allocation, &scratch_allocation_info);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                               "Failed to alloc scratch memory for acceleration structure build validation.");
+        }
+    }
+
+    if (result == VK_SUCCESS) {
+        result = DispatchBindBufferMemory(device, scratch, scratch_allocation_info.deviceMemory, scratch_allocation_info.offset);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                               "Failed to bind scratch memory for acceleration structure build validation.");
+        }
+    }
+
+    VkCommandPool command_pool = VK_NULL_HANDLE;
+    if (result == VK_SUCCESS) {
+        VkCommandPoolCreateInfo command_pool_ci = {};
+        command_pool_ci.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        command_pool_ci.queueFamilyIndex = 0;
+
+        result = DispatchCreateCommandPool(device, &command_pool_ci, nullptr, &command_pool);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                               "Failed to create command pool for acceleration structure build validation.");
+        }
+    }
+
+    VkCommandBuffer command_buffer = VK_NULL_HANDLE;
+
+    if (result == VK_SUCCESS) {
+        VkCommandBufferAllocateInfo command_buffer_ai = {};
+        command_buffer_ai.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        command_buffer_ai.commandPool = command_pool;
+        command_buffer_ai.commandBufferCount = 1;
+        command_buffer_ai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+        result = DispatchAllocateCommandBuffers(device, &command_buffer_ai, &command_buffer);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                               "Failed to create command buffer for acceleration structure build validation.");
+        }
+
+        // Hook up command buffer dispatch
+        gpu_validation_state->vkSetDeviceLoaderData(device, command_buffer);
+    }
+
+    if (result == VK_SUCCESS) {
+        VkCommandBufferBeginInfo command_buffer_bi = {};
+        command_buffer_bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+        result = DispatchBeginCommandBuffer(command_buffer, &command_buffer_bi);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                               "Failed to begin command buffer for acceleration structure build validation.");
+        }
+    }
+
+    if (result == VK_SUCCESS) {
+        DispatchCmdBuildAccelerationStructureNV(command_buffer, &as_ci.info, VK_NULL_HANDLE, 0, VK_FALSE,
+                                                as_validation_state.replacement_as, VK_NULL_HANDLE, scratch, 0);
+        DispatchEndCommandBuffer(command_buffer);
+    }
+
+    VkQueue queue = VK_NULL_HANDLE;
+    if (result == VK_SUCCESS) {
+        DispatchGetDeviceQueue(device, 0, 0, &queue);
+
+        // Hook up queue dispatch
+        gpu_validation_state->vkSetDeviceLoaderData(device, queue);
+
+        VkSubmitInfo submit_info = {};
+        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &command_buffer;
+        result = DispatchQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                               "Failed to submit command buffer for acceleration structure build validation.");
+        }
+    }
+
+    if (result == VK_SUCCESS) {
+        result = DispatchQueueWaitIdle(queue);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                               "Failed to wait for queue idle for acceleration structure build validation.");
+        }
+    }
+
+    if (vbo != VK_NULL_HANDLE) {
+        vmaDestroyBuffer(gpu_validation_state->vmaAllocator, vbo, vbo_allocation);
+    }
+    if (ibo != VK_NULL_HANDLE) {
+        vmaDestroyBuffer(gpu_validation_state->vmaAllocator, ibo, ibo_allocation);
+    }
+    if (scratch != VK_NULL_HANDLE) {
+        DispatchDestroyBuffer(device, scratch, nullptr);
+        vmaFreeMemory(gpu_validation_state->vmaAllocator, scratch_allocation);
+    }
+    if (command_pool != VK_NULL_HANDLE) {
+        DispatchDestroyCommandPool(device, command_pool, nullptr);
+    }
+
+    if (gpu_validation_state->debug_desc_layout == VK_NULL_HANDLE) {
+        ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                           "Failed to find descriptor set layout for acceleration structure build validation.");
+        result = VK_INCOMPLETE;
+    }
+
+    if (result == VK_SUCCESS) {
+        VkPipelineLayoutCreateInfo pipeline_layout_ci = {};
+        pipeline_layout_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipeline_layout_ci.setLayoutCount = 1;
+        pipeline_layout_ci.pSetLayouts = &gpu_validation_state->debug_desc_layout;
+        result = DispatchCreatePipelineLayout(device, &pipeline_layout_ci, 0, &as_validation_state.pipeline_layout);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                               "Failed to create pipeline layout for acceleration structure build validation.");
+        }
+    }
+
+    VkShaderModule shader_module = VK_NULL_HANDLE;
+    if (result == VK_SUCCESS) {
+        VkShaderModuleCreateInfo shader_module_ci = {};
+        shader_module_ci.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        shader_module_ci.codeSize = sizeof(kComputeShaderSpirv);
+        shader_module_ci.pCode = (uint32_t *)kComputeShaderSpirv;
+
+        result = DispatchCreateShaderModule(device, &shader_module_ci, nullptr, &shader_module);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                               "Failed to create compute shader module for acceleration structure build validation.");
+        }
+    }
+
+    if (result == VK_SUCCESS) {
+        VkPipelineShaderStageCreateInfo pipeline_stage_ci = {};
+        pipeline_stage_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        pipeline_stage_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+        pipeline_stage_ci.module = shader_module;
+        pipeline_stage_ci.pName = "main";
+
+        VkComputePipelineCreateInfo pipeline_ci = {};
+        pipeline_ci.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+        pipeline_ci.stage = pipeline_stage_ci;
+        pipeline_ci.layout = as_validation_state.pipeline_layout;
+
+        result = DispatchCreateComputePipelines(device, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &as_validation_state.pipeline);
+        if (result != VK_SUCCESS) {
+            ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                               "Failed to create compute pipeline for acceleration structure build validation.");
+        }
+    }
+
+    if (shader_module != VK_NULL_HANDLE) {
+        DispatchDestroyShaderModule(device, shader_module, nullptr);
+    }
+
+    if (result == VK_SUCCESS) {
+        as_validation_state.initialized = true;
+        log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                "UNASSIGNED-GPU-Assisted Validation.", "Acceleration Structure Building GPU Validation Enabled.");
+    } else {
+        gpu_validation_state->aborted = true;
+    }
+}
+
+void CoreChecks::GpuDestroyAccelerationStructureBuildValidationState() {
+    auto &as_validation_state = gpu_validation_state->acceleration_struction_validation_state;
+    if (as_validation_state.pipeline != VK_NULL_HANDLE) {
+        DispatchDestroyPipeline(device, as_validation_state.pipeline, nullptr);
+    }
+    if (as_validation_state.pipeline_layout != VK_NULL_HANDLE) {
+        DispatchDestroyPipelineLayout(device, as_validation_state.pipeline_layout, nullptr);
+    }
+    if (as_validation_state.replacement_as != VK_NULL_HANDLE) {
+        DispatchDestroyAccelerationStructureNV(device, as_validation_state.replacement_as, nullptr);
+    }
+    if (as_validation_state.replacement_as_allocation != VK_NULL_HANDLE) {
+        vmaFreeMemory(gpu_validation_state->vmaAllocator, as_validation_state.replacement_as_allocation);
+    }
+}
+
+struct RESTORABLE_PIPELINE_STATE {
+    VkPipelineBindPoint pipeline_bind_point = VK_PIPELINE_BIND_POINT_MAX_ENUM;
+    VkPipeline pipeline = VK_NULL_HANDLE;
+    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+    std::vector<VkDescriptorSet> descriptor_sets;
+    std::vector<std::vector<uint32_t>> dynamic_offsets;
+    uint32_t push_descriptor_set_index = 0;
+    std::vector<safe_VkWriteDescriptorSet> push_descriptor_set_writes;
+    std::vector<uint8_t> push_constants_data;
+    PushConstantRangesId push_constants_ranges;
+
+    void Create(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint bind_point) {
+        pipeline_bind_point = bind_point;
+
+        LAST_BOUND_STATE &last_bound = cb_state->lastBound[bind_point];
+        if (last_bound.pipeline_state) {
+            pipeline = last_bound.pipeline_state->pipeline;
+            pipeline_layout = last_bound.pipeline_layout;
+            descriptor_sets.reserve(last_bound.per_set.size());
+            for (std::size_t i = 0; i < last_bound.per_set.size(); i++) {
+                const auto *bound_descriptor_set = last_bound.per_set[i].bound_descriptor_set;
+
+                descriptor_sets.push_back(bound_descriptor_set->GetSet());
+                if (bound_descriptor_set->IsPushDescriptor()) {
+                    push_descriptor_set_index = static_cast<uint32_t>(i);
+                }
+                dynamic_offsets.push_back(last_bound.per_set[i].dynamicOffsets);
+            }
+
+            if (last_bound.push_descriptor_set) {
+                push_descriptor_set_writes = last_bound.push_descriptor_set->GetWrites();
+            }
+            if (last_bound.pipeline_state->pipeline_layout.push_constant_ranges == cb_state->push_constant_data_ranges) {
+                push_constants_data = cb_state->push_constant_data;
+                push_constants_ranges = last_bound.pipeline_state->pipeline_layout.push_constant_ranges;
+            }
+        }
+    }
+
+    void Restore(VkCommandBuffer command_buffer) const {
+        if (pipeline != VK_NULL_HANDLE) {
+            DispatchCmdBindPipeline(command_buffer, pipeline_bind_point, pipeline);
+            if (!descriptor_sets.empty()) {
+                for (std::size_t i = 0; i < descriptor_sets.size(); i++) {
+                    VkDescriptorSet descriptor_set = descriptor_sets[i];
+                    if (descriptor_set != VK_NULL_HANDLE) {
+                        DispatchCmdBindDescriptorSets(command_buffer, pipeline_bind_point, pipeline_layout,
+                                                      static_cast<uint32_t>(i), 1, &descriptor_set,
+                                                      static_cast<uint32_t>(dynamic_offsets[i].size()), dynamic_offsets[i].data());
+                    }
+                }
+            }
+            if (!push_descriptor_set_writes.empty()) {
+                DispatchCmdPushDescriptorSetKHR(command_buffer, pipeline_bind_point, pipeline_layout, push_descriptor_set_index,
+                                                static_cast<uint32_t>(push_descriptor_set_writes.size()),
+                                                reinterpret_cast<const VkWriteDescriptorSet *>(push_descriptor_set_writes.data()));
+            }
+            for (const auto &push_constant_range : *push_constants_ranges) {
+                if (push_constant_range.size == 0) continue;
+                DispatchCmdPushConstants(command_buffer, pipeline_layout, push_constant_range.stageFlags,
+                                         push_constant_range.offset, push_constant_range.size, push_constants_data.data());
+            }
+        }
+    }
+};
+
+void CoreChecks::GpuPreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer,
+                                                                 const VkAccelerationStructureInfoNV *pInfo, VkBuffer instanceData,
+                                                                 VkDeviceSize instanceOffset, VkBool32 update,
+                                                                 VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
+                                                                 VkBuffer scratch, VkDeviceSize scratchOffset) {
+    if (pInfo == nullptr || pInfo->type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV) {
+        return;
+    }
+
+    auto &as_validation_state = gpu_validation_state->acceleration_struction_validation_state;
+    if (!as_validation_state.initialized) {
+        return;
+    }
+
+    // Empty acceleration structure is valid according to the spec.
+    if (pInfo->instanceCount == 0 || instanceData == VK_NULL_HANDLE) {
+        return;
+    }
+
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    assert(cb_state != nullptr);
+
+    std::vector<uint64_t> current_valid_handles;
+    for (const auto &as_state_kv : accelerationStructureMap) {
+        const ACCELERATION_STRUCTURE_STATE &as_state = *as_state_kv.second;
+        if (as_state.built && as_state.create_info.info.type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV) {
+            current_valid_handles.push_back(as_state.opaque_handle);
+        }
+    }
+
+    GpuAccelerationStructureBuildValidationBufferInfo as_validation_buffer_info = {};
+    as_validation_buffer_info.acceleration_structure = dst;
+
+    const VkDeviceSize validation_buffer_size =
+        // One uint for number of instances to validate
+        4 +
+        // Two uint for the replacement acceleration structure handle
+        8 +
+        // One uint for number of invalid handles found
+        4 +
+        // Two uint for the first invalid handle found
+        8 +
+        // One uint for the number of current valid handles
+        4 +
+        // Two uint for each current valid handle
+        (8 * current_valid_handles.size());
+
+    VkBufferCreateInfo validation_buffer_create_info = {};
+    validation_buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    validation_buffer_create_info.size = validation_buffer_size;
+    validation_buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+
+    VmaAllocationCreateInfo validation_buffer_alloc_info = {};
+    validation_buffer_alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+
+    VkResult result = vmaCreateBuffer(gpu_validation_state->vmaAllocator, &validation_buffer_create_info,
+                                      &validation_buffer_alloc_info, &as_validation_buffer_info.validation_buffer,
+                                      &as_validation_buffer_info.validation_buffer_allocation, nullptr);
+    if (result != VK_SUCCESS) {
+        ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                           "Unable to allocate device memory.  Device could become unstable.");
+        gpu_validation_state->aborted = true;
+        return;
+    }
+
+    GpuAccelerationStructureBuildValidationBuffer *mapped_validation_buffer = nullptr;
+    result = vmaMapMemory(gpu_validation_state->vmaAllocator, as_validation_buffer_info.validation_buffer_allocation,
+                          (void **)&mapped_validation_buffer);
+    if (result != VK_SUCCESS) {
+        ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                           "Unable to allocate device memory for acceleration structure build val buffer.");
+        gpu_validation_state->aborted = true;
+        return;
+    }
+
+    mapped_validation_buffer->instances_to_validate = pInfo->instanceCount;
+    mapped_validation_buffer->replacement_handle_bits_0 =
+        reinterpret_cast<const uint32_t *>(&as_validation_state.replacement_as_handle)[0];
+    mapped_validation_buffer->replacement_handle_bits_1 =
+        reinterpret_cast<const uint32_t *>(&as_validation_state.replacement_as_handle)[1];
+    mapped_validation_buffer->invalid_handle_found = 0;
+    mapped_validation_buffer->invalid_handle_bits_0 = 0;
+    mapped_validation_buffer->invalid_handle_bits_1 = 0;
+    mapped_validation_buffer->valid_handles_count = static_cast<uint32_t>(current_valid_handles.size());
+
+    uint32_t *mapped_valid_handles = reinterpret_cast<uint32_t *>(&mapped_validation_buffer[1]);
+    for (std::size_t i = 0; i < current_valid_handles.size(); i++) {
+        const uint64_t current_valid_handle = current_valid_handles[i];
+
+        *mapped_valid_handles = reinterpret_cast<const uint32_t *>(&current_valid_handle)[0];
+        ++mapped_valid_handles;
+        *mapped_valid_handles = reinterpret_cast<const uint32_t *>(&current_valid_handle)[1];
+        ++mapped_valid_handles;
+    }
+
+    vmaUnmapMemory(gpu_validation_state->vmaAllocator, as_validation_buffer_info.validation_buffer_allocation);
+
+    static constexpr const VkDeviceSize kInstanceSize = 64;
+    const VkDeviceSize instance_buffer_size = kInstanceSize * pInfo->instanceCount;
+
+    result = gpu_validation_state->desc_set_manager->GetDescriptorSet(&as_validation_buffer_info.descriptor_pool,
+                                                                      &as_validation_buffer_info.descriptor_set);
+    if (result != VK_SUCCESS) {
+        ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                           "Unable to get descriptor set for acceleration structure build.");
+        gpu_validation_state->aborted = true;
+        return;
+    }
+
+    VkDescriptorBufferInfo descriptor_buffer_infos[2] = {};
+    descriptor_buffer_infos[0].buffer = instanceData;
+    descriptor_buffer_infos[0].offset = instanceOffset;
+    descriptor_buffer_infos[0].range = instance_buffer_size;
+    descriptor_buffer_infos[1].buffer = as_validation_buffer_info.validation_buffer;
+    descriptor_buffer_infos[1].offset = 0;
+    descriptor_buffer_infos[1].range = validation_buffer_size;
+
+    VkWriteDescriptorSet descriptor_set_writes[2] = {};
+    descriptor_set_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_set_writes[0].dstSet = as_validation_buffer_info.descriptor_set;
+    descriptor_set_writes[0].dstBinding = 0;
+    descriptor_set_writes[0].descriptorCount = 1;
+    descriptor_set_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_set_writes[0].pBufferInfo = &descriptor_buffer_infos[0];
+    descriptor_set_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_set_writes[1].dstSet = as_validation_buffer_info.descriptor_set;
+    descriptor_set_writes[1].dstBinding = 1;
+    descriptor_set_writes[1].descriptorCount = 1;
+    descriptor_set_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_set_writes[1].pBufferInfo = &descriptor_buffer_infos[1];
+
+    DispatchUpdateDescriptorSets(device, 2, descriptor_set_writes, 0, nullptr);
+
+    // Issue a memory barrier to make sure anything writing to the instance buffer has finished.
+    VkMemoryBarrier memory_barrier = {};
+    memory_barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    memory_barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+    memory_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    DispatchCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1,
+                               &memory_barrier, 0, nullptr, 0, nullptr);
+
+    // Save a copy of the compute pipeline state that needs to be restored.
+    RESTORABLE_PIPELINE_STATE restorable_state;
+    restorable_state.Create(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
+
+    // Switch to and launch the validation compute shader to find, replace, and report invalid acceleration structure handles.
+    DispatchCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, as_validation_state.pipeline);
+    DispatchCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, as_validation_state.pipeline_layout, 0, 1,
+                                  &as_validation_buffer_info.descriptor_set, 0, nullptr);
+    DispatchCmdDispatch(commandBuffer, 1, 1, 1);
+
+    // Issue a buffer memory barrier to make sure that any invalid bottom level acceleration structure handles
+    // have been replaced by the validation compute shader before any builds take place.
+    VkBufferMemoryBarrier instance_buffer_barrier = {};
+    instance_buffer_barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    instance_buffer_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    instance_buffer_barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
+    instance_buffer_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    instance_buffer_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    instance_buffer_barrier.buffer = instanceData;
+    instance_buffer_barrier.offset = instanceOffset;
+    instance_buffer_barrier.size = instance_buffer_size;
+    DispatchCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                               VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV, 0, 0, nullptr, 1, &instance_buffer_barrier, 0,
+                               nullptr);
+
+    // Restore the previous compute pipeline state.
+    restorable_state.Restore(commandBuffer);
+
+    as_validation_state.validation_buffers[commandBuffer].push_back(std::move(as_validation_buffer_info));
+}
+
+void CoreChecks::GpuProcessAccelerationStructureBuildValidationBuffer(VkQueue queue, CMD_BUFFER_STATE *cb_node) {
+    if (cb_node == nullptr || !cb_node->hasBuildAccelerationStructureCmd) {
+        return;
+    }
+
+    auto &as_validation_info = gpu_validation_state->acceleration_struction_validation_state;
+    auto &as_validation_buffer_infos = as_validation_info.validation_buffers[cb_node->commandBuffer];
+    for (const auto &as_validation_buffer_info : as_validation_buffer_infos) {
+        GpuAccelerationStructureBuildValidationBuffer *mapped_validation_buffer = nullptr;
+
+        VkResult result = vmaMapMemory(gpu_validation_state->vmaAllocator, as_validation_buffer_info.validation_buffer_allocation,
+                                       (void **)&mapped_validation_buffer);
+        if (result == VK_SUCCESS) {
+            if (mapped_validation_buffer->invalid_handle_found > 0) {
+                uint64_t invalid_handle = 0;
+                reinterpret_cast<uint32_t *>(&invalid_handle)[0] = mapped_validation_buffer->invalid_handle_bits_0;
+                reinterpret_cast<uint32_t *>(&invalid_handle)[1] = mapped_validation_buffer->invalid_handle_bits_1;
+
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT,
+                        HandleToUint64(as_validation_buffer_info.acceleration_structure), "UNASSIGNED-AccelerationStructure",
+                        "Attempted to build top level acceleration structure using invalid bottom level acceleration structure "
+                        "handle (%" PRIu64 ")",
+                        invalid_handle);
+            }
+            vmaUnmapMemory(gpu_validation_state->vmaAllocator, as_validation_buffer_info.validation_buffer_allocation);
+        }
     }
 }
 
@@ -478,6 +1309,19 @@ void CoreChecks::GpuResetCommandBuffer(const VkCommandBuffer commandBuffer) {
         }
     }
     gpu_validation_state->command_buffer_map.erase(commandBuffer);
+
+    auto &as_validation_info = gpu_validation_state->acceleration_struction_validation_state;
+    auto &as_validation_buffer_infos = as_validation_info.validation_buffers[commandBuffer];
+    for (auto &as_validation_buffer_info : as_validation_buffer_infos) {
+        vmaDestroyBuffer(gpu_validation_state->vmaAllocator, as_validation_buffer_info.validation_buffer,
+                         as_validation_buffer_info.validation_buffer_allocation);
+
+        if (as_validation_buffer_info.descriptor_set != VK_NULL_HANDLE) {
+            gpu_validation_state->desc_set_manager->PutBackDescriptorSet(as_validation_buffer_info.descriptor_pool,
+                                                                         as_validation_buffer_info.descriptor_set);
+        }
+    }
+    as_validation_info.validation_buffers.erase(commandBuffer);
 }
 
 // Just gives a warning about a possible deadlock.
@@ -1323,9 +2167,12 @@ void CoreChecks::GpuPostCallQueueSubmit(VkQueue queue, uint32_t submitCount, con
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
             auto cb_node = GetCBState(submit->pCommandBuffers[i]);
-            if (gpu_validation_state->GetGpuBufferInfo(cb_node->commandBuffer).size()) buffers_present = true;
+            if (gpu_validation_state->GetGpuBufferInfo(cb_node->commandBuffer).size() || cb_node->hasBuildAccelerationStructureCmd)
+                buffers_present = true;
             for (auto secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
-                if (gpu_validation_state->GetGpuBufferInfo(secondaryCmdBuffer->commandBuffer).size()) buffers_present = true;
+                if (gpu_validation_state->GetGpuBufferInfo(secondaryCmdBuffer->commandBuffer).size() ||
+                    cb_node->hasBuildAccelerationStructureCmd)
+                    buffers_present = true;
             }
         }
     }
@@ -1340,8 +2187,10 @@ void CoreChecks::GpuPostCallQueueSubmit(VkQueue queue, uint32_t submitCount, con
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
             auto cb_node = GetCBState(submit->pCommandBuffers[i]);
             ProcessInstrumentationBuffer(queue, cb_node);
+            GpuProcessAccelerationStructureBuildValidationBuffer(queue, cb_node);
             for (auto secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
                 ProcessInstrumentationBuffer(queue, secondaryCmdBuffer);
+                GpuProcessAccelerationStructureBuildValidationBuffer(queue, cb_node);
             }
         }
     }

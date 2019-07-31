@@ -138,8 +138,12 @@ struct create_pipeline_layout_api_state {
     VkPipelineLayoutCreateInfo modified_create_info;
 };
 
-// This structure is used modify and pass parameters for the CreateShaderModule down-chain API call
+// This structure is used modify parameters for the CreateBuffer down-chain API call
+struct create_buffer_api_state {
+    VkBufferCreateInfo modified_create_info;
+};
 
+// This structure is used modify and pass parameters for the CreateShaderModule down-chain API call
 struct create_shader_module_api_state {
     uint32_t unique_shader_id;
     VkShaderModuleCreateInfo instrumented_create_info;
@@ -906,6 +910,7 @@ class ValidationStateTracker : public ValidationObject {
     void RetireFence(VkFence fence);
     void RetireWorkOnQueue(QUEUE_STATE* pQueue, uint64_t seq, bool switch_finished_queries);
     bool SetEventStageMask(VkQueue queue, VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
+    void ResetCommandBufferPushConstantDataIfIncompatible(CMD_BUFFER_STATE* cb_state, VkPipelineLayout layout);
     void SetMemBinding(VkDeviceMemory mem, BINDABLE* mem_binding, VkDeviceSize memory_offset,
                        const VulkanTypedHandle& typed_handle);
     bool SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject object, QueryState value);
@@ -1337,6 +1342,16 @@ class CoreChecks : public ValidationStateTracker {
     void GpuPreCallRecordDestroyBuffer(VkBuffer buffer);
     VkResult GpuInitializeVma();
     void ReportSetupProblem(VkDebugReportObjectTypeEXT object_type, uint64_t object_handle, const char* const specific_message);
+    void GpuCreateAccelerationStructureBuildValidationState();
+    void GpuDestroyAccelerationStructureBuildValidationState();
+    void GpuPreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
+                                                         VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
+                                                         VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
+                                                         VkBuffer scratch, VkDeviceSize scratchOffset);
+    void GpuProcessAccelerationStructureBuildValidationBuffer(VkQueue queue, CMD_BUFFER_STATE* cb_node);
+    void GpuPreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
+                                      const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer,
+                                      VkBufferCreateInfo* modified_create_info);
 
     // Buffer Validation Functions
     template <class OBJECT, class LAYOUT>
@@ -1582,6 +1597,9 @@ class CoreChecks : public ValidationStateTracker {
                                       const VkBufferCopy* pRegions);
     bool PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks* pAllocator);
 
+    void PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                   VkBuffer* pBuffer, void* cb_state);
+
     bool PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator);
 
     void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator);
@@ -1789,6 +1807,10 @@ class CoreChecks : public ValidationStateTracker {
                                                         VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
                                                         VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
                                                         VkBuffer scratch, VkDeviceSize scratchOffset);
+    void PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
+                                                      VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
+                                                      VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
+                                                      VkBuffer scratch, VkDeviceSize scratchOffset);
     bool PreCallValidateCmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAccelerationStructureNV dst,
                                                        VkAccelerationStructureNV src, VkCopyAccelerationStructureModeNV mode);
     bool PreCallValidateDestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
@@ -1879,6 +1901,8 @@ class CoreChecks : public ValidationStateTracker {
                                               VkQueryResultFlags flags);
     bool PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
                                          uint32_t offset, uint32_t size, const void* pValues);
+    void PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
+                                        uint32_t offset, uint32_t size, const void* pValues);
     bool PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                           VkQueryPool queryPool, uint32_t slot);
     void PreCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool,
