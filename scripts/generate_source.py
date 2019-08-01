@@ -63,7 +63,8 @@ def main(argv):
                  os.path.abspath(os.path.join(args.registry, 'validusage.json')),
                  '-export_header'],
                 [common_codegen.repo_relative('scripts/external_revision_generator.py'),
-                 '--rev_file', common_codegen.repo_relative('scripts/known_good.json'),
+                 '--json_file', common_codegen.repo_relative('scripts/known_good.json'),
+                 '--json_keys', 'repos,0,commit',
                  '-s', 'SPIRV_TOOLS_COMMIT_ID',
                  '-o', 'spirv_tools_commit_id.h']]
 
