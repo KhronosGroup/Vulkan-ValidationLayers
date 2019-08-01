@@ -144,6 +144,7 @@ def printHelp():
     print ("                                [ -csv  [ <csv_out_filename>]  ]")
     print ("                                [ -html [ <html_out_filename>] ]")
     print ("                                [ -export_header ]")
+    print ("                                [ -summary ]")
     print ("                                [ -verbose ]")
     print ("                                [ -help ]")
     print ("\n  The vk_validation_stats script parses validation layer source files to")
@@ -162,6 +163,7 @@ def printHelp():
     print (" -html [filename]  output the error database in html to <html_database_filename>,")
     print ("                   defaults to 'validation_error_database.html'")
     print (" -export_header    export a new VUID error text header file to <%s>" % header_filename)
+    print (" -summary          output summary of VUID coverage")
     print (" -verbose          show your work (to stdout)")
 
 class ValidationJSON:
@@ -571,7 +573,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
             hfile.write('</table>\n</body>\n</html>\n')
 
     def export_header(self):
-        print("\n Exporting header file to: %s" % header_filename)
+        if verbose_mode:
+            print("\n Exporting header file to: %s" % header_filename)
         with open (header_filename, 'w') as hfile:
             hfile.write(self.header_version)
             hfile.write(self.header_preamble)
@@ -632,6 +635,7 @@ def main(argv):
     csv_out = False
     html_out = False
     header_out = False
+    show_summary = False
 
     if (1 > len(argv)):
         printHelp()
@@ -672,6 +676,8 @@ def main(argv):
             header_out = True
         elif (arg in ['-verbose']):
             verbose_mode = True
+        elif (arg in ['-summary']):
+            show_summary = True
         elif (arg in ['-help', '-h']):
             printHelp()
             sys.exit()
@@ -725,20 +731,21 @@ def main(argv):
         print("  %d unassigned" % len(val_tests.unassigned_vuids))
 
     # Process stats
-    print("\nValidation Statistics (using validusage.json version %s)" % val_json.apiversion)
-    print("  VUIDs defined in JSON file:  %04d explicit, %04d implicit, %04d total." % (exp_json, imp_json, all_json))
-    print("  VUIDs checked in layer code: %04d explicit, %04d implicit, %04d total." % (exp_checks, imp_checks, all_checks))
-    print("  VUIDs tested in layer tests: %04d explicit, %04d implicit, %04d total." % (exp_tests, imp_tests, all_tests))
+    if show_summary:
+        print("\nValidation Statistics (using validusage.json version %s)" % val_json.apiversion)
+        print("  VUIDs defined in JSON file:  %04d explicit, %04d implicit, %04d total." % (exp_json, imp_json, all_json))
+        print("  VUIDs checked in layer code: %04d explicit, %04d implicit, %04d total." % (exp_checks, imp_checks, all_checks))
+        print("  VUIDs tested in layer tests: %04d explicit, %04d implicit, %04d total." % (exp_tests, imp_tests, all_tests))
 
-    print("\nVUID check coverage")
-    print("  Explicit VUIDs checked: %.1f%% (%d checked vs %d defined)" % ((100.0 * exp_checks / exp_json), exp_checks, exp_json))
-    print("  Implicit VUIDs checked: %.1f%% (%d checked vs %d defined)" % ((100.0 * imp_checks / imp_json), imp_checks, imp_json))
-    print("  Overall VUIDs checked:  %.1f%% (%d checked vs %d defined)" % ((100.0 * all_checks / all_json), all_checks, all_json))
+        print("\nVUID check coverage")
+        print("  Explicit VUIDs checked: %.1f%% (%d checked vs %d defined)" % ((100.0 * exp_checks / exp_json), exp_checks, exp_json))
+        print("  Implicit VUIDs checked: %.1f%% (%d checked vs %d defined)" % ((100.0 * imp_checks / imp_json), imp_checks, imp_json))
+        print("  Overall VUIDs checked:  %.1f%% (%d checked vs %d defined)" % ((100.0 * all_checks / all_json), all_checks, all_json))
 
-    print("\nVUID test coverage")
-    print("  Explicit VUIDs tested: %.1f%% (%d tested vs %d checks)" % ((100.0 * exp_tests / exp_checks), exp_tests, exp_checks))
-    print("  Implicit VUIDs tested: %.1f%% (%d tested vs %d checks)" % ((100.0 * imp_tests / imp_checks), imp_tests, imp_checks))
-    print("  Overall VUIDs tested:  %.1f%% (%d tested vs %d checks)" % ((100.0 * all_tests / all_checks), all_tests, all_checks))
+        print("\nVUID test coverage")
+        print("  Explicit VUIDs tested: %.1f%% (%d tested vs %d checks)" % ((100.0 * exp_tests / exp_checks), exp_tests, exp_checks))
+        print("  Implicit VUIDs tested: %.1f%% (%d tested vs %d checks)" % ((100.0 * imp_tests / imp_checks), imp_tests, imp_checks))
+        print("  Overall VUIDs tested:  %.1f%% (%d tested vs %d checks)" % ((100.0 * all_tests / all_checks), all_tests, all_checks))
 
     # Report status of a single VUID
     if len(get_vuid_status) > 1:
