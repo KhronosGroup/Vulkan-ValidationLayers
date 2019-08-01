@@ -503,7 +503,7 @@ static void InstanceExtensionWhitelist(ValidationObject *layer_data, const VkIns
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         // Check for recognized instance extensions
         if (!white_list(pCreateInfo->ppEnabledExtensionNames[i], kInstanceExtensionNames)) {
-            log_msg(layer_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+            log_msg(layer_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                     kVUIDUndefined,
                     "Instance Extension %s is not supported by this layer.  Using this extension may adversely affect validation "
                     "results and/or produce undefined behavior.",
@@ -517,7 +517,7 @@ static void DeviceExtensionWhitelist(ValidationObject *layer_data, const VkDevic
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         // Check for recognized device extensions
         if (!white_list(pCreateInfo->ppEnabledExtensionNames[i], kDeviceExtensionNames)) {
-            log_msg(layer_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+            log_msg(layer_data->report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                     kVUIDUndefined,
                     "Device Extension %s is not supported by this layer.  Using this extension may adversely affect validation "
                     "results and/or produce undefined behavior.",
