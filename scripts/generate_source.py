@@ -19,13 +19,14 @@
 # Author: Mike Schuchardt <mikes@lunarg.com>
 
 import argparse
-import common_codegen
 import filecmp
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
+
+import common_codegen
 
 # files to exclude from --verify check
 verify_exclude = ['.clang-format']
@@ -84,10 +85,7 @@ def main(argv):
     for cmd in gen_cmds:
         print(' '.join(cmd))
         try:
-            subprocess.check_call([sys.executable] + cmd,
-                                  # ignore generator output, vk_validation_stats.py is especially noisy
-                                  stdout=subprocess.DEVNULL,
-                                  cwd=gen_dir)
+            subprocess.check_call([sys.executable] + cmd, cwd=gen_dir)
         except Exception as e:
             print('ERROR:', str(e))
             return 1
