@@ -506,13 +506,23 @@ class Image : public internal::NonDispHandle<VkImage> {
                                               VkImageLayout new_layout, const VkImageSubresourceRange &range,
                                               uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                                               uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED) const {
+        VkImageMemoryBarrier barrier = image_memory_barrier(handle(), output_mask, input_mask, old_layout, new_layout, range,
+                                                            srcQueueFamilyIndex, dstQueueFamilyIndex);
+        return barrier;
+    }
+
+    static VkImageMemoryBarrier image_memory_barrier(VkImage image, VkFlags output_mask, VkFlags input_mask,
+                                                     VkImageLayout old_layout, VkImageLayout new_layout,
+                                                     const VkImageSubresourceRange &range,
+                                                     uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                                                     uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED) {
         VkImageMemoryBarrier barrier = {};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.srcAccessMask = output_mask;
         barrier.dstAccessMask = input_mask;
         barrier.oldLayout = old_layout;
         barrier.newLayout = new_layout;
-        barrier.image = handle();
+        barrier.image = image;
         barrier.subresourceRange = range;
         barrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
         barrier.dstQueueFamilyIndex = dstQueueFamilyIndex;

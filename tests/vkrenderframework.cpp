@@ -1016,22 +1016,59 @@ void VkImageObj::ImageMemoryBarrier(VkCommandBufferObj *cmd_buf, VkImageAspectFl
                                     VK_MEMORY_INPUT_COPY_BIT*/, VkImageLayout image_layout,
                                     VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages,
                                     uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex) {
+    ImageMemoryBarrier(m_device, handle(), cmd_buf, aspect, output_mask, input_mask, Layout(), image_layout, src_stages,
+                       dest_stages, srcQueueFamilyIndex, dstQueueFamilyIndex);
+    m_descriptorImageInfo.imageLayout = image_layout;
+}
+
+void VkImageObj::SetLayout(VkCommandBufferObj *cmd_buf, VkImageAspectFlags aspect, VkImageLayout image_layout) {
+    SetLayout(m_device, handle(), cmd_buf, aspect, Layout(), image_layout);
+    m_descriptorImageInfo.imageLayout = image_layout;
+}
+
+void VkImageObj::SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout) {
+    SetLayout(m_device, handle(), aspect, Layout(), image_layout);
+    m_descriptorImageInfo.imageLayout = image_layout;
+}
+
+// clang-format off
+void VkImageObj::ImageMemoryBarrier(VkDeviceObj *device, VkImage image, VkCommandBufferObj *cmd_buf, VkImageAspectFlags aspect,
+                                           VkFlags output_mask /*=
+                                           VK_ACCESS_HOST_WRITE_BIT |
+                                           VK_ACCESS_SHADER_WRITE_BIT |
+                                           VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                           VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+                                           VK_MEMORY_OUTPUT_COPY_BIT*/,
+                                           VkFlags input_mask /*=
+                                           VK_ACCESS_HOST_READ_BIT |
+                                           VK_ACCESS_INDIRECT_COMMAND_READ_BIT |
+                                           VK_ACCESS_INDEX_READ_BIT |
+                                           VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
+                                           VK_ACCESS_UNIFORM_READ_BIT |
+                                           VK_ACCESS_SHADER_READ_BIT |
+                                           VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                           VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                           VK_MEMORY_INPUT_COPY_BIT*/,
+                                           VkImageLayout old_image_layout,
+                                           VkImageLayout new_image_layout, VkPipelineStageFlags src_stages,
+                                           VkPipelineStageFlags dest_stages, uint32_t srcQueueFamilyIndex,
+                                           uint32_t dstQueueFamilyIndex) {
     // clang-format on
     // TODO: Mali device crashing with VK_REMAINING_MIP_LEVELS
     const VkImageSubresourceRange subresourceRange =
-        subresource_range(aspect, 0, /*VK_REMAINING_MIP_LEVELS*/ 1, 0, 1 /*VK_REMAINING_ARRAY_LAYERS*/);
+        vk_testing::Image::subresource_range(aspect, 0, /*VK_REMAINING_MIP_LEVELS*/ 1, 0, 1 /*VK_REMAINING_ARRAY_LAYERS*/);
     VkImageMemoryBarrier barrier;
-    barrier = image_memory_barrier(output_mask, input_mask, Layout(), image_layout, subresourceRange, srcQueueFamilyIndex,
-                                   dstQueueFamilyIndex);
+    barrier = vk_testing::Image::image_memory_barrier(image, output_mask, input_mask, old_image_layout, new_image_layout,
+                                                      subresourceRange, srcQueueFamilyIndex, dstQueueFamilyIndex);
 
     VkImageMemoryBarrier *pmemory_barrier = &barrier;
-
     // write barrier to the command buffer
     vkCmdPipelineBarrier(cmd_buf->handle(), src_stages, dest_stages, VK_DEPENDENCY_BY_REGION_BIT, 0, NULL, 0, NULL, 1,
                          pmemory_barrier);
 }
 
-void VkImageObj::SetLayout(VkCommandBufferObj *cmd_buf, VkImageAspectFlags aspect, VkImageLayout image_layout) {
+void VkImageObj::SetLayout(VkDeviceObj *device, VkImage image, VkCommandBufferObj *cmd_buf, VkImageAspectFlags aspect,
+                           VkImageLayout old_image_layout, VkImageLayout new_image_layout) {
     VkFlags src_mask, dst_mask;
     const VkFlags all_cache_outputs = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
                                       VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1039,14 +1076,13 @@ void VkImageObj::SetLayout(VkCommandBufferObj *cmd_buf, VkImageAspectFlags aspec
                                      VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
                                      VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
                                      VK_ACCESS_MEMORY_READ_BIT;
-
-    if (image_layout == m_descriptorImageInfo.imageLayout) {
+    if (old_image_layout == new_image_layout) {
         return;
     }
 
-    switch (image_layout) {
+    switch (new_image_layout) {
         case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-            if (m_descriptorImageInfo.imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+            if (old_image_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
                 src_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
             else
                 src_mask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1054,9 +1090,9 @@ void VkImageObj::SetLayout(VkCommandBufferObj *cmd_buf, VkImageAspectFlags aspec
             break;
 
         case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-            if (m_descriptorImageInfo.imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+            if (old_image_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
                 src_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            else if (m_descriptorImageInfo.imageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+            else if (old_image_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
                 src_mask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
             else
                 src_mask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1064,7 +1100,7 @@ void VkImageObj::SetLayout(VkCommandBufferObj *cmd_buf, VkImageAspectFlags aspec
             break;
 
         case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-            if (m_descriptorImageInfo.imageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+            if (old_image_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
                 src_mask = VK_ACCESS_TRANSFER_WRITE_BIT;
             else
                 src_mask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
@@ -1072,7 +1108,7 @@ void VkImageObj::SetLayout(VkCommandBufferObj *cmd_buf, VkImageAspectFlags aspec
             break;
 
         case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-            if (m_descriptorImageInfo.imageLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+            if (old_image_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
                 src_mask = VK_ACCESS_TRANSFER_READ_BIT;
             else
                 src_mask = 0;
@@ -1090,23 +1126,22 @@ void VkImageObj::SetLayout(VkCommandBufferObj *cmd_buf, VkImageAspectFlags aspec
             break;
     }
 
-    if (m_descriptorImageInfo.imageLayout == VK_IMAGE_LAYOUT_UNDEFINED) src_mask = 0;
-
-    ImageMemoryBarrier(cmd_buf, aspect, src_mask, dst_mask, image_layout);
-    m_descriptorImageInfo.imageLayout = image_layout;
+    if (old_image_layout == VK_IMAGE_LAYOUT_UNDEFINED) src_mask = 0;
+    ImageMemoryBarrier(device, image, cmd_buf, aspect, src_mask, dst_mask, old_image_layout, new_image_layout);
 }
 
-void VkImageObj::SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout) {
-    if (image_layout == m_descriptorImageInfo.imageLayout) {
+void VkImageObj::SetLayout(VkDeviceObj *device, VkImage image, VkImageAspectFlags aspect, VkImageLayout old_image_layout,
+                           VkImageLayout new_image_layout) {
+    if (old_image_layout == new_image_layout) {
         return;
     }
 
-    VkCommandPoolObj pool(m_device, m_device->graphics_queue_node_index_);
-    VkCommandBufferObj cmd_buf(m_device, &pool);
+    VkCommandPoolObj pool(device, device->graphics_queue_node_index_);
+    VkCommandBufferObj cmd_buf(device, &pool);
 
     /* Build command buffer to set image layout in the driver */
     cmd_buf.begin();
-    SetLayout(&cmd_buf, aspect, image_layout);
+    SetLayout(device, image, &cmd_buf, aspect, old_image_layout, new_image_layout);
     cmd_buf.end();
 
     cmd_buf.QueueCommandBuffer();
