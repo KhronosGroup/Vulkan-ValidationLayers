@@ -964,6 +964,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceCooperativeMatrixPropertiesNV cooperative_matrix_props;
         VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
         VkPhysicalDeviceSubgroupProperties subgroup_props;
+        VkPhysicalDeviceFloatControlsPropertiesKHR float_controls_props;
         VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props;
         VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT texel_buffer_alignment_props;
         VkPhysicalDeviceFragmentDensityMapPropertiesEXT fragment_density_map_props;
