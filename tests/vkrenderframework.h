@@ -90,10 +90,13 @@ class VkRenderFramework : public VkTestFramework {
     bool InitSurface();
     bool InitSurface(float width, float height);
     bool InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                       VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
+                       VkSurfaceTransformFlagBitsKHR preTransform = VkSurfaceTransformFlagBitsKHR(0),
+                       VkExtent2D *imageExtent = nullptr);
     bool InitSwapchain(VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                       VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
+                       VkSurfaceTransformFlagBitsKHR preTransform = VkSurfaceTransformFlagBitsKHR(0),
+                       VkExtent2D *imageExtent = nullptr);
     void DestroySwapchain();
+    bool ResizeScreen(uint32_t width, uint32_t height);
     void InitRenderTarget();
     void InitRenderTarget(uint32_t targets);
     void InitRenderTarget(VkImageView *dsBinding);
@@ -168,6 +171,21 @@ class VkRenderFramework : public VkTestFramework {
     std::vector<const char *> m_instance_layer_names;
     std::vector<const char *> m_instance_extension_names;
     std::vector<const char *> m_device_extension_names;
+
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+    HINSTANCE window_instance;
+    HWND window;
+#endif
+
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
+    Display *dpy;
+    Window window_xlib;
+#endif
+
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+    xcb_connection_t *connection;
+    xcb_window_t window_xcb;
+#endif
 };
 
 class VkDescriptorSetObj;
