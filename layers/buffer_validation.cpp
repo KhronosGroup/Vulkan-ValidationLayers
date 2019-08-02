@@ -1505,7 +1505,6 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
     ImageSubresourcePair subpair{*pImage, false, VkImageSubresource()};
     imageSubresourceMap[*pImage].push_back(subpair);
     imageLayoutMap[subpair] = image_state;
-    imageLayoutMap[subpair] = image_state;
 }
 
 bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
