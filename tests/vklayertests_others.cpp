@@ -4147,6 +4147,86 @@ TEST_F(VkLayerTest, WarningSwapchainCreateInfoPreTransform) {
     m_errorMonitor->SetUnexpectedError("VUID-VkSwapchainCreateInfoKHR-preTransform-01279");
     InitSwapchain(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_INHERIT_BIT_KHR);
     m_errorMonitor->VerifyFound();
+    DestroySwapchain();
+}
+
+TEST_F(VkLayerTest, WarningSuboptimalSwapchain) {
+    TEST_DESCRIPTION("Print warning when the result is VK_SUBOPTIMAL_KHR");
+
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (!AddSwapchainDeviceExtension()) {
+        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    InitSurface();
+
+    VkSurfaceCapabilitiesKHR capabilities;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_device->phy().handle(), m_surface, &capabilities);
+    VkExtent2D *imageExtent = nullptr;
+    uint32_t new_width = 0, new_height = 0;
+    if ((capabilities.currentExtent.width != capabilities.minImageExtent.width) ||
+        (capabilities.currentExtent.height != capabilities.minImageExtent.height)) {
+        imageExtent = &capabilities.minImageExtent;
+        new_width = imageExtent->width + 100;
+        new_height = imageExtent->height + 100;
+    } else if ((capabilities.currentExtent.width != capabilities.maxImageExtent.width) ||
+               (capabilities.currentExtent.height != capabilities.maxImageExtent.height)) {
+        imageExtent = &capabilities.maxImageExtent;
+        new_width = imageExtent->width - 100;
+        new_height = imageExtent->height - 100;
+    } else {
+        printf("%s VkSurface's currentExtent is equal minImageExtent and maxImageExtent, skipping test\n", kSkipPrefix);
+        DestroySwapchain();
+        return;
+    }
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-GeneralParameterPerfWarn-SuboptimalSwapchain");
+    InitSwapchain(m_surface, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VkSurfaceTransformFlagBitsKHR(0), imageExtent);
+
+    VkSemaphore semaphore;
+    auto semaphore_create_info = lvl_init_struct<VkSemaphoreCreateInfo>();
+    vkCreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore);
+
+    uint32_t imageIndex = 0;
+    VkResult result;
+    VkPresentInfoKHR presentInfo = {};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.pNext = nullptr;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = &semaphore;
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = &m_swapchain;
+    presentInfo.pImageIndices = &imageIndex;
+    presentInfo.pResults = &result;
+
+    for (int i = 0; i < 10; ++i) {
+        vkAcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &imageIndex);
+        vkQueuePresentKHR(m_device->m_queue, &presentInfo);
+        vkQueueWaitIdle(m_device->m_queue);
+        vkDeviceWaitIdle(m_device->device());
+    }
+
+    ResizeScreen(new_width, new_height);
+
+    for (int i = 0; i < 10; ++i) {
+        vkAcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &imageIndex);
+        vkQueuePresentKHR(m_device->m_queue, &presentInfo);
+        vkQueueWaitIdle(m_device->m_queue);
+        vkDeviceWaitIdle(m_device->device());
+    }
+    m_errorMonitor->VerifyFound();
+
+    vkDestroySemaphore(m_device->device(), semaphore, nullptr);
+    DestroySwapchain();
 }
 
 bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, std::vector<const char *> &instance_extension_names,
