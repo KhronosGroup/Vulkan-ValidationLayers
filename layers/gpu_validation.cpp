@@ -282,7 +282,7 @@ void CoreChecks::GpuPostCallRecordCreateDevice(const CHECK_ENABLED *enables, con
             "UNASSIGNED-GPU-Assisted Validation. ", "Shaders using descriptor set at index %d. ",
             gpu_validation_state->desc_set_bind_index);
 
-    gpu_validation_state->output_buffer_size = sizeof(uint32_t) * (spvtools::kInst2MaxOutCnt + 1);
+    gpu_validation_state->output_buffer_size = sizeof(uint32_t) * (spvtools::kInstMaxOutCnt + 1);
     VkResult result = GpuInitializeVma();
     assert(result == VK_SUCCESS);
     std::unique_ptr<GpuDescriptorSetManager> desc_set_manager(new GpuDescriptorSetManager(this));
@@ -683,7 +683,7 @@ bool CoreChecks::GpuInstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo
     Optimizer optimizer(target_env);
     optimizer.RegisterPass(CreateInstBindlessCheckPass(gpu_validation_state->desc_set_bind_index,
                                                        gpu_validation_state->unique_shader_module_id, descriptor_indexing,
-                                                       descriptor_indexing, 2));
+                                                       descriptor_indexing));
     optimizer.RegisterPass(CreateAggressiveDCEPass());
     bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm);
     if (!pass) {
@@ -717,13 +717,10 @@ static void GenerateStageMessage(const uint32_t *debug_record, std::string &msg)
                  << " Instance Index = " << debug_record[kInstVertOutInstanceIndex] << ". ";
         } break;
         case spv::ExecutionModelTessellationControl: {
-            strm << "Stage = Tessellation Control.  Invocation ID = " << debug_record[kInstTessCtlOutInvocationId]
-                 << ", Primitive ID = " << debug_record[kInstTessCtlOutPrimitiveId];
+            strm << "Stage = Tessellation Control.  Invocation ID = " << debug_record[kInstTessOutInvocationId] << ". ";
         } break;
         case spv::ExecutionModelTessellationEvaluation: {
-            strm << "Stage = Tessellation Eval.  Primitive ID = " << debug_record[kInstTessEvalOutPrimitiveId]
-                 << ", TessCoord (u, v) = (" << debug_record[kInstTessEvalOutTessCoordU] << ", "
-                 << debug_record[kInstTessEvalOutTessCoordV] << "). ";
+            strm << "Stage = Tessellation Eval.  Invocation ID = " << debug_record[kInstTessOutInvocationId] << ". ";
         } break;
         case spv::ExecutionModelGeometry: {
             strm << "Stage = Geometry.  Primitive ID = " << debug_record[kInstGeomOutPrimitiveId]
@@ -735,8 +732,7 @@ static void GenerateStageMessage(const uint32_t *debug_record, std::string &msg)
                  << *reinterpret_cast<const float *>(&debug_record[kInstFragOutFragCoordY]) << "). ";
         } break;
         case spv::ExecutionModelGLCompute: {
-            strm << "Stage = Compute.  Global invocation ID (x, y, z) = (" << debug_record[kInstCompOutGlobalInvocationIdX] << ", "
-                 << debug_record[kInstCompOutGlobalInvocationIdY] << ", " << debug_record[kInstCompOutGlobalInvocationIdZ] << " )";
+            strm << "Stage = Compute.  Global invocation ID = " << debug_record[kInstCompOutGlobalInvocationId] << ". ";
         } break;
         case spv::ExecutionModelRayGenerationNV: {
             strm << "Stage = Ray Generation.  Global Launch ID (x,y,z) = (" << debug_record[kInstRayTracingOutLaunchIdX] << ", "
@@ -774,18 +770,18 @@ static void GenerateStageMessage(const uint32_t *debug_record, std::string &msg)
 static void GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, std::string &vuid_msg) {
     using namespace spvtools;
     std::ostringstream strm;
-    switch (debug_record[kInst2ValidationOutError]) {
+    switch (debug_record[kInstValidationOutError]) {
         case 0: {
-            strm << "Index of " << debug_record[kInst2BindlessBoundsOutDescIndex] << " used to index descriptor array of length "
-                 << debug_record[kInst2BindlessBoundsOutDescBound] << ". ";
+            strm << "Index of " << debug_record[kInstBindlessOutDescIndex] << " used to index descriptor array of length "
+                 << debug_record[kInstBindlessOutDescBound] << ". ";
             vuid_msg = "UNASSIGNED-Descriptor index out of bounds";
         } break;
         case 1: {
-            strm << "Descriptor index " << debug_record[kInst2BindlessUninitOutDescIndex] << " is uninitialized. ";
+            strm << "Descriptor index " << debug_record[kInstBindlessOutDescIndex] << " is uninitialized. ";
             vuid_msg = "UNASSIGNED-Descriptor uninitialized";
         } break;
         default: {
-            strm << "Internal Error (unexpected error type = " << debug_record[kInst2ValidationOutError] << "). ";
+            strm << "Internal Error (unexpected error type = " << debug_record[kInstValidationOutError] << "). ";
             vuid_msg = "UNASSIGNED-Internal Error";
             assert(false);
         } break;
@@ -1101,7 +1097,7 @@ void CoreChecks::AnalyzeAndReportError(CMD_BUFFER_STATE *cb_node, VkQueue queue,
             filename_message.c_str(), source_message.c_str());
     // The debug record at word kInstCommonOutSize is the number of words in the record
     // written by the shader.  Clear the entire record plus the total_words word at the start.
-    const uint32_t words_to_clear = 1 + std::min(debug_record[kInstCommonOutSize], (uint32_t)kInst2MaxOutCnt);
+    const uint32_t words_to_clear = 1 + std::min(debug_record[kInstCommonOutSize], (uint32_t)kInstMaxOutCnt);
     memset(debug_output_buffer, 0, sizeof(uint32_t) * words_to_clear);
 }
 
