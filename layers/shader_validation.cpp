@@ -1710,7 +1710,9 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
                     extension_names += "]";
                     skip |= RequireExtension(report_data, has_ext, extension_names.c_str());
                 }
-            } else {  // Do group non-uniform checks
+            }
+
+            {  // Do group non-uniform checks
                 const VkSubgroupFeatureFlags supportedOperations = phys_dev_ext_props.subgroup_props.supportedOperations;
                 const VkSubgroupFeatureFlags supportedStages = phys_dev_ext_props.subgroup_props.supportedStages;
 
