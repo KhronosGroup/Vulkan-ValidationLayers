@@ -1061,11 +1061,6 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.cooperative_matrix_features = *cooperative_matrix_features;
     }
 
-    const auto *float_controls_features = lvl_find_in_chain<VkPhysicalDeviceFloatControlsPropertiesKHR>(pCreateInfo->pNext);
-    if (float_controls_features) {
-        state_tracker->enabled_features.float_controls = *float_controls_features;
-    }
-
     const auto *host_query_reset_features = lvl_find_in_chain<VkPhysicalDeviceHostQueryResetFeaturesEXT>(pCreateInfo->pNext);
     if (host_query_reset_features) {
         state_tracker->enabled_features.host_query_reset_features = *host_query_reset_features;

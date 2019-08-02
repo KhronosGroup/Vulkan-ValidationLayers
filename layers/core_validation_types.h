@@ -1608,7 +1608,6 @@ struct DeviceFeatures {
     VkPhysicalDeviceScalarBlockLayoutFeaturesEXT scalar_block_layout_features;
     VkPhysicalDeviceBufferAddressFeaturesEXT buffer_address;
     VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperative_matrix_features;
-    VkPhysicalDeviceFloatControlsPropertiesKHR float_controls;
     VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features;
     VkPhysicalDeviceComputeShaderDerivativesFeaturesNV compute_shader_derivatives_features;
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features;
