@@ -44,6 +44,7 @@ static const char DECORATE_UNUSED *kVUID_PVError_DeviceLimit = "UNASSIGNED-Gener
 static const char DECORATE_UNUSED *kVUID_PVError_DeviceFeature = "UNASSIGNED-GeneralParameterError-DeviceFeature";
 static const char DECORATE_UNUSED *kVUID_PVError_FailureCode = "UNASSIGNED-GeneralParameterError-FailureCode";
 static const char DECORATE_UNUSED *kVUID_PVError_ExtensionNotEnabled = "UNASSIGNED-GeneralParameterError-ExtensionNotEnabled";
+static const char DECORATE_UNUSED *kVUID_PVPerfWarn_SuboptimalSwapchain = "UNASSIGNED-GeneralParameterPerfWarn-SuboptimalSwapchain";
 
 #undef DECORATE_UNUSED
 
@@ -914,6 +915,8 @@ class StatelessValidation : public ValidationObject {
 
     void PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                       VkInstance *pInstance, VkResult result);
+
+    void PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo, VkResult result);
 
     bool manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool);
