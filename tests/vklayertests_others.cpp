@@ -4188,6 +4188,11 @@ TEST_F(VkLayerTest, WarningSuboptimalSwapchain) {
         DestroySwapchain();
         return;
     }
+    std::cout << "imageExtent1  " << capabilities.minImageExtent.width << "  " << capabilities.minImageExtent.height << "  "
+              << capabilities.currentExtent.width << "  " << capabilities.currentExtent.height << "  "
+              << capabilities.maxImageExtent.width << "  " << capabilities.maxImageExtent.height << std::endl;
+    std::cout << "imageExtent2  " << imageExtent->width << "  " << imageExtent->height << std::endl;
+
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                          "UNASSIGNED-GeneralParameterPerfWarn-SuboptimalSwapchain");
     InitSwapchain(m_surface, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VkSurfaceTransformFlagBitsKHR(0), imageExtent);
@@ -4209,8 +4214,10 @@ TEST_F(VkLayerTest, WarningSuboptimalSwapchain) {
     presentInfo.pResults = &result;
 
     for (int i = 0; i < 10; ++i) {
-        vkAcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &imageIndex);
-        vkQueuePresentKHR(m_device->m_queue, &presentInfo);
+        VkResult ret = vkAcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &imageIndex);
+        std::cout << "vkAcquireNextImageKHR   " << ret << "   " << imageIndex << std::endl;
+        ret = vkQueuePresentKHR(m_device->m_queue, &presentInfo);
+        std::cout << "vkQueuePresentKHR   " << ret << std::endl;
         vkQueueWaitIdle(m_device->m_queue);
         vkDeviceWaitIdle(m_device->device());
     }
@@ -4218,8 +4225,10 @@ TEST_F(VkLayerTest, WarningSuboptimalSwapchain) {
     ResizeScreen(new_width, new_height);
 
     for (int i = 0; i < 10; ++i) {
-        vkAcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &imageIndex);
-        vkQueuePresentKHR(m_device->m_queue, &presentInfo);
+        VkResult ret = vkAcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &imageIndex);
+        std::cout << "vkAcquireNextImageKHR   " << ret << "   " << imageIndex << std::endl;
+        ret = vkQueuePresentKHR(m_device->m_queue, &presentInfo);
+        std::cout << "vkQueuePresentKHR   " << ret << std::endl;
         vkQueueWaitIdle(m_device->m_queue);
         vkDeviceWaitIdle(m_device->device());
     }

@@ -115,9 +115,12 @@ void StatelessValidation::PostCallRecordCreateInstance(const VkInstanceCreateInf
     this->instance_extensions = instance_data->instance_extensions;
 }
 
+#include <iostream>
 void StatelessValidation::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo, VkResult result) {
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
         auto swapchains_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : result;
+        std::cout << "swapchains_result   " << swapchains_result << "   " << pPresentInfo->pResults[i] << "   " << result
+                  << std::endl;
         if (swapchains_result == VK_SUBOPTIMAL_KHR) {
             log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
                     HandleToUint64(pPresentInfo->pSwapchains[i]), kVUID_PVPerfWarn_SuboptimalSwapchain,
