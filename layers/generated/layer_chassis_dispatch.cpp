@@ -4951,6 +4951,81 @@ void DispatchCmdDrawIndexedIndirectCountKHR(
 
 }
 
+VkResult DispatchGetPipelineExecutablePropertiesKHR(
+    VkDevice                                    device,
+    const VkPipelineInfoKHR*                    pPipelineInfo,
+    uint32_t*                                   pExecutableCount,
+    VkPipelineExecutablePropertiesKHR*          pProperties)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetPipelineExecutablePropertiesKHR(device, pPipelineInfo, pExecutableCount, pProperties);
+    safe_VkPipelineInfoKHR *local_pPipelineInfo = NULL;
+    {
+        std::lock_guard<std::mutex> lock(dispatch_lock);
+        if (pPipelineInfo) {
+            local_pPipelineInfo = new safe_VkPipelineInfoKHR(pPipelineInfo);
+            if (pPipelineInfo->pipeline) {
+                local_pPipelineInfo->pipeline = layer_data->Unwrap(pPipelineInfo->pipeline);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.GetPipelineExecutablePropertiesKHR(device, (const VkPipelineInfoKHR*)local_pPipelineInfo, pExecutableCount, pProperties);
+    if (local_pPipelineInfo) {
+        delete local_pPipelineInfo;
+    }
+    return result;
+}
+
+VkResult DispatchGetPipelineExecutableStatisticsKHR(
+    VkDevice                                    device,
+    const VkPipelineExecutableInfoKHR*          pExecutableInfo,
+    uint32_t*                                   pStatisticCount,
+    VkPipelineExecutableStatisticKHR*           pStatistics)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetPipelineExecutableStatisticsKHR(device, pExecutableInfo, pStatisticCount, pStatistics);
+    safe_VkPipelineExecutableInfoKHR *local_pExecutableInfo = NULL;
+    {
+        std::lock_guard<std::mutex> lock(dispatch_lock);
+        if (pExecutableInfo) {
+            local_pExecutableInfo = new safe_VkPipelineExecutableInfoKHR(pExecutableInfo);
+            if (pExecutableInfo->pipeline) {
+                local_pExecutableInfo->pipeline = layer_data->Unwrap(pExecutableInfo->pipeline);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.GetPipelineExecutableStatisticsKHR(device, (const VkPipelineExecutableInfoKHR*)local_pExecutableInfo, pStatisticCount, pStatistics);
+    if (local_pExecutableInfo) {
+        delete local_pExecutableInfo;
+    }
+    return result;
+}
+
+VkResult DispatchGetPipelineExecutableInternalRepresentationsKHR(
+    VkDevice                                    device,
+    const VkPipelineExecutableInfoKHR*          pExecutableInfo,
+    uint32_t*                                   pInternalRepresentationCount,
+    VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetPipelineExecutableInternalRepresentationsKHR(device, pExecutableInfo, pInternalRepresentationCount, pInternalRepresentations);
+    safe_VkPipelineExecutableInfoKHR *local_pExecutableInfo = NULL;
+    {
+        std::lock_guard<std::mutex> lock(dispatch_lock);
+        if (pExecutableInfo) {
+            local_pExecutableInfo = new safe_VkPipelineExecutableInfoKHR(pExecutableInfo);
+            if (pExecutableInfo->pipeline) {
+                local_pExecutableInfo->pipeline = layer_data->Unwrap(pExecutableInfo->pipeline);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.GetPipelineExecutableInternalRepresentationsKHR(device, (const VkPipelineExecutableInfoKHR*)local_pExecutableInfo, pInternalRepresentationCount, pInternalRepresentations);
+    if (local_pExecutableInfo) {
+        delete local_pExecutableInfo;
+    }
+    return result;
+}
+
 VkResult DispatchCreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,
@@ -6823,6 +6898,16 @@ VkResult DispatchCreateHeadlessSurfaceEXT(
         *pSurface = layer_data->WrapNew(*pSurface);
     }
     return result;
+}
+
+void DispatchCmdSetLineStippleEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    lineStippleFactor,
+    uint16_t                                    lineStipplePattern)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
+    layer_data->device_dispatch_table.CmdSetLineStippleEXT(commandBuffer, lineStippleFactor, lineStipplePattern);
+
 }
 
 void DispatchResetQueryPoolEXT(
