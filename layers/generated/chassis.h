@@ -2386,6 +2386,10 @@ typedef enum ValidationCheckDisables {
     VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION,
 } ValidationCheckDisables;
 
+typedef enum VkValidationFeatureEnable {
+    VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES,
+} VkValidationFeatureEnable;
+
 
 // CHECK_DISABLED struct is a container for bools that can block validation checks from being performed.
 // These bools are all "false" by default meaning that all checks are enabled. Enum values can be specified
