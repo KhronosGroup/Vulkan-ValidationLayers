@@ -7872,3 +7872,44 @@ TEST_F(VkPositiveLayerTest, SampleMaskOverrideCoverageNV) {
 
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, TestRasterizationDiscardEnableTrue) {
+    TEST_DESCRIPTION("Ensure it doesn't crash and trigger error msg when rasterizerDiscardEnable = true");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkAttachmentDescription att[1] = {{}};
+    att[0].format = VK_FORMAT_R8G8B8A8_UNORM;
+    att[0].samples = VK_SAMPLE_COUNT_4_BIT;
+    att[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    att[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkAttachmentReference cr = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkSubpassDescription sp = {};
+    sp.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    sp.colorAttachmentCount = 1;
+    sp.pColorAttachments = &cr;
+    VkRenderPassCreateInfo rpi = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
+    rpi.attachmentCount = 1;
+    rpi.pAttachments = att;
+    rpi.subpassCount = 1;
+    rpi.pSubpasses = &sp;
+    VkRenderPass rp;
+    vkCreateRenderPass(m_device->device(), &rpi, nullptr, &rp);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.gp_ci_.pViewportState = nullptr;
+    pipe.gp_ci_.pMultisampleState = nullptr;
+    pipe.gp_ci_.pDepthStencilState = nullptr;
+    pipe.gp_ci_.pColorBlendState = nullptr;
+    pipe.gp_ci_.renderPass = rp;
+
+    m_errorMonitor->ExpectSuccess();
+    // Skip the test in NexusPlayer. The driver crashes when pViewportState, pMultisampleState, pDepthStencilState, pColorBlendState
+    // are NULL.
+    pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyNotFound();
+    vkDestroyRenderPass(m_device->device(), rp, nullptr);
+}
