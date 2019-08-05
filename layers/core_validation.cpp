@@ -1610,175 +1610,185 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         }
     }
 
-    auto accumColorSamples = [subpass_desc, pPipeline](uint32_t &samples) {
-        for (uint32_t i = 0; i < subpass_desc->colorAttachmentCount; i++) {
-            const auto attachment = subpass_desc->pColorAttachments[i].attachment;
-            if (attachment != VK_ATTACHMENT_UNUSED) {
-                samples |= static_cast<uint32_t>(pPipeline->rp_state->createInfo.pAttachments[attachment].samples);
-            }
-        }
-    };
-
-    if (!(device_extensions.vk_amd_mixed_attachment_samples || device_extensions.vk_nv_framebuffer_mixed_samples)) {
-        uint32_t raster_samples = static_cast<uint32_t>(GetNumSamples(pPipeline));
-        uint32_t subpass_num_samples = 0;
-
-        accumColorSamples(subpass_num_samples);
-
-        if (subpass_desc->pDepthStencilAttachment && subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
-            const auto attachment = subpass_desc->pDepthStencilAttachment->attachment;
-            subpass_num_samples |= static_cast<uint32_t>(pPipeline->rp_state->createInfo.pAttachments[attachment].samples);
-        }
-
-        // subpass_num_samples is 0 when the subpass has no attachments or if all attachments are VK_ATTACHMENT_UNUSED.
-        // Only validate the value of subpass_num_samples if the subpass has attachments that are not VK_ATTACHMENT_UNUSED.
-        if (subpass_num_samples && (!IsPowerOfTwo(subpass_num_samples) || (subpass_num_samples != raster_samples))) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                            HandleToUint64(device), "VUID-VkGraphicsPipelineCreateInfo-subpass-00757",
-                            "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->rasterizationSamples (%u) "
-                            "does not match the number of samples of the RenderPass color and/or depth attachment.",
-                            pipelineIndex, raster_samples);
-        }
-    }
-
-    if (device_extensions.vk_amd_mixed_attachment_samples) {
-        VkSampleCountFlagBits max_sample_count = static_cast<VkSampleCountFlagBits>(0);
-        for (uint32_t i = 0; i < subpass_desc->colorAttachmentCount; ++i) {
-            if (subpass_desc->pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) {
-                max_sample_count =
-                    std::max(max_sample_count,
-                             pPipeline->rp_state->createInfo.pAttachments[subpass_desc->pColorAttachments[i].attachment].samples);
-            }
-        }
-        if (subpass_desc->pDepthStencilAttachment && subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
-            max_sample_count =
-                std::max(max_sample_count,
-                         pPipeline->rp_state->createInfo.pAttachments[subpass_desc->pDepthStencilAttachment->attachment].samples);
-        }
-        if ((pPipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable == VK_FALSE) &&
-            (pPipeline->graphicsPipelineCI.pMultisampleState->rasterizationSamples != max_sample_count)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                            HandleToUint64(device), "VUID-VkGraphicsPipelineCreateInfo-subpass-01505",
-                            "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->rasterizationSamples (%s) != max "
-                            "attachment samples (%s) used in subpass %u.",
-                            pipelineIndex,
-                            string_VkSampleCountFlagBits(pPipeline->graphicsPipelineCI.pMultisampleState->rasterizationSamples),
-                            string_VkSampleCountFlagBits(max_sample_count), pPipeline->graphicsPipelineCI.subpass);
-        }
-    }
-
-    if (device_extensions.vk_nv_framebuffer_mixed_samples) {
-        uint32_t raster_samples = static_cast<uint32_t>(GetNumSamples(pPipeline));
-        uint32_t subpass_color_samples = 0;
-
-        accumColorSamples(subpass_color_samples);
-
-        if (subpass_desc->pDepthStencilAttachment && subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
-            const auto attachment = subpass_desc->pDepthStencilAttachment->attachment;
-            const uint32_t subpass_depth_samples =
-                static_cast<uint32_t>(pPipeline->rp_state->createInfo.pAttachments[attachment].samples);
-
-            if (pPipeline->graphicsPipelineCI.pDepthStencilState) {
-                const bool ds_test_enabled = (pPipeline->graphicsPipelineCI.pDepthStencilState->depthTestEnable == VK_TRUE) ||
-                                             (pPipeline->graphicsPipelineCI.pDepthStencilState->depthBoundsTestEnable == VK_TRUE) ||
-                                             (pPipeline->graphicsPipelineCI.pDepthStencilState->stencilTestEnable == VK_TRUE);
-
-                if (ds_test_enabled && (!IsPowerOfTwo(subpass_depth_samples) || (raster_samples != subpass_depth_samples))) {
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                                    HandleToUint64(device), "VUID-VkGraphicsPipelineCreateInfo-subpass-01411",
-                                    "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->rasterizationSamples (%u) "
-                                    "does not match the number of samples of the RenderPass depth attachment (%u).",
-                                    pipelineIndex, raster_samples, subpass_depth_samples);
+    if (pPipeline->graphicsPipelineCI.pMultisampleState) {
+        auto accumColorSamples = [subpass_desc, pPipeline](uint32_t &samples) {
+            for (uint32_t i = 0; i < subpass_desc->colorAttachmentCount; i++) {
+                const auto attachment = subpass_desc->pColorAttachments[i].attachment;
+                if (attachment != VK_ATTACHMENT_UNUSED) {
+                    samples |= static_cast<uint32_t>(pPipeline->rp_state->createInfo.pAttachments[attachment].samples);
                 }
             }
-        }
+        };
 
-        if (IsPowerOfTwo(subpass_color_samples)) {
-            if (raster_samples < subpass_color_samples) {
+        if (!(device_extensions.vk_amd_mixed_attachment_samples || device_extensions.vk_nv_framebuffer_mixed_samples)) {
+            uint32_t raster_samples = static_cast<uint32_t>(GetNumSamples(pPipeline));
+            uint32_t subpass_num_samples = 0;
+
+            accumColorSamples(subpass_num_samples);
+
+            if (subpass_desc->pDepthStencilAttachment &&
+                subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
+                const auto attachment = subpass_desc->pDepthStencilAttachment->attachment;
+                subpass_num_samples |= static_cast<uint32_t>(pPipeline->rp_state->createInfo.pAttachments[attachment].samples);
+            }
+
+            // subpass_num_samples is 0 when the subpass has no attachments or if all attachments are VK_ATTACHMENT_UNUSED.
+            // Only validate the value of subpass_num_samples if the subpass has attachments that are not VK_ATTACHMENT_UNUSED.
+            if (subpass_num_samples && (!IsPowerOfTwo(subpass_num_samples) || (subpass_num_samples != raster_samples))) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                                HandleToUint64(device), "VUID-VkGraphicsPipelineCreateInfo-subpass-01412",
+                                HandleToUint64(device), "VUID-VkGraphicsPipelineCreateInfo-subpass-00757",
                                 "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->rasterizationSamples (%u) "
-                                "is not greater or equal to the number of samples of the RenderPass color attachment (%u).",
-                                pipelineIndex, raster_samples, subpass_color_samples);
+                                "does not match the number of samples of the RenderPass color and/or depth attachment.",
+                                pipelineIndex, raster_samples);
+            }
+        }
+
+        if (device_extensions.vk_amd_mixed_attachment_samples) {
+            VkSampleCountFlagBits max_sample_count = static_cast<VkSampleCountFlagBits>(0);
+            for (uint32_t i = 0; i < subpass_desc->colorAttachmentCount; ++i) {
+                if (subpass_desc->pColorAttachments[i].attachment != VK_ATTACHMENT_UNUSED) {
+                    max_sample_count = std::max(
+                        max_sample_count,
+                        pPipeline->rp_state->createInfo.pAttachments[subpass_desc->pColorAttachments[i].attachment].samples);
+                }
+            }
+            if (subpass_desc->pDepthStencilAttachment &&
+                subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
+                max_sample_count = std::max(
+                    max_sample_count,
+                    pPipeline->rp_state->createInfo.pAttachments[subpass_desc->pDepthStencilAttachment->attachment].samples);
+            }
+            if ((pPipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable == VK_FALSE) &&
+                (pPipeline->graphicsPipelineCI.pMultisampleState->rasterizationSamples != max_sample_count)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                HandleToUint64(device), "VUID-VkGraphicsPipelineCreateInfo-subpass-01505",
+                                "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->rasterizationSamples (%s) != max "
+                                "attachment samples (%s) used in subpass %u.",
+                                pipelineIndex,
+                                string_VkSampleCountFlagBits(pPipeline->graphicsPipelineCI.pMultisampleState->rasterizationSamples),
+                                string_VkSampleCountFlagBits(max_sample_count), pPipeline->graphicsPipelineCI.subpass);
+            }
+        }
+
+        if (device_extensions.vk_nv_framebuffer_mixed_samples) {
+            uint32_t raster_samples = static_cast<uint32_t>(GetNumSamples(pPipeline));
+            uint32_t subpass_color_samples = 0;
+
+            accumColorSamples(subpass_color_samples);
+
+            if (subpass_desc->pDepthStencilAttachment &&
+                subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
+                const auto attachment = subpass_desc->pDepthStencilAttachment->attachment;
+                const uint32_t subpass_depth_samples =
+                    static_cast<uint32_t>(pPipeline->rp_state->createInfo.pAttachments[attachment].samples);
+
+                if (pPipeline->graphicsPipelineCI.pDepthStencilState) {
+                    const bool ds_test_enabled =
+                        (pPipeline->graphicsPipelineCI.pDepthStencilState->depthTestEnable == VK_TRUE) ||
+                        (pPipeline->graphicsPipelineCI.pDepthStencilState->depthBoundsTestEnable == VK_TRUE) ||
+                        (pPipeline->graphicsPipelineCI.pDepthStencilState->stencilTestEnable == VK_TRUE);
+
+                    if (ds_test_enabled && (!IsPowerOfTwo(subpass_depth_samples) || (raster_samples != subpass_depth_samples))) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                        HandleToUint64(device), "VUID-VkGraphicsPipelineCreateInfo-subpass-01411",
+                                        "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->rasterizationSamples (%u) "
+                                        "does not match the number of samples of the RenderPass depth attachment (%u).",
+                                        pipelineIndex, raster_samples, subpass_depth_samples);
+                    }
+                }
             }
 
-            if (pPipeline->graphicsPipelineCI.pMultisampleState) {
-                if ((raster_samples > subpass_color_samples) &&
-                    (pPipeline->graphicsPipelineCI.pMultisampleState->sampleShadingEnable == VK_TRUE)) {
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        "VUID-VkPipelineMultisampleStateCreateInfo-rasterizationSamples-01415",
-                        "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->sampleShadingEnable must be VK_FALSE when "
-                        "pCreateInfo[%d].pMultisampleState->rasterizationSamples (%u) is greater than the number of samples of the "
-                        "subpass color attachment (%u).",
-                        pipelineIndex, pipelineIndex, raster_samples, subpass_color_samples);
+            if (IsPowerOfTwo(subpass_color_samples)) {
+                if (raster_samples < subpass_color_samples) {
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                    HandleToUint64(device), "VUID-VkGraphicsPipelineCreateInfo-subpass-01412",
+                                    "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->rasterizationSamples (%u) "
+                                    "is not greater or equal to the number of samples of the RenderPass color attachment (%u).",
+                                    pipelineIndex, raster_samples, subpass_color_samples);
                 }
 
-                const auto *coverage_modulation_state = lvl_find_in_chain<VkPipelineCoverageModulationStateCreateInfoNV>(
-                    pPipeline->graphicsPipelineCI.pMultisampleState->pNext);
+                if (pPipeline->graphicsPipelineCI.pMultisampleState) {
+                    if ((raster_samples > subpass_color_samples) &&
+                        (pPipeline->graphicsPipelineCI.pMultisampleState->sampleShadingEnable == VK_TRUE)) {
+                        skip |=
+                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                    HandleToUint64(device), "VUID-VkPipelineMultisampleStateCreateInfo-rasterizationSamples-01415",
+                                    "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->sampleShadingEnable must be "
+                                    "VK_FALSE when "
+                                    "pCreateInfo[%d].pMultisampleState->rasterizationSamples (%u) is greater than the number of "
+                                    "samples of the "
+                                    "subpass color attachment (%u).",
+                                    pipelineIndex, pipelineIndex, raster_samples, subpass_color_samples);
+                    }
 
-                if (coverage_modulation_state && (coverage_modulation_state->coverageModulationTableEnable == VK_TRUE)) {
-                    if (coverage_modulation_state->coverageModulationTableCount != (raster_samples / subpass_color_samples)) {
-                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                    const auto *coverage_modulation_state = lvl_find_in_chain<VkPipelineCoverageModulationStateCreateInfoNV>(
+                        pPipeline->graphicsPipelineCI.pMultisampleState->pNext);
+
+                    if (coverage_modulation_state && (coverage_modulation_state->coverageModulationTableEnable == VK_TRUE)) {
+                        if (coverage_modulation_state->coverageModulationTableCount != (raster_samples / subpass_color_samples)) {
+                            skip |=
+                                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
                                         HandleToUint64(device),
                                         "VUID-VkPipelineCoverageModulationStateCreateInfoNV-coverageModulationTableEnable-01405",
                                         "vkCreateGraphicsPipelines: pCreateInfos[%d] VkPipelineCoverageModulationStateCreateInfoNV "
                                         "coverageModulationTableCount of %u is invalid.",
                                         pipelineIndex, coverage_modulation_state->coverageModulationTableCount);
+                        }
                     }
                 }
             }
         }
-    }
 
-    if (device_extensions.vk_nv_fragment_coverage_to_color) {
-        const auto coverage_to_color_state =
-            lvl_find_in_chain<VkPipelineCoverageToColorStateCreateInfoNV>(pPipeline->graphicsPipelineCI.pMultisampleState);
+        if (device_extensions.vk_nv_fragment_coverage_to_color) {
+            const auto coverage_to_color_state =
+                lvl_find_in_chain<VkPipelineCoverageToColorStateCreateInfoNV>(pPipeline->graphicsPipelineCI.pMultisampleState);
 
-        if (coverage_to_color_state && coverage_to_color_state->coverageToColorEnable == VK_TRUE) {
-            bool attachment_is_valid = false;
-            std::string error_detail;
+            if (coverage_to_color_state && coverage_to_color_state->coverageToColorEnable == VK_TRUE) {
+                bool attachment_is_valid = false;
+                std::string error_detail;
 
-            if (coverage_to_color_state->coverageToColorLocation < subpass_desc->colorAttachmentCount) {
-                const auto color_attachment_ref = subpass_desc->pColorAttachments[coverage_to_color_state->coverageToColorLocation];
-                if (color_attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
-                    const auto color_attachment = pPipeline->rp_state->createInfo.pAttachments[color_attachment_ref.attachment];
+                if (coverage_to_color_state->coverageToColorLocation < subpass_desc->colorAttachmentCount) {
+                    const auto color_attachment_ref =
+                        subpass_desc->pColorAttachments[coverage_to_color_state->coverageToColorLocation];
+                    if (color_attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
+                        const auto color_attachment = pPipeline->rp_state->createInfo.pAttachments[color_attachment_ref.attachment];
 
-                    switch (color_attachment.format) {
-                        case VK_FORMAT_R8_UINT:
-                        case VK_FORMAT_R8_SINT:
-                        case VK_FORMAT_R16_UINT:
-                        case VK_FORMAT_R16_SINT:
-                        case VK_FORMAT_R32_UINT:
-                        case VK_FORMAT_R32_SINT:
-                            attachment_is_valid = true;
-                            break;
-                        default:
-                            string_sprintf(&error_detail, "references an attachment with an invalid format (%s).",
-                                           string_VkFormat(color_attachment.format));
-                            break;
+                        switch (color_attachment.format) {
+                            case VK_FORMAT_R8_UINT:
+                            case VK_FORMAT_R8_SINT:
+                            case VK_FORMAT_R16_UINT:
+                            case VK_FORMAT_R16_SINT:
+                            case VK_FORMAT_R32_UINT:
+                            case VK_FORMAT_R32_SINT:
+                                attachment_is_valid = true;
+                                break;
+                            default:
+                                string_sprintf(&error_detail, "references an attachment with an invalid format (%s).",
+                                               string_VkFormat(color_attachment.format));
+                                break;
+                        }
+                    } else {
+                        string_sprintf(&error_detail,
+                                       "references an invalid attachment. The subpass pColorAttachments[%" PRIu32
+                                       "].attachment has the value "
+                                       "VK_ATTACHMENT_UNUSED.",
+                                       coverage_to_color_state->coverageToColorLocation);
                     }
                 } else {
                     string_sprintf(&error_detail,
-                                   "references an invalid attachment. The subpass pColorAttachments[%" PRIu32
-                                   "].attachment has the value "
-                                   "VK_ATTACHMENT_UNUSED.",
-                                   coverage_to_color_state->coverageToColorLocation);
+                                   "references an non-existing attachment since the subpass colorAttachmentCount is %" PRIu32 ".",
+                                   subpass_desc->colorAttachmentCount);
                 }
-            } else {
-                string_sprintf(&error_detail,
-                               "references an non-existing attachment since the subpass colorAttachmentCount is %" PRIu32 ".",
-                               subpass_desc->colorAttachmentCount);
-            }
 
-            if (!attachment_is_valid) {
-                skip |=
-                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                            HandleToUint64(device), "VUID-VkPipelineCoverageToColorStateCreateInfoNV-coverageToColorEnable-01404",
-                            "vkCreateGraphicsPipelines: pCreateInfos[%" PRId32
-                            "].pMultisampleState VkPipelineCoverageToColorStateCreateInfoNV "
-                            "coverageToColorLocation = %" PRIu32 " %s",
-                            pipelineIndex, coverage_to_color_state->coverageToColorLocation, error_detail.c_str());
+                if (!attachment_is_valid) {
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                                    HandleToUint64(device),
+                                    "VUID-VkPipelineCoverageToColorStateCreateInfoNV-coverageToColorEnable-01404",
+                                    "vkCreateGraphicsPipelines: pCreateInfos[%" PRId32
+                                    "].pMultisampleState VkPipelineCoverageToColorStateCreateInfoNV "
+                                    "coverageToColorLocation = %" PRIu32 " %s",
+                                    pipelineIndex, coverage_to_color_state->coverageToColorLocation, error_detail.c_str());
+                }
             }
         }
     }
