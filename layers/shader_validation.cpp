@@ -2348,12 +2348,32 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_in
                     if (first_denorm_execution_mode.first == spv::ExecutionModeMax) {
                         // Register the first denorm execution mode found
                         first_denorm_execution_mode = std::make_pair(static_cast<spv::ExecutionMode>(mode), bit_width);
-                    } else if (first_denorm_execution_mode.first != mode && first_denorm_execution_mode.second != bit_width &&
-                               !enabled_features.float_controls.separateDenormSettings) {
-                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        kVUID_Core_Shader_FeatureNotEnabled,
-                                        "Shader uses separate denorm execution modes for different bit widths but "
-                                        "SeparateDenormSettings is not enabled on the device");
+                    } else if (first_denorm_execution_mode.first != mode && first_denorm_execution_mode.second != bit_width) {
+                        switch (enabled_features.float_controls.denormBehaviorIndependence) {
+                            case VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY_KHR:
+                                if (first_rounding_mode.second != 32 && bit_width != 32) {
+                                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                                    kVUID_Core_Shader_FeatureNotEnabled,
+                                                    "Shader uses separate denorm execution modes for 16 and 64-bit but "
+                                                    "denormBehaviorIndependence is "
+                                                    "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY_KHR on the device");
+                                }
+                                break;
+
+                            case VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_ALL_KHR:
+                                break;
+
+                            case VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE_KHR:
+                                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                                kVUID_Core_Shader_FeatureNotEnabled,
+                                                "Shader uses separate denorm execution modes different bit widths but "
+                                                "denormBehaviorIndependence is "
+                                                "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE_KHR on the device");
+                                break;
+
+                            default:
+                                break;
+                        }
                     }
                     break;
                 }
@@ -2372,12 +2392,32 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_in
                     if (first_denorm_execution_mode.first == spv::ExecutionModeMax) {
                         // Register the first denorm execution mode found
                         first_denorm_execution_mode = std::make_pair(static_cast<spv::ExecutionMode>(mode), bit_width);
-                    } else if (first_denorm_execution_mode.first != mode && first_denorm_execution_mode.second != bit_width &&
-                               !enabled_features.float_controls.separateDenormSettings) {
-                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        kVUID_Core_Shader_FeatureNotEnabled,
-                                        "Shader uses separate denorm execution modes for different bit widths but "
-                                        "SeparateDenormSettings is not enabled on the device");
+                    } else if (first_denorm_execution_mode.first != mode && first_denorm_execution_mode.second != bit_width) {
+                        switch (enabled_features.float_controls.denormBehaviorIndependence) {
+                            case VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY_KHR:
+                                if (first_rounding_mode.second != 32 && bit_width != 32) {
+                                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                                    kVUID_Core_Shader_FeatureNotEnabled,
+                                                    "Shader uses separate denorm execution modes for 16 and 64-bit but "
+                                                    "denormBehaviorIndependence is "
+                                                    "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY_KHR on the device");
+                                }
+                                break;
+
+                            case VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_ALL_KHR:
+                                break;
+
+                            case VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE_KHR:
+                                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                                kVUID_Core_Shader_FeatureNotEnabled,
+                                                "Shader uses separate denorm execution modes different bit widths but "
+                                                "denormBehaviorIndependence is "
+                                                "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE_KHR on the device");
+                                break;
+
+                            default:
+                                break;
+                        }
                     }
                     break;
                 }
@@ -2396,12 +2436,32 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_in
                     if (first_rounding_mode.first == spv::ExecutionModeMax) {
                         // Register the first rounding mode found
                         first_rounding_mode = std::make_pair(static_cast<spv::ExecutionMode>(mode), bit_width);
-                    } else if (first_rounding_mode.first != mode && first_rounding_mode.second != bit_width &&
-                               !enabled_features.float_controls.separateRoundingModeSettings) {
-                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        kVUID_Core_Shader_FeatureNotEnabled,
-                                        "Shader uses separate rounding modes for different bit widths but "
-                                        "SeparateRoundingModeSettings is not enabled on the device");
+                    } else if (first_rounding_mode.first != mode && first_rounding_mode.second != bit_width) {
+                        switch (enabled_features.float_controls.roundingModeIndependence) {
+                            case VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY_KHR:
+                                if (first_rounding_mode.second != 32 && bit_width != 32) {
+                                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                                    kVUID_Core_Shader_FeatureNotEnabled,
+                                                    "Shader uses separate rounding modes for 16 and 64-bit but "
+                                                    "roundingModeIndependence is "
+                                                    "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY_KHR on the device");
+                                }
+                                break;
+
+                            case VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_ALL_KHR:
+                                break;
+
+                            case VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE_KHR:
+                                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                                kVUID_Core_Shader_FeatureNotEnabled,
+                                                "Shader uses separate rounding modes for different bit widths but "
+                                                "roundingModeIndependence is "
+                                                "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE_KHR on the device");
+                                break;
+
+                            default:
+                                break;
+                        }
                     }
                     break;
                 }
@@ -2420,12 +2480,32 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_in
                     if (first_rounding_mode.first == spv::ExecutionModeMax) {
                         // Register the first rounding mode found
                         first_rounding_mode = std::make_pair(static_cast<spv::ExecutionMode>(mode), bit_width);
-                    } else if (first_rounding_mode.first != mode && first_rounding_mode.second != bit_width &&
-                               !enabled_features.float_controls.separateRoundingModeSettings) {
-                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        kVUID_Core_Shader_FeatureNotEnabled,
-                                        "Shader uses separate rounding modes for different bit widths but "
-                                        "SeparateRoundingModeSettings is not enabled on the device");
+                    } else if (first_rounding_mode.first != mode && first_rounding_mode.second != bit_width) {
+                        switch (enabled_features.float_controls.roundingModeIndependence) {
+                            case VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY_KHR:
+                                if (first_rounding_mode.second != 32 && bit_width != 32) {
+                                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                                    kVUID_Core_Shader_FeatureNotEnabled,
+                                                    "Shader uses separate rounding modes for 16 and 64-bit but "
+                                                    "roundingModeIndependence is "
+                                                    "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_32_BIT_ONLY_KHR on the device");
+                                }
+                                break;
+
+                            case VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_ALL_KHR:
+                                break;
+
+                            case VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE_KHR:
+                                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                                kVUID_Core_Shader_FeatureNotEnabled,
+                                                "Shader uses separate rounding modes for different bit widths but "
+                                                "roundingModeIndependence is "
+                                                "VK_SHADER_FLOAT_CONTROLS_INDEPENDENCE_NONE_KHR on the device");
+                                break;
+
+                            default:
+                                break;
+                        }
                     }
                     break;
                 }
