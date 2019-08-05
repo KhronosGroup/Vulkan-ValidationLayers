@@ -37,6 +37,10 @@
       ],
       "cmake_options" : [
         "-DBUILD_TESTS=NO"
+      ],
+      "build_platforms" : [
+        "linux",
+        "darwin"
       ]
     },
     {
