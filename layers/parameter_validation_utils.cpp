@@ -945,8 +945,121 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             }
 
             // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
-            if (pCreateInfos[i].pVertexInputState != nullptr) {
+
+            // Collect active stages
+            uint32_t active_shaders = 0;
+            for (uint32_t stages = 0; stages < pCreateInfos[i].stageCount; stages++) {
+                active_shaders |= pCreateInfos[i].pStages->stage;
+            }
+
+            if ((active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) &&
+                (active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) && (pCreateInfos[i].pTessellationState != nullptr)) {
+                skip |= validate_struct_type("vkCreateGraphicsPipelines", "pCreateInfos[i].pTessellationState",
+                                             "VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO",
+                                             pCreateInfos[i].pTessellationState,
+                                             VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, false, kVUIDUndefined,
+                                             "VUID-VkPipelineTessellationStateCreateInfo-sType-sType");
+
+                const VkStructureType allowed_structs_VkPipelineTessellationStateCreateInfo[] = {
+                    VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO};
+
+                skip |= validate_struct_pnext("vkCreateGraphicsPipelines", "pCreateInfos[i].pTessellationState->pNext",
+                                              "VkPipelineTessellationDomainOriginStateCreateInfo",
+                                              pCreateInfos[i].pTessellationState->pNext,
+                                              ARRAY_SIZE(allowed_structs_VkPipelineTessellationStateCreateInfo),
+                                              allowed_structs_VkPipelineTessellationStateCreateInfo, GeneratedVulkanHeaderVersion,
+                                              "VUID-VkPipelineTessellationStateCreateInfo-pNext-pNext");
+
+                skip |= validate_reserved_flags("vkCreateGraphicsPipelines", "pCreateInfos[i].pTessellationState->flags",
+                                                pCreateInfos[i].pTessellationState->flags,
+                                                "VUID-VkPipelineTessellationStateCreateInfo-flags-zerobitmask");
+            }
+
+            if (!(active_shaders & VK_SHADER_STAGE_MESH_BIT_NV) && (pCreateInfos[i].pInputAssemblyState != nullptr)) {
+                skip |= validate_struct_type("vkCreateGraphicsPipelines", "pCreateInfos[i].pInputAssemblyState",
+                                             "VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO",
+                                             pCreateInfos[i].pInputAssemblyState,
+                                             VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, false, kVUIDUndefined,
+                                             "VUID-VkPipelineInputAssemblyStateCreateInfo-sType-sType");
+
+                skip |= validate_struct_pnext("vkCreateGraphicsPipelines", "pCreateInfos[i].pInputAssemblyState->pNext", NULL,
+                                              pCreateInfos[i].pInputAssemblyState->pNext, 0, NULL, GeneratedVulkanHeaderVersion,
+                                              "VUID-VkPipelineInputAssemblyStateCreateInfo-pNext-pNext");
+
+                skip |= validate_reserved_flags("vkCreateGraphicsPipelines", "pCreateInfos[i].pInputAssemblyState->flags",
+                                                pCreateInfos[i].pInputAssemblyState->flags,
+                                                "VUID-VkPipelineInputAssemblyStateCreateInfo-flags-zerobitmask");
+
+                skip |= validate_ranged_enum("vkCreateGraphicsPipelines", "pCreateInfos[i].pInputAssemblyState->topology",
+                                             "VkPrimitiveTopology", AllVkPrimitiveTopologyEnums,
+                                             pCreateInfos[i].pInputAssemblyState->topology,
+                                             "VUID-VkPipelineInputAssemblyStateCreateInfo-topology-parameter");
+
+                skip |= validate_bool32("vkCreateGraphicsPipelines", "pCreateInfos[i].pInputAssemblyState->primitiveRestartEnable",
+                                        pCreateInfos[i].pInputAssemblyState->primitiveRestartEnable);
+            }
+
+            if (!(active_shaders & VK_SHADER_STAGE_MESH_BIT_NV) && (pCreateInfos[i].pVertexInputState != nullptr)) {
                 auto const &vertex_input_state = pCreateInfos[i].pVertexInputState;
+
+                if (pCreateInfos[i].pVertexInputState->flags != 0) {
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    "VUID-VkPipelineVertexInputStateCreateInfo-flags-zerobitmask",
+                                    "vkCreateGraphicsPipelines: pararameter "
+                                    "pCreateInfos[%d].pVertexInputState->flags (%u) is reserved and must be zero.",
+                                    i, vertex_input_state->flags);
+                }
+
+                const VkStructureType allowed_structs_VkPipelineVertexInputStateCreateInfo[] = {
+                    VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT};
+                skip |= validate_struct_pnext("vkCreateGraphicsPipelines", "pCreateInfos[i].pVertexInputState->pNext",
+                                              "VkPipelineVertexInputDivisorStateCreateInfoEXT",
+                                              pCreateInfos[i].pVertexInputState->pNext, 1,
+                                              allowed_structs_VkPipelineVertexInputStateCreateInfo, GeneratedVulkanHeaderVersion,
+                                              "VUID-VkPipelineVertexInputStateCreateInfo-pNext-pNext");
+                skip |= validate_struct_type("vkCreateGraphicsPipelines", "pCreateInfos[i].pVertexInputState",
+                                             "VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO", vertex_input_state,
+                                             VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, false,
+                                             "VUID-VkPipelineVertexInputStateCreateInfo-pVertexInputState-parameter",
+                                             "VUID-VkPipelineVertexInputStateCreateInfo-sType-sType");
+                skip |=
+                    validate_array("vkCreateGraphicsPipelines", "pCreateInfos[i].pVertexInputState->vertexBindingDescriptionCount",
+                                   "pCreateInfos[i].pVertexInputState->pVertexBindingDescriptions",
+                                   pCreateInfos[i].pVertexInputState->vertexBindingDescriptionCount,
+                                   &pCreateInfos[i].pVertexInputState->pVertexBindingDescriptions, false, true, kVUIDUndefined,
+                                   "VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-parameter");
+
+                skip |= validate_array(
+                    "vkCreateGraphicsPipelines", "pCreateInfos[i].pVertexInputState->vertexAttributeDescriptionCount",
+                    "pCreateInfos[i]->pVertexAttributeDescriptions", vertex_input_state->vertexAttributeDescriptionCount,
+                    &vertex_input_state->pVertexAttributeDescriptions, false, true, kVUIDUndefined,
+                    "VUID-VkPipelineVertexInputStateCreateInfo-pVertexAttributeDescriptions-parameter");
+
+                if (pCreateInfos[i].pVertexInputState->pVertexBindingDescriptions != NULL) {
+                    for (uint32_t vertexBindingDescriptionIndex = 0;
+                         vertexBindingDescriptionIndex < pCreateInfos[i].pVertexInputState->vertexBindingDescriptionCount;
+                         ++vertexBindingDescriptionIndex) {
+                        skip |= validate_ranged_enum(
+                            "vkCreateGraphicsPipelines",
+                            "pCreateInfos[i].pVertexInputState->pVertexBindingDescriptions[j].inputRate", "VkVertexInputRate",
+                            AllVkVertexInputRateEnums,
+                            pCreateInfos[i].pVertexInputState->pVertexBindingDescriptions[vertexBindingDescriptionIndex].inputRate,
+                            "VUID-VkVertexInputBindingDescription-inputRate-parameter");
+                    }
+                }
+
+                if (pCreateInfos[i].pVertexInputState->pVertexAttributeDescriptions != NULL) {
+                    for (uint32_t vertexAttributeDescriptionIndex = 0;
+                         vertexAttributeDescriptionIndex < pCreateInfos[i].pVertexInputState->vertexAttributeDescriptionCount;
+                         ++vertexAttributeDescriptionIndex) {
+                        skip |= validate_ranged_enum(
+                            "vkCreateGraphicsPipelines",
+                            "pCreateInfos[i].pVertexInputState->pVertexAttributeDescriptions[i].format", "VkFormat",
+                            AllVkFormatEnums,
+                            pCreateInfos[i].pVertexInputState->pVertexAttributeDescriptions[vertexAttributeDescriptionIndex].format,
+                            "VUID-VkVertexInputAttributeDescription-format-parameter");
+                    }
+                }
 
                 if (vertex_input_state->vertexBindingDescriptionCount > device_limits.maxVertexInputBindings) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -1448,6 +1561,12 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         pCreateInfos[i].pMultisampleState->rasterizationSamples, &pCreateInfos[i].pMultisampleState->pSampleMask,
                         true, false, kVUIDUndefined, kVUIDUndefined);
 
+                    skip |= validate_flags(
+                        "vkCreateGraphicsPipelines",
+                        ParameterName("pCreateInfos[%i].pMultisampleState->rasterizationSamples", ParameterName::IndexVector{i}),
+                        "VkSampleCountFlagBits", AllVkSampleCountFlagBits, pCreateInfos[i].pMultisampleState->rasterizationSamples,
+                        true, true, "VUID-VkPipelineMultisampleStateCreateInfo-rasterizationSamples-parameter");
+
                     skip |= validate_bool32(
                         "vkCreateGraphicsPipelines",
                         ParameterName("pCreateInfos[%i].pMultisampleState->alphaToCoverageEnable", ParameterName::IndexVector{i}),
@@ -1598,6 +1717,13 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_ADVANCED_STATE_CREATE_INFO_EXT};
 
                 if (pCreateInfos[i].pColorBlendState != nullptr && uses_color_attachment) {
+                    skip |= validate_struct_type("vkCreateGraphicsPipelines",
+                                                 ParameterName("pCreateInfos[%i].pColorBlendState", ParameterName::IndexVector{i}),
+                                                 "VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO",
+                                                 pCreateInfos[i].pColorBlendState,
+                                                 VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO, false, kVUIDUndefined,
+                                                 "VUID-VkPipelineColorBlendStateCreateInfo-sType-sType");
+
                     skip |= validate_struct_pnext(
                         "vkCreateGraphicsPipelines",
                         ParameterName("pCreateInfos[%i].pColorBlendState->pNext", ParameterName::IndexVector{i}),
