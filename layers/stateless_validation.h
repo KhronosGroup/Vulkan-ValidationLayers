@@ -55,6 +55,7 @@ extern const VkColorComponentFlags AllVkColorComponentFlagBits;
 extern const VkShaderStageFlags AllVkShaderStageFlagBits;
 extern const VkQueryControlFlags AllVkQueryControlFlagBits;
 extern const VkImageUsageFlags AllVkImageUsageFlagBits;
+extern const VkSampleCountFlags AllVkSampleCountFlagBits;
 
 extern const std::vector<VkCompareOp> AllVkCompareOpEnums;
 extern const std::vector<VkStencilOp> AllVkStencilOpEnums;
@@ -63,6 +64,9 @@ extern const std::vector<VkBlendOp> AllVkBlendOpEnums;
 extern const std::vector<VkLogicOp> AllVkLogicOpEnums;
 extern const std::vector<VkBorderColor> AllVkBorderColorEnums;
 extern const std::vector<VkImageLayout> AllVkImageLayoutEnums;
+extern const std::vector<VkFormat> AllVkFormatEnums;
+extern const std::vector<VkVertexInputRate> AllVkVertexInputRateEnums;
+extern const std::vector<VkPrimitiveTopology> AllVkPrimitiveTopologyEnums;
 
 // String returned by string_VkStructureType for an unrecognized type.
 const std::string UnsupportedStructureTypeString = "Unhandled VkStructureType";
