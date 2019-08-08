@@ -7770,3 +7770,105 @@ TEST_F(VkPositiveLayerTest, RenderPassValidStages) {
     dependency.dstStageMask = VK_PIPELINE_STAGE_HOST_BIT;
     PositiveTestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported);
 }
+
+TEST_F(VkPositiveLayerTest, SampleMaskOverrideCoverageNV) {
+    TEST_DESCRIPTION("Test to validate VK_NV_sample_mask_override_coverage");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_SAMPLE_MASK_OVERRIDE_COVERAGE_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_NV_SAMPLE_MASK_OVERRIDE_COVERAGE_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_NV_SAMPLE_MASK_OVERRIDE_COVERAGE_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    const char vs_src[] = R"(
+        #version 450
+        layout(location=0) out vec4  fragColor;
+
+        const vec2 pos[3] = { vec2( 0.0f, -0.5f),
+                              vec2( 0.5f,  0.5f),
+                              vec2(-0.5f,  0.5f)
+                            };
+        void main()
+        {
+            gl_Position = vec4(pos[gl_VertexIndex % 3], 0.0f, 1.0f);
+            fragColor = vec4(0.0f, 1.0f, 0.0f, 1.0f);
+        })";
+
+    const char fs_src[] = R"(
+        #version 450
+        #extension GL_NV_sample_mask_override_coverage : require
+
+        layout(location = 0) in  vec4 fragColor;
+        layout(location = 0) out vec4 outColor;
+
+        layout(override_coverage) out int gl_SampleMask[];
+
+        void main()
+        {
+            gl_SampleMask[0] = 0xff;
+            outColor = fragColor;
+        })";
+
+    m_errorMonitor->ExpectSuccess();
+
+    const VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_8_BIT;
+
+    VkAttachmentDescription cAttachment = {};
+    cAttachment.format = VK_FORMAT_B8G8R8A8_UNORM;
+    cAttachment.samples = sampleCount;
+    cAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    cAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    cAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    cAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    cAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    cAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference cAttachRef = {};
+    cAttachRef.attachment = 0;
+    cAttachRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &cAttachRef;
+
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &cAttachment;
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+
+    VkRenderPass rp;
+    vkCreateRenderPass(m_device->device(), &rpci, nullptr, &rp);
+
+    const VkPipelineLayoutObj pl(m_device);
+
+    VkSampleMask sampleMask = 0x01;
+    VkPipelineMultisampleStateCreateInfo msaa = {VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
+    msaa.rasterizationSamples = sampleCount;
+    msaa.sampleShadingEnable = VK_FALSE;
+    msaa.pSampleMask = &sampleMask;
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddDefaultColorAttachment();
+    pipe.SetMSAA(&msaa);
+
+    VkShaderObj vs(m_device, vs_src, VK_SHADER_STAGE_VERTEX_BIT, this);
+    pipe.AddShader(&vs);
+
+    VkShaderObj fs(m_device, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    pipe.AddShader(&fs);
+
+    // Create pipeline and make sure that the usage of NV_sample_mask_override_coverage
+    // in the fragment shader does not cause any errors.
+    pipe.CreateVKPipeline(pl.handle(), rp);
+
+    vkDestroyRenderPass(m_device->device(), rp, nullptr);
+
+    m_errorMonitor->VerifyNotFound();
+}
