@@ -251,7 +251,9 @@ adb $serialFlag shell am force-stop com.example.VulkanLayerValidationTests
 echo
 echo Fetching test output and filtered logcat text...
 
-today=$(date +%Y-%m-%d.%H:%M:%S)
+# Avoid characters that are illegal in Windows filenames, so these
+# files can be archived to a Windows host system for later reference
+today=$(date +%Y%m%d-%H%M%S)
 outFile="VulkanLayerValidationTests.$platform.$today.out.txt"
 errFile="VulkanLayerValidationTests.$platform.$today.err.txt"
 logFile="VulkanLayerValidationTests.$platform.$today.logcat.txt"
