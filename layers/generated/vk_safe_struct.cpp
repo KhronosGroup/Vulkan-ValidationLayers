@@ -26791,6 +26791,23 @@ void *SafePnextCopy(const void *pNext) {
             VkBaseOutStructure *header = reinterpret_cast<VkBaseOutStructure *>(cur_pnext);
 
             switch (header->sType) {
+
+                // Special-case Loader Instance Struct passed to/from layer in pNext chain
+                case VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO: {
+                        VkLayerInstanceCreateInfo *safe_struct = new VkLayerInstanceCreateInfo;
+                        memcpy((void *)safe_struct, (void *)cur_pnext, sizeof(VkLayerInstanceCreateInfo));
+                        safe_struct->pNext = SafePnextCopy(safe_struct->pNext);
+                        cur_ext_struct = reinterpret_cast<void *>(safe_struct);
+                    } break;
+
+                // Special-case Loader Device Struct passed to/from layer in pNext chain
+                case VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO: {
+                        VkLayerDeviceCreateInfo *safe_struct = new VkLayerDeviceCreateInfo;
+                        memcpy((void *)safe_struct, (void *)cur_pnext, sizeof(VkLayerDeviceCreateInfo));
+                        safe_struct->pNext = SafePnextCopy(safe_struct->pNext);
+                        cur_ext_struct = reinterpret_cast<void *>(safe_struct);
+                    } break;
+
                 case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES: {
                         safe_VkPhysicalDeviceSubgroupProperties *safe_struct = new safe_VkPhysicalDeviceSubgroupProperties;
                         safe_struct->initialize(reinterpret_cast<const VkPhysicalDeviceSubgroupProperties *>(cur_pnext));
@@ -27977,6 +27994,19 @@ void FreePnextChain(void *head) {
     VkBaseOutStructure *header = reinterpret_cast<VkBaseOutStructure *>(head);
 
     switch (header->sType) {
+
+        // Special-case Loader Instance Struct passed to/from layer in pNext chain
+        case VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO: {
+            if (header->pNext) FreePnextChain(header->pNext);
+            delete reinterpret_cast<VkLayerInstanceCreateInfo *>(head);
+        } break;
+
+        // Special-case Loader Device Struct passed to/from layer in pNext chain
+        case VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO: {
+            if (header->pNext) FreePnextChain(header->pNext);
+            delete reinterpret_cast<VkLayerDeviceCreateInfo *>(head);
+        } break;
+
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES:
             delete reinterpret_cast<safe_VkPhysicalDeviceSubgroupProperties *>(header);
             break;
