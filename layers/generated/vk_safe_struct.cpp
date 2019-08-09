@@ -46,7 +46,8 @@ safe_VkApplicationInfo::safe_VkApplicationInfo(const VkApplicationInfo* in_struc
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkApplicationInfo::safe_VkApplicationInfo()
+safe_VkApplicationInfo::safe_VkApplicationInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkApplicationInfo::safe_VkApplicationInfo(const safe_VkApplicationInfo& src)
@@ -121,7 +122,8 @@ safe_VkInstanceCreateInfo::safe_VkInstanceCreateInfo(const VkInstanceCreateInfo*
         pApplicationInfo = NULL;
 }
 
-safe_VkInstanceCreateInfo::safe_VkInstanceCreateInfo()
+safe_VkInstanceCreateInfo::safe_VkInstanceCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkInstanceCreateInfo::safe_VkInstanceCreateInfo(const safe_VkInstanceCreateInfo& src)
@@ -278,6 +280,7 @@ safe_VkDeviceQueueCreateInfo::safe_VkDeviceQueueCreateInfo(const VkDeviceQueueCr
 }
 
 safe_VkDeviceQueueCreateInfo::safe_VkDeviceQueueCreateInfo() :
+    pNext(nullptr),
     pQueuePriorities(nullptr)
 {}
 
@@ -378,6 +381,7 @@ safe_VkDeviceCreateInfo::safe_VkDeviceCreateInfo(const VkDeviceCreateInfo* in_st
 }
 
 safe_VkDeviceCreateInfo::safe_VkDeviceCreateInfo() :
+    pNext(nullptr),
     pQueueCreateInfos(nullptr),
     pEnabledFeatures(nullptr)
 {}
@@ -529,6 +533,7 @@ safe_VkSubmitInfo::safe_VkSubmitInfo(const VkSubmitInfo* in_struct) :
 }
 
 safe_VkSubmitInfo::safe_VkSubmitInfo() :
+    pNext(nullptr),
     pWaitSemaphores(nullptr),
     pWaitDstStageMask(nullptr),
     pCommandBuffers(nullptr),
@@ -704,7 +709,8 @@ safe_VkMemoryAllocateInfo::safe_VkMemoryAllocateInfo(const VkMemoryAllocateInfo*
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkMemoryAllocateInfo::safe_VkMemoryAllocateInfo()
+safe_VkMemoryAllocateInfo::safe_VkMemoryAllocateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkMemoryAllocateInfo::safe_VkMemoryAllocateInfo(const safe_VkMemoryAllocateInfo& src)
@@ -761,7 +767,8 @@ safe_VkMappedMemoryRange::safe_VkMappedMemoryRange(const VkMappedMemoryRange* in
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkMappedMemoryRange::safe_VkMappedMemoryRange()
+safe_VkMappedMemoryRange::safe_VkMappedMemoryRange() :
+    pNext(nullptr)
 {}
 
 safe_VkMappedMemoryRange::safe_VkMappedMemoryRange(const safe_VkMappedMemoryRange& src)
@@ -1106,6 +1113,7 @@ safe_VkBindSparseInfo::safe_VkBindSparseInfo(const VkBindSparseInfo* in_struct) 
 }
 
 safe_VkBindSparseInfo::safe_VkBindSparseInfo() :
+    pNext(nullptr),
     pWaitSemaphores(nullptr),
     pBufferBinds(nullptr),
     pImageOpaqueBinds(nullptr),
@@ -1337,7 +1345,8 @@ safe_VkFenceCreateInfo::safe_VkFenceCreateInfo(const VkFenceCreateInfo* in_struc
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkFenceCreateInfo::safe_VkFenceCreateInfo()
+safe_VkFenceCreateInfo::safe_VkFenceCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkFenceCreateInfo::safe_VkFenceCreateInfo(const safe_VkFenceCreateInfo& src)
@@ -1388,7 +1397,8 @@ safe_VkSemaphoreCreateInfo::safe_VkSemaphoreCreateInfo(const VkSemaphoreCreateIn
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSemaphoreCreateInfo::safe_VkSemaphoreCreateInfo()
+safe_VkSemaphoreCreateInfo::safe_VkSemaphoreCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkSemaphoreCreateInfo::safe_VkSemaphoreCreateInfo(const safe_VkSemaphoreCreateInfo& src)
@@ -1439,7 +1449,8 @@ safe_VkEventCreateInfo::safe_VkEventCreateInfo(const VkEventCreateInfo* in_struc
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkEventCreateInfo::safe_VkEventCreateInfo()
+safe_VkEventCreateInfo::safe_VkEventCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkEventCreateInfo::safe_VkEventCreateInfo(const safe_VkEventCreateInfo& src)
@@ -1493,7 +1504,8 @@ safe_VkQueryPoolCreateInfo::safe_VkQueryPoolCreateInfo(const VkQueryPoolCreateIn
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkQueryPoolCreateInfo::safe_VkQueryPoolCreateInfo()
+safe_VkQueryPoolCreateInfo::safe_VkQueryPoolCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkQueryPoolCreateInfo::safe_VkQueryPoolCreateInfo(const safe_VkQueryPoolCreateInfo& src)
@@ -1566,6 +1578,7 @@ safe_VkBufferCreateInfo::safe_VkBufferCreateInfo(const VkBufferCreateInfo* in_st
 }
 
 safe_VkBufferCreateInfo::safe_VkBufferCreateInfo() :
+    pNext(nullptr),
     pQueueFamilyIndices(nullptr)
 {}
 
@@ -1661,7 +1674,8 @@ safe_VkBufferViewCreateInfo::safe_VkBufferViewCreateInfo(const VkBufferViewCreat
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkBufferViewCreateInfo::safe_VkBufferViewCreateInfo()
+safe_VkBufferViewCreateInfo::safe_VkBufferViewCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkBufferViewCreateInfo::safe_VkBufferViewCreateInfo(const safe_VkBufferViewCreateInfo& src)
@@ -1745,6 +1759,7 @@ safe_VkImageCreateInfo::safe_VkImageCreateInfo(const VkImageCreateInfo* in_struc
 }
 
 safe_VkImageCreateInfo::safe_VkImageCreateInfo() :
+    pNext(nullptr),
     pQueueFamilyIndices(nullptr)
 {}
 
@@ -1869,7 +1884,8 @@ safe_VkImageViewCreateInfo::safe_VkImageViewCreateInfo(const VkImageViewCreateIn
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImageViewCreateInfo::safe_VkImageViewCreateInfo()
+safe_VkImageViewCreateInfo::safe_VkImageViewCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkImageViewCreateInfo::safe_VkImageViewCreateInfo(const safe_VkImageViewCreateInfo& src)
@@ -1947,6 +1963,7 @@ safe_VkShaderModuleCreateInfo::safe_VkShaderModuleCreateInfo(const VkShaderModul
 }
 
 safe_VkShaderModuleCreateInfo::safe_VkShaderModuleCreateInfo() :
+    pNext(nullptr),
     pCode(nullptr)
 {}
 
@@ -2028,7 +2045,8 @@ safe_VkPipelineCacheCreateInfo::safe_VkPipelineCacheCreateInfo(const VkPipelineC
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPipelineCacheCreateInfo::safe_VkPipelineCacheCreateInfo()
+safe_VkPipelineCacheCreateInfo::safe_VkPipelineCacheCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkPipelineCacheCreateInfo::safe_VkPipelineCacheCreateInfo(const safe_VkPipelineCacheCreateInfo& src)
@@ -2171,7 +2189,8 @@ safe_VkPipelineShaderStageCreateInfo::safe_VkPipelineShaderStageCreateInfo(const
         pSpecializationInfo = NULL;
 }
 
-safe_VkPipelineShaderStageCreateInfo::safe_VkPipelineShaderStageCreateInfo()
+safe_VkPipelineShaderStageCreateInfo::safe_VkPipelineShaderStageCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkPipelineShaderStageCreateInfo::safe_VkPipelineShaderStageCreateInfo(const safe_VkPipelineShaderStageCreateInfo& src)
@@ -2267,6 +2286,7 @@ safe_VkPipelineVertexInputStateCreateInfo::safe_VkPipelineVertexInputStateCreate
 }
 
 safe_VkPipelineVertexInputStateCreateInfo::safe_VkPipelineVertexInputStateCreateInfo() :
+    pNext(nullptr),
     pVertexBindingDescriptions(nullptr),
     pVertexAttributeDescriptions(nullptr)
 {}
@@ -2377,7 +2397,8 @@ safe_VkPipelineInputAssemblyStateCreateInfo::safe_VkPipelineInputAssemblyStateCr
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPipelineInputAssemblyStateCreateInfo::safe_VkPipelineInputAssemblyStateCreateInfo()
+safe_VkPipelineInputAssemblyStateCreateInfo::safe_VkPipelineInputAssemblyStateCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkPipelineInputAssemblyStateCreateInfo::safe_VkPipelineInputAssemblyStateCreateInfo(const safe_VkPipelineInputAssemblyStateCreateInfo& src)
@@ -2437,7 +2458,8 @@ safe_VkPipelineTessellationStateCreateInfo::safe_VkPipelineTessellationStateCrea
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPipelineTessellationStateCreateInfo::safe_VkPipelineTessellationStateCreateInfo()
+safe_VkPipelineTessellationStateCreateInfo::safe_VkPipelineTessellationStateCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkPipelineTessellationStateCreateInfo::safe_VkPipelineTessellationStateCreateInfo(const safe_VkPipelineTessellationStateCreateInfo& src)
@@ -2509,6 +2531,7 @@ safe_VkPipelineViewportStateCreateInfo::safe_VkPipelineViewportStateCreateInfo(c
 }
 
 safe_VkPipelineViewportStateCreateInfo::safe_VkPipelineViewportStateCreateInfo() :
+    pNext(nullptr),
     pViewports(nullptr),
     pScissors(nullptr)
 {}
@@ -2643,7 +2666,8 @@ safe_VkPipelineRasterizationStateCreateInfo::safe_VkPipelineRasterizationStateCr
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPipelineRasterizationStateCreateInfo::safe_VkPipelineRasterizationStateCreateInfo()
+safe_VkPipelineRasterizationStateCreateInfo::safe_VkPipelineRasterizationStateCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkPipelineRasterizationStateCreateInfo::safe_VkPipelineRasterizationStateCreateInfo(const safe_VkPipelineRasterizationStateCreateInfo& src)
@@ -2744,6 +2768,7 @@ safe_VkPipelineMultisampleStateCreateInfo::safe_VkPipelineMultisampleStateCreate
 }
 
 safe_VkPipelineMultisampleStateCreateInfo::safe_VkPipelineMultisampleStateCreateInfo() :
+    pNext(nullptr),
     pSampleMask(nullptr)
 {}
 
@@ -2844,7 +2869,8 @@ safe_VkPipelineDepthStencilStateCreateInfo::safe_VkPipelineDepthStencilStateCrea
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPipelineDepthStencilStateCreateInfo::safe_VkPipelineDepthStencilStateCreateInfo()
+safe_VkPipelineDepthStencilStateCreateInfo::safe_VkPipelineDepthStencilStateCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkPipelineDepthStencilStateCreateInfo::safe_VkPipelineDepthStencilStateCreateInfo(const safe_VkPipelineDepthStencilStateCreateInfo& src)
@@ -2943,6 +2969,7 @@ safe_VkPipelineColorBlendStateCreateInfo::safe_VkPipelineColorBlendStateCreateIn
 }
 
 safe_VkPipelineColorBlendStateCreateInfo::safe_VkPipelineColorBlendStateCreateInfo() :
+    pNext(nullptr),
     pAttachments(nullptr)
 {}
 
@@ -3049,6 +3076,7 @@ safe_VkPipelineDynamicStateCreateInfo::safe_VkPipelineDynamicStateCreateInfo(con
 }
 
 safe_VkPipelineDynamicStateCreateInfo::safe_VkPipelineDynamicStateCreateInfo() :
+    pNext(nullptr),
     pDynamicStates(nullptr)
 {}
 
@@ -3196,6 +3224,7 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const VkGra
 }
 
 safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo() :
+    pNext(nullptr),
     pStages(nullptr)
 {}
 
@@ -3523,7 +3552,8 @@ safe_VkComputePipelineCreateInfo::safe_VkComputePipelineCreateInfo(const VkCompu
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkComputePipelineCreateInfo::safe_VkComputePipelineCreateInfo()
+safe_VkComputePipelineCreateInfo::safe_VkComputePipelineCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkComputePipelineCreateInfo::safe_VkComputePipelineCreateInfo(const safe_VkComputePipelineCreateInfo& src)
@@ -3605,6 +3635,7 @@ safe_VkPipelineLayoutCreateInfo::safe_VkPipelineLayoutCreateInfo(const VkPipelin
 }
 
 safe_VkPipelineLayoutCreateInfo::safe_VkPipelineLayoutCreateInfo() :
+    pNext(nullptr),
     pSetLayouts(nullptr),
     pPushConstantRanges(nullptr)
 {}
@@ -3736,7 +3767,8 @@ safe_VkSamplerCreateInfo::safe_VkSamplerCreateInfo(const VkSamplerCreateInfo* in
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSamplerCreateInfo::safe_VkSamplerCreateInfo()
+safe_VkSamplerCreateInfo::safe_VkSamplerCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkSamplerCreateInfo::safe_VkSamplerCreateInfo(const safe_VkSamplerCreateInfo& src)
@@ -3953,6 +3985,7 @@ safe_VkDescriptorSetLayoutCreateInfo::safe_VkDescriptorSetLayoutCreateInfo(const
 }
 
 safe_VkDescriptorSetLayoutCreateInfo::safe_VkDescriptorSetLayoutCreateInfo() :
+    pNext(nullptr),
     pBindings(nullptr)
 {}
 
@@ -4048,6 +4081,7 @@ safe_VkDescriptorPoolCreateInfo::safe_VkDescriptorPoolCreateInfo(const VkDescrip
 }
 
 safe_VkDescriptorPoolCreateInfo::safe_VkDescriptorPoolCreateInfo() :
+    pNext(nullptr),
     pPoolSizes(nullptr)
 {}
 
@@ -4140,6 +4174,7 @@ safe_VkDescriptorSetAllocateInfo::safe_VkDescriptorSetAllocateInfo(const VkDescr
 }
 
 safe_VkDescriptorSetAllocateInfo::safe_VkDescriptorSetAllocateInfo() :
+    pNext(nullptr),
     pSetLayouts(nullptr)
 {}
 
@@ -4271,6 +4306,7 @@ safe_VkWriteDescriptorSet::safe_VkWriteDescriptorSet(const VkWriteDescriptorSet*
 }
 
 safe_VkWriteDescriptorSet::safe_VkWriteDescriptorSet() :
+    pNext(nullptr),
     pImageInfo(nullptr),
     pBufferInfo(nullptr),
     pTexelBufferView(nullptr)
@@ -4514,7 +4550,8 @@ safe_VkCopyDescriptorSet::safe_VkCopyDescriptorSet(const VkCopyDescriptorSet* in
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkCopyDescriptorSet::safe_VkCopyDescriptorSet()
+safe_VkCopyDescriptorSet::safe_VkCopyDescriptorSet() :
+    pNext(nullptr)
 {}
 
 safe_VkCopyDescriptorSet::safe_VkCopyDescriptorSet(const safe_VkCopyDescriptorSet& src)
@@ -4602,6 +4639,7 @@ safe_VkFramebufferCreateInfo::safe_VkFramebufferCreateInfo(const VkFramebufferCr
 }
 
 safe_VkFramebufferCreateInfo::safe_VkFramebufferCreateInfo() :
+    pNext(nullptr),
     pAttachments(nullptr)
 {}
 
@@ -4928,6 +4966,7 @@ safe_VkRenderPassCreateInfo::safe_VkRenderPassCreateInfo(const VkRenderPassCreat
 }
 
 safe_VkRenderPassCreateInfo::safe_VkRenderPassCreateInfo() :
+    pNext(nullptr),
     pAttachments(nullptr),
     pSubpasses(nullptr),
     pDependencies(nullptr)
@@ -5074,7 +5113,8 @@ safe_VkCommandPoolCreateInfo::safe_VkCommandPoolCreateInfo(const VkCommandPoolCr
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkCommandPoolCreateInfo::safe_VkCommandPoolCreateInfo()
+safe_VkCommandPoolCreateInfo::safe_VkCommandPoolCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkCommandPoolCreateInfo::safe_VkCommandPoolCreateInfo(const safe_VkCommandPoolCreateInfo& src)
@@ -5131,7 +5171,8 @@ safe_VkCommandBufferAllocateInfo::safe_VkCommandBufferAllocateInfo(const VkComma
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkCommandBufferAllocateInfo::safe_VkCommandBufferAllocateInfo()
+safe_VkCommandBufferAllocateInfo::safe_VkCommandBufferAllocateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkCommandBufferAllocateInfo::safe_VkCommandBufferAllocateInfo(const safe_VkCommandBufferAllocateInfo& src)
@@ -5195,7 +5236,8 @@ safe_VkCommandBufferInheritanceInfo::safe_VkCommandBufferInheritanceInfo(const V
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkCommandBufferInheritanceInfo::safe_VkCommandBufferInheritanceInfo()
+safe_VkCommandBufferInheritanceInfo::safe_VkCommandBufferInheritanceInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkCommandBufferInheritanceInfo::safe_VkCommandBufferInheritanceInfo(const safe_VkCommandBufferInheritanceInfo& src)
@@ -5270,7 +5312,8 @@ safe_VkCommandBufferBeginInfo::safe_VkCommandBufferBeginInfo(const VkCommandBuff
         pInheritanceInfo = NULL;
 }
 
-safe_VkCommandBufferBeginInfo::safe_VkCommandBufferBeginInfo()
+safe_VkCommandBufferBeginInfo::safe_VkCommandBufferBeginInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkCommandBufferBeginInfo::safe_VkCommandBufferBeginInfo(const safe_VkCommandBufferBeginInfo& src)
@@ -5342,7 +5385,8 @@ safe_VkMemoryBarrier::safe_VkMemoryBarrier(const VkMemoryBarrier* in_struct) :
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkMemoryBarrier::safe_VkMemoryBarrier()
+safe_VkMemoryBarrier::safe_VkMemoryBarrier() :
+    pNext(nullptr)
 {}
 
 safe_VkMemoryBarrier::safe_VkMemoryBarrier(const safe_VkMemoryBarrier& src)
@@ -5403,7 +5447,8 @@ safe_VkBufferMemoryBarrier::safe_VkBufferMemoryBarrier(const VkBufferMemoryBarri
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkBufferMemoryBarrier::safe_VkBufferMemoryBarrier()
+safe_VkBufferMemoryBarrier::safe_VkBufferMemoryBarrier() :
+    pNext(nullptr)
 {}
 
 safe_VkBufferMemoryBarrier::safe_VkBufferMemoryBarrier(const safe_VkBufferMemoryBarrier& src)
@@ -5485,7 +5530,8 @@ safe_VkImageMemoryBarrier::safe_VkImageMemoryBarrier(const VkImageMemoryBarrier*
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImageMemoryBarrier::safe_VkImageMemoryBarrier()
+safe_VkImageMemoryBarrier::safe_VkImageMemoryBarrier() :
+    pNext(nullptr)
 {}
 
 safe_VkImageMemoryBarrier::safe_VkImageMemoryBarrier(const safe_VkImageMemoryBarrier& src)
@@ -5573,6 +5619,7 @@ safe_VkRenderPassBeginInfo::safe_VkRenderPassBeginInfo(const VkRenderPassBeginIn
 }
 
 safe_VkRenderPassBeginInfo::safe_VkRenderPassBeginInfo() :
+    pNext(nullptr),
     pClearValues(nullptr)
 {}
 
@@ -5663,7 +5710,8 @@ safe_VkPhysicalDeviceSubgroupProperties::safe_VkPhysicalDeviceSubgroupProperties
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceSubgroupProperties::safe_VkPhysicalDeviceSubgroupProperties()
+safe_VkPhysicalDeviceSubgroupProperties::safe_VkPhysicalDeviceSubgroupProperties() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceSubgroupProperties::safe_VkPhysicalDeviceSubgroupProperties(const safe_VkPhysicalDeviceSubgroupProperties& src)
@@ -5728,7 +5776,8 @@ safe_VkBindBufferMemoryInfo::safe_VkBindBufferMemoryInfo(const VkBindBufferMemor
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkBindBufferMemoryInfo::safe_VkBindBufferMemoryInfo()
+safe_VkBindBufferMemoryInfo::safe_VkBindBufferMemoryInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkBindBufferMemoryInfo::safe_VkBindBufferMemoryInfo(const safe_VkBindBufferMemoryInfo& src)
@@ -5789,7 +5838,8 @@ safe_VkBindImageMemoryInfo::safe_VkBindImageMemoryInfo(const VkBindImageMemoryIn
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkBindImageMemoryInfo::safe_VkBindImageMemoryInfo()
+safe_VkBindImageMemoryInfo::safe_VkBindImageMemoryInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkBindImageMemoryInfo::safe_VkBindImageMemoryInfo(const safe_VkBindImageMemoryInfo& src)
@@ -5851,7 +5901,8 @@ safe_VkPhysicalDevice16BitStorageFeatures::safe_VkPhysicalDevice16BitStorageFeat
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDevice16BitStorageFeatures::safe_VkPhysicalDevice16BitStorageFeatures()
+safe_VkPhysicalDevice16BitStorageFeatures::safe_VkPhysicalDevice16BitStorageFeatures() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDevice16BitStorageFeatures::safe_VkPhysicalDevice16BitStorageFeatures(const safe_VkPhysicalDevice16BitStorageFeatures& src)
@@ -5915,7 +5966,8 @@ safe_VkMemoryDedicatedRequirements::safe_VkMemoryDedicatedRequirements(const VkM
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkMemoryDedicatedRequirements::safe_VkMemoryDedicatedRequirements()
+safe_VkMemoryDedicatedRequirements::safe_VkMemoryDedicatedRequirements() :
+    pNext(nullptr)
 {}
 
 safe_VkMemoryDedicatedRequirements::safe_VkMemoryDedicatedRequirements(const safe_VkMemoryDedicatedRequirements& src)
@@ -5971,7 +6023,8 @@ safe_VkMemoryDedicatedAllocateInfo::safe_VkMemoryDedicatedAllocateInfo(const VkM
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkMemoryDedicatedAllocateInfo::safe_VkMemoryDedicatedAllocateInfo()
+safe_VkMemoryDedicatedAllocateInfo::safe_VkMemoryDedicatedAllocateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkMemoryDedicatedAllocateInfo::safe_VkMemoryDedicatedAllocateInfo(const safe_VkMemoryDedicatedAllocateInfo& src)
@@ -6027,7 +6080,8 @@ safe_VkMemoryAllocateFlagsInfo::safe_VkMemoryAllocateFlagsInfo(const VkMemoryAll
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkMemoryAllocateFlagsInfo::safe_VkMemoryAllocateFlagsInfo()
+safe_VkMemoryAllocateFlagsInfo::safe_VkMemoryAllocateFlagsInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkMemoryAllocateFlagsInfo::safe_VkMemoryAllocateFlagsInfo(const safe_VkMemoryAllocateFlagsInfo& src)
@@ -6089,6 +6143,7 @@ safe_VkDeviceGroupRenderPassBeginInfo::safe_VkDeviceGroupRenderPassBeginInfo(con
 }
 
 safe_VkDeviceGroupRenderPassBeginInfo::safe_VkDeviceGroupRenderPassBeginInfo() :
+    pNext(nullptr),
     pDeviceRenderAreas(nullptr)
 {}
 
@@ -6168,7 +6223,8 @@ safe_VkDeviceGroupCommandBufferBeginInfo::safe_VkDeviceGroupCommandBufferBeginIn
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDeviceGroupCommandBufferBeginInfo::safe_VkDeviceGroupCommandBufferBeginInfo()
+safe_VkDeviceGroupCommandBufferBeginInfo::safe_VkDeviceGroupCommandBufferBeginInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkDeviceGroupCommandBufferBeginInfo::safe_VkDeviceGroupCommandBufferBeginInfo(const safe_VkDeviceGroupCommandBufferBeginInfo& src)
@@ -6237,6 +6293,7 @@ safe_VkDeviceGroupSubmitInfo::safe_VkDeviceGroupSubmitInfo(const VkDeviceGroupSu
 }
 
 safe_VkDeviceGroupSubmitInfo::safe_VkDeviceGroupSubmitInfo() :
+    pNext(nullptr),
     pWaitSemaphoreDeviceIndices(nullptr),
     pCommandBufferDeviceMasks(nullptr),
     pSignalSemaphoreDeviceIndices(nullptr)
@@ -6371,7 +6428,8 @@ safe_VkDeviceGroupBindSparseInfo::safe_VkDeviceGroupBindSparseInfo(const VkDevic
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDeviceGroupBindSparseInfo::safe_VkDeviceGroupBindSparseInfo()
+safe_VkDeviceGroupBindSparseInfo::safe_VkDeviceGroupBindSparseInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkDeviceGroupBindSparseInfo::safe_VkDeviceGroupBindSparseInfo(const safe_VkDeviceGroupBindSparseInfo& src)
@@ -6432,6 +6490,7 @@ safe_VkBindBufferMemoryDeviceGroupInfo::safe_VkBindBufferMemoryDeviceGroupInfo(c
 }
 
 safe_VkBindBufferMemoryDeviceGroupInfo::safe_VkBindBufferMemoryDeviceGroupInfo() :
+    pNext(nullptr),
     pDeviceIndices(nullptr)
 {}
 
@@ -6519,6 +6578,7 @@ safe_VkBindImageMemoryDeviceGroupInfo::safe_VkBindImageMemoryDeviceGroupInfo(con
 }
 
 safe_VkBindImageMemoryDeviceGroupInfo::safe_VkBindImageMemoryDeviceGroupInfo() :
+    pNext(nullptr),
     pDeviceIndices(nullptr),
     pSplitInstanceBindRegions(nullptr)
 {}
@@ -6627,7 +6687,8 @@ safe_VkPhysicalDeviceGroupProperties::safe_VkPhysicalDeviceGroupProperties(const
     }
 }
 
-safe_VkPhysicalDeviceGroupProperties::safe_VkPhysicalDeviceGroupProperties()
+safe_VkPhysicalDeviceGroupProperties::safe_VkPhysicalDeviceGroupProperties() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceGroupProperties::safe_VkPhysicalDeviceGroupProperties(const safe_VkPhysicalDeviceGroupProperties& src)
@@ -6700,6 +6761,7 @@ safe_VkDeviceGroupDeviceCreateInfo::safe_VkDeviceGroupDeviceCreateInfo(const VkD
 }
 
 safe_VkDeviceGroupDeviceCreateInfo::safe_VkDeviceGroupDeviceCreateInfo() :
+    pNext(nullptr),
     pPhysicalDevices(nullptr)
 {}
 
@@ -6775,7 +6837,8 @@ safe_VkBufferMemoryRequirementsInfo2::safe_VkBufferMemoryRequirementsInfo2(const
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkBufferMemoryRequirementsInfo2::safe_VkBufferMemoryRequirementsInfo2()
+safe_VkBufferMemoryRequirementsInfo2::safe_VkBufferMemoryRequirementsInfo2() :
+    pNext(nullptr)
 {}
 
 safe_VkBufferMemoryRequirementsInfo2::safe_VkBufferMemoryRequirementsInfo2(const safe_VkBufferMemoryRequirementsInfo2& src)
@@ -6826,7 +6889,8 @@ safe_VkImageMemoryRequirementsInfo2::safe_VkImageMemoryRequirementsInfo2(const V
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImageMemoryRequirementsInfo2::safe_VkImageMemoryRequirementsInfo2()
+safe_VkImageMemoryRequirementsInfo2::safe_VkImageMemoryRequirementsInfo2() :
+    pNext(nullptr)
 {}
 
 safe_VkImageMemoryRequirementsInfo2::safe_VkImageMemoryRequirementsInfo2(const safe_VkImageMemoryRequirementsInfo2& src)
@@ -6877,7 +6941,8 @@ safe_VkImageSparseMemoryRequirementsInfo2::safe_VkImageSparseMemoryRequirementsI
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImageSparseMemoryRequirementsInfo2::safe_VkImageSparseMemoryRequirementsInfo2()
+safe_VkImageSparseMemoryRequirementsInfo2::safe_VkImageSparseMemoryRequirementsInfo2() :
+    pNext(nullptr)
 {}
 
 safe_VkImageSparseMemoryRequirementsInfo2::safe_VkImageSparseMemoryRequirementsInfo2(const safe_VkImageSparseMemoryRequirementsInfo2& src)
@@ -6928,7 +6993,8 @@ safe_VkMemoryRequirements2::safe_VkMemoryRequirements2(const VkMemoryRequirement
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkMemoryRequirements2::safe_VkMemoryRequirements2()
+safe_VkMemoryRequirements2::safe_VkMemoryRequirements2() :
+    pNext(nullptr)
 {}
 
 safe_VkMemoryRequirements2::safe_VkMemoryRequirements2(const safe_VkMemoryRequirements2& src)
@@ -6979,7 +7045,8 @@ safe_VkSparseImageMemoryRequirements2::safe_VkSparseImageMemoryRequirements2(con
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSparseImageMemoryRequirements2::safe_VkSparseImageMemoryRequirements2()
+safe_VkSparseImageMemoryRequirements2::safe_VkSparseImageMemoryRequirements2() :
+    pNext(nullptr)
 {}
 
 safe_VkSparseImageMemoryRequirements2::safe_VkSparseImageMemoryRequirements2(const safe_VkSparseImageMemoryRequirements2& src)
@@ -7030,7 +7097,8 @@ safe_VkPhysicalDeviceFeatures2::safe_VkPhysicalDeviceFeatures2(const VkPhysicalD
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceFeatures2::safe_VkPhysicalDeviceFeatures2()
+safe_VkPhysicalDeviceFeatures2::safe_VkPhysicalDeviceFeatures2() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceFeatures2::safe_VkPhysicalDeviceFeatures2(const safe_VkPhysicalDeviceFeatures2& src)
@@ -7081,7 +7149,8 @@ safe_VkPhysicalDeviceProperties2::safe_VkPhysicalDeviceProperties2(const VkPhysi
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceProperties2::safe_VkPhysicalDeviceProperties2()
+safe_VkPhysicalDeviceProperties2::safe_VkPhysicalDeviceProperties2() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceProperties2::safe_VkPhysicalDeviceProperties2(const safe_VkPhysicalDeviceProperties2& src)
@@ -7132,7 +7201,8 @@ safe_VkFormatProperties2::safe_VkFormatProperties2(const VkFormatProperties2* in
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkFormatProperties2::safe_VkFormatProperties2()
+safe_VkFormatProperties2::safe_VkFormatProperties2() :
+    pNext(nullptr)
 {}
 
 safe_VkFormatProperties2::safe_VkFormatProperties2(const safe_VkFormatProperties2& src)
@@ -7183,7 +7253,8 @@ safe_VkImageFormatProperties2::safe_VkImageFormatProperties2(const VkImageFormat
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImageFormatProperties2::safe_VkImageFormatProperties2()
+safe_VkImageFormatProperties2::safe_VkImageFormatProperties2() :
+    pNext(nullptr)
 {}
 
 safe_VkImageFormatProperties2::safe_VkImageFormatProperties2(const safe_VkImageFormatProperties2& src)
@@ -7238,7 +7309,8 @@ safe_VkPhysicalDeviceImageFormatInfo2::safe_VkPhysicalDeviceImageFormatInfo2(con
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceImageFormatInfo2::safe_VkPhysicalDeviceImageFormatInfo2()
+safe_VkPhysicalDeviceImageFormatInfo2::safe_VkPhysicalDeviceImageFormatInfo2() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceImageFormatInfo2::safe_VkPhysicalDeviceImageFormatInfo2(const safe_VkPhysicalDeviceImageFormatInfo2& src)
@@ -7305,7 +7377,8 @@ safe_VkQueueFamilyProperties2::safe_VkQueueFamilyProperties2(const VkQueueFamily
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkQueueFamilyProperties2::safe_VkQueueFamilyProperties2()
+safe_VkQueueFamilyProperties2::safe_VkQueueFamilyProperties2() :
+    pNext(nullptr)
 {}
 
 safe_VkQueueFamilyProperties2::safe_VkQueueFamilyProperties2(const safe_VkQueueFamilyProperties2& src)
@@ -7356,7 +7429,8 @@ safe_VkPhysicalDeviceMemoryProperties2::safe_VkPhysicalDeviceMemoryProperties2(c
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceMemoryProperties2::safe_VkPhysicalDeviceMemoryProperties2()
+safe_VkPhysicalDeviceMemoryProperties2::safe_VkPhysicalDeviceMemoryProperties2() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceMemoryProperties2::safe_VkPhysicalDeviceMemoryProperties2(const safe_VkPhysicalDeviceMemoryProperties2& src)
@@ -7407,7 +7481,8 @@ safe_VkSparseImageFormatProperties2::safe_VkSparseImageFormatProperties2(const V
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSparseImageFormatProperties2::safe_VkSparseImageFormatProperties2()
+safe_VkSparseImageFormatProperties2::safe_VkSparseImageFormatProperties2() :
+    pNext(nullptr)
 {}
 
 safe_VkSparseImageFormatProperties2::safe_VkSparseImageFormatProperties2(const safe_VkSparseImageFormatProperties2& src)
@@ -7462,7 +7537,8 @@ safe_VkPhysicalDeviceSparseImageFormatInfo2::safe_VkPhysicalDeviceSparseImageFor
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceSparseImageFormatInfo2::safe_VkPhysicalDeviceSparseImageFormatInfo2()
+safe_VkPhysicalDeviceSparseImageFormatInfo2::safe_VkPhysicalDeviceSparseImageFormatInfo2() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceSparseImageFormatInfo2::safe_VkPhysicalDeviceSparseImageFormatInfo2(const safe_VkPhysicalDeviceSparseImageFormatInfo2& src)
@@ -7529,7 +7605,8 @@ safe_VkPhysicalDevicePointClippingProperties::safe_VkPhysicalDevicePointClipping
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDevicePointClippingProperties::safe_VkPhysicalDevicePointClippingProperties()
+safe_VkPhysicalDevicePointClippingProperties::safe_VkPhysicalDevicePointClippingProperties() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDevicePointClippingProperties::safe_VkPhysicalDevicePointClippingProperties(const safe_VkPhysicalDevicePointClippingProperties& src)
@@ -7586,6 +7663,7 @@ safe_VkRenderPassInputAttachmentAspectCreateInfo::safe_VkRenderPassInputAttachme
 }
 
 safe_VkRenderPassInputAttachmentAspectCreateInfo::safe_VkRenderPassInputAttachmentAspectCreateInfo() :
+    pNext(nullptr),
     pAspectReferences(nullptr)
 {}
 
@@ -7661,7 +7739,8 @@ safe_VkImageViewUsageCreateInfo::safe_VkImageViewUsageCreateInfo(const VkImageVi
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImageViewUsageCreateInfo::safe_VkImageViewUsageCreateInfo()
+safe_VkImageViewUsageCreateInfo::safe_VkImageViewUsageCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkImageViewUsageCreateInfo::safe_VkImageViewUsageCreateInfo(const safe_VkImageViewUsageCreateInfo& src)
@@ -7712,7 +7791,8 @@ safe_VkPipelineTessellationDomainOriginStateCreateInfo::safe_VkPipelineTessellat
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPipelineTessellationDomainOriginStateCreateInfo::safe_VkPipelineTessellationDomainOriginStateCreateInfo()
+safe_VkPipelineTessellationDomainOriginStateCreateInfo::safe_VkPipelineTessellationDomainOriginStateCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkPipelineTessellationDomainOriginStateCreateInfo::safe_VkPipelineTessellationDomainOriginStateCreateInfo(const safe_VkPipelineTessellationDomainOriginStateCreateInfo& src)
@@ -7781,6 +7861,7 @@ safe_VkRenderPassMultiviewCreateInfo::safe_VkRenderPassMultiviewCreateInfo(const
 }
 
 safe_VkRenderPassMultiviewCreateInfo::safe_VkRenderPassMultiviewCreateInfo() :
+    pNext(nullptr),
     pViewMasks(nullptr),
     pViewOffsets(nullptr),
     pCorrelationMasks(nullptr)
@@ -7916,7 +7997,8 @@ safe_VkPhysicalDeviceMultiviewFeatures::safe_VkPhysicalDeviceMultiviewFeatures(c
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceMultiviewFeatures::safe_VkPhysicalDeviceMultiviewFeatures()
+safe_VkPhysicalDeviceMultiviewFeatures::safe_VkPhysicalDeviceMultiviewFeatures() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceMultiviewFeatures::safe_VkPhysicalDeviceMultiviewFeatures(const safe_VkPhysicalDeviceMultiviewFeatures& src)
@@ -7976,7 +8058,8 @@ safe_VkPhysicalDeviceMultiviewProperties::safe_VkPhysicalDeviceMultiviewProperti
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceMultiviewProperties::safe_VkPhysicalDeviceMultiviewProperties()
+safe_VkPhysicalDeviceMultiviewProperties::safe_VkPhysicalDeviceMultiviewProperties() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceMultiviewProperties::safe_VkPhysicalDeviceMultiviewProperties(const safe_VkPhysicalDeviceMultiviewProperties& src)
@@ -8032,7 +8115,8 @@ safe_VkPhysicalDeviceVariablePointersFeatures::safe_VkPhysicalDeviceVariablePoin
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceVariablePointersFeatures::safe_VkPhysicalDeviceVariablePointersFeatures()
+safe_VkPhysicalDeviceVariablePointersFeatures::safe_VkPhysicalDeviceVariablePointersFeatures() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceVariablePointersFeatures::safe_VkPhysicalDeviceVariablePointersFeatures(const safe_VkPhysicalDeviceVariablePointersFeatures& src)
@@ -8087,7 +8171,8 @@ safe_VkPhysicalDeviceProtectedMemoryFeatures::safe_VkPhysicalDeviceProtectedMemo
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceProtectedMemoryFeatures::safe_VkPhysicalDeviceProtectedMemoryFeatures()
+safe_VkPhysicalDeviceProtectedMemoryFeatures::safe_VkPhysicalDeviceProtectedMemoryFeatures() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceProtectedMemoryFeatures::safe_VkPhysicalDeviceProtectedMemoryFeatures(const safe_VkPhysicalDeviceProtectedMemoryFeatures& src)
@@ -8138,7 +8223,8 @@ safe_VkPhysicalDeviceProtectedMemoryProperties::safe_VkPhysicalDeviceProtectedMe
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceProtectedMemoryProperties::safe_VkPhysicalDeviceProtectedMemoryProperties()
+safe_VkPhysicalDeviceProtectedMemoryProperties::safe_VkPhysicalDeviceProtectedMemoryProperties() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceProtectedMemoryProperties::safe_VkPhysicalDeviceProtectedMemoryProperties(const safe_VkPhysicalDeviceProtectedMemoryProperties& src)
@@ -8191,7 +8277,8 @@ safe_VkDeviceQueueInfo2::safe_VkDeviceQueueInfo2(const VkDeviceQueueInfo2* in_st
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDeviceQueueInfo2::safe_VkDeviceQueueInfo2()
+safe_VkDeviceQueueInfo2::safe_VkDeviceQueueInfo2() :
+    pNext(nullptr)
 {}
 
 safe_VkDeviceQueueInfo2::safe_VkDeviceQueueInfo2(const safe_VkDeviceQueueInfo2& src)
@@ -8250,7 +8337,8 @@ safe_VkProtectedSubmitInfo::safe_VkProtectedSubmitInfo(const VkProtectedSubmitIn
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkProtectedSubmitInfo::safe_VkProtectedSubmitInfo()
+safe_VkProtectedSubmitInfo::safe_VkProtectedSubmitInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkProtectedSubmitInfo::safe_VkProtectedSubmitInfo(const safe_VkProtectedSubmitInfo& src)
@@ -8308,7 +8396,8 @@ safe_VkSamplerYcbcrConversionCreateInfo::safe_VkSamplerYcbcrConversionCreateInfo
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSamplerYcbcrConversionCreateInfo::safe_VkSamplerYcbcrConversionCreateInfo()
+safe_VkSamplerYcbcrConversionCreateInfo::safe_VkSamplerYcbcrConversionCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkSamplerYcbcrConversionCreateInfo::safe_VkSamplerYcbcrConversionCreateInfo(const safe_VkSamplerYcbcrConversionCreateInfo& src)
@@ -8387,7 +8476,8 @@ safe_VkSamplerYcbcrConversionInfo::safe_VkSamplerYcbcrConversionInfo(const VkSam
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSamplerYcbcrConversionInfo::safe_VkSamplerYcbcrConversionInfo()
+safe_VkSamplerYcbcrConversionInfo::safe_VkSamplerYcbcrConversionInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkSamplerYcbcrConversionInfo::safe_VkSamplerYcbcrConversionInfo(const safe_VkSamplerYcbcrConversionInfo& src)
@@ -8438,7 +8528,8 @@ safe_VkBindImagePlaneMemoryInfo::safe_VkBindImagePlaneMemoryInfo(const VkBindIma
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkBindImagePlaneMemoryInfo::safe_VkBindImagePlaneMemoryInfo()
+safe_VkBindImagePlaneMemoryInfo::safe_VkBindImagePlaneMemoryInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkBindImagePlaneMemoryInfo::safe_VkBindImagePlaneMemoryInfo(const safe_VkBindImagePlaneMemoryInfo& src)
@@ -8489,7 +8580,8 @@ safe_VkImagePlaneMemoryRequirementsInfo::safe_VkImagePlaneMemoryRequirementsInfo
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImagePlaneMemoryRequirementsInfo::safe_VkImagePlaneMemoryRequirementsInfo()
+safe_VkImagePlaneMemoryRequirementsInfo::safe_VkImagePlaneMemoryRequirementsInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkImagePlaneMemoryRequirementsInfo::safe_VkImagePlaneMemoryRequirementsInfo(const safe_VkImagePlaneMemoryRequirementsInfo& src)
@@ -8540,7 +8632,8 @@ safe_VkPhysicalDeviceSamplerYcbcrConversionFeatures::safe_VkPhysicalDeviceSample
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceSamplerYcbcrConversionFeatures::safe_VkPhysicalDeviceSamplerYcbcrConversionFeatures()
+safe_VkPhysicalDeviceSamplerYcbcrConversionFeatures::safe_VkPhysicalDeviceSamplerYcbcrConversionFeatures() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceSamplerYcbcrConversionFeatures::safe_VkPhysicalDeviceSamplerYcbcrConversionFeatures(const safe_VkPhysicalDeviceSamplerYcbcrConversionFeatures& src)
@@ -8591,7 +8684,8 @@ safe_VkSamplerYcbcrConversionImageFormatProperties::safe_VkSamplerYcbcrConversio
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSamplerYcbcrConversionImageFormatProperties::safe_VkSamplerYcbcrConversionImageFormatProperties()
+safe_VkSamplerYcbcrConversionImageFormatProperties::safe_VkSamplerYcbcrConversionImageFormatProperties() :
+    pNext(nullptr)
 {}
 
 safe_VkSamplerYcbcrConversionImageFormatProperties::safe_VkSamplerYcbcrConversionImageFormatProperties(const safe_VkSamplerYcbcrConversionImageFormatProperties& src)
@@ -8654,6 +8748,7 @@ safe_VkDescriptorUpdateTemplateCreateInfo::safe_VkDescriptorUpdateTemplateCreate
 }
 
 safe_VkDescriptorUpdateTemplateCreateInfo::safe_VkDescriptorUpdateTemplateCreateInfo() :
+    pNext(nullptr),
     pDescriptorUpdateEntries(nullptr)
 {}
 
@@ -8753,7 +8848,8 @@ safe_VkPhysicalDeviceExternalImageFormatInfo::safe_VkPhysicalDeviceExternalImage
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceExternalImageFormatInfo::safe_VkPhysicalDeviceExternalImageFormatInfo()
+safe_VkPhysicalDeviceExternalImageFormatInfo::safe_VkPhysicalDeviceExternalImageFormatInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceExternalImageFormatInfo::safe_VkPhysicalDeviceExternalImageFormatInfo(const safe_VkPhysicalDeviceExternalImageFormatInfo& src)
@@ -8804,7 +8900,8 @@ safe_VkExternalImageFormatProperties::safe_VkExternalImageFormatProperties(const
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkExternalImageFormatProperties::safe_VkExternalImageFormatProperties()
+safe_VkExternalImageFormatProperties::safe_VkExternalImageFormatProperties() :
+    pNext(nullptr)
 {}
 
 safe_VkExternalImageFormatProperties::safe_VkExternalImageFormatProperties(const safe_VkExternalImageFormatProperties& src)
@@ -8857,7 +8954,8 @@ safe_VkPhysicalDeviceExternalBufferInfo::safe_VkPhysicalDeviceExternalBufferInfo
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceExternalBufferInfo::safe_VkPhysicalDeviceExternalBufferInfo()
+safe_VkPhysicalDeviceExternalBufferInfo::safe_VkPhysicalDeviceExternalBufferInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceExternalBufferInfo::safe_VkPhysicalDeviceExternalBufferInfo(const safe_VkPhysicalDeviceExternalBufferInfo& src)
@@ -8916,7 +9014,8 @@ safe_VkExternalBufferProperties::safe_VkExternalBufferProperties(const VkExterna
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkExternalBufferProperties::safe_VkExternalBufferProperties()
+safe_VkExternalBufferProperties::safe_VkExternalBufferProperties() :
+    pNext(nullptr)
 {}
 
 safe_VkExternalBufferProperties::safe_VkExternalBufferProperties(const safe_VkExternalBufferProperties& src)
@@ -8977,7 +9076,8 @@ safe_VkPhysicalDeviceIDProperties::safe_VkPhysicalDeviceIDProperties(const VkPhy
     }
 }
 
-safe_VkPhysicalDeviceIDProperties::safe_VkPhysicalDeviceIDProperties()
+safe_VkPhysicalDeviceIDProperties::safe_VkPhysicalDeviceIDProperties() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceIDProperties::safe_VkPhysicalDeviceIDProperties(const safe_VkPhysicalDeviceIDProperties& src)
@@ -9068,7 +9168,8 @@ safe_VkExternalMemoryImageCreateInfo::safe_VkExternalMemoryImageCreateInfo(const
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkExternalMemoryImageCreateInfo::safe_VkExternalMemoryImageCreateInfo()
+safe_VkExternalMemoryImageCreateInfo::safe_VkExternalMemoryImageCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkExternalMemoryImageCreateInfo::safe_VkExternalMemoryImageCreateInfo(const safe_VkExternalMemoryImageCreateInfo& src)
@@ -9119,7 +9220,8 @@ safe_VkExternalMemoryBufferCreateInfo::safe_VkExternalMemoryBufferCreateInfo(con
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkExternalMemoryBufferCreateInfo::safe_VkExternalMemoryBufferCreateInfo()
+safe_VkExternalMemoryBufferCreateInfo::safe_VkExternalMemoryBufferCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkExternalMemoryBufferCreateInfo::safe_VkExternalMemoryBufferCreateInfo(const safe_VkExternalMemoryBufferCreateInfo& src)
@@ -9170,7 +9272,8 @@ safe_VkExportMemoryAllocateInfo::safe_VkExportMemoryAllocateInfo(const VkExportM
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkExportMemoryAllocateInfo::safe_VkExportMemoryAllocateInfo()
+safe_VkExportMemoryAllocateInfo::safe_VkExportMemoryAllocateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkExportMemoryAllocateInfo::safe_VkExportMemoryAllocateInfo(const safe_VkExportMemoryAllocateInfo& src)
@@ -9221,7 +9324,8 @@ safe_VkPhysicalDeviceExternalFenceInfo::safe_VkPhysicalDeviceExternalFenceInfo(c
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceExternalFenceInfo::safe_VkPhysicalDeviceExternalFenceInfo()
+safe_VkPhysicalDeviceExternalFenceInfo::safe_VkPhysicalDeviceExternalFenceInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceExternalFenceInfo::safe_VkPhysicalDeviceExternalFenceInfo(const safe_VkPhysicalDeviceExternalFenceInfo& src)
@@ -9274,7 +9378,8 @@ safe_VkExternalFenceProperties::safe_VkExternalFenceProperties(const VkExternalF
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkExternalFenceProperties::safe_VkExternalFenceProperties()
+safe_VkExternalFenceProperties::safe_VkExternalFenceProperties() :
+    pNext(nullptr)
 {}
 
 safe_VkExternalFenceProperties::safe_VkExternalFenceProperties(const safe_VkExternalFenceProperties& src)
@@ -9333,7 +9438,8 @@ safe_VkExportFenceCreateInfo::safe_VkExportFenceCreateInfo(const VkExportFenceCr
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkExportFenceCreateInfo::safe_VkExportFenceCreateInfo()
+safe_VkExportFenceCreateInfo::safe_VkExportFenceCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkExportFenceCreateInfo::safe_VkExportFenceCreateInfo(const safe_VkExportFenceCreateInfo& src)
@@ -9384,7 +9490,8 @@ safe_VkExportSemaphoreCreateInfo::safe_VkExportSemaphoreCreateInfo(const VkExpor
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkExportSemaphoreCreateInfo::safe_VkExportSemaphoreCreateInfo()
+safe_VkExportSemaphoreCreateInfo::safe_VkExportSemaphoreCreateInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkExportSemaphoreCreateInfo::safe_VkExportSemaphoreCreateInfo(const safe_VkExportSemaphoreCreateInfo& src)
@@ -9435,7 +9542,8 @@ safe_VkPhysicalDeviceExternalSemaphoreInfo::safe_VkPhysicalDeviceExternalSemapho
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceExternalSemaphoreInfo::safe_VkPhysicalDeviceExternalSemaphoreInfo()
+safe_VkPhysicalDeviceExternalSemaphoreInfo::safe_VkPhysicalDeviceExternalSemaphoreInfo() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceExternalSemaphoreInfo::safe_VkPhysicalDeviceExternalSemaphoreInfo(const safe_VkPhysicalDeviceExternalSemaphoreInfo& src)
@@ -9488,7 +9596,8 @@ safe_VkExternalSemaphoreProperties::safe_VkExternalSemaphoreProperties(const VkE
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkExternalSemaphoreProperties::safe_VkExternalSemaphoreProperties()
+safe_VkExternalSemaphoreProperties::safe_VkExternalSemaphoreProperties() :
+    pNext(nullptr)
 {}
 
 safe_VkExternalSemaphoreProperties::safe_VkExternalSemaphoreProperties(const safe_VkExternalSemaphoreProperties& src)
@@ -9548,7 +9657,8 @@ safe_VkPhysicalDeviceMaintenance3Properties::safe_VkPhysicalDeviceMaintenance3Pr
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceMaintenance3Properties::safe_VkPhysicalDeviceMaintenance3Properties()
+safe_VkPhysicalDeviceMaintenance3Properties::safe_VkPhysicalDeviceMaintenance3Properties() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceMaintenance3Properties::safe_VkPhysicalDeviceMaintenance3Properties(const safe_VkPhysicalDeviceMaintenance3Properties& src)
@@ -9603,7 +9713,8 @@ safe_VkDescriptorSetLayoutSupport::safe_VkDescriptorSetLayoutSupport(const VkDes
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDescriptorSetLayoutSupport::safe_VkDescriptorSetLayoutSupport()
+safe_VkDescriptorSetLayoutSupport::safe_VkDescriptorSetLayoutSupport() :
+    pNext(nullptr)
 {}
 
 safe_VkDescriptorSetLayoutSupport::safe_VkDescriptorSetLayoutSupport(const safe_VkDescriptorSetLayoutSupport& src)
@@ -9654,7 +9765,8 @@ safe_VkPhysicalDeviceShaderDrawParametersFeatures::safe_VkPhysicalDeviceShaderDr
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceShaderDrawParametersFeatures::safe_VkPhysicalDeviceShaderDrawParametersFeatures()
+safe_VkPhysicalDeviceShaderDrawParametersFeatures::safe_VkPhysicalDeviceShaderDrawParametersFeatures() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceShaderDrawParametersFeatures::safe_VkPhysicalDeviceShaderDrawParametersFeatures(const safe_VkPhysicalDeviceShaderDrawParametersFeatures& src)
@@ -9725,6 +9837,7 @@ safe_VkSwapchainCreateInfoKHR::safe_VkSwapchainCreateInfoKHR(const VkSwapchainCr
 }
 
 safe_VkSwapchainCreateInfoKHR::safe_VkSwapchainCreateInfoKHR() :
+    pNext(nullptr),
     pQueueFamilyIndices(nullptr)
 {}
 
@@ -9882,6 +9995,7 @@ safe_VkPresentInfoKHR::safe_VkPresentInfoKHR(const VkPresentInfoKHR* in_struct) 
 }
 
 safe_VkPresentInfoKHR::safe_VkPresentInfoKHR() :
+    pNext(nullptr),
     pWaitSemaphores(nullptr),
     pSwapchains(nullptr),
     pImageIndices(nullptr),
@@ -10052,7 +10166,8 @@ safe_VkImageSwapchainCreateInfoKHR::safe_VkImageSwapchainCreateInfoKHR(const VkI
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImageSwapchainCreateInfoKHR::safe_VkImageSwapchainCreateInfoKHR()
+safe_VkImageSwapchainCreateInfoKHR::safe_VkImageSwapchainCreateInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkImageSwapchainCreateInfoKHR::safe_VkImageSwapchainCreateInfoKHR(const safe_VkImageSwapchainCreateInfoKHR& src)
@@ -10104,7 +10219,8 @@ safe_VkBindImageMemorySwapchainInfoKHR::safe_VkBindImageMemorySwapchainInfoKHR(c
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkBindImageMemorySwapchainInfoKHR::safe_VkBindImageMemorySwapchainInfoKHR()
+safe_VkBindImageMemorySwapchainInfoKHR::safe_VkBindImageMemorySwapchainInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkBindImageMemorySwapchainInfoKHR::safe_VkBindImageMemorySwapchainInfoKHR(const safe_VkBindImageMemorySwapchainInfoKHR& src)
@@ -10163,7 +10279,8 @@ safe_VkAcquireNextImageInfoKHR::safe_VkAcquireNextImageInfoKHR(const VkAcquireNe
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkAcquireNextImageInfoKHR::safe_VkAcquireNextImageInfoKHR()
+safe_VkAcquireNextImageInfoKHR::safe_VkAcquireNextImageInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkAcquireNextImageInfoKHR::safe_VkAcquireNextImageInfoKHR(const safe_VkAcquireNextImageInfoKHR& src)
@@ -10233,7 +10350,8 @@ safe_VkDeviceGroupPresentCapabilitiesKHR::safe_VkDeviceGroupPresentCapabilitiesK
     }
 }
 
-safe_VkDeviceGroupPresentCapabilitiesKHR::safe_VkDeviceGroupPresentCapabilitiesKHR()
+safe_VkDeviceGroupPresentCapabilitiesKHR::safe_VkDeviceGroupPresentCapabilitiesKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkDeviceGroupPresentCapabilitiesKHR::safe_VkDeviceGroupPresentCapabilitiesKHR(const safe_VkDeviceGroupPresentCapabilitiesKHR& src)
@@ -10303,6 +10421,7 @@ safe_VkDeviceGroupPresentInfoKHR::safe_VkDeviceGroupPresentInfoKHR(const VkDevic
 }
 
 safe_VkDeviceGroupPresentInfoKHR::safe_VkDeviceGroupPresentInfoKHR() :
+    pNext(nullptr),
     pDeviceMasks(nullptr)
 {}
 
@@ -10382,7 +10501,8 @@ safe_VkDeviceGroupSwapchainCreateInfoKHR::safe_VkDeviceGroupSwapchainCreateInfoK
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDeviceGroupSwapchainCreateInfoKHR::safe_VkDeviceGroupSwapchainCreateInfoKHR()
+safe_VkDeviceGroupSwapchainCreateInfoKHR::safe_VkDeviceGroupSwapchainCreateInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkDeviceGroupSwapchainCreateInfoKHR::safe_VkDeviceGroupSwapchainCreateInfoKHR(const safe_VkDeviceGroupSwapchainCreateInfoKHR& src)
@@ -10501,7 +10621,8 @@ safe_VkDisplayModeCreateInfoKHR::safe_VkDisplayModeCreateInfoKHR(const VkDisplay
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDisplayModeCreateInfoKHR::safe_VkDisplayModeCreateInfoKHR()
+safe_VkDisplayModeCreateInfoKHR::safe_VkDisplayModeCreateInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkDisplayModeCreateInfoKHR::safe_VkDisplayModeCreateInfoKHR(const safe_VkDisplayModeCreateInfoKHR& src)
@@ -10563,7 +10684,8 @@ safe_VkDisplaySurfaceCreateInfoKHR::safe_VkDisplaySurfaceCreateInfoKHR(const VkD
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDisplaySurfaceCreateInfoKHR::safe_VkDisplaySurfaceCreateInfoKHR()
+safe_VkDisplaySurfaceCreateInfoKHR::safe_VkDisplaySurfaceCreateInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkDisplaySurfaceCreateInfoKHR::safe_VkDisplaySurfaceCreateInfoKHR(const safe_VkDisplaySurfaceCreateInfoKHR& src)
@@ -10644,7 +10766,8 @@ safe_VkDisplayPresentInfoKHR::safe_VkDisplayPresentInfoKHR(const VkDisplayPresen
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDisplayPresentInfoKHR::safe_VkDisplayPresentInfoKHR()
+safe_VkDisplayPresentInfoKHR::safe_VkDisplayPresentInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkDisplayPresentInfoKHR::safe_VkDisplayPresentInfoKHR(const safe_VkDisplayPresentInfoKHR& src)
@@ -10707,7 +10830,8 @@ safe_VkImportMemoryWin32HandleInfoKHR::safe_VkImportMemoryWin32HandleInfoKHR(con
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImportMemoryWin32HandleInfoKHR::safe_VkImportMemoryWin32HandleInfoKHR()
+safe_VkImportMemoryWin32HandleInfoKHR::safe_VkImportMemoryWin32HandleInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkImportMemoryWin32HandleInfoKHR::safe_VkImportMemoryWin32HandleInfoKHR(const safe_VkImportMemoryWin32HandleInfoKHR& src)
@@ -10776,6 +10900,7 @@ safe_VkExportMemoryWin32HandleInfoKHR::safe_VkExportMemoryWin32HandleInfoKHR(con
 }
 
 safe_VkExportMemoryWin32HandleInfoKHR::safe_VkExportMemoryWin32HandleInfoKHR() :
+    pNext(nullptr),
     pAttributes(nullptr)
 {}
 
@@ -10855,7 +10980,8 @@ safe_VkMemoryWin32HandlePropertiesKHR::safe_VkMemoryWin32HandlePropertiesKHR(con
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkMemoryWin32HandlePropertiesKHR::safe_VkMemoryWin32HandlePropertiesKHR()
+safe_VkMemoryWin32HandlePropertiesKHR::safe_VkMemoryWin32HandlePropertiesKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkMemoryWin32HandlePropertiesKHR::safe_VkMemoryWin32HandlePropertiesKHR(const safe_VkMemoryWin32HandlePropertiesKHR& src)
@@ -10911,7 +11037,8 @@ safe_VkMemoryGetWin32HandleInfoKHR::safe_VkMemoryGetWin32HandleInfoKHR(const VkM
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkMemoryGetWin32HandleInfoKHR::safe_VkMemoryGetWin32HandleInfoKHR()
+safe_VkMemoryGetWin32HandleInfoKHR::safe_VkMemoryGetWin32HandleInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkMemoryGetWin32HandleInfoKHR::safe_VkMemoryGetWin32HandleInfoKHR(const safe_VkMemoryGetWin32HandleInfoKHR& src)
@@ -10969,7 +11096,8 @@ safe_VkImportMemoryFdInfoKHR::safe_VkImportMemoryFdInfoKHR(const VkImportMemoryF
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImportMemoryFdInfoKHR::safe_VkImportMemoryFdInfoKHR()
+safe_VkImportMemoryFdInfoKHR::safe_VkImportMemoryFdInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkImportMemoryFdInfoKHR::safe_VkImportMemoryFdInfoKHR(const safe_VkImportMemoryFdInfoKHR& src)
@@ -11024,7 +11152,8 @@ safe_VkMemoryFdPropertiesKHR::safe_VkMemoryFdPropertiesKHR(const VkMemoryFdPrope
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkMemoryFdPropertiesKHR::safe_VkMemoryFdPropertiesKHR()
+safe_VkMemoryFdPropertiesKHR::safe_VkMemoryFdPropertiesKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkMemoryFdPropertiesKHR::safe_VkMemoryFdPropertiesKHR(const safe_VkMemoryFdPropertiesKHR& src)
@@ -11076,7 +11205,8 @@ safe_VkMemoryGetFdInfoKHR::safe_VkMemoryGetFdInfoKHR(const VkMemoryGetFdInfoKHR*
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkMemoryGetFdInfoKHR::safe_VkMemoryGetFdInfoKHR()
+safe_VkMemoryGetFdInfoKHR::safe_VkMemoryGetFdInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkMemoryGetFdInfoKHR::safe_VkMemoryGetFdInfoKHR(const safe_VkMemoryGetFdInfoKHR& src)
@@ -11164,6 +11294,7 @@ safe_VkWin32KeyedMutexAcquireReleaseInfoKHR::safe_VkWin32KeyedMutexAcquireReleas
 }
 
 safe_VkWin32KeyedMutexAcquireReleaseInfoKHR::safe_VkWin32KeyedMutexAcquireReleaseInfoKHR() :
+    pNext(nullptr),
     pAcquireSyncs(nullptr),
     pAcquireKeys(nullptr),
     pAcquireTimeouts(nullptr),
@@ -11367,7 +11498,8 @@ safe_VkImportSemaphoreWin32HandleInfoKHR::safe_VkImportSemaphoreWin32HandleInfoK
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImportSemaphoreWin32HandleInfoKHR::safe_VkImportSemaphoreWin32HandleInfoKHR()
+safe_VkImportSemaphoreWin32HandleInfoKHR::safe_VkImportSemaphoreWin32HandleInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkImportSemaphoreWin32HandleInfoKHR::safe_VkImportSemaphoreWin32HandleInfoKHR(const safe_VkImportSemaphoreWin32HandleInfoKHR& src)
@@ -11444,6 +11576,7 @@ safe_VkExportSemaphoreWin32HandleInfoKHR::safe_VkExportSemaphoreWin32HandleInfoK
 }
 
 safe_VkExportSemaphoreWin32HandleInfoKHR::safe_VkExportSemaphoreWin32HandleInfoKHR() :
+    pNext(nullptr),
     pAttributes(nullptr)
 {}
 
@@ -11535,6 +11668,7 @@ safe_VkD3D12FenceSubmitInfoKHR::safe_VkD3D12FenceSubmitInfoKHR(const VkD3D12Fenc
 }
 
 safe_VkD3D12FenceSubmitInfoKHR::safe_VkD3D12FenceSubmitInfoKHR() :
+    pNext(nullptr),
     pWaitSemaphoreValues(nullptr),
     pSignalSemaphoreValues(nullptr)
 {}
@@ -11644,7 +11778,8 @@ safe_VkSemaphoreGetWin32HandleInfoKHR::safe_VkSemaphoreGetWin32HandleInfoKHR(con
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSemaphoreGetWin32HandleInfoKHR::safe_VkSemaphoreGetWin32HandleInfoKHR()
+safe_VkSemaphoreGetWin32HandleInfoKHR::safe_VkSemaphoreGetWin32HandleInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkSemaphoreGetWin32HandleInfoKHR::safe_VkSemaphoreGetWin32HandleInfoKHR(const safe_VkSemaphoreGetWin32HandleInfoKHR& src)
@@ -11704,7 +11839,8 @@ safe_VkImportSemaphoreFdInfoKHR::safe_VkImportSemaphoreFdInfoKHR(const VkImportS
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImportSemaphoreFdInfoKHR::safe_VkImportSemaphoreFdInfoKHR()
+safe_VkImportSemaphoreFdInfoKHR::safe_VkImportSemaphoreFdInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkImportSemaphoreFdInfoKHR::safe_VkImportSemaphoreFdInfoKHR(const safe_VkImportSemaphoreFdInfoKHR& src)
@@ -11768,7 +11904,8 @@ safe_VkSemaphoreGetFdInfoKHR::safe_VkSemaphoreGetFdInfoKHR(const VkSemaphoreGetF
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSemaphoreGetFdInfoKHR::safe_VkSemaphoreGetFdInfoKHR()
+safe_VkSemaphoreGetFdInfoKHR::safe_VkSemaphoreGetFdInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkSemaphoreGetFdInfoKHR::safe_VkSemaphoreGetFdInfoKHR(const safe_VkSemaphoreGetFdInfoKHR& src)
@@ -11823,7 +11960,8 @@ safe_VkPhysicalDevicePushDescriptorPropertiesKHR::safe_VkPhysicalDevicePushDescr
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDevicePushDescriptorPropertiesKHR::safe_VkPhysicalDevicePushDescriptorPropertiesKHR()
+safe_VkPhysicalDevicePushDescriptorPropertiesKHR::safe_VkPhysicalDevicePushDescriptorPropertiesKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDevicePushDescriptorPropertiesKHR::safe_VkPhysicalDevicePushDescriptorPropertiesKHR(const safe_VkPhysicalDevicePushDescriptorPropertiesKHR& src)
@@ -11875,7 +12013,8 @@ safe_VkPhysicalDeviceFloat16Int8FeaturesKHR::safe_VkPhysicalDeviceFloat16Int8Fea
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceFloat16Int8FeaturesKHR::safe_VkPhysicalDeviceFloat16Int8FeaturesKHR()
+safe_VkPhysicalDeviceFloat16Int8FeaturesKHR::safe_VkPhysicalDeviceFloat16Int8FeaturesKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceFloat16Int8FeaturesKHR::safe_VkPhysicalDeviceFloat16Int8FeaturesKHR(const safe_VkPhysicalDeviceFloat16Int8FeaturesKHR& src)
@@ -12005,6 +12144,7 @@ safe_VkPresentRegionsKHR::safe_VkPresentRegionsKHR(const VkPresentRegionsKHR* in
 }
 
 safe_VkPresentRegionsKHR::safe_VkPresentRegionsKHR() :
+    pNext(nullptr),
     pRegions(nullptr)
 {}
 
@@ -12088,7 +12228,8 @@ safe_VkPhysicalDeviceImagelessFramebufferFeaturesKHR::safe_VkPhysicalDeviceImage
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceImagelessFramebufferFeaturesKHR::safe_VkPhysicalDeviceImagelessFramebufferFeaturesKHR()
+safe_VkPhysicalDeviceImagelessFramebufferFeaturesKHR::safe_VkPhysicalDeviceImagelessFramebufferFeaturesKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceImagelessFramebufferFeaturesKHR::safe_VkPhysicalDeviceImagelessFramebufferFeaturesKHR(const safe_VkPhysicalDeviceImagelessFramebufferFeaturesKHR& src)
@@ -12150,6 +12291,7 @@ safe_VkFramebufferAttachmentImageInfoKHR::safe_VkFramebufferAttachmentImageInfoK
 }
 
 safe_VkFramebufferAttachmentImageInfoKHR::safe_VkFramebufferAttachmentImageInfoKHR() :
+    pNext(nullptr),
     pViewFormats(nullptr)
 {}
 
@@ -12253,6 +12395,7 @@ safe_VkFramebufferAttachmentsCreateInfoKHR::safe_VkFramebufferAttachmentsCreateI
 }
 
 safe_VkFramebufferAttachmentsCreateInfoKHR::safe_VkFramebufferAttachmentsCreateInfoKHR() :
+    pNext(nullptr),
     pAttachmentImageInfos(nullptr)
 {}
 
@@ -12344,6 +12487,7 @@ safe_VkRenderPassAttachmentBeginInfoKHR::safe_VkRenderPassAttachmentBeginInfoKHR
 }
 
 safe_VkRenderPassAttachmentBeginInfoKHR::safe_VkRenderPassAttachmentBeginInfoKHR() :
+    pNext(nullptr),
     pAttachments(nullptr)
 {}
 
@@ -12435,7 +12579,8 @@ safe_VkAttachmentDescription2KHR::safe_VkAttachmentDescription2KHR(const VkAttac
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkAttachmentDescription2KHR::safe_VkAttachmentDescription2KHR()
+safe_VkAttachmentDescription2KHR::safe_VkAttachmentDescription2KHR() :
+    pNext(nullptr)
 {}
 
 safe_VkAttachmentDescription2KHR::safe_VkAttachmentDescription2KHR(const safe_VkAttachmentDescription2KHR& src)
@@ -12520,7 +12665,8 @@ safe_VkAttachmentReference2KHR::safe_VkAttachmentReference2KHR(const VkAttachmen
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkAttachmentReference2KHR::safe_VkAttachmentReference2KHR()
+safe_VkAttachmentReference2KHR::safe_VkAttachmentReference2KHR() :
+    pNext(nullptr)
 {}
 
 safe_VkAttachmentReference2KHR::safe_VkAttachmentReference2KHR(const safe_VkAttachmentReference2KHR& src)
@@ -12615,6 +12761,7 @@ safe_VkSubpassDescription2KHR::safe_VkSubpassDescription2KHR(const VkSubpassDesc
 }
 
 safe_VkSubpassDescription2KHR::safe_VkSubpassDescription2KHR() :
+    pNext(nullptr),
     pInputAttachments(nullptr),
     pColorAttachments(nullptr),
     pResolveAttachments(nullptr),
@@ -12836,7 +12983,8 @@ safe_VkSubpassDependency2KHR::safe_VkSubpassDependency2KHR(const VkSubpassDepend
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSubpassDependency2KHR::safe_VkSubpassDependency2KHR()
+safe_VkSubpassDependency2KHR::safe_VkSubpassDependency2KHR() :
+    pNext(nullptr)
 {}
 
 safe_VkSubpassDependency2KHR::safe_VkSubpassDependency2KHR(const safe_VkSubpassDependency2KHR& src)
@@ -12946,6 +13094,7 @@ safe_VkRenderPassCreateInfo2KHR::safe_VkRenderPassCreateInfo2KHR(const VkRenderP
 }
 
 safe_VkRenderPassCreateInfo2KHR::safe_VkRenderPassCreateInfo2KHR() :
+    pNext(nullptr),
     pAttachments(nullptr),
     pSubpasses(nullptr),
     pDependencies(nullptr),
@@ -13136,7 +13285,8 @@ safe_VkSubpassBeginInfoKHR::safe_VkSubpassBeginInfoKHR(const VkSubpassBeginInfoK
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSubpassBeginInfoKHR::safe_VkSubpassBeginInfoKHR()
+safe_VkSubpassBeginInfoKHR::safe_VkSubpassBeginInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkSubpassBeginInfoKHR::safe_VkSubpassBeginInfoKHR(const safe_VkSubpassBeginInfoKHR& src)
@@ -13186,7 +13336,8 @@ safe_VkSubpassEndInfoKHR::safe_VkSubpassEndInfoKHR(const VkSubpassEndInfoKHR* in
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSubpassEndInfoKHR::safe_VkSubpassEndInfoKHR()
+safe_VkSubpassEndInfoKHR::safe_VkSubpassEndInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkSubpassEndInfoKHR::safe_VkSubpassEndInfoKHR(const safe_VkSubpassEndInfoKHR& src)
@@ -13233,7 +13384,8 @@ safe_VkSharedPresentSurfaceCapabilitiesKHR::safe_VkSharedPresentSurfaceCapabilit
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSharedPresentSurfaceCapabilitiesKHR::safe_VkSharedPresentSurfaceCapabilitiesKHR()
+safe_VkSharedPresentSurfaceCapabilitiesKHR::safe_VkSharedPresentSurfaceCapabilitiesKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkSharedPresentSurfaceCapabilitiesKHR::safe_VkSharedPresentSurfaceCapabilitiesKHR(const safe_VkSharedPresentSurfaceCapabilitiesKHR& src)
@@ -13290,7 +13442,8 @@ safe_VkImportFenceWin32HandleInfoKHR::safe_VkImportFenceWin32HandleInfoKHR(const
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImportFenceWin32HandleInfoKHR::safe_VkImportFenceWin32HandleInfoKHR()
+safe_VkImportFenceWin32HandleInfoKHR::safe_VkImportFenceWin32HandleInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkImportFenceWin32HandleInfoKHR::safe_VkImportFenceWin32HandleInfoKHR(const safe_VkImportFenceWin32HandleInfoKHR& src)
@@ -13367,6 +13520,7 @@ safe_VkExportFenceWin32HandleInfoKHR::safe_VkExportFenceWin32HandleInfoKHR(const
 }
 
 safe_VkExportFenceWin32HandleInfoKHR::safe_VkExportFenceWin32HandleInfoKHR() :
+    pNext(nullptr),
     pAttributes(nullptr)
 {}
 
@@ -13447,7 +13601,8 @@ safe_VkFenceGetWin32HandleInfoKHR::safe_VkFenceGetWin32HandleInfoKHR(const VkFen
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkFenceGetWin32HandleInfoKHR::safe_VkFenceGetWin32HandleInfoKHR()
+safe_VkFenceGetWin32HandleInfoKHR::safe_VkFenceGetWin32HandleInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkFenceGetWin32HandleInfoKHR::safe_VkFenceGetWin32HandleInfoKHR(const safe_VkFenceGetWin32HandleInfoKHR& src)
@@ -13507,7 +13662,8 @@ safe_VkImportFenceFdInfoKHR::safe_VkImportFenceFdInfoKHR(const VkImportFenceFdIn
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImportFenceFdInfoKHR::safe_VkImportFenceFdInfoKHR()
+safe_VkImportFenceFdInfoKHR::safe_VkImportFenceFdInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkImportFenceFdInfoKHR::safe_VkImportFenceFdInfoKHR(const safe_VkImportFenceFdInfoKHR& src)
@@ -13571,7 +13727,8 @@ safe_VkFenceGetFdInfoKHR::safe_VkFenceGetFdInfoKHR(const VkFenceGetFdInfoKHR* in
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkFenceGetFdInfoKHR::safe_VkFenceGetFdInfoKHR()
+safe_VkFenceGetFdInfoKHR::safe_VkFenceGetFdInfoKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkFenceGetFdInfoKHR::safe_VkFenceGetFdInfoKHR(const safe_VkFenceGetFdInfoKHR& src)
@@ -13626,7 +13783,8 @@ safe_VkPhysicalDeviceSurfaceInfo2KHR::safe_VkPhysicalDeviceSurfaceInfo2KHR(const
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceSurfaceInfo2KHR::safe_VkPhysicalDeviceSurfaceInfo2KHR()
+safe_VkPhysicalDeviceSurfaceInfo2KHR::safe_VkPhysicalDeviceSurfaceInfo2KHR() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceSurfaceInfo2KHR::safe_VkPhysicalDeviceSurfaceInfo2KHR(const safe_VkPhysicalDeviceSurfaceInfo2KHR& src)
@@ -13677,7 +13835,8 @@ safe_VkSurfaceCapabilities2KHR::safe_VkSurfaceCapabilities2KHR(const VkSurfaceCa
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSurfaceCapabilities2KHR::safe_VkSurfaceCapabilities2KHR()
+safe_VkSurfaceCapabilities2KHR::safe_VkSurfaceCapabilities2KHR() :
+    pNext(nullptr)
 {}
 
 safe_VkSurfaceCapabilities2KHR::safe_VkSurfaceCapabilities2KHR(const safe_VkSurfaceCapabilities2KHR& src)
@@ -13728,7 +13887,8 @@ safe_VkSurfaceFormat2KHR::safe_VkSurfaceFormat2KHR(const VkSurfaceFormat2KHR* in
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSurfaceFormat2KHR::safe_VkSurfaceFormat2KHR()
+safe_VkSurfaceFormat2KHR::safe_VkSurfaceFormat2KHR() :
+    pNext(nullptr)
 {}
 
 safe_VkSurfaceFormat2KHR::safe_VkSurfaceFormat2KHR(const safe_VkSurfaceFormat2KHR& src)
@@ -13779,7 +13939,8 @@ safe_VkDisplayProperties2KHR::safe_VkDisplayProperties2KHR(const VkDisplayProper
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDisplayProperties2KHR::safe_VkDisplayProperties2KHR()
+safe_VkDisplayProperties2KHR::safe_VkDisplayProperties2KHR() :
+    pNext(nullptr)
 {}
 
 safe_VkDisplayProperties2KHR::safe_VkDisplayProperties2KHR(const safe_VkDisplayProperties2KHR& src)
@@ -13830,7 +13991,8 @@ safe_VkDisplayPlaneProperties2KHR::safe_VkDisplayPlaneProperties2KHR(const VkDis
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDisplayPlaneProperties2KHR::safe_VkDisplayPlaneProperties2KHR()
+safe_VkDisplayPlaneProperties2KHR::safe_VkDisplayPlaneProperties2KHR() :
+    pNext(nullptr)
 {}
 
 safe_VkDisplayPlaneProperties2KHR::safe_VkDisplayPlaneProperties2KHR(const safe_VkDisplayPlaneProperties2KHR& src)
@@ -13881,7 +14043,8 @@ safe_VkDisplayModeProperties2KHR::safe_VkDisplayModeProperties2KHR(const VkDispl
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDisplayModeProperties2KHR::safe_VkDisplayModeProperties2KHR()
+safe_VkDisplayModeProperties2KHR::safe_VkDisplayModeProperties2KHR() :
+    pNext(nullptr)
 {}
 
 safe_VkDisplayModeProperties2KHR::safe_VkDisplayModeProperties2KHR(const safe_VkDisplayModeProperties2KHR& src)
@@ -13933,7 +14096,8 @@ safe_VkDisplayPlaneInfo2KHR::safe_VkDisplayPlaneInfo2KHR(const VkDisplayPlaneInf
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDisplayPlaneInfo2KHR::safe_VkDisplayPlaneInfo2KHR()
+safe_VkDisplayPlaneInfo2KHR::safe_VkDisplayPlaneInfo2KHR() :
+    pNext(nullptr)
 {}
 
 safe_VkDisplayPlaneInfo2KHR::safe_VkDisplayPlaneInfo2KHR(const safe_VkDisplayPlaneInfo2KHR& src)
@@ -13988,7 +14152,8 @@ safe_VkDisplayPlaneCapabilities2KHR::safe_VkDisplayPlaneCapabilities2KHR(const V
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDisplayPlaneCapabilities2KHR::safe_VkDisplayPlaneCapabilities2KHR()
+safe_VkDisplayPlaneCapabilities2KHR::safe_VkDisplayPlaneCapabilities2KHR() :
+    pNext(nullptr)
 {}
 
 safe_VkDisplayPlaneCapabilities2KHR::safe_VkDisplayPlaneCapabilities2KHR(const safe_VkDisplayPlaneCapabilities2KHR& src)
@@ -14045,6 +14210,7 @@ safe_VkImageFormatListCreateInfoKHR::safe_VkImageFormatListCreateInfoKHR(const V
 }
 
 safe_VkImageFormatListCreateInfoKHR::safe_VkImageFormatListCreateInfoKHR() :
+    pNext(nullptr),
     pViewFormats(nullptr)
 {}
 
@@ -14122,7 +14288,8 @@ safe_VkPhysicalDevice8BitStorageFeaturesKHR::safe_VkPhysicalDevice8BitStorageFea
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDevice8BitStorageFeaturesKHR::safe_VkPhysicalDevice8BitStorageFeaturesKHR()
+safe_VkPhysicalDevice8BitStorageFeaturesKHR::safe_VkPhysicalDevice8BitStorageFeaturesKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDevice8BitStorageFeaturesKHR::safe_VkPhysicalDevice8BitStorageFeaturesKHR(const safe_VkPhysicalDevice8BitStorageFeaturesKHR& src)
@@ -14182,7 +14349,8 @@ safe_VkPhysicalDeviceShaderAtomicInt64FeaturesKHR::safe_VkPhysicalDeviceShaderAt
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceShaderAtomicInt64FeaturesKHR::safe_VkPhysicalDeviceShaderAtomicInt64FeaturesKHR()
+safe_VkPhysicalDeviceShaderAtomicInt64FeaturesKHR::safe_VkPhysicalDeviceShaderAtomicInt64FeaturesKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceShaderAtomicInt64FeaturesKHR::safe_VkPhysicalDeviceShaderAtomicInt64FeaturesKHR(const safe_VkPhysicalDeviceShaderAtomicInt64FeaturesKHR& src)
@@ -14244,7 +14412,8 @@ safe_VkPhysicalDeviceDriverPropertiesKHR::safe_VkPhysicalDeviceDriverPropertiesK
     }
 }
 
-safe_VkPhysicalDeviceDriverPropertiesKHR::safe_VkPhysicalDeviceDriverPropertiesKHR()
+safe_VkPhysicalDeviceDriverPropertiesKHR::safe_VkPhysicalDeviceDriverPropertiesKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceDriverPropertiesKHR::safe_VkPhysicalDeviceDriverPropertiesKHR(const safe_VkPhysicalDeviceDriverPropertiesKHR& src)
@@ -14339,7 +14508,8 @@ safe_VkPhysicalDeviceFloatControlsPropertiesKHR::safe_VkPhysicalDeviceFloatContr
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceFloatControlsPropertiesKHR::safe_VkPhysicalDeviceFloatControlsPropertiesKHR()
+safe_VkPhysicalDeviceFloatControlsPropertiesKHR::safe_VkPhysicalDeviceFloatControlsPropertiesKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceFloatControlsPropertiesKHR::safe_VkPhysicalDeviceFloatControlsPropertiesKHR(const safe_VkPhysicalDeviceFloatControlsPropertiesKHR& src)
@@ -14459,7 +14629,8 @@ safe_VkSubpassDescriptionDepthStencilResolveKHR::safe_VkSubpassDescriptionDepthS
         pDepthStencilResolveAttachment = NULL;
 }
 
-safe_VkSubpassDescriptionDepthStencilResolveKHR::safe_VkSubpassDescriptionDepthStencilResolveKHR()
+safe_VkSubpassDescriptionDepthStencilResolveKHR::safe_VkSubpassDescriptionDepthStencilResolveKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkSubpassDescriptionDepthStencilResolveKHR::safe_VkSubpassDescriptionDepthStencilResolveKHR(const safe_VkSubpassDescriptionDepthStencilResolveKHR& src)
@@ -14537,7 +14708,8 @@ safe_VkPhysicalDeviceDepthStencilResolvePropertiesKHR::safe_VkPhysicalDeviceDept
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceDepthStencilResolvePropertiesKHR::safe_VkPhysicalDeviceDepthStencilResolvePropertiesKHR()
+safe_VkPhysicalDeviceDepthStencilResolvePropertiesKHR::safe_VkPhysicalDeviceDepthStencilResolvePropertiesKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceDepthStencilResolvePropertiesKHR::safe_VkPhysicalDeviceDepthStencilResolvePropertiesKHR(const safe_VkPhysicalDeviceDepthStencilResolvePropertiesKHR& src)
@@ -14602,7 +14774,8 @@ safe_VkPhysicalDeviceVulkanMemoryModelFeaturesKHR::safe_VkPhysicalDeviceVulkanMe
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceVulkanMemoryModelFeaturesKHR::safe_VkPhysicalDeviceVulkanMemoryModelFeaturesKHR()
+safe_VkPhysicalDeviceVulkanMemoryModelFeaturesKHR::safe_VkPhysicalDeviceVulkanMemoryModelFeaturesKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceVulkanMemoryModelFeaturesKHR::safe_VkPhysicalDeviceVulkanMemoryModelFeaturesKHR(const safe_VkPhysicalDeviceVulkanMemoryModelFeaturesKHR& src)
@@ -14661,7 +14834,8 @@ safe_VkSurfaceProtectedCapabilitiesKHR::safe_VkSurfaceProtectedCapabilitiesKHR(c
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSurfaceProtectedCapabilitiesKHR::safe_VkSurfaceProtectedCapabilitiesKHR()
+safe_VkSurfaceProtectedCapabilitiesKHR::safe_VkSurfaceProtectedCapabilitiesKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkSurfaceProtectedCapabilitiesKHR::safe_VkSurfaceProtectedCapabilitiesKHR(const safe_VkSurfaceProtectedCapabilitiesKHR& src)
@@ -14712,7 +14886,8 @@ safe_VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR::safe_VkPhysicalDevi
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR::safe_VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR()
+safe_VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR::safe_VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR::safe_VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR(const safe_VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR& src)
@@ -14765,7 +14940,8 @@ safe_VkDebugReportCallbackCreateInfoEXT::safe_VkDebugReportCallbackCreateInfoEXT
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDebugReportCallbackCreateInfoEXT::safe_VkDebugReportCallbackCreateInfoEXT()
+safe_VkDebugReportCallbackCreateInfoEXT::safe_VkDebugReportCallbackCreateInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkDebugReportCallbackCreateInfoEXT::safe_VkDebugReportCallbackCreateInfoEXT(const safe_VkDebugReportCallbackCreateInfoEXT& src)
@@ -14824,7 +15000,8 @@ safe_VkPipelineRasterizationStateRasterizationOrderAMD::safe_VkPipelineRasteriza
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPipelineRasterizationStateRasterizationOrderAMD::safe_VkPipelineRasterizationStateRasterizationOrderAMD()
+safe_VkPipelineRasterizationStateRasterizationOrderAMD::safe_VkPipelineRasterizationStateRasterizationOrderAMD() :
+    pNext(nullptr)
 {}
 
 safe_VkPipelineRasterizationStateRasterizationOrderAMD::safe_VkPipelineRasterizationStateRasterizationOrderAMD(const safe_VkPipelineRasterizationStateRasterizationOrderAMD& src)
@@ -14877,7 +15054,8 @@ safe_VkDebugMarkerObjectNameInfoEXT::safe_VkDebugMarkerObjectNameInfoEXT(const V
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDebugMarkerObjectNameInfoEXT::safe_VkDebugMarkerObjectNameInfoEXT()
+safe_VkDebugMarkerObjectNameInfoEXT::safe_VkDebugMarkerObjectNameInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkDebugMarkerObjectNameInfoEXT::safe_VkDebugMarkerObjectNameInfoEXT(const safe_VkDebugMarkerObjectNameInfoEXT& src)
@@ -14940,7 +15118,8 @@ safe_VkDebugMarkerObjectTagInfoEXT::safe_VkDebugMarkerObjectTagInfoEXT(const VkD
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDebugMarkerObjectTagInfoEXT::safe_VkDebugMarkerObjectTagInfoEXT()
+safe_VkDebugMarkerObjectTagInfoEXT::safe_VkDebugMarkerObjectTagInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkDebugMarkerObjectTagInfoEXT::safe_VkDebugMarkerObjectTagInfoEXT(const safe_VkDebugMarkerObjectTagInfoEXT& src)
@@ -15010,7 +15189,8 @@ safe_VkDebugMarkerMarkerInfoEXT::safe_VkDebugMarkerMarkerInfoEXT(const VkDebugMa
     }
 }
 
-safe_VkDebugMarkerMarkerInfoEXT::safe_VkDebugMarkerMarkerInfoEXT()
+safe_VkDebugMarkerMarkerInfoEXT::safe_VkDebugMarkerMarkerInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkDebugMarkerMarkerInfoEXT::safe_VkDebugMarkerMarkerInfoEXT(const safe_VkDebugMarkerMarkerInfoEXT& src)
@@ -15073,7 +15253,8 @@ safe_VkDedicatedAllocationImageCreateInfoNV::safe_VkDedicatedAllocationImageCrea
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDedicatedAllocationImageCreateInfoNV::safe_VkDedicatedAllocationImageCreateInfoNV()
+safe_VkDedicatedAllocationImageCreateInfoNV::safe_VkDedicatedAllocationImageCreateInfoNV() :
+    pNext(nullptr)
 {}
 
 safe_VkDedicatedAllocationImageCreateInfoNV::safe_VkDedicatedAllocationImageCreateInfoNV(const safe_VkDedicatedAllocationImageCreateInfoNV& src)
@@ -15124,7 +15305,8 @@ safe_VkDedicatedAllocationBufferCreateInfoNV::safe_VkDedicatedAllocationBufferCr
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDedicatedAllocationBufferCreateInfoNV::safe_VkDedicatedAllocationBufferCreateInfoNV()
+safe_VkDedicatedAllocationBufferCreateInfoNV::safe_VkDedicatedAllocationBufferCreateInfoNV() :
+    pNext(nullptr)
 {}
 
 safe_VkDedicatedAllocationBufferCreateInfoNV::safe_VkDedicatedAllocationBufferCreateInfoNV(const safe_VkDedicatedAllocationBufferCreateInfoNV& src)
@@ -15176,7 +15358,8 @@ safe_VkDedicatedAllocationMemoryAllocateInfoNV::safe_VkDedicatedAllocationMemory
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDedicatedAllocationMemoryAllocateInfoNV::safe_VkDedicatedAllocationMemoryAllocateInfoNV()
+safe_VkDedicatedAllocationMemoryAllocateInfoNV::safe_VkDedicatedAllocationMemoryAllocateInfoNV() :
+    pNext(nullptr)
 {}
 
 safe_VkDedicatedAllocationMemoryAllocateInfoNV::safe_VkDedicatedAllocationMemoryAllocateInfoNV(const safe_VkDedicatedAllocationMemoryAllocateInfoNV& src)
@@ -15232,7 +15415,8 @@ safe_VkPhysicalDeviceTransformFeedbackFeaturesEXT::safe_VkPhysicalDeviceTransfor
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceTransformFeedbackFeaturesEXT::safe_VkPhysicalDeviceTransformFeedbackFeaturesEXT()
+safe_VkPhysicalDeviceTransformFeedbackFeaturesEXT::safe_VkPhysicalDeviceTransformFeedbackFeaturesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceTransformFeedbackFeaturesEXT::safe_VkPhysicalDeviceTransformFeedbackFeaturesEXT(const safe_VkPhysicalDeviceTransformFeedbackFeaturesEXT& src)
@@ -15296,7 +15480,8 @@ safe_VkPhysicalDeviceTransformFeedbackPropertiesEXT::safe_VkPhysicalDeviceTransf
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceTransformFeedbackPropertiesEXT::safe_VkPhysicalDeviceTransformFeedbackPropertiesEXT()
+safe_VkPhysicalDeviceTransformFeedbackPropertiesEXT::safe_VkPhysicalDeviceTransformFeedbackPropertiesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceTransformFeedbackPropertiesEXT::safe_VkPhysicalDeviceTransformFeedbackPropertiesEXT(const safe_VkPhysicalDeviceTransformFeedbackPropertiesEXT& src)
@@ -15384,7 +15569,8 @@ safe_VkPipelineRasterizationStateStreamCreateInfoEXT::safe_VkPipelineRasterizati
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPipelineRasterizationStateStreamCreateInfoEXT::safe_VkPipelineRasterizationStateStreamCreateInfoEXT()
+safe_VkPipelineRasterizationStateStreamCreateInfoEXT::safe_VkPipelineRasterizationStateStreamCreateInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPipelineRasterizationStateStreamCreateInfoEXT::safe_VkPipelineRasterizationStateStreamCreateInfoEXT(const safe_VkPipelineRasterizationStateStreamCreateInfoEXT& src)
@@ -15441,7 +15627,8 @@ safe_VkImageViewHandleInfoNVX::safe_VkImageViewHandleInfoNVX(const VkImageViewHa
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImageViewHandleInfoNVX::safe_VkImageViewHandleInfoNVX()
+safe_VkImageViewHandleInfoNVX::safe_VkImageViewHandleInfoNVX() :
+    pNext(nullptr)
 {}
 
 safe_VkImageViewHandleInfoNVX::safe_VkImageViewHandleInfoNVX(const safe_VkImageViewHandleInfoNVX& src)
@@ -15500,7 +15687,8 @@ safe_VkTextureLODGatherFormatPropertiesAMD::safe_VkTextureLODGatherFormatPropert
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkTextureLODGatherFormatPropertiesAMD::safe_VkTextureLODGatherFormatPropertiesAMD()
+safe_VkTextureLODGatherFormatPropertiesAMD::safe_VkTextureLODGatherFormatPropertiesAMD() :
+    pNext(nullptr)
 {}
 
 safe_VkTextureLODGatherFormatPropertiesAMD::safe_VkTextureLODGatherFormatPropertiesAMD(const safe_VkTextureLODGatherFormatPropertiesAMD& src)
@@ -15554,7 +15742,8 @@ safe_VkStreamDescriptorSurfaceCreateInfoGGP::safe_VkStreamDescriptorSurfaceCreat
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkStreamDescriptorSurfaceCreateInfoGGP::safe_VkStreamDescriptorSurfaceCreateInfoGGP()
+safe_VkStreamDescriptorSurfaceCreateInfoGGP::safe_VkStreamDescriptorSurfaceCreateInfoGGP() :
+    pNext(nullptr)
 {}
 
 safe_VkStreamDescriptorSurfaceCreateInfoGGP::safe_VkStreamDescriptorSurfaceCreateInfoGGP(const safe_VkStreamDescriptorSurfaceCreateInfoGGP& src)
@@ -15611,7 +15800,8 @@ safe_VkPhysicalDeviceCornerSampledImageFeaturesNV::safe_VkPhysicalDeviceCornerSa
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceCornerSampledImageFeaturesNV::safe_VkPhysicalDeviceCornerSampledImageFeaturesNV()
+safe_VkPhysicalDeviceCornerSampledImageFeaturesNV::safe_VkPhysicalDeviceCornerSampledImageFeaturesNV() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceCornerSampledImageFeaturesNV::safe_VkPhysicalDeviceCornerSampledImageFeaturesNV(const safe_VkPhysicalDeviceCornerSampledImageFeaturesNV& src)
@@ -15662,7 +15852,8 @@ safe_VkExternalMemoryImageCreateInfoNV::safe_VkExternalMemoryImageCreateInfoNV(c
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkExternalMemoryImageCreateInfoNV::safe_VkExternalMemoryImageCreateInfoNV()
+safe_VkExternalMemoryImageCreateInfoNV::safe_VkExternalMemoryImageCreateInfoNV() :
+    pNext(nullptr)
 {}
 
 safe_VkExternalMemoryImageCreateInfoNV::safe_VkExternalMemoryImageCreateInfoNV(const safe_VkExternalMemoryImageCreateInfoNV& src)
@@ -15713,7 +15904,8 @@ safe_VkExportMemoryAllocateInfoNV::safe_VkExportMemoryAllocateInfoNV(const VkExp
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkExportMemoryAllocateInfoNV::safe_VkExportMemoryAllocateInfoNV()
+safe_VkExportMemoryAllocateInfoNV::safe_VkExportMemoryAllocateInfoNV() :
+    pNext(nullptr)
 {}
 
 safe_VkExportMemoryAllocateInfoNV::safe_VkExportMemoryAllocateInfoNV(const safe_VkExportMemoryAllocateInfoNV& src)
@@ -15767,7 +15959,8 @@ safe_VkImportMemoryWin32HandleInfoNV::safe_VkImportMemoryWin32HandleInfoNV(const
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImportMemoryWin32HandleInfoNV::safe_VkImportMemoryWin32HandleInfoNV()
+safe_VkImportMemoryWin32HandleInfoNV::safe_VkImportMemoryWin32HandleInfoNV() :
+    pNext(nullptr)
 {}
 
 safe_VkImportMemoryWin32HandleInfoNV::safe_VkImportMemoryWin32HandleInfoNV(const safe_VkImportMemoryWin32HandleInfoNV& src)
@@ -15831,6 +16024,7 @@ safe_VkExportMemoryWin32HandleInfoNV::safe_VkExportMemoryWin32HandleInfoNV(const
 }
 
 safe_VkExportMemoryWin32HandleInfoNV::safe_VkExportMemoryWin32HandleInfoNV() :
+    pNext(nullptr),
     pAttributes(nullptr)
 {}
 
@@ -15937,6 +16131,7 @@ safe_VkWin32KeyedMutexAcquireReleaseInfoNV::safe_VkWin32KeyedMutexAcquireRelease
 }
 
 safe_VkWin32KeyedMutexAcquireReleaseInfoNV::safe_VkWin32KeyedMutexAcquireReleaseInfoNV() :
+    pNext(nullptr),
     pAcquireSyncs(nullptr),
     pAcquireKeys(nullptr),
     pAcquireTimeoutMilliseconds(nullptr),
@@ -16140,6 +16335,7 @@ safe_VkValidationFlagsEXT::safe_VkValidationFlagsEXT(const VkValidationFlagsEXT*
 }
 
 safe_VkValidationFlagsEXT::safe_VkValidationFlagsEXT() :
+    pNext(nullptr),
     pDisabledValidationChecks(nullptr)
 {}
 
@@ -16218,7 +16414,8 @@ safe_VkViSurfaceCreateInfoNN::safe_VkViSurfaceCreateInfoNN(const VkViSurfaceCrea
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkViSurfaceCreateInfoNN::safe_VkViSurfaceCreateInfoNN()
+safe_VkViSurfaceCreateInfoNN::safe_VkViSurfaceCreateInfoNN() :
+    pNext(nullptr)
 {}
 
 safe_VkViSurfaceCreateInfoNN::safe_VkViSurfaceCreateInfoNN(const safe_VkViSurfaceCreateInfoNN& src)
@@ -16275,7 +16472,8 @@ safe_VkImageViewASTCDecodeModeEXT::safe_VkImageViewASTCDecodeModeEXT(const VkIma
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImageViewASTCDecodeModeEXT::safe_VkImageViewASTCDecodeModeEXT()
+safe_VkImageViewASTCDecodeModeEXT::safe_VkImageViewASTCDecodeModeEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkImageViewASTCDecodeModeEXT::safe_VkImageViewASTCDecodeModeEXT(const safe_VkImageViewASTCDecodeModeEXT& src)
@@ -16326,7 +16524,8 @@ safe_VkPhysicalDeviceASTCDecodeFeaturesEXT::safe_VkPhysicalDeviceASTCDecodeFeatu
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceASTCDecodeFeaturesEXT::safe_VkPhysicalDeviceASTCDecodeFeaturesEXT()
+safe_VkPhysicalDeviceASTCDecodeFeaturesEXT::safe_VkPhysicalDeviceASTCDecodeFeaturesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceASTCDecodeFeaturesEXT::safe_VkPhysicalDeviceASTCDecodeFeaturesEXT(const safe_VkPhysicalDeviceASTCDecodeFeaturesEXT& src)
@@ -16379,7 +16578,8 @@ safe_VkConditionalRenderingBeginInfoEXT::safe_VkConditionalRenderingBeginInfoEXT
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkConditionalRenderingBeginInfoEXT::safe_VkConditionalRenderingBeginInfoEXT()
+safe_VkConditionalRenderingBeginInfoEXT::safe_VkConditionalRenderingBeginInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkConditionalRenderingBeginInfoEXT::safe_VkConditionalRenderingBeginInfoEXT(const safe_VkConditionalRenderingBeginInfoEXT& src)
@@ -16439,7 +16639,8 @@ safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT::safe_VkPhysicalDeviceCondi
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT::safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT()
+safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT::safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT::safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT(const safe_VkPhysicalDeviceConditionalRenderingFeaturesEXT& src)
@@ -16494,7 +16695,8 @@ safe_VkCommandBufferInheritanceConditionalRenderingInfoEXT::safe_VkCommandBuffer
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkCommandBufferInheritanceConditionalRenderingInfoEXT::safe_VkCommandBufferInheritanceConditionalRenderingInfoEXT()
+safe_VkCommandBufferInheritanceConditionalRenderingInfoEXT::safe_VkCommandBufferInheritanceConditionalRenderingInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkCommandBufferInheritanceConditionalRenderingInfoEXT::safe_VkCommandBufferInheritanceConditionalRenderingInfoEXT(const safe_VkCommandBufferInheritanceConditionalRenderingInfoEXT& src)
@@ -16545,7 +16747,8 @@ safe_VkDeviceGeneratedCommandsFeaturesNVX::safe_VkDeviceGeneratedCommandsFeature
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDeviceGeneratedCommandsFeaturesNVX::safe_VkDeviceGeneratedCommandsFeaturesNVX()
+safe_VkDeviceGeneratedCommandsFeaturesNVX::safe_VkDeviceGeneratedCommandsFeaturesNVX() :
+    pNext(nullptr)
 {}
 
 safe_VkDeviceGeneratedCommandsFeaturesNVX::safe_VkDeviceGeneratedCommandsFeaturesNVX(const safe_VkDeviceGeneratedCommandsFeaturesNVX& src)
@@ -16600,7 +16803,8 @@ safe_VkDeviceGeneratedCommandsLimitsNVX::safe_VkDeviceGeneratedCommandsLimitsNVX
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDeviceGeneratedCommandsLimitsNVX::safe_VkDeviceGeneratedCommandsLimitsNVX()
+safe_VkDeviceGeneratedCommandsLimitsNVX::safe_VkDeviceGeneratedCommandsLimitsNVX() :
+    pNext(nullptr)
 {}
 
 safe_VkDeviceGeneratedCommandsLimitsNVX::safe_VkDeviceGeneratedCommandsLimitsNVX(const safe_VkDeviceGeneratedCommandsLimitsNVX& src)
@@ -16675,6 +16879,7 @@ safe_VkIndirectCommandsLayoutCreateInfoNVX::safe_VkIndirectCommandsLayoutCreateI
 }
 
 safe_VkIndirectCommandsLayoutCreateInfoNVX::safe_VkIndirectCommandsLayoutCreateInfoNVX() :
+    pNext(nullptr),
     pTokens(nullptr)
 {}
 
@@ -16774,6 +16979,7 @@ safe_VkCmdProcessCommandsInfoNVX::safe_VkCmdProcessCommandsInfoNVX(const VkCmdPr
 }
 
 safe_VkCmdProcessCommandsInfoNVX::safe_VkCmdProcessCommandsInfoNVX() :
+    pNext(nullptr),
     pIndirectCommandsTokens(nullptr)
 {}
 
@@ -16891,7 +17097,8 @@ safe_VkCmdReserveSpaceForCommandsInfoNVX::safe_VkCmdReserveSpaceForCommandsInfoN
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkCmdReserveSpaceForCommandsInfoNVX::safe_VkCmdReserveSpaceForCommandsInfoNVX()
+safe_VkCmdReserveSpaceForCommandsInfoNVX::safe_VkCmdReserveSpaceForCommandsInfoNVX() :
+    pNext(nullptr)
 {}
 
 safe_VkCmdReserveSpaceForCommandsInfoNVX::safe_VkCmdReserveSpaceForCommandsInfoNVX(const safe_VkCmdReserveSpaceForCommandsInfoNVX& src)
@@ -16971,6 +17178,7 @@ safe_VkObjectTableCreateInfoNVX::safe_VkObjectTableCreateInfoNVX(const VkObjectT
 }
 
 safe_VkObjectTableCreateInfoNVX::safe_VkObjectTableCreateInfoNVX() :
+    pNext(nullptr),
     pObjectEntryTypes(nullptr),
     pObjectEntryCounts(nullptr),
     pObjectEntryUsageFlags(nullptr)
@@ -17123,6 +17331,7 @@ safe_VkPipelineViewportWScalingStateCreateInfoNV::safe_VkPipelineViewportWScalin
 }
 
 safe_VkPipelineViewportWScalingStateCreateInfoNV::safe_VkPipelineViewportWScalingStateCreateInfoNV() :
+    pNext(nullptr),
     pViewportWScalings(nullptr)
 {}
 
@@ -17212,7 +17421,8 @@ safe_VkSurfaceCapabilities2EXT::safe_VkSurfaceCapabilities2EXT(const VkSurfaceCa
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSurfaceCapabilities2EXT::safe_VkSurfaceCapabilities2EXT()
+safe_VkSurfaceCapabilities2EXT::safe_VkSurfaceCapabilities2EXT() :
+    pNext(nullptr)
 {}
 
 safe_VkSurfaceCapabilities2EXT::safe_VkSurfaceCapabilities2EXT(const safe_VkSurfaceCapabilities2EXT& src)
@@ -17303,7 +17513,8 @@ safe_VkDisplayPowerInfoEXT::safe_VkDisplayPowerInfoEXT(const VkDisplayPowerInfoE
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDisplayPowerInfoEXT::safe_VkDisplayPowerInfoEXT()
+safe_VkDisplayPowerInfoEXT::safe_VkDisplayPowerInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkDisplayPowerInfoEXT::safe_VkDisplayPowerInfoEXT(const safe_VkDisplayPowerInfoEXT& src)
@@ -17354,7 +17565,8 @@ safe_VkDeviceEventInfoEXT::safe_VkDeviceEventInfoEXT(const VkDeviceEventInfoEXT*
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDeviceEventInfoEXT::safe_VkDeviceEventInfoEXT()
+safe_VkDeviceEventInfoEXT::safe_VkDeviceEventInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkDeviceEventInfoEXT::safe_VkDeviceEventInfoEXT(const safe_VkDeviceEventInfoEXT& src)
@@ -17405,7 +17617,8 @@ safe_VkDisplayEventInfoEXT::safe_VkDisplayEventInfoEXT(const VkDisplayEventInfoE
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDisplayEventInfoEXT::safe_VkDisplayEventInfoEXT()
+safe_VkDisplayEventInfoEXT::safe_VkDisplayEventInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkDisplayEventInfoEXT::safe_VkDisplayEventInfoEXT(const safe_VkDisplayEventInfoEXT& src)
@@ -17456,7 +17669,8 @@ safe_VkSwapchainCounterCreateInfoEXT::safe_VkSwapchainCounterCreateInfoEXT(const
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSwapchainCounterCreateInfoEXT::safe_VkSwapchainCounterCreateInfoEXT()
+safe_VkSwapchainCounterCreateInfoEXT::safe_VkSwapchainCounterCreateInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkSwapchainCounterCreateInfoEXT::safe_VkSwapchainCounterCreateInfoEXT(const safe_VkSwapchainCounterCreateInfoEXT& src)
@@ -17513,6 +17727,7 @@ safe_VkPresentTimesInfoGOOGLE::safe_VkPresentTimesInfoGOOGLE(const VkPresentTime
 }
 
 safe_VkPresentTimesInfoGOOGLE::safe_VkPresentTimesInfoGOOGLE() :
+    pNext(nullptr),
     pTimes(nullptr)
 {}
 
@@ -17588,7 +17803,8 @@ safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX::safe_VkPhysicalDev
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX::safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX()
+safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX::safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX::safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX(const safe_VkPhysicalDeviceMultiviewPerViewAttributesPropertiesNVX& src)
@@ -17646,6 +17862,7 @@ safe_VkPipelineViewportSwizzleStateCreateInfoNV::safe_VkPipelineViewportSwizzleS
 }
 
 safe_VkPipelineViewportSwizzleStateCreateInfoNV::safe_VkPipelineViewportSwizzleStateCreateInfoNV() :
+    pNext(nullptr),
     pViewportSwizzles(nullptr)
 {}
 
@@ -17725,7 +17942,8 @@ safe_VkPhysicalDeviceDiscardRectanglePropertiesEXT::safe_VkPhysicalDeviceDiscard
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceDiscardRectanglePropertiesEXT::safe_VkPhysicalDeviceDiscardRectanglePropertiesEXT()
+safe_VkPhysicalDeviceDiscardRectanglePropertiesEXT::safe_VkPhysicalDeviceDiscardRectanglePropertiesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceDiscardRectanglePropertiesEXT::safe_VkPhysicalDeviceDiscardRectanglePropertiesEXT(const safe_VkPhysicalDeviceDiscardRectanglePropertiesEXT& src)
@@ -17784,6 +18002,7 @@ safe_VkPipelineDiscardRectangleStateCreateInfoEXT::safe_VkPipelineDiscardRectang
 }
 
 safe_VkPipelineDiscardRectangleStateCreateInfoEXT::safe_VkPipelineDiscardRectangleStateCreateInfoEXT() :
+    pNext(nullptr),
     pDiscardRectangles(nullptr)
 {}
 
@@ -17875,7 +18094,8 @@ safe_VkPhysicalDeviceConservativeRasterizationPropertiesEXT::safe_VkPhysicalDevi
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceConservativeRasterizationPropertiesEXT::safe_VkPhysicalDeviceConservativeRasterizationPropertiesEXT()
+safe_VkPhysicalDeviceConservativeRasterizationPropertiesEXT::safe_VkPhysicalDeviceConservativeRasterizationPropertiesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceConservativeRasterizationPropertiesEXT::safe_VkPhysicalDeviceConservativeRasterizationPropertiesEXT(const safe_VkPhysicalDeviceConservativeRasterizationPropertiesEXT& src)
@@ -17960,7 +18180,8 @@ safe_VkPipelineRasterizationConservativeStateCreateInfoEXT::safe_VkPipelineRaste
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPipelineRasterizationConservativeStateCreateInfoEXT::safe_VkPipelineRasterizationConservativeStateCreateInfoEXT()
+safe_VkPipelineRasterizationConservativeStateCreateInfoEXT::safe_VkPipelineRasterizationConservativeStateCreateInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPipelineRasterizationConservativeStateCreateInfoEXT::safe_VkPipelineRasterizationConservativeStateCreateInfoEXT(const safe_VkPipelineRasterizationConservativeStateCreateInfoEXT& src)
@@ -18019,7 +18240,8 @@ safe_VkPhysicalDeviceDepthClipEnableFeaturesEXT::safe_VkPhysicalDeviceDepthClipE
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceDepthClipEnableFeaturesEXT::safe_VkPhysicalDeviceDepthClipEnableFeaturesEXT()
+safe_VkPhysicalDeviceDepthClipEnableFeaturesEXT::safe_VkPhysicalDeviceDepthClipEnableFeaturesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceDepthClipEnableFeaturesEXT::safe_VkPhysicalDeviceDepthClipEnableFeaturesEXT(const safe_VkPhysicalDeviceDepthClipEnableFeaturesEXT& src)
@@ -18071,7 +18293,8 @@ safe_VkPipelineRasterizationDepthClipStateCreateInfoEXT::safe_VkPipelineRasteriz
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPipelineRasterizationDepthClipStateCreateInfoEXT::safe_VkPipelineRasterizationDepthClipStateCreateInfoEXT()
+safe_VkPipelineRasterizationDepthClipStateCreateInfoEXT::safe_VkPipelineRasterizationDepthClipStateCreateInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPipelineRasterizationDepthClipStateCreateInfoEXT::safe_VkPipelineRasterizationDepthClipStateCreateInfoEXT(const safe_VkPipelineRasterizationDepthClipStateCreateInfoEXT& src)
@@ -18133,7 +18356,8 @@ safe_VkHdrMetadataEXT::safe_VkHdrMetadataEXT(const VkHdrMetadataEXT* in_struct) 
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkHdrMetadataEXT::safe_VkHdrMetadataEXT()
+safe_VkHdrMetadataEXT::safe_VkHdrMetadataEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkHdrMetadataEXT::safe_VkHdrMetadataEXT(const safe_VkHdrMetadataEXT& src)
@@ -18215,7 +18439,8 @@ safe_VkIOSSurfaceCreateInfoMVK::safe_VkIOSSurfaceCreateInfoMVK(const VkIOSSurfac
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkIOSSurfaceCreateInfoMVK::safe_VkIOSSurfaceCreateInfoMVK()
+safe_VkIOSSurfaceCreateInfoMVK::safe_VkIOSSurfaceCreateInfoMVK() :
+    pNext(nullptr)
 {}
 
 safe_VkIOSSurfaceCreateInfoMVK::safe_VkIOSSurfaceCreateInfoMVK(const safe_VkIOSSurfaceCreateInfoMVK& src)
@@ -18275,7 +18500,8 @@ safe_VkMacOSSurfaceCreateInfoMVK::safe_VkMacOSSurfaceCreateInfoMVK(const VkMacOS
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkMacOSSurfaceCreateInfoMVK::safe_VkMacOSSurfaceCreateInfoMVK()
+safe_VkMacOSSurfaceCreateInfoMVK::safe_VkMacOSSurfaceCreateInfoMVK() :
+    pNext(nullptr)
 {}
 
 safe_VkMacOSSurfaceCreateInfoMVK::safe_VkMacOSSurfaceCreateInfoMVK(const safe_VkMacOSSurfaceCreateInfoMVK& src)
@@ -18334,7 +18560,8 @@ safe_VkDebugUtilsObjectNameInfoEXT::safe_VkDebugUtilsObjectNameInfoEXT(const VkD
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDebugUtilsObjectNameInfoEXT::safe_VkDebugUtilsObjectNameInfoEXT()
+safe_VkDebugUtilsObjectNameInfoEXT::safe_VkDebugUtilsObjectNameInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkDebugUtilsObjectNameInfoEXT::safe_VkDebugUtilsObjectNameInfoEXT(const safe_VkDebugUtilsObjectNameInfoEXT& src)
@@ -18397,7 +18624,8 @@ safe_VkDebugUtilsObjectTagInfoEXT::safe_VkDebugUtilsObjectTagInfoEXT(const VkDeb
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDebugUtilsObjectTagInfoEXT::safe_VkDebugUtilsObjectTagInfoEXT()
+safe_VkDebugUtilsObjectTagInfoEXT::safe_VkDebugUtilsObjectTagInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkDebugUtilsObjectTagInfoEXT::safe_VkDebugUtilsObjectTagInfoEXT(const safe_VkDebugUtilsObjectTagInfoEXT& src)
@@ -18467,7 +18695,8 @@ safe_VkDebugUtilsLabelEXT::safe_VkDebugUtilsLabelEXT(const VkDebugUtilsLabelEXT*
     }
 }
 
-safe_VkDebugUtilsLabelEXT::safe_VkDebugUtilsLabelEXT()
+safe_VkDebugUtilsLabelEXT::safe_VkDebugUtilsLabelEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkDebugUtilsLabelEXT::safe_VkDebugUtilsLabelEXT(const safe_VkDebugUtilsLabelEXT& src)
@@ -18558,6 +18787,7 @@ safe_VkDebugUtilsMessengerCallbackDataEXT::safe_VkDebugUtilsMessengerCallbackDat
 }
 
 safe_VkDebugUtilsMessengerCallbackDataEXT::safe_VkDebugUtilsMessengerCallbackDataEXT() :
+    pNext(nullptr),
     pQueueLabels(nullptr),
     pCmdBufLabels(nullptr),
     pObjects(nullptr)
@@ -18735,7 +18965,8 @@ safe_VkDebugUtilsMessengerCreateInfoEXT::safe_VkDebugUtilsMessengerCreateInfoEXT
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDebugUtilsMessengerCreateInfoEXT::safe_VkDebugUtilsMessengerCreateInfoEXT()
+safe_VkDebugUtilsMessengerCreateInfoEXT::safe_VkDebugUtilsMessengerCreateInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkDebugUtilsMessengerCreateInfoEXT::safe_VkDebugUtilsMessengerCreateInfoEXT(const safe_VkDebugUtilsMessengerCreateInfoEXT& src)
@@ -18804,7 +19035,8 @@ safe_VkAndroidHardwareBufferUsageANDROID::safe_VkAndroidHardwareBufferUsageANDRO
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkAndroidHardwareBufferUsageANDROID::safe_VkAndroidHardwareBufferUsageANDROID()
+safe_VkAndroidHardwareBufferUsageANDROID::safe_VkAndroidHardwareBufferUsageANDROID() :
+    pNext(nullptr)
 {}
 
 safe_VkAndroidHardwareBufferUsageANDROID::safe_VkAndroidHardwareBufferUsageANDROID(const safe_VkAndroidHardwareBufferUsageANDROID& src)
@@ -18860,7 +19092,8 @@ safe_VkAndroidHardwareBufferPropertiesANDROID::safe_VkAndroidHardwareBufferPrope
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkAndroidHardwareBufferPropertiesANDROID::safe_VkAndroidHardwareBufferPropertiesANDROID()
+safe_VkAndroidHardwareBufferPropertiesANDROID::safe_VkAndroidHardwareBufferPropertiesANDROID() :
+    pNext(nullptr)
 {}
 
 safe_VkAndroidHardwareBufferPropertiesANDROID::safe_VkAndroidHardwareBufferPropertiesANDROID(const safe_VkAndroidHardwareBufferPropertiesANDROID& src)
@@ -18926,7 +19159,8 @@ safe_VkAndroidHardwareBufferFormatPropertiesANDROID::safe_VkAndroidHardwareBuffe
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkAndroidHardwareBufferFormatPropertiesANDROID::safe_VkAndroidHardwareBufferFormatPropertiesANDROID()
+safe_VkAndroidHardwareBufferFormatPropertiesANDROID::safe_VkAndroidHardwareBufferFormatPropertiesANDROID() :
+    pNext(nullptr)
 {}
 
 safe_VkAndroidHardwareBufferFormatPropertiesANDROID::safe_VkAndroidHardwareBufferFormatPropertiesANDROID(const safe_VkAndroidHardwareBufferFormatPropertiesANDROID& src)
@@ -19011,6 +19245,7 @@ safe_VkImportAndroidHardwareBufferInfoANDROID::safe_VkImportAndroidHardwareBuffe
 }
 
 safe_VkImportAndroidHardwareBufferInfoANDROID::safe_VkImportAndroidHardwareBufferInfoANDROID() :
+    pNext(nullptr),
     buffer(nullptr)
 {}
 
@@ -19066,7 +19301,8 @@ safe_VkMemoryGetAndroidHardwareBufferInfoANDROID::safe_VkMemoryGetAndroidHardwar
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkMemoryGetAndroidHardwareBufferInfoANDROID::safe_VkMemoryGetAndroidHardwareBufferInfoANDROID()
+safe_VkMemoryGetAndroidHardwareBufferInfoANDROID::safe_VkMemoryGetAndroidHardwareBufferInfoANDROID() :
+    pNext(nullptr)
 {}
 
 safe_VkMemoryGetAndroidHardwareBufferInfoANDROID::safe_VkMemoryGetAndroidHardwareBufferInfoANDROID(const safe_VkMemoryGetAndroidHardwareBufferInfoANDROID& src)
@@ -19121,7 +19357,8 @@ safe_VkExternalFormatANDROID::safe_VkExternalFormatANDROID(const VkExternalForma
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkExternalFormatANDROID::safe_VkExternalFormatANDROID()
+safe_VkExternalFormatANDROID::safe_VkExternalFormatANDROID() :
+    pNext(nullptr)
 {}
 
 safe_VkExternalFormatANDROID::safe_VkExternalFormatANDROID(const safe_VkExternalFormatANDROID& src)
@@ -19174,7 +19411,8 @@ safe_VkSamplerReductionModeCreateInfoEXT::safe_VkSamplerReductionModeCreateInfoE
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSamplerReductionModeCreateInfoEXT::safe_VkSamplerReductionModeCreateInfoEXT()
+safe_VkSamplerReductionModeCreateInfoEXT::safe_VkSamplerReductionModeCreateInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkSamplerReductionModeCreateInfoEXT::safe_VkSamplerReductionModeCreateInfoEXT(const safe_VkSamplerReductionModeCreateInfoEXT& src)
@@ -19226,7 +19464,8 @@ safe_VkPhysicalDeviceSamplerFilterMinmaxPropertiesEXT::safe_VkPhysicalDeviceSamp
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceSamplerFilterMinmaxPropertiesEXT::safe_VkPhysicalDeviceSamplerFilterMinmaxPropertiesEXT()
+safe_VkPhysicalDeviceSamplerFilterMinmaxPropertiesEXT::safe_VkPhysicalDeviceSamplerFilterMinmaxPropertiesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceSamplerFilterMinmaxPropertiesEXT::safe_VkPhysicalDeviceSamplerFilterMinmaxPropertiesEXT(const safe_VkPhysicalDeviceSamplerFilterMinmaxPropertiesEXT& src)
@@ -19282,7 +19521,8 @@ safe_VkPhysicalDeviceInlineUniformBlockFeaturesEXT::safe_VkPhysicalDeviceInlineU
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceInlineUniformBlockFeaturesEXT::safe_VkPhysicalDeviceInlineUniformBlockFeaturesEXT()
+safe_VkPhysicalDeviceInlineUniformBlockFeaturesEXT::safe_VkPhysicalDeviceInlineUniformBlockFeaturesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceInlineUniformBlockFeaturesEXT::safe_VkPhysicalDeviceInlineUniformBlockFeaturesEXT(const safe_VkPhysicalDeviceInlineUniformBlockFeaturesEXT& src)
@@ -19341,7 +19581,8 @@ safe_VkPhysicalDeviceInlineUniformBlockPropertiesEXT::safe_VkPhysicalDeviceInlin
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceInlineUniformBlockPropertiesEXT::safe_VkPhysicalDeviceInlineUniformBlockPropertiesEXT()
+safe_VkPhysicalDeviceInlineUniformBlockPropertiesEXT::safe_VkPhysicalDeviceInlineUniformBlockPropertiesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceInlineUniformBlockPropertiesEXT::safe_VkPhysicalDeviceInlineUniformBlockPropertiesEXT(const safe_VkPhysicalDeviceInlineUniformBlockPropertiesEXT& src)
@@ -19409,7 +19650,8 @@ safe_VkWriteDescriptorSetInlineUniformBlockEXT::safe_VkWriteDescriptorSetInlineU
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkWriteDescriptorSetInlineUniformBlockEXT::safe_VkWriteDescriptorSetInlineUniformBlockEXT()
+safe_VkWriteDescriptorSetInlineUniformBlockEXT::safe_VkWriteDescriptorSetInlineUniformBlockEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkWriteDescriptorSetInlineUniformBlockEXT::safe_VkWriteDescriptorSetInlineUniformBlockEXT(const safe_VkWriteDescriptorSetInlineUniformBlockEXT& src)
@@ -19464,7 +19706,8 @@ safe_VkDescriptorPoolInlineUniformBlockCreateInfoEXT::safe_VkDescriptorPoolInlin
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDescriptorPoolInlineUniformBlockCreateInfoEXT::safe_VkDescriptorPoolInlineUniformBlockCreateInfoEXT()
+safe_VkDescriptorPoolInlineUniformBlockCreateInfoEXT::safe_VkDescriptorPoolInlineUniformBlockCreateInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkDescriptorPoolInlineUniformBlockCreateInfoEXT::safe_VkDescriptorPoolInlineUniformBlockCreateInfoEXT(const safe_VkDescriptorPoolInlineUniformBlockCreateInfoEXT& src)
@@ -19523,6 +19766,7 @@ safe_VkSampleLocationsInfoEXT::safe_VkSampleLocationsInfoEXT(const VkSampleLocat
 }
 
 safe_VkSampleLocationsInfoEXT::safe_VkSampleLocationsInfoEXT() :
+    pNext(nullptr),
     pSampleLocations(nullptr)
 {}
 
@@ -19618,6 +19862,7 @@ safe_VkRenderPassSampleLocationsBeginInfoEXT::safe_VkRenderPassSampleLocationsBe
 }
 
 safe_VkRenderPassSampleLocationsBeginInfoEXT::safe_VkRenderPassSampleLocationsBeginInfoEXT() :
+    pNext(nullptr),
     pAttachmentInitialSampleLocations(nullptr),
     pPostSubpassSampleLocations(nullptr)
 {}
@@ -19723,7 +19968,8 @@ safe_VkPipelineSampleLocationsStateCreateInfoEXT::safe_VkPipelineSampleLocations
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPipelineSampleLocationsStateCreateInfoEXT::safe_VkPipelineSampleLocationsStateCreateInfoEXT()
+safe_VkPipelineSampleLocationsStateCreateInfoEXT::safe_VkPipelineSampleLocationsStateCreateInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPipelineSampleLocationsStateCreateInfoEXT::safe_VkPipelineSampleLocationsStateCreateInfoEXT(const safe_VkPipelineSampleLocationsStateCreateInfoEXT& src)
@@ -19784,7 +20030,8 @@ safe_VkPhysicalDeviceSampleLocationsPropertiesEXT::safe_VkPhysicalDeviceSampleLo
     }
 }
 
-safe_VkPhysicalDeviceSampleLocationsPropertiesEXT::safe_VkPhysicalDeviceSampleLocationsPropertiesEXT()
+safe_VkPhysicalDeviceSampleLocationsPropertiesEXT::safe_VkPhysicalDeviceSampleLocationsPropertiesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceSampleLocationsPropertiesEXT::safe_VkPhysicalDeviceSampleLocationsPropertiesEXT(const safe_VkPhysicalDeviceSampleLocationsPropertiesEXT& src)
@@ -19859,7 +20106,8 @@ safe_VkMultisamplePropertiesEXT::safe_VkMultisamplePropertiesEXT(const VkMultisa
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkMultisamplePropertiesEXT::safe_VkMultisamplePropertiesEXT()
+safe_VkMultisamplePropertiesEXT::safe_VkMultisamplePropertiesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkMultisamplePropertiesEXT::safe_VkMultisamplePropertiesEXT(const safe_VkMultisamplePropertiesEXT& src)
@@ -19910,7 +20158,8 @@ safe_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT::safe_VkPhysicalDeviceBle
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT::safe_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT()
+safe_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT::safe_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT::safe_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT(const safe_VkPhysicalDeviceBlendOperationAdvancedFeaturesEXT& src)
@@ -19966,7 +20215,8 @@ safe_VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::safe_VkPhysicalDeviceB
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::safe_VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT()
+safe_VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::safe_VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT::safe_VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT(const safe_VkPhysicalDeviceBlendOperationAdvancedPropertiesEXT& src)
@@ -20039,7 +20289,8 @@ safe_VkPipelineColorBlendAdvancedStateCreateInfoEXT::safe_VkPipelineColorBlendAd
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPipelineColorBlendAdvancedStateCreateInfoEXT::safe_VkPipelineColorBlendAdvancedStateCreateInfoEXT()
+safe_VkPipelineColorBlendAdvancedStateCreateInfoEXT::safe_VkPipelineColorBlendAdvancedStateCreateInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPipelineColorBlendAdvancedStateCreateInfoEXT::safe_VkPipelineColorBlendAdvancedStateCreateInfoEXT(const safe_VkPipelineColorBlendAdvancedStateCreateInfoEXT& src)
@@ -20100,7 +20351,8 @@ safe_VkPipelineCoverageToColorStateCreateInfoNV::safe_VkPipelineCoverageToColorS
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPipelineCoverageToColorStateCreateInfoNV::safe_VkPipelineCoverageToColorStateCreateInfoNV()
+safe_VkPipelineCoverageToColorStateCreateInfoNV::safe_VkPipelineCoverageToColorStateCreateInfoNV() :
+    pNext(nullptr)
 {}
 
 safe_VkPipelineCoverageToColorStateCreateInfoNV::safe_VkPipelineCoverageToColorStateCreateInfoNV(const safe_VkPipelineCoverageToColorStateCreateInfoNV& src)
@@ -20168,6 +20420,7 @@ safe_VkPipelineCoverageModulationStateCreateInfoNV::safe_VkPipelineCoverageModul
 }
 
 safe_VkPipelineCoverageModulationStateCreateInfoNV::safe_VkPipelineCoverageModulationStateCreateInfoNV() :
+    pNext(nullptr),
     pCoverageModulationTable(nullptr)
 {}
 
@@ -20256,7 +20509,8 @@ safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV::safe_VkPhysicalDeviceShaderSM
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV::safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV()
+safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV::safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV::safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV(const safe_VkPhysicalDeviceShaderSMBuiltinsPropertiesNV& src)
@@ -20311,7 +20565,8 @@ safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV::safe_VkPhysicalDeviceShaderSMBu
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV::safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV()
+safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV::safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV::safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV(const safe_VkPhysicalDeviceShaderSMBuiltinsFeaturesNV& src)
@@ -20368,6 +20623,7 @@ safe_VkDrmFormatModifierPropertiesListEXT::safe_VkDrmFormatModifierPropertiesLis
 }
 
 safe_VkDrmFormatModifierPropertiesListEXT::safe_VkDrmFormatModifierPropertiesListEXT() :
+    pNext(nullptr),
     pDrmFormatModifierProperties(nullptr)
 {}
 
@@ -20451,6 +20707,7 @@ safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT::safe_VkPhysicalDeviceImageDr
 }
 
 safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT::safe_VkPhysicalDeviceImageDrmFormatModifierInfoEXT() :
+    pNext(nullptr),
     pQueueFamilyIndices(nullptr)
 {}
 
@@ -20540,6 +20797,7 @@ safe_VkImageDrmFormatModifierListCreateInfoEXT::safe_VkImageDrmFormatModifierLis
 }
 
 safe_VkImageDrmFormatModifierListCreateInfoEXT::safe_VkImageDrmFormatModifierListCreateInfoEXT() :
+    pNext(nullptr),
     pDrmFormatModifiers(nullptr)
 {}
 
@@ -20622,6 +20880,7 @@ safe_VkImageDrmFormatModifierExplicitCreateInfoEXT::safe_VkImageDrmFormatModifie
 }
 
 safe_VkImageDrmFormatModifierExplicitCreateInfoEXT::safe_VkImageDrmFormatModifierExplicitCreateInfoEXT() :
+    pNext(nullptr),
     pPlaneLayouts(nullptr)
 {}
 
@@ -20701,7 +20960,8 @@ safe_VkImageDrmFormatModifierPropertiesEXT::safe_VkImageDrmFormatModifierPropert
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImageDrmFormatModifierPropertiesEXT::safe_VkImageDrmFormatModifierPropertiesEXT()
+safe_VkImageDrmFormatModifierPropertiesEXT::safe_VkImageDrmFormatModifierPropertiesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkImageDrmFormatModifierPropertiesEXT::safe_VkImageDrmFormatModifierPropertiesEXT(const safe_VkImageDrmFormatModifierPropertiesEXT& src)
@@ -20754,7 +21014,8 @@ safe_VkValidationCacheCreateInfoEXT::safe_VkValidationCacheCreateInfoEXT(const V
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkValidationCacheCreateInfoEXT::safe_VkValidationCacheCreateInfoEXT()
+safe_VkValidationCacheCreateInfoEXT::safe_VkValidationCacheCreateInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkValidationCacheCreateInfoEXT::safe_VkValidationCacheCreateInfoEXT(const safe_VkValidationCacheCreateInfoEXT& src)
@@ -20813,7 +21074,8 @@ safe_VkShaderModuleValidationCacheCreateInfoEXT::safe_VkShaderModuleValidationCa
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkShaderModuleValidationCacheCreateInfoEXT::safe_VkShaderModuleValidationCacheCreateInfoEXT()
+safe_VkShaderModuleValidationCacheCreateInfoEXT::safe_VkShaderModuleValidationCacheCreateInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkShaderModuleValidationCacheCreateInfoEXT::safe_VkShaderModuleValidationCacheCreateInfoEXT(const safe_VkShaderModuleValidationCacheCreateInfoEXT& src)
@@ -20870,6 +21132,7 @@ safe_VkDescriptorSetLayoutBindingFlagsCreateInfoEXT::safe_VkDescriptorSetLayoutB
 }
 
 safe_VkDescriptorSetLayoutBindingFlagsCreateInfoEXT::safe_VkDescriptorSetLayoutBindingFlagsCreateInfoEXT() :
+    pNext(nullptr),
     pBindingFlags(nullptr)
 {}
 
@@ -20964,7 +21227,8 @@ safe_VkPhysicalDeviceDescriptorIndexingFeaturesEXT::safe_VkPhysicalDeviceDescrip
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceDescriptorIndexingFeaturesEXT::safe_VkPhysicalDeviceDescriptorIndexingFeaturesEXT()
+safe_VkPhysicalDeviceDescriptorIndexingFeaturesEXT::safe_VkPhysicalDeviceDescriptorIndexingFeaturesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceDescriptorIndexingFeaturesEXT::safe_VkPhysicalDeviceDescriptorIndexingFeaturesEXT(const safe_VkPhysicalDeviceDescriptorIndexingFeaturesEXT& src)
@@ -21113,7 +21377,8 @@ safe_VkPhysicalDeviceDescriptorIndexingPropertiesEXT::safe_VkPhysicalDeviceDescr
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceDescriptorIndexingPropertiesEXT::safe_VkPhysicalDeviceDescriptorIndexingPropertiesEXT()
+safe_VkPhysicalDeviceDescriptorIndexingPropertiesEXT::safe_VkPhysicalDeviceDescriptorIndexingPropertiesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceDescriptorIndexingPropertiesEXT::safe_VkPhysicalDeviceDescriptorIndexingPropertiesEXT(const safe_VkPhysicalDeviceDescriptorIndexingPropertiesEXT& src)
@@ -21258,6 +21523,7 @@ safe_VkDescriptorSetVariableDescriptorCountAllocateInfoEXT::safe_VkDescriptorSet
 }
 
 safe_VkDescriptorSetVariableDescriptorCountAllocateInfoEXT::safe_VkDescriptorSetVariableDescriptorCountAllocateInfoEXT() :
+    pNext(nullptr),
     pDescriptorCounts(nullptr)
 {}
 
@@ -21333,7 +21599,8 @@ safe_VkDescriptorSetVariableDescriptorCountLayoutSupportEXT::safe_VkDescriptorSe
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDescriptorSetVariableDescriptorCountLayoutSupportEXT::safe_VkDescriptorSetVariableDescriptorCountLayoutSupportEXT()
+safe_VkDescriptorSetVariableDescriptorCountLayoutSupportEXT::safe_VkDescriptorSetVariableDescriptorCountLayoutSupportEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkDescriptorSetVariableDescriptorCountLayoutSupportEXT::safe_VkDescriptorSetVariableDescriptorCountLayoutSupportEXT(const safe_VkDescriptorSetVariableDescriptorCountLayoutSupportEXT& src)
@@ -21460,6 +21727,7 @@ safe_VkPipelineViewportShadingRateImageStateCreateInfoNV::safe_VkPipelineViewpor
 }
 
 safe_VkPipelineViewportShadingRateImageStateCreateInfoNV::safe_VkPipelineViewportShadingRateImageStateCreateInfoNV() :
+    pNext(nullptr),
     pShadingRatePalettes(nullptr)
 {}
 
@@ -21548,7 +21816,8 @@ safe_VkPhysicalDeviceShadingRateImageFeaturesNV::safe_VkPhysicalDeviceShadingRat
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceShadingRateImageFeaturesNV::safe_VkPhysicalDeviceShadingRateImageFeaturesNV()
+safe_VkPhysicalDeviceShadingRateImageFeaturesNV::safe_VkPhysicalDeviceShadingRateImageFeaturesNV() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceShadingRateImageFeaturesNV::safe_VkPhysicalDeviceShadingRateImageFeaturesNV(const safe_VkPhysicalDeviceShadingRateImageFeaturesNV& src)
@@ -21605,7 +21874,8 @@ safe_VkPhysicalDeviceShadingRateImagePropertiesNV::safe_VkPhysicalDeviceShadingR
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceShadingRateImagePropertiesNV::safe_VkPhysicalDeviceShadingRateImagePropertiesNV()
+safe_VkPhysicalDeviceShadingRateImagePropertiesNV::safe_VkPhysicalDeviceShadingRateImagePropertiesNV() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceShadingRateImagePropertiesNV::safe_VkPhysicalDeviceShadingRateImagePropertiesNV(const safe_VkPhysicalDeviceShadingRateImagePropertiesNV& src)
@@ -21750,6 +22020,7 @@ safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV::safe_VkPipelineViewpo
 }
 
 safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV::safe_VkPipelineViewportCoarseSampleOrderStateCreateInfoNV() :
+    pNext(nullptr),
     pCustomSampleOrders(nullptr)
 {}
 
@@ -21841,7 +22112,8 @@ safe_VkRayTracingShaderGroupCreateInfoNV::safe_VkRayTracingShaderGroupCreateInfo
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkRayTracingShaderGroupCreateInfoNV::safe_VkRayTracingShaderGroupCreateInfoNV()
+safe_VkRayTracingShaderGroupCreateInfoNV::safe_VkRayTracingShaderGroupCreateInfoNV() :
+    pNext(nullptr)
 {}
 
 safe_VkRayTracingShaderGroupCreateInfoNV::safe_VkRayTracingShaderGroupCreateInfoNV(const safe_VkRayTracingShaderGroupCreateInfoNV& src)
@@ -21929,6 +22201,7 @@ safe_VkRayTracingPipelineCreateInfoNV::safe_VkRayTracingPipelineCreateInfoNV(con
 }
 
 safe_VkRayTracingPipelineCreateInfoNV::safe_VkRayTracingPipelineCreateInfoNV() :
+    pNext(nullptr),
     pStages(nullptr),
     pGroups(nullptr)
 {}
@@ -22079,7 +22352,8 @@ safe_VkGeometryTrianglesNV::safe_VkGeometryTrianglesNV(const VkGeometryTriangles
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkGeometryTrianglesNV::safe_VkGeometryTrianglesNV()
+safe_VkGeometryTrianglesNV::safe_VkGeometryTrianglesNV() :
+    pNext(nullptr)
 {}
 
 safe_VkGeometryTrianglesNV::safe_VkGeometryTrianglesNV(const safe_VkGeometryTrianglesNV& src)
@@ -22173,7 +22447,8 @@ safe_VkGeometryAABBNV::safe_VkGeometryAABBNV(const VkGeometryAABBNV* in_struct) 
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkGeometryAABBNV::safe_VkGeometryAABBNV()
+safe_VkGeometryAABBNV::safe_VkGeometryAABBNV() :
+    pNext(nullptr)
 {}
 
 safe_VkGeometryAABBNV::safe_VkGeometryAABBNV(const safe_VkGeometryAABBNV& src)
@@ -22238,7 +22513,8 @@ safe_VkGeometryNV::safe_VkGeometryNV(const VkGeometryNV* in_struct) :
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkGeometryNV::safe_VkGeometryNV()
+safe_VkGeometryNV::safe_VkGeometryNV() :
+    pNext(nullptr)
 {}
 
 safe_VkGeometryNV::safe_VkGeometryNV(const safe_VkGeometryNV& src)
@@ -22308,6 +22584,7 @@ safe_VkAccelerationStructureInfoNV::safe_VkAccelerationStructureInfoNV(const VkA
 }
 
 safe_VkAccelerationStructureInfoNV::safe_VkAccelerationStructureInfoNV() :
+    pNext(nullptr),
     pGeometries(nullptr)
 {}
 
@@ -22404,7 +22681,8 @@ safe_VkAccelerationStructureCreateInfoNV::safe_VkAccelerationStructureCreateInfo
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkAccelerationStructureCreateInfoNV::safe_VkAccelerationStructureCreateInfoNV()
+safe_VkAccelerationStructureCreateInfoNV::safe_VkAccelerationStructureCreateInfoNV() :
+    pNext(nullptr)
 {}
 
 safe_VkAccelerationStructureCreateInfoNV::safe_VkAccelerationStructureCreateInfoNV(const safe_VkAccelerationStructureCreateInfoNV& src)
@@ -22468,6 +22746,7 @@ safe_VkBindAccelerationStructureMemoryInfoNV::safe_VkBindAccelerationStructureMe
 }
 
 safe_VkBindAccelerationStructureMemoryInfoNV::safe_VkBindAccelerationStructureMemoryInfoNV() :
+    pNext(nullptr),
     pDeviceIndices(nullptr)
 {}
 
@@ -22563,6 +22842,7 @@ safe_VkWriteDescriptorSetAccelerationStructureNV::safe_VkWriteDescriptorSetAccel
 }
 
 safe_VkWriteDescriptorSetAccelerationStructureNV::safe_VkWriteDescriptorSetAccelerationStructureNV() :
+    pNext(nullptr),
     pAccelerationStructures(nullptr)
 {}
 
@@ -22647,7 +22927,8 @@ safe_VkAccelerationStructureMemoryRequirementsInfoNV::safe_VkAccelerationStructu
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkAccelerationStructureMemoryRequirementsInfoNV::safe_VkAccelerationStructureMemoryRequirementsInfoNV()
+safe_VkAccelerationStructureMemoryRequirementsInfoNV::safe_VkAccelerationStructureMemoryRequirementsInfoNV() :
+    pNext(nullptr)
 {}
 
 safe_VkAccelerationStructureMemoryRequirementsInfoNV::safe_VkAccelerationStructureMemoryRequirementsInfoNV(const safe_VkAccelerationStructureMemoryRequirementsInfoNV& src)
@@ -22709,7 +22990,8 @@ safe_VkPhysicalDeviceRayTracingPropertiesNV::safe_VkPhysicalDeviceRayTracingProp
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceRayTracingPropertiesNV::safe_VkPhysicalDeviceRayTracingPropertiesNV()
+safe_VkPhysicalDeviceRayTracingPropertiesNV::safe_VkPhysicalDeviceRayTracingPropertiesNV() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceRayTracingPropertiesNV::safe_VkPhysicalDeviceRayTracingPropertiesNV(const safe_VkPhysicalDeviceRayTracingPropertiesNV& src)
@@ -22788,7 +23070,8 @@ safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV::safe_VkPhysicalDevice
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV::safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV()
+safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV::safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV::safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV(const safe_VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV& src)
@@ -22839,7 +23122,8 @@ safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV::safe_VkPipelineRepre
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV::safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV()
+safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV::safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV() :
+    pNext(nullptr)
 {}
 
 safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV::safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV(const safe_VkPipelineRepresentativeFragmentTestStateCreateInfoNV& src)
@@ -22890,7 +23174,8 @@ safe_VkPhysicalDeviceImageViewImageFormatInfoEXT::safe_VkPhysicalDeviceImageView
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceImageViewImageFormatInfoEXT::safe_VkPhysicalDeviceImageViewImageFormatInfoEXT()
+safe_VkPhysicalDeviceImageViewImageFormatInfoEXT::safe_VkPhysicalDeviceImageViewImageFormatInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceImageViewImageFormatInfoEXT::safe_VkPhysicalDeviceImageViewImageFormatInfoEXT(const safe_VkPhysicalDeviceImageViewImageFormatInfoEXT& src)
@@ -22942,7 +23227,8 @@ safe_VkFilterCubicImageViewImageFormatPropertiesEXT::safe_VkFilterCubicImageView
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkFilterCubicImageViewImageFormatPropertiesEXT::safe_VkFilterCubicImageViewImageFormatPropertiesEXT()
+safe_VkFilterCubicImageViewImageFormatPropertiesEXT::safe_VkFilterCubicImageViewImageFormatPropertiesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkFilterCubicImageViewImageFormatPropertiesEXT::safe_VkFilterCubicImageViewImageFormatPropertiesEXT(const safe_VkFilterCubicImageViewImageFormatPropertiesEXT& src)
@@ -22997,7 +23283,8 @@ safe_VkDeviceQueueGlobalPriorityCreateInfoEXT::safe_VkDeviceQueueGlobalPriorityC
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDeviceQueueGlobalPriorityCreateInfoEXT::safe_VkDeviceQueueGlobalPriorityCreateInfoEXT()
+safe_VkDeviceQueueGlobalPriorityCreateInfoEXT::safe_VkDeviceQueueGlobalPriorityCreateInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkDeviceQueueGlobalPriorityCreateInfoEXT::safe_VkDeviceQueueGlobalPriorityCreateInfoEXT(const safe_VkDeviceQueueGlobalPriorityCreateInfoEXT& src)
@@ -23049,7 +23336,8 @@ safe_VkImportMemoryHostPointerInfoEXT::safe_VkImportMemoryHostPointerInfoEXT(con
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImportMemoryHostPointerInfoEXT::safe_VkImportMemoryHostPointerInfoEXT()
+safe_VkImportMemoryHostPointerInfoEXT::safe_VkImportMemoryHostPointerInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkImportMemoryHostPointerInfoEXT::safe_VkImportMemoryHostPointerInfoEXT(const safe_VkImportMemoryHostPointerInfoEXT& src)
@@ -23104,7 +23392,8 @@ safe_VkMemoryHostPointerPropertiesEXT::safe_VkMemoryHostPointerPropertiesEXT(con
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkMemoryHostPointerPropertiesEXT::safe_VkMemoryHostPointerPropertiesEXT()
+safe_VkMemoryHostPointerPropertiesEXT::safe_VkMemoryHostPointerPropertiesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkMemoryHostPointerPropertiesEXT::safe_VkMemoryHostPointerPropertiesEXT(const safe_VkMemoryHostPointerPropertiesEXT& src)
@@ -23155,7 +23444,8 @@ safe_VkPhysicalDeviceExternalMemoryHostPropertiesEXT::safe_VkPhysicalDeviceExter
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceExternalMemoryHostPropertiesEXT::safe_VkPhysicalDeviceExternalMemoryHostPropertiesEXT()
+safe_VkPhysicalDeviceExternalMemoryHostPropertiesEXT::safe_VkPhysicalDeviceExternalMemoryHostPropertiesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceExternalMemoryHostPropertiesEXT::safe_VkPhysicalDeviceExternalMemoryHostPropertiesEXT(const safe_VkPhysicalDeviceExternalMemoryHostPropertiesEXT& src)
@@ -23206,7 +23496,8 @@ safe_VkCalibratedTimestampInfoEXT::safe_VkCalibratedTimestampInfoEXT(const VkCal
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkCalibratedTimestampInfoEXT::safe_VkCalibratedTimestampInfoEXT()
+safe_VkCalibratedTimestampInfoEXT::safe_VkCalibratedTimestampInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkCalibratedTimestampInfoEXT::safe_VkCalibratedTimestampInfoEXT(const safe_VkCalibratedTimestampInfoEXT& src)
@@ -23270,7 +23561,8 @@ safe_VkPhysicalDeviceShaderCorePropertiesAMD::safe_VkPhysicalDeviceShaderCorePro
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceShaderCorePropertiesAMD::safe_VkPhysicalDeviceShaderCorePropertiesAMD()
+safe_VkPhysicalDeviceShaderCorePropertiesAMD::safe_VkPhysicalDeviceShaderCorePropertiesAMD() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceShaderCorePropertiesAMD::safe_VkPhysicalDeviceShaderCorePropertiesAMD(const safe_VkPhysicalDeviceShaderCorePropertiesAMD& src)
@@ -23373,7 +23665,8 @@ safe_VkDeviceMemoryOverallocationCreateInfoAMD::safe_VkDeviceMemoryOverallocatio
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDeviceMemoryOverallocationCreateInfoAMD::safe_VkDeviceMemoryOverallocationCreateInfoAMD()
+safe_VkDeviceMemoryOverallocationCreateInfoAMD::safe_VkDeviceMemoryOverallocationCreateInfoAMD() :
+    pNext(nullptr)
 {}
 
 safe_VkDeviceMemoryOverallocationCreateInfoAMD::safe_VkDeviceMemoryOverallocationCreateInfoAMD(const safe_VkDeviceMemoryOverallocationCreateInfoAMD& src)
@@ -23424,7 +23717,8 @@ safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT::safe_VkPhysicalDeviceV
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT::safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT()
+safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT::safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT::safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT(const safe_VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT& src)
@@ -23481,6 +23775,7 @@ safe_VkPipelineVertexInputDivisorStateCreateInfoEXT::safe_VkPipelineVertexInputD
 }
 
 safe_VkPipelineVertexInputDivisorStateCreateInfoEXT::safe_VkPipelineVertexInputDivisorStateCreateInfoEXT() :
+    pNext(nullptr),
     pVertexBindingDivisors(nullptr)
 {}
 
@@ -23557,7 +23852,8 @@ safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT::safe_VkPhysicalDeviceVer
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT::safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT()
+safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT::safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT::safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT(const safe_VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT& src)
@@ -23614,7 +23910,8 @@ safe_VkPresentFrameTokenGGP::safe_VkPresentFrameTokenGGP(const VkPresentFrameTok
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPresentFrameTokenGGP::safe_VkPresentFrameTokenGGP()
+safe_VkPresentFrameTokenGGP::safe_VkPresentFrameTokenGGP() :
+    pNext(nullptr)
 {}
 
 safe_VkPresentFrameTokenGGP::safe_VkPresentFrameTokenGGP(const safe_VkPresentFrameTokenGGP& src)
@@ -23677,6 +23974,7 @@ safe_VkPipelineCreationFeedbackCreateInfoEXT::safe_VkPipelineCreationFeedbackCre
 }
 
 safe_VkPipelineCreationFeedbackCreateInfoEXT::safe_VkPipelineCreationFeedbackCreateInfoEXT() :
+    pNext(nullptr),
     pPipelineCreationFeedback(nullptr),
     pPipelineStageCreationFeedbacks(nullptr)
 {}
@@ -23774,7 +24072,8 @@ safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::safe_VkPhysicalDeviceCo
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV()
+safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV(const safe_VkPhysicalDeviceComputeShaderDerivativesFeaturesNV& src)
@@ -23830,7 +24129,8 @@ safe_VkPhysicalDeviceMeshShaderFeaturesNV::safe_VkPhysicalDeviceMeshShaderFeatur
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceMeshShaderFeaturesNV::safe_VkPhysicalDeviceMeshShaderFeaturesNV()
+safe_VkPhysicalDeviceMeshShaderFeaturesNV::safe_VkPhysicalDeviceMeshShaderFeaturesNV() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceMeshShaderFeaturesNV::safe_VkPhysicalDeviceMeshShaderFeaturesNV(const safe_VkPhysicalDeviceMeshShaderFeaturesNV& src)
@@ -23901,7 +24201,8 @@ safe_VkPhysicalDeviceMeshShaderPropertiesNV::safe_VkPhysicalDeviceMeshShaderProp
     }
 }
 
-safe_VkPhysicalDeviceMeshShaderPropertiesNV::safe_VkPhysicalDeviceMeshShaderPropertiesNV()
+safe_VkPhysicalDeviceMeshShaderPropertiesNV::safe_VkPhysicalDeviceMeshShaderPropertiesNV() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceMeshShaderPropertiesNV::safe_VkPhysicalDeviceMeshShaderPropertiesNV(const safe_VkPhysicalDeviceMeshShaderPropertiesNV& src)
@@ -24016,7 +24317,8 @@ safe_VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::safe_VkPhysicalDeviceF
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::safe_VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV()
+safe_VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::safe_VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV::safe_VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV(const safe_VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV& src)
@@ -24067,7 +24369,8 @@ safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV::safe_VkPhysicalDeviceShader
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV::safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV()
+safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV::safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV::safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV(const safe_VkPhysicalDeviceShaderImageFootprintFeaturesNV& src)
@@ -24124,6 +24427,7 @@ safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV::safe_VkPipelineViewpor
 }
 
 safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV::safe_VkPipelineViewportExclusiveScissorStateCreateInfoNV() :
+    pNext(nullptr),
     pExclusiveScissors(nullptr)
 {}
 
@@ -24199,7 +24503,8 @@ safe_VkPhysicalDeviceExclusiveScissorFeaturesNV::safe_VkPhysicalDeviceExclusiveS
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceExclusiveScissorFeaturesNV::safe_VkPhysicalDeviceExclusiveScissorFeaturesNV()
+safe_VkPhysicalDeviceExclusiveScissorFeaturesNV::safe_VkPhysicalDeviceExclusiveScissorFeaturesNV() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceExclusiveScissorFeaturesNV::safe_VkPhysicalDeviceExclusiveScissorFeaturesNV(const safe_VkPhysicalDeviceExclusiveScissorFeaturesNV& src)
@@ -24250,7 +24555,8 @@ safe_VkQueueFamilyCheckpointPropertiesNV::safe_VkQueueFamilyCheckpointProperties
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkQueueFamilyCheckpointPropertiesNV::safe_VkQueueFamilyCheckpointPropertiesNV()
+safe_VkQueueFamilyCheckpointPropertiesNV::safe_VkQueueFamilyCheckpointPropertiesNV() :
+    pNext(nullptr)
 {}
 
 safe_VkQueueFamilyCheckpointPropertiesNV::safe_VkQueueFamilyCheckpointPropertiesNV(const safe_VkQueueFamilyCheckpointPropertiesNV& src)
@@ -24302,7 +24608,8 @@ safe_VkCheckpointDataNV::safe_VkCheckpointDataNV(const VkCheckpointDataNV* in_st
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkCheckpointDataNV::safe_VkCheckpointDataNV()
+safe_VkCheckpointDataNV::safe_VkCheckpointDataNV() :
+    pNext(nullptr)
 {}
 
 safe_VkCheckpointDataNV::safe_VkCheckpointDataNV(const safe_VkCheckpointDataNV& src)
@@ -24357,7 +24664,8 @@ safe_VkPhysicalDeviceShaderIntegerFunctions2INTEL::safe_VkPhysicalDeviceShaderIn
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceShaderIntegerFunctions2INTEL::safe_VkPhysicalDeviceShaderIntegerFunctions2INTEL()
+safe_VkPhysicalDeviceShaderIntegerFunctions2INTEL::safe_VkPhysicalDeviceShaderIntegerFunctions2INTEL() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceShaderIntegerFunctions2INTEL::safe_VkPhysicalDeviceShaderIntegerFunctions2INTEL(const safe_VkPhysicalDeviceShaderIntegerFunctions2INTEL& src)
@@ -24465,7 +24773,8 @@ safe_VkInitializePerformanceApiInfoINTEL::safe_VkInitializePerformanceApiInfoINT
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkInitializePerformanceApiInfoINTEL::safe_VkInitializePerformanceApiInfoINTEL()
+safe_VkInitializePerformanceApiInfoINTEL::safe_VkInitializePerformanceApiInfoINTEL() :
+    pNext(nullptr)
 {}
 
 safe_VkInitializePerformanceApiInfoINTEL::safe_VkInitializePerformanceApiInfoINTEL(const safe_VkInitializePerformanceApiInfoINTEL& src)
@@ -24516,7 +24825,8 @@ safe_VkQueryPoolCreateInfoINTEL::safe_VkQueryPoolCreateInfoINTEL(const VkQueryPo
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkQueryPoolCreateInfoINTEL::safe_VkQueryPoolCreateInfoINTEL()
+safe_VkQueryPoolCreateInfoINTEL::safe_VkQueryPoolCreateInfoINTEL() :
+    pNext(nullptr)
 {}
 
 safe_VkQueryPoolCreateInfoINTEL::safe_VkQueryPoolCreateInfoINTEL(const safe_VkQueryPoolCreateInfoINTEL& src)
@@ -24567,7 +24877,8 @@ safe_VkPerformanceMarkerInfoINTEL::safe_VkPerformanceMarkerInfoINTEL(const VkPer
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPerformanceMarkerInfoINTEL::safe_VkPerformanceMarkerInfoINTEL()
+safe_VkPerformanceMarkerInfoINTEL::safe_VkPerformanceMarkerInfoINTEL() :
+    pNext(nullptr)
 {}
 
 safe_VkPerformanceMarkerInfoINTEL::safe_VkPerformanceMarkerInfoINTEL(const safe_VkPerformanceMarkerInfoINTEL& src)
@@ -24618,7 +24929,8 @@ safe_VkPerformanceStreamMarkerInfoINTEL::safe_VkPerformanceStreamMarkerInfoINTEL
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPerformanceStreamMarkerInfoINTEL::safe_VkPerformanceStreamMarkerInfoINTEL()
+safe_VkPerformanceStreamMarkerInfoINTEL::safe_VkPerformanceStreamMarkerInfoINTEL() :
+    pNext(nullptr)
 {}
 
 safe_VkPerformanceStreamMarkerInfoINTEL::safe_VkPerformanceStreamMarkerInfoINTEL(const safe_VkPerformanceStreamMarkerInfoINTEL& src)
@@ -24671,7 +24983,8 @@ safe_VkPerformanceOverrideInfoINTEL::safe_VkPerformanceOverrideInfoINTEL(const V
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPerformanceOverrideInfoINTEL::safe_VkPerformanceOverrideInfoINTEL()
+safe_VkPerformanceOverrideInfoINTEL::safe_VkPerformanceOverrideInfoINTEL() :
+    pNext(nullptr)
 {}
 
 safe_VkPerformanceOverrideInfoINTEL::safe_VkPerformanceOverrideInfoINTEL(const safe_VkPerformanceOverrideInfoINTEL& src)
@@ -24730,7 +25043,8 @@ safe_VkPerformanceConfigurationAcquireInfoINTEL::safe_VkPerformanceConfiguration
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPerformanceConfigurationAcquireInfoINTEL::safe_VkPerformanceConfigurationAcquireInfoINTEL()
+safe_VkPerformanceConfigurationAcquireInfoINTEL::safe_VkPerformanceConfigurationAcquireInfoINTEL() :
+    pNext(nullptr)
 {}
 
 safe_VkPerformanceConfigurationAcquireInfoINTEL::safe_VkPerformanceConfigurationAcquireInfoINTEL(const safe_VkPerformanceConfigurationAcquireInfoINTEL& src)
@@ -24784,7 +25098,8 @@ safe_VkPhysicalDevicePCIBusInfoPropertiesEXT::safe_VkPhysicalDevicePCIBusInfoPro
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDevicePCIBusInfoPropertiesEXT::safe_VkPhysicalDevicePCIBusInfoPropertiesEXT()
+safe_VkPhysicalDevicePCIBusInfoPropertiesEXT::safe_VkPhysicalDevicePCIBusInfoPropertiesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDevicePCIBusInfoPropertiesEXT::safe_VkPhysicalDevicePCIBusInfoPropertiesEXT(const safe_VkPhysicalDevicePCIBusInfoPropertiesEXT& src)
@@ -24847,7 +25162,8 @@ safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD::safe_VkDisplayNativeHdrSurfaceCap
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD::safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD()
+safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD::safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD() :
+    pNext(nullptr)
 {}
 
 safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD::safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD(const safe_VkDisplayNativeHdrSurfaceCapabilitiesAMD& src)
@@ -24898,7 +25214,8 @@ safe_VkSwapchainDisplayNativeHdrCreateInfoAMD::safe_VkSwapchainDisplayNativeHdrC
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSwapchainDisplayNativeHdrCreateInfoAMD::safe_VkSwapchainDisplayNativeHdrCreateInfoAMD()
+safe_VkSwapchainDisplayNativeHdrCreateInfoAMD::safe_VkSwapchainDisplayNativeHdrCreateInfoAMD() :
+    pNext(nullptr)
 {}
 
 safe_VkSwapchainDisplayNativeHdrCreateInfoAMD::safe_VkSwapchainDisplayNativeHdrCreateInfoAMD(const safe_VkSwapchainDisplayNativeHdrCreateInfoAMD& src)
@@ -24952,7 +25269,8 @@ safe_VkImagePipeSurfaceCreateInfoFUCHSIA::safe_VkImagePipeSurfaceCreateInfoFUCHS
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImagePipeSurfaceCreateInfoFUCHSIA::safe_VkImagePipeSurfaceCreateInfoFUCHSIA()
+safe_VkImagePipeSurfaceCreateInfoFUCHSIA::safe_VkImagePipeSurfaceCreateInfoFUCHSIA() :
+    pNext(nullptr)
 {}
 
 safe_VkImagePipeSurfaceCreateInfoFUCHSIA::safe_VkImagePipeSurfaceCreateInfoFUCHSIA(const safe_VkImagePipeSurfaceCreateInfoFUCHSIA& src)
@@ -25016,6 +25334,7 @@ safe_VkMetalSurfaceCreateInfoEXT::safe_VkMetalSurfaceCreateInfoEXT(const VkMetal
 }
 
 safe_VkMetalSurfaceCreateInfoEXT::safe_VkMetalSurfaceCreateInfoEXT() :
+    pNext(nullptr),
     pLayer(nullptr)
 {}
 
@@ -25091,7 +25410,8 @@ safe_VkPhysicalDeviceFragmentDensityMapFeaturesEXT::safe_VkPhysicalDeviceFragmen
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceFragmentDensityMapFeaturesEXT::safe_VkPhysicalDeviceFragmentDensityMapFeaturesEXT()
+safe_VkPhysicalDeviceFragmentDensityMapFeaturesEXT::safe_VkPhysicalDeviceFragmentDensityMapFeaturesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceFragmentDensityMapFeaturesEXT::safe_VkPhysicalDeviceFragmentDensityMapFeaturesEXT(const safe_VkPhysicalDeviceFragmentDensityMapFeaturesEXT& src)
@@ -25152,7 +25472,8 @@ safe_VkPhysicalDeviceFragmentDensityMapPropertiesEXT::safe_VkPhysicalDeviceFragm
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceFragmentDensityMapPropertiesEXT::safe_VkPhysicalDeviceFragmentDensityMapPropertiesEXT()
+safe_VkPhysicalDeviceFragmentDensityMapPropertiesEXT::safe_VkPhysicalDeviceFragmentDensityMapPropertiesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceFragmentDensityMapPropertiesEXT::safe_VkPhysicalDeviceFragmentDensityMapPropertiesEXT(const safe_VkPhysicalDeviceFragmentDensityMapPropertiesEXT& src)
@@ -25211,7 +25532,8 @@ safe_VkRenderPassFragmentDensityMapCreateInfoEXT::safe_VkRenderPassFragmentDensi
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkRenderPassFragmentDensityMapCreateInfoEXT::safe_VkRenderPassFragmentDensityMapCreateInfoEXT()
+safe_VkRenderPassFragmentDensityMapCreateInfoEXT::safe_VkRenderPassFragmentDensityMapCreateInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkRenderPassFragmentDensityMapCreateInfoEXT::safe_VkRenderPassFragmentDensityMapCreateInfoEXT(const safe_VkRenderPassFragmentDensityMapCreateInfoEXT& src)
@@ -25262,7 +25584,8 @@ safe_VkPhysicalDeviceScalarBlockLayoutFeaturesEXT::safe_VkPhysicalDeviceScalarBl
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceScalarBlockLayoutFeaturesEXT::safe_VkPhysicalDeviceScalarBlockLayoutFeaturesEXT()
+safe_VkPhysicalDeviceScalarBlockLayoutFeaturesEXT::safe_VkPhysicalDeviceScalarBlockLayoutFeaturesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceScalarBlockLayoutFeaturesEXT::safe_VkPhysicalDeviceScalarBlockLayoutFeaturesEXT(const safe_VkPhysicalDeviceScalarBlockLayoutFeaturesEXT& src)
@@ -25318,7 +25641,8 @@ safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT::safe_VkPhysicalDeviceMemoryBudge
     }
 }
 
-safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT::safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT()
+safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT::safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT::safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT(const safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT& src)
@@ -25389,7 +25713,8 @@ safe_VkPhysicalDeviceMemoryPriorityFeaturesEXT::safe_VkPhysicalDeviceMemoryPrior
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceMemoryPriorityFeaturesEXT::safe_VkPhysicalDeviceMemoryPriorityFeaturesEXT()
+safe_VkPhysicalDeviceMemoryPriorityFeaturesEXT::safe_VkPhysicalDeviceMemoryPriorityFeaturesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceMemoryPriorityFeaturesEXT::safe_VkPhysicalDeviceMemoryPriorityFeaturesEXT(const safe_VkPhysicalDeviceMemoryPriorityFeaturesEXT& src)
@@ -25440,7 +25765,8 @@ safe_VkMemoryPriorityAllocateInfoEXT::safe_VkMemoryPriorityAllocateInfoEXT(const
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkMemoryPriorityAllocateInfoEXT::safe_VkMemoryPriorityAllocateInfoEXT()
+safe_VkMemoryPriorityAllocateInfoEXT::safe_VkMemoryPriorityAllocateInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkMemoryPriorityAllocateInfoEXT::safe_VkMemoryPriorityAllocateInfoEXT(const safe_VkMemoryPriorityAllocateInfoEXT& src)
@@ -25491,7 +25817,8 @@ safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV::safe_VkPhysical
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV::safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV()
+safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV::safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV::safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV(const safe_VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV& src)
@@ -25544,7 +25871,8 @@ safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT::safe_VkPhysicalDeviceBuffer
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT::safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT()
+safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT::safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT::safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT(const safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT& src)
@@ -25603,7 +25931,8 @@ safe_VkBufferDeviceAddressInfoEXT::safe_VkBufferDeviceAddressInfoEXT(const VkBuf
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkBufferDeviceAddressInfoEXT::safe_VkBufferDeviceAddressInfoEXT()
+safe_VkBufferDeviceAddressInfoEXT::safe_VkBufferDeviceAddressInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkBufferDeviceAddressInfoEXT::safe_VkBufferDeviceAddressInfoEXT(const safe_VkBufferDeviceAddressInfoEXT& src)
@@ -25654,7 +25983,8 @@ safe_VkBufferDeviceAddressCreateInfoEXT::safe_VkBufferDeviceAddressCreateInfoEXT
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkBufferDeviceAddressCreateInfoEXT::safe_VkBufferDeviceAddressCreateInfoEXT()
+safe_VkBufferDeviceAddressCreateInfoEXT::safe_VkBufferDeviceAddressCreateInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkBufferDeviceAddressCreateInfoEXT::safe_VkBufferDeviceAddressCreateInfoEXT(const safe_VkBufferDeviceAddressCreateInfoEXT& src)
@@ -25705,7 +26035,8 @@ safe_VkImageStencilUsageCreateInfoEXT::safe_VkImageStencilUsageCreateInfoEXT(con
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkImageStencilUsageCreateInfoEXT::safe_VkImageStencilUsageCreateInfoEXT()
+safe_VkImageStencilUsageCreateInfoEXT::safe_VkImageStencilUsageCreateInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkImageStencilUsageCreateInfoEXT::safe_VkImageStencilUsageCreateInfoEXT(const safe_VkImageStencilUsageCreateInfoEXT& src)
@@ -25768,6 +26099,7 @@ safe_VkValidationFeaturesEXT::safe_VkValidationFeaturesEXT(const VkValidationFea
 }
 
 safe_VkValidationFeaturesEXT::safe_VkValidationFeaturesEXT() :
+    pNext(nullptr),
     pEnabledValidationFeatures(nullptr),
     pDisabledValidationFeatures(nullptr)
 {}
@@ -25879,7 +26211,8 @@ safe_VkCooperativeMatrixPropertiesNV::safe_VkCooperativeMatrixPropertiesNV(const
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkCooperativeMatrixPropertiesNV::safe_VkCooperativeMatrixPropertiesNV()
+safe_VkCooperativeMatrixPropertiesNV::safe_VkCooperativeMatrixPropertiesNV() :
+    pNext(nullptr)
 {}
 
 safe_VkCooperativeMatrixPropertiesNV::safe_VkCooperativeMatrixPropertiesNV(const safe_VkCooperativeMatrixPropertiesNV& src)
@@ -25959,7 +26292,8 @@ safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV::safe_VkPhysicalDeviceCooperati
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV::safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV()
+safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV::safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV::safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV(const safe_VkPhysicalDeviceCooperativeMatrixFeaturesNV& src)
@@ -26014,7 +26348,8 @@ safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV::safe_VkPhysicalDeviceCoopera
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV::safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV()
+safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV::safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV::safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV(const safe_VkPhysicalDeviceCooperativeMatrixPropertiesNV& src)
@@ -26065,7 +26400,8 @@ safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV::safe_VkPhysicalDeviceCover
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV::safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV()
+safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV::safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV::safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV(const safe_VkPhysicalDeviceCoverageReductionModeFeaturesNV& src)
@@ -26117,7 +26453,8 @@ safe_VkPipelineCoverageReductionStateCreateInfoNV::safe_VkPipelineCoverageReduct
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPipelineCoverageReductionStateCreateInfoNV::safe_VkPipelineCoverageReductionStateCreateInfoNV()
+safe_VkPipelineCoverageReductionStateCreateInfoNV::safe_VkPipelineCoverageReductionStateCreateInfoNV() :
+    pNext(nullptr)
 {}
 
 safe_VkPipelineCoverageReductionStateCreateInfoNV::safe_VkPipelineCoverageReductionStateCreateInfoNV(const safe_VkPipelineCoverageReductionStateCreateInfoNV& src)
@@ -26175,7 +26512,8 @@ safe_VkFramebufferMixedSamplesCombinationNV::safe_VkFramebufferMixedSamplesCombi
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkFramebufferMixedSamplesCombinationNV::safe_VkFramebufferMixedSamplesCombinationNV()
+safe_VkFramebufferMixedSamplesCombinationNV::safe_VkFramebufferMixedSamplesCombinationNV() :
+    pNext(nullptr)
 {}
 
 safe_VkFramebufferMixedSamplesCombinationNV::safe_VkFramebufferMixedSamplesCombinationNV(const safe_VkFramebufferMixedSamplesCombinationNV& src)
@@ -26240,7 +26578,8 @@ safe_VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::safe_VkPhysicalDeviceFr
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::safe_VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT()
+safe_VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::safe_VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::safe_VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT(const safe_VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT& src)
@@ -26299,7 +26638,8 @@ safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT::safe_VkPhysicalDeviceYcbcrImag
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT::safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT()
+safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT::safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT::safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT(const safe_VkPhysicalDeviceYcbcrImageArraysFeaturesEXT& src)
@@ -26352,7 +26692,8 @@ safe_VkSurfaceFullScreenExclusiveInfoEXT::safe_VkSurfaceFullScreenExclusiveInfoE
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSurfaceFullScreenExclusiveInfoEXT::safe_VkSurfaceFullScreenExclusiveInfoEXT()
+safe_VkSurfaceFullScreenExclusiveInfoEXT::safe_VkSurfaceFullScreenExclusiveInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkSurfaceFullScreenExclusiveInfoEXT::safe_VkSurfaceFullScreenExclusiveInfoEXT(const safe_VkSurfaceFullScreenExclusiveInfoEXT& src)
@@ -26407,7 +26748,8 @@ safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT::safe_VkSurfaceCapabilitiesFull
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT::safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT()
+safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT::safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT::safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT(const safe_VkSurfaceCapabilitiesFullScreenExclusiveEXT& src)
@@ -26462,7 +26804,8 @@ safe_VkSurfaceFullScreenExclusiveWin32InfoEXT::safe_VkSurfaceFullScreenExclusive
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkSurfaceFullScreenExclusiveWin32InfoEXT::safe_VkSurfaceFullScreenExclusiveWin32InfoEXT()
+safe_VkSurfaceFullScreenExclusiveWin32InfoEXT::safe_VkSurfaceFullScreenExclusiveWin32InfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkSurfaceFullScreenExclusiveWin32InfoEXT::safe_VkSurfaceFullScreenExclusiveWin32InfoEXT(const safe_VkSurfaceFullScreenExclusiveWin32InfoEXT& src)
@@ -26515,7 +26858,8 @@ safe_VkHeadlessSurfaceCreateInfoEXT::safe_VkHeadlessSurfaceCreateInfoEXT(const V
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkHeadlessSurfaceCreateInfoEXT::safe_VkHeadlessSurfaceCreateInfoEXT()
+safe_VkHeadlessSurfaceCreateInfoEXT::safe_VkHeadlessSurfaceCreateInfoEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkHeadlessSurfaceCreateInfoEXT::safe_VkHeadlessSurfaceCreateInfoEXT(const safe_VkHeadlessSurfaceCreateInfoEXT& src)
@@ -26566,7 +26910,8 @@ safe_VkPhysicalDeviceHostQueryResetFeaturesEXT::safe_VkPhysicalDeviceHostQueryRe
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceHostQueryResetFeaturesEXT::safe_VkPhysicalDeviceHostQueryResetFeaturesEXT()
+safe_VkPhysicalDeviceHostQueryResetFeaturesEXT::safe_VkPhysicalDeviceHostQueryResetFeaturesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceHostQueryResetFeaturesEXT::safe_VkPhysicalDeviceHostQueryResetFeaturesEXT(const safe_VkPhysicalDeviceHostQueryResetFeaturesEXT& src)
@@ -26617,7 +26962,8 @@ safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT::safe_VkPhysicalD
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT::safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT()
+safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT::safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT::safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT(const safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT& src)
@@ -26668,7 +27014,8 @@ safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT::safe_VkPhysicalDeviceTexel
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT::safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT()
+safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT::safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT::safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT(const safe_VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT& src)
@@ -26722,7 +27069,8 @@ safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT::safe_VkPhysicalDeviceTex
     pNext = SafePnextCopy(in_struct->pNext);
 }
 
-safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT::safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT()
+safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT::safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT() :
+    pNext(nullptr)
 {}
 
 safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT::safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT(const safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT& src)
