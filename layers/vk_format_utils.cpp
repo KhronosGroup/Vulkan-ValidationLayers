@@ -1213,6 +1213,14 @@ VK_LAYER_EXPORT VkDeviceSize SafeModulo(VkDeviceSize dividend, VkDeviceSize divi
     return result;
 }
 
+VK_LAYER_EXPORT VkDeviceSize SafeDivision(VkDeviceSize dividend, VkDeviceSize divisor) {
+    VkDeviceSize result = 0;
+    if (divisor != 0) {
+        result = dividend / divisor;
+    }
+    return result;
+}
+
 struct VULKAN_PER_PLANE_COMPATIBILITY {
     uint32_t width_divisor;
     uint32_t height_divisor;

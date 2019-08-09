@@ -29,6 +29,7 @@
 #include <string>
 
 #include "vk_enum_string_helper.h"
+#include "vk_format_utils.h"
 #include "vk_layer_data.h"
 #include "vk_layer_utils.h"
 #include "vk_layer_logging.h"
@@ -3812,24 +3813,23 @@ bool CoreChecks::ValidateBufferViewRange(const BUFFER_STATE *buffer_state, const
                             range);
         }
         // Range must be a multiple of the element size of format
-        const size_t format_size = FormatElementSize(pCreateInfo->format);
-        if (range % format_size != 0) {
+        const uint32_t format_size = FormatElementSize(pCreateInfo->format);
+        if (SafeModulo(range, format_size) != 0) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
                             HandleToUint64(buffer_state->buffer), "VUID-VkBufferViewCreateInfo-range-00929",
                             "If VkBufferViewCreateInfo range (%" PRIuLEAST64
                             ") does not equal VK_WHOLE_SIZE, range must be a multiple of the element size of the format "
-                            "(" PRINTF_SIZE_T_SPECIFIER ").",
+                            "(%" PRIu32 ").",
                             range, format_size);
         }
         // Range divided by the element size of format must be less than or equal to VkPhysicalDeviceLimits::maxTexelBufferElements
-        if (range / format_size > device_limits->maxTexelBufferElements) {
-            skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
-                        HandleToUint64(buffer_state->buffer), "VUID-VkBufferViewCreateInfo-range-00930",
-                        "If VkBufferViewCreateInfo range (%" PRIuLEAST64
-                        ") does not equal VK_WHOLE_SIZE, range divided by the element size of the format (" PRINTF_SIZE_T_SPECIFIER
-                        ") must be less than or equal to VkPhysicalDeviceLimits::maxTexelBufferElements (%" PRIuLEAST32 ").",
-                        range, format_size, device_limits->maxTexelBufferElements);
+        if (SafeDivision(range, format_size) > device_limits->maxTexelBufferElements) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                            HandleToUint64(buffer_state->buffer), "VUID-VkBufferViewCreateInfo-range-00930",
+                            "If VkBufferViewCreateInfo range (%" PRIuLEAST64
+                            ") does not equal VK_WHOLE_SIZE, range divided by the element size of the format (%" PRIu32
+                            ") must be less than or equal to VkPhysicalDeviceLimits::maxTexelBufferElements (%" PRIuLEAST32 ").",
+                            range, format_size, device_limits->maxTexelBufferElements);
         }
         // The sum of range and offset must be less than or equal to the size of buffer
         if (range + pCreateInfo->offset > buffer_state->createInfo.size) {
