@@ -1489,6 +1489,17 @@ class CoreChecks : public ValidationStateTracker {
                                               const VkComputePipelineCreateInfo* pCreateInfos,
                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
                                               void* pipe_state);
+    bool PreCallValidateGetPipelineExecutablePropertiesKHR(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
+                                                           uint32_t* pExecutableCount,
+                                                           VkPipelineExecutablePropertiesKHR* pProperties);
+    bool ValidatePipelineExecutableInfo(VkDevice device, const VkPipelineExecutableInfoKHR* pExecutableInfo) const;
+    bool PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice device, const VkPipelineExecutableInfoKHR* pExecutableInfo,
+                                                           uint32_t* pStatisticCount,
+                                                           VkPipelineExecutableStatisticKHR* pStatistics);
+    bool PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(VkDevice device,
+                                                                        const VkPipelineExecutableInfoKHR* pExecutableInfo,
+                                                                        uint32_t* pInternalRepresentationCount,
+                                                                        VkPipelineExecutableInternalRepresentationKHR* pStatistics);
     bool PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout);
     void PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,

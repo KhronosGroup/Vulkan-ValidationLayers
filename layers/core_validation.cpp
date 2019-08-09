@@ -2593,6 +2593,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.imageless_framebuffer_features = *imageless_framebuffer_features;
     }
 
+    const auto *pipeline_exe_props_features =
+        lvl_find_in_chain<VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR>(pCreateInfo->pNext);
+    if (pipeline_exe_props_features) {
+        state_tracker->enabled_features.pipeline_exe_props_features = *pipeline_exe_props_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);
@@ -5269,6 +5275,83 @@ void CoreChecks::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPi
         GpuPostCallRecordCreateRayTracingPipelinesNV(count, pCreateInfos, pAllocator, pPipelines);
         crtpl_state->gpu_create_infos.clear();
     }
+}
+
+bool CoreChecks::PreCallValidateGetPipelineExecutablePropertiesKHR(VkDevice device, const VkPipelineInfoKHR *pPipelineInfo,
+                                                                   uint32_t *pExecutableCount,
+                                                                   VkPipelineExecutablePropertiesKHR *pProperties) {
+    bool skip = false;
+
+    if (!enabled_features.pipeline_exe_props_features.pipelineExecutableInfo) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        "VUID-vkGetPipelineExecutablePropertiesKHR-pipelineExecutableProperties-03270",
+                        "vkGetPipelineExecutablePropertiesKHR called when pipelineExecutableInfo feature is not enabled.");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidatePipelineExecutableInfo(VkDevice device, const VkPipelineExecutableInfoKHR *pExecutableInfo) const {
+    bool skip = false;
+
+    if (!enabled_features.pipeline_exe_props_features.pipelineExecutableInfo) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        "VUID-vkGetPipelineExecutableStatisticsKHR-pipelineExecutableInfo-03272",
+                        "vkGetPipelineExecutableStatisticsKHR called when pipelineExecutableInfo feature is not enabled.");
+    }
+
+    VkPipelineInfoKHR pi = {};
+    pi.sType = VK_STRUCTURE_TYPE_PIPELINE_INFO_KHR;
+    pi.pipeline = pExecutableInfo->pipeline;
+
+    // We could probably cache this instead of fetching it every time
+    uint32_t executableCount = 0;
+    DispatchGetPipelineExecutablePropertiesKHR(device, &pi, &executableCount, NULL);
+
+    if (pExecutableInfo->executableIndex >= executableCount) {
+        skip |=
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                    HandleToUint64(pExecutableInfo->pipeline), "VUID-VkPipelineExecutableInfoKHR-executableIndex-03275",
+                    "VkPipelineExecutableInfo::executableIndex (%1u) must be less than the number of executables associated with "
+                    "the pipeline (%1u) as returned by vkGetPipelineExecutablePropertiessKHR",
+                    pExecutableInfo->executableIndex, executableCount);
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice device,
+                                                                   const VkPipelineExecutableInfoKHR *pExecutableInfo,
+                                                                   uint32_t *pStatisticCount,
+                                                                   VkPipelineExecutableStatisticKHR *pStatistics) {
+    bool skip = ValidatePipelineExecutableInfo(device, pExecutableInfo);
+
+    const PIPELINE_STATE *pipeline_state = GetPipelineState(pExecutableInfo->pipeline);
+    if (!(pipeline_state->getPipelineCreateFlags() & VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR)) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                        HandleToUint64(pExecutableInfo->pipeline), "VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03274",
+                        "vkGetPipelineExecutableStatisticsKHR called on a pipeline created without the "
+                        "VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR flag set");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
+    VkDevice device, const VkPipelineExecutableInfoKHR *pExecutableInfo, uint32_t *pInternalRepresentationCount,
+    VkPipelineExecutableInternalRepresentationKHR *pStatistics) {
+    bool skip = ValidatePipelineExecutableInfo(device, pExecutableInfo);
+
+    const PIPELINE_STATE *pipeline_state = GetPipelineState(pExecutableInfo->pipeline);
+    if (!(pipeline_state->getPipelineCreateFlags() & VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR)) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                        HandleToUint64(pExecutableInfo->pipeline),
+                        "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03278",
+                        "vkGetPipelineExecutableInternalRepresentationsKHR called on a pipeline created without the "
+                        "VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR flag set");
+    }
+
+    return skip;
 }
 
 void ValidationStateTracker::PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
