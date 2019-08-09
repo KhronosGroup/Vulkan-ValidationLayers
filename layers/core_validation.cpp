@@ -2012,7 +2012,7 @@ bool CoreChecks::ValidateDeviceMaskToZero(uint32_t deviceMask, VkDebugReportObje
 
 bool CoreChecks::ValidateDeviceMaskToCommandBuffer(const CMD_BUFFER_STATE *pCB, uint32_t deviceMask,
                                                    VkDebugReportObjectTypeEXT VUID_handle_type, uint64_t VUID_handle,
-                                                   const char *VUID) {
+                                                   const char *VUID) const {
     bool skip = false;
     if ((deviceMask & pCB->initial_device_mask) != deviceMask) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VUID_handle_type, VUID_handle, VUID,
@@ -9734,7 +9734,7 @@ static bool FindDependency(const uint32_t index, const uint32_t dependent, const
 }
 
 bool CoreChecks::CheckDependencyExists(const uint32_t subpass, const std::vector<uint32_t> &dependent_subpasses,
-                                       const std::vector<DAGNode> &subpass_to_node, bool &skip) {
+                                       const std::vector<DAGNode> &subpass_to_node, bool &skip) const {
     bool result = true;
     // Loop through all subpasses that share the same attachment and make sure a dependency exists
     for (uint32_t k = 0; k < dependent_subpasses.size(); ++k) {
@@ -9760,7 +9760,7 @@ bool CoreChecks::CheckDependencyExists(const uint32_t subpass, const std::vector
 }
 
 bool CoreChecks::CheckPreserved(const VkRenderPassCreateInfo2KHR *pCreateInfo, const int index, const uint32_t attachment,
-                                const std::vector<DAGNode> &subpass_to_node, int depth, bool &skip) {
+                                const std::vector<DAGNode> &subpass_to_node, int depth, bool &skip) const {
     const DAGNode &node = subpass_to_node[index];
     // If this node writes to the attachment return true as next nodes need to preserve the attachment.
     const VkSubpassDescription2KHR &subpass = pCreateInfo->pSubpasses[index];
@@ -9807,7 +9807,7 @@ bool IsRegionOverlapping(VkImageSubresourceRange range1, VkImageSubresourceRange
             IsRangeOverlapping(range1.baseArrayLayer, range1.layerCount, range2.baseArrayLayer, range2.layerCount));
 }
 
-bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, RENDER_PASS_STATE const *renderPass) {
+bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, RENDER_PASS_STATE const *renderPass) const {
     bool skip = false;
     auto const pFramebufferInfo = framebuffer->createInfo.ptr();
     auto const pCreateInfo = renderPass->createInfo.ptr();
@@ -10671,7 +10671,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRe
     return skip;
 }
 
-bool CoreChecks::ValidatePrimaryCommandBuffer(const CMD_BUFFER_STATE *pCB, char const *cmd_name, const char *error_code) {
+bool CoreChecks::ValidatePrimaryCommandBuffer(const CMD_BUFFER_STATE *pCB, char const *cmd_name, const char *error_code) const {
     bool skip = false;
     if (pCB->createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -10681,7 +10681,7 @@ bool CoreChecks::ValidatePrimaryCommandBuffer(const CMD_BUFFER_STATE *pCB, char 
     return skip;
 }
 
-bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo *pRenderPassBegin) {
+bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo *pRenderPassBegin) const {
     bool skip = false;
     const safe_VkFramebufferCreateInfo *pFramebufferInfo = &GetFramebufferState(pRenderPassBegin->framebuffer)->createInfo;
     if (pRenderPassBegin->renderArea.offset.x < 0 ||
@@ -10699,7 +10699,7 @@ bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo *pRenderPass
     return skip;
 }
 
-bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBeginInfo *pRenderPassBeginInfo) {
+bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBeginInfo *pRenderPassBeginInfo) const {
     bool skip = false;
     const VkRenderPassAttachmentBeginInfoKHR *pRenderPassAttachmentBeginInfo =
         lvl_find_in_chain<VkRenderPassAttachmentBeginInfoKHR>(pRenderPassBeginInfo->pNext);
@@ -10886,8 +10886,8 @@ static bool FormatSpecificLoadAndStoreOpSettings(VkFormat format, T color_depth_
 }
 
 bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
-                                            const VkRenderPassBeginInfo *pRenderPassBegin) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+                                            const VkRenderPassBeginInfo *pRenderPassBegin) const {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     auto render_pass_state = pRenderPassBegin ? GetRenderPassState(pRenderPassBegin->renderPass) : nullptr;
     auto framebuffer = pRenderPassBegin ? GetFramebufferState(pRenderPassBegin->framebuffer) : nullptr;
@@ -11007,8 +11007,9 @@ bool CoreChecks::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBu
     return skip;
 }
 
-void CoreChecks::RecordCmdBeginRenderPassState(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                               const VkSubpassContents contents) {
+void ValidationStateTracker::RecordCmdBeginRenderPassState(VkCommandBuffer commandBuffer,
+                                                           const VkRenderPassBeginInfo *pRenderPassBegin,
+                                                           const VkSubpassContents contents) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     auto render_pass_state = pRenderPassBegin ? GetRenderPassState(pRenderPassBegin->renderPass) : nullptr;
     auto framebuffer = pRenderPassBegin ? GetFramebufferState(pRenderPassBegin->framebuffer) : nullptr;
@@ -11026,8 +11027,6 @@ void CoreChecks::RecordCmdBeginRenderPassState(VkCommandBuffer commandBuffer, co
         // Connect this RP to cmdBuffer
         AddCommandBufferBinding(&render_pass_state->cb_bindings,
                                 VulkanTypedHandle(render_pass_state->renderPass, kVulkanObjectTypeRenderPass), cb_state);
-        // transition attachments to the correct layouts for beginning of renderPass and first subpass
-        TransitionBeginRenderPassLayouts(cb_state, render_pass_state, framebuffer);
 
         auto chained_device_group_struct = lvl_find_in_chain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
         if (chained_device_group_struct) {
@@ -11038,18 +11037,43 @@ void CoreChecks::RecordCmdBeginRenderPassState(VkCommandBuffer commandBuffer, co
     }
 }
 
+void CoreChecks::RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
+                                                 const VkSubpassContents contents) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    auto render_pass_state = pRenderPassBegin ? GetRenderPassState(pRenderPassBegin->renderPass) : nullptr;
+    auto framebuffer = pRenderPassBegin ? GetFramebufferState(pRenderPassBegin->framebuffer) : nullptr;
+    if (render_pass_state) {
+        // transition attachments to the correct layouts for beginning of renderPass and first subpass
+        TransitionBeginRenderPassLayouts(cb_state, render_pass_state, framebuffer);
+    }
+}
+
+void ValidationStateTracker::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer,
+                                                             const VkRenderPassBeginInfo *pRenderPassBegin,
+                                                             VkSubpassContents contents) {
+    RecordCmdBeginRenderPassState(commandBuffer, pRenderPassBegin, contents);
+}
+
 void CoreChecks::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                  VkSubpassContents contents) {
-    RecordCmdBeginRenderPassState(commandBuffer, pRenderPassBegin, contents);
+    StateTracker::PreCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
+    RecordCmdBeginRenderPassLayouts(commandBuffer, pRenderPassBegin, contents);
+}
+
+void ValidationStateTracker::PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
+                                                                 const VkRenderPassBeginInfo *pRenderPassBegin,
+                                                                 const VkSubpassBeginInfoKHR *pSubpassBeginInfo) {
+    RecordCmdBeginRenderPassState(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents);
 }
 
 void CoreChecks::PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                      const VkSubpassBeginInfoKHR *pSubpassBeginInfo) {
-    RecordCmdBeginRenderPassState(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents);
+    StateTracker::PreCallRecordCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
+    RecordCmdBeginRenderPassLayouts(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents);
 }
 
-bool CoreChecks::ValidateCmdNextSubpass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+bool CoreChecks::ValidateCmdNextSubpass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer) const {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
@@ -11085,25 +11109,41 @@ bool CoreChecks::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer
     return ValidateCmdNextSubpass(RENDER_PASS_VERSION_2, commandBuffer);
 }
 
-void CoreChecks::RecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
+void ValidationStateTracker::RecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->activeSubpass++;
     cb_state->activeSubpassContents = contents;
+}
+
+void CoreChecks::RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     TransitionSubpassLayouts(cb_state, cb_state->activeRenderPass, cb_state->activeSubpass,
                              GetFramebufferState(cb_state->activeRenderPassBeginInfo.framebuffer));
 }
 
-void CoreChecks::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
+void ValidationStateTracker::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
     RecordCmdNextSubpass(commandBuffer, contents);
+}
+
+void CoreChecks::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
+    StateTracker::PostCallRecordCmdNextSubpass(commandBuffer, contents);
+    RecordCmdNextSubpassLayouts(commandBuffer, contents);
+}
+
+void ValidationStateTracker::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer,
+                                                              const VkSubpassBeginInfoKHR *pSubpassBeginInfo,
+                                                              const VkSubpassEndInfoKHR *pSubpassEndInfo) {
+    RecordCmdNextSubpass(commandBuffer, pSubpassBeginInfo->contents);
 }
 
 void CoreChecks::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfoKHR *pSubpassBeginInfo,
                                                   const VkSubpassEndInfoKHR *pSubpassEndInfo) {
-    RecordCmdNextSubpass(commandBuffer, pSubpassBeginInfo->contents);
+    StateTracker::PostCallRecordCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
+    RecordCmdNextSubpassLayouts(commandBuffer, pSubpassBeginInfo->contents);
 }
 
-bool CoreChecks::ValidateCmdEndRenderPass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+bool CoreChecks::ValidateCmdEndRenderPass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer) const {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
@@ -11143,19 +11183,37 @@ bool CoreChecks::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuff
     return skip;
 }
 
-void CoreChecks::RecordCmdEndRenderPassState(VkCommandBuffer commandBuffer) {
+void ValidationStateTracker::RecordCmdEndRenderPassState(VkCommandBuffer commandBuffer) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    FRAMEBUFFER_STATE *framebuffer = GetFramebufferState(cb_state->activeFramebuffer);
-    TransitionFinalSubpassLayouts(cb_state, &cb_state->activeRenderPassBeginInfo, framebuffer);
     cb_state->activeRenderPass = nullptr;
     cb_state->activeSubpass = 0;
     cb_state->activeFramebuffer = VK_NULL_HANDLE;
 }
 
-void CoreChecks::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) { RecordCmdEndRenderPassState(commandBuffer); }
+void CoreChecks::RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    FRAMEBUFFER_STATE *framebuffer = GetFramebufferState(cb_state->activeFramebuffer);
+    TransitionFinalSubpassLayouts(cb_state, &cb_state->activeRenderPassBeginInfo, framebuffer);
+}
+
+void ValidationStateTracker::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) {
+    RecordCmdEndRenderPassState(commandBuffer);
+}
+
+void CoreChecks::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) {
+    // Record the end at the CoreLevel to ensure StateTracker cleanup doesn't step on anything we need.
+    RecordCmdEndRenderPassLayouts(commandBuffer);
+    StateTracker::PostCallRecordCmdEndRenderPass(commandBuffer);
+}
+
+void ValidationStateTracker::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer,
+                                                                const VkSubpassEndInfoKHR *pSubpassEndInfo) {
+    RecordCmdEndRenderPassState(commandBuffer);
+}
 
 void CoreChecks::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR *pSubpassEndInfo) {
-    RecordCmdEndRenderPassState(commandBuffer);
+    StateTracker::PostCallRecordCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
+    RecordCmdEndRenderPassLayouts(commandBuffer);
 }
 
 bool CoreChecks::ValidateFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BUFFER_STATE *pCB, VkCommandBuffer secondaryBuffer,
