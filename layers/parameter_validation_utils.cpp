@@ -3052,7 +3052,7 @@ bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerati
                         "VkAccelerationStructureInfoNV: instanceCount must be less than or equal to "
                         "VkPhysicalDeviceRayTracingPropertiesNV::maxInstanceCount.");
     }
-    if (info.geometryCount > 0) {
+    if (info.type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV && info.geometryCount > 0) {
         uint64_t total_triangle_count = 0;
         for (uint32_t i = 0; i < info.geometryCount; i++) {
             const VkGeometryNV &geometry = info.pGeometries[i];
@@ -3066,6 +3066,21 @@ bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerati
                             0, "VUID-VkAccelerationStructureInfoNV-maxTriangleCount-02424",
                             "VkAccelerationStructureInfoNV: The total number of triangles in all geometries must be less than "
                             "or equal to VkPhysicalDeviceRayTracingPropertiesNV::maxTriangleCount.");
+        }
+    }
+    if (info.type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV && info.geometryCount > 1) {
+        const VkGeometryTypeNV first_geometry_type = info.pGeometries[0].geometryType;
+        for (uint32_t i = 1; i < info.geometryCount; i++) {
+            const VkGeometryNV &geometry = info.pGeometries[i];
+            if (geometry.geometryType != first_geometry_type) {
+                // TODO: update fake VUID below with the real one once it is generated.
+                skip |=
+                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT,
+                            0, "UNASSIGNED-VkAccelerationStructureInfoNV-pGeometries-XXXX",
+                            "VkAccelerationStructureInfoNV: info.pGeometries[%d].geometryType does not match "
+                            "info.pGeometries[0].geometryType.",
+                            i);
+            }
         }
     }
     return skip;
