@@ -9337,7 +9337,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                             "Here are the respective dimensions for attachment #%u, the ceiling value:\n "
                                             "attachment #%u, framebuffer:\n"
                                             "width: %u, the ceiling value: %u\n",
-                                            i, ivci.subresourceRange.baseMipLevel, i, mip_width, ceilingWidth);
+                                            i, ivci.subresourceRange.baseMipLevel, i, i, mip_width, ceilingWidth);
                             }
                             uint32_t ceilingHeight = (uint32_t)ceil(
                                 (float)pCreateInfo->height /
@@ -9352,7 +9352,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                             "Here are the respective dimensions for attachment #%u, the ceiling value:\n "
                                             "attachment #%u, framebuffer:\n"
                                             "height: %u, the ceiling value: %u\n",
-                                            i, ivci.subresourceRange.baseMipLevel, i, mip_height, ceilingHeight);
+                                            i, ivci.subresourceRange.baseMipLevel, i, i, mip_height, ceilingHeight);
                             }
                         }
                         if (((ivci.components.r != VK_COMPONENT_SWIZZLE_IDENTITY) &&
