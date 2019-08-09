@@ -205,13 +205,16 @@ class HelperFileOutputGenerator(OutputGenerator):
             if groupName == 'VkDebugReportObjectTypeEXT':
                 for elem in groupElem.findall('enum'):
                     if elem.get('supported') != 'disabled':
-                        item_name = elem.get('name')
-                        self.debug_report_object_types.append(item_name)
+                        if elem.get('alias') is None: # TODO: Strangely the "alias" fn parameter does not work
+                            item_name = elem.get('name')
+                            if self.debug_report_object_types.count(item_name) == 0: # TODO: Strangely there are duplicates
+                                self.debug_report_object_types.append(item_name)
             elif groupName == 'VkObjectType':
                 for elem in groupElem.findall('enum'):
                     if elem.get('supported') != 'disabled':
-                        item_name = elem.get('name')
-                        self.core_object_types.append(item_name)
+                        if elem.get('alias') is None: # TODO: Strangely the "alias" fn parameter does not work
+                            item_name = elem.get('name')
+                            self.core_object_types.append(item_name)
 
     #
     # Called for each type -- if the type is a struct/union, grab the metadata
@@ -739,24 +742,25 @@ class HelperFileOutputGenerator(OutputGenerator):
             object_types_header += '    "%s",\n' % item
         object_types_header += '};\n'
 
-        # Key creation helper for map comprehensions that convert between k<Name> and VK<Name> symbols
-        def to_key(regex, raw_key): return re.search(regex, raw_key).group(1).lower().replace("_","")
+        # Helpers to create unified dict key from k<Name>, VK_OBJECT_TYPE_<Name>, and VK_DEBUG_REPORT_OBJECT_TYPE_<Name>
+        def dro_to_key(raw_key): return re.search('^VK_DEBUG_REPORT_OBJECT_TYPE_(.*)_EXT$', raw_key).group(1).lower().replace("_","")
+        def vko_to_key(raw_key): return re.search('^VK_OBJECT_TYPE_(.*)', raw_key).group(1).lower().replace("_","")
+        def kenum_to_key(raw_key): return re.search('^kVulkanObjectType(.*)', raw_key).group(1).lower()
+
+        dro_dict = {dro_to_key(dro) : dro for dro in self.debug_report_object_types}
+        vko_dict = {vko_to_key(vko) : vko for vko in self.core_object_types}
 
         # Output a conversion routine from the layer object definitions to the debug report definitions
-        # As the VK_DEBUG_REPORT types are not being updated, specify UNKNOWN for unmatched types
         object_types_header += '\n'
         object_types_header += '// Helper array to get Vulkan VK_EXT_debug_report object type enum from the internal layers version\n'
         object_types_header += 'const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {\n'
-        object_types_header += '    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, // kVulkanObjectTypeUnknown\n'
-
-        dbg_re = '^VK_DEBUG_REPORT_OBJECT_TYPE_(.*)_EXT$'
-        dbg_map = {to_key(dbg_re, dbg) : dbg for dbg in self.debug_report_object_types}
-        dbg_default = 'VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT'
+        object_types_header += '    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, // kVulkanObjectTypeUnknown\n' # no unknown handle, so this must be here explicitly
 
         for object_type in type_list:
-            vk_object_type = dbg_map.get(object_type.replace("kVulkanObjectType", "").lower(), dbg_default)
-            object_types_header += '    %s,   // %s\n' % (vk_object_type, object_type)
-            object_type_info[object_type]['DbgType'] = vk_object_type
+            # VK_DEBUG_REPORT is not updated anymore; there might be missing object types
+            kenum_type = dro_dict.get(kenum_to_key(object_type), 'VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT')
+            object_types_header += '    %s,   // %s\n' % (kenum_type, object_type)
+            object_type_info[object_type]['DbgType'] = kenum_type
         object_types_header += '};\n'
 
         # Output a conversion routine from the layer object definitions to the core object type definitions
@@ -764,58 +768,38 @@ class HelperFileOutputGenerator(OutputGenerator):
         object_types_header += '\n'
         object_types_header += '// Helper array to get Official Vulkan VkObjectType enum from the internal layers version\n'
         object_types_header += 'const VkObjectType get_object_type_enum[] = {\n'
-        object_types_header += '    VK_OBJECT_TYPE_UNKNOWN, // kVulkanObjectTypeUnknown\n'
+        object_types_header += '    VK_OBJECT_TYPE_UNKNOWN, // kVulkanObjectTypeUnknown\n' # no unknown handle, so must be here explicitly
 
-        vko_re = '^VK_OBJECT_TYPE_(.*)'
-        vko_map = {to_key(vko_re, vko) : vko for vko in self.core_object_types}
         for object_type in type_list:
-            vk_object_type = vko_map[object_type.replace("kVulkanObjectType", "").lower()]
-            object_types_header += '    %s,   // %s\n' % (vk_object_type, object_type)
-            object_type_info[object_type]['VkoType'] = vk_object_type
+            kenum_type = vko_dict[kenum_to_key(object_type)]
+            object_types_header += '    %s,   // %s\n' % (kenum_type, object_type)
+            object_type_info[object_type]['VkoType'] = kenum_type
         object_types_header += '};\n'
 
-        # Create a function to convert from VkDebugReportObjectTypeEXT to VkObjectType
-        object_types_header += '\n'
-        object_types_header += '// Helper function to convert from VkDebugReportObjectTypeEXT to VkObjectType\n'
-        object_types_header += 'static inline VkObjectType convertDebugReportObjectToCoreObject(VkDebugReportObjectTypeEXT debug_report_obj){\n'
-        object_types_header += '    if (debug_report_obj == VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT) {\n'
-        object_types_header += '        return VK_OBJECT_TYPE_UNKNOWN;\n'
-        for core_object_type in self.core_object_types:
-            core_target_type = core_object_type.replace("VK_OBJECT_TYPE_", "").lower()
-            core_target_type = core_target_type.replace("_", "")
-            for dr_object_type in self.debug_report_object_types:
-                dr_target_type = dr_object_type.replace("VK_DEBUG_REPORT_OBJECT_TYPE_", "").lower()
-                dr_target_type = dr_target_type[:-4]
-                dr_target_type = dr_target_type.replace("_", "")
-                if core_target_type == dr_target_type:
-                    object_types_header += '    } else if (debug_report_obj == %s) {\n' % dr_object_type
-                    object_types_header += '        return %s;\n' % core_object_type
-                    break
-        object_types_header += '    }\n'
-        object_types_header += '    return VK_OBJECT_TYPE_UNKNOWN;\n'
-        object_types_header += '}\n'
+        # Create a functions to convert between VkDebugReportObjectTypeEXT and VkObjectType
+        object_types_header +=     '\n'
+        object_types_header +=     'static inline VkObjectType convertDebugReportObjectToCoreObject(VkDebugReportObjectTypeEXT debug_report_obj) {\n'
+        object_types_header +=     '    switch (debug_report_obj) {\n'
+        for dr_object_type in self.debug_report_object_types:
+            object_types_header += '        case %s: return %s;\n' % (dr_object_type, vko_dict[dro_to_key(dr_object_type)])
+        object_types_header +=     '        default: return VK_OBJECT_TYPE_UNKNOWN;\n'
+        object_types_header +=     '    }\n'
+        object_types_header +=     '}\n'
 
-        # Create a function to convert from VkObjectType to VkDebugReportObjectTypeEXT
-        object_types_header += '\n'
-        object_types_header += '// Helper function to convert from VkDebugReportObjectTypeEXT to VkObjectType\n'
-        object_types_header += 'static inline VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(VkObjectType core_report_obj){\n'
-        object_types_header += '    if (core_report_obj == VK_OBJECT_TYPE_UNKNOWN) {\n'
-        object_types_header += '        return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;\n'
+        object_types_header +=         '\n'
+        object_types_header +=         'static inline VkDebugReportObjectTypeEXT convertCoreObjectToDebugReportObject(VkObjectType core_report_obj) {\n'
+        object_types_header +=         '    switch (core_report_obj) {\n'
         for core_object_type in self.core_object_types:
-            core_target_type = core_object_type.replace("VK_OBJECT_TYPE_", "").lower()
-            core_target_type = core_target_type.replace("_", "")
-            for dr_object_type in self.debug_report_object_types:
-                dr_target_type = dr_object_type.replace("VK_DEBUG_REPORT_OBJECT_TYPE_", "").lower()
-                dr_target_type = dr_target_type[:-4]
-                dr_target_type = dr_target_type.replace("_", "")
-                if core_target_type == dr_target_type:
-                    object_types_header += '    } else if (core_report_obj == %s) {\n' % core_object_type
-                    object_types_header += '        return %s;\n' % dr_object_type
-                    break
-        object_types_header += '    }\n'
-        object_types_header += '    return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;\n'
-        object_types_header += '}\n'
+            # VK_DEBUG_REPORT is not updated anymore; there might be missing object types
+            dr_object_type = dro_dict.get(vko_to_key(core_object_type))
+            if dr_object_type is not None:
+                object_types_header += '        case %s: return %s;\n' % (core_object_type, dr_object_type)
+        object_types_header +=         '        default: return VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;\n'
+        object_types_header +=         '    }\n'
+        object_types_header +=         '}\n'
 
+        #
+        object_types_header += '\n'
         traits_format = Outdent('''
             template <> struct VkHandleInfo<{vk_type}> {{
                 static const VulkanObjectType kVulkanObjectType = {obj_type};
