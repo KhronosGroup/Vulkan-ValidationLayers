@@ -119,7 +119,7 @@ class ThreadOutputGenerator(OutputGenerator):
 
     inline_copyright_message = """
 // This file is ***GENERATED***.  Do Not Edit.
-// See layer_chassis_dispatch_generator.py for modifications.
+// See thread_safety_generator.py for modifications.
 
 /* Copyright (c) 2015-2019 The Khronos Group Inc.
  * Copyright (c) 2015-2019 Valve Corporation
