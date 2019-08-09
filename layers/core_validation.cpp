@@ -9485,6 +9485,41 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                 "but framebuffer has a height of #%u.",
                                 i, aii.height, pCreateInfo->height);
                         }
+                    } else {
+                        if (rpci->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT ||
+                            rpci->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT) {
+                            uint32_t ceilingWidth = (uint32_t)ceil(
+                                (float)pCreateInfo->width /
+                                (float)phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
+
+                            if (aii.width < ceilingWidth) {
+                                skip |=
+                                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                            "VUID-VkFramebufferCreateInfo-flags-03196",
+                                            "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info #%u that is referenced "
+                                            "by VkRenderPassFragmentDensityMapCreateInfoEXT::fragmentDensityMapAttachment has a "
+                                            "width of only %u, "
+                                            "but it must be greater than or equal to the ceiling of width of framebuffer / "
+                                            "maxFragmentDensityTexelSize.width (%u).",
+                                            i, aii.width, ceilingWidth);
+                            }
+
+                            uint32_t ceilingHeight = (uint32_t)ceil(
+                                (float)pCreateInfo->height /
+                                (float)phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height);
+
+                            if (aii.height < ceilingHeight) {
+                                skip |=
+                                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                            "VUID-VkFramebufferCreateInfo-flags-03197",
+                                            "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info #%u that is referenced "
+                                            "by VkRenderPassFragmentDensityMapCreateInfoEXT::fragmentDensityMapAttachment has a "
+                                            "height of only %u, "
+                                            "but it must be greater than or equal to the ceiling of height of framebuffer / "
+                                            "maxFragmentDensityTexelSize.height (%u).",
+                                            i, aii.height, ceilingHeight);
+                            }
+                        }
                     }
                 }
 
