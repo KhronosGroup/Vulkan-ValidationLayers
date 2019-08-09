@@ -505,6 +505,178 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBGraphicsShaders) {
     return;
 }
 
+TEST_F(VkLayerTest, GpuBufferDeviceAddressOOB) {
+    bool supported = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+    VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
+    VkValidationFeaturesEXT features = {};
+    features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+    features.enabledValidationFeatureCount = 1;
+    features.pEnabledValidationFeatures = enables;
+    InitFramework(myDbgFunc, m_errorMonitor, &features);
+
+    if (DeviceIsMockICD() || DeviceSimulation()) {
+        printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
+        return;
+    }
+
+    supported = supported && DeviceExtensionSupported(gpu(), nullptr, VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+
+    VkPhysicalDeviceFeatures2KHR features2 = {};
+    auto bda_features = lvl_init_struct<VkPhysicalDeviceBufferDeviceAddressFeaturesEXT>();
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vkGetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&bda_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    supported = supported && bda_features.bufferDeviceAddress;
+
+    if (!supported) {
+        printf("Buffer Device Address feature not supported, skipping test\n");
+        return;
+    }
+    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
+    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
+        printf("%s GPU-Assisted validation test requires Vulkan 1.1+.\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Make a uniform buffer to be passed to the shader that contains the pointer and write count
+    uint32_t qfi = 0;
+    VkBufferCreateInfo bci = {};
+    bci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bci.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    bci.size = 8;
+    bci.queueFamilyIndexCount = 1;
+    bci.pQueueFamilyIndices = &qfi;
+    VkBufferObj buffer0;
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    buffer0.init(*m_device, bci, mem_props);
+
+    // Make another buffer to write to
+    bci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT;
+    bci.size = 64;  // Buffer should be 16*4 = 64 bytes
+    VkBufferObj buffer1;
+    buffer1.init(*m_device, bci, mem_props);
+
+    // Get device address of buffer to write to
+    VkBufferDeviceAddressInfoEXT bda_info = {};
+    bda_info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_EXT;
+    bda_info.buffer = buffer1.handle();
+    auto vkGetBufferDeviceAddressEXT =
+        (PFN_vkGetBufferDeviceAddressEXT)vkGetDeviceProcAddr(m_device->device(), "vkGetBufferDeviceAddressEXT");
+    ASSERT_TRUE(vkGetBufferDeviceAddressEXT != nullptr);
+    auto pBuffer = vkGetBufferDeviceAddressEXT(m_device->device(), &bda_info);
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+    VkDescriptorBufferInfo buffer_test_buffer_info[2] = {};
+    buffer_test_buffer_info[0].buffer = buffer0.handle();
+    buffer_test_buffer_info[0].offset = 0;
+    buffer_test_buffer_info[0].range = sizeof(uint32_t);
+
+    VkWriteDescriptorSet descriptor_writes[1] = {};
+    descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_writes[0].dstSet = descriptor_set.set_;
+    descriptor_writes[0].dstBinding = 0;
+    descriptor_writes[0].descriptorCount = 1;
+    descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_writes[0].pBufferInfo = buffer_test_buffer_info;
+    vkUpdateDescriptorSets(m_device->device(), 1, descriptor_writes, 0, NULL);
+
+    char const *shader_source =
+        "#version 450\n"
+        "#extension GL_EXT_buffer_reference : enable\n "
+        "layout(buffer_reference, buffer_reference_align = 16) buffer bufStruct;\n"
+        "layout(set = 0, binding = 0) uniform ufoo {\n"
+        "    bufStruct data;\n"
+        "    int nWrites;\n"
+        "} u_info;\n"
+        "layout(buffer_reference, std140) buffer bufStruct {\n"
+        "    int a[4];\n"
+        "};\n"
+        "void main() {\n"
+        "    for (int i=0; i < u_info.nWrites; ++i) {\n"
+        "        u_info.data.a[i] = 0xdeadca71;\n"
+        "    }\n"
+        "}\n";
+    VkShaderObj vs(m_device, shader_source, VK_SHADER_STAGE_VERTEX_BIT, this, "main", true);
+
+    VkViewport viewport = m_viewports[0];
+    VkRect2D scissors = m_scissors[0];
+
+    VkSubmitInfo submit_info = {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddShader(&vs);
+    pipe.AddDefaultColorAttachment();
+    VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    ASSERT_VK_SUCCESS(err);
+
+    VkCommandBufferBeginInfo begin_info = {};
+    VkCommandBufferInheritanceInfo hinfo = {};
+    hinfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.pInheritanceInfo = &hinfo;
+
+    m_commandBuffer->begin(&begin_info);
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                            &descriptor_set.set_, 0, nullptr);
+    vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+    vkCmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissors);
+    vkCmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    vkCmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+
+    // Starting address too low
+    VkDeviceAddress *data = (VkDeviceAddress *)buffer0.memory().map();
+    data[0] = pBuffer - 16;
+    data[1] = 4;
+    buffer0.memory().unmap();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "access out of bounds");
+    err = vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    ASSERT_VK_SUCCESS(err);
+    err = vkQueueWaitIdle(m_device->m_queue);
+    ASSERT_VK_SUCCESS(err);
+    m_errorMonitor->VerifyFound();
+
+    // Run past the end
+    data = (VkDeviceAddress *)buffer0.memory().map();
+    data[0] = pBuffer;
+    data[1] = 5;
+    buffer0.memory().unmap();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "access out of bounds");
+    err = vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    ASSERT_VK_SUCCESS(err);
+    err = vkQueueWaitIdle(m_device->m_queue);
+    ASSERT_VK_SUCCESS(err);
+    m_errorMonitor->VerifyFound();
+
+    // Positive test - stay inside buffer
+    m_errorMonitor->ExpectSuccess();
+    data = (VkDeviceAddress *)buffer0.memory().map();
+    data[0] = pBuffer;
+    data[1] = 4;
+    buffer0.memory().unmap();
+    err = vkQueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    ASSERT_VK_SUCCESS(err);
+    err = vkQueueWaitIdle(m_device->m_queue);
+    ASSERT_VK_SUCCESS(err);
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkLayerTest, GpuValidationArrayOOBRayTracingShaders) {
     TEST_DESCRIPTION(
         "GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors for "
