@@ -30,6 +30,7 @@
 //    4/18/19 - Make changes to suppress warnings from clang
 //    6/05/19 - Make changes to suppress warnings from clang 3.8.0
 //    6/05/19 - Make changes to suppress more warnings from GCC
+//    8/09/19 - Make changes to suppress dead code warnings (from upstream master branch)
 //
 
 #ifndef AMD_VULKAN_MEMORY_ALLOCATOR_H
@@ -3696,16 +3697,21 @@ static inline bool VmaIsBufferImageGranularityConflict(
 
 static void VmaWriteMagicValue(void* pData, VkDeviceSize offset)
 {
+#if VMA_DEBUG_MARGIN > 0 && VMA_DEBUG_DETECT_CORRUPTION
     uint32_t* pDst = (uint32_t*)((char*)pData + offset);
     const size_t numberCount = VMA_DEBUG_MARGIN / sizeof(uint32_t);
     for(size_t i = 0; i < numberCount; ++i, ++pDst)
     {
         *pDst = VMA_CORRUPTION_DETECTION_MAGIC_VALUE;
     }
+#else
+    // no-op
+#endif
 }
 
 static bool VmaValidateMagicValue(const void* pData, VkDeviceSize offset)
 {
+#if VMA_DEBUG_MARGIN > 0 && VMA_DEBUG_DETECT_CORRUPTION
     const uint32_t* pSrc = (const uint32_t*)((const char*)pData + offset);
     const size_t numberCount = VMA_DEBUG_MARGIN / sizeof(uint32_t);
     for(size_t i = 0; i < numberCount; ++i, ++pSrc)
@@ -3715,6 +3721,7 @@ static bool VmaValidateMagicValue(const void* pData, VkDeviceSize offset)
             return false;
         }
     }
+#endif
     return true;
 }
 
