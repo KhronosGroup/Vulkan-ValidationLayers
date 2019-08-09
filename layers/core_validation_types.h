@@ -1199,6 +1199,17 @@ class PIPELINE_STATE : public BASE_NODE {
         else
             return VK_PIPELINE_BIND_POINT_MAX_ENUM;
     }
+
+    inline VkPipelineCreateFlags getPipelineCreateFlags() const {
+        if (graphicsPipelineCI.sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO)
+            return graphicsPipelineCI.flags;
+        else if (computePipelineCI.sType == VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO)
+            return computePipelineCI.flags;
+        else if (raytracingPipelineCI.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV)
+            return raytracingPipelineCI.flags;
+        else
+            return 0;
+    }
 };
 
 // Track last states that are bound per pipeline bind point (Gfx & Compute)
@@ -1550,6 +1561,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT demote_to_helper_invocation_features;
     VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT texel_buffer_alignment_features;
     VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_framebuffer_features;
+    VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR pipeline_exe_props_features;
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
