@@ -8406,31 +8406,31 @@ bool Validate(const CoreChecks *device_data, const char *func_name, CMD_BUFFER_S
 
 // Type specific wrapper for image barriers
 bool CoreChecks::ValidateBarrierQueueFamilies(const char *func_name, CMD_BUFFER_STATE *cb_state,
-                                              const VkImageMemoryBarrier *barrier, const IMAGE_STATE *state_data) {
+                                              const VkImageMemoryBarrier &barrier, const IMAGE_STATE *state_data) {
     // State data is required
     if (!state_data) {
         return false;
     }
 
     // Create the validator state from the image state
-    barrier_queue_families::ValidatorState val(this, func_name, cb_state, barrier, state_data);
-    const uint32_t src_queue_family = barrier->srcQueueFamilyIndex;
-    const uint32_t dst_queue_family = barrier->dstQueueFamilyIndex;
+    barrier_queue_families::ValidatorState val(this, func_name, cb_state, &barrier, state_data);
+    const uint32_t src_queue_family = barrier.srcQueueFamilyIndex;
+    const uint32_t dst_queue_family = barrier.dstQueueFamilyIndex;
     return barrier_queue_families::Validate(this, func_name, cb_state, val, src_queue_family, dst_queue_family);
 }
 
 // Type specific wrapper for buffer barriers
 bool CoreChecks::ValidateBarrierQueueFamilies(const char *func_name, CMD_BUFFER_STATE *cb_state,
-                                              const VkBufferMemoryBarrier *barrier, const BUFFER_STATE *state_data) {
+                                              const VkBufferMemoryBarrier &barrier, const BUFFER_STATE *state_data) {
     // State data is required
     if (!state_data) {
         return false;
     }
 
     // Create the validator state from the buffer state
-    barrier_queue_families::ValidatorState val(this, func_name, cb_state, barrier, state_data);
-    const uint32_t src_queue_family = barrier->srcQueueFamilyIndex;
-    const uint32_t dst_queue_family = barrier->dstQueueFamilyIndex;
+    barrier_queue_families::ValidatorState val(this, func_name, cb_state, &barrier, state_data);
+    const uint32_t src_queue_family = barrier.srcQueueFamilyIndex;
+    const uint32_t dst_queue_family = barrier.dstQueueFamilyIndex;
     return barrier_queue_families::Validate(this, func_name, cb_state, val, src_queue_family, dst_queue_family);
 }
 
@@ -8456,24 +8456,24 @@ bool CoreChecks::ValidateBarriers(const char *funcName, CMD_BUFFER_STATE *cb_sta
         }
     }
     for (uint32_t i = 0; i < imageMemBarrierCount; ++i) {
-        auto mem_barrier = &pImageMemBarriers[i];
-        if (!ValidateAccessMaskPipelineStage(device_extensions, mem_barrier->srcAccessMask, src_stage_mask)) {
+        const auto &mem_barrier = pImageMemBarriers[i];
+        if (!ValidateAccessMaskPipelineStage(device_extensions, mem_barrier.srcAccessMask, src_stage_mask)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdPipelineBarrier-pMemoryBarriers-01184",
                             "%s: pImageMemBarriers[%d].srcAccessMask (0x%X) is not supported by srcStageMask (0x%X).", funcName, i,
-                            mem_barrier->srcAccessMask, src_stage_mask);
+                            mem_barrier.srcAccessMask, src_stage_mask);
         }
-        if (!ValidateAccessMaskPipelineStage(device_extensions, mem_barrier->dstAccessMask, dst_stage_mask)) {
+        if (!ValidateAccessMaskPipelineStage(device_extensions, mem_barrier.dstAccessMask, dst_stage_mask)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdPipelineBarrier-pMemoryBarriers-01185",
                             "%s: pImageMemBarriers[%d].dstAccessMask (0x%X) is not supported by dstStageMask (0x%X).", funcName, i,
-                            mem_barrier->dstAccessMask, dst_stage_mask);
+                            mem_barrier.dstAccessMask, dst_stage_mask);
         }
 
-        auto image_data = GetImageState(mem_barrier->image);
+        auto image_data = GetImageState(mem_barrier.image);
         skip |= ValidateBarrierQueueFamilies(funcName, cb_state, mem_barrier, image_data);
 
-        if (mem_barrier->newLayout == VK_IMAGE_LAYOUT_UNDEFINED || mem_barrier->newLayout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
+        if (mem_barrier.newLayout == VK_IMAGE_LAYOUT_UNDEFINED || mem_barrier.newLayout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_state->commandBuffer), "VUID-VkImageMemoryBarrier-newLayout-01198",
                             "%s: Image Layout cannot be transitioned to UNDEFINED or PREINITIALIZED.", funcName);
@@ -8486,32 +8486,31 @@ bool CoreChecks::ValidateBarriers(const char *funcName, CMD_BUFFER_STATE *cb_sta
             // TODO: Update this when VUID is defined
             skip |= ValidateMemoryIsBoundToImage(image_data, funcName, kVUIDUndefined);
 
-            auto aspect_mask = mem_barrier->subresourceRange.aspectMask;
+            const auto aspect_mask = mem_barrier.subresourceRange.aspectMask;
             skip |= ValidateImageAspectMask(image_data->image, image_data->createInfo.format, aspect_mask, funcName);
 
-            std::string param_name = "pImageMemoryBarriers[" + std::to_string(i) + "].subresourceRange";
-            skip |= ValidateImageBarrierSubresourceRange(image_data, mem_barrier->subresourceRange, funcName, param_name.c_str());
+            const std::string param_name = "pImageMemoryBarriers[" + std::to_string(i) + "].subresourceRange";
+            skip |= ValidateImageBarrierSubresourceRange(image_data, mem_barrier.subresourceRange, funcName, param_name.c_str());
         }
     }
 
     for (uint32_t i = 0; i < bufferBarrierCount; ++i) {
-        auto mem_barrier = &pBufferMemBarriers[i];
-        if (!mem_barrier) continue;
+        const auto &mem_barrier = pBufferMemBarriers[i];
 
-        if (!ValidateAccessMaskPipelineStage(device_extensions, mem_barrier->srcAccessMask, src_stage_mask)) {
+        if (!ValidateAccessMaskPipelineStage(device_extensions, mem_barrier.srcAccessMask, src_stage_mask)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdPipelineBarrier-pMemoryBarriers-01184",
                             "%s: pBufferMemBarriers[%d].srcAccessMask (0x%X) is not supported by srcStageMask (0x%X).", funcName, i,
-                            mem_barrier->srcAccessMask, src_stage_mask);
+                            mem_barrier.srcAccessMask, src_stage_mask);
         }
-        if (!ValidateAccessMaskPipelineStage(device_extensions, mem_barrier->dstAccessMask, dst_stage_mask)) {
+        if (!ValidateAccessMaskPipelineStage(device_extensions, mem_barrier.dstAccessMask, dst_stage_mask)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdPipelineBarrier-pMemoryBarriers-01185",
                             "%s: pBufferMemBarriers[%d].dstAccessMask (0x%X) is not supported by dstStageMask (0x%X).", funcName, i,
-                            mem_barrier->dstAccessMask, dst_stage_mask);
+                            mem_barrier.dstAccessMask, dst_stage_mask);
         }
         // Validate buffer barrier queue family indices
-        auto buffer_state = GetBufferState(mem_barrier->buffer);
+        auto buffer_state = GetBufferState(mem_barrier.buffer);
         skip |= ValidateBarrierQueueFamilies(funcName, cb_state, mem_barrier, buffer_state);
 
         if (buffer_state) {
@@ -8522,20 +8521,19 @@ bool CoreChecks::ValidateBarriers(const char *funcName, CMD_BUFFER_STATE *cb_sta
             skip |= ValidateMemoryIsBoundToBuffer(buffer_state, funcName, kVUIDUndefined);
 
             auto buffer_size = buffer_state->createInfo.size;
-            if (mem_barrier->offset >= buffer_size) {
+            if (mem_barrier.offset >= buffer_size) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                 HandleToUint64(cb_state->commandBuffer), "VUID-VkBufferMemoryBarrier-offset-01187",
                                 "%s: Buffer Barrier %s has offset 0x%" PRIx64 " which is not less than total size 0x%" PRIx64 ".",
-                                funcName, report_data->FormatHandle(mem_barrier->buffer).c_str(),
-                                HandleToUint64(mem_barrier->offset), HandleToUint64(buffer_size));
-            } else if (mem_barrier->size != VK_WHOLE_SIZE && (mem_barrier->offset + mem_barrier->size > buffer_size)) {
-                skip |=
-                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(cb_state->commandBuffer), "VUID-VkBufferMemoryBarrier-size-01189",
-                            "%s: Buffer Barrier %s has offset 0x%" PRIx64 " and size 0x%" PRIx64
-                            " whose sum is greater than total size 0x%" PRIx64 ".",
-                            funcName, report_data->FormatHandle(mem_barrier->buffer).c_str(), HandleToUint64(mem_barrier->offset),
-                            HandleToUint64(mem_barrier->size), HandleToUint64(buffer_size));
+                                funcName, report_data->FormatHandle(mem_barrier.buffer).c_str(), HandleToUint64(mem_barrier.offset),
+                                HandleToUint64(buffer_size));
+            } else if (mem_barrier.size != VK_WHOLE_SIZE && (mem_barrier.offset + mem_barrier.size > buffer_size)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                HandleToUint64(cb_state->commandBuffer), "VUID-VkBufferMemoryBarrier-size-01189",
+                                "%s: Buffer Barrier %s has offset 0x%" PRIx64 " and size 0x%" PRIx64
+                                " whose sum is greater than total size 0x%" PRIx64 ".",
+                                funcName, report_data->FormatHandle(mem_barrier.buffer).c_str(), HandleToUint64(mem_barrier.offset),
+                                HandleToUint64(mem_barrier.size), HandleToUint64(buffer_size));
             }
         }
     }

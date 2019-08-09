@@ -657,10 +657,11 @@ bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask, VkFormat format) {
 }
 
 // Verify an ImageMemoryBarrier's old/new ImageLayouts are compatible with the Image's ImageUsageFlags.
-bool CoreChecks::ValidateBarrierLayoutToImageUsage(const VkImageMemoryBarrier *img_barrier, bool new_not_old,
-                                                   VkImageUsageFlags usage_flags, const char *func_name) {
+bool CoreChecks::ValidateBarrierLayoutToImageUsage(const VkImageMemoryBarrier &img_barrier, bool new_not_old,
+                                                   VkImageUsageFlags usage_flags, const char *func_name,
+                                                   const char *barrier_pname) {
     bool skip = false;
-    const VkImageLayout layout = (new_not_old) ? img_barrier->newLayout : img_barrier->oldLayout;
+    const VkImageLayout layout = (new_not_old) ? img_barrier.newLayout : img_barrier.oldLayout;
     const char *msg_code = kVUIDUndefined;  // sentinel value meaning "no error"
 
     switch (layout) {
@@ -706,123 +707,122 @@ bool CoreChecks::ValidateBarrierLayoutToImageUsage(const VkImageMemoryBarrier *i
 
     if (msg_code != kVUIDUndefined) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                        HandleToUint64(img_barrier->image), msg_code,
-                        "%s: Image barrier 0x%p %s Layout=%s is not compatible with %s usage flags 0x%" PRIx32 ".", func_name,
-                        static_cast<const void *>(img_barrier), ((new_not_old) ? "new" : "old"), string_VkImageLayout(layout),
-                        report_data->FormatHandle(img_barrier->image).c_str(), usage_flags);
+                        HandleToUint64(img_barrier.image), msg_code,
+                        "%s: Image barrier %s %s Layout=%s is not compatible with %s usage flags 0x%" PRIx32 ".", func_name,
+                        barrier_pname, ((new_not_old) ? "new" : "old"), string_VkImageLayout(layout),
+                        report_data->FormatHandle(img_barrier.image).c_str(), usage_flags);
     }
     return skip;
 }
-
-// Scoreboard for checking for duplicate and inconsistent barriers to images
-struct ImageBarrierScoreboardEntry {
-    uint32_t index;
-    // This is designed for temporary storage within the scope of the API call.  If retained storage of the barriers is
-    // required, copies should be made and smart or unique pointers used in some other stucture (or this one refactored)
-    const VkImageMemoryBarrier *barrier;
-};
-using ImageBarrierScoreboardSubresMap = std::unordered_map<VkImageSubresourceRange, ImageBarrierScoreboardEntry>;
-using ImageBarrierScoreboardImageMap = std::unordered_map<VkImage, ImageBarrierScoreboardSubresMap>;
 
 // Verify image barriers are compatible with the images they reference.
 bool CoreChecks::ValidateBarriersToImages(CMD_BUFFER_STATE const *cb_state, uint32_t imageMemoryBarrierCount,
                                           const VkImageMemoryBarrier *pImageMemoryBarriers, const char *func_name) {
     bool skip = false;
 
+    // Scoreboard for checking for duplicate and inconsistent barriers to images
+    struct ImageBarrierScoreboardEntry {
+        uint32_t index;
+        // This is designed for temporary storage within the scope of the API call.  If retained storage of the barriers is
+        // required, copies should be made and smart or unique pointers used in some other stucture (or this one refactored)
+        const VkImageMemoryBarrier *barrier;
+    };
+    using ImageBarrierScoreboardSubresMap = std::unordered_map<VkImageSubresourceRange, ImageBarrierScoreboardEntry>;
+    using ImageBarrierScoreboardImageMap = std::unordered_map<VkImage, ImageBarrierScoreboardSubresMap>;
+
     // Scoreboard for duplicate layout transition barriers within the list
     // Pointers retained in the scoreboard only have the lifetime of *this* call (i.e. within the scope of the API call)
     ImageBarrierScoreboardImageMap layout_transitions;
 
     for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
-        auto img_barrier = &pImageMemoryBarriers[i];
-        if (!img_barrier) continue;
+        const auto &img_barrier = pImageMemoryBarriers[i];
+        const std::string barrier_pname = "pImageMemoryBarrier[" + std::to_string(i) + "]";
 
         // Update the scoreboard of layout transitions and check for barriers affecting the same image and subresource
         // TODO: a higher precision could be gained by adapting the command_buffer image_layout_map logic looking for conflicts
         // at a per sub-resource level
-        if (img_barrier->oldLayout != img_barrier->newLayout) {
-            ImageBarrierScoreboardEntry new_entry{i, img_barrier};
-            auto image_it = layout_transitions.find(img_barrier->image);
+        if (img_barrier.oldLayout != img_barrier.newLayout) {
+            const ImageBarrierScoreboardEntry new_entry{i, &img_barrier};
+            const auto image_it = layout_transitions.find(img_barrier.image);
             if (image_it != layout_transitions.end()) {
                 auto &subres_map = image_it->second;
-                auto subres_it = subres_map.find(img_barrier->subresourceRange);
+                auto subres_it = subres_map.find(img_barrier.subresourceRange);
                 if (subres_it != subres_map.end()) {
                     auto &entry = subres_it->second;
-                    if ((entry.barrier->newLayout != img_barrier->oldLayout) &&
-                        (img_barrier->oldLayout != VK_IMAGE_LAYOUT_UNDEFINED)) {
-                        const VkImageSubresourceRange &range = img_barrier->subresourceRange;
+                    if ((entry.barrier->newLayout != img_barrier.oldLayout) &&
+                        (img_barrier.oldLayout != VK_IMAGE_LAYOUT_UNDEFINED)) {
+                        const VkImageSubresourceRange &range = img_barrier.subresourceRange;
                         skip = log_msg(
                             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_state->commandBuffer), "VUID-VkImageMemoryBarrier-oldLayout-01197",
-                            "%s: pImageMemoryBarrier[%u] conflicts with earlier entry pImageMemoryBarrier[%u]. %s"
+                            "%s: %s conflicts with earlier entry pImageMemoryBarrier[%u]. %s"
                             " subresourceRange: aspectMask=%u baseMipLevel=%u levelCount=%u, baseArrayLayer=%u, layerCount=%u; "
                             "conflicting barrier transitions image layout from %s when earlier barrier transitioned to layout %s.",
-                            func_name, i, entry.index, report_data->FormatHandle(img_barrier->image).c_str(), range.aspectMask,
-                            range.baseMipLevel, range.levelCount, range.baseArrayLayer, range.layerCount,
-                            string_VkImageLayout(img_barrier->oldLayout), string_VkImageLayout(entry.barrier->newLayout));
+                            func_name, barrier_pname.c_str(), entry.index, report_data->FormatHandle(img_barrier.image).c_str(),
+                            range.aspectMask, range.baseMipLevel, range.levelCount, range.baseArrayLayer, range.layerCount,
+                            string_VkImageLayout(img_barrier.oldLayout), string_VkImageLayout(entry.barrier->newLayout));
                     }
                     entry = new_entry;
                 } else {
-                    subres_map[img_barrier->subresourceRange] = new_entry;
+                    subres_map[img_barrier.subresourceRange] = new_entry;
                 }
             } else {
-                layout_transitions[img_barrier->image][img_barrier->subresourceRange] = new_entry;
+                layout_transitions[img_barrier.image][img_barrier.subresourceRange] = new_entry;
             }
         }
 
-        auto image_state = GetImageState(img_barrier->image);
+        auto image_state = GetImageState(img_barrier.image);
         if (image_state) {
             VkImageUsageFlags usage_flags = image_state->createInfo.usage;
-            skip |= ValidateBarrierLayoutToImageUsage(img_barrier, false, usage_flags, func_name);
-            skip |= ValidateBarrierLayoutToImageUsage(img_barrier, true, usage_flags, func_name);
+            skip |= ValidateBarrierLayoutToImageUsage(img_barrier, false, usage_flags, func_name, barrier_pname.c_str());
+            skip |= ValidateBarrierLayoutToImageUsage(img_barrier, true, usage_flags, func_name, barrier_pname.c_str());
 
             // Make sure layout is able to be transitioned, currently only presented shared presentable images are locked
             if (image_state->layout_locked) {
                 // TODO: Add unique id for error when available
                 skip |= log_msg(
                     report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                    HandleToUint64(img_barrier->image), 0,
+                    HandleToUint64(img_barrier.image), 0,
                     "Attempting to transition shared presentable %s"
                     " from layout %s to layout %s, but image has already been presented and cannot have its layout transitioned.",
-                    report_data->FormatHandle(img_barrier->image).c_str(), string_VkImageLayout(img_barrier->oldLayout),
-                    string_VkImageLayout(img_barrier->newLayout));
+                    report_data->FormatHandle(img_barrier.image).c_str(), string_VkImageLayout(img_barrier.oldLayout),
+                    string_VkImageLayout(img_barrier.newLayout));
             }
 
             VkImageCreateInfo *image_create_info = &image_state->createInfo;
             // For a Depth/Stencil image both aspects MUST be set
             if (FormatIsDepthAndStencil(image_create_info->format)) {
-                auto const aspect_mask = img_barrier->subresourceRange.aspectMask;
+                auto const aspect_mask = img_barrier.subresourceRange.aspectMask;
                 auto const ds_mask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
                 if ((aspect_mask & ds_mask) != (ds_mask)) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                    HandleToUint64(img_barrier->image), "VUID-VkImageMemoryBarrier-image-01207",
-                                    "%s: Image barrier 0x%p references %s of format %s that must have the depth and stencil "
+                                    HandleToUint64(img_barrier.image), "VUID-VkImageMemoryBarrier-image-01207",
+                                    "%s: Image barrier %s references %s of format %s that must have the depth and stencil "
                                     "aspects set, but its aspectMask is 0x%" PRIx32 ".",
-                                    func_name, static_cast<const void *>(img_barrier),
-                                    report_data->FormatHandle(img_barrier->image).c_str(),
+                                    func_name, barrier_pname.c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
                                     string_VkFormat(image_create_info->format), aspect_mask);
                 }
             }
 
-            const auto *subresource_map = GetImageSubresourceLayoutMap(cb_state, img_barrier->image);
-            if (img_barrier->oldLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
+            const auto *subresource_map = GetImageSubresourceLayoutMap(cb_state, img_barrier.image);
+            if (img_barrier.oldLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 // TODO: Set memory invalid which is in mem_tracker currently
                 // Not sure if this needs to be in the ForRange traversal, pulling it out as it is currently invariant with
                 // subresource.
             } else if (subresource_map) {
                 bool subres_skip = false;
                 LayoutUseCheckAndMessage layout_check(subresource_map);
-                VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, img_barrier->subresourceRange);
+                VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, img_barrier.subresourceRange);
                 auto subres_callback = [this, img_barrier, cb_state, &layout_check, &subres_skip](
                                            const VkImageSubresource &subres, VkImageLayout layout, VkImageLayout initial_layout) {
-                    if (!layout_check.Check(subres, img_barrier->oldLayout, layout, initial_layout)) {
+                    if (!layout_check.Check(subres, img_barrier.oldLayout, layout, initial_layout)) {
                         subres_skip =
                             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                     HandleToUint64(cb_state->commandBuffer), "VUID-VkImageMemoryBarrier-oldLayout-01197",
                                     "For %s you cannot transition the layout of aspect=%d level=%d layer=%d from %s when the "
                                     "%s layout is %s.",
-                                    report_data->FormatHandle(img_barrier->image).c_str(), subres.aspectMask, subres.mipLevel,
-                                    subres.arrayLayer, string_VkImageLayout(img_barrier->oldLayout), layout_check.message,
+                                    report_data->FormatHandle(img_barrier.image).c_str(), subres.aspectMask, subres.mipLevel,
+                                    subres.arrayLayer, string_VkImageLayout(img_barrier.oldLayout), layout_check.message,
                                     string_VkImageLayout(layout_check.layout));
                     }
                     return !subres_skip;
@@ -835,11 +835,11 @@ bool CoreChecks::ValidateBarriersToImages(CMD_BUFFER_STATE const *cb_state, uint
     return skip;
 }
 
-bool CoreChecks::IsReleaseOp(CMD_BUFFER_STATE *cb_state, VkImageMemoryBarrier const *barrier) {
-    if (!IsTransferOp(barrier)) return false;
+bool CoreChecks::IsReleaseOp(CMD_BUFFER_STATE *cb_state, const VkImageMemoryBarrier &barrier) {
+    if (!IsTransferOp(&barrier)) return false;
 
     auto pool = GetCommandPoolState(cb_state->createInfo.commandPool);
-    return pool && TempIsReleaseOp<VkImageMemoryBarrier, true>(pool, barrier);
+    return pool && TempIsReleaseOp<VkImageMemoryBarrier, true>(pool, &barrier);
 }
 
 template <typename Barrier>
@@ -1033,8 +1033,7 @@ void CoreChecks::EraseQFOImageRelaseBarriers(const VkImage &image) { EraseQFORel
 void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t memBarrierCount,
                                         const VkImageMemoryBarrier *pImgMemBarriers) {
     for (uint32_t i = 0; i < memBarrierCount; ++i) {
-        auto mem_barrier = &pImgMemBarriers[i];
-        if (!mem_barrier) continue;
+        const auto &mem_barrier = pImgMemBarriers[i];
 
         // For ownership transfers, the barrier is specified twice; as a release
         // operation on the yielding queue family, and as an acquire operation
@@ -1047,10 +1046,10 @@ void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t mem
             continue;
         }
 
-        auto *image_state = GetImageState(mem_barrier->image);
+        auto *image_state = GetImageState(mem_barrier.image);
         if (!image_state) continue;
 
-        VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, mem_barrier->subresourceRange);
+        VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, mem_barrier.subresourceRange);
         const auto &image_create_info = image_state->createInfo;
 
         // Special case for 3D images with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR flag bit, where <extent.depth> and
@@ -1061,7 +1060,7 @@ void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t mem
             normalized_isr.layerCount = image_create_info.extent.depth;  // Treat each depth slice as a layer subresource
         }
 
-        SetImageLayout(cb_state, *image_state, normalized_isr, mem_barrier->newLayout, mem_barrier->oldLayout);
+        SetImageLayout(cb_state, *image_state, normalized_isr, mem_barrier.newLayout, mem_barrier.oldLayout);
     }
 }
 
