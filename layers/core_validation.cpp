@@ -970,9 +970,9 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 // Use 1 as vertex/instance index to use buffer stride as well
                 const auto attrib_address = buffer_binding_address + vertex_buffer_stride + attribute_offset;
 
-                uint32_t vtx_attrib_req_alignment = FormatElementSize(attribute_format);
+                VkDeviceSize vtx_attrib_req_alignment = FormatElementSize(attribute_format);
                 if (FormatElementIsTexel(attribute_format)) {
-                    vtx_attrib_req_alignment /= FormatChannelCount(attribute_format);
+                    vtx_attrib_req_alignment = SafeDivision(vtx_attrib_req_alignment, FormatChannelCount(attribute_format));
                 }
 
                 if (SafeModulo(attrib_address, vtx_attrib_req_alignment) != 0) {
