@@ -9400,10 +9400,10 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                                 i, ivci.subresourceRange.baseMipLevel, i, ivci.subresourceRange.layerCount,
                                                 pCreateInfo->layers);
                             }
-                            uint32_t ceilingWidth = (uint32_t)ceil(
+                            uint32_t ceiling_width = (uint32_t)ceil(
                                 (float)pCreateInfo->width /
                                 (float)phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
-                            if (mip_width < ceilingWidth) {
+                            if (mip_width < ceiling_width) {
                                 skip |=
                                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                             "VUID-VkFramebufferCreateInfo-pAttachments-02555",
@@ -9413,12 +9413,12 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                             "Here are the respective dimensions for attachment #%u, the ceiling value:\n "
                                             "attachment #%u, framebuffer:\n"
                                             "width: %u, the ceiling value: %u\n",
-                                            i, ivci.subresourceRange.baseMipLevel, i, mip_width, ceilingWidth);
+                                            i, ivci.subresourceRange.baseMipLevel, i, i, mip_width, ceiling_width);
                             }
-                            uint32_t ceilingHeight = (uint32_t)ceil(
+                            uint32_t ceiling_height = (uint32_t)ceil(
                                 (float)pCreateInfo->height /
                                 (float)phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height);
-                            if (mip_height < ceilingHeight) {
+                            if (mip_height < ceiling_height) {
                                 skip |=
                                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                             "VUID-VkFramebufferCreateInfo-pAttachments-02556",
@@ -9428,7 +9428,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                             "Here are the respective dimensions for attachment #%u, the ceiling value:\n "
                                             "attachment #%u, framebuffer:\n"
                                             "height: %u, the ceiling value: %u\n",
-                                            i, ivci.subresourceRange.baseMipLevel, i, mip_height, ceilingHeight);
+                                            i, ivci.subresourceRange.baseMipLevel, i, i, mip_height, ceiling_height);
                             }
                         }
                         if (((ivci.components.r != VK_COMPONENT_SWIZZLE_IDENTITY) &&
@@ -9453,7 +9453,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                 string_VkComponentSwizzle(ivci.components.b), string_VkComponentSwizzle(ivci.components.a));
                         }
 
-						if (rpci->subpassCount > 0) {
+                        if (rpci->subpassCount > 0) {
                             uint32_t view_bits = rpci->pSubpasses[0].viewMask;
                             uint32_t highest_view_bit = 0;
 
@@ -9564,11 +9564,11 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                     } else {
                         if (rpci->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT ||
                             rpci->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT) {
-                            uint32_t ceilingWidth = (uint32_t)ceil(
+                            uint32_t ceiling_width = (uint32_t)ceil(
                                 (float)pCreateInfo->width /
                                 (float)phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
 
-                            if (aii.width < ceilingWidth) {
+                            if (aii.width < ceiling_width) {
                                 skip |=
                                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                             "VUID-VkFramebufferCreateInfo-flags-03196",
@@ -9577,14 +9577,14 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                             "width of only %u, "
                                             "but it must be greater than or equal to the ceiling of width of framebuffer / "
                                             "maxFragmentDensityTexelSize.width (%u).",
-                                            i, aii.width, ceilingWidth);
+                                            i, aii.width, ceiling_width);
                             }
 
-                            uint32_t ceilingHeight = (uint32_t)ceil(
+                            uint32_t ceiling_height = (uint32_t)ceil(
                                 (float)pCreateInfo->height /
                                 (float)phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height);
 
-                            if (aii.height < ceilingHeight) {
+                            if (aii.height < ceiling_height) {
                                 skip |=
                                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                             "VUID-VkFramebufferCreateInfo-flags-03197",
@@ -9593,7 +9593,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                             "height of only %u, "
                                             "but it must be greater than or equal to the ceiling of height of framebuffer / "
                                             "maxFragmentDensityTexelSize.height (%u).",
-                                            i, aii.height, ceilingHeight);
+                                            i, aii.height, ceiling_height);
                             }
                         }
                     }
@@ -10584,11 +10584,9 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
             if (pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment >= pCreateInfo->attachmentCount) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                 "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02547",
-                                "fragmentDensityMapAttachment %u must be less than attachmentCount %u of RenderPass %s.",
-                                pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment, pCreateInfo->attachmentCount,
-                                report_data->FormatHandle(pRenderPass).c_str());
+                                "fragmentDensityMapAttachment %u must be less than attachmentCount %u of for this render pass.",
+                                pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment, pCreateInfo->attachmentCount);
             }
-
             if (!(pFragmentDensityMapInfo->fragmentDensityMapAttachment.layout ==
                       VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT ||
                   pFragmentDensityMapInfo->fragmentDensityMapAttachment.layout == VK_IMAGE_LAYOUT_GENERAL)) {
