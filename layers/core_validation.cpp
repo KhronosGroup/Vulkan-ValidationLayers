@@ -10508,11 +10508,9 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
             if (pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment >= pCreateInfo->attachmentCount) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                 "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02547",
-                                "fragmentDensityMapAttachment %u must be less than attachmentCount %u of RenderPass %s.",
-                                pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment, pCreateInfo->attachmentCount,
-                                report_data->FormatHandle(pRenderPass).c_str());
+                                "fragmentDensityMapAttachment %u must be less than attachmentCount %u of for this render pass.",
+                                pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment, pCreateInfo->attachmentCount);
             }
-
             if (!(pFragmentDensityMapInfo->fragmentDensityMapAttachment.layout ==
                       VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT ||
                   pFragmentDensityMapInfo->fragmentDensityMapAttachment.layout == VK_IMAGE_LAYOUT_GENERAL)) {
@@ -10543,7 +10541,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
                                 pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment);
             }
         }
-    }
+    }	
 
     if (!skip) {
         safe_VkRenderPassCreateInfo2KHR create_info_2;
