@@ -1246,6 +1246,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                 m_type = member.type
                 if member.name == 'pNext':
                     copy_pnext = '    pNext = SafePnextCopy(in_struct->pNext);\n'
+                    default_init_list += '\n    %s(nullptr),' % (member.name)
                 if member.type in self.structNames:
                     member_index = next((i for i, v in enumerate(self.structMembers) if v[0] == member.type), None)
                     if member_index is not None and self.NeedSafeStruct(self.structMembers[member_index]) == True:
