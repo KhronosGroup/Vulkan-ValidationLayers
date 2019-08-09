@@ -12,81 +12,20 @@
 [3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
 
-GPU-Assisted validation is implemented in the SPIR-V Tools optimizer and the `VK_LAYER_KHRONOS_validation layer (or, in the
-soon-to-be-deprecated `VK_LAYER_LUNARG_core_validation` layer). This document covers the design of the layer portion of the
-implementation.
+The GPU-assisted validation layer is responsible for running validation checks that can only be performed at runtime within
+the GPU itself. The motivating example for this layer is running out-of-bounds array access and uninitialized array element
+access checks within shaders which can only be performed at runtime during shader execution.
 
-## Basic Operation
-
-The basic operation of GPU-Assisted validation is comprised of instrumenting shader code to perform run-time checking in shaders and
-reporting any error conditions to the layer.
-The layer then reports the errors to the user via the same reporting mechanisms used by the rest of the validation system.
-
-The layer instruments the shaders by passing the shader's SPIR-V bytecode to the SPIR-V optimizer component and
-instructs the optimizer to perform an instrumentation pass to add the additional instructions to perform the run-time checking.
-The layer then passes the resulting modified SPIR-V bytecode to the driver as part of the process of creating a ShaderModule.
-
-The layer also allocates a buffer that describes the length of all descriptor arrays and the write state of each element of each array.
-It only does this if the VK_EXT_descriptor_indexing extension is enabled.
-
-As the shader is executed, the instrumented shader code performs the run-time checks.
-If a check detects an error condition, the instrumentation code writes an error record into the GPU's device memory.
-This record is small and is on the order of a dozen 32-bit words.
-Since multiple shader stages and multiple invocations of a shader can all detect errors, the instrumentation code
-writes error records into consecutive memory locations as long as there is space available in the pre-allocated block of device memory.
-
-The layer inspects this device memory block after completion of a queue submission.
-If the GPU had written an error record to this memory block,
-the layer analyzes this error record and constructs a validation error message
-which is then reported in the same manner as other validation messages.
-If the shader was compiled with debug information (source code and SPIR-V instruction mapping to source code lines), the layer
-also provides the line of shader source code that provoked the error as part of the validation error message.
-
-## GPU-Assisted Validation Checks
+## GPU-Assisted Validation Updates
 
 The initial release (Jan 2019) of GPU-Assisted Validation includes checking for out-of-bounds descriptor array indexing
 for image/texel descriptor types.
 
-The second release (Apr 2019) adds validation for out-of-bounds descriptor array indexing and use of unwritten descriptors when the 
+The second release (Apr 2019) adds validation for out-of-bounds descriptor array indexing and use of unwritten descriptors when the
 VK_EXT_descriptor_indexing extension is enabled.  Also added (June 2019) was validation for buffer descriptors.
 
-### Out-of-Bounds(OOB) Descriptor Array Indexing
-
-Checking for correct indexing of descriptor arrays is sometimes referred to as "bind-less validation".
-It is called "bind-less" because a binding in a descriptor set may contain an array of like descriptors.
-And unless there is a constant or compile-time indication of which descriptor in the array is selected,
-the descriptor binding status is considered to be ambiguous, leaving the actual binding to be determined at run-time.
-
-As an example, a fragment shader program may use a variable to index an array of combined image samplers.
-Such a line might look like:
-
-```glsl
-uFragColor = light * texture(tex[tex_ind], texcoord.xy);
-```
-
-The array of combined image samplers is `tex` and has 6 samplers in the array.
-The complete validation error message issued when `tex_ind` indexes past the array is:
-
-```terminal
-ERROR : VALIDATION - Message Id Number: 0 | Message Id Name: UNASSIGNED-Image descriptor index out of bounds
-        Index of 6 used to index descriptor array of length 6.  Command buffer (CubeDrawCommandBuf)(0xbc24b0).
-        Pipeline (0x45). Shader Module (0x43). Shader Instruction Index = 108.  Stage = Fragment.
-        Fragment coord (x,y) = (419.5, 254.5). Shader validation error occurred in file:
-        /home/user/src/Vulkan-ValidationLayers/external/Vulkan-Tools/cube/cube.frag at line 45.
-45:    uFragColor = light * texture(tex[tex_ind], texcoord.xy);
-```
-The VK_EXT_descriptor_indexing extension allows a shader to declare a descriptor array without specifying its size
-```glsl
-layout(set = 0, binding = 1) uniform sampler2D tex[];
-```
-In this case, the layer needs to tell the optimization code how big the descriptor array is so the code can determine what is out of 
-bounds and what is not.
-
-The extension also allows descriptor set bindings to be partially bound, meaning that as long as the shader doesn't use certain
-array elements, those elements are not required to have been written.
-The instrumentation code needs to know which elements of a descriptor array have been written, so that it can tell if one is used
-that has not been written.
-
+A third update (Aug 2019) adds validation of building top level acceleration structure for ray tracing when the
+VK_NV_ray_tracing extension is enabled.
 
 ## GPU-Assisted Validation Options
 
@@ -200,7 +139,7 @@ impossible for the application to account for them.
 
 Note that if descriptor indexing is enabled, the input buffer size will be equal to
 (1 + (number_of_sets * 2) + (binding_count * 2) + descriptor_count) words of memory where
-binding_count is the binding number of the largest binding in the set.  
+binding_count is the binding number of the largest binding in the set.
 This means that sparsely populated sets and sets with a very large binding will cause
 the input buffer to be much larger than it could be with more densely packed binding numbers.
 As a best practice, when using GPU-Assisted Validation with descriptor indexing enabled,
@@ -247,12 +186,91 @@ modify pipeline layouts, etc, and would relax some of the limitations listed abo
 
 This alternate implementation is under consideration.
 
-## GPU-Assisted Validation Internal Design
+## GPU-Assisted Validation Testing
+
+Validation Layer Tests (VLTs) exist for GPU-Assisted Validation.
+They cannot be run with the "mock ICD" in headless CI environments because they need to
+actually execute shaders.
+But they are still useful to run on real devices to check for regressions.
+
+There isn't anything else that remarkable or different about these tests.
+They activate GPU-Assisted Validation via the programmatic
+interface as described earlier.
+
+The tests exercise the extraction of source code information when the shader
+is built with debug info.
+
+## GPU-Assisted Validation Features
+
+### Out-of-Bounds(OOB) Descriptor Array Indexing
+
+#### Basic Operation
+
+Checking for correct indexing of descriptor arrays is sometimes referred to as "bind-less validation".
+It is called "bind-less" because a binding in a descriptor set may contain an array of like descriptors.
+And unless there is a constant or compile-time indication of which descriptor in the array is selected,
+the descriptor binding status is considered to be ambiguous, leaving the actual binding to be determined at run-time.
+
+As an example, a fragment shader program may use a variable to index an array of combined image samplers.
+Such a line might look like:
+
+```glsl
+uFragColor = light * texture(tex[tex_ind], texcoord.xy);
+```
+
+The array of combined image samplers is `tex` and has 6 samplers in the array.
+The complete validation error message issued when `tex_ind` indexes past the array is:
+
+```terminal
+ERROR : VALIDATION - Message Id Number: 0 | Message Id Name: UNASSIGNED-Image descriptor index out of bounds
+        Index of 6 used to index descriptor array of length 6.  Command buffer (CubeDrawCommandBuf)(0xbc24b0).
+        Pipeline (0x45). Shader Module (0x43). Shader Instruction Index = 108.  Stage = Fragment.
+        Fragment coord (x,y) = (419.5, 254.5). Shader validation error occurred in file:
+        /home/user/src/Vulkan-ValidationLayers/external/Vulkan-Tools/cube/cube.frag at line 45.
+45:    uFragColor = light * texture(tex[tex_ind], texcoord.xy);
+```
+The VK_EXT_descriptor_indexing extension allows a shader to declare a descriptor array without specifying its size
+```glsl
+layout(set = 0, binding = 1) uniform sampler2D tex[];
+```
+In this case, the layer needs to tell the optimization code how big the descriptor array is so the code can determine what is out of
+bounds and what is not.
+
+The extension also allows descriptor set bindings to be partially bound, meaning that as long as the shader doesn't use certain
+array elements, those elements are not required to have been written.
+The instrumentation code needs to know which elements of a descriptor array have been written, so that it can tell if one is used
+that has not been written.
+
+#### Design Overview
+
+The basic operation of GPU-Assisted validation is comprised of running checks that can only be performed on the GPU itself. The
+motivating example of this is instrumenting shader code to perform run-time checking in shaders and reporting any error conditions
+to the layer.
+
+The layer instruments the shaders by passing the shader's SPIR-V bytecode to the SPIR-V optimizer component and
+instructs the optimizer to perform an instrumentation pass to add the additional instructions to perform the run-time checking.
+The layer then passes the resulting modified SPIR-V bytecode to the driver as part of the process of creating a ShaderModule.
+
+The layer also allocates a buffer that describes the length of all descriptor arrays and the write state of each element of each array.
+It only does this if the VK_EXT_descriptor_indexing extension is enabled.
+
+As the shader is executed, the instrumented shader code performs the run-time checks.
+If a check detects an error condition, the instrumentation code writes an error record into the GPU's device memory.
+This record is small and is on the order of a dozen 32-bit words.
+Since multiple shader stages and multiple invocations of a shader can all detect errors, the instrumentation code
+writes error records into consecutive memory locations as long as there is space available in the pre-allocated block of device memory.
+
+The layer inspects this device memory block after completion of a queue submission.
+If the GPU had written an error record to this memory block,
+the layer analyzes this error record and constructs a validation error message
+which is then reported in the same manner as other validation messages.
+If the shader was compiled with debug information (source code and SPIR-V instruction mapping to source code lines), the layer
+also provides the line of shader source code that provoked the error as part of the validation error message.
+
+#### Implementation
 
 This section may be of interest to readers who are interested on how GPU-Assisted Validation is implemented.
 It isn't necessarily required for using the feature.
-
-### General
 
 In general, the implementation does:
 
@@ -309,7 +327,7 @@ In general, the implementation does:
 The above describes only the high-level details of GPU-Assisted Validation operation.
 More detail is found in the discussion of the individual hooked functions below.
 
-### Initialization
+##### Initialization
 
 When the validation layer loads, it examines the user options from both the layer settings file and the
 `VK_EXT_validation_features` extension.
@@ -317,7 +335,7 @@ Note that it also processes the subsumed `VK_EXT_validation_flags` extension for
 From these options, the layer sets instance-scope flags in the validation layer tracking data to indicate if
 GPU-Assisted Validation has been requested, along with any other associated options.
 
-### "Calling Down the Chain"
+##### "Calling Down the Chain"
 
 Much of the GPU-Assisted Validation implementation involves making "application level" Vulkan API
 calls outside of the application's API usage to create resources and perform its required operations
@@ -369,7 +387,7 @@ This doesn't present any particular problem, but it does raise some issues:
   extension will have less of a need to allocate these
   tracked resources and it therefore becomes less of an issue.
 
-### Code Structure and Relationship to the Core Validation Layer
+##### Code Structure and Relationship to the Core Validation Layer
 
 The GPU-Assisted Validation code is largely contained in one
 [file](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/layers/gpu_validation.cpp), with "hooks" in
@@ -384,7 +402,7 @@ if (GetEnables(dev_data)->gpu_validation) {
 
 The GPU-Assisted Validation code is linked into the shared library for the khronos and core validation layers.
 
-#### Review of Khronos Validation Code Structure
+##### Review of Khronos Validation Code Structure
 
 Each function for a Vulkan API command intercepted in the khronos validation layer is usually split up
 into several decomposed functions in order to organize the implementation.
@@ -400,13 +418,13 @@ by hooking one of these decomposed functions.
 
 The design of each hooked function follows:
 
-#### GpuPreCallRecordCreateDevice
+###### GpuPreCallRecordCreateDevice
 
 * Modify the `VkPhysicalDeviceFeatures` to turn on two additional physical device features:
   * `fragmentStoresAndAtomics`
   * `vertexPipelineStoresAndAtomics`
 
-#### GpuPostCallRecordCreateDevice
+###### GpuPostCallRecordCreateDevice
 
 * Determine and record (save in device state) the desired descriptor set binding index.
 * Initialize Vulkan Memory Allocator
@@ -417,14 +435,14 @@ The design of each hooked function follows:
   * This is used to "pad" pipeline layouts to fill any gaps between the used bind indices and our bind index
 * Record these objects in the per-device state
 
-#### GpuPreCallRecordDestroyDevice
+###### GpuPreCallRecordDestroyDevice
 
 * Destroy descriptor set layouts created in CreateDevice
 * Clean up descriptor set manager
 * Clean up Vulkan Memory Allocator (VMA)
 * Clean up device state
 
-#### GpuAllocateValidationResources
+###### GpuAllocateValidationResources
 
 * For each Draw, Dispatch, or TraceRays call:
   * Get a descriptor set from the descriptor set manager
@@ -436,14 +454,14 @@ The design of each hooked function follows:
 * Record the above objects in the per-CB state
 Note that the Draw and Dispatch calls include vkCmdDraw, vkCmdDrawIndexed, vkCmdDrawIndirect, vkCmdDrawIndexedIndirect, vkCmdDispatch, vkCmdDispatchIndirect, and vkCmdTraceRaysNV.
 
-#### GpuPreCallRecordFreeCommandBuffers
+###### GpuPreCallRecordFreeCommandBuffers
 
 * For each command buffer:
   * Destroy the VMA buffer(s), releasing the memory
   * Give the descriptor sets back to the descriptor set manager
   * Clean up CB state
 
-#### GpuOverrideDispatchCreateShaderModule
+###### GpuOverrideDispatchCreateShaderModule
 
 This function is called from PreCallRecordCreateShaderModule.
 This routine sets up to call the SPIR-V optimizer to run the "BindlessCheckPass", replacing the original SPIR-V with the instrumented SPIR-V
@@ -472,7 +490,7 @@ there is a binding index conflict.
 The application cannot destroy the shader module until it has used the shader module to create the pipeline.
 This ensures that the original SPIR-V bytecode is available if we need it to replace the instrumented shader.
 
-#### GpuOverrideDispatchCreatePipelineLayout
+###### GpuOverrideDispatchCreatePipelineLayout
 
 This is function is called through PreCallRecordCreatePipelineLayout.
 
@@ -485,24 +503,24 @@ This is function is called through PreCallRecordCreatePipelineLayout.
     * Add our descriptor set layout as the last one in the new pipeline layout
 * Create the pipeline layouts by calling down the chain with the original or modified create info
 
-#### GpuPreCallQueueSubmit
+###### GpuPreCallQueueSubmit
 
 * For each primary and secondary command buffer in the submission:
   * Call helper function to see if there are any update after bind descriptors whose write state may need to be updated
     and if so, map the input buffer and update the state.
 
-#### GpuPostCallQueueSubmit
+###### GpuPostCallQueueSubmit
 
 * Submit a command buffer containing a memory barrier to make GPU writes available to the host domain.
 * Call QueueWaitIdle.
 * For each primary and secondary command buffer in the submission:
   * Call a helper function to process the instrumentation debug buffers (described later)
 
-#### GpuPreCallValidateCmdWaitEvents
+###### GpuPreCallValidateCmdWaitEvents
 
 * Report an error about a possible deadlock if CmdWaitEvents is recorded with VK_PIPELINE_STAGE_HOST_BIT set.
 
-#### GpuPreCallRecordCreateGraphicsPipelines
+###### GpuPreCallRecordCreateGraphicsPipelines
 
 * Examine the pipelines to see if any use the debug descriptor set binding index
 * For those that do:
@@ -510,7 +528,7 @@ This is function is called through PreCallRecordCreatePipelineLayout.
   * Modify the CreateInfo data to use these non-instrumented shaders.
     * This prevents instrumented shaders from using the application's descriptor set.
 
-#### GpuPostCallRecordCreateGraphicsPipelines
+###### GpuPostCallRecordCreateGraphicsPipelines
 
 * For every shader in the pipeline:
   * Destroy the shader module created in GpuPreCallRecordCreateGraphicsPipelines, if any
@@ -536,11 +554,11 @@ so the graphics pipeline handle is also stored in this tracker so that it can
 be looked up when the graphics pipeline is destroyed.
 At that point, it is safe to free the bytecode since the pipeline is never used again.
 
-#### GpuPreCallRecordDestroyPipeline
+###### GpuPreCallRecordDestroyPipeline
 
 * Find the shader tracker(s) with the graphics pipeline handle and free the tracker, along with any bytecode it has stored in it.
 
-### Shader Instrumentation Scope
+##### Shader Instrumentation Scope
 
 The shader instrumentation process performed by the SPIR-V optimizer applies descriptor index bounds checking
 to descriptors of the following types:
@@ -596,7 +614,7 @@ struct decorated with Block, or a runtime or statically-sized array of such
 a struct.
 
 
-### Shader Instrumentation Error Record Format
+###### Shader Instrumentation Error Record Format
 
 The instrumented shader code generates "error records" in a specific format.
 
@@ -634,8 +652,6 @@ Given this protocol, the value in `DataWrittenLength` is not very meaningful if 
 However, the format of the written records plus the fact that `Data` is initialized to 0 should be enough to determine
 the records that were written.
 
-### Record Format
-
 The format of an output record is the following:
 
     Word 0: Record size
@@ -670,7 +686,7 @@ The Stage is the integer value used in SPIR-V for each of the Execution Models:
 |MissNV         |5317   |
 |CallableNV     |5318   |
 
-### Stage Specific Words
+####### Stage Specific Words
 
 These are words that identify which "instance" of the shader the validation error occurred in.
 Here are words for each stage:
@@ -691,7 +707,7 @@ Here are words for each stage:
 
 "unused" means not relevant, but still present.
 
-### Validation-Specific Words
+####### Validation-Specific Words
 
 These are words that are specific to the validation being done.
 For bindless validation, they are variable.
@@ -724,7 +740,7 @@ If overflow will happen, no words are written..
 
 The validation layer can continue to read valid records until it sees a Record Length of 0 or the end of Data is reached.
 
-#### Programmatic interface
+####### Programmatic interface
 
 The programmatic interface for the above informal description is codified in the
 [SPIRV-Tools](https://github.com/KhronosGroup/SPIRV-Tools) repository in file
@@ -732,7 +748,7 @@ The programmatic interface for the above informal description is codified in the
 It consists largely of integer constant definitions for the codes and values mentioned above and
 offsets into the record for locating each item.
 
-## GPU-Assisted Validation Error Report
+####### Error Report
 
 This is a fairly simple process of mapping the debug report buffer associated with
 each draw in the command buffer that was just submitted and looking to see if the GPU instrumentation
@@ -767,7 +783,7 @@ validation-specific data as described earlier.
 
 This completes the error report when there is no source-level debug information in the shader.
 
-### Source-Level Debug Information
+###### Source-Level Debug Information
 
 This is one of the more complicated and code-heavy parts of the GPU-Assisted Validation feature
 and all it really does is display source-level information when the shader is compiled
@@ -775,7 +791,7 @@ with debugging info (`-g` option in the case of `glslangValidator`).
 
 The process breaks down into two steps:
 
-#### OpLine Processing
+###### OpLine Processing
 
 The SPIR-V generator (e.g., glslangValidator) places an OpLine SPIR-V instruction in the
 shader program ahead of code generated for each source code statement.
@@ -795,7 +811,7 @@ This information is added to the validation error message.
 
 For online compilation when there is no "file", only the line number information is reported.
 
-#### OpSource Processing
+###### OpSource Processing
 
 The SPIR-V built with source-level debug info also contains OpSource instructions that
 have a string containing the source code, delimited by newlines.
@@ -815,7 +831,7 @@ then added to the validation error message.
 For example, if the OpLine line number is 15, and there is a "#line 10" on line 40
 in the OpSource source, then line 45 in the OpSource contains the correct source line.
 
-### Shader Instrumentation Input Record Format
+###### Shader Instrumentation Input Record Format
 
 Although the input buffer is a linear array of unsigned integers, conceptually there are arrays within the linear array
 
@@ -859,22 +875,64 @@ Here is what the input buffer should look like:
                                                                                                                                                   35 |1| S1B3I4 was written
 ```
 Alternately, you could describe the array size and write state data as:
-(set = s, binding = b, index = i) is not initialized if 
+(set = s, binding = b, index = i) is not initialized if
 ```
 Input[ i + Input[ b + Input[ s + Input[ Input[0] ] ] ] ] == 0
 ```
-and the array's size = Input[ Input[ s + 1 ] + b ] 
+and the array's size = Input[ Input[ s + 1 ] + b ]
 
-## GPU-Assisted Validation Testing
+### Acceleration Structure Building Validation
 
-Validation Layer Tests (VLTs) exist for GPU-Assisted Validation.
-They cannot be run with the "mock ICD" in headless CI environments because they need to
-actually execute shaders.
-But they are still useful to run on real devices to check for regressions.
+Increasing performance of graphics hardware has made ray tracing a viable option for interactive rendering. The VK_NV_ray_tracing extension adds
+ray tracing support to Vulkan. With this extension, applications create and build VkAccelerationStructureNV objects for their scene geometry
+which allows implementations to manage the scene geometry as it is traversed during a ray tracing query.
 
-There isn't anything else that remarkable or different about these tests.
-They activate GPU-Assisted Validation via the programmatic
-interface as described earlier.
+There are two types of acceleration structures, top level acceleration structures and bottom level acceleration structures. Bottom level acceleration
+structures are for an array of geometries and top level acceleration structures are for an array of instances of bottom level structures.
 
-The tests exercise the extraction of source code information when the shader
-is built with debug info.
+The acceleration structure building validation feature of the GPU validation layer validates that the bottom level acceleration structure references
+found in the instance data used when building top level acceleration structures are valid.
+
+#### Implementation
+
+Because the instance data buffer used in vkCmdBuildAccelerationStructureNV could be a device local buffer and because commands are executed sometime
+in the future, validating the instance buffer must take place on the GPU. To accomplish this, the GPU validation layer tracks the known valid handles
+of bottom level acceleration structures at the time a command buffer is recorded and inserts an additional compute shader dispatch before commands
+which build top level acceleration structures to inspect and validate the instance buffer used. The compute shader iterates over the instance buffer
+and replaces unrecognized bottom level acceleration structure handles with a prebuilt valid bottom level acceleration structure handle. Upon queue
+submission and completion of the command buffer, the reported failures are read from a storage buffer written to by the compute shader and finally
+reported to the application.
+
+To help visualized, a command buffer that would originally have been recorded as:
+
+```cpp
+vkBeginCommandBuffer(...)
+
+... other commands ...
+
+vkCmdBuildAccelerationStructureNV(...) // build top level
+
+... other commands ...
+
+vkEndCommandBuffer(...)
+```
+
+would actually be recorded as:
+
+```cpp
+vkBeginCommandBuffer(...)
+
+... other commands ...
+
+vkCmdPipelineBarrier(...)               // ensure writes to instance buffer have completed
+
+vkCmdDispatch(...)                      // launch validation compute shader
+
+vkCmdPipelineBarrier(...)               // ensure validation compute shader writes have completed
+
+vkCmdBuildAccelerationStructureNV(...)  // build top level using modified instance buffer
+
+... other commands ...
+
+vkEndCommandBuffer(...)
+```
