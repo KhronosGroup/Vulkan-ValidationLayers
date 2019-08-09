@@ -4226,51 +4226,89 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureNV) {
     as_create_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
     as_create_info.info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
 
-    // Top level can not have geometry
-    VkAccelerationStructureCreateInfoNV bad_top_level_create_info = as_create_info;
-    bad_top_level_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
-    bad_top_level_create_info.info.instanceCount = 0;
-    bad_top_level_create_info.info.geometryCount = 1;
-    bad_top_level_create_info.info.pGeometries = &geometry;
     VkAccelerationStructureNV as = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAccelerationStructureInfoNV-type-02425");
-    vkCreateAccelerationStructureNV(m_device->handle(), &bad_top_level_create_info, nullptr, &as);
-    m_errorMonitor->VerifyFound();
+
+    // Top level can not have geometry
+    {
+        VkAccelerationStructureCreateInfoNV bad_top_level_create_info = as_create_info;
+        bad_top_level_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
+        bad_top_level_create_info.info.instanceCount = 0;
+        bad_top_level_create_info.info.geometryCount = 1;
+        bad_top_level_create_info.info.pGeometries = &geometry;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAccelerationStructureInfoNV-type-02425");
+        vkCreateAccelerationStructureNV(m_device->handle(), &bad_top_level_create_info, nullptr, &as);
+        m_errorMonitor->VerifyFound();
+    }
 
     // Bot level can not have instances
-    VkAccelerationStructureCreateInfoNV bad_bot_level_create_info = as_create_info;
-    bad_bot_level_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
-    bad_bot_level_create_info.info.instanceCount = 1;
-    bad_bot_level_create_info.info.geometryCount = 0;
-    bad_bot_level_create_info.info.pGeometries = nullptr;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAccelerationStructureInfoNV-type-02426");
-    vkCreateAccelerationStructureNV(m_device->handle(), &bad_bot_level_create_info, nullptr, &as);
-    m_errorMonitor->VerifyFound();
+    {
+        VkAccelerationStructureCreateInfoNV bad_bot_level_create_info = as_create_info;
+        bad_bot_level_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
+        bad_bot_level_create_info.info.instanceCount = 1;
+        bad_bot_level_create_info.info.geometryCount = 0;
+        bad_bot_level_create_info.info.pGeometries = nullptr;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAccelerationStructureInfoNV-type-02426");
+        vkCreateAccelerationStructureNV(m_device->handle(), &bad_bot_level_create_info, nullptr, &as);
+        m_errorMonitor->VerifyFound();
+    }
 
     // Can not prefer both fast trace and fast build
-    VkAccelerationStructureCreateInfoNV bad_flags_level_create_info = as_create_info;
-    bad_flags_level_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
-    bad_flags_level_create_info.info.instanceCount = 0;
-    bad_flags_level_create_info.info.geometryCount = 1;
-    bad_flags_level_create_info.info.pGeometries = &geometry;
-    bad_flags_level_create_info.info.flags =
-        VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV | VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_NV;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAccelerationStructureInfoNV-flags-02592");
-    vkCreateAccelerationStructureNV(m_device->handle(), &bad_flags_level_create_info, nullptr, &as);
-    m_errorMonitor->VerifyFound();
+    {
+        VkAccelerationStructureCreateInfoNV bad_flags_level_create_info = as_create_info;
+        bad_flags_level_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
+        bad_flags_level_create_info.info.instanceCount = 0;
+        bad_flags_level_create_info.info.geometryCount = 1;
+        bad_flags_level_create_info.info.pGeometries = &geometry;
+        bad_flags_level_create_info.info.flags =
+            VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV | VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_NV;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAccelerationStructureInfoNV-flags-02592");
+        vkCreateAccelerationStructureNV(m_device->handle(), &bad_flags_level_create_info, nullptr, &as);
+        m_errorMonitor->VerifyFound();
+    }
 
     // Can not have geometry or instance for compacting
-    VkAccelerationStructureCreateInfoNV bad_compacting_as_create_info = as_create_info;
-    bad_compacting_as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
-    bad_compacting_as_create_info.info.instanceCount = 0;
-    bad_compacting_as_create_info.info.geometryCount = 1;
-    bad_compacting_as_create_info.info.pGeometries = &geometry;
-    bad_compacting_as_create_info.info.flags = 0;
-    bad_compacting_as_create_info.compactedSize = 1024;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-VkAccelerationStructureCreateInfoNV-compactedSize-02421");
-    vkCreateAccelerationStructureNV(m_device->handle(), &bad_compacting_as_create_info, nullptr, &as);
-    m_errorMonitor->VerifyFound();
+    {
+        VkAccelerationStructureCreateInfoNV bad_compacting_as_create_info = as_create_info;
+        bad_compacting_as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
+        bad_compacting_as_create_info.info.instanceCount = 0;
+        bad_compacting_as_create_info.info.geometryCount = 1;
+        bad_compacting_as_create_info.info.pGeometries = &geometry;
+        bad_compacting_as_create_info.info.flags = 0;
+        bad_compacting_as_create_info.compactedSize = 1024;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-VkAccelerationStructureCreateInfoNV-compactedSize-02421");
+        vkCreateAccelerationStructureNV(m_device->handle(), &bad_compacting_as_create_info, nullptr, &as);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Can not mix different geometry types into single bottom level acceleration structure
+    {
+        VkGeometryNV aabb_geometry = {};
+        aabb_geometry.sType = VK_STRUCTURE_TYPE_GEOMETRY_NV;
+        aabb_geometry.geometryType = VK_GEOMETRY_TYPE_AABBS_NV;
+        aabb_geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
+        aabb_geometry.geometry.aabbs = {};
+        aabb_geometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
+        // Buffer contents do not matter for this test.
+        aabb_geometry.geometry.aabbs.aabbData = geometry.geometry.triangles.vertexData;
+        aabb_geometry.geometry.aabbs.numAABBs = 1;
+        aabb_geometry.geometry.aabbs.offset = 0;
+        aabb_geometry.geometry.aabbs.stride = 24;
+
+        std::vector<VkGeometryNV> geometries = {geometry, aabb_geometry};
+
+        VkAccelerationStructureCreateInfoNV mix_geometry_types_as_create_info = as_create_info;
+        mix_geometry_types_as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
+        mix_geometry_types_as_create_info.info.instanceCount = 0;
+        mix_geometry_types_as_create_info.info.geometryCount = static_cast<uint32_t>(geometries.size());
+        mix_geometry_types_as_create_info.info.pGeometries = geometries.data();
+        mix_geometry_types_as_create_info.info.flags = 0;
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "UNASSIGNED-VkAccelerationStructureInfoNV-pGeometries-XXXX");
+        vkCreateAccelerationStructureNV(m_device->handle(), &mix_geometry_types_as_create_info, nullptr, &as);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
