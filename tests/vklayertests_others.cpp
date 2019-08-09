@@ -4607,13 +4607,29 @@ TEST_F(VkLayerTest, ValidateGetAccelerationStructureHandleNV) {
     bot_level_as_create_info.info.geometryCount = 1;
     bot_level_as_create_info.info.pGeometries = &geometry;
 
-    VkAccelerationStructureObj bot_level_as(*m_device, bot_level_as_create_info);
-    m_errorMonitor->VerifyNotFound();
+    // Not enough space for the handle
+    {
+        VkAccelerationStructureObj bot_level_as(*m_device, bot_level_as_create_info);
+        m_errorMonitor->VerifyNotFound();
 
-    uint64_t handle = 0;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetAccelerationStructureHandleNV-dataSize-02240");
-    vkGetAccelerationStructureHandleNV(m_device->handle(), bot_level_as.handle(), sizeof(uint8_t), &handle);
-    m_errorMonitor->VerifyFound();
+        uint64_t handle = 0;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-vkGetAccelerationStructureHandleNV-dataSize-02240");
+        vkGetAccelerationStructureHandleNV(m_device->handle(), bot_level_as.handle(), sizeof(uint8_t), &handle);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // No memory bound to acceleration structure
+    {
+        VkAccelerationStructureObj bot_level_as(*m_device, bot_level_as_create_info, /*init_memory=*/false);
+        m_errorMonitor->VerifyNotFound();
+
+        uint64_t handle = 0;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "UNASSIGNED-vkGetAccelerationStructureHandleNV-accelerationStructure-XXXX");
+        vkGetAccelerationStructureHandleNV(m_device->handle(), bot_level_as.handle(), sizeof(uint64_t), &handle);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(VkLayerTest, ValidateCmdCopyAccelerationStructureNV) {
