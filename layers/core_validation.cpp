@@ -6766,6 +6766,21 @@ bool CoreChecks::PreCallValidateBindAccelerationStructureMemoryNV(VkDevice devic
     return skip;
 }
 
+bool CoreChecks::PreCallValidateGetAccelerationStructureHandleNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
+                                                                 size_t dataSize, void *pData) {
+    bool skip = false;
+
+    const ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureState(accelerationStructure);
+    if (as_state != nullptr) {
+        // TODO: update the fake VUID below once the real one is generated.
+        skip = ValidateMemoryIsBoundToAccelerationStructure(
+            as_state, "vkGetAccelerationStructureHandleNV",
+            "UNASSIGNED-vkGetAccelerationStructureHandleNV-accelerationStructure-XXXX");
+    }
+
+    return skip;
+}
+
 void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(
     VkDevice device, uint32_t bindInfoCount, const VkBindAccelerationStructureMemoryInfoNV *pBindInfos, VkResult result) {
     if (VK_SUCCESS != result) return;
