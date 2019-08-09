@@ -9376,6 +9376,61 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                 i, string_VkComponentSwizzle(ivci.components.r), string_VkComponentSwizzle(ivci.components.g),
                                 string_VkComponentSwizzle(ivci.components.b), string_VkComponentSwizzle(ivci.components.a));
                         }
+
+						if (rpci->subpassCount > 0) {
+                            uint32_t view_bits = rpci->pSubpasses[0].viewMask;
+                            uint32_t highest_view_bit = 0;
+
+                            for (int j = 0; j < 32; ++j) {
+                                if (((view_bits >> j) & 1) != 0) {
+                                    highest_view_bit = j;
+                                }
+                            }
+
+                            if (rpci->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT ||
+                                rpci->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT) {
+                                if (view_bits == 0) {
+                                    if (ivci.subresourceRange.layerCount != 1) {
+                                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                        VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                                        "VUID-VkFramebufferCreateInfo-renderPass-02747",
+                                                        "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u that is "
+                                                        "referenced by "
+                                                        "fragmentDensityMapAttachment must have a layerCount equal to 1 "
+                                                        "when the view mask in renderPass (%s) is zero.",
+                                                        i, report_data->FormatHandle(pCreateInfo->renderPass).c_str());
+                                    }
+                                } else {
+                                    if (ivci.subresourceRange.layerCount == 0 ||
+                                        ivci.subresourceRange.layerCount <= highest_view_bit) {
+                                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                        VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                                        "VUID-VkFramebufferCreateInfo-renderPass-02746",
+                                                        "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u that is "
+                                                        "referenced by "
+                                                        "fragmentDensityMapAttachment must have a layerCount (%u) equal to 1 or "
+                                                        "greater than the index of the most significant bit (%u) "
+                                                        "when the view mask in renderPass (%s) is non-zero.",
+                                                        i, ivci.subresourceRange.layerCount, highest_view_bit,
+                                                        report_data->FormatHandle(pCreateInfo->renderPass).c_str());
+                                    }
+                                }
+
+                            } else {
+                                if (ivci.subresourceRange.layerCount <= highest_view_bit) {
+                                    skip |=
+                                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
+                                                0, "VUID-VkFramebufferCreateInfo-renderPass-02745",
+                                                "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u that is not "
+                                                "referenced by "
+                                                "fragmentDensityMapAttachment must have a layerCount (%u) greater than "
+                                                "the index of the most significant bit (%u) "
+                                                "when the view mask in renderPass (%s) is non-zero.",
+                                                i, ivci.subresourceRange.layerCount, highest_view_bit,
+                                                report_data->FormatHandle(pCreateInfo->renderPass).c_str());
+                                }
+                            }
+                        }
                     }
                 }
             } else if (pFramebufferAttachmentsCreateInfo) {
