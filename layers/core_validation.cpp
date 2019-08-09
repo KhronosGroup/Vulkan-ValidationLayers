@@ -10577,6 +10577,49 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
             }
         }
     }
+    const VkRenderPassFragmentDensityMapCreateInfoEXT *pFragmentDensityMapInfo =
+        lvl_find_in_chain<VkRenderPassFragmentDensityMapCreateInfoEXT>(pCreateInfo->pNext);
+    if (pFragmentDensityMapInfo) {
+        if (pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment != VK_ATTACHMENT_UNUSED) {
+            if (pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment >= pCreateInfo->attachmentCount) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02547",
+                                "fragmentDensityMapAttachment %u must be less than attachmentCount %u of RenderPass %s.",
+                                pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment, pCreateInfo->attachmentCount,
+                                report_data->FormatHandle(pRenderPass).c_str());
+            }
+
+            if (!(pFragmentDensityMapInfo->fragmentDensityMapAttachment.layout ==
+                      VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT ||
+                  pFragmentDensityMapInfo->fragmentDensityMapAttachment.layout == VK_IMAGE_LAYOUT_GENERAL)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02549",
+                                "Layout of fragmentDensityMapAttachment %u' must be equal to "
+                                "VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT, or VK_IMAGE_LAYOUT_GENERAL.",
+                                pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment);
+            }
+
+            if (!(pCreateInfo->pAttachments[pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment].loadOp ==
+                      VK_ATTACHMENT_LOAD_OP_LOAD ||
+                  pCreateInfo->pAttachments[pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment].loadOp ==
+                      VK_ATTACHMENT_LOAD_OP_DONT_CARE)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02550",
+                                "FragmentDensityMapAttachment %u' must reference an attachment with a loadOp "
+                                "equal to VK_ATTACHMENT_LOAD_OP_LOAD or VK_ATTACHMENT_LOAD_OP_DONT_CARE.",
+                                pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment);
+            }
+
+            if (pCreateInfo->pAttachments[pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment].storeOp !=
+                VK_ATTACHMENT_STORE_OP_DONT_CARE) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02551",
+                                "FragmentDensityMapAttachment %u' must reference an attachment with a storeOp "
+                                "equal to VK_ATTACHMENT_STORE_OP_DONT_CARE.",
+                                pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment);
+            }
+        }
+    }
 
     if (!skip) {
         safe_VkRenderPassCreateInfo2KHR create_info_2;
