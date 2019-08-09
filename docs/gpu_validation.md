@@ -52,6 +52,9 @@ for image/texel descriptor types.
 The second release (Apr 2019) adds validation for out-of-bounds descriptor array indexing and use of unwritten descriptors when the 
 VK_EXT_descriptor_indexing extension is enabled.  Also added (June 2019) was validation for buffer descriptors.
 
+A third update (Aug 2019) adds validation of building top level acceleration structure for ray tracing when the
+VK_NV_ray_tracing extension is enabled.
+
 (August 2019) Add bounds checking for pointers retrieved from vkGetBufferDeviceAddressEXT.
 
 ### Out-of-Bounds(OOB) Descriptor Array Indexing
@@ -894,6 +897,61 @@ Word X+3: Size of first buffer
                .
 Word Y:   Size of last buffer
 Word Y+1: 0  (size of pretend buffer at word X+1)
+```
+### Acceleration Structure Building Validation
+
+Increasing performance of graphics hardware has made ray tracing a viable option for interactive rendering. The VK_NV_ray_tracing extension adds
+ray tracing support to Vulkan. With this extension, applications create and build VkAccelerationStructureNV objects for their scene geometry
+which allows implementations to manage the scene geometry as it is traversed during a ray tracing query.
+
+There are two types of acceleration structures, top level acceleration structures and bottom level acceleration structures. Bottom level acceleration
+structures are for an array of geometries and top level acceleration structures are for an array of instances of bottom level structures.
+
+The acceleration structure building validation feature of the GPU validation layer validates that the bottom level acceleration structure references
+found in the instance data used when building top level acceleration structures are valid.
+
+#### Implementation
+
+Because the instance data buffer used in vkCmdBuildAccelerationStructureNV could be a device local buffer and because commands are executed sometime
+in the future, validating the instance buffer must take place on the GPU. To accomplish this, the GPU validation layer tracks the known valid handles
+of bottom level acceleration structures at the time a command buffer is recorded and inserts an additional compute shader dispatch before commands
+which build top level acceleration structures to inspect and validate the instance buffer used. The compute shader iterates over the instance buffer
+and replaces unrecognized bottom level acceleration structure handles with a prebuilt valid bottom level acceleration structure handle. Upon queue
+submission and completion of the command buffer, the reported failures are read from a storage buffer written to by the compute shader and finally
+reported to the application.
+
+To help visualized, a command buffer that would originally have been recorded as:
+
+```cpp
+vkBeginCommandBuffer(...)
+
+... other commands ...
+
+vkCmdBuildAccelerationStructureNV(...) // build top level
+
+... other commands ...
+
+vkEndCommandBuffer(...)
+```
+
+would actually be recorded as:
+
+```cpp
+vkBeginCommandBuffer(...)
+
+... other commands ...
+
+vkCmdPipelineBarrier(...)               // ensure writes to instance buffer have completed
+
+vkCmdDispatch(...)                      // launch validation compute shader
+
+vkCmdPipelineBarrier(...)               // ensure validation compute shader writes have completed
+
+vkCmdBuildAccelerationStructureNV(...)  // build top level using modified instance buffer
+
+... other commands ...
+
+vkEndCommandBuffer(...)
 ```
 ## GPU-Assisted Validation Testing
 
