@@ -358,8 +358,8 @@ public:
             use_data->thread = tid;
         } else if (uses[object].writer_count > 0 && uses[object].thread != tid) {
             // There is a writer of the object.
-            skip |= false;
-            log_msg(*report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object), kVUID_Threading_MultipleThreads,
+            skip |= log_msg(*report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object),
+                kVUID_Threading_MultipleThreads,
                 "THREADING ERROR : object of type %s is simultaneously used in "
                 "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
                 typeName, (uint64_t)uses[object].thread, (uint64_t)tid);
