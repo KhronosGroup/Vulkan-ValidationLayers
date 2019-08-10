@@ -4125,64 +4125,10 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
     return skip;
 }
 
-// Return true if given ranges intersect, else false
-// Prereq : For both ranges, range->end - range->start > 0. This case should have already resulted
-//  in an error so not checking that here
-// pad_ranges bool indicates a linear and non-linear comparison which requires padding
-// In the case where padding is required, if an alias is encountered then a validation error is reported and skip
-//  may be set by the callback function so caller should merge in skip value if padding case is possible.
-// This check can be skipped by passing skip_checks=true, for call sites outside the validation path.
-bool ValidationStateTracker::RangesIntersect(MEMORY_RANGE const *range1, MEMORY_RANGE const *range2) const {
-    auto r1_start = range1->start;
-    auto r1_end = range1->end;
-    auto r2_start = range2->start;
-    auto r2_end = range2->end;
-    VkDeviceSize pad_align = 1;
-    if (range1->linear != range2->linear) {
-        pad_align = phys_dev_props.limits.bufferImageGranularity;
-    }
-    if ((r1_end & ~(pad_align - 1)) < (r2_start & ~(pad_align - 1))) return false;
-    if ((r1_start & ~(pad_align - 1)) > (r2_end & ~(pad_align - 1))) return false;
-
-    // Ranges intersect
-    return true;
-}
-
 bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle, const DEVICE_MEMORY_STATE *mem_info,
                                            VkDeviceSize memoryOffset, const VkMemoryRequirements &memRequirements, bool is_linear,
                                            const char *api_name) const {
     bool skip = false;
-
-    MEMORY_RANGE range;
-    range.image = typed_handle.type == kVulkanObjectTypeImage;
-    range.handle = typed_handle.handle;
-    range.linear = is_linear;
-    range.memory = mem_info->mem;
-    range.start = memoryOffset;
-    range.size = memRequirements.size;
-    range.end = memoryOffset + memRequirements.size - 1;
-    range.aliases.clear();
-
-    // Check for aliasing problems.
-    for (auto &obj_range_pair : mem_info->bound_ranges) {
-        auto check_range = &obj_range_pair.second;
-        if (RangesIntersect(&range, check_range)) {
-            if (range.linear != check_range->linear) {
-                // In linear vs. non-linear case, warn of aliasing
-                const char *r1_linear_str = range.linear ? "Linear" : "Non-linear";
-                const char *r2_linear_str = check_range->linear ? "linear" : "non-linear";
-                auto obj_type = range.image ? VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT : VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT;
-                skip |= log_msg(
-                    report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, obj_type, range.handle, kVUID_Core_MemTrack_InvalidAliasing,
-                    "%s %s is aliased with %s %s which may indicate a bug. For further info refer to the Buffer-Image Granularity "
-                    "section of the Vulkan specification. "
-                    "(https://www.khronos.org/registry/vulkan/specs/1.0-extensions/xhtml/"
-                    "vkspec.html#resources-bufferimagegranularity)",
-                    r1_linear_str, report_data->FormatHandle(MemoryRangeTypedHandle(range)).c_str(), r2_linear_str,
-                    report_data->FormatHandle(MemoryRangeTypedHandle(*check_range)).c_str());
-            }
-        }
-    }
 
     if (memoryOffset >= mem_info->alloc_info.allocationSize) {
         const char *error_code = nullptr;
@@ -4217,32 +4163,6 @@ bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle
 // is_linear indicates a buffer or linear image
 void ValidationStateTracker::InsertMemoryRange(const VulkanTypedHandle &typed_handle, DEVICE_MEMORY_STATE *mem_info,
                                                VkDeviceSize memoryOffset, VkMemoryRequirements memRequirements, bool is_linear) {
-    MEMORY_RANGE range;
-
-    range.image = typed_handle.type == kVulkanObjectTypeImage;
-    range.handle = typed_handle.handle;
-    range.linear = is_linear;
-    range.memory = mem_info->mem;
-    range.start = memoryOffset;
-    range.size = memRequirements.size;
-    range.end = memoryOffset + memRequirements.size - 1;
-    range.aliases.clear();
-    // Update Memory aliasing
-    // Save aliased ranges so we can copy into final map entry below. Can't do it in loop b/c we don't yet have final ptr. If we
-    // inserted into map before loop to get the final ptr, then we may enter loop when not needed & we check range against itself
-    std::unordered_set<MEMORY_RANGE *> tmp_alias_ranges;
-    for (auto &obj_range_pair : mem_info->bound_ranges) {
-        auto check_range = &obj_range_pair.second;
-        if (RangesIntersect(&range, check_range)) {
-            range.aliases.insert(check_range);
-            tmp_alias_ranges.insert(check_range);
-        }
-    }
-    mem_info->bound_ranges[typed_handle.handle] = std::move(range);
-    for (auto tmp_range : tmp_alias_ranges) {
-        tmp_range->aliases.insert(&mem_info->bound_ranges[typed_handle.handle]);
-    }
-
     if (typed_handle.type == kVulkanObjectTypeImage) {
         mem_info->bound_images.insert(typed_handle.handle);
     } else if (typed_handle.type == kVulkanObjectTypeBuffer) {
@@ -4286,17 +4206,8 @@ void ValidationStateTracker::InsertAccelerationStructureMemoryRange(VkAccelerati
     InsertMemoryRange(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureNV), mem_info, mem_offset, mem_reqs, true);
 }
 
-// Remove MEMORY_RANGE struct for give handle from bound_ranges of mem_info
-//  is_image indicates if handle is for image or buffer
-//  This function will also remove the handle-to-index mapping from the appropriate
-//  map and clean up any aliases for range being removed.
+// This function will remove the handle-to-index mapping from the appropriate map.
 static void RemoveMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE *mem_info, VulkanObjectType object_type) {
-    auto erase_range = &mem_info->bound_ranges[handle];
-    for (auto alias_range : erase_range->aliases) {
-        alias_range->aliases.erase(erase_range);
-    }
-    erase_range->aliases.clear();
-    mem_info->bound_ranges.erase(handle);
     if (object_type == kVulkanObjectTypeImage) {
         mem_info->bound_images.erase(handle);
     } else if (object_type == kVulkanObjectTypeBuffer) {

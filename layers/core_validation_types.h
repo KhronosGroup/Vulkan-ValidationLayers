@@ -358,26 +358,6 @@ struct MemRange {
     VkDeviceSize size;
 };
 
-struct MEMORY_RANGE {
-    uint64_t handle;
-    bool image;   // True for image, false for buffer
-    bool linear;  // True for buffers and linear images
-    VkDeviceMemory memory;
-    VkDeviceSize start;
-    VkDeviceSize size;
-    VkDeviceSize end;  // Store this pre-computed for simplicity
-    // Set of ptrs to every range aliased with this one
-    std::unordered_set<MEMORY_RANGE *> aliases;
-};
-
-static inline VulkanTypedHandle MemoryRangeTypedHandle(const MEMORY_RANGE &range) {
-    // TODO: Convert MEMORY_RANGE to use VulkanTypedHandle internally
-    if (range.image) {
-        return VulkanTypedHandle(CastFromUint64<VkImage>(range.handle), kVulkanObjectTypeImage);
-    }
-    return VulkanTypedHandle(CastFromUint64<VkBuffer>(range.handle), kVulkanObjectTypeBuffer);
-}
-
 // Data struct for tracking memory object
 struct DEVICE_MEMORY_STATE : public BASE_NODE {
     void *object;  // Dispatchable object used to create this memory (device of swapchain)
@@ -388,8 +368,7 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
     VkImage dedicated_image;
     bool is_export;
     VkExternalMemoryHandleTypeFlags export_handle_type_flags;
-    std::unordered_set<VulkanTypedHandle> obj_bindings;       // objects bound to this memory
-    std::unordered_map<uint64_t, MEMORY_RANGE> bound_ranges;  // Map of object to its binding range
+    std::unordered_set<VulkanTypedHandle> obj_bindings;  // objects bound to this memory
     // Convenience vectors of handles to speed up iterating over objects independently
     std::unordered_set<uint64_t> bound_images;
     std::unordered_set<uint64_t> bound_buffers;

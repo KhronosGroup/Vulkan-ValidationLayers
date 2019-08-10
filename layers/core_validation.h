@@ -628,7 +628,6 @@ class ValidationStateTracker : public ValidationObject {
                                        const cvdescriptorset::AllocateDescriptorSetsData*);
     void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE* template_state,
                                                     const void* pData);
-    bool RangesIntersect(MEMORY_RANGE const* range1, MEMORY_RANGE const* range2) const;
     void RecordAcquireNextImageState(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                      VkFence fence, uint32_t* pImageIndex);
     void RecordCreateImageANDROID(const VkImageCreateInfo* create_info, IMAGE_STATE* is_node);
