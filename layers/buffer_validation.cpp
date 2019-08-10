@@ -1370,7 +1370,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                         "maxFramebufferHeight");
     }
 
-	uint32_t ceilingWidth = (uint32_t)ceil((float)device_limits->maxFramebufferWidth /
+    uint32_t ceilingWidth = (uint32_t)ceil((float)device_limits->maxFramebufferWidth /
                                            (float)phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width);
 
     if ((pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) && (pCreateInfo->extent.width > ceilingWidth)) {
