@@ -146,6 +146,8 @@ enum descriptor_req {
     DESCRIPTOR_REQ_COMPONENT_TYPE_UINT = DESCRIPTOR_REQ_COMPONENT_TYPE_SINT << 1,
 };
 
+extern unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt);
+
 struct DESCRIPTOR_POOL_STATE : BASE_NODE {
     VkDescriptorPool pool;
     uint32_t maxSets;        // Max descriptor sets allowed in this pool
@@ -327,6 +329,8 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
     VkImageView image_view;
     VkImageViewCreateInfo create_info;
     VkImageSubresourceRange normalized_subresource_range;
+    VkSampleCountFlagBits samples;
+    unsigned descriptor_format_bits;
     VkSamplerYcbcrConversion samplerConversion;  // Handle of the ycbcr sampler conversion the image was created with, if any
     IMAGE_VIEW_STATE(const IMAGE_STATE *image_state, VkImageView iv, const VkImageViewCreateInfo *ci);
     IMAGE_VIEW_STATE(const IMAGE_VIEW_STATE &rh_obj) = delete;

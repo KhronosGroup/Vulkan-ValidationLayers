@@ -630,7 +630,7 @@ static char const *StringDescriptorReqComponentType(descriptor_req req) {
     return "(none)";
 }
 
-static unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt) {
+unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt) {
     if (FormatIsSInt(fmt)) return DESCRIPTOR_REQ_COMPONENT_TYPE_SINT;
     if (FormatIsUInt(fmt)) return DESCRIPTOR_REQ_COMPONENT_TYPE_UINT;
     if (FormatIsDepthAndStencil(fmt)) return DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT | DESCRIPTOR_REQ_COMPONENT_TYPE_UINT;
@@ -662,6 +662,14 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const st
             *error = error_str.str();
             return false;
         }
+
+        if (binding_it.GetDescriptorBindingFlags() &
+            (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)) {
+            // Can't validate the descriptor because it may not have been updated,
+            // or the view could have been destroyed
+            continue;
+        }
+
         // Copy the range, the end range is subject to update based on variable length descriptor arrays.
         cvdescriptorset::IndexRange index_range = binding_it.GetGlobalIndexRange();
         auto array_idx = 0;  // Track array idx if we're dealing with array descriptors
@@ -675,11 +683,8 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const st
             uint32_t index = i - index_range.start;
             const auto *descriptor = descriptor_set->GetDescriptorFromGlobalIndex(i);
 
-            if ((binding_it.GetDescriptorBindingFlags() &
-                 (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)) ||
-                descriptor->GetClass() == DescriptorClass::InlineUniform) {
-                // Can't validate the descriptor because it may not have been updated,
-                // or the view could have been destroyed
+            if (descriptor->GetClass() == DescriptorClass::InlineUniform) {
+                // Can't validate the descriptor because it may not have been updated.
                 continue;
             } else if (!descriptor->updated) {
                 std::stringstream error_str;
@@ -760,7 +765,7 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const st
                         *error = error_str.str();
                         return false;
                     }
-                    auto image_view_ci = image_view_state->create_info;
+                    const auto &image_view_ci = image_view_state->create_info;
 
                     if ((reqs & DESCRIPTOR_REQ_ALL_VIEW_TYPE_BITS) && (~reqs & (1 << image_view_ci.viewType))) {
                         // bad view type
@@ -772,8 +777,7 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const st
                         return false;
                     }
 
-                    auto format_bits = DescriptorRequirementsBitsFromFormat(image_view_ci.format);
-                    if (!(reqs & format_bits)) {
+                    if (!(reqs & image_view_state->descriptor_format_bits)) {
                         // bad component type
                         std::stringstream error_str;
                         error_str << "Descriptor in binding #" << binding << " index " << index << " requires "
@@ -783,32 +787,34 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const st
                         return false;
                     }
 
-                    auto image_node = GetImageState(image_view_ci.image);
-                    assert(image_node);
-                    // Verify Image Layout
-                    // No "invalid layout" VUID required for this call, since the optimal_layout parameter is UNDEFINED.
-                    bool hit_error = false;
-                    VerifyImageLayout(cb_node, image_node, image_view_state->normalized_subresource_range,
-                                      image_view_ci.subresourceRange.aspectMask, image_layout, VK_IMAGE_LAYOUT_UNDEFINED, caller,
-                                      kVUIDUndefined, "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
-                    if (hit_error) {
-                        *error =
-                            "Image layout specified at vkUpdateDescriptorSet* or vkCmdPushDescriptorSet* time "
-                            "doesn't match actual image layout at time descriptor is used. See previous error callback for "
-                            "specific details.";
-                        return false;
+                    if (!disabled.image_layout_validation) {
+                        auto image_node = GetImageState(image_view_ci.image);
+                        assert(image_node);
+                        // Verify Image Layout
+                        // No "invalid layout" VUID required for this call, since the optimal_layout parameter is UNDEFINED.
+                        bool hit_error = false;
+                        VerifyImageLayout(cb_node, image_node, image_view_state->normalized_subresource_range,
+                                          image_view_ci.subresourceRange.aspectMask, image_layout, VK_IMAGE_LAYOUT_UNDEFINED,
+                                          caller, kVUIDUndefined, "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
+                        if (hit_error) {
+                            *error =
+                                "Image layout specified at vkUpdateDescriptorSet* or vkCmdPushDescriptorSet* time "
+                                "doesn't match actual image layout at time descriptor is used. See previous error callback for "
+                                "specific details.";
+                            return false;
+                        }
                     }
 
                     // Verify Sample counts
-                    if ((reqs & DESCRIPTOR_REQ_SINGLE_SAMPLE) && image_node->createInfo.samples != VK_SAMPLE_COUNT_1_BIT) {
+                    if ((reqs & DESCRIPTOR_REQ_SINGLE_SAMPLE) && image_view_state->samples != VK_SAMPLE_COUNT_1_BIT) {
                         std::stringstream error_str;
                         error_str << "Descriptor in binding #" << binding << " index " << index
                                   << " requires bound image to have VK_SAMPLE_COUNT_1_BIT but got "
-                                  << string_VkSampleCountFlagBits(image_node->createInfo.samples) << ".";
+                                  << string_VkSampleCountFlagBits(image_view_state->samples) << ".";
                         *error = error_str.str();
                         return false;
                     }
-                    if ((reqs & DESCRIPTOR_REQ_MULTI_SAMPLE) && image_node->createInfo.samples == VK_SAMPLE_COUNT_1_BIT) {
+                    if ((reqs & DESCRIPTOR_REQ_MULTI_SAMPLE) && image_view_state->samples == VK_SAMPLE_COUNT_1_BIT) {
                         std::stringstream error_str;
                         error_str << "Descriptor in binding #" << binding << " index " << index
                                   << " requires bound image to have multiple samples, but got VK_SAMPLE_COUNT_1_BIT.";

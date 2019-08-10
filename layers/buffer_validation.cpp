@@ -113,6 +113,8 @@ IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const IMAGE_STATE *image_state, VkImageView i
 
         // Cache a full normalization (for "full image/whole image" comparisons)
         normalized_subresource_range = NormalizeSubresourceRange(*image_state, ci->subresourceRange);
+        samples = image_state->createInfo.samples;
+        descriptor_format_bits = DescriptorRequirementsBitsFromFormat(create_info.format);
     }
 }
 
