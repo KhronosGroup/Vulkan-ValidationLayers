@@ -2355,8 +2355,9 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, 0,
                         kVUID_Core_DevLimit_MustQueryCount,
                         "Invalid call to vkCreateDevice() w/o first calling vkEnumeratePhysicalDevices().");
+    } else {
+        skip |= ValidateDeviceQueueCreateInfos(pd_state, pCreateInfo->queueCreateInfoCount, pCreateInfo->pQueueCreateInfos);
     }
-    skip |= ValidateDeviceQueueCreateInfos(pd_state, pCreateInfo->queueCreateInfoCount, pCreateInfo->pQueueCreateInfos);
     return skip;
 }
 
@@ -12780,33 +12781,35 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapch
         skip |= ValidateFenceForSubmit(pFence);
     }
 
-    auto swapchain_data = GetSwapchainState(swapchain);
-    if (swapchain_data && swapchain_data->retired) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
-                        HandleToUint64(swapchain), "VUID-vkAcquireNextImageKHR-swapchain-01285",
-                        "%s: This swapchain has been retired. The application can still present any images it "
-                        "has acquired, but cannot acquire any more.",
-                        func_name);
-    }
-
-    auto physical_device_state = GetPhysicalDeviceState();
-    if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState != UNCALLED) {
-        uint64_t acquired_images = std::count_if(swapchain_data->images.begin(), swapchain_data->images.end(),
-                                                 [=](VkImage image) { return GetImageState(image)->acquired; });
-        if (acquired_images > swapchain_data->images.size() - physical_device_state->surfaceCapabilities.minImageCount) {
+    const auto swapchain_data = GetSwapchainState(swapchain);
+    if (swapchain_data) {
+        if (swapchain_data->retired) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
-                            HandleToUint64(swapchain), kVUID_Core_DrawState_SwapchainTooManyImages,
-                            "%s: Application has already acquired the maximum number of images (0x%" PRIxLEAST64 ")", func_name,
-                            acquired_images);
+                            HandleToUint64(swapchain), "VUID-vkAcquireNextImageKHR-swapchain-01285",
+                            "%s: This swapchain has been retired. The application can still present any images it "
+                            "has acquired, but cannot acquire any more.",
+                            func_name);
         }
-    }
 
-    if (swapchain_data && swapchain_data->images.size() == 0) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
-                        HandleToUint64(swapchain), kVUID_Core_DrawState_SwapchainImagesNotFound,
-                        "%s: No images found to acquire from. Application probably did not call "
-                        "vkGetSwapchainImagesKHR after swapchain creation.",
-                        func_name);
+        auto physical_device_state = GetPhysicalDeviceState();
+        if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState != UNCALLED) {
+            uint64_t acquired_images = std::count_if(swapchain_data->images.begin(), swapchain_data->images.end(),
+                                                     [=](VkImage image) { return GetImageState(image)->acquired; });
+            if (acquired_images > swapchain_data->images.size() - physical_device_state->surfaceCapabilities.minImageCount) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
+                                HandleToUint64(swapchain), kVUID_Core_DrawState_SwapchainTooManyImages,
+                                "%s: Application has already acquired the maximum number of images (0x%" PRIxLEAST64 ")", func_name,
+                                acquired_images);
+            }
+        }
+
+        if (swapchain_data->images.size() == 0) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
+                            HandleToUint64(swapchain), kVUID_Core_DrawState_SwapchainImagesNotFound,
+                            "%s: No images found to acquire from. Application probably did not call "
+                            "vkGetSwapchainImagesKHR after swapchain creation.",
+                            func_name);
+        }
     }
     return skip;
 }
