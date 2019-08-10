@@ -6526,7 +6526,7 @@ void ValidationStateTracker::PreCallRecordCmdSetExclusiveScissorNV(VkCommandBuff
 
 bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView,
                                                           VkImageLayout imageLayout) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdBindShadingRateImageNV()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdBindShadingRateImageNV-commandBuffer-cmdpool");
@@ -6540,7 +6540,7 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
     }
 
     if (imageView != VK_NULL_HANDLE) {
-        auto view_state = GetImageViewState(imageView);
+        const auto view_state = GetImageViewState(imageView);
         auto &ivci = view_state->create_info;
 
         if (!view_state || (ivci.viewType != VK_IMAGE_VIEW_TYPE_2D && ivci.viewType != VK_IMAGE_VIEW_TYPE_2D_ARRAY)) {
@@ -6566,7 +6566,7 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
         }
 
         if (view_state) {
-            auto image_state = GetImageState(view_state->create_info.image);
+            const auto image_state = GetImageState(view_state->create_info.image);
             bool hit_error = false;
 
             // XXX TODO: While the VUID says "each subresource", only the base mip level is
@@ -6586,8 +6586,8 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView,
-                                                        VkImageLayout imageLayout) {
+void ValidationStateTracker::PreCallRecordCmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView,
+                                                                    VkImageLayout imageLayout) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
 
     if (imageView != VK_NULL_HANDLE) {
@@ -7624,8 +7624,8 @@ static VkDeviceSize GetIndexAlignment(VkIndexType indexType) {
 
 bool CoreChecks::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                    VkIndexType indexType) {
-    auto buffer_state = GetBufferState(buffer);
-    auto cb_node = GetCBState(commandBuffer);
+    const auto buffer_state = GetBufferState(buffer);
+    const auto cb_node = GetCBState(commandBuffer);
     assert(buffer_state);
     assert(cb_node);
 
@@ -7636,7 +7636,7 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer
                                   "VUID-vkCmdBindIndexBuffer-commandBuffer-cmdpool");
     skip |= ValidateCmd(cb_node, CMD_BINDINDEXBUFFER, "vkCmdBindIndexBuffer()");
     skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdBindIndexBuffer()", "VUID-vkCmdBindIndexBuffer-buffer-00434");
-    auto offset_align = GetIndexAlignment(indexType);
+    const auto offset_align = GetIndexAlignment(indexType);
     if (offset % offset_align) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdBindIndexBuffer-offset-00432",
@@ -7647,8 +7647,8 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                 VkIndexType indexType) {
+void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                             VkIndexType indexType) {
     auto buffer_state = GetBufferState(buffer);
     auto cb_state = GetCBState(commandBuffer);
 
@@ -7663,14 +7663,14 @@ void CoreChecks::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer, 
 
 bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
                                                      const VkBuffer *pBuffers, const VkDeviceSize *pOffsets) {
-    auto cb_state = GetCBState(commandBuffer);
+    const auto cb_state = GetCBState(commandBuffer);
     assert(cb_state);
 
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdBindVertexBuffers()", VK_QUEUE_GRAPHICS_BIT,
                                       "VUID-vkCmdBindVertexBuffers-commandBuffer-cmdpool");
     skip |= ValidateCmd(cb_state, CMD_BINDVERTEXBUFFERS, "vkCmdBindVertexBuffers()");
     for (uint32_t i = 0; i < bindingCount; ++i) {
-        auto buffer_state = GetBufferState(pBuffers[i]);
+        const auto buffer_state = GetBufferState(pBuffers[i]);
         assert(buffer_state);
         skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, true,
                                          "VUID-vkCmdBindVertexBuffers-pBuffers-00627", "vkCmdBindVertexBuffers()",
@@ -7686,8 +7686,9 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuff
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
-                                                   const VkBuffer *pBuffers, const VkDeviceSize *pOffsets) {
+void ValidationStateTracker::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                               uint32_t bindingCount, const VkBuffer *pBuffers,
+                                                               const VkDeviceSize *pOffsets) {
     auto cb_state = GetCBState(commandBuffer);
 
     uint32_t end = firstBinding + bindingCount;
