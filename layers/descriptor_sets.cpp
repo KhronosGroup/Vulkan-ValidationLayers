@@ -885,49 +885,6 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const st
     return true;
 }
 
-// For given bindings, place any update buffers or images into the passed-in unordered_sets
-uint32_t cvdescriptorset::DescriptorSet::GetStorageUpdates(const std::map<uint32_t, descriptor_req> &bindings,
-                                                           std::unordered_set<VkBuffer> *buffer_set,
-                                                           std::unordered_set<VkImageView> *image_set) const {
-    auto num_updates = 0;
-    for (auto binding_pair : bindings) {
-        auto binding = binding_pair.first;
-        // If a binding doesn't exist, skip it
-        if (!p_layout_->HasBinding(binding)) {
-            continue;
-        }
-        uint32_t start_idx = p_layout_->GetGlobalIndexRangeFromBinding(binding).start;
-        if (descriptors_[start_idx]->IsStorage()) {
-            if (Image == descriptors_[start_idx]->descriptor_class) {
-                for (uint32_t i = 0; i < p_layout_->GetDescriptorCountFromBinding(binding); ++i) {
-                    if (descriptors_[start_idx + i]->updated) {
-                        image_set->insert(static_cast<ImageDescriptor *>(descriptors_[start_idx + i].get())->GetImageView());
-                        num_updates++;
-                    }
-                }
-            } else if (TexelBuffer == descriptors_[start_idx]->descriptor_class) {
-                for (uint32_t i = 0; i < p_layout_->GetDescriptorCountFromBinding(binding); ++i) {
-                    if (descriptors_[start_idx + i]->updated) {
-                        auto bufferview = static_cast<TexelDescriptor *>(descriptors_[start_idx + i].get())->GetBufferView();
-                        auto bv_state = state_data_->GetBufferViewState(bufferview);
-                        if (bv_state) {
-                            buffer_set->insert(bv_state->create_info.buffer);
-                            num_updates++;
-                        }
-                    }
-                }
-            } else if (GeneralBuffer == descriptors_[start_idx]->descriptor_class) {
-                for (uint32_t i = 0; i < p_layout_->GetDescriptorCountFromBinding(binding); ++i) {
-                    if (descriptors_[start_idx + i]->updated) {
-                        buffer_set->insert(static_cast<BufferDescriptor *>(descriptors_[start_idx + i].get())->GetBuffer());
-                        num_updates++;
-                    }
-                }
-            }
-        }
-    }
-    return num_updates;
-}
 // Set is being deleted or updates so invalidate all bound cmd buffers
 void cvdescriptorset::DescriptorSet::InvalidateBoundCmdBuffers() {
     state_data_->InvalidateCommandBuffers(cb_bindings, VulkanTypedHandle(set_, kVulkanObjectTypeDescriptorSet));

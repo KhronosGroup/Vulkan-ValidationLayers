@@ -1429,9 +1429,6 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     CBVertexBufferBindingInfo current_vertex_buffer_binding_info;
     bool vertex_buffer_used;  // Track for perf warning to make sure any bound vtx buffer used
     VkCommandBuffer primaryCommandBuffer;
-    // Track images and buffers that are updated by this CB at the point of a draw
-    std::unordered_set<VkImageView> updateImages;
-    std::unordered_set<VkBuffer> updateBuffers;
     // If primary, the secondary command buffers we will call.
     // If secondary, the primary command buffers we will be called by.
     std::unordered_set<CMD_BUFFER_STATE *> linkedCommandBuffers;
