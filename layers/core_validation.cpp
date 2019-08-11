@@ -300,6 +300,9 @@ void ValidationStateTracker::AddMemObjInfo(void *object, const VkDeviceMemory me
 
 // Create binding link between given sampler and command buffer node
 void ValidationStateTracker::AddCommandBufferBindingSampler(CMD_BUFFER_STATE *cb_node, SAMPLER_STATE *sampler_state) {
+    if (disabled.command_buffer_state) {
+        return;
+    }
     auto inserted = cb_node->object_bindings.emplace(sampler_state->sampler, kVulkanObjectTypeSampler);
     if (inserted.second) {
         // Only need to complete the cross-reference if this is a new item
@@ -309,6 +312,9 @@ void ValidationStateTracker::AddCommandBufferBindingSampler(CMD_BUFFER_STATE *cb
 
 // Create binding link between given image node and command buffer node
 void ValidationStateTracker::AddCommandBufferBindingImage(CMD_BUFFER_STATE *cb_node, IMAGE_STATE *image_state) {
+    if (disabled.command_buffer_state) {
+        return;
+    }
     // Skip validation if this image was created through WSI
     if (image_state->binding.mem != MEMTRACKER_SWAP_CHAIN_IMAGE_KEY) {
         // First update cb binding for image
@@ -334,6 +340,9 @@ void ValidationStateTracker::AddCommandBufferBindingImage(CMD_BUFFER_STATE *cb_n
 
 // Create binding link between given image view node and its image with command buffer node
 void ValidationStateTracker::AddCommandBufferBindingImageView(CMD_BUFFER_STATE *cb_node, IMAGE_VIEW_STATE *view_state) {
+    if (disabled.command_buffer_state) {
+        return;
+    }
     // First add bindings for imageView
     auto inserted = cb_node->object_bindings.emplace(view_state->image_view, kVulkanObjectTypeImageView);
     if (inserted.second) {
@@ -349,6 +358,9 @@ void ValidationStateTracker::AddCommandBufferBindingImageView(CMD_BUFFER_STATE *
 
 // Create binding link between given buffer node and command buffer node
 void ValidationStateTracker::AddCommandBufferBindingBuffer(CMD_BUFFER_STATE *cb_node, BUFFER_STATE *buffer_state) {
+    if (disabled.command_buffer_state) {
+        return;
+    }
     // First update cb binding for buffer
     auto buffer_inserted = cb_node->object_bindings.emplace(buffer_state->buffer, kVulkanObjectTypeBuffer);
     if (buffer_inserted.second) {
@@ -371,6 +383,9 @@ void ValidationStateTracker::AddCommandBufferBindingBuffer(CMD_BUFFER_STATE *cb_
 
 // Create binding link between given buffer view node and its buffer with command buffer node
 void ValidationStateTracker::AddCommandBufferBindingBufferView(CMD_BUFFER_STATE *cb_node, BUFFER_VIEW_STATE *view_state) {
+    if (disabled.command_buffer_state) {
+        return;
+    }
     // First add bindings for bufferView
     auto inserted = cb_node->object_bindings.emplace(view_state->buffer_view, kVulkanObjectTypeBufferView);
     if (inserted.second) {
@@ -386,6 +401,9 @@ void ValidationStateTracker::AddCommandBufferBindingBufferView(CMD_BUFFER_STATE 
 
 // Create binding link between given acceleration structure and command buffer node
 void CoreChecks::AddCommandBufferBindingAccelerationStructure(CMD_BUFFER_STATE *cb_node, ACCELERATION_STRUCTURE_STATE *as_state) {
+    if (disabled.command_buffer_state) {
+        return;
+    }
     auto as_inserted = cb_node->object_bindings.emplace(as_state->acceleration_structure, kVulkanObjectTypeAccelerationStructureNV);
     if (as_inserted.second) {
         // Only need to complete the cross-reference if this is a new item
@@ -2029,8 +2047,11 @@ BASE_NODE *ValidationStateTracker::GetStateStructPtrFromObject(const VulkanTyped
 // Tie the VulkanTypedHandle to the cmd buffer which includes:
 //  Add object_binding to cmd buffer
 //  Add cb_binding to object
-static void AddCommandBufferBinding(std::unordered_set<CMD_BUFFER_STATE *> *cb_bindings, const VulkanTypedHandle &obj,
-                                    CMD_BUFFER_STATE *cb_node) {
+void ValidationStateTracker::AddCommandBufferBinding(std::unordered_set<CMD_BUFFER_STATE *> *cb_bindings,
+                                                     const VulkanTypedHandle &obj, CMD_BUFFER_STATE *cb_node) {
+    if (disabled.command_buffer_state) {
+        return;
+    }
     cb_bindings->insert(cb_node);
     cb_node->object_bindings.insert(obj);
 }

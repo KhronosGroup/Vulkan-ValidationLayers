@@ -597,6 +597,8 @@ class ValidationStateTracker : public ValidationObject {
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
     // State Utilty functions
+    void AddCommandBufferBinding(std::unordered_set<CMD_BUFFER_STATE*>* cb_bindings, const VulkanTypedHandle& obj,
+                                 CMD_BUFFER_STATE* cb_node);
     void AddCommandBufferBindingBuffer(CMD_BUFFER_STATE*, BUFFER_STATE*);
     void AddCommandBufferBindingBufferView(CMD_BUFFER_STATE*, BUFFER_VIEW_STATE*);
     void AddCommandBufferBindingImage(CMD_BUFFER_STATE*, IMAGE_STATE*);
