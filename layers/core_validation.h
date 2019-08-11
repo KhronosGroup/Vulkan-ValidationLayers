@@ -964,6 +964,8 @@ class CoreChecks : public ValidationStateTracker {
     void RecordCmdEndQuery(CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj);
 
     bool SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject object, QueryState value);
+    bool SetQueryStateMulti(VkQueue queue, VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                            uint32_t queryCount, QueryState value);
     bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type,
                              const char* caller, VkQueueFlags queue_flags, const char* queue_flag_code,
                              const char* renderpass_msg_code, const char* pipebound_msg_code,
