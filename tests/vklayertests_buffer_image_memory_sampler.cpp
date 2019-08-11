@@ -5340,7 +5340,7 @@ TEST_F(VkLayerTest, InvalidImageViewUsageCreateInfo) {
 
     // Try an illegal bit in usage field
     usage_ci.usage = 0x10000000 | VK_IMAGE_USAGE_SAMPLED_BIT;
-    CreateImageViewTest(*this, &ivci, "value of usage contains flag bits that are not recognized members of VkImageUsageFlagBits");
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewUsageCreateInfo-usage-parameter");
 }
 
 TEST_F(VkLayerTest, CreateImageViewNoMemoryBoundToImage) {

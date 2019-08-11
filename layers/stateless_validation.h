@@ -21,8 +21,6 @@
 
 #pragma once
 
-#include <bitset>
-
 #include "parameter_name.h"
 #include "vk_typemap_helper.h"
 
@@ -705,6 +703,8 @@ class StatelessValidation : public ValidationObject {
         return skip_call;
     }
 
+    enum FlagType { kRequiredFlags, kOptionalFlags, kRequiredSingleBit, kOptionalSingleBit };
+
     /**
      * Validate a Vulkan bitmask value.
      *
@@ -716,27 +716,37 @@ class StatelessValidation : public ValidationObject {
      * @param flag_bits_name Name of the VkFlags type being validated.
      * @param all_flags A bit mask combining all valid flag bits for the VkFlags type being validated.
      * @param value VkFlags value to validate.
-     * @param flags_required The 'value' parameter may not be 0 when true.
-     * @param singleFlag The 'value' parameter may not contain more than one bit from all_flags.
+     * @param flag_type The type of flag, like optional, or single bit.
+     * @param vuid VUID used for flag that is outside defined bits (or has more than one bit for Bits type).
+     * @param flags_zero_vuid VUID used for non-optional Flags that are zero.
      * @return Boolean value indicating that the call should be skipped.
      */
     bool validate_flags(const char *api_name, const ParameterName &parameter_name, const char *flag_bits_name, VkFlags all_flags,
-                        VkFlags value, bool flags_required, bool singleFlag, const char *vuid) {
+                        VkFlags value, const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) {
         bool skip_call = false;
 
-        if (value == 0) {
-            if (flags_required) {
-                skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                                     "%s: value of %s must not be 0.", api_name, parameter_name.get_name().c_str());
-            }
-        } else if ((value & (~all_flags)) != 0) {
-            skip_call |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        kVUID_PVError_UnrecognizedValue, "%s: value of %s contains flag bits that are not recognized members of %s",
-                        api_name, parameter_name.get_name().c_str(), flag_bits_name);
-        } else if (singleFlag && (std::bitset<sizeof(VkFlags) * 8>(value).count() > 1)) {
-            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                 kVUID_PVError_UnrecognizedValue,
+        if ((value & ~all_flags) != 0) {
+            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
+                                 "%s: value of %s contains flag bits that are not recognized members of %s", api_name,
+                                 parameter_name.get_name().c_str(), flag_bits_name);
+        }
+
+        const bool required = flag_type == kRequiredFlags || flag_type == kRequiredSingleBit;
+        const char *zero_vuid = flag_type == kRequiredFlags ? flags_zero_vuid : vuid;
+        if (required && value == 0) {
+            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, zero_vuid,
+                                 "%s: value of %s must not be 0.", api_name, parameter_name.get_name().c_str());
+        }
+
+        const auto HasMaxOneBitSet = [](const VkFlags f) {
+            // Decrement flips bits from right upto first 1.
+            // Rest stays same, and if there was any other 1s &ded together they would be non-zero. QED
+            return f == 0 || !(f & (f - 1));
+        };
+
+        const bool is_bits_type = flag_type == kRequiredSingleBit || flag_type == kOptionalSingleBit;
+        if (is_bits_type && !HasMaxOneBitSet(value)) {
+            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                                  "%s: value of %s contains multiple members of %s when only a single value is allowed", api_name,
                                  parameter_name.get_name().c_str(), flag_bits_name);
         }
