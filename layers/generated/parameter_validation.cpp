@@ -2820,7 +2820,6 @@ bool StatelessValidation::PreCallValidateCreateImageView(
         }
     }
     skip |= validate_required_pointer("vkCreateImageView", "pView", pView, "VUID-vkCreateImageView-pView-parameter");
-    skip |= manual_PreCallValidateCreateImageView(device, pCreateInfo, pAllocator, pView);
     return skip;
 }
 

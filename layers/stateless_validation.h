@@ -992,9 +992,6 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkImage *pImage);
 
-    bool manual_PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
-                                               const VkAllocationCallbacks *pAllocator, VkImageView *pView);
-
     bool manual_PreCallValidateViewport(const VkViewport &viewport, const char *fn_name, const ParameterName &parameter_name,
                                         VkDebugReportObjectTypeEXT object_type, uint64_t object);
 

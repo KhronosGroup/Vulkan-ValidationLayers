@@ -140,7 +140,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCreateRenderPass2KHR',
             'vkCreateBuffer',
             'vkCreateImage',
-            'vkCreateImageView',
             'vkCreateGraphicsPipelines',
             'vkCreateComputePipelines',
             "vkCreateRayTracingPipelinesNV",

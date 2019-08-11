@@ -635,32 +635,6 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
-                                                                const VkAllocationCallbacks *pAllocator, VkImageView *pView) {
-    bool skip = false;
-
-    if (pCreateInfo != nullptr) {
-        // Validate chained VkImageViewUsageCreateInfo struct, if present
-        if (nullptr != pCreateInfo->pNext) {
-            auto chained_ivuci_struct = lvl_find_in_chain<VkImageViewUsageCreateInfoKHR>(pCreateInfo->pNext);
-            if (chained_ivuci_struct) {
-                if (0 == chained_ivuci_struct->usage) {
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                    "VUID-VkImageViewUsageCreateInfo-usage-requiredbitmask",
-                                    "vkCreateImageView: Chained VkImageViewUsageCreateInfo usage field must not be 0.");
-                } else if (chained_ivuci_struct->usage & ~AllVkImageUsageFlagBits) {
-                    std::stringstream ss;
-                    ss << "vkCreateImageView: Chained VkImageViewUsageCreateInfo usage field (0x" << std::hex
-                       << chained_ivuci_struct->usage << ") contains invalid flag bits.";
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                    "VUID-VkImageViewUsageCreateInfo-usage-parameter", "%s", ss.str().c_str());
-                }
-            }
-        }
-    }
-    return skip;
-}
-
 bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewport, const char *fn_name,
                                                          const ParameterName &parameter_name,
                                                          VkDebugReportObjectTypeEXT object_type, uint64_t object = 0) {
