@@ -2244,44 +2244,56 @@ bool StatelessValidation::manual_PreCallValidateFreeCommandBuffers(VkDevice devi
 bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer,
                                                                    const VkCommandBufferBeginInfo *pBeginInfo) {
     bool skip = false;
+
+    // VkCommandBufferInheritanceInfo validation, due to a 'noautovalidity' of pBeginInfo->pInheritanceInfo in vkBeginCommandBuffer
+    const char *cmd_name = "vkBeginCommandBuffer";
     const VkCommandBufferInheritanceInfo *pInfo = pBeginInfo->pInheritanceInfo;
 
-    // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
-    // TODO: pBeginInfo->pInheritanceInfo must not be NULL if commandBuffer is a secondary command buffer
-    skip |= validate_struct_type("vkBeginCommandBuffer", "pBeginInfo->pInheritanceInfo",
-                                 "VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO", pBeginInfo->pInheritanceInfo,
-                                 VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, false,
-                                 "VUID_vkBeginCommandBuffer-pBeginInfo-parameter", "VUID_VkCommandBufferBeginInfo-sType-sType");
+    // Implicit VUs
+    // validate only sType here; pointer has to be validated in core_validation
+    const bool kNotRequired = false;
+    const char *kNoVUID = nullptr;
+    skip |= validate_struct_type(cmd_name, "pBeginInfo->pInheritanceInfo", "VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO",
+                                 pInfo, VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, kNotRequired, kNoVUID,
+                                 "VUID-VkCommandBufferInheritanceInfo-sType-sType");
 
-    if (pBeginInfo->pInheritanceInfo != NULL) {
-        skip |= validate_struct_pnext("vkBeginCommandBuffer", "pBeginInfo->pInheritanceInfo->pNext", NULL,
-                                      pBeginInfo->pInheritanceInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion,
-                                      "VUID-VkCommandBufferBeginInfo-pNext-pNext");
+    if (pInfo) {
+        const VkStructureType allowed_structs_VkCommandBufferInheritanceInfo[] = {
+            VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_CONDITIONAL_RENDERING_INFO_EXT};
+        skip |= validate_struct_pnext(
+            cmd_name, "pBeginInfo->pInheritanceInfo->pNext", "VkCommandBufferInheritanceConditionalRenderingInfoEXT", pInfo->pNext,
+            ARRAY_SIZE(allowed_structs_VkCommandBufferInheritanceInfo), allowed_structs_VkCommandBufferInheritanceInfo,
+            GeneratedVulkanHeaderVersion, "VUID-VkCommandBufferInheritanceInfo-pNext-pNext");
 
-        skip |= validate_bool32("vkBeginCommandBuffer", "pBeginInfo->pInheritanceInfo->occlusionQueryEnable",
-                                pBeginInfo->pInheritanceInfo->occlusionQueryEnable);
+        skip |= validate_bool32(cmd_name, "pBeginInfo->pInheritanceInfo->occlusionQueryEnable", pInfo->occlusionQueryEnable);
 
-        // TODO: This only needs to be validated when the inherited queries feature is enabled
-        // skip |= validate_flags("vkBeginCommandBuffer", "pBeginInfo->pInheritanceInfo->queryFlags",
-        // "VkQueryControlFlagBits", AllVkQueryControlFlagBits, pBeginInfo->pInheritanceInfo->queryFlags, false);
-
-        // TODO: This must be 0 if the pipeline statistics queries feature is not enabled
-        skip |= validate_flags("vkBeginCommandBuffer", "pBeginInfo->pInheritanceInfo->pipelineStatistics",
-                               "VkQueryPipelineStatisticFlagBits", AllVkQueryPipelineStatisticFlagBits,
-                               pBeginInfo->pInheritanceInfo->pipelineStatistics, false, false, kVUIDUndefined);
-    }
-
-    if (pInfo != NULL) {
-        if ((physical_device_features.inheritedQueries == VK_FALSE) && (pInfo->occlusionQueryEnable != VK_FALSE)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(commandBuffer), "VUID-VkCommandBufferInheritanceInfo-occlusionQueryEnable-00056",
-                            "Cannot set inherited occlusionQueryEnable in vkBeginCommandBuffer() when device does not support "
-                            "inheritedQueries.");
+        // Explicit VUs
+        if (!physical_device_features.inheritedQueries && pInfo->occlusionQueryEnable == VK_TRUE) {
+            skip |= log_msg(
+                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                HandleToUint64(commandBuffer), "VUID-VkCommandBufferInheritanceInfo-occlusionQueryEnable-00056",
+                "%s: Inherited queries feature is disabled, but pBeginInfo->pInheritanceInfo->occlusionQueryEnable is VK_TRUE.",
+                cmd_name);
         }
-        if ((physical_device_features.inheritedQueries != VK_FALSE) && (pInfo->occlusionQueryEnable != VK_FALSE)) {
-            skip |= validate_flags("vkBeginCommandBuffer", "pBeginInfo->pInheritanceInfo->queryFlags", "VkQueryControlFlagBits",
+
+        if (physical_device_features.inheritedQueries) {
+            skip |= validate_flags(cmd_name, "pBeginInfo->pInheritanceInfo->queryFlags", "VkQueryControlFlagBits",
                                    AllVkQueryControlFlagBits, pInfo->queryFlags, false, false,
                                    "VUID-VkCommandBufferInheritanceInfo-queryFlags-00057");
+        } else {  // !inheritedQueries
+            // TODO: Real VUID should be available when spec 1.1.120 is released
+            skip |= validate_reserved_flags(cmd_name, "pBeginInfo->pInheritanceInfo->queryFlags", pInfo->queryFlags,
+                                            kVUID_PVError_ReservedParameter);
+        }
+
+        if (physical_device_features.pipelineStatisticsQuery) {
+            // TODO: Real VUID should be available when spec 1.1.120 is released
+            skip |= validate_flags(cmd_name, "pBeginInfo->pInheritanceInfo->pipelineStatistics", "VkQueryPipelineStatisticFlagBits",
+                                   AllVkQueryPipelineStatisticFlagBits, pInfo->pipelineStatistics, false, false,
+                                   kVUID_PVError_UnrecognizedValue);
+        } else {  // !pipelineStatisticsQuery
+            skip |= validate_reserved_flags(cmd_name, "pBeginInfo->pInheritanceInfo->pipelineStatistics", pInfo->pipelineStatistics,
+                                            "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-00058");
         }
     }
 
