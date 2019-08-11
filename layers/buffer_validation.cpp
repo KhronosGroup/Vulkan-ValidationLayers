@@ -311,6 +311,9 @@ void CoreChecks::SetImageLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_STATE &im
 
 // Set the initial image layout for all slices of an image view
 void CoreChecks::SetImageViewInitialLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_VIEW_STATE &view_state, VkImageLayout layout) {
+    if (disabled.image_layout_validation) {
+        return;
+    }
     IMAGE_STATE *image_state = GetImageState(view_state.create_info.image);
     if (image_state) {
         auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, *image_state);
