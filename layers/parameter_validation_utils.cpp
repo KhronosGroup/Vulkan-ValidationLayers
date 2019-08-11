@@ -1564,7 +1564,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         "vkCreateGraphicsPipelines",
                         ParameterName("pCreateInfos[%i].pMultisampleState->rasterizationSamples", ParameterName::IndexVector{i}),
                         "VkSampleCountFlagBits", AllVkSampleCountFlagBits, pCreateInfos[i].pMultisampleState->rasterizationSamples,
-                        true, true, "VUID-VkPipelineMultisampleStateCreateInfo-rasterizationSamples-parameter");
+                        kRequiredSingleBit, "VUID-VkPipelineMultisampleStateCreateInfo-rasterizationSamples-parameter");
 
                     skip |= validate_bool32(
                         "vkCreateGraphicsPipelines",
@@ -1810,7 +1810,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                                              ParameterName::IndexVector{i, attachmentIndex}),
                                                "VkColorComponentFlagBits", AllVkColorComponentFlagBits,
                                                pCreateInfos[i].pColorBlendState->pAttachments[attachmentIndex].colorWriteMask,
-                                               false, false, "VUID-VkPipelineColorBlendAttachmentState-colorWriteMask-parameter");
+                                               kOptionalFlags, "VUID-VkPipelineColorBlendAttachmentState-colorWriteMask-parameter");
                         }
                     }
 
@@ -2278,7 +2278,7 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
 
         if (physical_device_features.inheritedQueries) {
             skip |= validate_flags(cmd_name, "pBeginInfo->pInheritanceInfo->queryFlags", "VkQueryControlFlagBits",
-                                   AllVkQueryControlFlagBits, pInfo->queryFlags, false, false,
+                                   AllVkQueryControlFlagBits, pInfo->queryFlags, kOptionalFlags,
                                    "VUID-VkCommandBufferInheritanceInfo-queryFlags-00057");
         } else {  // !inheritedQueries
             // TODO: Real VUID should be available when spec 1.1.120 is released
@@ -2289,7 +2289,7 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
         if (physical_device_features.pipelineStatisticsQuery) {
             // TODO: Real VUID should be available when spec 1.1.120 is released
             skip |= validate_flags(cmd_name, "pBeginInfo->pInheritanceInfo->pipelineStatistics", "VkQueryPipelineStatisticFlagBits",
-                                   AllVkQueryPipelineStatisticFlagBits, pInfo->pipelineStatistics, false, false,
+                                   AllVkQueryPipelineStatisticFlagBits, pInfo->pipelineStatistics, kOptionalFlags,
                                    kVUID_PVError_UnrecognizedValue);
         } else {  // !pipelineStatisticsQuery
             skip |= validate_reserved_flags(cmd_name, "pBeginInfo->pInheritanceInfo->pipelineStatistics", pInfo->pipelineStatistics,

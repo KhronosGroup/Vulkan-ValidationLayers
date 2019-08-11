@@ -1197,25 +1197,26 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     elif value.type in self.handleTypes:
                         if not self.isHandleOptional(value, None):
                             usedLines.append('skip |= validate_required_handle("{}", {ppp}"{}"{pps}, {}{});\n'.format(funcName, valueDisplayName, valuePrefix, value.name, **postProcSpec))
-                    elif value.type in self.flags:
-                        flagBitsName = value.type.replace('Flags', 'FlagBits')
-                        if not flagBitsName in self.flagBits:
-                            vuid = self.GetVuid(vuid_name_tag, "%s-zerobitmask" % (value.name))
-                            usedLines.append('skip |= validate_reserved_flags("{}", {ppp}"{}"{pps}, {pf}{}, {});\n'.format(funcName, valueDisplayName, value.name, vuid, pf=valuePrefix, **postProcSpec))
-                        else:
-                            if value.isoptional:
-                                flagsRequired = 'false'
-                                vuid = self.GetVuid(vuid_name_tag, "%s-parameter" % (value.name))
-                            else:
-                                flagsRequired = 'true'
-                                vuid = self.GetVuid(vuid_name_tag, "%s-requiredbitmask" % (value.name))
-                            allFlagsName = 'All' + flagBitsName
-                            usedLines.append('skip |= validate_flags("{}", {ppp}"{}"{pps}, "{}", {}, {pf}{}, {}, false, {});\n'.format(funcName, valueDisplayName, flagBitsName, allFlagsName, value.name, flagsRequired, vuid, pf=valuePrefix, **postProcSpec))
-                    elif value.type in self.flagBits:
-                        flagsRequired = 'false' if value.isoptional else 'true'
-                        allFlagsName = 'All' + value.type
-                        vuid = self.GetVuid(vuid_name_tag, "%s-parameter" % (value.name))
-                        usedLines.append('skip |= validate_flags("{}", {ppp}"{}"{pps}, "{}", {}, {pf}{}, {}, true, {});\n'.format(funcName, valueDisplayName, value.type, allFlagsName, value.name, flagsRequired, vuid, pf=valuePrefix, **postProcSpec))
+                    elif value.type in self.flags and value.type.replace('Flags', 'FlagBits') not in self.flagBits:
+                        vuid = self.GetVuid(vuid_name_tag, "%s-zerobitmask" % (value.name))
+                        usedLines.append('skip |= validate_reserved_flags("{}", {ppp}"{}"{pps}, {pf}{}, {});\n'.format(funcName, valueDisplayName, value.name, vuid, pf=valuePrefix, **postProcSpec))
+                    elif value.type in self.flags or value.type in self.flagBits:
+                        if value.type in self.flags:
+                            flagBitsName = value.type.replace('Flags', 'FlagBits')
+                            flagsType = 'kOptionalFlags' if value.isoptional else 'kRequiredFlags'
+                            invalidVuid = self.GetVuid(vuid_name_tag, "%s-parameter" % (value.name))
+                            zeroVuid = self.GetVuid(vuid_name_tag, "%s-requiredbitmask" % (value.name))
+                        elif value.type in self.flagBits:
+                            flagBitsName = value.type
+                            flagsType = 'kOptionalSingleBit' if value.isoptional else 'kRequiredSingleBit'
+                            invalidVuid = self.GetVuid(vuid_name_tag, "%s-parameter" % (value.name))
+                            zeroVuid = invalidVuid
+                        allFlagsName = 'All' + flagBitsName
+
+                        invalid_vuid = self.GetVuid(vuid_name_tag, "%s-parameter" % (value.name))
+                        allFlagsName = 'All' + flagBitsName
+                        zeroVuidArg = '' if value.isoptional else ', ' + zeroVuid
+                        usedLines.append('skip |= validate_flags("{}", {ppp}"{}"{pps}, "{}", {}, {pf}{}, {}, {}{});\n'.format(funcName, valueDisplayName, flagBitsName, allFlagsName, value.name, flagsType, invalidVuid, zeroVuidArg, pf=valuePrefix, **postProcSpec))
                     elif value.isbool:
                         usedLines.append('skip |= validate_bool32("{}", {ppp}"{}"{pps}, {}{});\n'.format(funcName, valueDisplayName, valuePrefix, value.name, **postProcSpec))
                     elif value.israngedenum:
