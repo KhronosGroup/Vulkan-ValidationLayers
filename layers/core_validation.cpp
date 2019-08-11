@@ -2581,7 +2581,13 @@ void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const V
 
     pipelineMap.clear();
     renderPassMap.clear();
+
+    // Reset all command buffers before destroying them, to unlink object_bindings.
+    for (auto &commandBuffer : commandBufferMap) {
+        ResetCommandBufferState(commandBuffer.first);
+    }
     commandBufferMap.clear();
+
     // This will also delete all sets in the pool & remove them from setMap
     DeleteDescriptorSetPools();
     // All sets should be removed
