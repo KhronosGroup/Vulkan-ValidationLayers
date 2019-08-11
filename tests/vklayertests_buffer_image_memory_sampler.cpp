@@ -5336,14 +5336,11 @@ TEST_F(VkLayerTest, InvalidImageViewUsageCreateInfo) {
 
     // Try a zero usage field
     usage_ci.usage = 0;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "vkCreateImageView: Chained VkImageViewUsageCreateInfo usage field must not be 0");
-    CreateImageViewTest(*this, &ivci, "VkImageViewUsageCreateInfo: value of usage must not be 0");
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewUsageCreateInfo-usage-requiredbitmask");
 
     // Try an illegal bit in usage field
     usage_ci.usage = 0x10000000 | VK_IMAGE_USAGE_SAMPLED_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "UNASSIGNED-GeneralParameterError-UnrecognizedValue");
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewUsageCreateInfo-usage-parameter");
+    CreateImageViewTest(*this, &ivci, "value of usage contains flag bits that are not recognized members of VkImageUsageFlagBits");
 }
 
 TEST_F(VkLayerTest, CreateImageViewNoMemoryBoundToImage) {
