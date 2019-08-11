@@ -8811,6 +8811,23 @@ bool CoreChecks::SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, Que
     return false;
 }
 
+bool CoreChecks::SetQueryStateMulti(VkQueue queue, VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                    uint32_t queryCount, QueryState value) {
+    CMD_BUFFER_STATE *pCB = GetCBState(commandBuffer);
+    auto queue_data = queueMap.find(queue);
+
+    for (uint32_t i = 0; i < queryCount; i++) {
+        QueryObject object = {queryPool, firstQuery + i};
+        if (pCB) {
+            pCB->queryToStateMap[object] = value;
+        }
+        if (queue_data != queueMap.end()) {
+            queue_data->second.queryToStateMap[object] = value;
+        }
+    }
+    return false;
+}
+
 bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE *cb_state, const QueryObject &query_obj, VkFlags flags, CMD_TYPE cmd,
                                     const char *cmd_name, const char *vuid_queue_flags, const char *vuid_queue_feedback,
                                     const char *vuid_queue_occlusion, const char *vuid_precise, const char *vuid_query_count) {
@@ -8958,11 +8975,9 @@ void CoreChecks::PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, 
                                                  uint32_t queryCount) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
 
-    for (uint32_t i = 0; i < queryCount; i++) {
-        QueryObject query = {queryPool, firstQuery + i};
-        cb_state->queryUpdates.emplace_back(
-            [this, commandBuffer, query](VkQueue q) { return SetQueryState(q, commandBuffer, query, QUERYSTATE_RESET); });
-    }
+    cb_state->queryUpdates.emplace_back([this, commandBuffer, queryPool, firstQuery, queryCount](VkQueue q) {
+        return SetQueryStateMulti(q, commandBuffer, queryPool, firstQuery, queryCount, QUERYSTATE_RESET);
+    });
     AddCommandBufferBinding(&GetQueryPoolState(queryPool)->cb_bindings, VulkanTypedHandle(queryPool, kVulkanObjectTypeQueryPool),
                             cb_state);
 }
