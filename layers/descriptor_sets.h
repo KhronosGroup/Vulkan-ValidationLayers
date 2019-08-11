@@ -559,10 +559,6 @@ class DescriptorSet : public BASE_NODE {
     }
     // Return true if given binding is present in this set
     bool HasBinding(const uint32_t binding) const { return p_layout_->HasBinding(binding); };
-    // For given set of bindings, add any buffers and images that will be updated to their respective unordered_sets & return number
-    // of objects inserted
-    uint32_t GetStorageUpdates(const std::map<uint32_t, descriptor_req> &, std::unordered_set<VkBuffer> *,
-                               std::unordered_set<VkImageView> *) const;
 
     std::string StringifySetAndLayout() const;
 

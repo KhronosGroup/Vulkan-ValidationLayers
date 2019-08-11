@@ -1247,8 +1247,6 @@ void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, const V
 
                 // Bind this set and its active descriptor resources to the command buffer
                 descriptor_set->UpdateDrawState(this, cb_state, binding_req_map);
-                // For given active slots record updated images & buffers
-                descriptor_set->GetStorageUpdates(binding_req_map, &cb_state->updateBuffers, &cb_state->updateImages);
             }
         }
     }
@@ -2131,8 +2129,6 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
             pSubCB->linkedCommandBuffers.erase(pCB);
         }
         pCB->linkedCommandBuffers.clear();
-        pCB->updateImages.clear();
-        pCB->updateBuffers.clear();
         ClearCmdBufAndMemReferences(pCB);
         pCB->queue_submit_functions.clear();
         pCB->cmd_execute_commands_functions.clear();
