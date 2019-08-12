@@ -10302,6 +10302,18 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
                             "Dependency count is %u but multiview info has a dependency count of %u.", pCreateInfo->dependencyCount,
                             pMultiviewInfo->dependencyCount);
         }
+
+        for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
+            auto const &dependency = pCreateInfo->pDependencies[i];
+
+            if (((dependency.dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) == 0) && pMultiviewInfo->pViewOffsets[i] != 0) {
+                skip |= log_msg(
+                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    "VUID-VkRenderPassCreateInfo-pNext-02512",
+                    "PViewOffsets[%u] must be 0, if the corresponding Dependency %u doesn't include VK_DEPENDENCY_VIEW_LOCAL_BIT.",
+                    i, i);
+            }
+        }
     }
     const VkRenderPassInputAttachmentAspectCreateInfo *pInputAttachmentAspectInfo =
         lvl_find_in_chain<VkRenderPassInputAttachmentAspectCreateInfo>(pCreateInfo->pNext);
@@ -10365,9 +10377,9 @@ void ValidationStateTracker::RecordCreateRenderPassState(RenderPassCreateVersion
 }
 
 // Style note:
-// Use of rvalue reference exceeds reccommended usage of rvalue refs in google style guide, but intentionally forces caller to move
-// or copy.  This is clearer than passing a pointer to shared_ptr and avoids the atomic increment/decrement of shared_ptr copy
-// construction or assignment.
+// Use of rvalue reference exceeds reccommended usage of rvalue refs in google style guide, but intentionally forces caller to
+// move or copy.  This is clearer than passing a pointer to shared_ptr and avoids the atomic increment/decrement of shared_ptr
+// copy construction or assignment.
 void ValidationStateTracker::PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
                                                             const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                             VkResult result) {
@@ -10543,13 +10555,14 @@ bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo *pRenderPass
         (pRenderPassBegin->renderArea.offset.x + pRenderPassBegin->renderArea.extent.width) > pFramebufferInfo->width ||
         pRenderPassBegin->renderArea.offset.y < 0 ||
         (pRenderPassBegin->renderArea.offset.y + pRenderPassBegin->renderArea.extent.height) > pFramebufferInfo->height) {
-        skip |= static_cast<bool>(log_msg(
-            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-            kVUID_Core_DrawState_InvalidRenderArea,
-            "Cannot execute a render pass with renderArea not within the bound of the framebuffer. RenderArea: x %d, y %d, width "
-            "%d, height %d. Framebuffer: width %d, height %d.",
-            pRenderPassBegin->renderArea.offset.x, pRenderPassBegin->renderArea.offset.y, pRenderPassBegin->renderArea.extent.width,
-            pRenderPassBegin->renderArea.extent.height, pFramebufferInfo->width, pFramebufferInfo->height));
+        skip |= static_cast<bool>(log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                          kVUID_Core_DrawState_InvalidRenderArea,
+                                          "Cannot execute a render pass with renderArea not within the bound of the "
+                                          "framebuffer. RenderArea: x %d, y %d, width "
+                                          "%d, height %d. Framebuffer: width %d, height %d.",
+                                          pRenderPassBegin->renderArea.offset.x, pRenderPassBegin->renderArea.offset.y,
+                                          pRenderPassBegin->renderArea.extent.width, pRenderPassBegin->renderArea.extent.height,
+                                          pFramebufferInfo->width, pFramebufferInfo->height));
     }
     return skip;
 }
@@ -10728,7 +10741,8 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
 
 // If this is a stencil format, make sure the stencil[Load|Store]Op flag is checked, while if it is a depth/color attachment the
 // [load|store]Op flag must be checked
-// TODO: The memory valid flag in DEVICE_MEMORY_STATE should probably be split to track the validity of stencil memory separately.
+// TODO: The memory valid flag in DEVICE_MEMORY_STATE should probably be split to track the validity of stencil memory
+// separately.
 template <typename T>
 static bool FormatSpecificLoadAndStoreOpSettings(VkFormat format, T color_depth_op, T stencil_op, T op) {
     if (color_depth_op != op && stencil_op != op) {
@@ -11053,13 +11067,13 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(CMD_BUFFER_STATE *pCB, CMD_
                     pSubCB->beginInfo.pInheritanceInfo) {
                     VkQueryPipelineStatisticFlags cmdBufStatistics = pSubCB->beginInfo.pInheritanceInfo->pipelineStatistics;
                     if ((cmdBufStatistics & query_pool_state->createInfo.pipelineStatistics) != cmdBufStatistics) {
-                        skip |= log_msg(
-                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(pCB->commandBuffer), "VUID-vkCmdExecuteCommands-commandBuffer-00104",
-                            "vkCmdExecuteCommands() called w/ invalid %s which has invalid active %s"
-                            ". Pipeline statistics is being queried so the command buffer must have all bits set on the queryPool.",
-                            report_data->FormatHandle(pCB->commandBuffer).c_str(),
-                            report_data->FormatHandle(queryObject.pool).c_str());
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                        HandleToUint64(pCB->commandBuffer), "VUID-vkCmdExecuteCommands-commandBuffer-00104",
+                                        "vkCmdExecuteCommands() called w/ invalid %s which has invalid active %s"
+                                        ". Pipeline statistics is being queried so the command buffer must have all bits set on "
+                                        "the queryPool.",
+                                        report_data->FormatHandle(pCB->commandBuffer).c_str(),
+                                        report_data->FormatHandle(queryObject.pool).c_str());
                     }
                 }
                 activeTypes.insert(query_pool_state->createInfo.queryType);
@@ -11242,8 +11256,8 @@ void CoreChecks::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, 
         assert(sub_cb_state);
         if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
             if (cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
-                // TODO: Because this is a state change, clearing the VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT needs to be moved
-                // from the validation step to the recording step
+                // TODO: Because this is a state change, clearing the VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT needs to be
+                // moved from the validation step to the recording step
                 cb_state->beginInfo.flags &= ~VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
             }
         }
@@ -12626,8 +12640,8 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                 }
             }
 
-            // All physical devices and queue families are required to be able to present to any native window on Android; require
-            // the application to have established support on any other platform.
+            // All physical devices and queue families are required to be able to present to any native window on Android;
+            // require the application to have established support on any other platform.
             if (!instance_extensions.vk_khr_android_surface) {
                 auto surface_state = GetSurfaceState(swapchain_data->createInfo.surface);
                 auto support_it = surface_state->gpu_queue_support.find({physical_device, queue_state->queueFamilyIndex});
@@ -12671,12 +12685,12 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                                         i, j, rect.offset.y, rect.extent.height, swapchain_data->createInfo.imageExtent.height);
                     }
                     if (rect.layer > swapchain_data->createInfo.imageArrayLayers) {
-                        skip |= log_msg(
-                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
-                            HandleToUint64(pPresentInfo->pSwapchains[i]), "VUID-VkRectLayerKHR-layer-01262",
-                            "vkQueuePresentKHR(): For VkPresentRegionKHR down pNext chain, pRegion[%i].pRectangles[%i], the layer "
-                            "(%i) is greater than the corresponding swapchain's imageArrayLayers (%i).",
-                            i, j, rect.layer, swapchain_data->createInfo.imageArrayLayers);
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
+                                        HandleToUint64(pPresentInfo->pSwapchains[i]), "VUID-VkRectLayerKHR-layer-01262",
+                                        "vkQueuePresentKHR(): For VkPresentRegionKHR down pNext chain, "
+                                        "pRegion[%i].pRectangles[%i], the layer "
+                                        "(%i) is greater than the corresponding swapchain's imageArrayLayers (%i).",
+                                        i, j, rect.layer, swapchain_data->createInfo.imageArrayLayers);
                     }
                 }
             }
@@ -12710,8 +12724,8 @@ void CoreChecks::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInf
     }
 
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
-        // Note: this is imperfect, in that we can get confused about what did or didn't succeed-- but if the app does that, it's
-        // confused itself just as much.
+        // Note: this is imperfect, in that we can get confused about what did or didn't succeed-- but if the app does that,
+        // it's confused itself just as much.
         auto local_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : result;
         if (local_result != VK_SUCCESS && local_result != VK_SUBOPTIMAL_KHR) continue;  // this present didn't actually happen.
         // Mark the image as having been released to the WSI
@@ -12724,8 +12738,8 @@ void CoreChecks::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInf
             }
         }
     }
-    // Note: even though presentation is directed to a queue, there is no direct ordering between QP and subsequent work, so QP (and
-    // its semaphore waits) /never/ participate in any completion proof.
+    // Note: even though presentation is directed to a queue, there is no direct ordering between QP and subsequent work, so QP
+    // (and its semaphore waits) /never/ participate in any completion proof.
 }
 
 bool CoreChecks::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
@@ -12892,24 +12906,27 @@ static bool ValidateCommonGetPhysicalDeviceQueueFamilyProperties(debug_report_da
                                                                  const char *caller_name) {
     bool skip = false;
     if (!qfp_null) {
-        // Verify that for each physical device, this command is called first with NULL pQueueFamilyProperties in order to get count
+        // Verify that for each physical device, this command is called first with NULL pQueueFamilyProperties in order to get
+        // count
         if (UNCALLED == pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState) {
             skip |= log_msg(
                 report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
                 HandleToUint64(pd_state->phys_device), kVUID_Core_DevLimit_MissingQueryCount,
-                "%s is called with non-NULL pQueueFamilyProperties before obtaining pQueueFamilyPropertyCount. It is recommended "
+                "%s is called with non-NULL pQueueFamilyProperties before obtaining pQueueFamilyPropertyCount. It is "
+                "recommended "
                 "to first call %s with NULL pQueueFamilyProperties in order to obtain the maximal pQueueFamilyPropertyCount.",
                 caller_name, caller_name);
             // Then verify that pCount that is passed in on second call matches what was returned
         } else if (pd_state->queue_family_known_count != requested_queue_family_property_count) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
-                HandleToUint64(pd_state->phys_device), kVUID_Core_DevLimit_CountMismatch,
-                "%s is called with non-NULL pQueueFamilyProperties and pQueueFamilyPropertyCount value %" PRIu32
-                ", but the largest previously returned pQueueFamilyPropertyCount for this physicalDevice is %" PRIu32
-                ". It is recommended to instead receive all the properties by calling %s with pQueueFamilyPropertyCount that was "
-                "previously obtained by calling %s with NULL pQueueFamilyProperties.",
-                caller_name, requested_queue_family_property_count, pd_state->queue_family_known_count, caller_name, caller_name);
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+                            HandleToUint64(pd_state->phys_device), kVUID_Core_DevLimit_CountMismatch,
+                            "%s is called with non-NULL pQueueFamilyProperties and pQueueFamilyPropertyCount value %" PRIu32
+                            ", but the largest previously returned pQueueFamilyPropertyCount for this physicalDevice is %" PRIu32
+                            ". It is recommended to instead receive all the properties by calling %s with "
+                            "pQueueFamilyPropertyCount that was "
+                            "previously obtained by calling %s with NULL pQueueFamilyProperties.",
+                            caller_name, requested_queue_family_property_count, pd_state->queue_family_known_count, caller_name,
+                            caller_name);
         }
     }
 
@@ -13216,8 +13233,8 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDev
     bool skip = false;
     switch (call_state) {
         case UNCALLED:
-            // Since we haven't recorded a preliminary value of *pSurfaceFormatCount, that likely means that the application didn't
-            // previously call this function with a NULL value of pSurfaceFormats:
+            // Since we haven't recorded a preliminary value of *pSurfaceFormatCount, that likely means that the application
+            // didn't previously call this function with a NULL value of pSurfaceFormats:
             skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
                             HandleToUint64(physicalDevice), kVUID_Core_DevLimit_MustQueryCount,
                             "vkGetPhysicalDeviceSurfaceFormatsKHR() called with non-NULL pSurfaceFormatCount; but no prior "
@@ -13631,12 +13648,12 @@ bool CoreChecks::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysi
                         api_name);
     } else {
         if (planeIndex >= physical_device_state->display_plane_property_count) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
-                HandleToUint64(physicalDevice), "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249",
-                "%s(): planeIndex must be in the range [0, %d] that was returned by vkGetPhysicalDeviceDisplayPlanePropertiesKHR "
-                "or vkGetPhysicalDeviceDisplayPlaneProperties2KHR. Do you have the plane index hardcoded?",
-                api_name, physical_device_state->display_plane_property_count - 1);
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+                            HandleToUint64(physicalDevice), "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249",
+                            "%s(): planeIndex must be in the range [0, %d] that was returned by "
+                            "vkGetPhysicalDeviceDisplayPlanePropertiesKHR "
+                            "or vkGetPhysicalDeviceDisplayPlaneProperties2KHR. Do you have the plane index hardcoded?",
+                            api_name, physical_device_state->display_plane_property_count - 1);
         }
     }
     return skip;
