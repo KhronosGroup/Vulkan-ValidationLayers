@@ -10317,20 +10317,34 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
 
         bool zero_mask = false;
         for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
-            uint32_t view_mask = pMultiviewInfo->pViewMasks[i];
+            uint32_t view_bits = pMultiviewInfo->pViewMasks[i];
             if (i == 0) {
-                if (view_mask == 0)
+                if (view_bits == 0)
                     zero_mask = true;
                 else
                     zero_mask = false;
             } else {
-                if ((view_mask == 0 && !zero_mask) || (view_mask != 0 && zero_mask)) {
+                if ((view_bits == 0 && !zero_mask) || (view_bits != 0 && zero_mask)) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                     "VUID-VkRenderPassCreateInfo-pNext-02513",
                                     "Elements of pViewMasks must be either all be 0, or all not be 0, if render pass includes "
-                                    "a multiview info.",
-                                    i);
+                                    "a multiview info.");
                 }
+            }
+
+            uint32_t bits_counter = 0;
+            for (int j = 0; j < 32; ++j) {
+                if (((view_bits >> j) & 1) != 0) {
+                    ++bits_counter;
+                }
+            }
+
+            if (bits_counter >= phys_dev_props.limits.maxFramebufferLayers) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkRenderPassCreateInfo-pNext-02516",
+                                "PViewMasks[%u] must not have a bit set at an index greater than or equal to physical device "
+                                "limits. The bit set counter: %u, device max: %u\n",
+                                i, bits_counter, phys_dev_props.limits.maxFramebufferLayers);
             }
         }
 
