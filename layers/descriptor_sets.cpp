@@ -544,7 +544,8 @@ cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, const V
       pool_state_(nullptr),
       p_layout_(layout),
       state_data_(state_data),
-      variable_count_(variable_count) {
+      variable_count_(variable_count),
+      change_count_(0) {
     pool_state_ = state_data->GetDescriptorPoolState(pool);
     // Foreach binding, create default descriptors of given type
     descriptors_.reserve(p_layout_->GetTotalDescriptorCount());
@@ -917,7 +918,10 @@ void cvdescriptorset::DescriptorSet::PerformWriteUpdate(const VkWriteDescriptorS
         offset = 0;
         binding_being_updated++;
     }
-    if (update->descriptorCount) some_update_ = true;
+    if (update->descriptorCount) {
+        some_update_ = true;
+        change_count_++;
+    }
 
     if (!(p_layout_->GetDescriptorBindingFlagsFromBinding(update->dstBinding) &
           (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT))) {
@@ -1135,6 +1139,7 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet
         if (src->updated) {
             dst->CopyUpdate(src);
             some_update_ = true;
+            change_count_++;
         } else {
             dst->updated = false;
         }
@@ -2242,8 +2247,8 @@ void ValidationStateTracker::PerformAllocateDescriptorSets(const VkDescriptorSet
     }
 }
 
-const cvdescriptorset::BindingReqMap &cvdescriptorset::PrefilterBindRequestMap::FilteredMap(const CMD_BUFFER_STATE &cb_state,
-                                                                                            const PIPELINE_STATE &pipeline) {
+const BindingReqMap &cvdescriptorset::PrefilterBindRequestMap::FilteredMap(const CMD_BUFFER_STATE &cb_state,
+                                                                           const PIPELINE_STATE &pipeline) {
     if (IsManyDescriptors()) {
         filtered_map_.reset(new std::map<uint32_t, descriptor_req>());
         descriptor_set_.FilterBindingReqs(cb_state, pipeline, orig_map_, filtered_map_.get());

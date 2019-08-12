@@ -48,7 +48,6 @@ struct IndexRange {
     uint32_t start;
     uint32_t end;
 };
-typedef std::map<uint32_t, descriptor_req> BindingReqMap;
 
 /*
  * DescriptorSetLayoutDef/DescriptorSetLayout classes
@@ -619,6 +618,7 @@ class DescriptorSet : public BASE_NODE {
     uint32_t GetVariableDescriptorCount() const { return variable_count_; }
     DESCRIPTOR_POOL_STATE *GetPoolState() const { return pool_state_; }
     const Descriptor *GetDescriptorFromGlobalIndex(const uint32_t index) const { return descriptors_[index].get(); }
+    uint64_t GetChangeCount() const { return change_count_; }
 
    private:
     // Private helper to set all bound cmd buffers to INVALID state
@@ -630,6 +630,7 @@ class DescriptorSet : public BASE_NODE {
     std::vector<std::unique_ptr<Descriptor>> descriptors_;
     StateTracker *state_data_;
     uint32_t variable_count_;
+    uint64_t change_count_;
 
     // Cached binding and validation support:
     //
@@ -639,9 +640,9 @@ class DescriptorSet : public BASE_NODE {
     // Track the validation caching of bindings vs. the command buffer and draw state
     typedef std::unordered_map<uint32_t, CMD_BUFFER_STATE::ImageLayoutUpdateCount> VersionedBindings;
     struct CachedValidation {
-        TrackedBindings command_binding_and_usage;                               // Persistent for the life of the recording
-        TrackedBindings non_dynamic_buffers;                                     // Persistent for the life of the recording
-        TrackedBindings dynamic_buffers;                                         // Dirtied (flushed) each BindDescriptorSet
+        TrackedBindings command_binding_and_usage;                                     // Persistent for the life of the recording
+        TrackedBindings non_dynamic_buffers;                                           // Persistent for the life of the recording
+        TrackedBindings dynamic_buffers;                                               // Dirtied (flushed) each BindDescriptorSet
         std::unordered_map<const PIPELINE_STATE *, VersionedBindings> image_samplers;  // Tested vs. changes to CB's ImageLayout
     };
     typedef std::unordered_map<const CMD_BUFFER_STATE *, CachedValidation> CachedValidationMap;
