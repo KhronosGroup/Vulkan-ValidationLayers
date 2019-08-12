@@ -1551,7 +1551,7 @@ bool StatelessValidation::PreCallValidateCreateInstance(
         }
     }
     skip |= validate_required_pointer("vkCreateInstance", "pInstance", pInstance, "VUID-vkCreateInstance-pInstance-parameter");
-    skip |= manual_PreCallValidateCreateInstance(pCreateInfo, pAllocator, pInstance);
+    if (!skip) skip |= manual_PreCallValidateCreateInstance(pCreateInfo, pAllocator, pInstance);
     return skip;
 }
 
@@ -1844,7 +1844,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(
         }
     }
     skip |= validate_required_pointer("vkCreateDevice", "pDevice", pDevice, "VUID-vkCreateDevice-pDevice-parameter");
-    skip |= manual_PreCallValidateCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice);
+    if (!skip) skip |= manual_PreCallValidateCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice);
     return skip;
 }
 
@@ -1960,7 +1960,7 @@ bool StatelessValidation::PreCallValidateAllocateMemory(
         }
     }
     skip |= validate_required_pointer("vkAllocateMemory", "pMemory", pMemory, "VUID-vkAllocateMemory-pMemory-parameter");
-    skip |= manual_PreCallValidateAllocateMemory(device, pAllocateInfo, pAllocator, pMemory);
+    if (!skip) skip |= manual_PreCallValidateAllocateMemory(device, pAllocateInfo, pAllocator, pMemory);
     return skip;
 }
 
@@ -2617,7 +2617,7 @@ bool StatelessValidation::PreCallValidateCreateBuffer(
         }
     }
     skip |= validate_required_pointer("vkCreateBuffer", "pBuffer", pBuffer, "VUID-vkCreateBuffer-pBuffer-parameter");
-    skip |= manual_PreCallValidateCreateBuffer(device, pCreateInfo, pAllocator, pBuffer);
+    if (!skip) skip |= manual_PreCallValidateCreateBuffer(device, pCreateInfo, pAllocator, pBuffer);
     return skip;
 }
 
@@ -2770,7 +2770,7 @@ bool StatelessValidation::PreCallValidateCreateImage(
         }
     }
     skip |= validate_required_pointer("vkCreateImage", "pImage", pImage, "VUID-vkCreateImage-pImage-parameter");
-    skip |= manual_PreCallValidateCreateImage(device, pCreateInfo, pAllocator, pImage);
+    if (!skip) skip |= manual_PreCallValidateCreateImage(device, pCreateInfo, pAllocator, pImage);
     return skip;
 }
 
@@ -3177,7 +3177,7 @@ bool StatelessValidation::PreCallValidateCreateGraphicsPipelines(
         }
     }
     skip |= validate_array("vkCreateGraphicsPipelines", "createInfoCount", "pPipelines", createInfoCount, &pPipelines, true, true, "VUID-vkCreateGraphicsPipelines-createInfoCount-arraylength", "VUID-vkCreateGraphicsPipelines-pPipelines-parameter");
-    skip |= manual_PreCallValidateCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+    if (!skip) skip |= manual_PreCallValidateCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
     return skip;
 }
 
@@ -3253,7 +3253,7 @@ bool StatelessValidation::PreCallValidateCreateComputePipelines(
         }
     }
     skip |= validate_array("vkCreateComputePipelines", "createInfoCount", "pPipelines", createInfoCount, &pPipelines, true, true, "VUID-vkCreateComputePipelines-createInfoCount-arraylength", "VUID-vkCreateComputePipelines-pPipelines-parameter");
-    skip |= manual_PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+    if (!skip) skip |= manual_PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
     return skip;
 }
 
@@ -3416,7 +3416,7 @@ bool StatelessValidation::PreCallValidateCreateSampler(
         }
     }
     skip |= validate_required_pointer("vkCreateSampler", "pSampler", pSampler, "VUID-vkCreateSampler-pSampler-parameter");
-    skip |= manual_PreCallValidateCreateSampler(device, pCreateInfo, pAllocator, pSampler);
+    if (!skip) skip |= manual_PreCallValidateCreateSampler(device, pCreateInfo, pAllocator, pSampler);
     return skip;
 }
 
@@ -3494,7 +3494,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorSetLayout(
         }
     }
     skip |= validate_required_pointer("vkCreateDescriptorSetLayout", "pSetLayout", pSetLayout, "VUID-vkCreateDescriptorSetLayout-pSetLayout-parameter");
-    skip |= manual_PreCallValidateCreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout);
+    if (!skip) skip |= manual_PreCallValidateCreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout);
     return skip;
 }
 
@@ -3572,7 +3572,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorPool(
         }
     }
     skip |= validate_required_pointer("vkCreateDescriptorPool", "pDescriptorPool", pDescriptorPool, "VUID-vkCreateDescriptorPool-pDescriptorPool-parameter");
-    skip |= manual_PreCallValidateCreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool);
+    if (!skip) skip |= manual_PreCallValidateCreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool);
     return skip;
 }
 
@@ -3643,7 +3643,7 @@ bool StatelessValidation::PreCallValidateFreeDescriptorSets(
     const VkDescriptorSet*                      pDescriptorSets) {
     bool skip = false;
     skip |= validate_required_handle("vkFreeDescriptorSets", "descriptorPool", descriptorPool);
-    skip |= manual_PreCallValidateFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets);
+    if (!skip) skip |= manual_PreCallValidateFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets);
     return skip;
 }
 
@@ -3678,7 +3678,7 @@ bool StatelessValidation::PreCallValidateUpdateDescriptorSets(
             skip |= validate_required_handle("vkUpdateDescriptorSets", ParameterName("pDescriptorCopies[%i].dstSet", ParameterName::IndexVector{ descriptorCopyIndex }), pDescriptorCopies[descriptorCopyIndex].dstSet);
         }
     }
-    skip |= manual_PreCallValidateUpdateDescriptorSets(device, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount, pDescriptorCopies);
+    if (!skip) skip |= manual_PreCallValidateUpdateDescriptorSets(device, descriptorWriteCount, pDescriptorWrites, descriptorCopyCount, pDescriptorCopies);
     return skip;
 }
 
@@ -3720,7 +3720,7 @@ bool StatelessValidation::PreCallValidateCreateFramebuffer(
         }
     }
     skip |= validate_required_pointer("vkCreateFramebuffer", "pFramebuffer", pFramebuffer, "VUID-vkCreateFramebuffer-pFramebuffer-parameter");
-    skip |= manual_PreCallValidateCreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer);
+    if (!skip) skip |= manual_PreCallValidateCreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer);
     return skip;
 }
 
@@ -3877,7 +3877,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass(
         }
     }
     skip |= validate_required_pointer("vkCreateRenderPass", "pRenderPass", pRenderPass, "VUID-vkCreateRenderPass-pRenderPass-parameter");
-    skip |= manual_PreCallValidateCreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass);
+    if (!skip) skip |= manual_PreCallValidateCreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass);
     return skip;
 }
 
@@ -4037,7 +4037,7 @@ bool StatelessValidation::PreCallValidateBeginCommandBuffer(
 
         skip |= validate_flags("vkBeginCommandBuffer", "pBeginInfo->flags", "VkCommandBufferUsageFlagBits", AllVkCommandBufferUsageFlagBits, pBeginInfo->flags, false, false, "VUID-VkCommandBufferBeginInfo-flags-parameter");
     }
-    skip |= manual_PreCallValidateBeginCommandBuffer(commandBuffer, pBeginInfo);
+    if (!skip) skip |= manual_PreCallValidateBeginCommandBuffer(commandBuffer, pBeginInfo);
     return skip;
 }
 
@@ -4080,7 +4080,7 @@ bool StatelessValidation::PreCallValidateCmdSetViewport(
             // No xml-driven validation
         }
     }
-    skip |= manual_PreCallValidateCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
+    if (!skip) skip |= manual_PreCallValidateCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
     return skip;
 }
 
@@ -4100,7 +4100,7 @@ bool StatelessValidation::PreCallValidateCmdSetScissor(
             // No xml-driven validation
         }
     }
-    skip |= manual_PreCallValidateCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
+    if (!skip) skip |= manual_PreCallValidateCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
     return skip;
 }
 
@@ -4109,7 +4109,7 @@ bool StatelessValidation::PreCallValidateCmdSetLineWidth(
     float                                       lineWidth) {
     bool skip = false;
     // No xml-driven validation
-    skip |= manual_PreCallValidateCmdSetLineWidth(commandBuffer, lineWidth);
+    if (!skip) skip |= manual_PreCallValidateCmdSetLineWidth(commandBuffer, lineWidth);
     return skip;
 }
 
@@ -4215,7 +4215,7 @@ bool StatelessValidation::PreCallValidateCmdDraw(
     uint32_t                                    firstInstance) {
     bool skip = false;
     // No xml-driven validation
-    skip |= manual_PreCallValidateCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+    if (!skip) skip |= manual_PreCallValidateCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
     return skip;
 }
 
@@ -4239,7 +4239,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndirect(
     uint32_t                                    stride) {
     bool skip = false;
     skip |= validate_required_handle("vkCmdDrawIndirect", "buffer", buffer);
-    skip |= manual_PreCallValidateCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
+    if (!skip) skip |= manual_PreCallValidateCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
     return skip;
 }
 
@@ -4251,7 +4251,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexedIndirect(
     uint32_t                                    stride) {
     bool skip = false;
     skip |= validate_required_handle("vkCmdDrawIndexedIndirect", "buffer", buffer);
-    skip |= manual_PreCallValidateCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
+    if (!skip) skip |= manual_PreCallValidateCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
     return skip;
 }
 
@@ -4262,7 +4262,7 @@ bool StatelessValidation::PreCallValidateCmdDispatch(
     uint32_t                                    groupCountZ) {
     bool skip = false;
     // No xml-driven validation
-    skip |= manual_PreCallValidateCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
+    if (!skip) skip |= manual_PreCallValidateCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
     return skip;
 }
 
@@ -4272,7 +4272,7 @@ bool StatelessValidation::PreCallValidateCmdDispatchIndirect(
     VkDeviceSize                                offset) {
     bool skip = false;
     skip |= validate_required_handle("vkCmdDispatchIndirect", "buffer", buffer);
-    skip |= manual_PreCallValidateCmdDispatchIndirect(commandBuffer, buffer, offset);
+    if (!skip) skip |= manual_PreCallValidateCmdDispatchIndirect(commandBuffer, buffer, offset);
     return skip;
 }
 
@@ -4325,7 +4325,7 @@ bool StatelessValidation::PreCallValidateCmdCopyImage(
             // No xml-driven validation
         }
     }
-    skip |= manual_PreCallValidateCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+    if (!skip) skip |= manual_PreCallValidateCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
     return skip;
 }
 
@@ -4354,7 +4354,7 @@ bool StatelessValidation::PreCallValidateCmdBlitImage(
         }
     }
     skip |= validate_ranged_enum("vkCmdBlitImage", "filter", "VkFilter", AllVkFilterEnums, filter, "VUID-vkCmdBlitImage-filter-parameter");
-    skip |= manual_PreCallValidateCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
+    if (!skip) skip |= manual_PreCallValidateCmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
     return skip;
 }
 
@@ -4381,7 +4381,7 @@ bool StatelessValidation::PreCallValidateCmdCopyBufferToImage(
             // No xml-driven validation
         }
     }
-    skip |= manual_PreCallValidateCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
+    if (!skip) skip |= manual_PreCallValidateCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
     return skip;
 }
 
@@ -4408,7 +4408,7 @@ bool StatelessValidation::PreCallValidateCmdCopyImageToBuffer(
             // No xml-driven validation
         }
     }
-    skip |= manual_PreCallValidateCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
+    if (!skip) skip |= manual_PreCallValidateCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
     return skip;
 }
 
@@ -4421,7 +4421,7 @@ bool StatelessValidation::PreCallValidateCmdUpdateBuffer(
     bool skip = false;
     skip |= validate_required_handle("vkCmdUpdateBuffer", "dstBuffer", dstBuffer);
     skip |= validate_array("vkCmdUpdateBuffer", "dataSize", "pData", dataSize, &pData, true, true, "VUID-vkCmdUpdateBuffer-dataSize-arraylength", "VUID-vkCmdUpdateBuffer-pData-parameter");
-    skip |= manual_PreCallValidateCmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
+    if (!skip) skip |= manual_PreCallValidateCmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
     return skip;
 }
 
@@ -4433,7 +4433,7 @@ bool StatelessValidation::PreCallValidateCmdFillBuffer(
     uint32_t                                    data) {
     bool skip = false;
     skip |= validate_required_handle("vkCmdFillBuffer", "dstBuffer", dstBuffer);
-    skip |= manual_PreCallValidateCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
+    if (!skip) skip |= manual_PreCallValidateCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
     return skip;
 }
 
@@ -4518,7 +4518,7 @@ bool StatelessValidation::PreCallValidateCmdClearAttachments(
             // No xml-driven validation
         }
     }
-    skip |= manual_PreCallValidateCmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects);
+    if (!skip) skip |= manual_PreCallValidateCmdClearAttachments(commandBuffer, attachmentCount, pAttachments, rectCount, pRects);
     return skip;
 }
 
@@ -5566,7 +5566,7 @@ bool StatelessValidation::PreCallValidateCreateSwapchainKHR(
         }
     }
     skip |= validate_required_pointer("vkCreateSwapchainKHR", "pSwapchain", pSwapchain, "VUID-vkCreateSwapchainKHR-pSwapchain-parameter");
-    skip |= manual_PreCallValidateCreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
+    if (!skip) skip |= manual_PreCallValidateCreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
     return skip;
 }
 
@@ -5649,7 +5649,7 @@ bool StatelessValidation::PreCallValidateQueuePresentKHR(
 
         skip |= validate_array("vkQueuePresentKHR", "pPresentInfo->swapchainCount", "pPresentInfo->pResults", pPresentInfo->swapchainCount, &pPresentInfo->pResults, true, false, "VUID-VkPresentInfoKHR-swapchainCount-arraylength", "VUID-VkPresentInfoKHR-pResults-parameter");
     }
-    skip |= manual_PreCallValidateQueuePresentKHR(queue, pPresentInfo);
+    if (!skip) skip |= manual_PreCallValidateQueuePresentKHR(queue, pPresentInfo);
     return skip;
 }
 
@@ -6386,7 +6386,7 @@ bool StatelessValidation::PreCallValidateCmdDispatchBaseKHR(
     if (!device_extensions.vk_khr_device_group_creation) skip |= OutputExtensionError("vkCmdDispatchBaseKHR", VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
     if (!device_extensions.vk_khr_device_group) skip |= OutputExtensionError("vkCmdDispatchBaseKHR", VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     // No xml-driven validation
-    skip |= manual_PreCallValidateCmdDispatchBaseKHR(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
+    if (!skip) skip |= manual_PreCallValidateCmdDispatchBaseKHR(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ);
     return skip;
 }
 
@@ -6928,7 +6928,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
         }
     }
     skip |= validate_required_pointer("vkCreateRenderPass2KHR", "pRenderPass", pRenderPass, "VUID-vkCreateRenderPass2KHR-pRenderPass-parameter");
-    skip |= manual_PreCallValidateCreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass);
+    if (!skip) skip |= manual_PreCallValidateCreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass);
     return skip;
 }
 
@@ -9319,7 +9319,7 @@ bool StatelessValidation::PreCallValidateCmdSetViewportShadingRatePaletteNV(
             skip |= validate_ranged_enum_array("vkCmdSetViewportShadingRatePaletteNV", ParameterName("pShadingRatePalettes[%i].shadingRatePaletteEntryCount", ParameterName::IndexVector{ viewportIndex }), ParameterName("pShadingRatePalettes[%i].pShadingRatePaletteEntries", ParameterName::IndexVector{ viewportIndex }), "VkShadingRatePaletteEntryNV", AllVkShadingRatePaletteEntryNVEnums, pShadingRatePalettes[viewportIndex].shadingRatePaletteEntryCount, pShadingRatePalettes[viewportIndex].pShadingRatePaletteEntries, true, true);
         }
     }
-    skip |= manual_PreCallValidateCmdSetViewportShadingRatePaletteNV(commandBuffer, firstViewport, viewportCount, pShadingRatePalettes);
+    if (!skip) skip |= manual_PreCallValidateCmdSetViewportShadingRatePaletteNV(commandBuffer, firstViewport, viewportCount, pShadingRatePalettes);
     return skip;
 }
 
@@ -9350,7 +9350,7 @@ bool StatelessValidation::PreCallValidateCmdSetCoarseSampleOrderNV(
             }
         }
     }
-    skip |= manual_PreCallValidateCmdSetCoarseSampleOrderNV(commandBuffer, sampleOrderType, customSampleOrderCount, pCustomSampleOrders);
+    if (!skip) skip |= manual_PreCallValidateCmdSetCoarseSampleOrderNV(commandBuffer, sampleOrderType, customSampleOrderCount, pCustomSampleOrders);
     return skip;
 }
 
@@ -9425,7 +9425,7 @@ bool StatelessValidation::PreCallValidateCreateAccelerationStructureNV(
         }
     }
     skip |= validate_required_pointer("vkCreateAccelerationStructureNV", "pAccelerationStructure", pAccelerationStructure, "VUID-vkCreateAccelerationStructureNV-pAccelerationStructure-parameter");
-    skip |= manual_PreCallValidateCreateAccelerationStructureNV(device, pCreateInfo, pAllocator, pAccelerationStructure);
+    if (!skip) skip |= manual_PreCallValidateCreateAccelerationStructureNV(device, pCreateInfo, pAllocator, pAccelerationStructure);
     return skip;
 }
 
@@ -9559,7 +9559,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructureNV(
     skip |= validate_bool32("vkCmdBuildAccelerationStructureNV", "update", update);
     skip |= validate_required_handle("vkCmdBuildAccelerationStructureNV", "dst", dst);
     skip |= validate_required_handle("vkCmdBuildAccelerationStructureNV", "scratch", scratch);
-    skip |= manual_PreCallValidateCmdBuildAccelerationStructureNV(commandBuffer, pInfo, instanceData, instanceOffset, update, dst, src, scratch, scratchOffset);
+    if (!skip) skip |= manual_PreCallValidateCmdBuildAccelerationStructureNV(commandBuffer, pInfo, instanceData, instanceOffset, update, dst, src, scratch, scratchOffset);
     return skip;
 }
 
@@ -9695,7 +9695,7 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesNV(
         }
     }
     skip |= validate_array("vkCreateRayTracingPipelinesNV", "createInfoCount", "pPipelines", createInfoCount, &pPipelines, true, true, "VUID-vkCreateRayTracingPipelinesNV-createInfoCount-arraylength", "VUID-vkCreateRayTracingPipelinesNV-pPipelines-parameter");
-    skip |= manual_PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+    if (!skip) skip |= manual_PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
     return skip;
 }
 
@@ -9726,7 +9726,7 @@ bool StatelessValidation::PreCallValidateGetAccelerationStructureHandleNV(
     if (!device_extensions.vk_nv_ray_tracing) skip |= OutputExtensionError("vkGetAccelerationStructureHandleNV", VK_NV_RAY_TRACING_EXTENSION_NAME);
     skip |= validate_required_handle("vkGetAccelerationStructureHandleNV", "accelerationStructure", accelerationStructure);
     skip |= validate_array("vkGetAccelerationStructureHandleNV", "dataSize", "pData", dataSize, &pData, true, true, "VUID-vkGetAccelerationStructureHandleNV-dataSize-arraylength", "VUID-vkGetAccelerationStructureHandleNV-pData-parameter");
-    skip |= manual_PreCallValidateGetAccelerationStructureHandleNV(device, accelerationStructure, dataSize, pData);
+    if (!skip) skip |= manual_PreCallValidateGetAccelerationStructureHandleNV(device, accelerationStructure, dataSize, pData);
     return skip;
 }
 
@@ -9862,7 +9862,7 @@ bool StatelessValidation::PreCallValidateCmdDrawMeshTasksNV(
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdDrawMeshTasksNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_nv_mesh_shader) skip |= OutputExtensionError("vkCmdDrawMeshTasksNV", VK_NV_MESH_SHADER_EXTENSION_NAME);
     // No xml-driven validation
-    skip |= manual_PreCallValidateCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask);
+    if (!skip) skip |= manual_PreCallValidateCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask);
     return skip;
 }
 
@@ -9876,7 +9876,7 @@ bool StatelessValidation::PreCallValidateCmdDrawMeshTasksIndirectNV(
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdDrawMeshTasksIndirectNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_nv_mesh_shader) skip |= OutputExtensionError("vkCmdDrawMeshTasksIndirectNV", VK_NV_MESH_SHADER_EXTENSION_NAME);
     skip |= validate_required_handle("vkCmdDrawMeshTasksIndirectNV", "buffer", buffer);
-    skip |= manual_PreCallValidateCmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride);
+    if (!skip) skip |= manual_PreCallValidateCmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride);
     return skip;
 }
 
@@ -9893,7 +9893,7 @@ bool StatelessValidation::PreCallValidateCmdDrawMeshTasksIndirectCountNV(
     if (!device_extensions.vk_nv_mesh_shader) skip |= OutputExtensionError("vkCmdDrawMeshTasksIndirectCountNV", VK_NV_MESH_SHADER_EXTENSION_NAME);
     skip |= validate_required_handle("vkCmdDrawMeshTasksIndirectCountNV", "buffer", buffer);
     skip |= validate_required_handle("vkCmdDrawMeshTasksIndirectCountNV", "countBuffer", countBuffer);
-    skip |= manual_PreCallValidateCmdDrawMeshTasksIndirectCountNV(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+    if (!skip) skip |= manual_PreCallValidateCmdDrawMeshTasksIndirectCountNV(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
     return skip;
 }
 
@@ -9921,7 +9921,7 @@ bool StatelessValidation::PreCallValidateCmdSetExclusiveScissorNV(
             // No xml-driven validation
         }
     }
-    skip |= manual_PreCallValidateCmdSetExclusiveScissorNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount, pExclusiveScissors);
+    if (!skip) skip |= manual_PreCallValidateCmdSetExclusiveScissorNV(commandBuffer, firstExclusiveScissor, exclusiveScissorCount, pExclusiveScissors);
     return skip;
 }
 
