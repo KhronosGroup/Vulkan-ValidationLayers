@@ -1112,19 +1112,6 @@ struct PIPELINE_LAYOUT_STATE {
         compat_for_set.clear();
     }
 };
-
-static inline bool CompatForSet(uint32_t set, const std::vector<PipelineLayoutCompatId> &a,
-                                const std::vector<PipelineLayoutCompatId> &b) {
-    bool result = (set < a.size()) && (set < b.size()) && (a[set] == b[set]);
-    return result;
-}
-
-static inline bool CompatForSet(uint32_t set, const PIPELINE_LAYOUT_STATE *a, const PIPELINE_LAYOUT_STATE *b) {
-    // Intentionally have a result variable to simplify debugging
-    bool result = a && b && CompatForSet(set, a->compat_for_set, b->compat_for_set);
-    return result;
-}
-
 // Shader typedefs needed to store StageStage below
 struct interface_var {
     uint32_t id;
@@ -1217,34 +1204,49 @@ struct LAST_BOUND_STATE {
     LAST_BOUND_STATE() { reset(); }  // must define default constructor for portability reasons
     PIPELINE_STATE *pipeline_state;
     VkPipelineLayout pipeline_layout;
-    // Track each set that has been bound
-    // Ordered bound set tracking where index is set# that given set is bound to
-    std::vector<cvdescriptorset::DescriptorSet *> boundDescriptorSets;
     std::unique_ptr<cvdescriptorset::DescriptorSet> push_descriptor_set;
-    // one dynamic offset per dynamic descriptor bound to this CB
-    std::vector<std::vector<uint32_t>> dynamicOffsets;
-    std::vector<PipelineLayoutCompatId> compat_id_for_set;
+
+    // Ordered bound set tracking where index is set# that given set is bound to
+    struct PER_SET {
+        PER_SET() : bound_descriptor_set(nullptr), compat_id_for_set(0) {}
+        cvdescriptorset::DescriptorSet *bound_descriptor_set;
+        // one dynamic offset per dynamic descriptor bound to this CB
+        std::vector<uint32_t> dynamicOffsets;
+        PipelineLayoutCompatId compat_id_for_set;
+    };
+
+    std::vector<PER_SET> per_set;
 
     void reset() {
         pipeline_state = nullptr;
         pipeline_layout = VK_NULL_HANDLE;
-        boundDescriptorSets.clear();
         push_descriptor_set = nullptr;
-        dynamicOffsets.clear();
-        compat_id_for_set.clear();
+        per_set.clear();
     }
 
     void UnbindAndResetPushDescriptorSet(cvdescriptorset::DescriptorSet *ds) {
         if (push_descriptor_set) {
-            for (std::size_t i = 0; i < boundDescriptorSets.size(); i++) {
-                if (boundDescriptorSets[i] == push_descriptor_set.get()) {
-                    boundDescriptorSets[i] = nullptr;
+            for (std::size_t i = 0; i < per_set.size(); i++) {
+                if (per_set[i].bound_descriptor_set == push_descriptor_set.get()) {
+                    per_set[i].bound_descriptor_set = nullptr;
                 }
             }
         }
         push_descriptor_set.reset(ds);
     }
 };
+
+static inline bool CompatForSet(uint32_t set, const LAST_BOUND_STATE &a, const std::vector<PipelineLayoutCompatId> &b) {
+    bool result = (set < a.per_set.size()) && (set < b.size()) && (a.per_set[set].compat_id_for_set == b[set]);
+    return result;
+}
+
+static inline bool CompatForSet(uint32_t set, const PIPELINE_LAYOUT_STATE *a, const PIPELINE_LAYOUT_STATE *b) {
+    // Intentionally have a result variable to simplify debugging
+    bool result = a && b && (set < a->compat_for_set.size()) && (set < b->compat_for_set.size()) &&
+                  (a->compat_for_set[set] == b->compat_for_set[set]);
+    return result;
+}
 
 // Types to store queue family ownership (QFO) Transfers
 
