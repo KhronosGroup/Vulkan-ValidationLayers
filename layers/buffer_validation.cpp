@@ -2795,7 +2795,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                                                     const VkClearAttachment *pAttachments, uint32_t rectCount,
                                                     const VkClearRect *pRects) {
     bool skip = false;
-    CMD_BUFFER_STATE *cb_node = GetCBState(commandBuffer);  // TODO: Should be const, and never modified during validation
+    const CMD_BUFFER_STATE *cb_node = GetCBState(commandBuffer);  // TODO: Should be const, and never modified during validation
     if (!cb_node) return skip;
 
     skip |= ValidateCmdQueueFlags(cb_node, "vkCmdClearAttachments()", VK_QUEUE_GRAPHICS_BIT,
@@ -2822,7 +2822,6 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         const VkSubpassDescription2KHR *subpass_desc = &renderpass_create_info->pSubpasses[cb_node->activeSubpass];
         const auto *framebuffer = GetFramebufferState(cb_node->activeFramebuffer);
         const auto &render_area = cb_node->activeRenderPassBeginInfo.renderArea;
-        std::shared_ptr<std::vector<VkClearRect>> clear_rect_copy;
 
         for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
             auto clear_desc = &pAttachments[attachment_index];
@@ -2890,19 +2889,42 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             if (cb_node->createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
                 skip |= ValidateClearAttachmentExtent(commandBuffer, attachment_index, framebuffer, fb_attachment, render_area,
                                                       rectCount, pRects);
-            } else {
-                // if a secondary level command buffer inherits the framebuffer from the primary command buffer
-                // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
+            }
+        }
+    }
+    return skip;
+}
+
+void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+                                                  const VkClearAttachment *pAttachments, uint32_t rectCount,
+                                                  const VkClearRect *pRects) {
+    auto *cb_node = GetCBState(commandBuffer);
+    if (cb_node->activeRenderPass && (cb_node->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)) {
+        const VkRenderPassCreateInfo2KHR *renderpass_create_info = cb_node->activeRenderPass->createInfo.ptr();
+        const VkSubpassDescription2KHR *subpass_desc = &renderpass_create_info->pSubpasses[cb_node->activeSubpass];
+        std::shared_ptr<std::vector<VkClearRect>> clear_rect_copy;
+        for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
+            const auto clear_desc = &pAttachments[attachment_index];
+            uint32_t fb_attachment = VK_ATTACHMENT_UNUSED;
+            if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) &&
+                (clear_desc->colorAttachment < subpass_desc->colorAttachmentCount)) {
+                fb_attachment = subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment;
+            } else if ((clear_desc->aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) &&
+                       subpass_desc->pDepthStencilAttachment) {
+                fb_attachment = subpass_desc->pDepthStencilAttachment->attachment;
+            }
+            if (fb_attachment != VK_ATTACHMENT_UNUSED) {
                 if (!clear_rect_copy) {
                     // We need a copy of the clear rectangles that will persist until the last lambda executes
                     // but we want to create it as lazily as possible
                     clear_rect_copy.reset(new std::vector<VkClearRect>(pRects, pRects + rectCount));
                 }
-
+                // if a secondary level command buffer inherits the framebuffer from the primary command buffer
+                // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
                 auto val_fn = [this, commandBuffer, attachment_index, fb_attachment, rectCount, clear_rect_copy](
                                   CMD_BUFFER_STATE *prim_cb, VkFramebuffer fb) {
                     assert(rectCount == clear_rect_copy->size());
-                    FRAMEBUFFER_STATE *framebuffer = GetFramebufferState(fb);
+                    const FRAMEBUFFER_STATE *framebuffer = GetFramebufferState(fb);
                     const auto &render_area = prim_cb->activeRenderPassBeginInfo.renderArea;
                     bool skip = false;
                     skip = ValidateClearAttachmentExtent(commandBuffer, attachment_index, framebuffer, fb_attachment, render_area,
@@ -2913,7 +2935,6 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
             }
         }
     }
-    return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,

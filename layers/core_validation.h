@@ -1385,6 +1385,8 @@ class CoreChecks : public ValidationStateTracker {
 
     bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                             const VkClearAttachment* pAttachments, uint32_t rectCount, const VkClearRect* pRects);
+    void PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+                                          const VkClearAttachment* pAttachments, uint32_t rectCount, const VkClearRect* pRects);
 
     bool PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                         VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
