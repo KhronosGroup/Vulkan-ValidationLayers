@@ -612,12 +612,18 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions,
                                    VkFilter filter);
+    void PostCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
+                                                       VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
+                                                       VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
+                                                       VkBuffer scratch, VkDeviceSize scratchOffset);
     void PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                          const VkClearColorValue* pColor, uint32_t rangeCount,
                                          const VkImageSubresourceRange* pRanges);
     void PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                 const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
                                                 const VkImageSubresourceRange* pRanges);
+    void PostCallRecordCmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAccelerationStructureNV dst,
+                                                      VkAccelerationStructureNV src, VkCopyAccelerationStructureModeNV mode);
     void PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
                                     const VkBufferCopy* pRegions);
     void PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
@@ -724,6 +730,7 @@ class ValidationStateTracker : public ValidationObject {
     // State Utilty functions
     void AddCommandBufferBinding(std::unordered_set<CMD_BUFFER_STATE*>* cb_bindings, const VulkanTypedHandle& obj,
                                  CMD_BUFFER_STATE* cb_node);
+    void AddCommandBufferBindingAccelerationStructure(CMD_BUFFER_STATE*, ACCELERATION_STRUCTURE_STATE*);
     void AddCommandBufferBindingBuffer(CMD_BUFFER_STATE*, BUFFER_STATE*);
     void AddCommandBufferBindingBufferView(CMD_BUFFER_STATE*, BUFFER_VIEW_STATE*);
     void AddCommandBufferBindingImage(CMD_BUFFER_STATE*, IMAGE_STATE*);
@@ -1038,7 +1045,6 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateMemoryIsBoundToBuffer(const BUFFER_STATE*, const char*, const char*) const;
     bool ValidateMemoryIsBoundToImage(const IMAGE_STATE*, const char*, const char*) const;
     bool ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION_STRUCTURE_STATE*, const char*, const char*) const;
-    void AddCommandBufferBindingAccelerationStructure(CMD_BUFFER_STATE*, ACCELERATION_STRUCTURE_STATE*);
     bool ValidateObjectNotInUse(const BASE_NODE* obj_node, const VulkanTypedHandle& obj_struct, const char* caller_name,
                                 const char* error_code) const;
     bool ValidateCmdQueueFlags(const CMD_BUFFER_STATE* cb_node, const char* caller_name, VkQueueFlags flags,
@@ -1693,14 +1699,8 @@ class CoreChecks : public ValidationStateTracker {
                                                         VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
                                                         VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
                                                         VkBuffer scratch, VkDeviceSize scratchOffset);
-    void PostCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
-                                                       VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
-                                                       VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
-                                                       VkBuffer scratch, VkDeviceSize scratchOffset);
     bool PreCallValidateCmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAccelerationStructureNV dst,
                                                        VkAccelerationStructureNV src, VkCopyAccelerationStructureModeNV mode);
-    void PostCallRecordCmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAccelerationStructureNV dst,
-                                                      VkAccelerationStructureNV src, VkCopyAccelerationStructureModeNV mode);
     bool PreCallValidateDestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
                                                        const VkAllocationCallbacks* pAllocator);
     bool PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth);
