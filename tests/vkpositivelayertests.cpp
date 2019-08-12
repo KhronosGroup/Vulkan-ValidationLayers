@@ -8092,3 +8092,98 @@ TEST_F(VkPositiveLayerTest, SubpassWithReadOnlyLayoutWithoutDependency) {
     vkDestroyRenderPass(m_device->device(), rp, nullptr);
     vkDestroyImageView(m_device->device(), view, nullptr);
 }
+
+TEST_F(VkPositiveLayerTest, GeometryShaderPassthroughNV) {
+    TEST_DESCRIPTION("Test to validate VK_NV_geometry_shader_passthrough");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    VkPhysicalDeviceFeatures available_features = {};
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&available_features));
+
+    if (!available_features.geometryShader) {
+        printf("%s VkPhysicalDeviceFeatures::geometryShader is not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_GEOMETRY_SHADER_PASSTHROUGH_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_NV_GEOMETRY_SHADER_PASSTHROUGH_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_NV_GEOMETRY_SHADER_PASSTHROUGH_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const char vs_src[] = R"(
+        #version 450
+
+        out gl_PerVertex {
+            vec4 gl_Position;
+        };
+
+        layout(location = 0) out ColorBlock {vec4 vertexColor;};
+
+        const vec2 positions[3] = { vec2( 0.0f, -0.5f),
+                                    vec2( 0.5f,  0.5f),
+                                    vec2(-0.5f,  0.5f)
+                                  };
+
+        const vec4 colors[3] = { vec4(1.0f, 0.0f, 0.0f, 1.0f),
+                                 vec4(0.0f, 1.0f, 0.0f, 1.0f),
+                                 vec4(0.0f, 0.0f, 1.0f, 1.0f)
+                               };
+        void main()
+        {
+            vertexColor = colors[gl_VertexIndex % 3];
+            gl_Position = vec4(positions[gl_VertexIndex % 3], 0.0, 1.0);
+        })";
+
+    const char gs_src[] = R"(
+        #version 450
+        #extension GL_NV_geometry_shader_passthrough: require
+
+        layout(triangles) in;
+        layout(triangle_strip, max_vertices = 3) out;
+
+        layout(passthrough) in gl_PerVertex {vec4 gl_Position;};
+        layout(location = 0, passthrough) in ColorBlock {vec4 vertexColor;};
+
+        void main()
+        {
+           gl_Layer = 0;
+        })";
+
+    const char fs_src[] = R"(
+        #version 450
+
+        layout(location = 0) in ColorBlock {vec4 vertexColor;};
+        layout(location = 0) out vec4 outColor;
+
+        void main() {
+            outColor = vertexColor;
+        })";
+
+    m_errorMonitor->ExpectSuccess();
+
+    const VkPipelineLayoutObj pl(m_device);
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddDefaultColorAttachment();
+
+    VkShaderObj vs(m_device, vs_src, VK_SHADER_STAGE_VERTEX_BIT, this);
+    pipe.AddShader(&vs);
+
+    VkShaderObj gs(m_device, gs_src, VK_SHADER_STAGE_GEOMETRY_BIT, this);
+    pipe.AddShader(&gs);
+
+    VkShaderObj fs(m_device, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    pipe.AddShader(&fs);
+
+    // Create pipeline and make sure that the usage of NV_geometry_shader_passthrough
+    // in the fragment shader does not cause any errors.
+    pipe.CreateVKPipeline(pl.handle(), renderPass());
+
+    m_errorMonitor->VerifyNotFound();
+}
