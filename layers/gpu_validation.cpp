@@ -1338,14 +1338,15 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
     VkWriteDescriptorSet desc_writes[2] = {};
     uint32_t desc_count = 1;
     auto const &state = cb_node->lastBound[bind_point];
-    uint32_t number_of_sets = (uint32_t)state.boundDescriptorSets.size();
+    uint32_t number_of_sets = (uint32_t)state.per_set.size();
 
     // Figure out how much memory we need for the input block based on how many sets and bindings there are
     // and how big each of the bindings is
     if (number_of_sets > 0 && device_extensions.vk_ext_descriptor_indexing) {
         uint32_t descriptor_count = 0;  // Number of descriptors, including all array elements
         uint32_t binding_count = 0;     // Number of bindings based on the max binding number used
-        for (auto desc : state.boundDescriptorSets) {
+        for (auto s : state.per_set) {
+            auto desc = s.bound_descriptor_set;
             auto bindings = desc->GetLayout()->GetSortedBindingSet();
             if (bindings.size() > 0) {
                 binding_count += desc->GetLayout()->GetMaxBinding() + 1;
@@ -1395,7 +1396,8 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
         // Index of the start of the sets_to_bindings array
         pData[0] = number_of_sets + binding_count + 1;
 
-        for (auto desc : state.boundDescriptorSets) {
+        for (auto s : state.per_set) {
+            auto desc = s.bound_descriptor_set;
             auto layout = desc->GetLayout();
             auto bindings = layout->GetSortedBindingSet();
             if (bindings.size() > 0) {

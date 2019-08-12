@@ -1179,14 +1179,15 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     for (const auto &set_binding_pair : pPipe->active_slots) {
         uint32_t setIndex = set_binding_pair.first;
         // If valid set is not bound throw an error
-        if ((state.boundDescriptorSets.size() <= setIndex) || (!state.boundDescriptorSets[setIndex])) {
+        if ((state.per_set.size() <= setIndex) || (!state.per_set[setIndex].bound_descriptor_set)) {
             result |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(cb_node->commandBuffer), kVUID_Core_DrawState_DescriptorSetNotBound,
                         "%s uses set #%u but that set is not bound.", report_data->FormatHandle(pPipe->pipeline).c_str(), setIndex);
-        } else if (!VerifySetLayoutCompatibility(state.boundDescriptorSets[setIndex], &pipeline_layout, setIndex, errorString)) {
+        } else if (!VerifySetLayoutCompatibility(state.per_set[setIndex].bound_descriptor_set, &pipeline_layout, setIndex,
+                                                 errorString)) {
             // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
-            VkDescriptorSet setHandle = state.boundDescriptorSets[setIndex]->GetSet();
+            VkDescriptorSet setHandle = state.per_set[setIndex].bound_descriptor_set->GetSet();
             result |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
                               HandleToUint64(setHandle), kVUID_Core_DrawState_PipelineLayoutsIncompatible,
                               "%s bound as set #%u is not compatible with overlapping %s due to: %s",
@@ -1194,7 +1195,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                               report_data->FormatHandle(pipeline_layout.layout).c_str(), errorString.c_str());
         } else {  // Valid set is bound and layout compatible, validate that it's updated
             // Pull the set node
-            cvdescriptorset::DescriptorSet *descriptor_set = state.boundDescriptorSets[setIndex];
+            cvdescriptorset::DescriptorSet *descriptor_set = state.per_set[setIndex].bound_descriptor_set;
             // Validate the draw-time state for this descriptor set
             std::string err_str;
             if (!descriptor_set->IsPushDescriptor()) {
@@ -1205,7 +1206,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                 cvdescriptorset::PrefilterBindRequestMap reduced_map(*descriptor_set, set_binding_pair.second);
                 const auto &binding_req_map = reduced_map.FilteredMap(*cb_node, *pPipe);
 
-                if (!ValidateDrawState(descriptor_set, binding_req_map, state.dynamicOffsets[setIndex], cb_node, function,
+                if (!ValidateDrawState(descriptor_set, binding_req_map, state.per_set[setIndex].dynamicOffsets, cb_node, function,
                                        &err_str)) {
                     auto set = descriptor_set->GetSet();
                     result |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
@@ -1231,7 +1232,7 @@ void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, const V
         for (const auto &set_binding_pair : pPipe->active_slots) {
             uint32_t setIndex = set_binding_pair.first;
             // Pull the set node
-            cvdescriptorset::DescriptorSet *descriptor_set = state.boundDescriptorSets[setIndex];
+            cvdescriptorset::DescriptorSet *descriptor_set = state.per_set[setIndex].bound_descriptor_set;
             if (!descriptor_set->IsPushDescriptor()) {
                 // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor binding
 
@@ -7238,15 +7239,8 @@ void ValidationStateTracker::UpdateLastBoundDescriptorSets(CMD_BUFFER_STATE *cb_
 
     // Some useful shorthand
     auto &last_bound = cb_state->lastBound[pipeline_bind_point];
-
-    auto &bound_sets = last_bound.boundDescriptorSets;
-    auto &dynamic_offsets = last_bound.dynamicOffsets;
-    auto &bound_compat_ids = last_bound.compat_id_for_set;
     auto &pipe_compat_ids = pipeline_layout->compat_for_set;
-
-    const uint32_t current_size = static_cast<uint32_t>(bound_sets.size());
-    assert(current_size == dynamic_offsets.size());
-    assert(current_size == bound_compat_ids.size());
+    const uint32_t current_size = static_cast<uint32_t>(last_bound.per_set.size());
 
     // We need this three times in this function, but nowhere else
     auto push_descriptor_cleanup = [&last_bound](const cvdescriptorset::DescriptorSet *ds) -> bool {
@@ -7260,10 +7254,10 @@ void ValidationStateTracker::UpdateLastBoundDescriptorSets(CMD_BUFFER_STATE *cb_
 
     // Clean up the "disturbed" before and after the range to be set
     if (required_size < current_size) {
-        if (bound_compat_ids[last_binding_index] != pipe_compat_ids[last_binding_index]) {
+        if (last_bound.per_set[last_binding_index].compat_id_for_set != pipe_compat_ids[last_binding_index]) {
             // We're disturbing those after last, we'll shrink below, but first need to check for and cleanup the push_descriptor
             for (auto set_idx = required_size; set_idx < current_size; ++set_idx) {
-                if (push_descriptor_cleanup(bound_sets[set_idx])) break;
+                if (push_descriptor_cleanup(last_bound.per_set[set_idx].bound_descriptor_set)) break;
             }
         } else {
             // We're not disturbing past last, so leave the upper binding data alone.
@@ -7273,19 +7267,16 @@ void ValidationStateTracker::UpdateLastBoundDescriptorSets(CMD_BUFFER_STATE *cb_
 
     // We resize if we need more set entries or if those past "last" are disturbed
     if (required_size != current_size) {
-        // TODO: put these size tied things in a struct (touches many lines)
-        bound_sets.resize(required_size);
-        dynamic_offsets.resize(required_size);
-        bound_compat_ids.resize(required_size);
+        last_bound.per_set.resize(required_size);
     }
 
     // For any previously bound sets, need to set them to "invalid" if they were disturbed by this update
     for (uint32_t set_idx = 0; set_idx < first_set; ++set_idx) {
-        if (bound_compat_ids[set_idx] != pipe_compat_ids[set_idx]) {
-            push_descriptor_cleanup(bound_sets[set_idx]);
-            bound_sets[set_idx] = nullptr;
-            dynamic_offsets[set_idx].clear();
-            bound_compat_ids[set_idx] = pipe_compat_ids[set_idx];
+        if (last_bound.per_set[set_idx].compat_id_for_set != pipe_compat_ids[set_idx]) {
+            push_descriptor_cleanup(last_bound.per_set[set_idx].bound_descriptor_set);
+            last_bound.per_set[set_idx].bound_descriptor_set = nullptr;
+            last_bound.per_set[set_idx].dynamicOffsets.clear();
+            last_bound.per_set[set_idx].compat_id_for_set = pipe_compat_ids[set_idx];
         }
     }
 
@@ -7298,21 +7289,21 @@ void ValidationStateTracker::UpdateLastBoundDescriptorSets(CMD_BUFFER_STATE *cb_
         // Record binding (or push)
         if (descriptor_set != last_bound.push_descriptor_set.get()) {
             // Only cleanup the push descriptors if they aren't the currently used set.
-            push_descriptor_cleanup(bound_sets[set_idx]);
+            push_descriptor_cleanup(last_bound.per_set[set_idx].bound_descriptor_set);
         }
-        bound_sets[set_idx] = descriptor_set;
-        bound_compat_ids[set_idx] = pipe_compat_ids[set_idx];  // compat ids are canonical *per* set index
+        last_bound.per_set[set_idx].bound_descriptor_set = descriptor_set;
+        last_bound.per_set[set_idx].compat_id_for_set = pipe_compat_ids[set_idx];  // compat ids are canonical *per* set index
 
         if (descriptor_set) {
             auto set_dynamic_descriptor_count = descriptor_set->GetDynamicDescriptorCount();
             // TODO: Add logic for tracking push_descriptor offsets (here or in caller)
             if (set_dynamic_descriptor_count && input_dynamic_offsets) {
                 const uint32_t *end_offset = input_dynamic_offsets + set_dynamic_descriptor_count;
-                dynamic_offsets[set_idx] = std::vector<uint32_t>(input_dynamic_offsets, end_offset);
+                last_bound.per_set[set_idx].dynamicOffsets = std::vector<uint32_t>(input_dynamic_offsets, end_offset);
                 input_dynamic_offsets = end_offset;
                 assert(input_dynamic_offsets <= (p_dynamic_offsets + dynamic_offset_count));
             } else {
-                dynamic_offsets[set_idx].clear();
+                last_bound.per_set[set_idx].dynamicOffsets.clear();
             }
             if (!descriptor_set->IsPushDescriptor()) {
                 // Can't cache validation of push_descriptors
@@ -7335,10 +7326,8 @@ void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer 
 
     // Resize binding arrays
     uint32_t last_set_index = firstSet + setCount - 1;
-    if (last_set_index >= cb_state->lastBound[pipelineBindPoint].boundDescriptorSets.size()) {
-        cb_state->lastBound[pipelineBindPoint].boundDescriptorSets.resize(last_set_index + 1);
-        cb_state->lastBound[pipelineBindPoint].dynamicOffsets.resize(last_set_index + 1);
-        cb_state->lastBound[pipelineBindPoint].compat_id_for_set.resize(last_set_index + 1);
+    if (last_set_index >= cb_state->lastBound[pipelineBindPoint].per_set.size()) {
+        cb_state->lastBound[pipelineBindPoint].per_set.resize(last_set_index + 1);
     }
 
     // Construct a list of the descriptors
@@ -7547,7 +7536,7 @@ void CoreChecks::RecordCmdPushDescriptorSetState(CMD_BUFFER_STATE *cb_state, VkP
     auto &last_bound = cb_state->lastBound[pipelineBindPoint];
     auto &push_descriptor_set = last_bound.push_descriptor_set;
     // If we are disturbing the current push_desriptor_set clear it
-    if (!push_descriptor_set || !CompatForSet(set, last_bound.compat_id_for_set, pipeline_layout->compat_for_set)) {
+    if (!push_descriptor_set || !CompatForSet(set, last_bound, pipeline_layout->compat_for_set)) {
         last_bound.UnbindAndResetPushDescriptorSet(new cvdescriptorset::DescriptorSet(0, 0, dsl, 0, this));
     }
 
