@@ -10314,6 +10314,25 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
                     i, i);
             }
         }
+
+        bool zero_mask = false;
+        for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
+            uint32_t view_mask = pMultiviewInfo->pViewMasks[i];
+            if (i == 0) {
+                if (view_mask == 0)
+                    zero_mask = true;
+                else
+                    zero_mask = false;
+            } else {
+                if ((view_mask == 0 && !zero_mask) || (view_mask != 0 && zero_mask)) {
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    "VUID-VkRenderPassCreateInfo-pNext-02513",
+                                    "Elements of pViewMasks[%u] must be either all be 0, or all not be 0, if render pass includes "
+                                    "a multiview info.",
+                                    i);
+                }
+            }
+        }
     }
     const VkRenderPassInputAttachmentAspectCreateInfo *pInputAttachmentAspectInfo =
         lvl_find_in_chain<VkRenderPassInputAttachmentAspectCreateInfo>(pCreateInfo->pNext);
