@@ -1195,7 +1195,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                               report_data->FormatHandle(pipeline_layout.layout).c_str(), errorString.c_str());
         } else {  // Valid set is bound and layout compatible, validate that it's updated
             // Pull the set node
-            cvdescriptorset::DescriptorSet *descriptor_set = state.per_set[setIndex].bound_descriptor_set;
+            const cvdescriptorset::DescriptorSet *descriptor_set = state.per_set[setIndex].bound_descriptor_set;
             // Validate the draw-time state for this descriptor set
             std::string err_str;
             if (!descriptor_set->IsPushDescriptor()) {
@@ -1206,13 +1206,35 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                 cvdescriptorset::PrefilterBindRequestMap reduced_map(*descriptor_set, set_binding_pair.second);
                 const auto &binding_req_map = reduced_map.FilteredMap(*cb_node, *pPipe);
 
-                if (!ValidateDrawState(descriptor_set, binding_req_map, state.per_set[setIndex].dynamicOffsets, cb_node, function,
-                                       &err_str)) {
-                    auto set = descriptor_set->GetSet();
-                    result |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
-                                      HandleToUint64(set), kVUID_Core_DrawState_DescriptorSetNotUpdated,
-                                      "%s bound as set #%u encountered the following validation error at %s time: %s",
-                                      report_data->FormatHandle(set).c_str(), setIndex, function, err_str.c_str());
+                // We can skip validating the descriptor set if "nothing" has changed since the last validation.
+                // Same set, no image layout changes, and same "pipeline state" (binding_req_map). If there are
+                // any dynamic descriptors, always revalidate rather than caching the values. We currently only
+                // apply this optimization if IsManyDescriptors is true, to avoid the overhead of copying the
+                // binding_req_map which could potentially be expensive.
+                bool need_validate =
+                    !reduced_map.IsManyDescriptors() ||
+                    // Revalidate each time if the set has dynamic offsets
+                    state.per_set[setIndex].dynamicOffsets.size() > 0 ||
+                    // Revalidate if descriptor set (or contents) has changed
+                    state.per_set[setIndex].validated_set != descriptor_set ||
+                    state.per_set[setIndex].validated_set_change_count != descriptor_set->GetChangeCount() ||
+                    (!disabled.image_layout_validation &&
+                     state.per_set[setIndex].validated_set_image_layout_change_count != cb_node->image_layout_change_count) ||
+                    // Revalidate if previous bindingReqMap doesn't include new bindingRepMap
+                    !std::includes(state.per_set[setIndex].validated_set_binding_req_map.begin(),
+                                   state.per_set[setIndex].validated_set_binding_req_map.end(), set_binding_pair.second.begin(),
+                                   set_binding_pair.second.end());
+
+                if (need_validate) {
+                    if (!ValidateDrawState(descriptor_set, binding_req_map, state.per_set[setIndex].dynamicOffsets, cb_node,
+                                           function, &err_str)) {
+                        auto set = descriptor_set->GetSet();
+                        result |=
+                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
+                                    HandleToUint64(set), kVUID_Core_DrawState_DescriptorSetNotUpdated,
+                                    "%s bound as set #%u encountered the following validation error at %s time: %s",
+                                    report_data->FormatHandle(set).c_str(), setIndex, function, err_str.c_str());
+                    }
                 }
             }
         }
@@ -1226,7 +1248,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
 }
 
 void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, const VkPipelineBindPoint bind_point) {
-    auto const &state = cb_state->lastBound[bind_point];
+    auto &state = cb_state->lastBound[bind_point];
     PIPELINE_STATE *pPipe = state.pipeline_state;
     if (VK_NULL_HANDLE != state.pipeline_layout) {
         for (const auto &set_binding_pair : pPipe->active_slots) {
@@ -1246,8 +1268,30 @@ void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, const V
                     descriptor_set->UpdateValidationCache(*cb_state, *pPipe, binding_req_map);
                 }
 
-                // Bind this set and its active descriptor resources to the command buffer
-                descriptor_set->UpdateDrawState(this, cb_state, binding_req_map);
+                // We can skip updating the state if "nothing" has changed since the last validation.
+                // See CoreChecks::ValidateCmdBufDrawState for more details.
+                bool need_update =
+                    !reduced_map.IsManyDescriptors() ||
+                    // Update if descriptor set (or contents) has changed
+                    state.per_set[setIndex].validated_set != descriptor_set ||
+                    state.per_set[setIndex].validated_set_change_count != descriptor_set->GetChangeCount() ||
+                    (!disabled.image_layout_validation &&
+                     state.per_set[setIndex].validated_set_image_layout_change_count != cb_state->image_layout_change_count) ||
+                    // Update if previous bindingReqMap doesn't include new bindingRepMap
+                    !std::includes(state.per_set[setIndex].validated_set_binding_req_map.begin(),
+                                   state.per_set[setIndex].validated_set_binding_req_map.end(), set_binding_pair.second.begin(),
+                                   set_binding_pair.second.end());
+
+                if (need_update) {
+                    // Bind this set and its active descriptor resources to the command buffer
+                    descriptor_set->UpdateDrawState(this, cb_state, binding_req_map);
+
+                    state.per_set[setIndex].validated_set = descriptor_set;
+                    state.per_set[setIndex].validated_set_change_count = descriptor_set->GetChangeCount();
+                    state.per_set[setIndex].validated_set_image_layout_change_count = cb_state->image_layout_change_count;
+                    state.per_set[setIndex].validated_set_binding_req_map =
+                        reduced_map.IsManyDescriptors() ? set_binding_pair.second : BindingReqMap();
+                }
             }
         }
     }

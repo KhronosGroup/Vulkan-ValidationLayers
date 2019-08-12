@@ -148,6 +148,8 @@ enum descriptor_req {
 
 extern unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt);
 
+typedef std::map<uint32_t, descriptor_req> BindingReqMap;
+
 struct DESCRIPTOR_POOL_STATE : BASE_NODE {
     VkDescriptorPool pool;
     uint32_t maxSets;        // Max descriptor sets allowed in this pool
@@ -1142,7 +1144,7 @@ class PIPELINE_STATE : public BASE_NODE {
     uint32_t active_shaders;
     uint32_t duplicate_shaders;
     // Capture which slots (set#->bindings) are actually used by the shaders of this pipeline
-    std::unordered_map<uint32_t, std::map<uint32_t, descriptor_req>> active_slots;
+    std::unordered_map<uint32_t, BindingReqMap> active_slots;
     // Additional metadata needed by pipeline_state initialization and validation
     std::vector<StageState> stage_state;
     // Vtx input info (if any)
@@ -1208,11 +1210,24 @@ struct LAST_BOUND_STATE {
 
     // Ordered bound set tracking where index is set# that given set is bound to
     struct PER_SET {
-        PER_SET() : bound_descriptor_set(nullptr), compat_id_for_set(0) {}
+        PER_SET()
+            : bound_descriptor_set(nullptr),
+              compat_id_for_set(0),
+              validated_set(nullptr),
+              validated_set_change_count(~0ULL),
+              validated_set_image_layout_change_count(~0ULL),
+              validated_set_binding_req_map() {}
+
         cvdescriptorset::DescriptorSet *bound_descriptor_set;
         // one dynamic offset per dynamic descriptor bound to this CB
         std::vector<uint32_t> dynamicOffsets;
         PipelineLayoutCompatId compat_id_for_set;
+
+        // Cache most recently validated descriptor state for ValidateCmdBufDrawState/UpdateDrawState
+        const cvdescriptorset::DescriptorSet *validated_set;
+        uint64_t validated_set_change_count;
+        uint64_t validated_set_image_layout_change_count;
+        BindingReqMap validated_set_binding_req_map;
     };
 
     std::vector<PER_SET> per_set;
