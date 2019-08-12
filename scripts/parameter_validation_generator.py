@@ -1295,7 +1295,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     for param in command.params:
                         params_text += '%s, ' % param.name
                     params_text = params_text[:-2] + ');\n'
-                    cmdDef += '    skip |= manual_PreCallValidate'+ command.name[2:] + '(' + params_text
+                    cmdDef += '    if (!skip) skip |= manual_PreCallValidate'+ command.name[2:] + '(' + params_text
                 cmdDef += '%sreturn skip;\n' % indent
                 cmdDef += '}\n'
                 self.validation.append(cmdDef)

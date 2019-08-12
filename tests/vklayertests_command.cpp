@@ -3845,11 +3845,6 @@ TEST_F(VkLayerTest, SetDynViewportParamTests) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewport-firstViewport-01224");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewport-viewportCount-arraylength");
-    vkCmdSetViewport(m_commandBuffer->handle(), 1, 0, viewports);
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewport-firstViewport-01224");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewport-viewportCount-01225");
     vkCmdSetViewport(m_commandBuffer->handle(), 1, 2, viewports);
     m_errorMonitor->VerifyFound();
@@ -3975,8 +3970,7 @@ TEST_F(VkLayerTest, SetDynViewportParamMultiviewportTests) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewport-viewportCount-arraylength");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewport-firstViewport-01223");
-    vkCmdSetViewport(m_commandBuffer->handle(), max_viewports + 1, 0, viewports.data());
+    vkCmdSetViewport(m_commandBuffer->handle(), 1, 0, viewports.data());
     m_errorMonitor->VerifyFound();
 }
 
@@ -4233,11 +4227,6 @@ TEST_F(VkLayerTest, SetDynScissorParamTests) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetScissor-firstScissor-00593");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetScissor-scissorCount-arraylength");
-    vkCmdSetScissor(m_commandBuffer->handle(), 1, 0, scissors);
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetScissor-firstScissor-00593");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetScissor-scissorCount-00594");
     vkCmdSetScissor(m_commandBuffer->handle(), 1, 2, scissors);
     m_errorMonitor->VerifyFound();
@@ -4317,8 +4306,7 @@ TEST_F(VkLayerTest, SetDynScissorParamMultiviewportTests) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetScissor-scissorCount-arraylength");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetScissor-firstScissor-00592");
-    vkCmdSetScissor(m_commandBuffer->handle(), max_scissors + 1, 0, scissors.data());
+    vkCmdSetScissor(m_commandBuffer->handle(), 1, 0, scissors.data());
     m_errorMonitor->VerifyFound();
 }
 
