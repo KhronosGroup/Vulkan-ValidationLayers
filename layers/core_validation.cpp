@@ -409,7 +409,8 @@ void ValidationStateTracker::AddCommandBufferBindingBufferView(CMD_BUFFER_STATE 
 }
 
 // Create binding link between given acceleration structure and command buffer node
-void CoreChecks::AddCommandBufferBindingAccelerationStructure(CMD_BUFFER_STATE *cb_node, ACCELERATION_STRUCTURE_STATE *as_state) {
+void ValidationStateTracker::AddCommandBufferBindingAccelerationStructure(CMD_BUFFER_STATE *cb_node,
+                                                                          ACCELERATION_STRUCTURE_STATE *as_state) {
     if (disabled.command_buffer_state) {
         return;
     }
@@ -6870,7 +6871,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
                                                                 VkDeviceSize instanceOffset, VkBool32 update,
                                                                 VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
                                                                 VkBuffer scratch, VkDeviceSize scratchOffset) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdBuildAccelerationStructureNV()", VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdBuildAccelerationStructureNV-commandBuffer-cmdpool");
@@ -6892,9 +6893,9 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
                         pInfo->geometryCount);
     }
 
-    ACCELERATION_STRUCTURE_STATE *dst_as_state = GetAccelerationStructureState(dst);
-    ACCELERATION_STRUCTURE_STATE *src_as_state = GetAccelerationStructureState(src);
-    BUFFER_STATE *scratch_buffer_state = GetBufferState(scratch);
+    const ACCELERATION_STRUCTURE_STATE *dst_as_state = GetAccelerationStructureState(dst);
+    const ACCELERATION_STRUCTURE_STATE *src_as_state = GetAccelerationStructureState(src);
+    const BUFFER_STATE *scratch_buffer_state = GetBufferState(scratch);
 
     if (dst_as_state != nullptr && pInfo != nullptr) {
         if (dst_as_state->create_info.info.type != pInfo->type) {
@@ -7027,11 +7028,9 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
     return skip;
 }
 
-void CoreChecks::PostCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer,
-                                                               const VkAccelerationStructureInfoNV *pInfo, VkBuffer instanceData,
-                                                               VkDeviceSize instanceOffset, VkBool32 update,
-                                                               VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
-                                                               VkBuffer scratch, VkDeviceSize scratchOffset) {
+void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructureNV(
+    VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV *pInfo, VkBuffer instanceData, VkDeviceSize instanceOffset,
+    VkBool32 update, VkAccelerationStructureNV dst, VkAccelerationStructureNV src, VkBuffer scratch, VkDeviceSize scratchOffset) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     if (cb_state) {
         ACCELERATION_STRUCTURE_STATE *dst_as_state = GetAccelerationStructureState(dst);
@@ -7050,15 +7049,15 @@ void CoreChecks::PostCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer c
 bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAccelerationStructureNV dst,
                                                                VkAccelerationStructureNV src,
                                                                VkCopyAccelerationStructureModeNV mode) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdCopyAccelerationStructureNV()", VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdCopyAccelerationStructureNV-commandBuffer-cmdpool");
 
     skip |= ValidateCmd(cb_state, CMD_COPYACCELERATIONSTRUCTURENV, "vkCmdCopyAccelerationStructureNV()");
 
-    ACCELERATION_STRUCTURE_STATE *dst_as_state = GetAccelerationStructureState(dst);
-    ACCELERATION_STRUCTURE_STATE *src_as_state = GetAccelerationStructureState(src);
+    const ACCELERATION_STRUCTURE_STATE *dst_as_state = GetAccelerationStructureState(dst);
+    const ACCELERATION_STRUCTURE_STATE *src_as_state = GetAccelerationStructureState(src);
 
     if (dst_as_state != nullptr) {
         skip |= ValidateMemoryIsBoundToAccelerationStructure(
@@ -7079,9 +7078,10 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureNV(VkCommandBuffer c
     return skip;
 }
 
-void CoreChecks::PostCallRecordCmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAccelerationStructureNV dst,
-                                                              VkAccelerationStructureNV src,
-                                                              VkCopyAccelerationStructureModeNV mode) {
+void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer,
+                                                                          VkAccelerationStructureNV dst,
+                                                                          VkAccelerationStructureNV src,
+                                                                          VkCopyAccelerationStructureModeNV mode) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     if (cb_state) {
         ACCELERATION_STRUCTURE_STATE *src_as_state = GetAccelerationStructureState(src);
