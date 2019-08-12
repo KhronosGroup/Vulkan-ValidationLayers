@@ -9377,7 +9377,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                 string_VkComponentSwizzle(ivci.components.b), string_VkComponentSwizzle(ivci.components.a));
                         }
 
-						if (rpci->subpassCount > 0) {
+                        if (rpci->subpassCount > 0) {
                             uint32_t view_bits = rpci->pSubpasses[0].viewMask;
                             uint32_t highest_view_bit = 0;
 
@@ -10541,7 +10541,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
                                 pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment);
             }
         }
-    }	
+    }
 
     if (!skip) {
         safe_VkRenderPassCreateInfo2KHR create_info_2;
