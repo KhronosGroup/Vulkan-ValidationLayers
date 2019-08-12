@@ -841,7 +841,7 @@ bool CoreChecks::ValidateBarriersToImages(CMD_BUFFER_STATE const *cb_state, uint
     return skip;
 }
 
-bool CoreChecks::IsReleaseOp(CMD_BUFFER_STATE *cb_state, const VkImageMemoryBarrier &barrier) {
+bool CoreChecks::IsReleaseOp(CMD_BUFFER_STATE *cb_state, const VkImageMemoryBarrier &barrier) const {
     if (!IsTransferOp(&barrier)) return false;
 
     auto pool = GetCommandPoolState(cb_state->createInfo.commandPool);
@@ -2088,7 +2088,7 @@ bool CoreChecks::ValidateImageArrayLayerRange(const CMD_BUFFER_STATE *cb_node, c
 // Check valid usage Image Transfer Granularity requirements for elements of a VkBufferImageCopy structure
 bool CoreChecks::ValidateCopyBufferImageTransferGranularityRequirements(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *img,
                                                                         const VkBufferImageCopy *region, const uint32_t i,
-                                                                        const char *function, const char *vuid) {
+                                                                        const char *function, const char *vuid) const {
     bool skip = false;
     VkExtent3D granularity = GetScaledItg(cb_node, img);
     skip |= CheckItgOffset(cb_node, &region->imageOffset, &granularity, i, function, "imageOffset", vuid);
@@ -4476,9 +4476,9 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
 
 bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
                                               uint32_t regionCount, const VkBufferCopy *pRegions) {
-    auto cb_node = GetCBState(commandBuffer);
-    auto src_buffer_state = GetBufferState(srcBuffer);
-    auto dst_buffer_state = GetBufferState(dstBuffer);
+    const auto cb_node = GetCBState(commandBuffer);
+    const auto src_buffer_state = GetBufferState(srcBuffer);
+    const auto dst_buffer_state = GetBufferState(dstBuffer);
 
     bool skip = false;
     skip |= ValidateMemoryIsBoundToBuffer(src_buffer_state, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-srcBuffer-00119");
@@ -4933,9 +4933,9 @@ static inline bool ValidateBufferBounds(const debug_report_data *report_data, IM
 
 bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                      VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
-    auto cb_node = GetCBState(commandBuffer);
-    auto src_image_state = GetImageState(srcImage);
-    auto dst_buffer_state = GetBufferState(dstBuffer);
+    const auto cb_node = GetCBState(commandBuffer);
+    const auto src_image_state = GetImageState(srcImage);
+    const auto dst_buffer_state = GetBufferState(dstBuffer);
 
     bool skip = ValidateBufferImageCopyData(regionCount, pRegions, src_image_state, "vkCmdCopyImageToBuffer");
 
@@ -4943,7 +4943,7 @@ bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuff
     skip |= ValidateCmd(cb_node, CMD_COPYIMAGETOBUFFER, "vkCmdCopyImageToBuffer()");
 
     // Command pool must support graphics, compute, or transfer operations
-    auto pPool = GetCommandPoolState(cb_node->createInfo.commandPool);
+    const auto pPool = GetCommandPoolState(cb_node->createInfo.commandPool);
 
     VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[pPool->queueFamilyIndex].queueFlags;
 
@@ -5025,9 +5025,9 @@ void CoreChecks::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer
 bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                                      VkImageLayout dstImageLayout, uint32_t regionCount,
                                                      const VkBufferImageCopy *pRegions) {
-    auto cb_node = GetCBState(commandBuffer);
-    auto src_buffer_state = GetBufferState(srcBuffer);
-    auto dst_image_state = GetImageState(dstImage);
+    const auto cb_node = GetCBState(commandBuffer);
+    const auto src_buffer_state = GetBufferState(srcBuffer);
+    const auto dst_image_state = GetImageState(dstImage);
 
     bool skip = ValidateBufferImageCopyData(regionCount, pRegions, dst_image_state, "vkCmdCopyBufferToImage");
 
@@ -5035,7 +5035,7 @@ bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuff
     skip |= ValidateCmd(cb_node, CMD_COPYBUFFERTOIMAGE, "vkCmdCopyBufferToImage()");
 
     // Command pool must support graphics, compute, or transfer operations
-    auto pPool = GetCommandPoolState(cb_node->createInfo.commandPool);
+    const auto pPool = GetCommandPoolState(cb_node->createInfo.commandPool);
     VkQueueFlags queue_flags = GetPhysicalDeviceState()->queue_family_properties[pPool->queueFamilyIndex].queueFlags;
     if (0 == (queue_flags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT))) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,

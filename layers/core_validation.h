@@ -1102,7 +1102,7 @@ class CoreChecks : public ValidationStateTracker {
     template <typename Barrier>
     bool ValidateQFOTransferBarrierUniqueness(const char* func_name, CMD_BUFFER_STATE* cb_state, uint32_t barrier_count,
                                               const Barrier* barriers);
-    bool IsReleaseOp(CMD_BUFFER_STATE* cb_state, const VkImageMemoryBarrier& barrier);
+    bool IsReleaseOp(CMD_BUFFER_STATE* cb_state, const VkImageMemoryBarrier& barrier) const;
     bool ValidateBarriersQFOTransferUniqueness(const char* func_name, CMD_BUFFER_STATE* cb_state, uint32_t bufferBarrierCount,
                                                const VkBufferMemoryBarrier* pBufferMemBarriers, uint32_t imageMemBarrierCount,
                                                const VkImageMemoryBarrier* pImageMemBarriers);
@@ -1458,7 +1458,7 @@ class CoreChecks : public ValidationStateTracker {
 
     bool ValidateCopyBufferImageTransferGranularityRequirements(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* img,
                                                                 const VkBufferImageCopy* region, const uint32_t i,
-                                                                const char* function, const char* vuid);
+                                                                const char* function, const char* vuid) const;
 
     bool ValidateImageMipLevel(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* img, uint32_t mip_level, const uint32_t i,
                                const char* function, const char* member, const char* vuid) const;
