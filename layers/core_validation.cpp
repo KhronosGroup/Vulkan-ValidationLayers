@@ -10327,10 +10327,28 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
                 if ((view_mask == 0 && !zero_mask) || (view_mask != 0 && zero_mask)) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                     "VUID-VkRenderPassCreateInfo-pNext-02513",
-                                    "Elements of pViewMasks[%u] must be either all be 0, or all not be 0, if render pass includes "
+                                    "Elements of pViewMasks must be either all be 0, or all not be 0, if render pass includes "
                                     "a multiview info.",
                                     i);
                 }
+            }
+        }
+
+        if (zero_mask) {
+            for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
+                auto const &dependency = pCreateInfo->pDependencies[i];
+                if ((dependency.dependencyFlags & VK_DEPENDENCY_VIEW_LOCAL_BIT) != 0) {
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    "VUID-VkRenderPassCreateInfo-pNext-02514",
+                                    "If each element of pViewMasks member is 0, pDependencies[%u] must not include "
+                                    "VK_DEPENDENCY_VIEW_LOCAL_BIT.",
+                                    i);
+                }
+            }
+            if (pMultiviewInfo->correlationMaskCount != 0) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkRenderPassCreateInfo-pNext-02515",
+                                "If each element of pViewMasks member is 0, correlatedViewMaskCount must be 0.");
             }
         }
     }
