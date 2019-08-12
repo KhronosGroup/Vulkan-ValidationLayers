@@ -30,7 +30,18 @@
 // This intentionally includes a cpp file
 #include "vk_safe_struct.cpp"
 
-std::mutex dispatch_lock;
+// shared_mutex support added in MSVC 2015 update 2
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918
+    #include <shared_mutex>
+    typedef std::shared_mutex dispatch_lock_t;
+    typedef std::shared_lock<dispatch_lock_t> read_dispatch_lock_guard_t;
+    typedef std::unique_lock<dispatch_lock_t> write_dispatch_lock_guard_t;
+#else
+    typedef std::mutex dispatch_lock_t;
+    typedef std::unique_lock<dispatch_lock_t> read_dispatch_lock_guard_t;
+    typedef std::unique_lock<dispatch_lock_t> write_dispatch_lock_guard_t;
+#endif
+dispatch_lock_t dispatch_lock;
 
 // Unique Objects pNext extension handling function
 void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
@@ -157,7 +168,7 @@ VkResult DispatchCreateComputePipelines(VkDevice device, VkPipelineCache pipelin
                                                                                           pCreateInfos, pAllocator, pPipelines);
     safe_VkComputePipelineCreateInfo *local_pCreateInfos = NULL;
     if (pCreateInfos) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         local_pCreateInfos = new safe_VkComputePipelineCreateInfo[createInfoCount];
         for (uint32_t idx0 = 0; idx0 < createInfoCount; ++idx0) {
             local_pCreateInfos[idx0].initialize(&pCreateInfos[idx0]);
@@ -173,7 +184,7 @@ VkResult DispatchCreateComputePipelines(VkDevice device, VkPipelineCache pipelin
         }
     }
     if (pipelineCache) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         pipelineCache = layer_data->Unwrap(pipelineCache);
     }
 
@@ -181,7 +192,7 @@ VkResult DispatchCreateComputePipelines(VkDevice device, VkPipelineCache pipelin
                                                                                local_pCreateInfos->ptr(), pAllocator, pPipelines);
     delete[] local_pCreateInfos;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         for (uint32_t i = 0; i < createInfoCount; ++i) {
             if (pPipelines[i] != VK_NULL_HANDLE) {
                 pPipelines[i] = layer_data->WrapNew(pPipelines[i]);
@@ -200,7 +211,7 @@ VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipeli
     safe_VkGraphicsPipelineCreateInfo *local_pCreateInfos = nullptr;
     if (pCreateInfos) {
         local_pCreateInfos = new safe_VkGraphicsPipelineCreateInfo[createInfoCount];
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         for (uint32_t idx0 = 0; idx0 < createInfoCount; ++idx0) {
             bool uses_color_attachment = false;
             bool uses_depthstencil_attachment = false;
@@ -236,7 +247,7 @@ VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipeli
         }
     }
     if (pipelineCache) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         pipelineCache = layer_data->Unwrap(pipelineCache);
     }
 
@@ -244,7 +255,7 @@ VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipeli
                                                                                 local_pCreateInfos->ptr(), pAllocator, pPipelines);
     delete[] local_pCreateInfos;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         for (uint32_t i = 0; i < createInfoCount; ++i) {
             if (pPipelines[i] != VK_NULL_HANDLE) {
                 pPipelines[i] = layer_data->WrapNew(pPipelines[i]);
@@ -279,7 +290,7 @@ VkResult DispatchCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo 
     VkResult result = layer_data->device_dispatch_table.CreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass);
     if (!wrap_handles) return result;
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         UpdateCreateRenderPassState(layer_data, pCreateInfo, *pRenderPass);
         *pRenderPass = layer_data->WrapNew(*pRenderPass);
     }
@@ -292,7 +303,7 @@ VkResult DispatchCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateI
     VkResult result = layer_data->device_dispatch_table.CreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass);
     if (!wrap_handles) return result;
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         UpdateCreateRenderPassState(layer_data, pCreateInfo, *pRenderPass);
         *pRenderPass = layer_data->WrapNew(*pRenderPass);
     }
@@ -302,7 +313,7 @@ VkResult DispatchCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateI
 void DispatchDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyRenderPass(device, renderPass, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t renderPass_id = reinterpret_cast<uint64_t &>(renderPass);
     renderPass = (VkRenderPass)unique_id_mapping[renderPass_id];
     unique_id_mapping.erase(renderPass_id);
@@ -319,7 +330,7 @@ VkResult DispatchCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfo
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateSwapchainKHR(device, pCreateInfo, pAllocator, pSwapchain);
     safe_VkSwapchainCreateInfoKHR *local_pCreateInfo = NULL;
     if (pCreateInfo) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         local_pCreateInfo = new safe_VkSwapchainCreateInfoKHR(pCreateInfo);
         local_pCreateInfo->oldSwapchain = layer_data->Unwrap(pCreateInfo->oldSwapchain);
         // Surface is instance-level object
@@ -330,7 +341,7 @@ VkResult DispatchCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfo
     delete local_pCreateInfo;
 
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pSwapchain = layer_data->WrapNew(*pSwapchain);
     }
     return result;
@@ -344,7 +355,7 @@ VkResult DispatchCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCo
                                                                            pSwapchains);
     safe_VkSwapchainCreateInfoKHR *local_pCreateInfos = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pCreateInfos) {
             local_pCreateInfos = new safe_VkSwapchainCreateInfoKHR[swapchainCount];
             for (uint32_t i = 0; i < swapchainCount; ++i) {
@@ -363,7 +374,7 @@ VkResult DispatchCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCo
                                                                                   pAllocator, pSwapchains);
     delete[] local_pCreateInfos;
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         for (uint32_t i = 0; i < swapchainCount; i++) {
             pSwapchains[i] = layer_data->WrapNew(pSwapchains[i]);
         }
@@ -378,14 +389,14 @@ VkResult DispatchGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain
         return layer_data->device_dispatch_table.GetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages);
     VkSwapchainKHR wrapped_swapchain_handle = swapchain;
     if (VK_NULL_HANDLE != swapchain) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         swapchain = layer_data->Unwrap(swapchain);
     }
     VkResult result =
         layer_data->device_dispatch_table.GetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages);
     if ((VK_SUCCESS == result) || (VK_INCOMPLETE == result)) {
         if ((*pSwapchainImageCount > 0) && pSwapchainImages) {
-            std::lock_guard<std::mutex> lock(dispatch_lock);
+            write_dispatch_lock_guard_t lock(dispatch_lock);
             auto &wrapped_swapchain_image_handles = layer_data->swapchain_wrapped_image_handle_map[wrapped_swapchain_handle];
             for (uint32_t i = static_cast<uint32_t>(wrapped_swapchain_image_handles.size()); i < *pSwapchainImageCount; i++) {
                 wrapped_swapchain_image_handles.emplace_back(layer_data->WrapNew(pSwapchainImages[i]));
@@ -401,7 +412,7 @@ VkResult DispatchGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain
 void DispatchDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks *pAllocator) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroySwapchainKHR(device, swapchain, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
 
     auto &image_array = layer_data->swapchain_wrapped_image_handle_map[swapchain];
     for (auto &image_handle : image_array) {
@@ -421,7 +432,7 @@ VkResult DispatchQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresent
     if (!wrap_handles) return layer_data->device_dispatch_table.QueuePresentKHR(queue, pPresentInfo);
     safe_VkPresentInfoKHR *local_pPresentInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pPresentInfo) {
             local_pPresentInfo = new safe_VkPresentInfoKHR(pPresentInfo);
             if (local_pPresentInfo->pWaitSemaphores) {
@@ -452,7 +463,7 @@ VkResult DispatchQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresent
 void DispatchDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, const VkAllocationCallbacks *pAllocator) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyDescriptorPool(device, descriptorPool, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
 
     // remove references to implicitly freed descriptor sets
     for(auto descriptor_set : layer_data->pool_descriptor_sets_map[descriptorPool]) {
@@ -472,12 +483,12 @@ VkResult DispatchResetDescriptorPool(VkDevice device, VkDescriptorPool descripto
     if (!wrap_handles) return layer_data->device_dispatch_table.ResetDescriptorPool(device, descriptorPool, flags);
     VkDescriptorPool local_descriptor_pool = VK_NULL_HANDLE;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         local_descriptor_pool = layer_data->Unwrap(descriptorPool);
     }
     VkResult result = layer_data->device_dispatch_table.ResetDescriptorPool(device, local_descriptor_pool, flags);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         // remove references to implicitly freed descriptor sets
         for(auto descriptor_set : layer_data->pool_descriptor_sets_map[descriptorPool]) {
             unique_id_mapping.erase(reinterpret_cast<uint64_t &>(descriptor_set));
@@ -494,7 +505,7 @@ VkResult DispatchAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAl
     if (!wrap_handles) return layer_data->device_dispatch_table.AllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets);
     safe_VkDescriptorSetAllocateInfo *local_pAllocateInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pAllocateInfo) {
             local_pAllocateInfo = new safe_VkDescriptorSetAllocateInfo(pAllocateInfo);
             if (pAllocateInfo->descriptorPool) {
@@ -513,7 +524,7 @@ VkResult DispatchAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAl
         delete local_pAllocateInfo;
     }
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         auto &pool_descriptor_sets = layer_data->pool_descriptor_sets_map[pAllocateInfo->descriptorPool];
         for (uint32_t index0 = 0; index0 < pAllocateInfo->descriptorSetCount; index0++) {
             pDescriptorSets[index0] = layer_data->WrapNew(pDescriptorSets[index0]);
@@ -531,7 +542,7 @@ VkResult DispatchFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptor
     VkDescriptorSet *local_pDescriptorSets = NULL;
     VkDescriptorPool local_descriptor_pool = VK_NULL_HANDLE;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         local_descriptor_pool = layer_data->Unwrap(descriptorPool);
         if (pDescriptorSets) {
             local_pDescriptorSets = new VkDescriptorSet[descriptorSetCount];
@@ -544,7 +555,7 @@ VkResult DispatchFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptor
                                                                            (const VkDescriptorSet *)local_pDescriptorSets);
     if (local_pDescriptorSets) delete[] local_pDescriptorSets;
     if ((VK_SUCCESS == result) && (pDescriptorSets)) {
-        std::unique_lock<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         auto &pool_descriptor_sets = layer_data->pool_descriptor_sets_map[descriptorPool];
         for (uint32_t index0 = 0; index0 < descriptorSetCount; index0++) {
             VkDescriptorSet handle = pDescriptorSets[index0];
@@ -566,7 +577,7 @@ VkResult DispatchCreateDescriptorUpdateTemplate(VkDevice device, const VkDescrip
                                                                                 pDescriptorUpdateTemplate);
     safe_VkDescriptorUpdateTemplateCreateInfo *local_create_info = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pCreateInfo) {
             local_create_info = new safe_VkDescriptorUpdateTemplateCreateInfo(pCreateInfo);
             if (pCreateInfo->descriptorSetLayout) {
@@ -580,7 +591,7 @@ VkResult DispatchCreateDescriptorUpdateTemplate(VkDevice device, const VkDescrip
     VkResult result = layer_data->device_dispatch_table.CreateDescriptorUpdateTemplate(device, local_create_info->ptr(), pAllocator,
                                                                                        pDescriptorUpdateTemplate);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pDescriptorUpdateTemplate = layer_data->WrapNew(*pDescriptorUpdateTemplate);
 
         // Shadow template createInfo for later updates
@@ -600,7 +611,7 @@ VkResult DispatchCreateDescriptorUpdateTemplateKHR(VkDevice device, const VkDesc
                                                                                    pDescriptorUpdateTemplate);
     safe_VkDescriptorUpdateTemplateCreateInfo *local_create_info = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pCreateInfo) {
             local_create_info = new safe_VkDescriptorUpdateTemplateCreateInfo(pCreateInfo);
             if (pCreateInfo->descriptorSetLayout) {
@@ -614,7 +625,7 @@ VkResult DispatchCreateDescriptorUpdateTemplateKHR(VkDevice device, const VkDesc
     VkResult result = layer_data->device_dispatch_table.CreateDescriptorUpdateTemplateKHR(device, local_create_info->ptr(), pAllocator,
                                                                                           pDescriptorUpdateTemplate);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pDescriptorUpdateTemplate = layer_data->WrapNew(*pDescriptorUpdateTemplate);
 
         // Shadow template createInfo for later updates
@@ -630,7 +641,7 @@ void DispatchDestroyDescriptorUpdateTemplate(VkDevice device, VkDescriptorUpdate
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles)
         return layer_data->device_dispatch_table.DestroyDescriptorUpdateTemplate(device, descriptorUpdateTemplate, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t descriptor_update_template_id = reinterpret_cast<uint64_t &>(descriptorUpdateTemplate);
     layer_data->desc_template_createinfo_map.erase(descriptor_update_template_id);
     descriptorUpdateTemplate = (VkDescriptorUpdateTemplate)unique_id_mapping[descriptor_update_template_id];
@@ -645,7 +656,7 @@ void DispatchDestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescriptorUpd
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles)
         return layer_data->device_dispatch_table.DestroyDescriptorUpdateTemplateKHR(device, descriptorUpdateTemplate, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t descriptor_update_template_id = reinterpret_cast<uint64_t &>(descriptorUpdateTemplate);
     layer_data->desc_template_createinfo_map.erase(descriptor_update_template_id);
     descriptorUpdateTemplate = (VkDescriptorUpdateTemplate)unique_id_mapping[descriptor_update_template_id];
@@ -761,7 +772,7 @@ void DispatchUpdateDescriptorSetWithTemplate(VkDevice device, VkDescriptorSet de
                                                                                  pData);
     uint64_t template_handle = reinterpret_cast<uint64_t &>(descriptorUpdateTemplate);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         descriptorSet = layer_data->Unwrap(descriptorSet);
         descriptorUpdateTemplate = (VkDescriptorUpdateTemplate)unique_id_mapping[template_handle];
     }
@@ -779,7 +790,7 @@ void DispatchUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet
     uint64_t template_handle = reinterpret_cast<uint64_t &>(descriptorUpdateTemplate);
     void *unwrapped_buffer = nullptr;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         descriptorSet = layer_data->Unwrap(descriptorSet);
         descriptorUpdateTemplate = (VkDescriptorUpdateTemplate)unique_id_mapping[template_handle];
         unwrapped_buffer = BuildUnwrappedUpdateTemplateBuffer(layer_data, template_handle, pData);
@@ -798,7 +809,7 @@ void DispatchCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
     uint64_t template_handle = reinterpret_cast<uint64_t &>(descriptorUpdateTemplate);
     void *unwrapped_buffer = nullptr;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         descriptorUpdateTemplate = layer_data->Unwrap(descriptorUpdateTemplate);
         layout = layer_data->Unwrap(layout);
         unwrapped_buffer = BuildUnwrappedUpdateTemplateBuffer(layer_data, template_handle, pData);
@@ -815,7 +826,7 @@ VkResult DispatchGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physical
         layer_data->instance_dispatch_table.GetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties);
     if (!wrap_handles) return result;
     if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
             pProperties[idx0].display = layer_data->MaybeWrapDisplay(pProperties[idx0].display, layer_data);
         }
@@ -830,7 +841,7 @@ VkResult DispatchGetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physica
         layer_data->instance_dispatch_table.GetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties);
     if (!wrap_handles) return result;
     if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
             pProperties[idx0].displayProperties.display =
                 layer_data->MaybeWrapDisplay(pProperties[idx0].displayProperties.display, layer_data);
@@ -846,7 +857,7 @@ VkResult DispatchGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice phy
         layer_data->instance_dispatch_table.GetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties);
     if (!wrap_handles) return result;
     if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
             VkDisplayKHR &opt_display = pProperties[idx0].currentDisplay;
             if (opt_display) opt_display = layer_data->MaybeWrapDisplay(opt_display, layer_data);
@@ -862,7 +873,7 @@ VkResult DispatchGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice ph
                                                                                                       pPropertyCount, pProperties);
     if (!wrap_handles) return result;
     if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
             VkDisplayKHR &opt_display = pProperties[idx0].displayPlaneProperties.currentDisplay;
             if (opt_display) opt_display = layer_data->MaybeWrapDisplay(opt_display, layer_data);
@@ -878,7 +889,7 @@ VkResult DispatchGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDe
                                                                                               pDisplayCount, pDisplays);
     if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pDisplays) {
     if (!wrap_handles) return result;
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         for (uint32_t i = 0; i < *pDisplayCount; ++i) {
             if (pDisplays[i]) pDisplays[i] = layer_data->MaybeWrapDisplay(pDisplays[i], layer_data);
         }
@@ -893,13 +904,13 @@ VkResult DispatchGetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, Vk
         return layer_data->instance_dispatch_table.GetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount,
                                                                                pProperties);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         display = layer_data->Unwrap(display);
     }
 
     VkResult result = layer_data->instance_dispatch_table.GetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties);
     if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
             pProperties[idx0].displayMode = layer_data->WrapNew(pProperties[idx0].displayMode);
         }
@@ -914,14 +925,14 @@ VkResult DispatchGetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, V
         return layer_data->instance_dispatch_table.GetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount,
                                                                                 pProperties);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         display = layer_data->Unwrap(display);
     }
 
     VkResult result =
         layer_data->instance_dispatch_table.GetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties);
     if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
             pProperties[idx0].displayModeProperties.displayMode = layer_data->WrapNew(pProperties[idx0].displayModeProperties.displayMode);
         }
@@ -934,7 +945,7 @@ VkResult DispatchDebugMarkerSetObjectTagEXT(VkDevice device, const VkDebugMarker
     if (!wrap_handles) return layer_data->device_dispatch_table.DebugMarkerSetObjectTagEXT(device, pTagInfo);
     safe_VkDebugMarkerObjectTagInfoEXT local_tag_info(pTagInfo);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         auto it = unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_tag_info.object));
         if (it != unique_id_mapping.end()) {
             local_tag_info.object = it->second;
@@ -950,7 +961,7 @@ VkResult DispatchDebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarke
     if (!wrap_handles) return layer_data->device_dispatch_table.DebugMarkerSetObjectNameEXT(device, pNameInfo);
     safe_VkDebugMarkerObjectNameInfoEXT local_name_info(pNameInfo);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         auto it = unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_name_info.object));
         if (it != unique_id_mapping.end()) {
             local_name_info.object = it->second;
@@ -967,7 +978,7 @@ VkResult DispatchSetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsOb
     if (!wrap_handles) return layer_data->device_dispatch_table.SetDebugUtilsObjectTagEXT(device, pTagInfo);
     safe_VkDebugUtilsObjectTagInfoEXT local_tag_info(pTagInfo);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         auto it = unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_tag_info.objectHandle));
         if (it != unique_id_mapping.end()) {
             local_tag_info.objectHandle = it->second;
@@ -983,7 +994,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
     if (!wrap_handles) return layer_data->device_dispatch_table.SetDebugUtilsObjectNameEXT(device, pNameInfo);
     safe_VkDebugUtilsObjectNameInfoEXT local_name_info(pNameInfo);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         auto it = unique_id_mapping.find(reinterpret_cast<uint64_t &>(local_name_info.objectHandle));
         if (it != unique_id_mapping.end()) {
             local_name_info.objectHandle = it->second;
@@ -1127,7 +1138,7 @@ VkResult DispatchQueueSubmit(
     if (!wrap_handles) return layer_data->device_dispatch_table.QueueSubmit(queue, submitCount, pSubmits, fence);
     safe_VkSubmitInfo *local_pSubmits = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pSubmits) {
             local_pSubmits = new safe_VkSubmitInfo[submitCount];
             for (uint32_t index0 = 0; index0 < submitCount; ++index0) {
@@ -1182,7 +1193,7 @@ VkResult DispatchAllocateMemory(
     if (!wrap_handles) return layer_data->device_dispatch_table.AllocateMemory(device, pAllocateInfo, pAllocator, pMemory);
     safe_VkMemoryAllocateInfo *local_pAllocateInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pAllocateInfo) {
             local_pAllocateInfo = new safe_VkMemoryAllocateInfo(pAllocateInfo);
             WrapPnextChainHandles(layer_data, local_pAllocateInfo->pNext);
@@ -1193,7 +1204,7 @@ VkResult DispatchAllocateMemory(
         delete local_pAllocateInfo;
     }
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pMemory = layer_data->WrapNew(*pMemory);
     }
     return result;
@@ -1206,7 +1217,7 @@ void DispatchFreeMemory(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.FreeMemory(device, memory, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t memory_id = reinterpret_cast<uint64_t &>(memory);
     memory = (VkDeviceMemory)unique_id_mapping[memory_id];
     unique_id_mapping.erase(memory_id);
@@ -1226,7 +1237,7 @@ VkResult DispatchMapMemory(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.MapMemory(device, memory, offset, size, flags, ppData);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         memory = layer_data->Unwrap(memory);
     }
     VkResult result = layer_data->device_dispatch_table.MapMemory(device, memory, offset, size, flags, ppData);
@@ -1241,7 +1252,7 @@ void DispatchUnmapMemory(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.UnmapMemory(device, memory);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         memory = layer_data->Unwrap(memory);
     }
     layer_data->device_dispatch_table.UnmapMemory(device, memory);
@@ -1257,7 +1268,7 @@ VkResult DispatchFlushMappedMemoryRanges(
     if (!wrap_handles) return layer_data->device_dispatch_table.FlushMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges);
     safe_VkMappedMemoryRange *local_pMemoryRanges = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pMemoryRanges) {
             local_pMemoryRanges = new safe_VkMappedMemoryRange[memoryRangeCount];
             for (uint32_t index0 = 0; index0 < memoryRangeCount; ++index0) {
@@ -1284,7 +1295,7 @@ VkResult DispatchInvalidateMappedMemoryRanges(
     if (!wrap_handles) return layer_data->device_dispatch_table.InvalidateMappedMemoryRanges(device, memoryRangeCount, pMemoryRanges);
     safe_VkMappedMemoryRange *local_pMemoryRanges = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pMemoryRanges) {
             local_pMemoryRanges = new safe_VkMappedMemoryRange[memoryRangeCount];
             for (uint32_t index0 = 0; index0 < memoryRangeCount; ++index0) {
@@ -1310,7 +1321,7 @@ void DispatchGetDeviceMemoryCommitment(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetDeviceMemoryCommitment(device, memory, pCommittedMemoryInBytes);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         memory = layer_data->Unwrap(memory);
     }
     layer_data->device_dispatch_table.GetDeviceMemoryCommitment(device, memory, pCommittedMemoryInBytes);
@@ -1326,7 +1337,7 @@ VkResult DispatchBindBufferMemory(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.BindBufferMemory(device, buffer, memory, memoryOffset);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         buffer = layer_data->Unwrap(buffer);
         memory = layer_data->Unwrap(memory);
     }
@@ -1344,7 +1355,7 @@ VkResult DispatchBindImageMemory(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.BindImageMemory(device, image, memory, memoryOffset);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         image = layer_data->Unwrap(image);
         memory = layer_data->Unwrap(memory);
     }
@@ -1361,7 +1372,7 @@ void DispatchGetBufferMemoryRequirements(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetBufferMemoryRequirements(device, buffer, pMemoryRequirements);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         buffer = layer_data->Unwrap(buffer);
     }
     layer_data->device_dispatch_table.GetBufferMemoryRequirements(device, buffer, pMemoryRequirements);
@@ -1376,7 +1387,7 @@ void DispatchGetImageMemoryRequirements(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetImageMemoryRequirements(device, image, pMemoryRequirements);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         image = layer_data->Unwrap(image);
     }
     layer_data->device_dispatch_table.GetImageMemoryRequirements(device, image, pMemoryRequirements);
@@ -1392,7 +1403,7 @@ void DispatchGetImageSparseMemoryRequirements(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetImageSparseMemoryRequirements(device, image, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         image = layer_data->Unwrap(image);
     }
     layer_data->device_dispatch_table.GetImageSparseMemoryRequirements(device, image, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
@@ -1424,7 +1435,7 @@ VkResult DispatchQueueBindSparse(
     if (!wrap_handles) return layer_data->device_dispatch_table.QueueBindSparse(queue, bindInfoCount, pBindInfo, fence);
     safe_VkBindSparseInfo *local_pBindInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pBindInfo) {
             local_pBindInfo = new safe_VkBindSparseInfo[bindInfoCount];
             for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
@@ -1502,7 +1513,7 @@ VkResult DispatchCreateFence(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateFence(device, pCreateInfo, pAllocator, pFence);
     VkResult result = layer_data->device_dispatch_table.CreateFence(device, pCreateInfo, pAllocator, pFence);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pFence = layer_data->WrapNew(*pFence);
     }
     return result;
@@ -1515,7 +1526,7 @@ void DispatchDestroyFence(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyFence(device, fence, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t fence_id = reinterpret_cast<uint64_t &>(fence);
     fence = (VkFence)unique_id_mapping[fence_id];
     unique_id_mapping.erase(fence_id);
@@ -1533,7 +1544,7 @@ VkResult DispatchResetFences(
     if (!wrap_handles) return layer_data->device_dispatch_table.ResetFences(device, fenceCount, pFences);
     VkFence *local_pFences = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pFences) {
             local_pFences = new VkFence[fenceCount];
             for (uint32_t index0 = 0; index0 < fenceCount; ++index0) {
@@ -1554,7 +1565,7 @@ VkResult DispatchGetFenceStatus(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetFenceStatus(device, fence);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         fence = layer_data->Unwrap(fence);
     }
     VkResult result = layer_data->device_dispatch_table.GetFenceStatus(device, fence);
@@ -1573,7 +1584,7 @@ VkResult DispatchWaitForFences(
     if (!wrap_handles) return layer_data->device_dispatch_table.WaitForFences(device, fenceCount, pFences, waitAll, timeout);
     VkFence *local_pFences = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pFences) {
             local_pFences = new VkFence[fenceCount];
             for (uint32_t index0 = 0; index0 < fenceCount; ++index0) {
@@ -1597,7 +1608,7 @@ VkResult DispatchCreateSemaphore(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore);
     VkResult result = layer_data->device_dispatch_table.CreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pSemaphore = layer_data->WrapNew(*pSemaphore);
     }
     return result;
@@ -1610,7 +1621,7 @@ void DispatchDestroySemaphore(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroySemaphore(device, semaphore, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t semaphore_id = reinterpret_cast<uint64_t &>(semaphore);
     semaphore = (VkSemaphore)unique_id_mapping[semaphore_id];
     unique_id_mapping.erase(semaphore_id);
@@ -1629,7 +1640,7 @@ VkResult DispatchCreateEvent(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateEvent(device, pCreateInfo, pAllocator, pEvent);
     VkResult result = layer_data->device_dispatch_table.CreateEvent(device, pCreateInfo, pAllocator, pEvent);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pEvent = layer_data->WrapNew(*pEvent);
     }
     return result;
@@ -1642,7 +1653,7 @@ void DispatchDestroyEvent(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyEvent(device, event, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t event_id = reinterpret_cast<uint64_t &>(event);
     event = (VkEvent)unique_id_mapping[event_id];
     unique_id_mapping.erase(event_id);
@@ -1658,7 +1669,7 @@ VkResult DispatchGetEventStatus(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetEventStatus(device, event);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         event = layer_data->Unwrap(event);
     }
     VkResult result = layer_data->device_dispatch_table.GetEventStatus(device, event);
@@ -1673,7 +1684,7 @@ VkResult DispatchSetEvent(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.SetEvent(device, event);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         event = layer_data->Unwrap(event);
     }
     VkResult result = layer_data->device_dispatch_table.SetEvent(device, event);
@@ -1688,7 +1699,7 @@ VkResult DispatchResetEvent(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.ResetEvent(device, event);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         event = layer_data->Unwrap(event);
     }
     VkResult result = layer_data->device_dispatch_table.ResetEvent(device, event);
@@ -1706,7 +1717,7 @@ VkResult DispatchCreateQueryPool(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool);
     VkResult result = layer_data->device_dispatch_table.CreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pQueryPool = layer_data->WrapNew(*pQueryPool);
     }
     return result;
@@ -1719,7 +1730,7 @@ void DispatchDestroyQueryPool(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyQueryPool(device, queryPool, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t queryPool_id = reinterpret_cast<uint64_t &>(queryPool);
     queryPool = (VkQueryPool)unique_id_mapping[queryPool_id];
     unique_id_mapping.erase(queryPool_id);
@@ -1741,7 +1752,7 @@ VkResult DispatchGetQueryPoolResults(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         queryPool = layer_data->Unwrap(queryPool);
     }
     VkResult result = layer_data->device_dispatch_table.GetQueryPoolResults(device, queryPool, firstQuery, queryCount, dataSize, pData, stride, flags);
@@ -1759,7 +1770,7 @@ VkResult DispatchCreateBuffer(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateBuffer(device, pCreateInfo, pAllocator, pBuffer);
     VkResult result = layer_data->device_dispatch_table.CreateBuffer(device, pCreateInfo, pAllocator, pBuffer);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pBuffer = layer_data->WrapNew(*pBuffer);
     }
     return result;
@@ -1772,7 +1783,7 @@ void DispatchDestroyBuffer(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyBuffer(device, buffer, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t buffer_id = reinterpret_cast<uint64_t &>(buffer);
     buffer = (VkBuffer)unique_id_mapping[buffer_id];
     unique_id_mapping.erase(buffer_id);
@@ -1791,7 +1802,7 @@ VkResult DispatchCreateBufferView(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateBufferView(device, pCreateInfo, pAllocator, pView);
     safe_VkBufferViewCreateInfo *local_pCreateInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pCreateInfo) {
             local_pCreateInfo = new safe_VkBufferViewCreateInfo(pCreateInfo);
             if (pCreateInfo->buffer) {
@@ -1804,7 +1815,7 @@ VkResult DispatchCreateBufferView(
         delete local_pCreateInfo;
     }
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pView = layer_data->WrapNew(*pView);
     }
     return result;
@@ -1817,7 +1828,7 @@ void DispatchDestroyBufferView(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyBufferView(device, bufferView, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t bufferView_id = reinterpret_cast<uint64_t &>(bufferView);
     bufferView = (VkBufferView)unique_id_mapping[bufferView_id];
     unique_id_mapping.erase(bufferView_id);
@@ -1836,7 +1847,7 @@ VkResult DispatchCreateImage(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateImage(device, pCreateInfo, pAllocator, pImage);
     safe_VkImageCreateInfo *local_pCreateInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pCreateInfo) {
             local_pCreateInfo = new safe_VkImageCreateInfo(pCreateInfo);
             WrapPnextChainHandles(layer_data, local_pCreateInfo->pNext);
@@ -1847,7 +1858,7 @@ VkResult DispatchCreateImage(
         delete local_pCreateInfo;
     }
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pImage = layer_data->WrapNew(*pImage);
     }
     return result;
@@ -1860,7 +1871,7 @@ void DispatchDestroyImage(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyImage(device, image, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t image_id = reinterpret_cast<uint64_t &>(image);
     image = (VkImage)unique_id_mapping[image_id];
     unique_id_mapping.erase(image_id);
@@ -1878,7 +1889,7 @@ void DispatchGetImageSubresourceLayout(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetImageSubresourceLayout(device, image, pSubresource, pLayout);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         image = layer_data->Unwrap(image);
     }
     layer_data->device_dispatch_table.GetImageSubresourceLayout(device, image, pSubresource, pLayout);
@@ -1895,7 +1906,7 @@ VkResult DispatchCreateImageView(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateImageView(device, pCreateInfo, pAllocator, pView);
     safe_VkImageViewCreateInfo *local_pCreateInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pCreateInfo) {
             local_pCreateInfo = new safe_VkImageViewCreateInfo(pCreateInfo);
             if (pCreateInfo->image) {
@@ -1909,7 +1920,7 @@ VkResult DispatchCreateImageView(
         delete local_pCreateInfo;
     }
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pView = layer_data->WrapNew(*pView);
     }
     return result;
@@ -1922,7 +1933,7 @@ void DispatchDestroyImageView(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyImageView(device, imageView, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t imageView_id = reinterpret_cast<uint64_t &>(imageView);
     imageView = (VkImageView)unique_id_mapping[imageView_id];
     unique_id_mapping.erase(imageView_id);
@@ -1941,7 +1952,7 @@ VkResult DispatchCreateShaderModule(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule);
     safe_VkShaderModuleCreateInfo *local_pCreateInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pCreateInfo) {
             local_pCreateInfo = new safe_VkShaderModuleCreateInfo(pCreateInfo);
             WrapPnextChainHandles(layer_data, local_pCreateInfo->pNext);
@@ -1952,7 +1963,7 @@ VkResult DispatchCreateShaderModule(
         delete local_pCreateInfo;
     }
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pShaderModule = layer_data->WrapNew(*pShaderModule);
     }
     return result;
@@ -1965,7 +1976,7 @@ void DispatchDestroyShaderModule(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyShaderModule(device, shaderModule, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t shaderModule_id = reinterpret_cast<uint64_t &>(shaderModule);
     shaderModule = (VkShaderModule)unique_id_mapping[shaderModule_id];
     unique_id_mapping.erase(shaderModule_id);
@@ -1984,7 +1995,7 @@ VkResult DispatchCreatePipelineCache(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreatePipelineCache(device, pCreateInfo, pAllocator, pPipelineCache);
     VkResult result = layer_data->device_dispatch_table.CreatePipelineCache(device, pCreateInfo, pAllocator, pPipelineCache);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pPipelineCache = layer_data->WrapNew(*pPipelineCache);
     }
     return result;
@@ -1997,7 +2008,7 @@ void DispatchDestroyPipelineCache(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyPipelineCache(device, pipelineCache, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t pipelineCache_id = reinterpret_cast<uint64_t &>(pipelineCache);
     pipelineCache = (VkPipelineCache)unique_id_mapping[pipelineCache_id];
     unique_id_mapping.erase(pipelineCache_id);
@@ -2015,7 +2026,7 @@ VkResult DispatchGetPipelineCacheData(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetPipelineCacheData(device, pipelineCache, pDataSize, pData);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         pipelineCache = layer_data->Unwrap(pipelineCache);
     }
     VkResult result = layer_data->device_dispatch_table.GetPipelineCacheData(device, pipelineCache, pDataSize, pData);
@@ -2033,7 +2044,7 @@ VkResult DispatchMergePipelineCaches(
     if (!wrap_handles) return layer_data->device_dispatch_table.MergePipelineCaches(device, dstCache, srcCacheCount, pSrcCaches);
     VkPipelineCache *local_pSrcCaches = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         dstCache = layer_data->Unwrap(dstCache);
         if (pSrcCaches) {
             local_pSrcCaches = new VkPipelineCache[srcCacheCount];
@@ -2059,7 +2070,7 @@ void DispatchDestroyPipeline(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyPipeline(device, pipeline, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t pipeline_id = reinterpret_cast<uint64_t &>(pipeline);
     pipeline = (VkPipeline)unique_id_mapping[pipeline_id];
     unique_id_mapping.erase(pipeline_id);
@@ -2078,7 +2089,7 @@ VkResult DispatchCreatePipelineLayout(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout);
     safe_VkPipelineLayoutCreateInfo *local_pCreateInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pCreateInfo) {
             local_pCreateInfo = new safe_VkPipelineLayoutCreateInfo(pCreateInfo);
             if (local_pCreateInfo->pSetLayouts) {
@@ -2093,7 +2104,7 @@ VkResult DispatchCreatePipelineLayout(
         delete local_pCreateInfo;
     }
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pPipelineLayout = layer_data->WrapNew(*pPipelineLayout);
     }
     return result;
@@ -2106,7 +2117,7 @@ void DispatchDestroyPipelineLayout(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyPipelineLayout(device, pipelineLayout, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t pipelineLayout_id = reinterpret_cast<uint64_t &>(pipelineLayout);
     pipelineLayout = (VkPipelineLayout)unique_id_mapping[pipelineLayout_id];
     unique_id_mapping.erase(pipelineLayout_id);
@@ -2125,7 +2136,7 @@ VkResult DispatchCreateSampler(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateSampler(device, pCreateInfo, pAllocator, pSampler);
     safe_VkSamplerCreateInfo *local_pCreateInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pCreateInfo) {
             local_pCreateInfo = new safe_VkSamplerCreateInfo(pCreateInfo);
             WrapPnextChainHandles(layer_data, local_pCreateInfo->pNext);
@@ -2136,7 +2147,7 @@ VkResult DispatchCreateSampler(
         delete local_pCreateInfo;
     }
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pSampler = layer_data->WrapNew(*pSampler);
     }
     return result;
@@ -2149,7 +2160,7 @@ void DispatchDestroySampler(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroySampler(device, sampler, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t sampler_id = reinterpret_cast<uint64_t &>(sampler);
     sampler = (VkSampler)unique_id_mapping[sampler_id];
     unique_id_mapping.erase(sampler_id);
@@ -2168,7 +2179,7 @@ VkResult DispatchCreateDescriptorSetLayout(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateDescriptorSetLayout(device, pCreateInfo, pAllocator, pSetLayout);
     safe_VkDescriptorSetLayoutCreateInfo *local_pCreateInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pCreateInfo) {
             local_pCreateInfo = new safe_VkDescriptorSetLayoutCreateInfo(pCreateInfo);
             if (local_pCreateInfo->pBindings) {
@@ -2187,7 +2198,7 @@ VkResult DispatchCreateDescriptorSetLayout(
         delete local_pCreateInfo;
     }
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pSetLayout = layer_data->WrapNew(*pSetLayout);
     }
     return result;
@@ -2200,7 +2211,7 @@ void DispatchDestroyDescriptorSetLayout(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyDescriptorSetLayout(device, descriptorSetLayout, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t descriptorSetLayout_id = reinterpret_cast<uint64_t &>(descriptorSetLayout);
     descriptorSetLayout = (VkDescriptorSetLayout)unique_id_mapping[descriptorSetLayout_id];
     unique_id_mapping.erase(descriptorSetLayout_id);
@@ -2219,7 +2230,7 @@ VkResult DispatchCreateDescriptorPool(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool);
     VkResult result = layer_data->device_dispatch_table.CreateDescriptorPool(device, pCreateInfo, pAllocator, pDescriptorPool);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pDescriptorPool = layer_data->WrapNew(*pDescriptorPool);
     }
     return result;
@@ -2245,7 +2256,7 @@ void DispatchUpdateDescriptorSets(
     safe_VkWriteDescriptorSet *local_pDescriptorWrites = NULL;
     safe_VkCopyDescriptorSet *local_pDescriptorCopies = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pDescriptorWrites) {
             local_pDescriptorWrites = new safe_VkWriteDescriptorSet[descriptorWriteCount];
             for (uint32_t index0 = 0; index0 < descriptorWriteCount; ++index0) {
@@ -2310,7 +2321,7 @@ VkResult DispatchCreateFramebuffer(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateFramebuffer(device, pCreateInfo, pAllocator, pFramebuffer);
     safe_VkFramebufferCreateInfo *local_pCreateInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pCreateInfo) {
             local_pCreateInfo = new safe_VkFramebufferCreateInfo(pCreateInfo);
             if (pCreateInfo->renderPass) {
@@ -2328,7 +2339,7 @@ VkResult DispatchCreateFramebuffer(
         delete local_pCreateInfo;
     }
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pFramebuffer = layer_data->WrapNew(*pFramebuffer);
     }
     return result;
@@ -2341,7 +2352,7 @@ void DispatchDestroyFramebuffer(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyFramebuffer(device, framebuffer, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t framebuffer_id = reinterpret_cast<uint64_t &>(framebuffer);
     framebuffer = (VkFramebuffer)unique_id_mapping[framebuffer_id];
     unique_id_mapping.erase(framebuffer_id);
@@ -2362,7 +2373,7 @@ void DispatchGetRenderAreaGranularity(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetRenderAreaGranularity(device, renderPass, pGranularity);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         renderPass = layer_data->Unwrap(renderPass);
     }
     layer_data->device_dispatch_table.GetRenderAreaGranularity(device, renderPass, pGranularity);
@@ -2379,7 +2390,7 @@ VkResult DispatchCreateCommandPool(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool);
     VkResult result = layer_data->device_dispatch_table.CreateCommandPool(device, pCreateInfo, pAllocator, pCommandPool);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pCommandPool = layer_data->WrapNew(*pCommandPool);
     }
     return result;
@@ -2392,7 +2403,7 @@ void DispatchDestroyCommandPool(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyCommandPool(device, commandPool, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t commandPool_id = reinterpret_cast<uint64_t &>(commandPool);
     commandPool = (VkCommandPool)unique_id_mapping[commandPool_id];
     unique_id_mapping.erase(commandPool_id);
@@ -2409,7 +2420,7 @@ VkResult DispatchResetCommandPool(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.ResetCommandPool(device, commandPool, flags);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         commandPool = layer_data->Unwrap(commandPool);
     }
     VkResult result = layer_data->device_dispatch_table.ResetCommandPool(device, commandPool, flags);
@@ -2426,7 +2437,7 @@ VkResult DispatchAllocateCommandBuffers(
     if (!wrap_handles) return layer_data->device_dispatch_table.AllocateCommandBuffers(device, pAllocateInfo, pCommandBuffers);
     safe_VkCommandBufferAllocateInfo *local_pAllocateInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pAllocateInfo) {
             local_pAllocateInfo = new safe_VkCommandBufferAllocateInfo(pAllocateInfo);
             if (pAllocateInfo->commandPool) {
@@ -2450,7 +2461,7 @@ void DispatchFreeCommandBuffers(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.FreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         commandPool = layer_data->Unwrap(commandPool);
     }
     layer_data->device_dispatch_table.FreeCommandBuffers(device, commandPool, commandBufferCount, pCommandBuffers);
@@ -2465,7 +2476,7 @@ VkResult DispatchBeginCommandBuffer(
     if (!wrap_handles) return layer_data->device_dispatch_table.BeginCommandBuffer(commandBuffer, pBeginInfo);
     safe_VkCommandBufferBeginInfo *local_pBeginInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pBeginInfo) {
             local_pBeginInfo = new safe_VkCommandBufferBeginInfo(pBeginInfo);
             if (local_pBeginInfo->pInheritanceInfo) {
@@ -2512,7 +2523,7 @@ void DispatchCmdBindPipeline(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         pipeline = layer_data->Unwrap(pipeline);
     }
     layer_data->device_dispatch_table.CmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
@@ -2624,7 +2635,7 @@ void DispatchCmdBindDescriptorSets(
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
     VkDescriptorSet *local_pDescriptorSets = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         layout = layer_data->Unwrap(layout);
         if (pDescriptorSets) {
             local_pDescriptorSets = new VkDescriptorSet[descriptorSetCount];
@@ -2647,7 +2658,7 @@ void DispatchCmdBindIndexBuffer(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         buffer = layer_data->Unwrap(buffer);
     }
     layer_data->device_dispatch_table.CmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
@@ -2665,7 +2676,7 @@ void DispatchCmdBindVertexBuffers(
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
     VkBuffer *local_pBuffers = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pBuffers) {
             local_pBuffers = new VkBuffer[bindingCount];
             for (uint32_t index0 = 0; index0 < bindingCount; ++index0) {
@@ -2713,7 +2724,7 @@ void DispatchCmdDrawIndirect(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         buffer = layer_data->Unwrap(buffer);
     }
     layer_data->device_dispatch_table.CmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
@@ -2730,7 +2741,7 @@ void DispatchCmdDrawIndexedIndirect(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         buffer = layer_data->Unwrap(buffer);
     }
     layer_data->device_dispatch_table.CmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
@@ -2756,7 +2767,7 @@ void DispatchCmdDispatchIndirect(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdDispatchIndirect(commandBuffer, buffer, offset);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         buffer = layer_data->Unwrap(buffer);
     }
     layer_data->device_dispatch_table.CmdDispatchIndirect(commandBuffer, buffer, offset);
@@ -2773,7 +2784,7 @@ void DispatchCmdCopyBuffer(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         srcBuffer = layer_data->Unwrap(srcBuffer);
         dstBuffer = layer_data->Unwrap(dstBuffer);
     }
@@ -2793,7 +2804,7 @@ void DispatchCmdCopyImage(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         srcImage = layer_data->Unwrap(srcImage);
         dstImage = layer_data->Unwrap(dstImage);
     }
@@ -2814,7 +2825,7 @@ void DispatchCmdBlitImage(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdBlitImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions, filter);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         srcImage = layer_data->Unwrap(srcImage);
         dstImage = layer_data->Unwrap(dstImage);
     }
@@ -2833,7 +2844,7 @@ void DispatchCmdCopyBufferToImage(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         srcBuffer = layer_data->Unwrap(srcBuffer);
         dstImage = layer_data->Unwrap(dstImage);
     }
@@ -2852,7 +2863,7 @@ void DispatchCmdCopyImageToBuffer(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         srcImage = layer_data->Unwrap(srcImage);
         dstBuffer = layer_data->Unwrap(dstBuffer);
     }
@@ -2870,7 +2881,7 @@ void DispatchCmdUpdateBuffer(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         dstBuffer = layer_data->Unwrap(dstBuffer);
     }
     layer_data->device_dispatch_table.CmdUpdateBuffer(commandBuffer, dstBuffer, dstOffset, dataSize, pData);
@@ -2887,7 +2898,7 @@ void DispatchCmdFillBuffer(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         dstBuffer = layer_data->Unwrap(dstBuffer);
     }
     layer_data->device_dispatch_table.CmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
@@ -2905,7 +2916,7 @@ void DispatchCmdClearColorImage(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         image = layer_data->Unwrap(image);
     }
     layer_data->device_dispatch_table.CmdClearColorImage(commandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
@@ -2923,7 +2934,7 @@ void DispatchCmdClearDepthStencilImage(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         image = layer_data->Unwrap(image);
     }
     layer_data->device_dispatch_table.CmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
@@ -2954,7 +2965,7 @@ void DispatchCmdResolveImage(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdResolveImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         srcImage = layer_data->Unwrap(srcImage);
         dstImage = layer_data->Unwrap(dstImage);
     }
@@ -2970,7 +2981,7 @@ void DispatchCmdSetEvent(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdSetEvent(commandBuffer, event, stageMask);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         event = layer_data->Unwrap(event);
     }
     layer_data->device_dispatch_table.CmdSetEvent(commandBuffer, event, stageMask);
@@ -2985,7 +2996,7 @@ void DispatchCmdResetEvent(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdResetEvent(commandBuffer, event, stageMask);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         event = layer_data->Unwrap(event);
     }
     layer_data->device_dispatch_table.CmdResetEvent(commandBuffer, event, stageMask);
@@ -3011,7 +3022,7 @@ void DispatchCmdWaitEvents(
     safe_VkBufferMemoryBarrier *local_pBufferMemoryBarriers = NULL;
     safe_VkImageMemoryBarrier *local_pImageMemoryBarriers = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pEvents) {
             local_pEvents = new VkEvent[eventCount];
             for (uint32_t index0 = 0; index0 < eventCount; ++index0) {
@@ -3065,7 +3076,7 @@ void DispatchCmdPipelineBarrier(
     safe_VkBufferMemoryBarrier *local_pBufferMemoryBarriers = NULL;
     safe_VkImageMemoryBarrier *local_pImageMemoryBarriers = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pBufferMemoryBarriers) {
             local_pBufferMemoryBarriers = new safe_VkBufferMemoryBarrier[bufferMemoryBarrierCount];
             for (uint32_t index0 = 0; index0 < bufferMemoryBarrierCount; ++index0) {
@@ -3103,7 +3114,7 @@ void DispatchCmdBeginQuery(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdBeginQuery(commandBuffer, queryPool, query, flags);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         queryPool = layer_data->Unwrap(queryPool);
     }
     layer_data->device_dispatch_table.CmdBeginQuery(commandBuffer, queryPool, query, flags);
@@ -3118,7 +3129,7 @@ void DispatchCmdEndQuery(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdEndQuery(commandBuffer, queryPool, query);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         queryPool = layer_data->Unwrap(queryPool);
     }
     layer_data->device_dispatch_table.CmdEndQuery(commandBuffer, queryPool, query);
@@ -3134,7 +3145,7 @@ void DispatchCmdResetQueryPool(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         queryPool = layer_data->Unwrap(queryPool);
     }
     layer_data->device_dispatch_table.CmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
@@ -3150,7 +3161,7 @@ void DispatchCmdWriteTimestamp(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         queryPool = layer_data->Unwrap(queryPool);
     }
     layer_data->device_dispatch_table.CmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
@@ -3170,7 +3181,7 @@ void DispatchCmdCopyQueryPoolResults(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset, stride, flags);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         queryPool = layer_data->Unwrap(queryPool);
         dstBuffer = layer_data->Unwrap(dstBuffer);
     }
@@ -3189,7 +3200,7 @@ void DispatchCmdPushConstants(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         layout = layer_data->Unwrap(layout);
     }
     layer_data->device_dispatch_table.CmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
@@ -3205,7 +3216,7 @@ void DispatchCmdBeginRenderPass(
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
     safe_VkRenderPassBeginInfo *local_pRenderPassBegin = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pRenderPassBegin) {
             local_pRenderPassBegin = new safe_VkRenderPassBeginInfo(pRenderPassBegin);
             if (pRenderPassBegin->renderPass) {
@@ -3261,7 +3272,7 @@ VkResult DispatchBindBufferMemory2(
     if (!wrap_handles) return layer_data->device_dispatch_table.BindBufferMemory2(device, bindInfoCount, pBindInfos);
     safe_VkBindBufferMemoryInfo *local_pBindInfos = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pBindInfos) {
             local_pBindInfos = new safe_VkBindBufferMemoryInfo[bindInfoCount];
             for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
@@ -3291,7 +3302,7 @@ VkResult DispatchBindImageMemory2(
     if (!wrap_handles) return layer_data->device_dispatch_table.BindImageMemory2(device, bindInfoCount, pBindInfos);
     safe_VkBindImageMemoryInfo *local_pBindInfos = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pBindInfos) {
             local_pBindInfos = new safe_VkBindImageMemoryInfo[bindInfoCount];
             for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
@@ -3368,7 +3379,7 @@ void DispatchGetImageMemoryRequirements2(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetImageMemoryRequirements2(device, pInfo, pMemoryRequirements);
     safe_VkImageMemoryRequirementsInfo2 *local_pInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pInfo) {
             local_pInfo = new safe_VkImageMemoryRequirementsInfo2(pInfo);
             if (pInfo->image) {
@@ -3391,7 +3402,7 @@ void DispatchGetBufferMemoryRequirements2(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetBufferMemoryRequirements2(device, pInfo, pMemoryRequirements);
     safe_VkBufferMemoryRequirementsInfo2 *local_pInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pInfo) {
             local_pInfo = new safe_VkBufferMemoryRequirementsInfo2(pInfo);
             if (pInfo->buffer) {
@@ -3415,7 +3426,7 @@ void DispatchGetImageSparseMemoryRequirements2(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
     safe_VkImageSparseMemoryRequirementsInfo2 *local_pInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pInfo) {
             local_pInfo = new safe_VkImageSparseMemoryRequirementsInfo2(pInfo);
             if (pInfo->image) {
@@ -3466,7 +3477,7 @@ VkResult DispatchGetPhysicalDeviceImageFormatProperties2(
     if (!wrap_handles) return layer_data->instance_dispatch_table.GetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties);
     safe_VkPhysicalDeviceImageFormatInfo2 *local_pImageFormatInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pImageFormatInfo) {
             local_pImageFormatInfo = new safe_VkPhysicalDeviceImageFormatInfo2(pImageFormatInfo);
             WrapPnextChainHandles(layer_data, local_pImageFormatInfo->pNext);
@@ -3517,7 +3528,7 @@ void DispatchTrimCommandPool(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.TrimCommandPool(device, commandPool, flags);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         commandPool = layer_data->Unwrap(commandPool);
     }
     layer_data->device_dispatch_table.TrimCommandPool(device, commandPool, flags);
@@ -3544,7 +3555,7 @@ VkResult DispatchCreateSamplerYcbcrConversion(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
     safe_VkSamplerYcbcrConversionCreateInfo *local_pCreateInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pCreateInfo) {
             local_pCreateInfo = new safe_VkSamplerYcbcrConversionCreateInfo(pCreateInfo);
             WrapPnextChainHandles(layer_data, local_pCreateInfo->pNext);
@@ -3555,7 +3566,7 @@ VkResult DispatchCreateSamplerYcbcrConversion(
         delete local_pCreateInfo;
     }
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pYcbcrConversion = layer_data->WrapNew(*pYcbcrConversion);
     }
     return result;
@@ -3568,7 +3579,7 @@ void DispatchDestroySamplerYcbcrConversion(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroySamplerYcbcrConversion(device, ycbcrConversion, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t ycbcrConversion_id = reinterpret_cast<uint64_t &>(ycbcrConversion);
     ycbcrConversion = (VkSamplerYcbcrConversion)unique_id_mapping[ycbcrConversion_id];
     unique_id_mapping.erase(ycbcrConversion_id);
@@ -3622,7 +3633,7 @@ void DispatchGetDescriptorSetLayoutSupport(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetDescriptorSetLayoutSupport(device, pCreateInfo, pSupport);
     safe_VkDescriptorSetLayoutCreateInfo *local_pCreateInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pCreateInfo) {
             local_pCreateInfo = new safe_VkDescriptorSetLayoutCreateInfo(pCreateInfo);
             if (local_pCreateInfo->pBindings) {
@@ -3649,7 +3660,7 @@ void DispatchDestroySurfaceKHR(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.DestroySurfaceKHR(instance, surface, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t surface_id = reinterpret_cast<uint64_t &>(surface);
     surface = (VkSurfaceKHR)unique_id_mapping[surface_id];
     unique_id_mapping.erase(surface_id);
@@ -3667,7 +3678,7 @@ VkResult DispatchGetPhysicalDeviceSurfaceSupportKHR(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.GetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         surface = layer_data->Unwrap(surface);
     }
     VkResult result = layer_data->instance_dispatch_table.GetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, surface, pSupported);
@@ -3683,7 +3694,7 @@ VkResult DispatchGetPhysicalDeviceSurfaceCapabilitiesKHR(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.GetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         surface = layer_data->Unwrap(surface);
     }
     VkResult result = layer_data->instance_dispatch_table.GetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, pSurfaceCapabilities);
@@ -3700,7 +3711,7 @@ VkResult DispatchGetPhysicalDeviceSurfaceFormatsKHR(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.GetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         surface = layer_data->Unwrap(surface);
     }
     VkResult result = layer_data->instance_dispatch_table.GetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, pSurfaceFormatCount, pSurfaceFormats);
@@ -3717,7 +3728,7 @@ VkResult DispatchGetPhysicalDeviceSurfacePresentModesKHR(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.GetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         surface = layer_data->Unwrap(surface);
     }
     VkResult result = layer_data->instance_dispatch_table.GetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, pPresentModeCount, pPresentModes);
@@ -3742,7 +3753,7 @@ VkResult DispatchAcquireNextImageKHR(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.AcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         swapchain = layer_data->Unwrap(swapchain);
         semaphore = layer_data->Unwrap(semaphore);
         fence = layer_data->Unwrap(fence);
@@ -3772,7 +3783,7 @@ VkResult DispatchGetDeviceGroupSurfacePresentModesKHR(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetDeviceGroupSurfacePresentModesKHR(device, surface, pModes);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         surface = layer_data->Unwrap(surface);
     }
     VkResult result = layer_data->device_dispatch_table.GetDeviceGroupSurfacePresentModesKHR(device, surface, pModes);
@@ -3789,7 +3800,7 @@ VkResult DispatchGetPhysicalDevicePresentRectanglesKHR(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.GetPhysicalDevicePresentRectanglesKHR(physicalDevice, surface, pRectCount, pRects);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         surface = layer_data->Unwrap(surface);
     }
     VkResult result = layer_data->instance_dispatch_table.GetPhysicalDevicePresentRectanglesKHR(physicalDevice, surface, pRectCount, pRects);
@@ -3806,7 +3817,7 @@ VkResult DispatchAcquireNextImage2KHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.AcquireNextImage2KHR(device, pAcquireInfo, pImageIndex);
     safe_VkAcquireNextImageInfoKHR *local_pAcquireInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pAcquireInfo) {
             local_pAcquireInfo = new safe_VkAcquireNextImageInfoKHR(pAcquireInfo);
             if (pAcquireInfo->swapchain) {
@@ -3845,12 +3856,12 @@ VkResult DispatchCreateDisplayModeKHR(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.CreateDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         display = layer_data->Unwrap(display);
     }
     VkResult result = layer_data->instance_dispatch_table.CreateDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pMode = layer_data->WrapNew(*pMode);
     }
     return result;
@@ -3865,7 +3876,7 @@ VkResult DispatchGetDisplayPlaneCapabilitiesKHR(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.GetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         mode = layer_data->Unwrap(mode);
     }
     VkResult result = layer_data->instance_dispatch_table.GetDisplayPlaneCapabilitiesKHR(physicalDevice, mode, planeIndex, pCapabilities);
@@ -3883,7 +3894,7 @@ VkResult DispatchCreateDisplayPlaneSurfaceKHR(
     if (!wrap_handles) return layer_data->instance_dispatch_table.CreateDisplayPlaneSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
     safe_VkDisplaySurfaceCreateInfoKHR *local_pCreateInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pCreateInfo) {
             local_pCreateInfo = new safe_VkDisplaySurfaceCreateInfoKHR(pCreateInfo);
             if (pCreateInfo->displayMode) {
@@ -3896,7 +3907,7 @@ VkResult DispatchCreateDisplayPlaneSurfaceKHR(
         delete local_pCreateInfo;
     }
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pSurface = layer_data->WrapNew(*pSurface);
     }
     return result;
@@ -3916,7 +3927,7 @@ VkResult DispatchCreateXlibSurfaceKHR(
     if (!wrap_handles) return layer_data->instance_dispatch_table.CreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
     VkResult result = layer_data->instance_dispatch_table.CreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pSurface = layer_data->WrapNew(*pSurface);
     }
     return result;
@@ -3950,7 +3961,7 @@ VkResult DispatchCreateXcbSurfaceKHR(
     if (!wrap_handles) return layer_data->instance_dispatch_table.CreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
     VkResult result = layer_data->instance_dispatch_table.CreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pSurface = layer_data->WrapNew(*pSurface);
     }
     return result;
@@ -3984,7 +3995,7 @@ VkResult DispatchCreateWaylandSurfaceKHR(
     if (!wrap_handles) return layer_data->instance_dispatch_table.CreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
     VkResult result = layer_data->instance_dispatch_table.CreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pSurface = layer_data->WrapNew(*pSurface);
     }
     return result;
@@ -4017,7 +4028,7 @@ VkResult DispatchCreateAndroidSurfaceKHR(
     if (!wrap_handles) return layer_data->instance_dispatch_table.CreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
     VkResult result = layer_data->instance_dispatch_table.CreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pSurface = layer_data->WrapNew(*pSurface);
     }
     return result;
@@ -4036,7 +4047,7 @@ VkResult DispatchCreateWin32SurfaceKHR(
     if (!wrap_handles) return layer_data->instance_dispatch_table.CreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
     VkResult result = layer_data->instance_dispatch_table.CreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pSurface = layer_data->WrapNew(*pSurface);
     }
     return result;
@@ -4093,7 +4104,7 @@ VkResult DispatchGetPhysicalDeviceImageFormatProperties2KHR(
     if (!wrap_handles) return layer_data->instance_dispatch_table.GetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo, pImageFormatProperties);
     safe_VkPhysicalDeviceImageFormatInfo2 *local_pImageFormatInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pImageFormatInfo) {
             local_pImageFormatInfo = new safe_VkPhysicalDeviceImageFormatInfo2(pImageFormatInfo);
             WrapPnextChainHandles(layer_data, local_pImageFormatInfo->pNext);
@@ -4179,7 +4190,7 @@ void DispatchTrimCommandPoolKHR(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.TrimCommandPoolKHR(device, commandPool, flags);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         commandPool = layer_data->Unwrap(commandPool);
     }
     layer_data->device_dispatch_table.TrimCommandPoolKHR(device, commandPool, flags);
@@ -4218,7 +4229,7 @@ VkResult DispatchGetMemoryWin32HandleKHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
     safe_VkMemoryGetWin32HandleInfoKHR *local_pGetWin32HandleInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pGetWin32HandleInfo) {
             local_pGetWin32HandleInfo = new safe_VkMemoryGetWin32HandleInfoKHR(pGetWin32HandleInfo);
             if (pGetWin32HandleInfo->memory) {
@@ -4258,7 +4269,7 @@ VkResult DispatchGetMemoryFdKHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetMemoryFdKHR(device, pGetFdInfo, pFd);
     safe_VkMemoryGetFdInfoKHR *local_pGetFdInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pGetFdInfo) {
             local_pGetFdInfo = new safe_VkMemoryGetFdInfoKHR(pGetFdInfo);
             if (pGetFdInfo->memory) {
@@ -4305,7 +4316,7 @@ VkResult DispatchImportSemaphoreWin32HandleKHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.ImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo);
     safe_VkImportSemaphoreWin32HandleInfoKHR *local_pImportSemaphoreWin32HandleInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pImportSemaphoreWin32HandleInfo) {
             local_pImportSemaphoreWin32HandleInfo = new safe_VkImportSemaphoreWin32HandleInfoKHR(pImportSemaphoreWin32HandleInfo);
             if (pImportSemaphoreWin32HandleInfo->semaphore) {
@@ -4332,7 +4343,7 @@ VkResult DispatchGetSemaphoreWin32HandleKHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
     safe_VkSemaphoreGetWin32HandleInfoKHR *local_pGetWin32HandleInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pGetWin32HandleInfo) {
             local_pGetWin32HandleInfo = new safe_VkSemaphoreGetWin32HandleInfoKHR(pGetWin32HandleInfo);
             if (pGetWin32HandleInfo->semaphore) {
@@ -4356,7 +4367,7 @@ VkResult DispatchImportSemaphoreFdKHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.ImportSemaphoreFdKHR(device, pImportSemaphoreFdInfo);
     safe_VkImportSemaphoreFdInfoKHR *local_pImportSemaphoreFdInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pImportSemaphoreFdInfo) {
             local_pImportSemaphoreFdInfo = new safe_VkImportSemaphoreFdInfoKHR(pImportSemaphoreFdInfo);
             if (pImportSemaphoreFdInfo->semaphore) {
@@ -4380,7 +4391,7 @@ VkResult DispatchGetSemaphoreFdKHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetSemaphoreFdKHR(device, pGetFdInfo, pFd);
     safe_VkSemaphoreGetFdInfoKHR *local_pGetFdInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pGetFdInfo) {
             local_pGetFdInfo = new safe_VkSemaphoreGetFdInfoKHR(pGetFdInfo);
             if (pGetFdInfo->semaphore) {
@@ -4407,7 +4418,7 @@ void DispatchCmdPushDescriptorSetKHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount, pDescriptorWrites);
     safe_VkWriteDescriptorSet *local_pDescriptorWrites = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         layout = layer_data->Unwrap(layout);
         if (pDescriptorWrites) {
             local_pDescriptorWrites = new safe_VkWriteDescriptorSet[descriptorWriteCount];
@@ -4467,7 +4478,7 @@ void DispatchCmdBeginRenderPass2KHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
     safe_VkRenderPassBeginInfo *local_pRenderPassBegin = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pRenderPassBegin) {
             local_pRenderPassBegin = new safe_VkRenderPassBeginInfo(pRenderPassBegin);
             if (pRenderPassBegin->renderPass) {
@@ -4511,7 +4522,7 @@ VkResult DispatchGetSwapchainStatusKHR(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetSwapchainStatusKHR(device, swapchain);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         swapchain = layer_data->Unwrap(swapchain);
     }
     VkResult result = layer_data->device_dispatch_table.GetSwapchainStatusKHR(device, swapchain);
@@ -4539,7 +4550,7 @@ VkResult DispatchImportFenceWin32HandleKHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.ImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo);
     safe_VkImportFenceWin32HandleInfoKHR *local_pImportFenceWin32HandleInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pImportFenceWin32HandleInfo) {
             local_pImportFenceWin32HandleInfo = new safe_VkImportFenceWin32HandleInfoKHR(pImportFenceWin32HandleInfo);
             if (pImportFenceWin32HandleInfo->fence) {
@@ -4566,7 +4577,7 @@ VkResult DispatchGetFenceWin32HandleKHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetFenceWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
     safe_VkFenceGetWin32HandleInfoKHR *local_pGetWin32HandleInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pGetWin32HandleInfo) {
             local_pGetWin32HandleInfo = new safe_VkFenceGetWin32HandleInfoKHR(pGetWin32HandleInfo);
             if (pGetWin32HandleInfo->fence) {
@@ -4590,7 +4601,7 @@ VkResult DispatchImportFenceFdKHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.ImportFenceFdKHR(device, pImportFenceFdInfo);
     safe_VkImportFenceFdInfoKHR *local_pImportFenceFdInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pImportFenceFdInfo) {
             local_pImportFenceFdInfo = new safe_VkImportFenceFdInfoKHR(pImportFenceFdInfo);
             if (pImportFenceFdInfo->fence) {
@@ -4614,7 +4625,7 @@ VkResult DispatchGetFenceFdKHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetFenceFdKHR(device, pGetFdInfo, pFd);
     safe_VkFenceGetFdInfoKHR *local_pGetFdInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pGetFdInfo) {
             local_pGetFdInfo = new safe_VkFenceGetFdInfoKHR(pGetFdInfo);
             if (pGetFdInfo->fence) {
@@ -4638,7 +4649,7 @@ VkResult DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(
     if (!wrap_handles) return layer_data->instance_dispatch_table.GetPhysicalDeviceSurfaceCapabilities2KHR(physicalDevice, pSurfaceInfo, pSurfaceCapabilities);
     safe_VkPhysicalDeviceSurfaceInfo2KHR *local_pSurfaceInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pSurfaceInfo) {
             local_pSurfaceInfo = new safe_VkPhysicalDeviceSurfaceInfo2KHR(pSurfaceInfo);
             if (pSurfaceInfo->surface) {
@@ -4663,7 +4674,7 @@ VkResult DispatchGetPhysicalDeviceSurfaceFormats2KHR(
     if (!wrap_handles) return layer_data->instance_dispatch_table.GetPhysicalDeviceSurfaceFormats2KHR(physicalDevice, pSurfaceInfo, pSurfaceFormatCount, pSurfaceFormats);
     safe_VkPhysicalDeviceSurfaceInfo2KHR *local_pSurfaceInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pSurfaceInfo) {
             local_pSurfaceInfo = new safe_VkPhysicalDeviceSurfaceInfo2KHR(pSurfaceInfo);
             if (pSurfaceInfo->surface) {
@@ -4693,7 +4704,7 @@ VkResult DispatchGetDisplayPlaneCapabilities2KHR(
     if (!wrap_handles) return layer_data->instance_dispatch_table.GetDisplayPlaneCapabilities2KHR(physicalDevice, pDisplayPlaneInfo, pCapabilities);
     safe_VkDisplayPlaneInfo2KHR *local_pDisplayPlaneInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pDisplayPlaneInfo) {
             local_pDisplayPlaneInfo = new safe_VkDisplayPlaneInfo2KHR(pDisplayPlaneInfo);
             if (pDisplayPlaneInfo->mode) {
@@ -4717,7 +4728,7 @@ void DispatchGetImageMemoryRequirements2KHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetImageMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
     safe_VkImageMemoryRequirementsInfo2 *local_pInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pInfo) {
             local_pInfo = new safe_VkImageMemoryRequirementsInfo2(pInfo);
             if (pInfo->image) {
@@ -4740,7 +4751,7 @@ void DispatchGetBufferMemoryRequirements2KHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetBufferMemoryRequirements2KHR(device, pInfo, pMemoryRequirements);
     safe_VkBufferMemoryRequirementsInfo2 *local_pInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pInfo) {
             local_pInfo = new safe_VkBufferMemoryRequirementsInfo2(pInfo);
             if (pInfo->buffer) {
@@ -4764,7 +4775,7 @@ void DispatchGetImageSparseMemoryRequirements2KHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetImageSparseMemoryRequirements2KHR(device, pInfo, pSparseMemoryRequirementCount, pSparseMemoryRequirements);
     safe_VkImageSparseMemoryRequirementsInfo2 *local_pInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pInfo) {
             local_pInfo = new safe_VkImageSparseMemoryRequirementsInfo2(pInfo);
             if (pInfo->image) {
@@ -4788,7 +4799,7 @@ VkResult DispatchCreateSamplerYcbcrConversionKHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateSamplerYcbcrConversionKHR(device, pCreateInfo, pAllocator, pYcbcrConversion);
     safe_VkSamplerYcbcrConversionCreateInfo *local_pCreateInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pCreateInfo) {
             local_pCreateInfo = new safe_VkSamplerYcbcrConversionCreateInfo(pCreateInfo);
             WrapPnextChainHandles(layer_data, local_pCreateInfo->pNext);
@@ -4799,7 +4810,7 @@ VkResult DispatchCreateSamplerYcbcrConversionKHR(
         delete local_pCreateInfo;
     }
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pYcbcrConversion = layer_data->WrapNew(*pYcbcrConversion);
     }
     return result;
@@ -4812,7 +4823,7 @@ void DispatchDestroySamplerYcbcrConversionKHR(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroySamplerYcbcrConversionKHR(device, ycbcrConversion, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t ycbcrConversion_id = reinterpret_cast<uint64_t &>(ycbcrConversion);
     ycbcrConversion = (VkSamplerYcbcrConversion)unique_id_mapping[ycbcrConversion_id];
     unique_id_mapping.erase(ycbcrConversion_id);
@@ -4830,7 +4841,7 @@ VkResult DispatchBindBufferMemory2KHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.BindBufferMemory2KHR(device, bindInfoCount, pBindInfos);
     safe_VkBindBufferMemoryInfo *local_pBindInfos = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pBindInfos) {
             local_pBindInfos = new safe_VkBindBufferMemoryInfo[bindInfoCount];
             for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
@@ -4860,7 +4871,7 @@ VkResult DispatchBindImageMemory2KHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.BindImageMemory2KHR(device, bindInfoCount, pBindInfos);
     safe_VkBindImageMemoryInfo *local_pBindInfos = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pBindInfos) {
             local_pBindInfos = new safe_VkBindImageMemoryInfo[bindInfoCount];
             for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
@@ -4891,7 +4902,7 @@ void DispatchGetDescriptorSetLayoutSupportKHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetDescriptorSetLayoutSupportKHR(device, pCreateInfo, pSupport);
     safe_VkDescriptorSetLayoutCreateInfo *local_pCreateInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pCreateInfo) {
             local_pCreateInfo = new safe_VkDescriptorSetLayoutCreateInfo(pCreateInfo);
             if (local_pCreateInfo->pBindings) {
@@ -4923,7 +4934,7 @@ void DispatchCmdDrawIndirectCountKHR(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         buffer = layer_data->Unwrap(buffer);
         countBuffer = layer_data->Unwrap(countBuffer);
     }
@@ -4943,7 +4954,7 @@ void DispatchCmdDrawIndexedIndirectCountKHR(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         buffer = layer_data->Unwrap(buffer);
         countBuffer = layer_data->Unwrap(countBuffer);
     }
@@ -4961,7 +4972,7 @@ VkResult DispatchGetPipelineExecutablePropertiesKHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetPipelineExecutablePropertiesKHR(device, pPipelineInfo, pExecutableCount, pProperties);
     safe_VkPipelineInfoKHR *local_pPipelineInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pPipelineInfo) {
             local_pPipelineInfo = new safe_VkPipelineInfoKHR(pPipelineInfo);
             if (pPipelineInfo->pipeline) {
@@ -4986,7 +4997,7 @@ VkResult DispatchGetPipelineExecutableStatisticsKHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetPipelineExecutableStatisticsKHR(device, pExecutableInfo, pStatisticCount, pStatistics);
     safe_VkPipelineExecutableInfoKHR *local_pExecutableInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pExecutableInfo) {
             local_pExecutableInfo = new safe_VkPipelineExecutableInfoKHR(pExecutableInfo);
             if (pExecutableInfo->pipeline) {
@@ -5011,7 +5022,7 @@ VkResult DispatchGetPipelineExecutableInternalRepresentationsKHR(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetPipelineExecutableInternalRepresentationsKHR(device, pExecutableInfo, pInternalRepresentationCount, pInternalRepresentations);
     safe_VkPipelineExecutableInfoKHR *local_pExecutableInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pExecutableInfo) {
             local_pExecutableInfo = new safe_VkPipelineExecutableInfoKHR(pExecutableInfo);
             if (pExecutableInfo->pipeline) {
@@ -5036,7 +5047,7 @@ VkResult DispatchCreateDebugReportCallbackEXT(
     if (!wrap_handles) return layer_data->instance_dispatch_table.CreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
     VkResult result = layer_data->instance_dispatch_table.CreateDebugReportCallbackEXT(instance, pCreateInfo, pAllocator, pCallback);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pCallback = layer_data->WrapNew(*pCallback);
     }
     return result;
@@ -5049,7 +5060,7 @@ void DispatchDestroyDebugReportCallbackEXT(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.DestroyDebugReportCallbackEXT(instance, callback, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t callback_id = reinterpret_cast<uint64_t &>(callback);
     callback = (VkDebugReportCallbackEXT)unique_id_mapping[callback_id];
     unique_id_mapping.erase(callback_id);
@@ -5115,7 +5126,7 @@ void DispatchCmdBindTransformFeedbackBuffersEXT(
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdBindTransformFeedbackBuffersEXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes);
     VkBuffer *local_pBuffers = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pBuffers) {
             local_pBuffers = new VkBuffer[bindingCount];
             for (uint32_t index0 = 0; index0 < bindingCount; ++index0) {
@@ -5139,7 +5150,7 @@ void DispatchCmdBeginTransformFeedbackEXT(
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdBeginTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount, pCounterBuffers, pCounterBufferOffsets);
     VkBuffer *local_pCounterBuffers = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pCounterBuffers) {
             local_pCounterBuffers = new VkBuffer[counterBufferCount];
             for (uint32_t index0 = 0; index0 < counterBufferCount; ++index0) {
@@ -5163,7 +5174,7 @@ void DispatchCmdEndTransformFeedbackEXT(
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdEndTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount, pCounterBuffers, pCounterBufferOffsets);
     VkBuffer *local_pCounterBuffers = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pCounterBuffers) {
             local_pCounterBuffers = new VkBuffer[counterBufferCount];
             for (uint32_t index0 = 0; index0 < counterBufferCount; ++index0) {
@@ -5186,7 +5197,7 @@ void DispatchCmdBeginQueryIndexedEXT(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdBeginQueryIndexedEXT(commandBuffer, queryPool, query, flags, index);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         queryPool = layer_data->Unwrap(queryPool);
     }
     layer_data->device_dispatch_table.CmdBeginQueryIndexedEXT(commandBuffer, queryPool, query, flags, index);
@@ -5202,7 +5213,7 @@ void DispatchCmdEndQueryIndexedEXT(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdEndQueryIndexedEXT(commandBuffer, queryPool, query, index);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         queryPool = layer_data->Unwrap(queryPool);
     }
     layer_data->device_dispatch_table.CmdEndQueryIndexedEXT(commandBuffer, queryPool, query, index);
@@ -5221,7 +5232,7 @@ void DispatchCmdDrawIndirectByteCountEXT(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer, counterBufferOffset, counterOffset, vertexStride);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         counterBuffer = layer_data->Unwrap(counterBuffer);
     }
     layer_data->device_dispatch_table.CmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer, counterBufferOffset, counterOffset, vertexStride);
@@ -5236,7 +5247,7 @@ uint32_t DispatchGetImageViewHandleNVX(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetImageViewHandleNVX(device, pInfo);
     safe_VkImageViewHandleInfoNVX *local_pInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pInfo) {
             local_pInfo = new safe_VkImageViewHandleInfoNVX(pInfo);
             if (pInfo->imageView) {
@@ -5266,7 +5277,7 @@ void DispatchCmdDrawIndirectCountAMD(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdDrawIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         buffer = layer_data->Unwrap(buffer);
         countBuffer = layer_data->Unwrap(countBuffer);
     }
@@ -5286,7 +5297,7 @@ void DispatchCmdDrawIndexedIndirectCountAMD(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdDrawIndexedIndirectCountAMD(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         buffer = layer_data->Unwrap(buffer);
         countBuffer = layer_data->Unwrap(countBuffer);
     }
@@ -5305,7 +5316,7 @@ VkResult DispatchGetShaderInfoAMD(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetShaderInfoAMD(device, pipeline, shaderStage, infoType, pInfoSize, pInfo);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         pipeline = layer_data->Unwrap(pipeline);
     }
     VkResult result = layer_data->device_dispatch_table.GetShaderInfoAMD(device, pipeline, shaderStage, infoType, pInfoSize, pInfo);
@@ -5325,7 +5336,7 @@ VkResult DispatchCreateStreamDescriptorSurfaceGGP(
     if (!wrap_handles) return layer_data->instance_dispatch_table.CreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface);
     VkResult result = layer_data->instance_dispatch_table.CreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pSurface = layer_data->WrapNew(*pSurface);
     }
     return result;
@@ -5359,7 +5370,7 @@ VkResult DispatchGetMemoryWin32HandleNV(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetMemoryWin32HandleNV(device, memory, handleType, pHandle);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         memory = layer_data->Unwrap(memory);
     }
     VkResult result = layer_data->device_dispatch_table.GetMemoryWin32HandleNV(device, memory, handleType, pHandle);
@@ -5380,7 +5391,7 @@ VkResult DispatchCreateViSurfaceNN(
     if (!wrap_handles) return layer_data->instance_dispatch_table.CreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface);
     VkResult result = layer_data->instance_dispatch_table.CreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pSurface = layer_data->WrapNew(*pSurface);
     }
     return result;
@@ -5395,7 +5406,7 @@ void DispatchCmdBeginConditionalRenderingEXT(
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdBeginConditionalRenderingEXT(commandBuffer, pConditionalRenderingBegin);
     safe_VkConditionalRenderingBeginInfoEXT *local_pConditionalRenderingBegin = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pConditionalRenderingBegin) {
             local_pConditionalRenderingBegin = new safe_VkConditionalRenderingBeginInfoEXT(pConditionalRenderingBegin);
             if (pConditionalRenderingBegin->buffer) {
@@ -5425,7 +5436,7 @@ void DispatchCmdProcessCommandsNVX(
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdProcessCommandsNVX(commandBuffer, pProcessCommandsInfo);
     safe_VkCmdProcessCommandsInfoNVX *local_pProcessCommandsInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pProcessCommandsInfo) {
             local_pProcessCommandsInfo = new safe_VkCmdProcessCommandsInfoNVX(pProcessCommandsInfo);
             if (pProcessCommandsInfo->objectTable) {
@@ -5463,7 +5474,7 @@ void DispatchCmdReserveSpaceForCommandsNVX(
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdReserveSpaceForCommandsNVX(commandBuffer, pReserveSpaceInfo);
     safe_VkCmdReserveSpaceForCommandsInfoNVX *local_pReserveSpaceInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pReserveSpaceInfo) {
             local_pReserveSpaceInfo = new safe_VkCmdReserveSpaceForCommandsInfoNVX(pReserveSpaceInfo);
             if (pReserveSpaceInfo->objectTable) {
@@ -5490,7 +5501,7 @@ VkResult DispatchCreateIndirectCommandsLayoutNVX(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateIndirectCommandsLayoutNVX(device, pCreateInfo, pAllocator, pIndirectCommandsLayout);
     VkResult result = layer_data->device_dispatch_table.CreateIndirectCommandsLayoutNVX(device, pCreateInfo, pAllocator, pIndirectCommandsLayout);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pIndirectCommandsLayout = layer_data->WrapNew(*pIndirectCommandsLayout);
     }
     return result;
@@ -5503,7 +5514,7 @@ void DispatchDestroyIndirectCommandsLayoutNVX(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyIndirectCommandsLayoutNVX(device, indirectCommandsLayout, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t indirectCommandsLayout_id = reinterpret_cast<uint64_t &>(indirectCommandsLayout);
     indirectCommandsLayout = (VkIndirectCommandsLayoutNVX)unique_id_mapping[indirectCommandsLayout_id];
     unique_id_mapping.erase(indirectCommandsLayout_id);
@@ -5522,7 +5533,7 @@ VkResult DispatchCreateObjectTableNVX(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateObjectTableNVX(device, pCreateInfo, pAllocator, pObjectTable);
     VkResult result = layer_data->device_dispatch_table.CreateObjectTableNVX(device, pCreateInfo, pAllocator, pObjectTable);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pObjectTable = layer_data->WrapNew(*pObjectTable);
     }
     return result;
@@ -5535,7 +5546,7 @@ void DispatchDestroyObjectTableNVX(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyObjectTableNVX(device, objectTable, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t objectTable_id = reinterpret_cast<uint64_t &>(objectTable);
     objectTable = (VkObjectTableNVX)unique_id_mapping[objectTable_id];
     unique_id_mapping.erase(objectTable_id);
@@ -5554,7 +5565,7 @@ VkResult DispatchRegisterObjectsNVX(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.RegisterObjectsNVX(device, objectTable, objectCount, ppObjectTableEntries, pObjectIndices);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         objectTable = layer_data->Unwrap(objectTable);
     }
     VkResult result = layer_data->device_dispatch_table.RegisterObjectsNVX(device, objectTable, objectCount, ppObjectTableEntries, pObjectIndices);
@@ -5572,7 +5583,7 @@ VkResult DispatchUnregisterObjectsNVX(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.UnregisterObjectsNVX(device, objectTable, objectCount, pObjectEntryTypes, pObjectIndices);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         objectTable = layer_data->Unwrap(objectTable);
     }
     VkResult result = layer_data->device_dispatch_table.UnregisterObjectsNVX(device, objectTable, objectCount, pObjectEntryTypes, pObjectIndices);
@@ -5608,7 +5619,7 @@ VkResult DispatchReleaseDisplayEXT(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.ReleaseDisplayEXT(physicalDevice, display);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         display = layer_data->Unwrap(display);
     }
     VkResult result = layer_data->instance_dispatch_table.ReleaseDisplayEXT(physicalDevice, display);
@@ -5626,7 +5637,7 @@ VkResult DispatchAcquireXlibDisplayEXT(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.AcquireXlibDisplayEXT(physicalDevice, dpy, display);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         display = layer_data->Unwrap(display);
     }
     VkResult result = layer_data->instance_dispatch_table.AcquireXlibDisplayEXT(physicalDevice, dpy, display);
@@ -5647,7 +5658,7 @@ VkResult DispatchGetRandROutputDisplayEXT(
     if (!wrap_handles) return layer_data->instance_dispatch_table.GetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay);
     VkResult result = layer_data->instance_dispatch_table.GetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pDisplay = layer_data->WrapNew(*pDisplay);
     }
     return result;
@@ -5662,7 +5673,7 @@ VkResult DispatchGetPhysicalDeviceSurfaceCapabilities2EXT(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.GetPhysicalDeviceSurfaceCapabilities2EXT(physicalDevice, surface, pSurfaceCapabilities);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         surface = layer_data->Unwrap(surface);
     }
     VkResult result = layer_data->instance_dispatch_table.GetPhysicalDeviceSurfaceCapabilities2EXT(physicalDevice, surface, pSurfaceCapabilities);
@@ -5678,7 +5689,7 @@ VkResult DispatchDisplayPowerControlEXT(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DisplayPowerControlEXT(device, display, pDisplayPowerInfo);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         display = layer_data->Unwrap(display);
     }
     VkResult result = layer_data->device_dispatch_table.DisplayPowerControlEXT(device, display, pDisplayPowerInfo);
@@ -5696,7 +5707,7 @@ VkResult DispatchRegisterDeviceEventEXT(
     if (!wrap_handles) return layer_data->device_dispatch_table.RegisterDeviceEventEXT(device, pDeviceEventInfo, pAllocator, pFence);
     VkResult result = layer_data->device_dispatch_table.RegisterDeviceEventEXT(device, pDeviceEventInfo, pAllocator, pFence);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pFence = layer_data->WrapNew(*pFence);
     }
     return result;
@@ -5712,12 +5723,12 @@ VkResult DispatchRegisterDisplayEventEXT(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.RegisterDisplayEventEXT(device, display, pDisplayEventInfo, pAllocator, pFence);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         display = layer_data->Unwrap(display);
     }
     VkResult result = layer_data->device_dispatch_table.RegisterDisplayEventEXT(device, display, pDisplayEventInfo, pAllocator, pFence);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pFence = layer_data->WrapNew(*pFence);
     }
     return result;
@@ -5732,7 +5743,7 @@ VkResult DispatchGetSwapchainCounterEXT(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetSwapchainCounterEXT(device, swapchain, counter, pCounterValue);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         swapchain = layer_data->Unwrap(swapchain);
     }
     VkResult result = layer_data->device_dispatch_table.GetSwapchainCounterEXT(device, swapchain, counter, pCounterValue);
@@ -5748,7 +5759,7 @@ VkResult DispatchGetRefreshCycleDurationGOOGLE(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetRefreshCycleDurationGOOGLE(device, swapchain, pDisplayTimingProperties);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         swapchain = layer_data->Unwrap(swapchain);
     }
     VkResult result = layer_data->device_dispatch_table.GetRefreshCycleDurationGOOGLE(device, swapchain, pDisplayTimingProperties);
@@ -5765,7 +5776,7 @@ VkResult DispatchGetPastPresentationTimingGOOGLE(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetPastPresentationTimingGOOGLE(device, swapchain, pPresentationTimingCount, pPresentationTimings);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         swapchain = layer_data->Unwrap(swapchain);
     }
     VkResult result = layer_data->device_dispatch_table.GetPastPresentationTimingGOOGLE(device, swapchain, pPresentationTimingCount, pPresentationTimings);
@@ -5794,7 +5805,7 @@ void DispatchSetHdrMetadataEXT(
     if (!wrap_handles) return layer_data->device_dispatch_table.SetHdrMetadataEXT(device, swapchainCount, pSwapchains, pMetadata);
     VkSwapchainKHR *local_pSwapchains = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pSwapchains) {
             local_pSwapchains = new VkSwapchainKHR[swapchainCount];
             for (uint32_t index0 = 0; index0 < swapchainCount; ++index0) {
@@ -5819,7 +5830,7 @@ VkResult DispatchCreateIOSSurfaceMVK(
     if (!wrap_handles) return layer_data->instance_dispatch_table.CreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface);
     VkResult result = layer_data->instance_dispatch_table.CreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pSurface = layer_data->WrapNew(*pSurface);
     }
     return result;
@@ -5838,7 +5849,7 @@ VkResult DispatchCreateMacOSSurfaceMVK(
     if (!wrap_handles) return layer_data->instance_dispatch_table.CreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface);
     VkResult result = layer_data->instance_dispatch_table.CreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pSurface = layer_data->WrapNew(*pSurface);
     }
     return result;
@@ -5911,7 +5922,7 @@ VkResult DispatchCreateDebugUtilsMessengerEXT(
     if (!wrap_handles) return layer_data->instance_dispatch_table.CreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
     VkResult result = layer_data->instance_dispatch_table.CreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pMessenger);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pMessenger = layer_data->WrapNew(*pMessenger);
     }
     return result;
@@ -5924,7 +5935,7 @@ void DispatchDestroyDebugUtilsMessengerEXT(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
     if (!wrap_handles) return layer_data->instance_dispatch_table.DestroyDebugUtilsMessengerEXT(instance, messenger, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t messenger_id = reinterpret_cast<uint64_t &>(messenger);
     messenger = (VkDebugUtilsMessengerEXT)unique_id_mapping[messenger_id];
     unique_id_mapping.erase(messenger_id);
@@ -5969,7 +5980,7 @@ VkResult DispatchGetMemoryAndroidHardwareBufferANDROID(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetMemoryAndroidHardwareBufferANDROID(device, pInfo, pBuffer);
     safe_VkMemoryGetAndroidHardwareBufferInfoANDROID *local_pInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pInfo) {
             local_pInfo = new safe_VkMemoryGetAndroidHardwareBufferInfoANDROID(pInfo);
             if (pInfo->memory) {
@@ -6012,7 +6023,7 @@ VkResult DispatchGetImageDrmFormatModifierPropertiesEXT(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetImageDrmFormatModifierPropertiesEXT(device, image, pProperties);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         image = layer_data->Unwrap(image);
     }
     VkResult result = layer_data->device_dispatch_table.GetImageDrmFormatModifierPropertiesEXT(device, image, pProperties);
@@ -6030,7 +6041,7 @@ VkResult DispatchCreateValidationCacheEXT(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateValidationCacheEXT(device, pCreateInfo, pAllocator, pValidationCache);
     VkResult result = layer_data->device_dispatch_table.CreateValidationCacheEXT(device, pCreateInfo, pAllocator, pValidationCache);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pValidationCache = layer_data->WrapNew(*pValidationCache);
     }
     return result;
@@ -6043,7 +6054,7 @@ void DispatchDestroyValidationCacheEXT(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyValidationCacheEXT(device, validationCache, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t validationCache_id = reinterpret_cast<uint64_t &>(validationCache);
     validationCache = (VkValidationCacheEXT)unique_id_mapping[validationCache_id];
     unique_id_mapping.erase(validationCache_id);
@@ -6062,7 +6073,7 @@ VkResult DispatchMergeValidationCachesEXT(
     if (!wrap_handles) return layer_data->device_dispatch_table.MergeValidationCachesEXT(device, dstCache, srcCacheCount, pSrcCaches);
     VkValidationCacheEXT *local_pSrcCaches = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         dstCache = layer_data->Unwrap(dstCache);
         if (pSrcCaches) {
             local_pSrcCaches = new VkValidationCacheEXT[srcCacheCount];
@@ -6086,7 +6097,7 @@ VkResult DispatchGetValidationCacheDataEXT(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetValidationCacheDataEXT(device, validationCache, pDataSize, pData);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         validationCache = layer_data->Unwrap(validationCache);
     }
     VkResult result = layer_data->device_dispatch_table.GetValidationCacheDataEXT(device, validationCache, pDataSize, pData);
@@ -6102,7 +6113,7 @@ void DispatchCmdBindShadingRateImageNV(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         imageView = layer_data->Unwrap(imageView);
     }
     layer_data->device_dispatch_table.CmdBindShadingRateImageNV(commandBuffer, imageView, imageLayout);
@@ -6141,7 +6152,7 @@ VkResult DispatchCreateAccelerationStructureNV(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateAccelerationStructureNV(device, pCreateInfo, pAllocator, pAccelerationStructure);
     safe_VkAccelerationStructureCreateInfoNV *local_pCreateInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pCreateInfo) {
             local_pCreateInfo = new safe_VkAccelerationStructureCreateInfoNV(pCreateInfo);
             if (local_pCreateInfo->info.pGeometries) {
@@ -6167,7 +6178,7 @@ VkResult DispatchCreateAccelerationStructureNV(
         delete local_pCreateInfo;
     }
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pAccelerationStructure = layer_data->WrapNew(*pAccelerationStructure);
     }
     return result;
@@ -6180,7 +6191,7 @@ void DispatchDestroyAccelerationStructureNV(
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyAccelerationStructureNV(device, accelerationStructure, pAllocator);
-    std::unique_lock<std::mutex> lock(dispatch_lock);
+    write_dispatch_lock_guard_t lock(dispatch_lock);
     uint64_t accelerationStructure_id = reinterpret_cast<uint64_t &>(accelerationStructure);
     accelerationStructure = (VkAccelerationStructureNV)unique_id_mapping[accelerationStructure_id];
     unique_id_mapping.erase(accelerationStructure_id);
@@ -6198,7 +6209,7 @@ void DispatchGetAccelerationStructureMemoryRequirementsNV(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetAccelerationStructureMemoryRequirementsNV(device, pInfo, pMemoryRequirements);
     safe_VkAccelerationStructureMemoryRequirementsInfoNV *local_pInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pInfo) {
             local_pInfo = new safe_VkAccelerationStructureMemoryRequirementsInfoNV(pInfo);
             if (pInfo->accelerationStructure) {
@@ -6221,7 +6232,7 @@ VkResult DispatchBindAccelerationStructureMemoryNV(
     if (!wrap_handles) return layer_data->device_dispatch_table.BindAccelerationStructureMemoryNV(device, bindInfoCount, pBindInfos);
     safe_VkBindAccelerationStructureMemoryInfoNV *local_pBindInfos = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pBindInfos) {
             local_pBindInfos = new safe_VkBindAccelerationStructureMemoryInfoNV[bindInfoCount];
             for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
@@ -6257,7 +6268,7 @@ void DispatchCmdBuildAccelerationStructureNV(
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdBuildAccelerationStructureNV(commandBuffer, pInfo, instanceData, instanceOffset, update, dst, src, scratch, scratchOffset);
     safe_VkAccelerationStructureInfoNV *local_pInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pInfo) {
             local_pInfo = new safe_VkAccelerationStructureInfoNV(pInfo);
             if (local_pInfo->pGeometries) {
@@ -6297,7 +6308,7 @@ void DispatchCmdCopyAccelerationStructureNV(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdCopyAccelerationStructureNV(commandBuffer, dst, src, mode);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         dst = layer_data->Unwrap(dst);
         src = layer_data->Unwrap(src);
     }
@@ -6325,7 +6336,7 @@ void DispatchCmdTraceRaysNV(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdTraceRaysNV(commandBuffer, raygenShaderBindingTableBuffer, raygenShaderBindingOffset, missShaderBindingTableBuffer, missShaderBindingOffset, missShaderBindingStride, hitShaderBindingTableBuffer, hitShaderBindingOffset, hitShaderBindingStride, callableShaderBindingTableBuffer, callableShaderBindingOffset, callableShaderBindingStride, width, height, depth);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         raygenShaderBindingTableBuffer = layer_data->Unwrap(raygenShaderBindingTableBuffer);
         missShaderBindingTableBuffer = layer_data->Unwrap(missShaderBindingTableBuffer);
         hitShaderBindingTableBuffer = layer_data->Unwrap(hitShaderBindingTableBuffer);
@@ -6347,7 +6358,7 @@ VkResult DispatchCreateRayTracingPipelinesNV(
     if (!wrap_handles) return layer_data->device_dispatch_table.CreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
     safe_VkRayTracingPipelineCreateInfoNV *local_pCreateInfos = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         pipelineCache = layer_data->Unwrap(pipelineCache);
         if (pCreateInfos) {
             local_pCreateInfos = new safe_VkRayTracingPipelineCreateInfoNV[createInfoCount];
@@ -6374,7 +6385,7 @@ VkResult DispatchCreateRayTracingPipelinesNV(
         delete[] local_pCreateInfos;
     }
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {
             pPipelines[index0] = layer_data->WrapNew(pPipelines[index0]);
         }
@@ -6393,7 +6404,7 @@ VkResult DispatchGetRayTracingShaderGroupHandlesNV(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetRayTracingShaderGroupHandlesNV(device, pipeline, firstGroup, groupCount, dataSize, pData);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         pipeline = layer_data->Unwrap(pipeline);
     }
     VkResult result = layer_data->device_dispatch_table.GetRayTracingShaderGroupHandlesNV(device, pipeline, firstGroup, groupCount, dataSize, pData);
@@ -6410,7 +6421,7 @@ VkResult DispatchGetAccelerationStructureHandleNV(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetAccelerationStructureHandleNV(device, accelerationStructure, dataSize, pData);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         accelerationStructure = layer_data->Unwrap(accelerationStructure);
     }
     VkResult result = layer_data->device_dispatch_table.GetAccelerationStructureHandleNV(device, accelerationStructure, dataSize, pData);
@@ -6430,7 +6441,7 @@ void DispatchCmdWriteAccelerationStructuresPropertiesNV(
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdWriteAccelerationStructuresPropertiesNV(commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);
     VkAccelerationStructureNV *local_pAccelerationStructures = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pAccelerationStructures) {
             local_pAccelerationStructures = new VkAccelerationStructureNV[accelerationStructureCount];
             for (uint32_t index0 = 0; index0 < accelerationStructureCount; ++index0) {
@@ -6452,7 +6463,7 @@ VkResult DispatchCompileDeferredNV(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CompileDeferredNV(device, pipeline, shader);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         pipeline = layer_data->Unwrap(pipeline);
     }
     VkResult result = layer_data->device_dispatch_table.CompileDeferredNV(device, pipeline, shader);
@@ -6482,7 +6493,7 @@ void DispatchCmdWriteBufferMarkerAMD(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         dstBuffer = layer_data->Unwrap(dstBuffer);
     }
     layer_data->device_dispatch_table.CmdWriteBufferMarkerAMD(commandBuffer, pipelineStage, dstBuffer, dstOffset, marker);
@@ -6533,7 +6544,7 @@ void DispatchCmdDrawMeshTasksIndirectNV(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         buffer = layer_data->Unwrap(buffer);
     }
     layer_data->device_dispatch_table.CmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride);
@@ -6552,7 +6563,7 @@ void DispatchCmdDrawMeshTasksIndirectCountNV(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(commandBuffer), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.CmdDrawMeshTasksIndirectCountNV(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         buffer = layer_data->Unwrap(buffer);
         countBuffer = layer_data->Unwrap(countBuffer);
     }
@@ -6646,7 +6657,7 @@ VkResult DispatchAcquirePerformanceConfigurationINTEL(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.AcquirePerformanceConfigurationINTEL(device, pAcquireInfo, pConfiguration);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         pConfiguration = layer_data->Unwrap(pConfiguration);
     }
     VkResult result = layer_data->device_dispatch_table.AcquirePerformanceConfigurationINTEL(device, pAcquireInfo, pConfiguration);
@@ -6661,7 +6672,7 @@ VkResult DispatchReleasePerformanceConfigurationINTEL(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.ReleasePerformanceConfigurationINTEL(device, configuration);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         configuration = layer_data->Unwrap(configuration);
     }
     VkResult result = layer_data->device_dispatch_table.ReleasePerformanceConfigurationINTEL(device, configuration);
@@ -6676,7 +6687,7 @@ VkResult DispatchQueueSetPerformanceConfigurationINTEL(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(queue), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.QueueSetPerformanceConfigurationINTEL(queue, configuration);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         configuration = layer_data->Unwrap(configuration);
     }
     VkResult result = layer_data->device_dispatch_table.QueueSetPerformanceConfigurationINTEL(queue, configuration);
@@ -6703,7 +6714,7 @@ void DispatchSetLocalDimmingAMD(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.SetLocalDimmingAMD(device, swapChain, localDimmingEnable);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         swapChain = layer_data->Unwrap(swapChain);
     }
     layer_data->device_dispatch_table.SetLocalDimmingAMD(device, swapChain, localDimmingEnable);
@@ -6722,7 +6733,7 @@ VkResult DispatchCreateImagePipeSurfaceFUCHSIA(
     if (!wrap_handles) return layer_data->instance_dispatch_table.CreateImagePipeSurfaceFUCHSIA(instance, pCreateInfo, pAllocator, pSurface);
     VkResult result = layer_data->instance_dispatch_table.CreateImagePipeSurfaceFUCHSIA(instance, pCreateInfo, pAllocator, pSurface);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pSurface = layer_data->WrapNew(*pSurface);
     }
     return result;
@@ -6741,7 +6752,7 @@ VkResult DispatchCreateMetalSurfaceEXT(
     if (!wrap_handles) return layer_data->instance_dispatch_table.CreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
     VkResult result = layer_data->instance_dispatch_table.CreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pSurface = layer_data->WrapNew(*pSurface);
     }
     return result;
@@ -6756,7 +6767,7 @@ VkDeviceAddress DispatchGetBufferDeviceAddressEXT(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetBufferDeviceAddressEXT(device, pInfo);
     safe_VkBufferDeviceAddressInfoEXT *local_pInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pInfo) {
             local_pInfo = new safe_VkBufferDeviceAddressInfoEXT(pInfo);
             if (pInfo->buffer) {
@@ -6805,7 +6816,7 @@ VkResult DispatchGetPhysicalDeviceSurfacePresentModes2EXT(
     if (!wrap_handles) return layer_data->instance_dispatch_table.GetPhysicalDeviceSurfacePresentModes2EXT(physicalDevice, pSurfaceInfo, pPresentModeCount, pPresentModes);
     safe_VkPhysicalDeviceSurfaceInfo2KHR *local_pSurfaceInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pSurfaceInfo) {
             local_pSurfaceInfo = new safe_VkPhysicalDeviceSurfaceInfo2KHR(pSurfaceInfo);
             if (pSurfaceInfo->surface) {
@@ -6830,7 +6841,7 @@ VkResult DispatchAcquireFullScreenExclusiveModeEXT(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.AcquireFullScreenExclusiveModeEXT(device, swapchain);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         swapchain = layer_data->Unwrap(swapchain);
     }
     VkResult result = layer_data->device_dispatch_table.AcquireFullScreenExclusiveModeEXT(device, swapchain);
@@ -6848,7 +6859,7 @@ VkResult DispatchReleaseFullScreenExclusiveModeEXT(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.ReleaseFullScreenExclusiveModeEXT(device, swapchain);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         swapchain = layer_data->Unwrap(swapchain);
     }
     VkResult result = layer_data->device_dispatch_table.ReleaseFullScreenExclusiveModeEXT(device, swapchain);
@@ -6868,7 +6879,7 @@ VkResult DispatchGetDeviceGroupSurfacePresentModes2EXT(
     if (!wrap_handles) return layer_data->device_dispatch_table.GetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes);
     safe_VkPhysicalDeviceSurfaceInfo2KHR *local_pSurfaceInfo = NULL;
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         if (pSurfaceInfo) {
             local_pSurfaceInfo = new safe_VkPhysicalDeviceSurfaceInfo2KHR(pSurfaceInfo);
             if (pSurfaceInfo->surface) {
@@ -6894,7 +6905,7 @@ VkResult DispatchCreateHeadlessSurfaceEXT(
     if (!wrap_handles) return layer_data->instance_dispatch_table.CreateHeadlessSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
     VkResult result = layer_data->instance_dispatch_table.CreateHeadlessSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface);
     if (VK_SUCCESS == result) {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pSurface = layer_data->WrapNew(*pSurface);
     }
     return result;
@@ -6919,7 +6930,7 @@ void DispatchResetQueryPoolEXT(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.ResetQueryPoolEXT(device, queryPool, firstQuery, queryCount);
     {
-        std::lock_guard<std::mutex> lock(dispatch_lock);
+        read_dispatch_lock_guard_t lock(dispatch_lock);
         queryPool = layer_data->Unwrap(queryPool);
     }
     layer_data->device_dispatch_table.ResetQueryPoolEXT(device, queryPool, firstQuery, queryCount);
