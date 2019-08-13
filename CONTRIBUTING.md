@@ -77,7 +77,7 @@ a good reason is "This violates the style guide, but it improves type safety."
 >        $ git commit
 
 * **Commit Messages**
-    * Limit the subject line to 50 characters -- this allows the information to display correctly in git/Github logs
+    * Limit the subject line to 64 characters -- this allows the information to display correctly in git/GitHub logs
     * Begin subject line with a one-word component description followed by a colon (e.g. build, docs, layers, tests, etc.)
     * Separate subject from body with a blank line
     * Wrap the body at 72 characters

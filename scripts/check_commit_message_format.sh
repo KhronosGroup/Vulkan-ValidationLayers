@@ -55,9 +55,9 @@ printf %s "$COMMIT_TEXT" | while IFS='' read -r line; do
   fi
   chars=${#line}
   if [ $current_line -eq 1 ]; then
-    # Subject line should be 50 chars or less (but give some slack here)
-    if [ $chars -gt 54 ]; then
-      echo "The following subject line exceeds 50 characters in length."
+    # Subject line should be 64 chars or less
+    if [ $chars -gt 64 ]; then
+      echo "The following subject line exceeds 64 characters in length."
       echo "     '$line'"
       success=0
     fi
