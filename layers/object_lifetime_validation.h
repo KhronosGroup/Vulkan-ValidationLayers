@@ -20,6 +20,18 @@
  * Author: Tobin Ehlis <tobine@google.com>
  */
 
+// shared_mutex support added in MSVC 2015 update 2
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918
+#include <shared_mutex>
+typedef std::shared_mutex object_lifetime_mutex_t;
+typedef std::shared_lock<object_lifetime_mutex_t> read_object_lifetime_mutex_t;
+typedef std::unique_lock<object_lifetime_mutex_t> write_object_lifetime_mutex_t;
+#else
+typedef std::mutex object_lifetime_mutex_t;
+typedef std::unique_lock<object_lifetime_mutex_t> read_object_lifetime_mutex_t;
+typedef std::unique_lock<object_lifetime_mutex_t> write_object_lifetime_mutex_t;
+#endif
+
 // Suppress unused warning on Linux
 #if defined(__GNUC__)
 #define DECORATE_UNUSED __attribute__((unused))
@@ -71,6 +83,17 @@ typedef std::unordered_map<uint64_t, ObjTrackState *> object_map_type;
 
 class ObjectLifetimes : public ValidationObject {
    public:
+    // Override chassis read/write locks for this validation object
+    // This override takes a deferred lock. i.e. it is not acquired.
+    // This class does its own locking with a shared mutex.
+    virtual std::unique_lock<std::mutex> write_lock() {
+        return std::unique_lock<std::mutex>(validation_object_mutex, std::defer_lock);
+    }
+
+    object_lifetime_mutex_t object_lifetime_mutex;
+    write_object_lifetime_mutex_t write_shared_lock() { return write_object_lifetime_mutex_t(object_lifetime_mutex); }
+    read_object_lifetime_mutex_t read_shared_lock() { return read_object_lifetime_mutex_t(object_lifetime_mutex); }
+
     uint64_t num_objects[kVulkanObjectTypeMax + 1];
     uint64_t num_total_objects;
     // Vector of unordered_maps per object type to hold ObjTrackState info
