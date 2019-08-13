@@ -37,13 +37,13 @@
 
 safe_VkApplicationInfo::safe_VkApplicationInfo(const VkApplicationInfo* in_struct) :
     sType(in_struct->sType),
-    pApplicationName(in_struct->pApplicationName),
     applicationVersion(in_struct->applicationVersion),
-    pEngineName(in_struct->pEngineName),
     engineVersion(in_struct->engineVersion),
     apiVersion(in_struct->apiVersion)
 {
     pNext = SafePnextCopy(in_struct->pNext);
+    pApplicationName = SafeStringCopy(in_struct->pApplicationName);
+    pEngineName = SafeStringCopy(in_struct->pEngineName);
 }
 
 safe_VkApplicationInfo::safe_VkApplicationInfo() :
@@ -55,34 +55,38 @@ safe_VkApplicationInfo::safe_VkApplicationInfo() :
 safe_VkApplicationInfo::safe_VkApplicationInfo(const safe_VkApplicationInfo& src)
 {
     sType = src.sType;
-    pApplicationName = src.pApplicationName;
     applicationVersion = src.applicationVersion;
-    pEngineName = src.pEngineName;
     engineVersion = src.engineVersion;
     apiVersion = src.apiVersion;
     pNext = SafePnextCopy(src.pNext);
+    pApplicationName = SafeStringCopy(src.pApplicationName);
+    pEngineName = SafeStringCopy(src.pEngineName);
 }
 
 safe_VkApplicationInfo& safe_VkApplicationInfo::operator=(const safe_VkApplicationInfo& src)
 {
     if (&src == this) return *this;
 
+    if (pApplicationName) delete [] pApplicationName;
+    if (pEngineName) delete [] pEngineName;
     if (pNext)
         FreePnextChain(pNext);
 
     sType = src.sType;
-    pApplicationName = src.pApplicationName;
     applicationVersion = src.applicationVersion;
-    pEngineName = src.pEngineName;
     engineVersion = src.engineVersion;
     apiVersion = src.apiVersion;
     pNext = SafePnextCopy(src.pNext);
+    pApplicationName = SafeStringCopy(src.pApplicationName);
+    pEngineName = SafeStringCopy(src.pEngineName);
 
     return *this;
 }
 
 safe_VkApplicationInfo::~safe_VkApplicationInfo()
 {
+    if (pApplicationName) delete [] pApplicationName;
+    if (pEngineName) delete [] pEngineName;
     if (pNext)
         FreePnextChain(pNext);
 }
@@ -90,34 +94,40 @@ safe_VkApplicationInfo::~safe_VkApplicationInfo()
 void safe_VkApplicationInfo::initialize(const VkApplicationInfo* in_struct)
 {
     sType = in_struct->sType;
-    pApplicationName = in_struct->pApplicationName;
     applicationVersion = in_struct->applicationVersion;
-    pEngineName = in_struct->pEngineName;
     engineVersion = in_struct->engineVersion;
     apiVersion = in_struct->apiVersion;
     pNext = SafePnextCopy(in_struct->pNext);
+    pApplicationName = SafeStringCopy(in_struct->pApplicationName);
+    pEngineName = SafeStringCopy(in_struct->pEngineName);
 }
 
 void safe_VkApplicationInfo::initialize(const safe_VkApplicationInfo* src)
 {
     sType = src->sType;
-    pApplicationName = src->pApplicationName;
     applicationVersion = src->applicationVersion;
-    pEngineName = src->pEngineName;
     engineVersion = src->engineVersion;
     apiVersion = src->apiVersion;
     pNext = SafePnextCopy(src->pNext);
+    pApplicationName = SafeStringCopy(src->pApplicationName);
+    pEngineName = SafeStringCopy(src->pEngineName);
 }
 
 safe_VkInstanceCreateInfo::safe_VkInstanceCreateInfo(const VkInstanceCreateInfo* in_struct) :
     sType(in_struct->sType),
     flags(in_struct->flags),
     enabledLayerCount(in_struct->enabledLayerCount),
-    ppEnabledLayerNames(in_struct->ppEnabledLayerNames),
-    enabledExtensionCount(in_struct->enabledExtensionCount),
-    ppEnabledExtensionNames(in_struct->ppEnabledExtensionNames)
+    enabledExtensionCount(in_struct->enabledExtensionCount)
 {
     pNext = SafePnextCopy(in_struct->pNext);
+    ppEnabledLayerNames = new char *[in_struct->enabledLayerCount];
+    for (uint32_t i = 0; i < enabledLayerCount; ++i) {
+        (const_cast<const char **>(ppEnabledLayerNames))[i] = SafeStringCopy(in_struct->ppEnabledLayerNames[i]);
+    }
+    ppEnabledExtensionNames = new char *[in_struct->enabledExtensionCount];
+    for (uint32_t i = 0; i < enabledExtensionCount; ++i) {
+        (const_cast<const char **>(ppEnabledExtensionNames))[i] = SafeStringCopy(in_struct->ppEnabledExtensionNames[i]);
+    }
     if (in_struct->pApplicationInfo)
         pApplicationInfo = new safe_VkApplicationInfo(in_struct->pApplicationInfo);
     else
@@ -135,10 +145,16 @@ safe_VkInstanceCreateInfo::safe_VkInstanceCreateInfo(const safe_VkInstanceCreate
     sType = src.sType;
     flags = src.flags;
     enabledLayerCount = src.enabledLayerCount;
-    ppEnabledLayerNames = src.ppEnabledLayerNames;
     enabledExtensionCount = src.enabledExtensionCount;
-    ppEnabledExtensionNames = src.ppEnabledExtensionNames;
     pNext = SafePnextCopy(src.pNext);
+    ppEnabledLayerNames = new char *[src.enabledLayerCount];
+    for (uint32_t i = 0; i < enabledLayerCount; ++i) {
+        (const_cast<const char **>(ppEnabledLayerNames))[i] = SafeStringCopy(src.ppEnabledLayerNames[i]);
+    }
+    ppEnabledExtensionNames = new char *[src.enabledExtensionCount];
+    for (uint32_t i = 0; i < enabledExtensionCount; ++i) {
+        (const_cast<const char **>(ppEnabledExtensionNames))[i] = SafeStringCopy(src.ppEnabledExtensionNames[i]);
+    }
     if (src.pApplicationInfo)
         pApplicationInfo = new safe_VkApplicationInfo(*src.pApplicationInfo);
     else
@@ -151,16 +167,34 @@ safe_VkInstanceCreateInfo& safe_VkInstanceCreateInfo::operator=(const safe_VkIns
 
     if (pApplicationInfo)
         delete pApplicationInfo;
+    if (ppEnabledLayerNames) {
+        for (uint32_t i = 0; i < enabledLayerCount; ++i) {
+            delete [] ppEnabledLayerNames[i];
+        }
+        delete [] ppEnabledLayerNames;
+    }
+    if (ppEnabledExtensionNames) {
+        for (uint32_t i = 0; i < enabledExtensionCount; ++i) {
+            delete [] ppEnabledExtensionNames[i];
+        }
+        delete [] ppEnabledExtensionNames;
+    }
     if (pNext)
         FreePnextChain(pNext);
 
     sType = src.sType;
     flags = src.flags;
     enabledLayerCount = src.enabledLayerCount;
-    ppEnabledLayerNames = src.ppEnabledLayerNames;
     enabledExtensionCount = src.enabledExtensionCount;
-    ppEnabledExtensionNames = src.ppEnabledExtensionNames;
     pNext = SafePnextCopy(src.pNext);
+    ppEnabledLayerNames = new char *[src.enabledLayerCount];
+    for (uint32_t i = 0; i < enabledLayerCount; ++i) {
+        (const_cast<const char **>(ppEnabledLayerNames))[i] = SafeStringCopy(src.ppEnabledLayerNames[i]);
+    }
+    ppEnabledExtensionNames = new char *[src.enabledExtensionCount];
+    for (uint32_t i = 0; i < enabledExtensionCount; ++i) {
+        (const_cast<const char **>(ppEnabledExtensionNames))[i] = SafeStringCopy(src.ppEnabledExtensionNames[i]);
+    }
     if (src.pApplicationInfo)
         pApplicationInfo = new safe_VkApplicationInfo(*src.pApplicationInfo);
     else
@@ -173,6 +207,18 @@ safe_VkInstanceCreateInfo::~safe_VkInstanceCreateInfo()
 {
     if (pApplicationInfo)
         delete pApplicationInfo;
+    if (ppEnabledLayerNames) {
+        for (uint32_t i = 0; i < enabledLayerCount; ++i) {
+            delete [] ppEnabledLayerNames[i];
+        }
+        delete [] ppEnabledLayerNames;
+    }
+    if (ppEnabledExtensionNames) {
+        for (uint32_t i = 0; i < enabledExtensionCount; ++i) {
+            delete [] ppEnabledExtensionNames[i];
+        }
+        delete [] ppEnabledExtensionNames;
+    }
     if (pNext)
         FreePnextChain(pNext);
 }
@@ -182,10 +228,16 @@ void safe_VkInstanceCreateInfo::initialize(const VkInstanceCreateInfo* in_struct
     sType = in_struct->sType;
     flags = in_struct->flags;
     enabledLayerCount = in_struct->enabledLayerCount;
-    ppEnabledLayerNames = in_struct->ppEnabledLayerNames;
     enabledExtensionCount = in_struct->enabledExtensionCount;
-    ppEnabledExtensionNames = in_struct->ppEnabledExtensionNames;
     pNext = SafePnextCopy(in_struct->pNext);
+    ppEnabledLayerNames = new char *[in_struct->enabledLayerCount];
+    for (uint32_t i = 0; i < enabledLayerCount; ++i) {
+        (const_cast<const char **>(ppEnabledLayerNames))[i] = SafeStringCopy(in_struct->ppEnabledLayerNames[i]);
+    }
+    ppEnabledExtensionNames = new char *[in_struct->enabledExtensionCount];
+    for (uint32_t i = 0; i < enabledExtensionCount; ++i) {
+        (const_cast<const char **>(ppEnabledExtensionNames))[i] = SafeStringCopy(in_struct->ppEnabledExtensionNames[i]);
+    }
     if (in_struct->pApplicationInfo)
         pApplicationInfo = new safe_VkApplicationInfo(in_struct->pApplicationInfo);
     else
@@ -197,10 +249,16 @@ void safe_VkInstanceCreateInfo::initialize(const safe_VkInstanceCreateInfo* src)
     sType = src->sType;
     flags = src->flags;
     enabledLayerCount = src->enabledLayerCount;
-    ppEnabledLayerNames = src->ppEnabledLayerNames;
     enabledExtensionCount = src->enabledExtensionCount;
-    ppEnabledExtensionNames = src->ppEnabledExtensionNames;
     pNext = SafePnextCopy(src->pNext);
+    ppEnabledLayerNames = new char *[src->enabledLayerCount];
+    for (uint32_t i = 0; i < enabledLayerCount; ++i) {
+        (const_cast<const char **>(ppEnabledLayerNames))[i] = SafeStringCopy(src->ppEnabledLayerNames[i]);
+    }
+    ppEnabledExtensionNames = new char *[src->enabledExtensionCount];
+    for (uint32_t i = 0; i < enabledExtensionCount; ++i) {
+        (const_cast<const char **>(ppEnabledExtensionNames))[i] = SafeStringCopy(src->ppEnabledExtensionNames[i]);
+    }
     if (src->pApplicationInfo)
         pApplicationInfo = new safe_VkApplicationInfo(*src->pApplicationInfo);
     else
@@ -368,12 +426,18 @@ safe_VkDeviceCreateInfo::safe_VkDeviceCreateInfo(const VkDeviceCreateInfo* in_st
     queueCreateInfoCount(in_struct->queueCreateInfoCount),
     pQueueCreateInfos(nullptr),
     enabledLayerCount(in_struct->enabledLayerCount),
-    ppEnabledLayerNames(in_struct->ppEnabledLayerNames),
     enabledExtensionCount(in_struct->enabledExtensionCount),
-    ppEnabledExtensionNames(in_struct->ppEnabledExtensionNames),
     pEnabledFeatures(nullptr)
 {
     pNext = SafePnextCopy(in_struct->pNext);
+    ppEnabledLayerNames = new char *[in_struct->enabledLayerCount];
+    for (uint32_t i = 0; i < enabledLayerCount; ++i) {
+        (const_cast<const char **>(ppEnabledLayerNames))[i] = SafeStringCopy(in_struct->ppEnabledLayerNames[i]);
+    }
+    ppEnabledExtensionNames = new char *[in_struct->enabledExtensionCount];
+    for (uint32_t i = 0; i < enabledExtensionCount; ++i) {
+        (const_cast<const char **>(ppEnabledExtensionNames))[i] = SafeStringCopy(in_struct->ppEnabledExtensionNames[i]);
+    }
     if (queueCreateInfoCount && in_struct->pQueueCreateInfos) {
         pQueueCreateInfos = new safe_VkDeviceQueueCreateInfo[queueCreateInfoCount];
         for (uint32_t i=0; i<queueCreateInfoCount; ++i) {
@@ -400,11 +464,17 @@ safe_VkDeviceCreateInfo::safe_VkDeviceCreateInfo(const safe_VkDeviceCreateInfo& 
     queueCreateInfoCount = src.queueCreateInfoCount;
     pQueueCreateInfos = nullptr;
     enabledLayerCount = src.enabledLayerCount;
-    ppEnabledLayerNames = src.ppEnabledLayerNames;
     enabledExtensionCount = src.enabledExtensionCount;
-    ppEnabledExtensionNames = src.ppEnabledExtensionNames;
     pEnabledFeatures = nullptr;
     pNext = SafePnextCopy(src.pNext);
+    ppEnabledLayerNames = new char *[src.enabledLayerCount];
+    for (uint32_t i = 0; i < enabledLayerCount; ++i) {
+        (const_cast<const char **>(ppEnabledLayerNames))[i] = SafeStringCopy(src.ppEnabledLayerNames[i]);
+    }
+    ppEnabledExtensionNames = new char *[src.enabledExtensionCount];
+    for (uint32_t i = 0; i < enabledExtensionCount; ++i) {
+        (const_cast<const char **>(ppEnabledExtensionNames))[i] = SafeStringCopy(src.ppEnabledExtensionNames[i]);
+    }
     if (queueCreateInfoCount && src.pQueueCreateInfos) {
         pQueueCreateInfos = new safe_VkDeviceQueueCreateInfo[queueCreateInfoCount];
         for (uint32_t i=0; i<queueCreateInfoCount; ++i) {
@@ -422,6 +492,18 @@ safe_VkDeviceCreateInfo& safe_VkDeviceCreateInfo::operator=(const safe_VkDeviceC
 
     if (pQueueCreateInfos)
         delete[] pQueueCreateInfos;
+    if (ppEnabledLayerNames) {
+        for (uint32_t i = 0; i < enabledLayerCount; ++i) {
+            delete [] ppEnabledLayerNames[i];
+        }
+        delete [] ppEnabledLayerNames;
+    }
+    if (ppEnabledExtensionNames) {
+        for (uint32_t i = 0; i < enabledExtensionCount; ++i) {
+            delete [] ppEnabledExtensionNames[i];
+        }
+        delete [] ppEnabledExtensionNames;
+    }
     if (pEnabledFeatures)
         delete pEnabledFeatures;
     if (pNext)
@@ -432,11 +514,17 @@ safe_VkDeviceCreateInfo& safe_VkDeviceCreateInfo::operator=(const safe_VkDeviceC
     queueCreateInfoCount = src.queueCreateInfoCount;
     pQueueCreateInfos = nullptr;
     enabledLayerCount = src.enabledLayerCount;
-    ppEnabledLayerNames = src.ppEnabledLayerNames;
     enabledExtensionCount = src.enabledExtensionCount;
-    ppEnabledExtensionNames = src.ppEnabledExtensionNames;
     pEnabledFeatures = nullptr;
     pNext = SafePnextCopy(src.pNext);
+    ppEnabledLayerNames = new char *[src.enabledLayerCount];
+    for (uint32_t i = 0; i < enabledLayerCount; ++i) {
+        (const_cast<const char **>(ppEnabledLayerNames))[i] = SafeStringCopy(src.ppEnabledLayerNames[i]);
+    }
+    ppEnabledExtensionNames = new char *[src.enabledExtensionCount];
+    for (uint32_t i = 0; i < enabledExtensionCount; ++i) {
+        (const_cast<const char **>(ppEnabledExtensionNames))[i] = SafeStringCopy(src.ppEnabledExtensionNames[i]);
+    }
     if (queueCreateInfoCount && src.pQueueCreateInfos) {
         pQueueCreateInfos = new safe_VkDeviceQueueCreateInfo[queueCreateInfoCount];
         for (uint32_t i=0; i<queueCreateInfoCount; ++i) {
@@ -454,6 +542,18 @@ safe_VkDeviceCreateInfo::~safe_VkDeviceCreateInfo()
 {
     if (pQueueCreateInfos)
         delete[] pQueueCreateInfos;
+    if (ppEnabledLayerNames) {
+        for (uint32_t i = 0; i < enabledLayerCount; ++i) {
+            delete [] ppEnabledLayerNames[i];
+        }
+        delete [] ppEnabledLayerNames;
+    }
+    if (ppEnabledExtensionNames) {
+        for (uint32_t i = 0; i < enabledExtensionCount; ++i) {
+            delete [] ppEnabledExtensionNames[i];
+        }
+        delete [] ppEnabledExtensionNames;
+    }
     if (pEnabledFeatures)
         delete pEnabledFeatures;
     if (pNext)
@@ -467,11 +567,17 @@ void safe_VkDeviceCreateInfo::initialize(const VkDeviceCreateInfo* in_struct)
     queueCreateInfoCount = in_struct->queueCreateInfoCount;
     pQueueCreateInfos = nullptr;
     enabledLayerCount = in_struct->enabledLayerCount;
-    ppEnabledLayerNames = in_struct->ppEnabledLayerNames;
     enabledExtensionCount = in_struct->enabledExtensionCount;
-    ppEnabledExtensionNames = in_struct->ppEnabledExtensionNames;
     pEnabledFeatures = nullptr;
     pNext = SafePnextCopy(in_struct->pNext);
+    ppEnabledLayerNames = new char *[in_struct->enabledLayerCount];
+    for (uint32_t i = 0; i < enabledLayerCount; ++i) {
+        (const_cast<const char **>(ppEnabledLayerNames))[i] = SafeStringCopy(in_struct->ppEnabledLayerNames[i]);
+    }
+    ppEnabledExtensionNames = new char *[in_struct->enabledExtensionCount];
+    for (uint32_t i = 0; i < enabledExtensionCount; ++i) {
+        (const_cast<const char **>(ppEnabledExtensionNames))[i] = SafeStringCopy(in_struct->ppEnabledExtensionNames[i]);
+    }
     if (queueCreateInfoCount && in_struct->pQueueCreateInfos) {
         pQueueCreateInfos = new safe_VkDeviceQueueCreateInfo[queueCreateInfoCount];
         for (uint32_t i=0; i<queueCreateInfoCount; ++i) {
@@ -490,11 +596,17 @@ void safe_VkDeviceCreateInfo::initialize(const safe_VkDeviceCreateInfo* src)
     queueCreateInfoCount = src->queueCreateInfoCount;
     pQueueCreateInfos = nullptr;
     enabledLayerCount = src->enabledLayerCount;
-    ppEnabledLayerNames = src->ppEnabledLayerNames;
     enabledExtensionCount = src->enabledExtensionCount;
-    ppEnabledExtensionNames = src->ppEnabledExtensionNames;
     pEnabledFeatures = nullptr;
     pNext = SafePnextCopy(src->pNext);
+    ppEnabledLayerNames = new char *[src->enabledLayerCount];
+    for (uint32_t i = 0; i < enabledLayerCount; ++i) {
+        (const_cast<const char **>(ppEnabledLayerNames))[i] = SafeStringCopy(src->ppEnabledLayerNames[i]);
+    }
+    ppEnabledExtensionNames = new char *[src->enabledExtensionCount];
+    for (uint32_t i = 0; i < enabledExtensionCount; ++i) {
+        (const_cast<const char **>(ppEnabledExtensionNames))[i] = SafeStringCopy(src->ppEnabledExtensionNames[i]);
+    }
     if (queueCreateInfoCount && src->pQueueCreateInfos) {
         pQueueCreateInfos = new safe_VkDeviceQueueCreateInfo[queueCreateInfoCount];
         for (uint32_t i=0; i<queueCreateInfoCount; ++i) {
@@ -2188,10 +2300,10 @@ safe_VkPipelineShaderStageCreateInfo::safe_VkPipelineShaderStageCreateInfo(const
     sType(in_struct->sType),
     flags(in_struct->flags),
     stage(in_struct->stage),
-    module(in_struct->module),
-    pName(in_struct->pName)
+    module(in_struct->module)
 {
     pNext = SafePnextCopy(in_struct->pNext);
+    pName = SafeStringCopy(in_struct->pName);
     if (in_struct->pSpecializationInfo)
         pSpecializationInfo = new safe_VkSpecializationInfo(in_struct->pSpecializationInfo);
     else
@@ -2209,8 +2321,8 @@ safe_VkPipelineShaderStageCreateInfo::safe_VkPipelineShaderStageCreateInfo(const
     flags = src.flags;
     stage = src.stage;
     module = src.module;
-    pName = src.pName;
     pNext = SafePnextCopy(src.pNext);
+    pName = SafeStringCopy(src.pName);
     if (src.pSpecializationInfo)
         pSpecializationInfo = new safe_VkSpecializationInfo(*src.pSpecializationInfo);
     else
@@ -2221,6 +2333,7 @@ safe_VkPipelineShaderStageCreateInfo& safe_VkPipelineShaderStageCreateInfo::oper
 {
     if (&src == this) return *this;
 
+    if (pName) delete [] pName;
     if (pSpecializationInfo)
         delete pSpecializationInfo;
     if (pNext)
@@ -2230,8 +2343,8 @@ safe_VkPipelineShaderStageCreateInfo& safe_VkPipelineShaderStageCreateInfo::oper
     flags = src.flags;
     stage = src.stage;
     module = src.module;
-    pName = src.pName;
     pNext = SafePnextCopy(src.pNext);
+    pName = SafeStringCopy(src.pName);
     if (src.pSpecializationInfo)
         pSpecializationInfo = new safe_VkSpecializationInfo(*src.pSpecializationInfo);
     else
@@ -2242,6 +2355,7 @@ safe_VkPipelineShaderStageCreateInfo& safe_VkPipelineShaderStageCreateInfo::oper
 
 safe_VkPipelineShaderStageCreateInfo::~safe_VkPipelineShaderStageCreateInfo()
 {
+    if (pName) delete [] pName;
     if (pSpecializationInfo)
         delete pSpecializationInfo;
     if (pNext)
@@ -2254,8 +2368,8 @@ void safe_VkPipelineShaderStageCreateInfo::initialize(const VkPipelineShaderStag
     flags = in_struct->flags;
     stage = in_struct->stage;
     module = in_struct->module;
-    pName = in_struct->pName;
     pNext = SafePnextCopy(in_struct->pNext);
+    pName = SafeStringCopy(in_struct->pName);
     if (in_struct->pSpecializationInfo)
         pSpecializationInfo = new safe_VkSpecializationInfo(in_struct->pSpecializationInfo);
     else
@@ -2268,8 +2382,8 @@ void safe_VkPipelineShaderStageCreateInfo::initialize(const safe_VkPipelineShade
     flags = src->flags;
     stage = src->stage;
     module = src->module;
-    pName = src->pName;
     pNext = SafePnextCopy(src->pNext);
+    pName = SafeStringCopy(src->pName);
     if (src->pSpecializationInfo)
         pSpecializationInfo = new safe_VkSpecializationInfo(*src->pSpecializationInfo);
     else
@@ -10558,13 +10672,13 @@ void safe_VkDeviceGroupSwapchainCreateInfoKHR::initialize(const safe_VkDeviceGro
 
 safe_VkDisplayPropertiesKHR::safe_VkDisplayPropertiesKHR(const VkDisplayPropertiesKHR* in_struct) :
     display(in_struct->display),
-    displayName(in_struct->displayName),
     physicalDimensions(in_struct->physicalDimensions),
     physicalResolution(in_struct->physicalResolution),
     supportedTransforms(in_struct->supportedTransforms),
     planeReorderPossible(in_struct->planeReorderPossible),
     persistentContent(in_struct->persistentContent)
 {
+    displayName = SafeStringCopy(in_struct->displayName);
 }
 
 safe_VkDisplayPropertiesKHR::safe_VkDisplayPropertiesKHR() :
@@ -10574,54 +10688,56 @@ safe_VkDisplayPropertiesKHR::safe_VkDisplayPropertiesKHR() :
 safe_VkDisplayPropertiesKHR::safe_VkDisplayPropertiesKHR(const safe_VkDisplayPropertiesKHR& src)
 {
     display = src.display;
-    displayName = src.displayName;
     physicalDimensions = src.physicalDimensions;
     physicalResolution = src.physicalResolution;
     supportedTransforms = src.supportedTransforms;
     planeReorderPossible = src.planeReorderPossible;
     persistentContent = src.persistentContent;
+    displayName = SafeStringCopy(src.displayName);
 }
 
 safe_VkDisplayPropertiesKHR& safe_VkDisplayPropertiesKHR::operator=(const safe_VkDisplayPropertiesKHR& src)
 {
     if (&src == this) return *this;
 
+    if (displayName) delete [] displayName;
 
     display = src.display;
-    displayName = src.displayName;
     physicalDimensions = src.physicalDimensions;
     physicalResolution = src.physicalResolution;
     supportedTransforms = src.supportedTransforms;
     planeReorderPossible = src.planeReorderPossible;
     persistentContent = src.persistentContent;
+    displayName = SafeStringCopy(src.displayName);
 
     return *this;
 }
 
 safe_VkDisplayPropertiesKHR::~safe_VkDisplayPropertiesKHR()
 {
+    if (displayName) delete [] displayName;
 }
 
 void safe_VkDisplayPropertiesKHR::initialize(const VkDisplayPropertiesKHR* in_struct)
 {
     display = in_struct->display;
-    displayName = in_struct->displayName;
     physicalDimensions = in_struct->physicalDimensions;
     physicalResolution = in_struct->physicalResolution;
     supportedTransforms = in_struct->supportedTransforms;
     planeReorderPossible = in_struct->planeReorderPossible;
     persistentContent = in_struct->persistentContent;
+    displayName = SafeStringCopy(in_struct->displayName);
 }
 
 void safe_VkDisplayPropertiesKHR::initialize(const safe_VkDisplayPropertiesKHR* src)
 {
     display = src->display;
-    displayName = src->displayName;
     physicalDimensions = src->physicalDimensions;
     physicalResolution = src->physicalResolution;
     supportedTransforms = src->supportedTransforms;
     planeReorderPossible = src->planeReorderPossible;
     persistentContent = src->persistentContent;
+    displayName = SafeStringCopy(src->displayName);
 }
 
 safe_VkDisplayModeCreateInfoKHR::safe_VkDisplayModeCreateInfoKHR(const VkDisplayModeCreateInfoKHR* in_struct) :
@@ -15488,10 +15604,10 @@ void safe_VkPipelineRasterizationStateRasterizationOrderAMD::initialize(const sa
 safe_VkDebugMarkerObjectNameInfoEXT::safe_VkDebugMarkerObjectNameInfoEXT(const VkDebugMarkerObjectNameInfoEXT* in_struct) :
     sType(in_struct->sType),
     objectType(in_struct->objectType),
-    object(in_struct->object),
-    pObjectName(in_struct->pObjectName)
+    object(in_struct->object)
 {
     pNext = SafePnextCopy(in_struct->pNext);
+    pObjectName = SafeStringCopy(in_struct->pObjectName);
 }
 
 safe_VkDebugMarkerObjectNameInfoEXT::safe_VkDebugMarkerObjectNameInfoEXT() :
@@ -15504,28 +15620,30 @@ safe_VkDebugMarkerObjectNameInfoEXT::safe_VkDebugMarkerObjectNameInfoEXT(const s
     sType = src.sType;
     objectType = src.objectType;
     object = src.object;
-    pObjectName = src.pObjectName;
     pNext = SafePnextCopy(src.pNext);
+    pObjectName = SafeStringCopy(src.pObjectName);
 }
 
 safe_VkDebugMarkerObjectNameInfoEXT& safe_VkDebugMarkerObjectNameInfoEXT::operator=(const safe_VkDebugMarkerObjectNameInfoEXT& src)
 {
     if (&src == this) return *this;
 
+    if (pObjectName) delete [] pObjectName;
     if (pNext)
         FreePnextChain(pNext);
 
     sType = src.sType;
     objectType = src.objectType;
     object = src.object;
-    pObjectName = src.pObjectName;
     pNext = SafePnextCopy(src.pNext);
+    pObjectName = SafeStringCopy(src.pObjectName);
 
     return *this;
 }
 
 safe_VkDebugMarkerObjectNameInfoEXT::~safe_VkDebugMarkerObjectNameInfoEXT()
 {
+    if (pObjectName) delete [] pObjectName;
     if (pNext)
         FreePnextChain(pNext);
 }
@@ -15535,8 +15653,8 @@ void safe_VkDebugMarkerObjectNameInfoEXT::initialize(const VkDebugMarkerObjectNa
     sType = in_struct->sType;
     objectType = in_struct->objectType;
     object = in_struct->object;
-    pObjectName = in_struct->pObjectName;
     pNext = SafePnextCopy(in_struct->pNext);
+    pObjectName = SafeStringCopy(in_struct->pObjectName);
 }
 
 void safe_VkDebugMarkerObjectNameInfoEXT::initialize(const safe_VkDebugMarkerObjectNameInfoEXT* src)
@@ -15544,8 +15662,8 @@ void safe_VkDebugMarkerObjectNameInfoEXT::initialize(const safe_VkDebugMarkerObj
     sType = src->sType;
     objectType = src->objectType;
     object = src->object;
-    pObjectName = src->pObjectName;
     pNext = SafePnextCopy(src->pNext);
+    pObjectName = SafeStringCopy(src->pObjectName);
 }
 
 safe_VkDebugMarkerObjectTagInfoEXT::safe_VkDebugMarkerObjectTagInfoEXT(const VkDebugMarkerObjectTagInfoEXT* in_struct) :
@@ -15622,10 +15740,10 @@ void safe_VkDebugMarkerObjectTagInfoEXT::initialize(const safe_VkDebugMarkerObje
 }
 
 safe_VkDebugMarkerMarkerInfoEXT::safe_VkDebugMarkerMarkerInfoEXT(const VkDebugMarkerMarkerInfoEXT* in_struct) :
-    sType(in_struct->sType),
-    pMarkerName(in_struct->pMarkerName)
+    sType(in_struct->sType)
 {
     pNext = SafePnextCopy(in_struct->pNext);
+    pMarkerName = SafeStringCopy(in_struct->pMarkerName);
     for (uint32_t i=0; i<4; ++i) {
         color[i] = in_struct->color[i];
     }
@@ -15639,8 +15757,8 @@ safe_VkDebugMarkerMarkerInfoEXT::safe_VkDebugMarkerMarkerInfoEXT() :
 safe_VkDebugMarkerMarkerInfoEXT::safe_VkDebugMarkerMarkerInfoEXT(const safe_VkDebugMarkerMarkerInfoEXT& src)
 {
     sType = src.sType;
-    pMarkerName = src.pMarkerName;
     pNext = SafePnextCopy(src.pNext);
+    pMarkerName = SafeStringCopy(src.pMarkerName);
     for (uint32_t i=0; i<4; ++i) {
         color[i] = src.color[i];
     }
@@ -15650,12 +15768,13 @@ safe_VkDebugMarkerMarkerInfoEXT& safe_VkDebugMarkerMarkerInfoEXT::operator=(cons
 {
     if (&src == this) return *this;
 
+    if (pMarkerName) delete [] pMarkerName;
     if (pNext)
         FreePnextChain(pNext);
 
     sType = src.sType;
-    pMarkerName = src.pMarkerName;
     pNext = SafePnextCopy(src.pNext);
+    pMarkerName = SafeStringCopy(src.pMarkerName);
     for (uint32_t i=0; i<4; ++i) {
         color[i] = src.color[i];
     }
@@ -15665,6 +15784,7 @@ safe_VkDebugMarkerMarkerInfoEXT& safe_VkDebugMarkerMarkerInfoEXT::operator=(cons
 
 safe_VkDebugMarkerMarkerInfoEXT::~safe_VkDebugMarkerMarkerInfoEXT()
 {
+    if (pMarkerName) delete [] pMarkerName;
     if (pNext)
         FreePnextChain(pNext);
 }
@@ -15672,8 +15792,8 @@ safe_VkDebugMarkerMarkerInfoEXT::~safe_VkDebugMarkerMarkerInfoEXT()
 void safe_VkDebugMarkerMarkerInfoEXT::initialize(const VkDebugMarkerMarkerInfoEXT* in_struct)
 {
     sType = in_struct->sType;
-    pMarkerName = in_struct->pMarkerName;
     pNext = SafePnextCopy(in_struct->pNext);
+    pMarkerName = SafeStringCopy(in_struct->pMarkerName);
     for (uint32_t i=0; i<4; ++i) {
         color[i] = in_struct->color[i];
     }
@@ -15682,8 +15802,8 @@ void safe_VkDebugMarkerMarkerInfoEXT::initialize(const VkDebugMarkerMarkerInfoEX
 void safe_VkDebugMarkerMarkerInfoEXT::initialize(const safe_VkDebugMarkerMarkerInfoEXT* src)
 {
     sType = src->sType;
-    pMarkerName = src->pMarkerName;
     pNext = SafePnextCopy(src->pNext);
+    pMarkerName = SafeStringCopy(src->pMarkerName);
     for (uint32_t i=0; i<4; ++i) {
         color[i] = src->color[i];
     }
@@ -19052,10 +19172,10 @@ void safe_VkMacOSSurfaceCreateInfoMVK::initialize(const safe_VkMacOSSurfaceCreat
 safe_VkDebugUtilsObjectNameInfoEXT::safe_VkDebugUtilsObjectNameInfoEXT(const VkDebugUtilsObjectNameInfoEXT* in_struct) :
     sType(in_struct->sType),
     objectType(in_struct->objectType),
-    objectHandle(in_struct->objectHandle),
-    pObjectName(in_struct->pObjectName)
+    objectHandle(in_struct->objectHandle)
 {
     pNext = SafePnextCopy(in_struct->pNext);
+    pObjectName = SafeStringCopy(in_struct->pObjectName);
 }
 
 safe_VkDebugUtilsObjectNameInfoEXT::safe_VkDebugUtilsObjectNameInfoEXT() :
@@ -19068,28 +19188,30 @@ safe_VkDebugUtilsObjectNameInfoEXT::safe_VkDebugUtilsObjectNameInfoEXT(const saf
     sType = src.sType;
     objectType = src.objectType;
     objectHandle = src.objectHandle;
-    pObjectName = src.pObjectName;
     pNext = SafePnextCopy(src.pNext);
+    pObjectName = SafeStringCopy(src.pObjectName);
 }
 
 safe_VkDebugUtilsObjectNameInfoEXT& safe_VkDebugUtilsObjectNameInfoEXT::operator=(const safe_VkDebugUtilsObjectNameInfoEXT& src)
 {
     if (&src == this) return *this;
 
+    if (pObjectName) delete [] pObjectName;
     if (pNext)
         FreePnextChain(pNext);
 
     sType = src.sType;
     objectType = src.objectType;
     objectHandle = src.objectHandle;
-    pObjectName = src.pObjectName;
     pNext = SafePnextCopy(src.pNext);
+    pObjectName = SafeStringCopy(src.pObjectName);
 
     return *this;
 }
 
 safe_VkDebugUtilsObjectNameInfoEXT::~safe_VkDebugUtilsObjectNameInfoEXT()
 {
+    if (pObjectName) delete [] pObjectName;
     if (pNext)
         FreePnextChain(pNext);
 }
@@ -19099,8 +19221,8 @@ void safe_VkDebugUtilsObjectNameInfoEXT::initialize(const VkDebugUtilsObjectName
     sType = in_struct->sType;
     objectType = in_struct->objectType;
     objectHandle = in_struct->objectHandle;
-    pObjectName = in_struct->pObjectName;
     pNext = SafePnextCopy(in_struct->pNext);
+    pObjectName = SafeStringCopy(in_struct->pObjectName);
 }
 
 void safe_VkDebugUtilsObjectNameInfoEXT::initialize(const safe_VkDebugUtilsObjectNameInfoEXT* src)
@@ -19108,8 +19230,8 @@ void safe_VkDebugUtilsObjectNameInfoEXT::initialize(const safe_VkDebugUtilsObjec
     sType = src->sType;
     objectType = src->objectType;
     objectHandle = src->objectHandle;
-    pObjectName = src->pObjectName;
     pNext = SafePnextCopy(src->pNext);
+    pObjectName = SafeStringCopy(src->pObjectName);
 }
 
 safe_VkDebugUtilsObjectTagInfoEXT::safe_VkDebugUtilsObjectTagInfoEXT(const VkDebugUtilsObjectTagInfoEXT* in_struct) :
@@ -19186,10 +19308,10 @@ void safe_VkDebugUtilsObjectTagInfoEXT::initialize(const safe_VkDebugUtilsObject
 }
 
 safe_VkDebugUtilsLabelEXT::safe_VkDebugUtilsLabelEXT(const VkDebugUtilsLabelEXT* in_struct) :
-    sType(in_struct->sType),
-    pLabelName(in_struct->pLabelName)
+    sType(in_struct->sType)
 {
     pNext = SafePnextCopy(in_struct->pNext);
+    pLabelName = SafeStringCopy(in_struct->pLabelName);
     for (uint32_t i=0; i<4; ++i) {
         color[i] = in_struct->color[i];
     }
@@ -19203,8 +19325,8 @@ safe_VkDebugUtilsLabelEXT::safe_VkDebugUtilsLabelEXT() :
 safe_VkDebugUtilsLabelEXT::safe_VkDebugUtilsLabelEXT(const safe_VkDebugUtilsLabelEXT& src)
 {
     sType = src.sType;
-    pLabelName = src.pLabelName;
     pNext = SafePnextCopy(src.pNext);
+    pLabelName = SafeStringCopy(src.pLabelName);
     for (uint32_t i=0; i<4; ++i) {
         color[i] = src.color[i];
     }
@@ -19214,12 +19336,13 @@ safe_VkDebugUtilsLabelEXT& safe_VkDebugUtilsLabelEXT::operator=(const safe_VkDeb
 {
     if (&src == this) return *this;
 
+    if (pLabelName) delete [] pLabelName;
     if (pNext)
         FreePnextChain(pNext);
 
     sType = src.sType;
-    pLabelName = src.pLabelName;
     pNext = SafePnextCopy(src.pNext);
+    pLabelName = SafeStringCopy(src.pLabelName);
     for (uint32_t i=0; i<4; ++i) {
         color[i] = src.color[i];
     }
@@ -19229,6 +19352,7 @@ safe_VkDebugUtilsLabelEXT& safe_VkDebugUtilsLabelEXT::operator=(const safe_VkDeb
 
 safe_VkDebugUtilsLabelEXT::~safe_VkDebugUtilsLabelEXT()
 {
+    if (pLabelName) delete [] pLabelName;
     if (pNext)
         FreePnextChain(pNext);
 }
@@ -19236,8 +19360,8 @@ safe_VkDebugUtilsLabelEXT::~safe_VkDebugUtilsLabelEXT()
 void safe_VkDebugUtilsLabelEXT::initialize(const VkDebugUtilsLabelEXT* in_struct)
 {
     sType = in_struct->sType;
-    pLabelName = in_struct->pLabelName;
     pNext = SafePnextCopy(in_struct->pNext);
+    pLabelName = SafeStringCopy(in_struct->pLabelName);
     for (uint32_t i=0; i<4; ++i) {
         color[i] = in_struct->color[i];
     }
@@ -19246,8 +19370,8 @@ void safe_VkDebugUtilsLabelEXT::initialize(const VkDebugUtilsLabelEXT* in_struct
 void safe_VkDebugUtilsLabelEXT::initialize(const safe_VkDebugUtilsLabelEXT* src)
 {
     sType = src->sType;
-    pLabelName = src->pLabelName;
     pNext = SafePnextCopy(src->pNext);
+    pLabelName = SafeStringCopy(src->pLabelName);
     for (uint32_t i=0; i<4; ++i) {
         color[i] = src->color[i];
     }
@@ -19256,9 +19380,7 @@ void safe_VkDebugUtilsLabelEXT::initialize(const safe_VkDebugUtilsLabelEXT* src)
 safe_VkDebugUtilsMessengerCallbackDataEXT::safe_VkDebugUtilsMessengerCallbackDataEXT(const VkDebugUtilsMessengerCallbackDataEXT* in_struct) :
     sType(in_struct->sType),
     flags(in_struct->flags),
-    pMessageIdName(in_struct->pMessageIdName),
     messageIdNumber(in_struct->messageIdNumber),
-    pMessage(in_struct->pMessage),
     queueLabelCount(in_struct->queueLabelCount),
     pQueueLabels(nullptr),
     cmdBufLabelCount(in_struct->cmdBufLabelCount),
@@ -19267,6 +19389,8 @@ safe_VkDebugUtilsMessengerCallbackDataEXT::safe_VkDebugUtilsMessengerCallbackDat
     pObjects(nullptr)
 {
     pNext = SafePnextCopy(in_struct->pNext);
+    pMessageIdName = SafeStringCopy(in_struct->pMessageIdName);
+    pMessage = SafeStringCopy(in_struct->pMessage);
     if (queueLabelCount && in_struct->pQueueLabels) {
         pQueueLabels = new safe_VkDebugUtilsLabelEXT[queueLabelCount];
         for (uint32_t i=0; i<queueLabelCount; ++i) {
@@ -19300,9 +19424,7 @@ safe_VkDebugUtilsMessengerCallbackDataEXT::safe_VkDebugUtilsMessengerCallbackDat
 {
     sType = src.sType;
     flags = src.flags;
-    pMessageIdName = src.pMessageIdName;
     messageIdNumber = src.messageIdNumber;
-    pMessage = src.pMessage;
     queueLabelCount = src.queueLabelCount;
     pQueueLabels = nullptr;
     cmdBufLabelCount = src.cmdBufLabelCount;
@@ -19310,6 +19432,8 @@ safe_VkDebugUtilsMessengerCallbackDataEXT::safe_VkDebugUtilsMessengerCallbackDat
     objectCount = src.objectCount;
     pObjects = nullptr;
     pNext = SafePnextCopy(src.pNext);
+    pMessageIdName = SafeStringCopy(src.pMessageIdName);
+    pMessage = SafeStringCopy(src.pMessage);
     if (queueLabelCount && src.pQueueLabels) {
         pQueueLabels = new safe_VkDebugUtilsLabelEXT[queueLabelCount];
         for (uint32_t i=0; i<queueLabelCount; ++i) {
@@ -19334,6 +19458,8 @@ safe_VkDebugUtilsMessengerCallbackDataEXT& safe_VkDebugUtilsMessengerCallbackDat
 {
     if (&src == this) return *this;
 
+    if (pMessageIdName) delete [] pMessageIdName;
+    if (pMessage) delete [] pMessage;
     if (pQueueLabels)
         delete[] pQueueLabels;
     if (pCmdBufLabels)
@@ -19345,9 +19471,7 @@ safe_VkDebugUtilsMessengerCallbackDataEXT& safe_VkDebugUtilsMessengerCallbackDat
 
     sType = src.sType;
     flags = src.flags;
-    pMessageIdName = src.pMessageIdName;
     messageIdNumber = src.messageIdNumber;
-    pMessage = src.pMessage;
     queueLabelCount = src.queueLabelCount;
     pQueueLabels = nullptr;
     cmdBufLabelCount = src.cmdBufLabelCount;
@@ -19355,6 +19479,8 @@ safe_VkDebugUtilsMessengerCallbackDataEXT& safe_VkDebugUtilsMessengerCallbackDat
     objectCount = src.objectCount;
     pObjects = nullptr;
     pNext = SafePnextCopy(src.pNext);
+    pMessageIdName = SafeStringCopy(src.pMessageIdName);
+    pMessage = SafeStringCopy(src.pMessage);
     if (queueLabelCount && src.pQueueLabels) {
         pQueueLabels = new safe_VkDebugUtilsLabelEXT[queueLabelCount];
         for (uint32_t i=0; i<queueLabelCount; ++i) {
@@ -19379,6 +19505,8 @@ safe_VkDebugUtilsMessengerCallbackDataEXT& safe_VkDebugUtilsMessengerCallbackDat
 
 safe_VkDebugUtilsMessengerCallbackDataEXT::~safe_VkDebugUtilsMessengerCallbackDataEXT()
 {
+    if (pMessageIdName) delete [] pMessageIdName;
+    if (pMessage) delete [] pMessage;
     if (pQueueLabels)
         delete[] pQueueLabels;
     if (pCmdBufLabels)
@@ -19393,9 +19521,7 @@ void safe_VkDebugUtilsMessengerCallbackDataEXT::initialize(const VkDebugUtilsMes
 {
     sType = in_struct->sType;
     flags = in_struct->flags;
-    pMessageIdName = in_struct->pMessageIdName;
     messageIdNumber = in_struct->messageIdNumber;
-    pMessage = in_struct->pMessage;
     queueLabelCount = in_struct->queueLabelCount;
     pQueueLabels = nullptr;
     cmdBufLabelCount = in_struct->cmdBufLabelCount;
@@ -19403,6 +19529,8 @@ void safe_VkDebugUtilsMessengerCallbackDataEXT::initialize(const VkDebugUtilsMes
     objectCount = in_struct->objectCount;
     pObjects = nullptr;
     pNext = SafePnextCopy(in_struct->pNext);
+    pMessageIdName = SafeStringCopy(in_struct->pMessageIdName);
+    pMessage = SafeStringCopy(in_struct->pMessage);
     if (queueLabelCount && in_struct->pQueueLabels) {
         pQueueLabels = new safe_VkDebugUtilsLabelEXT[queueLabelCount];
         for (uint32_t i=0; i<queueLabelCount; ++i) {
@@ -19427,9 +19555,7 @@ void safe_VkDebugUtilsMessengerCallbackDataEXT::initialize(const safe_VkDebugUti
 {
     sType = src->sType;
     flags = src->flags;
-    pMessageIdName = src->pMessageIdName;
     messageIdNumber = src->messageIdNumber;
-    pMessage = src->pMessage;
     queueLabelCount = src->queueLabelCount;
     pQueueLabels = nullptr;
     cmdBufLabelCount = src->cmdBufLabelCount;
@@ -19437,6 +19563,8 @@ void safe_VkDebugUtilsMessengerCallbackDataEXT::initialize(const safe_VkDebugUti
     objectCount = src->objectCount;
     pObjects = nullptr;
     pNext = SafePnextCopy(src->pNext);
+    pMessageIdName = SafeStringCopy(src->pMessageIdName);
+    pMessage = SafeStringCopy(src->pMessage);
     if (queueLabelCount && src->pQueueLabels) {
         pQueueLabels = new safe_VkDebugUtilsLabelEXT[queueLabelCount];
         for (uint32_t i=0; i<queueLabelCount; ++i) {
@@ -25273,9 +25401,9 @@ safe_VkPerformanceValueDataINTEL::safe_VkPerformanceValueDataINTEL(const VkPerfo
     value32(in_struct->value32),
     value64(in_struct->value64),
     valueFloat(in_struct->valueFloat),
-    valueBool(in_struct->valueBool),
-    valueString(in_struct->valueString)
+    valueBool(in_struct->valueBool)
 {
+    valueString = SafeStringCopy(in_struct->valueString);
 }
 
 safe_VkPerformanceValueDataINTEL::safe_VkPerformanceValueDataINTEL() :
@@ -25288,25 +25416,27 @@ safe_VkPerformanceValueDataINTEL::safe_VkPerformanceValueDataINTEL(const safe_Vk
     value64 = src.value64;
     valueFloat = src.valueFloat;
     valueBool = src.valueBool;
-    valueString = src.valueString;
+    valueString = SafeStringCopy(src.valueString);
 }
 
 safe_VkPerformanceValueDataINTEL& safe_VkPerformanceValueDataINTEL::operator=(const safe_VkPerformanceValueDataINTEL& src)
 {
     if (&src == this) return *this;
 
+    if (valueString) delete [] valueString;
 
     value32 = src.value32;
     value64 = src.value64;
     valueFloat = src.valueFloat;
     valueBool = src.valueBool;
-    valueString = src.valueString;
+    valueString = SafeStringCopy(src.valueString);
 
     return *this;
 }
 
 safe_VkPerformanceValueDataINTEL::~safe_VkPerformanceValueDataINTEL()
 {
+    if (valueString) delete [] valueString;
 }
 
 void safe_VkPerformanceValueDataINTEL::initialize(const VkPerformanceValueDataINTEL* in_struct)
@@ -25315,7 +25445,7 @@ void safe_VkPerformanceValueDataINTEL::initialize(const VkPerformanceValueDataIN
     value64 = in_struct->value64;
     valueFloat = in_struct->valueFloat;
     valueBool = in_struct->valueBool;
-    valueString = in_struct->valueString;
+    valueString = SafeStringCopy(in_struct->valueString);
 }
 
 void safe_VkPerformanceValueDataINTEL::initialize(const safe_VkPerformanceValueDataINTEL* src)
@@ -25324,7 +25454,7 @@ void safe_VkPerformanceValueDataINTEL::initialize(const safe_VkPerformanceValueD
     value64 = src->value64;
     valueFloat = src->valueFloat;
     valueBool = src->valueBool;
-    valueString = src->valueString;
+    valueString = SafeStringCopy(src->valueString);
 }
 
 safe_VkInitializePerformanceApiInfoINTEL::safe_VkInitializePerformanceApiInfoINTEL(const VkInitializePerformanceApiInfoINTEL* in_struct) :
