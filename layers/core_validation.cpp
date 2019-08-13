@@ -9455,61 +9455,6 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                 i, string_VkComponentSwizzle(ivci.components.r), string_VkComponentSwizzle(ivci.components.g),
                                 string_VkComponentSwizzle(ivci.components.b), string_VkComponentSwizzle(ivci.components.a));
                         }
-
-                        if (rpci->subpassCount > 0) {
-                            uint32_t view_bits = rpci->pSubpasses[0].viewMask;
-                            uint32_t highest_view_bit = 0;
-
-                            for (int j = 0; j < 32; ++j) {
-                                if (((view_bits >> j) & 1) != 0) {
-                                    highest_view_bit = j;
-                                }
-                            }
-
-                            if (rpci->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT ||
-                                rpci->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT) {
-                                if (view_bits == 0) {
-                                    if (ivci.subresourceRange.layerCount != 1) {
-                                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                        VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                                        "VUID-VkFramebufferCreateInfo-renderPass-02747",
-                                                        "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u that is "
-                                                        "referenced by "
-                                                        "fragmentDensityMapAttachment must have a layerCount equal to 1 "
-                                                        "when the view mask in renderPass (%s) is zero.",
-                                                        i, report_data->FormatHandle(pCreateInfo->renderPass).c_str());
-                                    }
-                                } else {
-                                    if (ivci.subresourceRange.layerCount == 0 ||
-                                        ivci.subresourceRange.layerCount <= highest_view_bit) {
-                                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                        VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                                        "VUID-VkFramebufferCreateInfo-renderPass-02746",
-                                                        "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u that is "
-                                                        "referenced by "
-                                                        "fragmentDensityMapAttachment must have a layerCount (%u) equal to 1 or "
-                                                        "greater than the index of the most significant bit (%u) "
-                                                        "when the view mask in renderPass (%s) is non-zero.",
-                                                        i, ivci.subresourceRange.layerCount, highest_view_bit,
-                                                        report_data->FormatHandle(pCreateInfo->renderPass).c_str());
-                                    }
-                                }
-
-                            } else {
-                                if (ivci.subresourceRange.layerCount <= highest_view_bit) {
-                                    skip |=
-                                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
-                                                0, "VUID-VkFramebufferCreateInfo-renderPass-02745",
-                                                "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u that is not "
-                                                "referenced by "
-                                                "fragmentDensityMapAttachment must have a layerCount (%u) greater than "
-                                                "the index of the most significant bit (%u) "
-                                                "when the view mask in renderPass (%s) is non-zero.",
-                                                i, ivci.subresourceRange.layerCount, highest_view_bit,
-                                                report_data->FormatHandle(pCreateInfo->renderPass).c_str());
-                                }
-                            }
-                        }
                     }
                 }
             } else if (pFramebufferAttachmentsCreateInfo) {
@@ -9546,60 +9491,22 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                         }
                     }
 
-                    if (!device_extensions.vk_ext_fragment_density_map) {
-                        if (aii.width < pCreateInfo->width) {
-                            skip |= log_msg(
-                                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                "VUID-VkFramebufferCreateInfo-flags-03192",
-                                "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info #%u has a width of only #%u, "
-                                "but framebuffer has a width of #%u.",
-                                i, aii.width, pCreateInfo->width);
-                        }
+                    if (aii.width < pCreateInfo->width) {
+                        skip |=
+                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    "VUID-VkFramebufferCreateInfo-flags-03192",
+                                    "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info #%u has a width of only #%u, "
+                                    "but framebuffer has a width of #%u.",
+                                    i, aii.width, pCreateInfo->width);
+                    }
 
-                        if (aii.height < pCreateInfo->height) {
-                            skip |= log_msg(
-                                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                "VUID-VkFramebufferCreateInfo-flags-03193",
-                                "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info #%u has a height of only #%u, "
-                                "but framebuffer has a height of #%u.",
-                                i, aii.height, pCreateInfo->height);
-                        }
-                    } else {
-                        if (rpci->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT ||
-                            rpci->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT &&
-                                device_extensions.vk_ext_fragment_density_map) {
-                            uint32_t ceiling_width = (uint32_t)ceil(
-                                (float)pCreateInfo->width /
-                                (float)phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
-
-                            if (aii.width < ceiling_width) {
-                                skip |=
-                                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                            "VUID-VkFramebufferCreateInfo-flags-03196",
-                                            "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info #%u that is referenced "
-                                            "by VkRenderPassFragmentDensityMapCreateInfoEXT::fragmentDensityMapAttachment has a "
-                                            "width of only %u, "
-                                            "but it must be greater than or equal to the ceiling of width of framebuffer / "
-                                            "maxFragmentDensityTexelSize.width (%u).",
-                                            i, aii.width, ceiling_width);
-                            }
-
-                            uint32_t ceiling_height = (uint32_t)ceil(
-                                (float)pCreateInfo->height /
-                                (float)phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height);
-
-                            if (aii.height < ceiling_height) {
-                                skip |=
-                                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                            "VUID-VkFramebufferCreateInfo-flags-03197",
-                                            "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info #%u that is referenced "
-                                            "by VkRenderPassFragmentDensityMapCreateInfoEXT::fragmentDensityMapAttachment has a "
-                                            "height of only %u, "
-                                            "but it must be greater than or equal to the ceiling of height of framebuffer / "
-                                            "maxFragmentDensityTexelSize.height (%u).",
-                                            i, aii.height, ceiling_height);
-                            }
-                        }
+                    if (aii.height < pCreateInfo->height) {
+                        skip |=
+                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    "VUID-VkFramebufferCreateInfo-flags-03193",
+                                    "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment info #%u has a height of only #%u, "
+                                    "but framebuffer has a height of #%u.",
+                                    i, aii.height, pCreateInfo->height);
                     }
                 }
 
