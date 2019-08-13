@@ -667,6 +667,8 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query, uint32_t index);
     void PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer);
     void PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR* pSubpassEndInfo);
+    void PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
+                                         const VkCommandBuffer* pCommandBuffers);
     void PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
                                     uint32_t data);
     void PreCallRecordCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo);
@@ -969,7 +971,7 @@ class CoreChecks : public ValidationStateTracker {
                                          const safe_VkSubpassDependency2KHR* dependencies,
                                          const std::vector<uint32_t>& self_dependencies, uint32_t image_mem_barrier_count,
                                          const VkImageMemoryBarrier* image_barriers);
-    bool ValidateSecondaryCommandBufferState(CMD_BUFFER_STATE* pCB, CMD_BUFFER_STATE* pSubCB);
+    bool ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE* pCB, const CMD_BUFFER_STATE* pSubCB);
     bool ValidateFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BUFFER_STATE* pCB, VkCommandBuffer secondaryBuffer,
                              const CMD_BUFFER_STATE* pSubCB, const char* caller);
     bool ValidateDescriptorUpdateTemplate(const char* func_name, const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo);
@@ -1845,8 +1847,6 @@ class CoreChecks : public ValidationStateTracker {
     void PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR* pSubpassEndInfo);
     bool PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
                                            const VkCommandBuffer* pCommandBuffers);
-    void PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
-                                         const VkCommandBuffer* pCommandBuffers);
     bool PreCallValidateMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, VkFlags flags,
                                   void** ppData);
     void PostCallRecordMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, VkFlags flags,

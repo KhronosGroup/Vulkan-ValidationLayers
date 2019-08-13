@@ -2952,7 +2952,7 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
                 // if a secondary level command buffer inherits the framebuffer from the primary command buffer
                 // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
                 auto val_fn = [this, commandBuffer, attachment_index, fb_attachment, rectCount, clear_rect_copy](
-                                  CMD_BUFFER_STATE *prim_cb, VkFramebuffer fb) {
+                                  const CMD_BUFFER_STATE *prim_cb, VkFramebuffer fb) {
                     assert(rectCount == clear_rect_copy->size());
                     const FRAMEBUFFER_STATE *framebuffer = GetFramebufferState(fb);
                     const auto &render_area = prim_cb->activeRenderPassBeginInfo.renderArea;

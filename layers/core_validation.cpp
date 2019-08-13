@@ -8170,7 +8170,7 @@ bool CoreChecks::ValidateRenderPassImageBarriers(const char *funcName, CMD_BUFFE
         if (VK_NULL_HANDLE == cb_state->activeFramebuffer) {
             assert(VK_COMMAND_BUFFER_LEVEL_SECONDARY == cb_state->createInfo.level);
             // Secondary CB case w/o FB specified delay validation
-            cb_state->cmd_execute_commands_functions.emplace_back([=](CMD_BUFFER_STATE *primary_cb, VkFramebuffer fb) {
+            cb_state->cmd_execute_commands_functions.emplace_back([=](const CMD_BUFFER_STATE *primary_cb, VkFramebuffer fb) {
                 return ValidateImageBarrierImage(funcName, cb_state, fb, active_subpass, sub_desc, rp_handle, i, img_barrier);
             });
         } else {
@@ -11468,7 +11468,7 @@ bool CoreChecks::ValidateFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BU
     return skip;
 }
 
-bool CoreChecks::ValidateSecondaryCommandBufferState(CMD_BUFFER_STATE *pCB, CMD_BUFFER_STATE *pSubCB) {
+bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE *pCB, const CMD_BUFFER_STATE *pSubCB) {
     bool skip = false;
     unordered_set<int> activeTypes;
     if (!disabled.query_validation) {
@@ -11520,11 +11520,11 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(CMD_BUFFER_STATE *pCB, CMD_
 
 bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
                                                    const VkCommandBuffer *pCommandBuffers) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     bool skip = false;
-    CMD_BUFFER_STATE *sub_cb_state = NULL;
-    std::unordered_set<CMD_BUFFER_STATE *> linked_command_buffers = cb_state->linkedCommandBuffers;
+    const CMD_BUFFER_STATE *sub_cb_state = NULL;
+    std::unordered_set<const CMD_BUFFER_STATE *> linked_command_buffers;
 
     for (uint32_t i = 0; i < commandBuffersCount; i++) {
         sub_cb_state = GetCBState(pCommandBuffers[i]);
@@ -11537,7 +11537,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                             report_data->FormatHandle(pCommandBuffers[i]).c_str(), i);
         } else if (VK_COMMAND_BUFFER_LEVEL_SECONDARY == sub_cb_state->createInfo.level) {
             if (sub_cb_state->beginInfo.pInheritanceInfo != nullptr) {
-                auto secondary_rp_state = GetRenderPassState(sub_cb_state->beginInfo.pInheritanceInfo->renderPass);
+                const auto secondary_rp_state = GetRenderPassState(sub_cb_state->beginInfo.pInheritanceInfo->renderPass);
                 if (cb_state->activeRenderPass &&
                     !(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -11583,12 +11583,31 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
         skip |= ValidateCommandBufferState(sub_cb_state, "vkCmdExecuteCommands()", 0,
                                            "VUID-vkCmdExecuteCommands-pCommandBuffers-00089");
         if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
-            if (sub_cb_state->in_use.load() || linked_command_buffers.count(sub_cb_state)) {
+            if (sub_cb_state->in_use.load()) {
+                // TODO: Find some way to differentiate between the -00090 and -00091 conditions
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                 HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdExecuteCommands-pCommandBuffers-00090",
-                                "Attempt to simultaneously execute %s without VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set!",
+                                "Cannot execute pending %s without VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
+                                report_data->FormatHandle(sub_cb_state->commandBuffer).c_str());
+            }
+            // We use an const_cast, because one cannot query a container keyed on a non-const pointer using a const pointer
+            if (cb_state->linkedCommandBuffers.count(const_cast<CMD_BUFFER_STATE *>(sub_cb_state))) {
+                skip |= log_msg(
+                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                    HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdExecuteCommands-pCommandBuffers-00092",
+                    "Cannot execute %s without VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set if previously executed in %s",
+                    report_data->FormatHandle(sub_cb_state->commandBuffer).c_str(),
+                    report_data->FormatHandle(cb_state->commandBuffer).c_str());
+            }
+
+            const auto insert_pair = linked_command_buffers.insert(sub_cb_state);
+            if (!insert_pair.second) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                                HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdExecuteCommands-pCommandBuffers-00093",
+                                "Cannot duplicate %s in pCommandBuffers without VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
                                 report_data->FormatHandle(cb_state->commandBuffer).c_str());
             }
+
             if (cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
                 // Warn that non-simultaneous secondary cmd buffer renders primary non-simultaneous
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -11647,9 +11666,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                 }
             }
         }
-
-        linked_command_buffers.insert(sub_cb_state);
     }
+
     skip |= ValidatePrimaryCommandBuffer(cb_state, "vkCmdExecuteCommands()", "VUID-vkCmdExecuteCommands-bufferlevel");
     skip |= ValidateCmdQueueFlags(cb_state, "vkCmdExecuteCommands()",
                                   VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -11658,8 +11676,8 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
-                                                 const VkCommandBuffer *pCommandBuffers) {
+void ValidationStateTracker::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
+                                                             const VkCommandBuffer *pCommandBuffers) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
 
     CMD_BUFFER_STATE *sub_cb_state = NULL;
@@ -11675,6 +11693,9 @@ void CoreChecks::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, 
         }
 
         // Propagate inital layout and current layout state to the primary cmd buffer
+        // NOTE: The update/population of the image_layout_map is done in CoreChecks, but for other classes derived from
+        // ValidationStateTracker these maps will be empty, so leaving the propagation in the the state tracker should be a no-op
+        // for those other classes.
         for (const auto &sub_layout_map_entry : sub_cb_state->image_layout_map) {
             const auto image = sub_layout_map_entry.first;
             const auto *image_state = GetImageState(image);

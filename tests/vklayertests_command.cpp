@@ -928,7 +928,7 @@ TEST_F(VkLayerTest, NonSimultaneousSecondaryMarksPrimary) {
 TEST_F(VkLayerTest, SimultaneousUseSecondaryTwoExecutes) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    const char *simultaneous_use_message = "without VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set!";
+    const char *simultaneous_use_message = "VUID-vkCmdExecuteCommands-pCommandBuffers-00092";
 
     VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -955,7 +955,7 @@ TEST_F(VkLayerTest, SimultaneousUseSecondarySingleExecute) {
     // variation on previous test executing the same CB twice in the same
     // CmdExecuteCommands call
 
-    const char *simultaneous_use_message = "without VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set!";
+    const char *simultaneous_use_message = "VUID-vkCmdExecuteCommands-pCommandBuffers-00093";
 
     VkCommandBufferObj secondary(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
