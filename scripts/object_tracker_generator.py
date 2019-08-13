@@ -963,6 +963,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                     self.appendSection('command', '')
                     self.appendSection('command', pre_cv_func_decl)
                     self.appendSection('command', '    bool skip = false;')
+                    self.appendSection('command', '    auto lock = read_shared_lock();')
                     self.appendSection('command', pre_call_validate)
                     self.appendSection('command', '    return skip;')
                     self.appendSection('command', '}')
@@ -972,6 +973,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                     pre_cr_func_decl = 'void ObjectLifetimes::PreCallRecord' + func_decl_template + ' {'
                     self.appendSection('command', '')
                     self.appendSection('command', pre_cr_func_decl)
+                    self.appendSection('command', '    auto lock = write_shared_lock();')
                     self.appendSection('command', pre_call_record)
                     self.appendSection('command', '}')
 
@@ -986,7 +988,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                         if 'CreateGraphicsPipelines' not in cmdname and 'CreateComputePipelines' not in cmdname and 'CreateRayTracingPipelines' not in cmdname:
                             post_cr_func_decl = post_cr_func_decl.replace('{', '{\n    if (result != VK_SUCCESS) return;')
                     self.appendSection('command', post_cr_func_decl)
-
+                    self.appendSection('command', '    auto lock = write_shared_lock();')
 
                     self.appendSection('command', post_call_record)
                     self.appendSection('command', '}')
