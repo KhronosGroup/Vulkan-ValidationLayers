@@ -829,32 +829,61 @@ class StatelessValidation : public ValidationObject {
     bool ValidateSubpassGraphicsFlags(const debug_report_data *report_data, const RenderPassCreateInfoGeneric *pCreateInfo,
                                       uint32_t dependency_index, uint32_t subpass, VkPipelineStageFlags stages, const char *vuid,
                                       const char *target) {
-        const VkPipelineStageFlags kGraphicsStages =
-            VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT | VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT |
-            VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV | VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV | VK_PIPELINE_STAGE_VERTEX_INPUT_BIT |
+        const VkPipelineStageFlags kCommonStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT | VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        const VkPipelineStageFlags kFramebufferStages =
+            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+            VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        const VkPipelineStageFlags kPrimitiveShadingPipelineStages =
+            kCommonStages | VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_VERTEX_INPUT_BIT |
             VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
             VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT | VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |
-            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-            VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT | VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT |
-            VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT | VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV |
-            VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT;
+            VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT | VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV | kFramebufferStages;
+        const VkPipelineStageFlags kMeshShadingPipelineStages =
+            kCommonStages | VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV |
+            VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV | VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV | kFramebufferStages;
+        const VkPipelineStageFlags kFragmentDensityStages = VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT;
+        const VkPipelineStageFlags kConditionalRenderingStages = VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT;
+        const VkPipelineStageFlags kCommandProcessingPipelineStages = kCommonStages | VK_PIPELINE_STAGE_COMMAND_PROCESS_BIT_NVX;
+
+        const VkPipelineStageFlags kGraphicsStages = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | kPrimitiveShadingPipelineStages |
+                                                     kMeshShadingPipelineStages | kFragmentDensityStages |
+                                                     kConditionalRenderingStages | kCommandProcessingPipelineStages;
+
+        const VkPipelineStageFlags kRayTracingPipelineStages = kCommonStages | VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV;
+        const VkPipelineStageFlags kRayTracingAccellerationStructOpsStages =
+            kCommonStages | VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV;
+        const VkPipelineStageFlags kRayTracingStages = kCommonStages | kRayTracingPipelineStages |
+                                                       kRayTracingAccellerationStructOpsStages | kFragmentDensityStages |
+                                                       kConditionalRenderingStages | kCommandProcessingPipelineStages;
 
         bool skip = false;
-        const bool is_all_graphics_stages = (stages & ~kGraphicsStages) == 0;
-        const auto IsGraphics = [pCreateInfo](uint32_t subpass) {
+
+        const auto IsPipeline = [pCreateInfo](uint32_t subpass, const VkPipelineBindPoint stage) {
             if (subpass == VK_SUBPASS_EXTERNAL)
                 return false;
             else
-                return pCreateInfo->pSubpasses[subpass].pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS;
+                return pCreateInfo->pSubpasses[subpass].pipelineBindPoint == stage;
         };
 
-        if (IsGraphics(subpass) && !is_all_graphics_stages) {
+        const bool is_all_graphics_stages = (stages & ~kGraphicsStages) == 0;
+        if (IsPipeline(subpass, VK_PIPELINE_BIND_POINT_GRAPHICS) && !is_all_graphics_stages) {
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT, 0, vuid,
                         "Dependency pDependencies[%" PRIu32
                         "] specifies a %sStageMask that contains stages (%s) that are not part "
                         "of the Graphics pipeline, as specified by the %sSubpass (= %" PRIu32 ") in pipelineBindPoint.",
+                        dependency_index, target, string_VkPipelineStageFlags(stages & ~kGraphicsStages).c_str(), target, subpass);
+        }
+
+        // TODO: Raytracing also allowed here? See https://github.com/KhronosGroup/Vulkan-Docs/issues/1021
+        // There's no harm in validating it even if not sure, I think...
+        const bool is_all_raytracing_stages = (stages & ~kRayTracingStages) == 0;
+        if (IsPipeline(subpass, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) && !is_all_raytracing_stages) {
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT, 0, vuid,
+                        "Dependency pDependencies[%" PRIu32
+                        "] specifies a %sStageMask that contains stages (%s) that are not part "
+                        "of the Ray Tracing pipeline, as specified by the %sSubpass (= %" PRIu32 ") in pipelineBindPoint.",
                         dependency_index, target, string_VkPipelineStageFlags(stages & ~kGraphicsStages).c_str(), target, subpass);
         }
 
