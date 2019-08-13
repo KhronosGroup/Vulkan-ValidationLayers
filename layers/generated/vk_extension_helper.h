@@ -283,9 +283,11 @@ struct DeviceExtensions : public InstanceExtensions {
     bool vk_amd_memory_overallocation_behavior{false};
     bool vk_amd_mixed_attachment_samples{false};
     bool vk_amd_negative_viewport_height{false};
+    bool vk_amd_pipeline_compiler_control{false};
     bool vk_amd_rasterization_order{false};
     bool vk_amd_shader_ballot{false};
     bool vk_amd_shader_core_properties{false};
+    bool vk_amd_shader_core_properties_2{false};
     bool vk_amd_shader_explicit_vertex_parameter{false};
     bool vk_amd_shader_fragment_mask{false};
     bool vk_amd_shader_image_load_store_lod{false};
@@ -315,7 +317,9 @@ struct DeviceExtensions : public InstanceExtensions {
     bool vk_ext_hdr_metadata{false};
     bool vk_ext_host_query_reset{false};
     bool vk_ext_image_drm_format_modifier{false};
+    bool vk_ext_index_type_uint8{false};
     bool vk_ext_inline_uniform_block{false};
+    bool vk_ext_line_rasterization{false};
     bool vk_ext_memory_budget{false};
     bool vk_ext_memory_priority{false};
     bool vk_ext_pci_bus_info{false};
@@ -331,7 +335,9 @@ struct DeviceExtensions : public InstanceExtensions {
     bool vk_ext_shader_subgroup_ballot{false};
     bool vk_ext_shader_subgroup_vote{false};
     bool vk_ext_shader_viewport_index_layer{false};
+    bool vk_ext_subgroup_size_control{false};
     bool vk_ext_texel_buffer_alignment{false};
+    bool vk_ext_texture_compression_astc_hdr{false};
     bool vk_ext_transform_feedback{false};
     bool vk_ext_validation_cache{false};
     bool vk_ext_vertex_attribute_divisor{false};
@@ -343,7 +349,7 @@ struct DeviceExtensions : public InstanceExtensions {
     bool vk_img_filter_cubic{false};
     bool vk_img_format_pvrtc{false};
     bool vk_intel_performance_query{false};
-    bool vk_intel_shader_integer_functions2{false};
+    bool vk_intel_shader_integer_functions_2{false};
     bool vk_khr_16bit_storage{false};
     bool vk_khr_8bit_storage{false};
     bool vk_khr_bind_memory_2{false};
@@ -372,6 +378,7 @@ struct DeviceExtensions : public InstanceExtensions {
     bool vk_khr_maintenance2{false};
     bool vk_khr_maintenance3{false};
     bool vk_khr_multiview{false};
+    bool vk_khr_pipeline_executable_properties{false};
     bool vk_khr_push_descriptor{false};
     bool vk_khr_relaxed_block_layout{false};
     bool vk_khr_sampler_mirror_clamp_to_edge{false};
@@ -447,10 +454,13 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_AMD_MEMORY_OVERALLOCATION_BEHAVIOR_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_memory_overallocation_behavior, {})),
             std::make_pair(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_mixed_attachment_samples, {})),
             std::make_pair(VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_negative_viewport_height, {})),
+            std::make_pair(VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_pipeline_compiler_control, {})),
             std::make_pair(VK_AMD_RASTERIZATION_ORDER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_rasterization_order, {})),
             std::make_pair(VK_AMD_SHADER_BALLOT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_shader_ballot, {})),
             std::make_pair(VK_AMD_SHADER_CORE_PROPERTIES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_shader_core_properties, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
+            std::make_pair(VK_AMD_SHADER_CORE_PROPERTIES_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_shader_core_properties_2, {{
+                           {&DeviceExtensions::vk_amd_shader_core_properties, VK_AMD_SHADER_CORE_PROPERTIES_EXTENSION_NAME}}})),
             std::make_pair(VK_AMD_SHADER_EXPLICIT_VERTEX_PARAMETER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_shader_explicit_vertex_parameter, {})),
             std::make_pair(VK_AMD_SHADER_FRAGMENT_MASK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_shader_fragment_mask, {})),
             std::make_pair(VK_AMD_SHADER_IMAGE_LOAD_STORE_LOD_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_shader_image_load_store_lod, {})),
@@ -512,9 +522,12 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_image_format_list, VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_sampler_ycbcr_conversion, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME}}})),
+            std::make_pair(VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_index_type_uint8, {})),
             std::make_pair(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_inline_uniform_block, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_maintenance1, VK_KHR_MAINTENANCE1_EXTENSION_NAME}}})),
+            std::make_pair(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_line_rasterization, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_memory_budget, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_memory_priority, {{
@@ -538,7 +551,10 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_subgroup_ballot, {})),
             std::make_pair(VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_subgroup_vote, {})),
             std::make_pair(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_viewport_index_layer, {})),
+            std::make_pair(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_subgroup_size_control, {})),
             std::make_pair(VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_texel_buffer_alignment, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
+            std::make_pair(VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_texture_compression_astc_hdr, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_transform_feedback, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
@@ -559,7 +575,7 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_IMG_FILTER_CUBIC_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_img_filter_cubic, {})),
             std::make_pair(VK_IMG_FORMAT_PVRTC_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_img_format_pvrtc, {})),
             std::make_pair(VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_intel_performance_query, {})),
-            std::make_pair(VK_INTEL_SHADER_INTEGER_FUNCTIONS2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_intel_shader_integer_functions2, {{
+            std::make_pair(VK_INTEL_SHADER_INTEGER_FUNCTIONS_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_intel_shader_integer_functions_2, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_16BIT_STORAGE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_16bit_storage, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
@@ -621,6 +637,7 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_MULTIVIEW_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_multiview, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
+            std::make_pair(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_pipeline_executable_properties, {})),
             std::make_pair(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_push_descriptor, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_relaxed_block_layout, {})),
@@ -782,9 +799,11 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_AMD_MEMORY_OVERALLOCATION_BEHAVIOR_EXTENSION_NAME,
     VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME,
     VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME,
+    VK_AMD_PIPELINE_COMPILER_CONTROL_EXTENSION_NAME,
     VK_AMD_RASTERIZATION_ORDER_EXTENSION_NAME,
     VK_AMD_SHADER_BALLOT_EXTENSION_NAME,
     VK_AMD_SHADER_CORE_PROPERTIES_EXTENSION_NAME,
+    VK_AMD_SHADER_CORE_PROPERTIES_2_EXTENSION_NAME,
     VK_AMD_SHADER_EXPLICIT_VERTEX_PARAMETER_EXTENSION_NAME,
     VK_AMD_SHADER_FRAGMENT_MASK_EXTENSION_NAME,
     VK_AMD_SHADER_IMAGE_LOAD_STORE_LOD_EXTENSION_NAME,
@@ -818,7 +837,9 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_HDR_METADATA_EXTENSION_NAME,
     VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
     VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME,
+    VK_EXT_INDEX_TYPE_UINT8_EXTENSION_NAME,
     VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME,
+    VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME,
     VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
     VK_EXT_MEMORY_PRIORITY_EXTENSION_NAME,
     VK_EXT_PCI_BUS_INFO_EXTENSION_NAME,
@@ -834,7 +855,9 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME,
     VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME,
     VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
+    VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME,
     VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME,
+    VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME,
     VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME,
     VK_EXT_VALIDATION_CACHE_EXTENSION_NAME,
     VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME,
@@ -848,7 +871,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_IMG_FILTER_CUBIC_EXTENSION_NAME,
     VK_IMG_FORMAT_PVRTC_EXTENSION_NAME,
     VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME,
-    VK_INTEL_SHADER_INTEGER_FUNCTIONS2_EXTENSION_NAME,
+    VK_INTEL_SHADER_INTEGER_FUNCTIONS_2_EXTENSION_NAME,
     VK_KHR_16BIT_STORAGE_EXTENSION_NAME,
     VK_KHR_8BIT_STORAGE_EXTENSION_NAME,
     VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
@@ -883,6 +906,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_MAINTENANCE2_EXTENSION_NAME,
     VK_KHR_MAINTENANCE3_EXTENSION_NAME,
     VK_KHR_MULTIVIEW_EXTENSION_NAME,
+    VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME,
     VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
     VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME,
     VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME,

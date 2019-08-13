@@ -3925,6 +3925,57 @@ void ThreadSafety::PostCallRecordCmdDrawIndexedIndirectCountKHR(
     // Host access to commandBuffer must be externally synchronized
 }
 
+void ThreadSafety::PreCallRecordGetPipelineExecutablePropertiesKHR(
+    VkDevice                                    device,
+    const VkPipelineInfoKHR*                    pPipelineInfo,
+    uint32_t*                                   pExecutableCount,
+    VkPipelineExecutablePropertiesKHR*          pProperties) {
+    StartReadObject(device);
+}
+
+void ThreadSafety::PostCallRecordGetPipelineExecutablePropertiesKHR(
+    VkDevice                                    device,
+    const VkPipelineInfoKHR*                    pPipelineInfo,
+    uint32_t*                                   pExecutableCount,
+    VkPipelineExecutablePropertiesKHR*          pProperties,
+    VkResult                                    result) {
+    FinishReadObject(device);
+}
+
+void ThreadSafety::PreCallRecordGetPipelineExecutableStatisticsKHR(
+    VkDevice                                    device,
+    const VkPipelineExecutableInfoKHR*          pExecutableInfo,
+    uint32_t*                                   pStatisticCount,
+    VkPipelineExecutableStatisticKHR*           pStatistics) {
+    StartReadObject(device);
+}
+
+void ThreadSafety::PostCallRecordGetPipelineExecutableStatisticsKHR(
+    VkDevice                                    device,
+    const VkPipelineExecutableInfoKHR*          pExecutableInfo,
+    uint32_t*                                   pStatisticCount,
+    VkPipelineExecutableStatisticKHR*           pStatistics,
+    VkResult                                    result) {
+    FinishReadObject(device);
+}
+
+void ThreadSafety::PreCallRecordGetPipelineExecutableInternalRepresentationsKHR(
+    VkDevice                                    device,
+    const VkPipelineExecutableInfoKHR*          pExecutableInfo,
+    uint32_t*                                   pInternalRepresentationCount,
+    VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations) {
+    StartReadObject(device);
+}
+
+void ThreadSafety::PostCallRecordGetPipelineExecutableInternalRepresentationsKHR(
+    VkDevice                                    device,
+    const VkPipelineExecutableInfoKHR*          pExecutableInfo,
+    uint32_t*                                   pInternalRepresentationCount,
+    VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations,
+    VkResult                                    result) {
+    FinishReadObject(device);
+}
+
 void ThreadSafety::PreCallRecordCreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,
@@ -5759,6 +5810,22 @@ void ThreadSafety::PostCallRecordCreateHeadlessSurfaceEXT(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) {
     FinishReadObject(instance);
+}
+
+void ThreadSafety::PreCallRecordCmdSetLineStippleEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    lineStippleFactor,
+    uint16_t                                    lineStipplePattern) {
+    StartWriteObject(commandBuffer);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdSetLineStippleEXT(
+    VkCommandBuffer                             commandBuffer,
+    uint32_t                                    lineStippleFactor,
+    uint16_t                                    lineStipplePattern) {
+    FinishWriteObject(commandBuffer);
+    // Host access to commandBuffer must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordResetQueryPoolEXT(

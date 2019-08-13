@@ -1019,8 +1019,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                               "VUID-VkPipelineVertexInputStateCreateInfo-pNext-pNext");
                 skip |= validate_struct_type("vkCreateGraphicsPipelines", "pCreateInfos[i].pVertexInputState",
                                              "VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO", vertex_input_state,
-                                             VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, false,
-                                             "VUID-VkPipelineVertexInputStateCreateInfo-pVertexInputState-parameter",
+                                             VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, false, kVUIDUndefined,
                                              "VUID-VkPipelineVertexInputStateCreateInfo-sType-sType");
                 skip |=
                     validate_array("vkCreateGraphicsPipelines", "pCreateInfos[i].pVertexInputState->vertexBindingDescriptionCount",

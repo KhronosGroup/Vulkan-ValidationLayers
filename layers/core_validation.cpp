@@ -9428,7 +9428,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
 
                     const char *mismatchedLayersNoMultiviewVuid = device_extensions.vk_khr_multiview
                                                                       ? "VUID-VkFramebufferCreateInfo-renderPass-03199"
-                                                                      : "VUID-VkFramebufferCreateInfo-renderPass-03200";
+                                                                      : "VUID-VkFramebufferCreateInfo-flags-03200";
                     if ((rpci->subpassCount == 0) || (rpci->pSubpasses[0].viewMask == 0)) {
                         if (aii.layerCount < pCreateInfo->layers) {
                             skip |=
