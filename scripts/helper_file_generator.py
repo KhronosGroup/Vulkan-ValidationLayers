@@ -872,7 +872,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         return object_types_header
     #
     # Generate pNext handling function
-    def build_pnext_chain_processing_func(self):
+    def build_safe_struct_utility_funcs(self):
         # Construct helper functions to build and free pNext extension chains
         build_pnext_proc = '\n\n'
         build_pnext_proc += 'void *SafePnextCopy(const void *pNext) {\n'
@@ -988,7 +988,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         safe_struct_helper_source += '#include <string.h>\n'
         safe_struct_helper_source += '\n'
         safe_struct_helper_source += self.GenerateSafeStructSource()
-        safe_struct_helper_source += self.build_pnext_chain_processing_func()
+        safe_struct_helper_source += self.build_safe_struct_utility_funcs()
 
         return safe_struct_helper_source
     #
