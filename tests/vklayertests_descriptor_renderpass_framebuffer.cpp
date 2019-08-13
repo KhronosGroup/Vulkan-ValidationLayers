@@ -3108,7 +3108,12 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
         " 9. framebuffer dimensions exceed physical device limits\n"
         "10. null pAttachments\n");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+	ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    bool push_fragment_density_support = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    if (push_fragment_density_support) m_device_extension_names.push_back(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, 0));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkFramebufferCreateInfo-attachmentCount-00876");
@@ -3262,6 +3267,72 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
     m_errorMonitor->VerifyFound();
     if (err == VK_SUCCESS) {
         vkDestroyFramebuffer(m_device->device(), fb, NULL);
+    }
+
+    {
+        // Create a renderPass with a single color attachment for fragment density map
+        VkAttachmentReference attach_fragment_density_map = {};
+        attach_fragment_density_map.layout = VK_IMAGE_LAYOUT_GENERAL;
+        VkSubpassDescription subpass_fragment_density_map = {};
+        subpass_fragment_density_map.pColorAttachments = &attach_fragment_density_map;
+        VkRenderPassCreateInfo rpci_fragment_density_map = {};
+        rpci_fragment_density_map.subpassCount = 1;
+        rpci_fragment_density_map.pSubpasses = &subpass_fragment_density_map;
+        rpci_fragment_density_map.attachmentCount = 1;
+        VkAttachmentDescription attach_desc_fragment_density_map = {};
+        attach_desc_fragment_density_map.format = VK_FORMAT_R8G8_UNORM;
+        attach_desc_fragment_density_map.samples = VK_SAMPLE_COUNT_1_BIT;
+        attach_desc_fragment_density_map.finalLayout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
+        rpci_fragment_density_map.pAttachments = &attach_desc_fragment_density_map;
+        rpci_fragment_density_map.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        VkRenderPass rp_fragment_density_map;
+        err = vkCreateRenderPass(m_device->device(), &rpci_fragment_density_map, NULL, &rp_fragment_density_map);
+        ASSERT_VK_SUCCESS(err);
+
+        // Create an image with one mip level.
+        VkImageObj image(m_device);
+        image.Init(16, 16, 1, VK_FORMAT_R8G8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+        ASSERT_TRUE(image.initialized());
+
+        // Create view attachment
+        VkImageView view_fragment_density_map;
+        VkImageViewCreateInfo ivci = {};
+        ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        ivci.image = image.handle();
+        ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        ivci.format = VK_FORMAT_R8G8_UNORM;
+        ivci.flags = 0;
+        ivci.subresourceRange.layerCount = 1;
+        ivci.subresourceRange.baseMipLevel = 0;
+        ivci.subresourceRange.levelCount = 1;
+        ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        err = vkCreateImageView(m_device->device(), &ivci, NULL, &view_fragment_density_map);
+        ASSERT_VK_SUCCESS(err);
+
+        VkFramebufferCreateInfo fb_info_fragment_density_map = {};
+        fb_info_fragment_density_map.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        fb_info_fragment_density_map.pNext = NULL;
+        fb_info_fragment_density_map.renderPass = rp_fragment_density_map;
+        fb_info_fragment_density_map.attachmentCount = 1;
+        fb_info_fragment_density_map.pAttachments = &view_fragment_density_map;
+        // Set large width and height
+        fb_info_fragment_density_map.width = 512;
+        fb_info_fragment_density_map.height = 512;
+        // Set mis-matching layerCount
+        fb_info_fragment_density_map.layers = 2;
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkFramebufferCreateInfo-pAttachments-02554");
+        err = vkCreateFramebuffer(device(), &fb_info_fragment_density_map, NULL, &fb);
+
+        m_errorMonitor->VerifyFound();
+        if (err == VK_SUCCESS) {
+            vkDestroyFramebuffer(m_device->device(), fb, NULL);
+        }
+
+        fb_info_fragment_density_map.layers = 1;
+
+        vkDestroyImageView(m_device->device(), view_fragment_density_map, NULL);
+        vkDestroyRenderPass(m_device->device(), rp_fragment_density_map, NULL);
     }
 
     {
