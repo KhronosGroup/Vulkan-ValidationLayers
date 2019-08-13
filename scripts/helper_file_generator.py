@@ -1224,7 +1224,6 @@ class HelperFileOutputGenerator(OutputGenerator):
             custom_destruct_txt = {'VkShaderModuleCreateInfo' :
                                    '    if (pCode)\n'
                                    '        delete[] reinterpret_cast<const uint8_t *>(pCode);\n' }
-
             copy_pnext = ''
             for member in item.members:
                 m_type = member.type
@@ -1241,8 +1240,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                             # For these exceptions just copy initial value over for now
                             init_list += '\n    %s(in_struct->%s),' % (member.name, member.name)
                             init_func_txt += '    %s = in_struct->%s;\n' % (member.name, member.name)
-                        else:
-                            default_init_list += '\n    %s(nullptr),' % (member.name)
+                        default_init_list += '\n    %s(nullptr),' % (member.name)
                     else:
                         default_init_list += '\n    %s(nullptr),' % (member.name)
                         init_list += '\n    %s(nullptr),' % (member.name)
