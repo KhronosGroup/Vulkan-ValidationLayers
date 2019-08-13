@@ -768,24 +768,27 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const st
                     }
                     const auto &image_view_ci = image_view_state->create_info;
 
-                    if ((reqs & DESCRIPTOR_REQ_ALL_VIEW_TYPE_BITS) && (~reqs & (1 << image_view_ci.viewType))) {
-                        // bad view type
-                        std::stringstream error_str;
-                        error_str << "Descriptor in binding #" << binding << " index " << index
-                                  << " requires an image view of type " << StringDescriptorReqViewType(reqs) << " but got "
-                                  << string_VkImageViewType(image_view_ci.viewType) << ".";
-                        *error = error_str.str();
-                        return false;
-                    }
+                    if (reqs & DESCRIPTOR_REQ_ALL_VIEW_TYPE_BITS) {
+                        if (~reqs & (1 << image_view_ci.viewType)) {
+                            // bad view type
+                            std::stringstream error_str;
+                            error_str << "Descriptor in binding #" << binding << " index " << index
+                                      << " requires an image view of type " << StringDescriptorReqViewType(reqs) << " but got "
+                                      << string_VkImageViewType(image_view_ci.viewType) << ".";
+                            *error = error_str.str();
+                            return false;
+                        }
 
-                    if (!(reqs & image_view_state->descriptor_format_bits)) {
-                        // bad component type
-                        std::stringstream error_str;
-                        error_str << "Descriptor in binding #" << binding << " index " << index << " requires "
-                                  << StringDescriptorReqComponentType(reqs) << " component type, but bound descriptor format is "
-                                  << string_VkFormat(image_view_ci.format) << ".";
-                        *error = error_str.str();
-                        return false;
+                        if (!(reqs & image_view_state->descriptor_format_bits)) {
+                            // bad component type
+                            std::stringstream error_str;
+                            error_str << "Descriptor in binding #" << binding << " index " << index << " requires "
+                                      << StringDescriptorReqComponentType(reqs)
+                                      << " component type, but bound descriptor format is " << string_VkFormat(image_view_ci.format)
+                                      << ".";
+                            *error = error_str.str();
+                            return false;
+                        }
                     }
 
                     if (!disabled.image_layout_validation) {
