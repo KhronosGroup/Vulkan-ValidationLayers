@@ -6058,7 +6058,12 @@ TEST_F(VkLayerTest, CreateImageMinLimitsViolation) {
 TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
     TEST_DESCRIPTION("Create invalid image with invalid parameters exceeding physical device limits.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    bool push_fragment_density_support = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    if (push_fragment_density_support) m_device_extension_names.push_back(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, 0));
 
     VkImageCreateInfo tmp_img_ci = {};
     tmp_img_ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -6149,6 +6154,22 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
             CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-00965");
         } else {
             printf("%s VkPhysicalDeviceLimits::maxFramebufferHeight is already UINT32_MAX; skipping part of test.\n", kSkipPrefix);
+        }
+    }
+
+    {
+        if (!push_fragment_density_support) {
+            printf("%s VK_EXT_fragment_density_map Extension not supported, skipping tests\n", kSkipPrefix);
+        } else {
+            VkImageCreateInfo image_ci = safe_image_ci;
+            image_ci.usage = VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
+
+            VkImageFormatProperties img_limits;
+            ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
+
+            image_ci.extent = {dev_limits.maxFramebufferWidth + 1, dev_limits.maxFramebufferHeight + 1, 1};
+            CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-02559");
+            CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-02560");
         }
     }
 }
