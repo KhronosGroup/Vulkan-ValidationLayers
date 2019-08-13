@@ -31,8 +31,8 @@
 
 
 #include "vk_safe_struct.h"
-#include <assert.h>
 #include <string.h>
+#include <cstring>
 
 
 safe_VkApplicationInfo::safe_VkApplicationInfo(const VkApplicationInfo* in_struct) :
@@ -28167,6 +28167,12 @@ void safe_VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT::initialize(const sa
     uniformTexelBufferOffsetAlignmentBytes = src->uniformTexelBufferOffsetAlignmentBytes;
     uniformTexelBufferOffsetSingleTexelAlignment = src->uniformTexelBufferOffsetSingleTexelAlignment;
     pNext = SafePnextCopy(src->pNext);
+}
+
+const char *SafeStringCopy(const char *in_string) {
+    if (nullptr == in_string) return nullptr;
+    char* dest = new char[std::strlen(in_string) + 1];
+    return std::strcpy(dest, in_string);
 }
 
 void *SafePnextCopy(const void *pNext) {

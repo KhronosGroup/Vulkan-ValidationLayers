@@ -460,6 +460,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         safe_struct_helper_header += 'void *SafePnextCopy(const void *pNext);\n'
         safe_struct_helper_header += 'void FreePnextChain(const void *head);\n'
         safe_struct_helper_header += 'void FreePnextChain(void *head);\n'
+        safe_struct_helper_header += 'const char *SafeStringCopy(const char *in_string);\n'
         safe_struct_helper_header += '\n'
         safe_struct_helper_header += self.GenerateSafeStructHeader()
         return safe_struct_helper_header
@@ -873,8 +874,16 @@ class HelperFileOutputGenerator(OutputGenerator):
     #
     # Generate pNext handling function
     def build_safe_struct_utility_funcs(self):
-        # Construct helper functions to build and free pNext extension chains
-        build_pnext_proc = '\n\n'
+        # Construct Safe-struct helper functions
+
+        string_copy_proc = '\n\n'
+        string_copy_proc += 'const char *SafeStringCopy(const char *in_string) {\n'
+        string_copy_proc += '    if (nullptr == in_string) return nullptr;\n'
+        string_copy_proc += '    char* dest = new char[std::strlen(in_string) + 1];\n'
+        string_copy_proc += '    return std::strcpy(dest, in_string);\n'
+        string_copy_proc += '}\n'
+
+        build_pnext_proc = '\n'
         build_pnext_proc += 'void *SafePnextCopy(const void *pNext) {\n'
         build_pnext_proc += '    void *cur_pnext = const_cast<void *>(pNext);\n'
         build_pnext_proc += '    void *cur_ext_struct = NULL;\n'
@@ -965,7 +974,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         free_pnext_proc += '    }\n'
         free_pnext_proc += '}\n'
 
-        pnext_procs = build_pnext_proc + free_pnext_proc
+        pnext_procs = string_copy_proc + build_pnext_proc + free_pnext_proc
         return pnext_procs
     #
     # Determine if a structure needs a safe_struct helper function
@@ -984,8 +993,8 @@ class HelperFileOutputGenerator(OutputGenerator):
     def GenerateSafeStructHelperSource(self):
         safe_struct_helper_source = '\n'
         safe_struct_helper_source += '#include "vk_safe_struct.h"\n'
-        safe_struct_helper_source += '#include <assert.h>\n'
         safe_struct_helper_source += '#include <string.h>\n'
+        safe_struct_helper_source += '#include <cstring>\n'
         safe_struct_helper_source += '\n'
         safe_struct_helper_source += self.GenerateSafeStructSource()
         safe_struct_helper_source += self.build_safe_struct_utility_funcs()

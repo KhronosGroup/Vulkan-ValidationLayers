@@ -37,6 +37,7 @@
 void *SafePnextCopy(const void *pNext);
 void FreePnextChain(const void *head);
 void FreePnextChain(void *head);
+const char *SafeStringCopy(const char *in_string);
 
 
 struct safe_VkApplicationInfo {
