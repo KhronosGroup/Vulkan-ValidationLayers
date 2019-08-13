@@ -1234,6 +1234,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                                    '    if (pCode)\n'
                                    '        delete[] reinterpret_cast<const uint8_t *>(pCode);\n' }
             copy_pnext = ''
+            copy_strings = ''
             for member in item.members:
                 m_type = member.type
                 if member.name == 'pNext':
@@ -1246,9 +1247,27 @@ class HelperFileOutputGenerator(OutputGenerator):
                     # Ptr types w/o a safe_struct, for non-null case need to allocate new ptr and copy data in
                     if m_type in ['void', 'char']:
                         if member.name != 'pNext':
-                            # For these exceptions just copy initial value over for now
-                            init_list += '\n    %s(in_struct->%s),' % (member.name, member.name)
-                            init_func_txt += '    %s = in_struct->%s;\n' % (member.name, member.name)
+                            if m_type == 'char':
+                                # Create deep copies of strings
+                                if member.len:
+                                    copy_strings += '    %s = new char *[in_struct->%s];\n' % (member.name, member.len)
+                                    copy_strings += '    for (uint32_t i = 0; i < %s; ++i) {\n' % member.len
+                                    copy_strings += '        (const_cast<const char **>(%s))[i] = SafeStringCopy(in_struct->%s[i]);\n' % (member.name, member.name)
+                                    copy_strings += '    }\n'
+
+                                    destruct_txt += '    if (%s) {\n' % member.name
+                                    destruct_txt += '        for (uint32_t i = 0; i < %s; ++i) {\n' % member.len
+                                    destruct_txt += '            delete [] %s[i];\n' % member.name
+                                    destruct_txt += '        }\n'
+                                    destruct_txt += '        delete [] %s;\n' % member.name
+                                    destruct_txt += '    }\n'
+                                else:
+                                    copy_strings += '    %s = SafeStringCopy(in_struct->%s);\n' % (member.name, member.name)
+                                    destruct_txt += '    if (%s) delete [] %s;\n' % (member.name, member.name)
+                            else:
+                                # For these exceptions just copy initial value over for now
+                                init_list += '\n    %s(in_struct->%s),' % (member.name, member.name)
+                                init_func_txt += '    %s = in_struct->%s;\n' % (member.name, member.name)
                         default_init_list += '\n    %s(nullptr),' % (member.name)
                     else:
                         default_init_list += '\n    %s(nullptr),' % (member.name)
@@ -1318,7 +1337,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             if item.name in custom_construct_txt:
                 construct_txt = custom_construct_txt[item.name]
 
-            construct_txt = copy_pnext + construct_txt
+            construct_txt = copy_pnext + copy_strings + construct_txt
 
             if item.name in custom_destruct_txt:
                 destruct_txt = custom_destruct_txt[item.name]
