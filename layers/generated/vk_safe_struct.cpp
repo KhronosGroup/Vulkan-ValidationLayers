@@ -47,7 +47,9 @@ safe_VkApplicationInfo::safe_VkApplicationInfo(const VkApplicationInfo* in_struc
 }
 
 safe_VkApplicationInfo::safe_VkApplicationInfo() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pApplicationName(nullptr),
+    pEngineName(nullptr)
 {}
 
 safe_VkApplicationInfo::safe_VkApplicationInfo(const safe_VkApplicationInfo& src)
@@ -123,7 +125,9 @@ safe_VkInstanceCreateInfo::safe_VkInstanceCreateInfo(const VkInstanceCreateInfo*
 }
 
 safe_VkInstanceCreateInfo::safe_VkInstanceCreateInfo() :
-    pNext(nullptr)
+    pNext(nullptr),
+    ppEnabledLayerNames(nullptr),
+    ppEnabledExtensionNames(nullptr)
 {}
 
 safe_VkInstanceCreateInfo::safe_VkInstanceCreateInfo(const safe_VkInstanceCreateInfo& src)
@@ -213,7 +217,8 @@ safe_VkAllocationCallbacks::safe_VkAllocationCallbacks(const VkAllocationCallbac
 {
 }
 
-safe_VkAllocationCallbacks::safe_VkAllocationCallbacks()
+safe_VkAllocationCallbacks::safe_VkAllocationCallbacks() :
+    pUserData(nullptr)
 {}
 
 safe_VkAllocationCallbacks::safe_VkAllocationCallbacks(const safe_VkAllocationCallbacks& src)
@@ -383,6 +388,8 @@ safe_VkDeviceCreateInfo::safe_VkDeviceCreateInfo(const VkDeviceCreateInfo* in_st
 safe_VkDeviceCreateInfo::safe_VkDeviceCreateInfo() :
     pNext(nullptr),
     pQueueCreateInfos(nullptr),
+    ppEnabledLayerNames(nullptr),
+    ppEnabledExtensionNames(nullptr),
     pEnabledFeatures(nullptr)
 {}
 
@@ -2046,7 +2053,8 @@ safe_VkPipelineCacheCreateInfo::safe_VkPipelineCacheCreateInfo(const VkPipelineC
 }
 
 safe_VkPipelineCacheCreateInfo::safe_VkPipelineCacheCreateInfo() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pInitialData(nullptr)
 {}
 
 safe_VkPipelineCacheCreateInfo::safe_VkPipelineCacheCreateInfo(const safe_VkPipelineCacheCreateInfo& src)
@@ -2111,7 +2119,8 @@ safe_VkSpecializationInfo::safe_VkSpecializationInfo(const VkSpecializationInfo*
 }
 
 safe_VkSpecializationInfo::safe_VkSpecializationInfo() :
-    pMapEntries(nullptr)
+    pMapEntries(nullptr),
+    pData(nullptr)
 {}
 
 safe_VkSpecializationInfo::safe_VkSpecializationInfo(const safe_VkSpecializationInfo& src)
@@ -2190,7 +2199,8 @@ safe_VkPipelineShaderStageCreateInfo::safe_VkPipelineShaderStageCreateInfo(const
 }
 
 safe_VkPipelineShaderStageCreateInfo::safe_VkPipelineShaderStageCreateInfo() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pName(nullptr)
 {}
 
 safe_VkPipelineShaderStageCreateInfo::safe_VkPipelineShaderStageCreateInfo(const safe_VkPipelineShaderStageCreateInfo& src)
@@ -10557,7 +10567,8 @@ safe_VkDisplayPropertiesKHR::safe_VkDisplayPropertiesKHR(const VkDisplayProperti
 {
 }
 
-safe_VkDisplayPropertiesKHR::safe_VkDisplayPropertiesKHR()
+safe_VkDisplayPropertiesKHR::safe_VkDisplayPropertiesKHR() :
+    displayName(nullptr)
 {}
 
 safe_VkDisplayPropertiesKHR::safe_VkDisplayPropertiesKHR(const safe_VkDisplayPropertiesKHR& src)
@@ -15282,7 +15293,8 @@ safe_VkPipelineExecutableInternalRepresentationKHR::safe_VkPipelineExecutableInt
 }
 
 safe_VkPipelineExecutableInternalRepresentationKHR::safe_VkPipelineExecutableInternalRepresentationKHR() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pData(nullptr)
 {}
 
 safe_VkPipelineExecutableInternalRepresentationKHR::safe_VkPipelineExecutableInternalRepresentationKHR(const safe_VkPipelineExecutableInternalRepresentationKHR& src)
@@ -15368,7 +15380,8 @@ safe_VkDebugReportCallbackCreateInfoEXT::safe_VkDebugReportCallbackCreateInfoEXT
 }
 
 safe_VkDebugReportCallbackCreateInfoEXT::safe_VkDebugReportCallbackCreateInfoEXT() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pUserData(nullptr)
 {}
 
 safe_VkDebugReportCallbackCreateInfoEXT::safe_VkDebugReportCallbackCreateInfoEXT(const safe_VkDebugReportCallbackCreateInfoEXT& src)
@@ -15482,7 +15495,8 @@ safe_VkDebugMarkerObjectNameInfoEXT::safe_VkDebugMarkerObjectNameInfoEXT(const V
 }
 
 safe_VkDebugMarkerObjectNameInfoEXT::safe_VkDebugMarkerObjectNameInfoEXT() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pObjectName(nullptr)
 {}
 
 safe_VkDebugMarkerObjectNameInfoEXT::safe_VkDebugMarkerObjectNameInfoEXT(const safe_VkDebugMarkerObjectNameInfoEXT& src)
@@ -15546,7 +15560,8 @@ safe_VkDebugMarkerObjectTagInfoEXT::safe_VkDebugMarkerObjectTagInfoEXT(const VkD
 }
 
 safe_VkDebugMarkerObjectTagInfoEXT::safe_VkDebugMarkerObjectTagInfoEXT() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pTag(nullptr)
 {}
 
 safe_VkDebugMarkerObjectTagInfoEXT::safe_VkDebugMarkerObjectTagInfoEXT(const safe_VkDebugMarkerObjectTagInfoEXT& src)
@@ -15617,7 +15632,8 @@ safe_VkDebugMarkerMarkerInfoEXT::safe_VkDebugMarkerMarkerInfoEXT(const VkDebugMa
 }
 
 safe_VkDebugMarkerMarkerInfoEXT::safe_VkDebugMarkerMarkerInfoEXT() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pMarkerName(nullptr)
 {}
 
 safe_VkDebugMarkerMarkerInfoEXT::safe_VkDebugMarkerMarkerInfoEXT(const safe_VkDebugMarkerMarkerInfoEXT& src)
@@ -16842,7 +16858,8 @@ safe_VkViSurfaceCreateInfoNN::safe_VkViSurfaceCreateInfoNN(const VkViSurfaceCrea
 }
 
 safe_VkViSurfaceCreateInfoNN::safe_VkViSurfaceCreateInfoNN() :
-    pNext(nullptr)
+    pNext(nullptr),
+    window(nullptr)
 {}
 
 safe_VkViSurfaceCreateInfoNN::safe_VkViSurfaceCreateInfoNN(const safe_VkViSurfaceCreateInfoNN& src)
@@ -18919,7 +18936,8 @@ safe_VkIOSSurfaceCreateInfoMVK::safe_VkIOSSurfaceCreateInfoMVK(const VkIOSSurfac
 }
 
 safe_VkIOSSurfaceCreateInfoMVK::safe_VkIOSSurfaceCreateInfoMVK() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pView(nullptr)
 {}
 
 safe_VkIOSSurfaceCreateInfoMVK::safe_VkIOSSurfaceCreateInfoMVK(const safe_VkIOSSurfaceCreateInfoMVK& src)
@@ -18980,7 +18998,8 @@ safe_VkMacOSSurfaceCreateInfoMVK::safe_VkMacOSSurfaceCreateInfoMVK(const VkMacOS
 }
 
 safe_VkMacOSSurfaceCreateInfoMVK::safe_VkMacOSSurfaceCreateInfoMVK() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pView(nullptr)
 {}
 
 safe_VkMacOSSurfaceCreateInfoMVK::safe_VkMacOSSurfaceCreateInfoMVK(const safe_VkMacOSSurfaceCreateInfoMVK& src)
@@ -19040,7 +19059,8 @@ safe_VkDebugUtilsObjectNameInfoEXT::safe_VkDebugUtilsObjectNameInfoEXT(const VkD
 }
 
 safe_VkDebugUtilsObjectNameInfoEXT::safe_VkDebugUtilsObjectNameInfoEXT() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pObjectName(nullptr)
 {}
 
 safe_VkDebugUtilsObjectNameInfoEXT::safe_VkDebugUtilsObjectNameInfoEXT(const safe_VkDebugUtilsObjectNameInfoEXT& src)
@@ -19104,7 +19124,8 @@ safe_VkDebugUtilsObjectTagInfoEXT::safe_VkDebugUtilsObjectTagInfoEXT(const VkDeb
 }
 
 safe_VkDebugUtilsObjectTagInfoEXT::safe_VkDebugUtilsObjectTagInfoEXT() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pTag(nullptr)
 {}
 
 safe_VkDebugUtilsObjectTagInfoEXT::safe_VkDebugUtilsObjectTagInfoEXT(const safe_VkDebugUtilsObjectTagInfoEXT& src)
@@ -19175,7 +19196,8 @@ safe_VkDebugUtilsLabelEXT::safe_VkDebugUtilsLabelEXT(const VkDebugUtilsLabelEXT*
 }
 
 safe_VkDebugUtilsLabelEXT::safe_VkDebugUtilsLabelEXT() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pLabelName(nullptr)
 {}
 
 safe_VkDebugUtilsLabelEXT::safe_VkDebugUtilsLabelEXT(const safe_VkDebugUtilsLabelEXT& src)
@@ -19267,6 +19289,8 @@ safe_VkDebugUtilsMessengerCallbackDataEXT::safe_VkDebugUtilsMessengerCallbackDat
 
 safe_VkDebugUtilsMessengerCallbackDataEXT::safe_VkDebugUtilsMessengerCallbackDataEXT() :
     pNext(nullptr),
+    pMessageIdName(nullptr),
+    pMessage(nullptr),
     pQueueLabels(nullptr),
     pCmdBufLabels(nullptr),
     pObjects(nullptr)
@@ -19445,7 +19469,8 @@ safe_VkDebugUtilsMessengerCreateInfoEXT::safe_VkDebugUtilsMessengerCreateInfoEXT
 }
 
 safe_VkDebugUtilsMessengerCreateInfoEXT::safe_VkDebugUtilsMessengerCreateInfoEXT() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pUserData(nullptr)
 {}
 
 safe_VkDebugUtilsMessengerCreateInfoEXT::safe_VkDebugUtilsMessengerCreateInfoEXT(const safe_VkDebugUtilsMessengerCreateInfoEXT& src)
@@ -20130,7 +20155,8 @@ safe_VkWriteDescriptorSetInlineUniformBlockEXT::safe_VkWriteDescriptorSetInlineU
 }
 
 safe_VkWriteDescriptorSetInlineUniformBlockEXT::safe_VkWriteDescriptorSetInlineUniformBlockEXT() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pData(nullptr)
 {}
 
 safe_VkWriteDescriptorSetInlineUniformBlockEXT::safe_VkWriteDescriptorSetInlineUniformBlockEXT(const safe_VkWriteDescriptorSetInlineUniformBlockEXT& src)
@@ -21494,7 +21520,8 @@ safe_VkValidationCacheCreateInfoEXT::safe_VkValidationCacheCreateInfoEXT(const V
 }
 
 safe_VkValidationCacheCreateInfoEXT::safe_VkValidationCacheCreateInfoEXT() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pInitialData(nullptr)
 {}
 
 safe_VkValidationCacheCreateInfoEXT::safe_VkValidationCacheCreateInfoEXT(const safe_VkValidationCacheCreateInfoEXT& src)
@@ -23816,7 +23843,8 @@ safe_VkImportMemoryHostPointerInfoEXT::safe_VkImportMemoryHostPointerInfoEXT(con
 }
 
 safe_VkImportMemoryHostPointerInfoEXT::safe_VkImportMemoryHostPointerInfoEXT() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pHostPointer(nullptr)
 {}
 
 safe_VkImportMemoryHostPointerInfoEXT::safe_VkImportMemoryHostPointerInfoEXT(const safe_VkImportMemoryHostPointerInfoEXT& src)
@@ -25140,7 +25168,8 @@ safe_VkCheckpointDataNV::safe_VkCheckpointDataNV(const VkCheckpointDataNV* in_st
 }
 
 safe_VkCheckpointDataNV::safe_VkCheckpointDataNV() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pCheckpointMarker(nullptr)
 {}
 
 safe_VkCheckpointDataNV::safe_VkCheckpointDataNV(const safe_VkCheckpointDataNV& src)
@@ -25249,7 +25278,8 @@ safe_VkPerformanceValueDataINTEL::safe_VkPerformanceValueDataINTEL(const VkPerfo
 {
 }
 
-safe_VkPerformanceValueDataINTEL::safe_VkPerformanceValueDataINTEL()
+safe_VkPerformanceValueDataINTEL::safe_VkPerformanceValueDataINTEL() :
+    valueString(nullptr)
 {}
 
 safe_VkPerformanceValueDataINTEL::safe_VkPerformanceValueDataINTEL(const safe_VkPerformanceValueDataINTEL& src)
@@ -25305,7 +25335,8 @@ safe_VkInitializePerformanceApiInfoINTEL::safe_VkInitializePerformanceApiInfoINT
 }
 
 safe_VkInitializePerformanceApiInfoINTEL::safe_VkInitializePerformanceApiInfoINTEL() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pUserData(nullptr)
 {}
 
 safe_VkInitializePerformanceApiInfoINTEL::safe_VkInitializePerformanceApiInfoINTEL(const safe_VkInitializePerformanceApiInfoINTEL& src)
