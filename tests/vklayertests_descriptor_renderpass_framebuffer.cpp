@@ -3331,6 +3331,18 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
 
         fb_info_fragment_density_map.layers = 1;
 
+		if (!push_fragment_density_support) {
+            printf("%s VK_EXT_fragment_density_map Extension not supported, skipping tests\n", kSkipPrefix);
+        } else {
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkFramebufferCreateInfo-pAttachments-02555");
+            err = vkCreateFramebuffer(device(), &fb_info_fragment_density_map, NULL, &fb);
+
+            m_errorMonitor->VerifyFound();
+            if (err == VK_SUCCESS) {
+                vkDestroyFramebuffer(m_device->device(), fb, NULL);
+            }
+        }
+
         vkDestroyImageView(m_device->device(), view_fragment_density_map, NULL);
         vkDestroyRenderPass(m_device->device(), rp_fragment_density_map, NULL);
     }
