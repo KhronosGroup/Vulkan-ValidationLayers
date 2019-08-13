@@ -1375,29 +1375,34 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                         "maxFramebufferHeight");
     }
 
-    uint32_t ceiling_width = (uint32_t)ceil((float)device_limits->maxFramebufferWidth /
-                                            (float)phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width);
+    if (device_extensions.vk_ext_fragment_density_map) {
+        uint32_t ceiling_width =
+            (uint32_t)ceil((float)device_limits->maxFramebufferWidth /
+                           (float)phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width);
 
-    if ((pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) && (pCreateInfo->extent.width > ceiling_width)) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+        if ((pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) && (pCreateInfo->extent.width > ceiling_width)) {
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkImageCreateInfo-usage-02559",
                         "vkCreateImage(): Image usage flags include a fragment density map bit and image width (%u) exceeds the "
                         "ceiling of device "
                         "maxFramebufferWidth / minFragmentDensityTexelSize.width (%u)",
                         pCreateInfo->extent.width, ceiling_width);
-    }
+        }
 
-    uint32_t ceiling_height =
-        (uint32_t)ceil((float)device_limits->maxFramebufferHeight /
-                       (float)phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.height);
+        uint32_t ceiling_height =
+            (uint32_t)ceil((float)device_limits->maxFramebufferHeight /
+                           (float)phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.height);
 
-    if ((pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) && (pCreateInfo->extent.height > ceiling_height)) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+        if ((pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) && (pCreateInfo->extent.height > ceiling_height)) {
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkImageCreateInfo-usage-02560",
                         "vkCreateImage(): Image usage flags include a fragment density map bit and image height (%u) exceeds the "
                         "ceiling of device "
                         "maxFramebufferHeight / minFragmentDensityTexelSize.height (%u)",
                         pCreateInfo->extent.height, ceiling_height);
+        }
     }
 
     VkImageFormatProperties format_limits = {};
