@@ -3341,6 +3341,14 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
             if (err == VK_SUCCESS) {
                 vkDestroyFramebuffer(m_device->device(), fb, NULL);
             }
+
+			m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkFramebufferCreateInfo-pAttachments-02556");
+            err = vkCreateFramebuffer(device(), &fb_info_fragment_density_map, NULL, &fb);
+
+            m_errorMonitor->VerifyFound();
+            if (err == VK_SUCCESS) {
+                vkDestroyFramebuffer(m_device->device(), fb, NULL);
+            }
         }
 
         vkDestroyImageView(m_device->device(), view_fragment_density_map, NULL);
