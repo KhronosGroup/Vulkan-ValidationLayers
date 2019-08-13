@@ -1166,6 +1166,13 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
     cb_node->object_bindings.emplace(set_, kVulkanObjectTypeDescriptorSet);
     pool_state_->cb_bindings.insert(cb_node);
     cb_node->object_bindings.emplace(pool_state_->pool, kVulkanObjectTypeDescriptorPool);
+
+    // Descriptor UpdateDrawState functions do two things - associate resources to the command buffer,
+    // and call image layout validation callbacks. If both are disabled, skip the entire loop.
+    if (device_data->disabled.command_buffer_state && device_data->disabled.image_layout_validation) {
+        return;
+    }
+
     // For the active slots, use set# to look up descriptorSet from boundDescriptorSets, and bind all of that descriptor set's
     // resources
     for (auto binding_req_pair : binding_req_map) {
