@@ -7913,3 +7913,84 @@ TEST_F(VkPositiveLayerTest, TestRasterizationDiscardEnableTrue) {
     m_errorMonitor->VerifyNotFound();
     vkDestroyRenderPass(m_device->device(), rp, nullptr);
 }
+
+TEST_F(VkPositiveLayerTest, TestSamplerDataForCombinedImageSampler) {
+    TEST_DESCRIPTION("Shader code uses sampler data for CombinedImageSampler");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const std::string fsSource = R"(
+                   OpCapability Shader
+                   OpMemoryModel Logical GLSL450
+                   OpEntryPoint Fragment %main "main"
+                   OpExecutionMode %main OriginUpperLeft
+
+                   OpDecorate %InputData DescriptorSet 0
+                   OpDecorate %InputData Binding 0
+                   OpDecorate %SamplerData DescriptorSet 0
+                   OpDecorate %SamplerData Binding 0
+
+               %void = OpTypeVoid
+                %f32 = OpTypeFloat 32
+              %Image = OpTypeImage %f32 2D 0 0 0 1 Rgba32f
+           %ImagePtr = OpTypePointer UniformConstant %Image
+          %InputData = OpVariable %ImagePtr UniformConstant
+            %Sampler = OpTypeSampler
+         %SamplerPtr = OpTypePointer UniformConstant %Sampler
+        %SamplerData = OpVariable %SamplerPtr UniformConstant
+       %SampledImage = OpTypeSampledImage %Image
+
+               %func = OpTypeFunction %void
+               %main = OpFunction %void None %func
+                 %40 = OpLabel
+           %call_smp = OpLoad %Sampler %SamplerData
+                   OpReturn
+                   OpFunctionEnd)";
+
+    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.dsl_bindings_ = {
+        {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+    };
+    pipe.shader_stages_ = {fs.GetStageCreateInfo(), pipe.vs_->GetStageCreateInfo()};
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView view = image.targetView(VK_FORMAT_R8G8B8A8_UNORM);
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    VkSampler sampler;
+    vkCreateSampler(m_device->device(), &sampler_ci, nullptr, &sampler);
+
+    uint32_t qfi = 0;
+    VkBufferCreateInfo buffer_create_info = {};
+    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_create_info.size = 1024;
+    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    buffer_create_info.queueFamilyIndexCount = 1;
+    buffer_create_info.pQueueFamilyIndices = &qfi;
+
+    VkBufferObj buffer;
+    buffer.init(*m_device, buffer_create_info);
+
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+    vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                            &pipe.descriptor_set_->set_, 0, NULL);
+
+    m_errorMonitor->ExpectSuccess();
+    vkCmdDraw(m_commandBuffer->handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyNotFound();
+
+    vkCmdEndRenderPass(m_commandBuffer->handle());
+    m_commandBuffer->end();
+    vkDestroySampler(m_device->device(), sampler, NULL);
+}
