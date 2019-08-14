@@ -9388,20 +9388,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                     pCreateInfo->height, ivci.subresourceRange.layerCount, pCreateInfo->layers);
                             }
                         } else {
-                            if ((ivci.subresourceRange.layerCount < pCreateInfo->layers)) {
-                                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
-                                                0, "VUID-VkFramebufferCreateInfo-pAttachments-02554",
-                                                "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u mip level %u has "
-                                                "the number of layer "
-                                                "smaller than the corresponding framebuffer's number of layer. Here are the "
-                                                "respective the number of layers for "
-                                                "attachment #%u, framebuffer:\n"
-                                                "layerCount: %u, %u\n",
-                                                i, ivci.subresourceRange.baseMipLevel, i, ivci.subresourceRange.layerCount,
-                                                pCreateInfo->layers);
-                            }
-
-                            if (device_extensions.vk_ext_fragment_density_map) {
+							if (device_extensions.vk_ext_fragment_density_map) {
                                 uint32_t ceiling_width = (uint32_t)ceil(
                                     (float)pCreateInfo->width /
                                     std::max((float)phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width,
@@ -10510,7 +10497,6 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
                                 "VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT, or VK_IMAGE_LAYOUT_GENERAL.",
                                 pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment);
             }
-
             if (!(pCreateInfo->pAttachments[pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment].loadOp ==
                       VK_ATTACHMENT_LOAD_OP_LOAD ||
                   pCreateInfo->pAttachments[pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment].loadOp ==
@@ -10521,7 +10507,6 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
                                 "equal to VK_ATTACHMENT_LOAD_OP_LOAD or VK_ATTACHMENT_LOAD_OP_DONT_CARE.",
                                 pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment);
             }
-
             if (pCreateInfo->pAttachments[pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment].storeOp !=
                 VK_ATTACHMENT_STORE_OP_DONT_CARE) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -10530,6 +10515,14 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
                                 "equal to VK_ATTACHMENT_STORE_OP_DONT_CARE.",
                                 pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment);
             }
+
+			const VkImageViewCreateInfo *pImageViewCreateInfo =
+                &GetImageViewState(pCreateInfo->pAttachments[pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment])
+                     ->create_info;
+
+			 ;
+
+            if (. )
         }
     }
 

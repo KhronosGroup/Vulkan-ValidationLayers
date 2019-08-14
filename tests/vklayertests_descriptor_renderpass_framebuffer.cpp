@@ -3400,16 +3400,10 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
             err = vkCreateRenderPass(m_device->device(), &rpci_fragment_density_map, NULL, &rp_fragment_density_map);
             ASSERT_VK_SUCCESS(err);
 
-            VkImageObj image(m_device);
-            image.Init(attachment_width, attachment_height, 1, attachment_format, VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT,
-                       VK_IMAGE_TILING_LINEAR, 0);
-            ASSERT_TRUE(image.initialized());
-
             // Create view attachment
             VkImageView view_fragment_density_map;
             VkImageViewCreateInfo ivci = {};
             ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            ivci.image = image.handle();
             ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
             ivci.format = attachment_format;
             ivci.flags = 0;
@@ -3417,8 +3411,6 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
             ivci.subresourceRange.baseMipLevel = 0;
             ivci.subresourceRange.levelCount = 1;
             ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            err = vkCreateImageView(m_device->device(), &ivci, NULL, &view_fragment_density_map);
-            ASSERT_VK_SUCCESS(err);
 
             VkFramebufferAttachmentImageInfoKHR fb_fdm = {};
             fb_fdm.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO_KHR;
@@ -3439,21 +3431,10 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
             fbci.flags = 0;
             fbci.width = frame_width;
             fbci.height = frame_height;
-            // Set mis-matching layerCount
-            fbci.layers = 2;
+            fbci.layers = 1;
             fbci.renderPass = rp_fragment_density_map;
             fbci.attachmentCount = 1;
             fbci.pAttachments = &view_fragment_density_map;
-
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkFramebufferCreateInfo-pAttachments-02554");
-            err = vkCreateFramebuffer(device(), &fbci, NULL, &fb);
-
-            m_errorMonitor->VerifyFound();
-            if (err == VK_SUCCESS) {
-                vkDestroyFramebuffer(m_device->device(), fb, NULL);
-            }
-
-            vkDestroyImageView(m_device->device(), view_fragment_density_map, NULL);
 
             // Set small width
             VkImageObj image2(m_device);
@@ -3465,7 +3446,7 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
             err = vkCreateImageView(m_device->device(), &ivci, NULL, &view_fragment_density_map);
             ASSERT_VK_SUCCESS(err);
 
-            fbci.layers = 1;
+            fbci.pAttachments = &view_fragment_density_map;
 
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkFramebufferCreateInfo-pAttachments-02555");
             err = vkCreateFramebuffer(device(), &fbci, NULL, &fb);
@@ -3486,6 +3467,8 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
             ivci.image = image3.handle();
             err = vkCreateImageView(m_device->device(), &ivci, NULL, &view_fragment_density_map);
             ASSERT_VK_SUCCESS(err);
+
+            fbci.pAttachments = &view_fragment_density_map;
 
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkFramebufferCreateInfo-pAttachments-02556");
             err = vkCreateFramebuffer(device(), &fbci, NULL, &fb);
