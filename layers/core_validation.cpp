@@ -9388,7 +9388,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                     pCreateInfo->height, ivci.subresourceRange.layerCount, pCreateInfo->layers);
                             }
                         } else {
-							if (device_extensions.vk_ext_fragment_density_map) {
+                            if (device_extensions.vk_ext_fragment_density_map) {
                                 uint32_t ceiling_width = (uint32_t)ceil(
                                     (float)pCreateInfo->width /
                                     std::max((float)phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width,
@@ -10515,14 +10515,6 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
                                 "equal to VK_ATTACHMENT_STORE_OP_DONT_CARE.",
                                 pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment);
             }
-
-			const VkImageViewCreateInfo *pImageViewCreateInfo =
-                &GetImageViewState(pCreateInfo->pAttachments[pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment])
-                     ->create_info;
-
-			 ;
-
-            if (. )
         }
     }
 
