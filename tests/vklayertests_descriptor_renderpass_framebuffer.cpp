@@ -2130,6 +2130,9 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidFragmentDensityMapReferences) {
 
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false,
                          "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02550", nullptr);
+
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false,
+                         "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02551", nullptr);
 }
 
 TEST_F(VkLayerTest, RenderPassCreateSubpassNonGraphicsPipeline) {
