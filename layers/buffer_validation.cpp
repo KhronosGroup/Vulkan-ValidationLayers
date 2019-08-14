@@ -1378,11 +1378,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     if (device_extensions.vk_ext_fragment_density_map) {
         uint32_t ceiling_width =
             (uint32_t)ceil((float)device_limits->maxFramebufferWidth /
-                                       phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width ==
-                                   0
-                               ? 1.0f
-                               : (float)phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width);
-
+                           std::max((float)phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width, 1.0f));
         if ((pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) && (pCreateInfo->extent.width > ceiling_width)) {
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -1394,11 +1390,9 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                         phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width, ceiling_width);
         }
 
-        float height_denom = phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.height == 0
-                                 ? 1.0f
-                                 : (float)phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.height;
-        uint32_t ceiling_height = (uint32_t)ceil((float)device_limits->maxFramebufferHeight / height_denom);
-
+        uint32_t ceiling_height =
+            (uint32_t)ceil((float)device_limits->maxFramebufferHeight /
+                           std::max((float)phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.height, 1.0f));
         if ((pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) && (pCreateInfo->extent.height > ceiling_height)) {
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -4282,9 +4276,9 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             image_state,
             VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-                VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV,
+                VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV | VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT,
             false, kVUIDUndefined, "vkCreateImageView()",
-            "VK_IMAGE_USAGE_[SAMPLED|STORAGE|COLOR_ATTACHMENT|DEPTH_STENCIL_ATTACHMENT|INPUT_ATTACHMENT|SHADING_RATE_IMAGE]_BIT");
+            "VK_IMAGE_USAGE_[SAMPLED|STORAGE|COLOR_ATTACHMENT|DEPTH_STENCIL_ATTACHMENT|INPUT_ATTACHMENT|SHADING_RATE_IMAGE|FRAGMENT_DENSITY_MAP]_BIT");
         // If this isn't a sparse image, it needs to have memory backing it at CreateImageView time
         skip |= ValidateMemoryIsBoundToImage(image_state, "vkCreateImageView()", "VUID-VkImageViewCreateInfo-image-01020");
         // Checks imported from image layer
