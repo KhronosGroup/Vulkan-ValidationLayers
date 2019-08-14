@@ -1394,12 +1394,10 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                         phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width, ceiling_width);
         }
 
-        uint32_t ceiling_height =
-            (uint32_t)ceil((float)device_limits->maxFramebufferHeight /
-                                       (float)phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.height ==
-                                   0
-                               ? 1.0f
-                               : (float)phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.height);
+        float height_denom = phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.height == 0
+                                 ? 1.0f
+                                 : (float)phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.height;
+        uint32_t ceiling_height = (uint32_t)ceil((float)device_limits->maxFramebufferHeight / height_denom);
 
         if ((pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) && (pCreateInfo->extent.height > ceiling_height)) {
             skip |=
