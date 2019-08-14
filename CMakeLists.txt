@@ -309,12 +309,12 @@ endif()
 install(TARGETS VkLayer_utils DESTINATION ${CMAKE_INSTALL_LIBDIR})
 set_target_properties(VkLayer_utils PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(VkLayer_utils
-                           PUBLIC ${VulkanHeaders_INCLUDE_DIR}
-                                  ${CMAKE_CURRENT_SOURCE_DIR}/layers
+                           PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/layers
                                   ${CMAKE_CURRENT_SOURCE_DIR}/layers/generated
                                   ${CMAKE_CURRENT_BINARY_DIR}
                                   ${CMAKE_CURRENT_BINARY_DIR}/layers
-                                  ${PROJECT_BINARY_DIR})
+                                  ${PROJECT_BINARY_DIR}
+                                  ${VulkanHeaders_INCLUDE_DIR})
 
 # uninstall target ---------------------------------------------------------------------------------------------------------------
 if(NOT TARGET uninstall)

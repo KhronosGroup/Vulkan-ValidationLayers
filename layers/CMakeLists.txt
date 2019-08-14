@@ -142,7 +142,7 @@ else(UNIX AND NOT APPLE) # i.e.: Linux
     endmacro()
 endif()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${VulkanHeaders_INCLUDE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/generated ${VulkanHeaders_INCLUDE_DIR})
 
 if(WIN32)
     # Applies to all configurations
