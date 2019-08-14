@@ -1160,12 +1160,18 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet
 //   to be used in a draw by the given cb_node
 void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *device_data, CMD_BUFFER_STATE *cb_node,
                                                      const std::map<uint32_t, descriptor_req> &binding_req_map) {
-    // bind cb to this descriptor set
-    cb_bindings.insert(cb_node);
-    // Add bindings for descriptor set, the set's pool, and individual objects in the set
-    cb_node->object_bindings.emplace(set_, kVulkanObjectTypeDescriptorSet);
-    pool_state_->cb_bindings.insert(cb_node);
-    cb_node->object_bindings.emplace(pool_state_->pool, kVulkanObjectTypeDescriptorPool);
+    if (!device_data->disabled.command_buffer_state) {
+        // bind cb to this descriptor set
+        // Add bindings for descriptor set, the set's pool, and individual objects in the set
+        auto inserted = cb_node->object_bindings.emplace(set_, kVulkanObjectTypeDescriptorSet);
+        if (inserted.second) {
+            cb_bindings.insert(cb_node);
+            auto inserted2 = cb_node->object_bindings.emplace(pool_state_->pool, kVulkanObjectTypeDescriptorPool);
+            if (inserted2.second) {
+                pool_state_->cb_bindings.insert(cb_node);
+            }
+        }
+    }
 
     // Descriptor UpdateDrawState functions do two things - associate resources to the command buffer,
     // and call image layout validation callbacks. If both are disabled, skip the entire loop.
