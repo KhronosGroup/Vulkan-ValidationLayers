@@ -140,6 +140,9 @@ class LayerChassisDispatchOutputGenerator(OutputGenerator):
  */"""
 
     inline_custom_source_preamble = """
+
+#define DISPATCH_MAX_STACK_ALLOCATIONS 32
+
 VkResult DispatchCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                         const VkComputePipelineCreateInfo *pCreateInfos,
                                         const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
@@ -1452,12 +1455,11 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
     #
     # Clean up local declarations
     def cleanUpLocalDeclarations(self, indent, prefix, name, len, index):
-        cleanup = '%sif (local_%s%s) {\n' % (indent, prefix, name)
+        cleanup = ''
         if len is not None:
+            cleanup = '%sif (local_%s%s) {\n' % (indent, prefix, name)
             cleanup += '%s    delete[] local_%s%s;\n' % (indent, prefix, name)
-        else:
-            cleanup += '%s    delete local_%s%s;\n' % (indent, prefix, name)
-        cleanup += "%s}\n" % (indent)
+            cleanup += "%s}\n" % (indent)
         return cleanup
     #
     # Output UO code for a single NDO (ndo_count is NULL) or a counted list of NDOs
@@ -1467,11 +1469,12 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
         post_call_code = ''
         if ndo_count is not None:
             if top_level == True:
+                decl_code += '%s%s var_local_%s%s[DISPATCH_MAX_STACK_ALLOCATIONS];\n' % (indent, ndo_type, prefix, ndo_name)
                 decl_code += '%s%s *local_%s%s = NULL;\n' % (indent, ndo_type, prefix, ndo_name)
             pre_call_code += '%s    if (%s%s) {\n' % (indent, prefix, ndo_name)
             indent = self.incIndent(indent)
             if top_level == True:
-                pre_call_code += '%s    local_%s%s = new %s[%s];\n' % (indent, prefix, ndo_name, ndo_type, ndo_count)
+                pre_call_code += '%s    local_%s%s = %s > DISPATCH_MAX_STACK_ALLOCATIONS ? new %s[%s] : &var_local_%s%s[0];\n' % (indent, prefix, ndo_name, ndo_count, ndo_type, ndo_count, prefix, ndo_name)
                 pre_call_code += '%s    for (uint32_t %s = 0; %s < %s; ++%s) {\n' % (indent, index, index, ndo_count, index)
                 indent = self.incIndent(indent)
                 pre_call_code += '%s    local_%s%s[%s] = layer_data->Unwrap(%s[%s]);\n' % (indent, prefix, ndo_name, index, ndo_name, index)
@@ -1484,7 +1487,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
             indent = self.decIndent(indent)
             pre_call_code += '%s    }\n' % indent
             if top_level == True:
-                post_call_code += '%sif (local_%s%s)\n' % (indent, prefix, ndo_name)
+                post_call_code += '%sif (local_%s%s != &var_local_%s%s[0])\n' % (indent, prefix, ndo_name, prefix, ndo_name)
                 indent = self.incIndent(indent)
                 post_call_code += '%sdelete[] local_%s;\n' % (indent, ndo_name)
         else:
@@ -1570,6 +1573,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
                         # Update struct prefix
                         if first_level_param == True:
                             new_prefix = 'local_%s->' % member.name
+                            decls += '%ssafe_%s var_local_%s%s;\n' % (indent, member.type, prefix, member.name)
                             decls += '%ssafe_%s *local_%s%s = NULL;\n' % (indent, member.type, prefix, member.name)
                         else:
                             new_prefix = '%s%s->' % (prefix, member.name)
@@ -1577,7 +1581,8 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
                         pre_code += '%s    if (%s%s) {\n' % (indent, prefix, member.name)
                         indent = self.incIndent(indent)
                         if first_level_param == True:
-                            pre_code += '%s    local_%s%s = new safe_%s(%s);\n' % (indent, prefix, member.name, member.type, member.name)
+                            pre_code += '%s    local_%s%s = &var_local_%s%s;\n' % (indent, prefix, member.name, prefix, member.name);
+                            pre_code += '%s    local_%s%s->initialize(%s);\n' % (indent, prefix, member.name, member.name)
                         # Process sub-structs in this struct
                         (tmp_decl, tmp_pre, tmp_post) = self.uniquify_members(struct_info, indent, new_prefix, array_index, create_func, destroy_func, destroy_array, False)
                         decls += tmp_decl
