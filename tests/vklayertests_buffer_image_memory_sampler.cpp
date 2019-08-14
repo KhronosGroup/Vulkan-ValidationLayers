@@ -6174,7 +6174,6 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
         } else {
             VkImageCreateInfo image_ci = safe_image_ci;
             image_ci.usage = VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
-
             VkImageFormatProperties img_limits;
             ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
 
