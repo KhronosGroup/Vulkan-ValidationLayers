@@ -1375,6 +1375,36 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                         "maxFramebufferHeight");
     }
 
+    if (device_extensions.vk_ext_fragment_density_map) {
+        uint32_t ceiling_width =
+            (uint32_t)ceil((float)device_limits->maxFramebufferWidth /
+                           std::max((float)phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width, 1.0f));
+        if ((pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) && (pCreateInfo->extent.width > ceiling_width)) {
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        "VUID-VkImageCreateInfo-usage-02559",
+                        "vkCreateImage(): Image usage flags include a fragment density map bit and image width (%u) exceeds the "
+                        "ceiling of device "
+                        "maxFramebufferWidth (%u) / minFragmentDensityTexelSize.width (%u). The ceiling value: %u",
+                        pCreateInfo->extent.width, device_limits->maxFramebufferWidth,
+                        phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width, ceiling_width);
+        }
+
+        uint32_t ceiling_height =
+            (uint32_t)ceil((float)device_limits->maxFramebufferHeight /
+                           std::max((float)phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.height, 1.0f));
+        if ((pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) && (pCreateInfo->extent.height > ceiling_height)) {
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        "VUID-VkImageCreateInfo-usage-02560",
+                        "vkCreateImage(): Image usage flags include a fragment density map bit and image height (%u) exceeds the "
+                        "ceiling of device "
+                        "maxFramebufferHeight (%u) / minFragmentDensityTexelSize.height (%u). The ceiling value: %u",
+                        pCreateInfo->extent.height, device_limits->maxFramebufferHeight,
+                        phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.height, ceiling_height);
+        }
+    }
+
     VkImageFormatProperties format_limits = {};
     VkResult res = GetPDImageFormatProperties(pCreateInfo, &format_limits);
     if (res == VK_ERROR_FORMAT_NOT_SUPPORTED) {
