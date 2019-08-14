@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include <condition_variable>
+#include <chrono>
 #include <mutex>
 #include <vector>
 #include <unordered_set>
@@ -137,7 +137,6 @@ public:
     // Per-bucket locking, to reduce contention.
     small_unordered_map<T, object_use_data> uses[THREAD_SAFETY_BUCKETS];
     std::mutex counter_lock[THREAD_SAFETY_BUCKETS];
-    std::condition_variable counter_condition[THREAD_SAFETY_BUCKETS];
 
     void StartWrite(T object) {
         if (object == VK_NULL_HANDLE) {
@@ -165,8 +164,12 @@ public:
                         typeName, (uint64_t)use_data->thread, (uint64_t)tid);
                     if (skip) {
                         // Wait for thread-safe access to object instead of skipping call.
+                        // Don't use condition_variable to wait because it should be extremely
+                        // rare to have collisions, but signaling would be very frequent.
                         while (uses[h].contains(object)) {
-                            counter_condition[h].wait(lock);
+                            lock.unlock();
+                            std::this_thread::sleep_for(std::chrono::microseconds(1));
+                            lock.lock();
                         }
                         // There is now no current use of the object.  Record writer thread.
                         struct object_use_data *new_use_data = &uses[h][object];
@@ -193,8 +196,12 @@ public:
                         typeName, (uint64_t)use_data->thread, (uint64_t)tid);
                     if (skip) {
                         // Wait for thread-safe access to object instead of skipping call.
+                        // Don't use condition_variable to wait because it should be extremely
+                        // rare to have collisions, but signaling would be very frequent.
                         while (uses[h].contains(object)) {
-                            counter_condition[h].wait(lock);
+                            lock.unlock();
+                            std::this_thread::sleep_for(std::chrono::microseconds(1));
+                            lock.lock();
                         }
                         // There is now no current use of the object.  Record writer thread.
                         struct object_use_data *new_use_data = &uses[h][object];
@@ -222,13 +229,11 @@ public:
         uint32_t h = ThreadSafetyHashObject(object);
         // Object is no longer in use
         std::unique_lock<std::mutex> lock(counter_lock[h]);
-        uses[h][object].writer_count -= 1;
-        if ((uses[h][object].reader_count == 0) && (uses[h][object].writer_count == 0)) {
+        struct object_use_data *use_data = &uses[h][object];
+        use_data->writer_count -= 1;
+        if ((use_data->reader_count == 0) && (use_data->writer_count == 0)) {
             uses[h].erase(object);
         }
-        // Notify any waiting threads that this object may be safe to use
-        lock.unlock();
-        counter_condition[h].notify_all();
     }
 
     void StartRead(T object) {
@@ -254,8 +259,12 @@ public:
                 typeName, (uint64_t)uses[h][object].thread, (uint64_t)tid);
             if (skip) {
                 // Wait for thread-safe access to object instead of skipping call.
+                // Don't use condition_variable to wait because it should be extremely
+                // rare to have collisions, but signaling would be very frequent.
                 while (uses[h].contains(object)) {
-                    counter_condition[h].wait(lock);
+                    lock.unlock();
+                    std::this_thread::sleep_for(std::chrono::microseconds(1));
+                    lock.lock();
                 }
                 // There is no current use of the object.  Record reader count
                 struct object_use_data *use_data = &uses[h][object];
@@ -276,13 +285,11 @@ public:
         }
         uint32_t h = ThreadSafetyHashObject(object);
         std::unique_lock<std::mutex> lock(counter_lock[h]);
-        uses[h][object].reader_count -= 1;
-        if ((uses[h][object].reader_count == 0) && (uses[h][object].writer_count == 0)) {
+        struct object_use_data *use_data = &uses[h][object];
+        use_data->reader_count -= 1;
+        if ((use_data->reader_count == 0) && (use_data->writer_count == 0)) {
             uses[h].erase(object);
         }
-        // Notify any waiting threads that this object may be safe to use
-        lock.unlock();
-        counter_condition[h].notify_all();
     }
     counter(const char *name = "", VkDebugReportObjectTypeEXT type = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, debug_report_data **rep_data = nullptr) {
         typeName = name;
