@@ -1289,8 +1289,15 @@ void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, const V
                     state.per_set[setIndex].validated_set = descriptor_set;
                     state.per_set[setIndex].validated_set_change_count = descriptor_set->GetChangeCount();
                     state.per_set[setIndex].validated_set_image_layout_change_count = cb_state->image_layout_change_count;
-                    state.per_set[setIndex].validated_set_binding_req_map =
-                        reduced_map.IsManyDescriptors() ? set_binding_pair.second : BindingReqMap();
+                    if (reduced_map.IsManyDescriptors()) {
+                        // Check whether old == new before assigning, the equality check is much cheaper than
+                        // freeing and reallocating the map.
+                        if (state.per_set[setIndex].validated_set_binding_req_map != set_binding_pair.second) {
+                            state.per_set[setIndex].validated_set_binding_req_map = set_binding_pair.second;
+                        }
+                    } else {
+                        state.per_set[setIndex].validated_set_binding_req_map = BindingReqMap();
+                    }
                 }
             }
         }
@@ -7265,15 +7272,16 @@ void ValidationStateTracker::PreCallRecordCmdSetStencilReference(VkCommandBuffer
     cb_state->status |= CBSTATUS_STENCIL_REFERENCE_SET;
 }
 
-// Update pipeline_layout bind points applying the "Pipeline Layout Compatibility" rules
+// Update pipeline_layout bind points applying the "Pipeline Layout Compatibility" rules.
+// One of pDescriptorSets or push_descriptor_set should be nullptr, indicating whether this
+// is called for CmdBindDescriptorSets or CmdPushDescriptorSet.
 void ValidationStateTracker::UpdateLastBoundDescriptorSets(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint pipeline_bind_point,
                                                            const PIPELINE_LAYOUT_STATE *pipeline_layout, uint32_t first_set,
-                                                           uint32_t set_count,
-                                                           const std::vector<cvdescriptorset::DescriptorSet *> descriptor_sets,
+                                                           uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
+                                                           cvdescriptorset::DescriptorSet *push_descriptor_set,
                                                            uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets) {
+    assert((pDescriptorSets == nullptr) ^ (push_descriptor_set == nullptr));
     // Defensive
-    assert(set_count);
-    if (0 == set_count) return;
     assert(pipeline_layout);
     if (!pipeline_layout) return;
 
@@ -7328,7 +7336,8 @@ void ValidationStateTracker::UpdateLastBoundDescriptorSets(CMD_BUFFER_STATE *cb_
     const uint32_t *input_dynamic_offsets = p_dynamic_offsets;  // "read" pointer for dynamic offset data
     for (uint32_t input_idx = 0; input_idx < set_count; input_idx++) {
         auto set_idx = input_idx + first_set;  // set_idx is index within layout, input_idx is index within input descriptor sets
-        cvdescriptorset::DescriptorSet *descriptor_set = descriptor_sets[input_idx];
+        cvdescriptorset::DescriptorSet *descriptor_set =
+            push_descriptor_set ? push_descriptor_set : GetSetNode(pDescriptorSets[input_idx]);
 
         // Record binding (or push)
         if (descriptor_set != last_bound.push_descriptor_set.get()) {
@@ -7365,8 +7374,6 @@ void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer 
                                                                 const uint32_t *pDynamicOffsets) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     auto pipeline_layout = GetPipelineLayout(layout);
-    std::vector<cvdescriptorset::DescriptorSet *> descriptor_sets;
-    descriptor_sets.reserve(setCount);
 
     // Resize binding arrays
     uint32_t last_set_index = firstSet + setCount - 1;
@@ -7374,18 +7381,9 @@ void ValidationStateTracker::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer 
         cb_state->lastBound[pipelineBindPoint].per_set.resize(last_set_index + 1);
     }
 
-    // Construct a list of the descriptors
-    bool found_non_null = false;
-    for (uint32_t i = 0; i < setCount; i++) {
-        cvdescriptorset::DescriptorSet *descriptor_set = GetSetNode(pDescriptorSets[i]);
-        descriptor_sets.emplace_back(descriptor_set);
-        found_non_null |= descriptor_set != nullptr;
-    }
-    if (found_non_null) {  // which implies setCount > 0
-        UpdateLastBoundDescriptorSets(cb_state, pipelineBindPoint, pipeline_layout, firstSet, setCount, descriptor_sets,
-                                      dynamicOffsetCount, pDynamicOffsets);
-        cb_state->lastBound[pipelineBindPoint].pipeline_layout = layout;
-    }
+    UpdateLastBoundDescriptorSets(cb_state, pipelineBindPoint, pipeline_layout, firstSet, setCount, pDescriptorSets, nullptr,
+                                  dynamicOffsetCount, pDynamicOffsets);
+    cb_state->lastBound[pipelineBindPoint].pipeline_layout = layout;
 }
 
 static bool ValidateDynamicOffsetAlignment(const debug_report_data *report_data, const VkDescriptorSetLayoutBinding *binding,
@@ -7584,8 +7582,8 @@ void CoreChecks::RecordCmdPushDescriptorSetState(CMD_BUFFER_STATE *cb_state, VkP
         last_bound.UnbindAndResetPushDescriptorSet(new cvdescriptorset::DescriptorSet(0, 0, dsl, 0, this));
     }
 
-    std::vector<cvdescriptorset::DescriptorSet *> descriptor_sets = {push_descriptor_set.get()};
-    UpdateLastBoundDescriptorSets(cb_state, pipelineBindPoint, pipeline_layout, set, 1, descriptor_sets, 0, nullptr);
+    UpdateLastBoundDescriptorSets(cb_state, pipelineBindPoint, pipeline_layout, set, 1, nullptr, push_descriptor_set.get(), 0,
+                                  nullptr);
     last_bound.pipeline_layout = layout;
 
     // Now that we have either the new or extant push_descriptor set ... do the write updates against it
