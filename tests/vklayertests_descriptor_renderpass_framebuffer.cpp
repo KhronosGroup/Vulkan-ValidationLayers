@@ -3317,91 +3317,91 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
     }
 
     {
-        // Create a renderPass with a single color attachment for fragment density map
-        VkAttachmentReference attach_fragment_density_map = {};
-        attach_fragment_density_map.layout = VK_IMAGE_LAYOUT_GENERAL;
-        VkSubpassDescription subpass_fragment_density_map = {};
-        subpass_fragment_density_map.pColorAttachments = &attach_fragment_density_map;
-        VkRenderPassCreateInfo rpci_fragment_density_map = {};
-        rpci_fragment_density_map.subpassCount = 1;
-        rpci_fragment_density_map.pSubpasses = &subpass_fragment_density_map;
-        rpci_fragment_density_map.attachmentCount = 1;
-        VkAttachmentDescription attach_desc_fragment_density_map = {};
-        attach_desc_fragment_density_map.format = VK_FORMAT_R8G8_UNORM;
-        attach_desc_fragment_density_map.samples = VK_SAMPLE_COUNT_1_BIT;
-        attach_desc_fragment_density_map.finalLayout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
-        rpci_fragment_density_map.pAttachments = &attach_desc_fragment_density_map;
-        rpci_fragment_density_map.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        VkRenderPass rp_fragment_density_map;
-
-        err = vkCreateRenderPass(m_device->device(), &rpci_fragment_density_map, NULL, &rp_fragment_density_map);
-        ASSERT_VK_SUCCESS(err);
-
-        uint32_t attachment_width = 32;
-        uint32_t attachment_height = 32;
-        VkFormat attachment_format = VK_FORMAT_R8G8_UNORM;
-        uint32_t frame_width = 512;
-        uint32_t frame_height = 512;
-        // Create an image with one mip level.
-        VkImageObj image(m_device);
-
-        image.Init(attachment_width, attachment_height, 1, attachment_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                   VK_IMAGE_TILING_LINEAR, 0);
-        ASSERT_TRUE(image.initialized());
-
-        // Create view attachment
-        VkImageView view_fragment_density_map;
-        VkImageViewCreateInfo ivci = {};
-        ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        ivci.image = image.handle();
-        ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        ivci.format = VK_FORMAT_R8G8_UNORM;
-        ivci.flags = 0;
-        ivci.subresourceRange.layerCount = 1;
-        ivci.subresourceRange.baseMipLevel = 0;
-        ivci.subresourceRange.levelCount = 1;
-        ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        err = vkCreateImageView(m_device->device(), &ivci, NULL, &view_fragment_density_map);
-        ASSERT_VK_SUCCESS(err);
-
-        VkFramebufferAttachmentImageInfoKHR frameBuffer_fdm = {};
-        frameBuffer_fdm.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO_KHR;
-        frameBuffer_fdm.usage = VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
-        frameBuffer_fdm.width = frame_width;
-        frameBuffer_fdm.height = frame_height;
-        frameBuffer_fdm.layerCount = 1;
-        frameBuffer_fdm.viewFormatCount = 1;
-        frameBuffer_fdm.pViewFormats = &attachment_format;
-        VkFramebufferAttachmentsCreateInfoKHR framebuffer_aci_fdm = {};
-        framebuffer_aci_fdm.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO_KHR;
-        framebuffer_aci_fdm.attachmentImageInfoCount = 1;
-        framebuffer_aci_fdm.pAttachmentImageInfos = &frameBuffer_fdm;
-
-        VkFramebufferCreateInfo framebufferCreateInfo = {};
-        framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferCreateInfo.pNext = &framebuffer_aci_fdm;
-        framebufferCreateInfo.flags = 0;
-        framebufferCreateInfo.width = frame_width;
-        framebufferCreateInfo.height = frame_height;
-        // Set mis-matching layerCount
-        framebufferCreateInfo.layers = 2;
-        framebufferCreateInfo.renderPass = rp_fragment_density_map;
-        framebufferCreateInfo.attachmentCount = 1;
-        framebufferCreateInfo.pAttachments = &view_fragment_density_map;
-
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkFramebufferCreateInfo-pAttachments-02554");
-        err = vkCreateFramebuffer(device(), &framebufferCreateInfo, NULL, &fb);
-
-        m_errorMonitor->VerifyFound();
-        if (err == VK_SUCCESS) {
-            vkDestroyFramebuffer(m_device->device(), fb, NULL);
-        }
-
-        framebufferCreateInfo.layers = 1;
-
         if (!push_fragment_density_support) {
             printf("%s VK_EXT_fragment_density_map Extension not supported, skipping tests\n", kSkipPrefix);
         } else {
+            // Create a renderPass with a single color attachment for fragment density map
+            VkAttachmentReference attach_fragment_density_map = {};
+            attach_fragment_density_map.layout = VK_IMAGE_LAYOUT_GENERAL;
+            VkSubpassDescription subpass_fragment_density_map = {};
+            subpass_fragment_density_map.pColorAttachments = &attach_fragment_density_map;
+            VkRenderPassCreateInfo rpci_fragment_density_map = {};
+            rpci_fragment_density_map.subpassCount = 1;
+            rpci_fragment_density_map.pSubpasses = &subpass_fragment_density_map;
+            rpci_fragment_density_map.attachmentCount = 1;
+            VkAttachmentDescription attach_desc_fragment_density_map = {};
+            attach_desc_fragment_density_map.format = VK_FORMAT_R8G8_UNORM;
+            attach_desc_fragment_density_map.samples = VK_SAMPLE_COUNT_1_BIT;
+            attach_desc_fragment_density_map.finalLayout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
+            rpci_fragment_density_map.pAttachments = &attach_desc_fragment_density_map;
+            rpci_fragment_density_map.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+            VkRenderPass rp_fragment_density_map;
+
+            err = vkCreateRenderPass(m_device->device(), &rpci_fragment_density_map, NULL, &rp_fragment_density_map);
+            ASSERT_VK_SUCCESS(err);
+
+            uint32_t attachment_width = 16;
+            uint32_t attachment_height = 16;
+            VkFormat attachment_format = VK_FORMAT_R8G8_UNORM;
+            uint32_t frame_width = 512;
+            uint32_t frame_height = 512;
+            // Create an image with one mip level.
+            VkImageObj image(m_device);
+
+            image.Init(attachment_width, attachment_height, 1, attachment_format, VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT,
+                       VK_IMAGE_TILING_LINEAR, 0);
+            ASSERT_TRUE(image.initialized());
+
+            // Create view attachment
+            VkImageView view_fragment_density_map;
+            VkImageViewCreateInfo ivci = {};
+            ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            ivci.image = image.handle();
+            ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            ivci.format = VK_FORMAT_R8G8_UNORM;
+            ivci.flags = 0;
+            ivci.subresourceRange.layerCount = 1;
+            ivci.subresourceRange.baseMipLevel = 0;
+            ivci.subresourceRange.levelCount = 1;
+            ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            err = vkCreateImageView(m_device->device(), &ivci, NULL, &view_fragment_density_map);
+            ASSERT_VK_SUCCESS(err);
+
+            VkFramebufferAttachmentImageInfoKHR frameBuffer_fdm = {};
+            frameBuffer_fdm.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO_KHR;
+            frameBuffer_fdm.usage = VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
+            frameBuffer_fdm.width = frame_width;
+            frameBuffer_fdm.height = frame_height;
+            frameBuffer_fdm.layerCount = 1;
+            frameBuffer_fdm.viewFormatCount = 1;
+            frameBuffer_fdm.pViewFormats = &attachment_format;
+            VkFramebufferAttachmentsCreateInfoKHR framebuffer_aci_fdm = {};
+            framebuffer_aci_fdm.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO_KHR;
+            framebuffer_aci_fdm.attachmentImageInfoCount = 1;
+            framebuffer_aci_fdm.pAttachmentImageInfos = &frameBuffer_fdm;
+
+            VkFramebufferCreateInfo framebufferCreateInfo = {};
+            framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            framebufferCreateInfo.pNext = &framebuffer_aci_fdm;
+            framebufferCreateInfo.flags = 0;
+            framebufferCreateInfo.width = frame_width;
+            framebufferCreateInfo.height = frame_height;
+            // Set mis-matching layerCount
+            framebufferCreateInfo.layers = 2;
+            framebufferCreateInfo.renderPass = rp_fragment_density_map;
+            framebufferCreateInfo.attachmentCount = 1;
+            framebufferCreateInfo.pAttachments = &view_fragment_density_map;
+
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkFramebufferCreateInfo-pAttachments-02554");
+            err = vkCreateFramebuffer(device(), &framebufferCreateInfo, NULL, &fb);
+
+            m_errorMonitor->VerifyFound();
+            if (err == VK_SUCCESS) {
+                vkDestroyFramebuffer(m_device->device(), fb, NULL);
+            }
+
+            framebufferCreateInfo.layers = 1;
+
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkFramebufferCreateInfo-pAttachments-02555");
             err = vkCreateFramebuffer(device(), &framebufferCreateInfo, NULL, &fb);
 
@@ -3417,10 +3417,10 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
             if (err == VK_SUCCESS) {
                 vkDestroyFramebuffer(m_device->device(), fb, NULL);
             }
-        }
 
-        vkDestroyImageView(m_device->device(), view_fragment_density_map, NULL);
-        vkDestroyRenderPass(m_device->device(), rp_fragment_density_map, NULL);
+            vkDestroyImageView(m_device->device(), view_fragment_density_map, NULL);
+            vkDestroyRenderPass(m_device->device(), rp_fragment_density_map, NULL);
+        }
     }
 
     {
