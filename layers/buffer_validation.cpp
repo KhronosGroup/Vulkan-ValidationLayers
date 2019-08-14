@@ -1378,7 +1378,10 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     if (device_extensions.vk_ext_fragment_density_map) {
         uint32_t ceiling_width =
             (uint32_t)ceil((float)device_limits->maxFramebufferWidth /
-                           (float)phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width);
+                                       phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width ==
+                                   0
+                               ? 1.0f
+                               : (float)phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width);
 
         if ((pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) && (pCreateInfo->extent.width > ceiling_width)) {
             skip |=
@@ -1392,7 +1395,10 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 
         uint32_t ceiling_height =
             (uint32_t)ceil((float)device_limits->maxFramebufferHeight /
-                           (float)phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.height);
+                                       (float)phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.height ==
+                                   0
+                               ? 1.0f
+                               : (float)phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.height);
 
         if ((pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) && (pCreateInfo->extent.height > ceiling_height)) {
             skip |=

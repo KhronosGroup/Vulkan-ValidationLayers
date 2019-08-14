@@ -6178,8 +6178,10 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
             VkImageFormatProperties img_limits;
             ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_ci, &img_limits));
 
-            image_ci.extent = {dev_limits.maxFramebufferWidth + 1, dev_limits.maxFramebufferHeight + 1, 1};
+            image_ci.extent = {dev_limits.maxFramebufferWidth + 1, 64, 1};
             CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-02559");
+
+            image_ci.extent = {64, dev_limits.maxFramebufferHeight + 1, 1};
             CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-02560");
         }
     }
