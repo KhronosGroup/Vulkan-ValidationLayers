@@ -2091,6 +2091,14 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidInputAttachmentReferences) {
 TEST_F(VkLayerTest, RenderPassCreateInvalidFragmentDensityMapReferences) {
     TEST_DESCRIPTION("Create a subpass with the wrong attachment information for a fragment density map ");
 
+    // Check for VK_KHR_get_physical_device_properties2
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+        return;
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME)) {
@@ -3155,10 +3163,21 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
         " 9. framebuffer dimensions exceed physical device limits\n"
         "10. null pAttachments\n");
 
+    // Check for VK_KHR_get_physical_device_properties2
+    bool push_physical_device_properties_2_support =
+        InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (push_physical_device_properties_2_support) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
 
-    bool push_fragment_density_support = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
-    if (push_fragment_density_support) m_device_extension_names.push_back(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    bool push_fragment_density_support = false;
+
+    if (push_physical_device_properties_2_support) {
+        push_fragment_density_support = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+        if (push_fragment_density_support) m_device_extension_names.push_back(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    }
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, 0));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
