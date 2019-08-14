@@ -9404,7 +9404,8 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                             if (device_extensions.vk_ext_fragment_density_map) {
                                 uint32_t ceiling_width = (uint32_t)ceil(
                                     (float)pCreateInfo->width /
-                                    (float)phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width);
+                                    std::max((float)phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width,
+                                             1.0f));
                                 if (mip_width < ceiling_width) {
                                     skip |= log_msg(
                                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -9419,7 +9420,9 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                 }
                                 uint32_t ceiling_height = (uint32_t)ceil(
                                     (float)pCreateInfo->height /
-                                    (float)phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height);
+                                    std::max(
+                                        (float)phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height,
+                                        1.0f));
                                 if (mip_height < ceiling_height) {
                                     skip |= log_msg(
                                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
