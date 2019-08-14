@@ -2088,6 +2088,96 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidInputAttachmentReferences) {
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkRenderPassCreateInfo-pNext-01927", nullptr);
 }
 
+TEST_F(VkLayerTest, RenderPassCreateInvalidFragmentDensityMapReferences) {
+    TEST_DESCRIPTION("Create a subpass with the wrong attachment information for a fragment density map ");
+
+    // Check for VK_KHR_get_physical_device_properties2
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkAttachmentDescription attach = {0,
+                                      VK_FORMAT_R8G8_UNORM,
+                                      VK_SAMPLE_COUNT_1_BIT,
+                                      VK_ATTACHMENT_LOAD_OP_LOAD,
+                                      VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                      VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                      VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                      VK_IMAGE_LAYOUT_UNDEFINED,
+                                      VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT};
+    // Set 1 instead of 0
+    VkAttachmentReference ref = {1, VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT};
+    VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &ref, 0, nullptr, nullptr, nullptr, 0, nullptr};
+    VkRenderPassFragmentDensityMapCreateInfoEXT rpfdmi = {VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT,
+                                                          nullptr, ref};
+
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, &rpfdmi, 0, 1, &attach, 1, &subpass, 0, nullptr};
+
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false,
+                         "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02547", nullptr);
+
+    // Set wrong VkImageLayout
+    ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &ref, 0, nullptr, nullptr, nullptr, 0, nullptr};
+    rpfdmi = {VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT, nullptr, ref};
+    rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, &rpfdmi, 0, 1, &attach, 1, &subpass, 0, nullptr};
+
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false,
+                         "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02549", nullptr);
+
+    // Set wrong load operation
+    attach = {0,
+              VK_FORMAT_R8G8_UNORM,
+              VK_SAMPLE_COUNT_1_BIT,
+              VK_ATTACHMENT_LOAD_OP_CLEAR,
+              VK_ATTACHMENT_STORE_OP_DONT_CARE,
+              VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+              VK_ATTACHMENT_STORE_OP_DONT_CARE,
+              VK_IMAGE_LAYOUT_UNDEFINED,
+              VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT};
+
+    ref = {0, VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT};
+    subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &ref, 0, nullptr, nullptr, nullptr, 0, nullptr};
+    rpfdmi = {VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT, nullptr, ref};
+    rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, &rpfdmi, 0, 1, &attach, 1, &subpass, 0, nullptr};
+
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false,
+                         "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02550", nullptr);
+
+    // Set wrong store operation
+    attach = {0,
+              VK_FORMAT_R8G8_UNORM,
+              VK_SAMPLE_COUNT_1_BIT,
+              VK_ATTACHMENT_LOAD_OP_LOAD,
+              VK_ATTACHMENT_STORE_OP_STORE,
+              VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+              VK_ATTACHMENT_STORE_OP_DONT_CARE,
+              VK_IMAGE_LAYOUT_UNDEFINED,
+              VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT};
+
+    ref = {0, VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT};
+    subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 1, &ref, 0, nullptr, nullptr, nullptr, 0, nullptr};
+    rpfdmi = {VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT, nullptr, ref};
+    rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, &rpfdmi, 0, 1, &attach, 1, &subpass, 0, nullptr};
+
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false,
+                         "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02551", nullptr);
+}
+
 TEST_F(VkLayerTest, RenderPassCreateSubpassNonGraphicsPipeline) {
     TEST_DESCRIPTION("Create a subpass with the compute pipeline bind point");
     // Check for VK_KHR_get_physical_device_properties2
