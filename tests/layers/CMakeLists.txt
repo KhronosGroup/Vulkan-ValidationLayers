@@ -97,13 +97,13 @@ AddVkLayer(device_profile_api device_profile_api.cpp ${PROJECT_SOURCE_DIR}/layer
 # --------------------------------------------------------------------------------------------------------------------------------
 
 target_include_directories(${TEST_LAYER_NAME}
-                           PRIVATE ${VulkanHeaders_INCLUDE_DIR}
-                                   ${CMAKE_CURRENT_SOURCE_DIR}
+                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
                                    ${PROJECT_SOURCE_DIR}/layers
                                    ${CMAKE_CURRENT_BINARY_DIR}
                                    ${PROJECT_BINARY_DIR}
                                    ${PROJECT_BINARY_DIR}/layers
-                                   ${CMAKE_BINARY_DIR})
+                                   ${CMAKE_BINARY_DIR}
+                                   ${VulkanHeaders_INCLUDE_DIR})
 
 if(WIN32)
     # For Windows, copy necessary device_profile_api layer files for the layer_tests
