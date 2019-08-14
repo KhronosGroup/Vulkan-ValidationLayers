@@ -1389,8 +1389,9 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                         "VUID-VkImageCreateInfo-usage-02559",
                         "vkCreateImage(): Image usage flags include a fragment density map bit and image width (%u) exceeds the "
                         "ceiling of device "
-                        "maxFramebufferWidth / minFragmentDensityTexelSize.width (%u)",
-                        pCreateInfo->extent.width, ceiling_width);
+                        "maxFramebufferWidth (%u) / minFragmentDensityTexelSize.width (%u). The ceiling value: %u",
+                        pCreateInfo->extent.width, device_limits->maxFramebufferWidth,
+                        phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.width, ceiling_width);
         }
 
         uint32_t ceiling_height =
@@ -1406,8 +1407,9 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                         "VUID-VkImageCreateInfo-usage-02560",
                         "vkCreateImage(): Image usage flags include a fragment density map bit and image height (%u) exceeds the "
                         "ceiling of device "
-                        "maxFramebufferHeight / minFragmentDensityTexelSize.height (%u)",
-                        pCreateInfo->extent.height, ceiling_height);
+                        "maxFramebufferHeight (%u) / minFragmentDensityTexelSize.height (%u). The ceiling value: %u",
+                        pCreateInfo->extent.height, device_limits->maxFramebufferHeight,
+                        phys_dev_ext_props.fragment_density_map_props.minFragmentDensityTexelSize.height, ceiling_height);
         }
     }
 
