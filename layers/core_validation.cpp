@@ -4066,7 +4066,7 @@ void CoreChecks::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, Vk
     RetireFence(fence);
 }
 
-void CoreChecks::RecordGetDeviceQueueState(uint32_t queue_family_index, VkQueue queue) {
+void ValidationStateTracker::RecordGetDeviceQueueState(uint32_t queue_family_index, VkQueue queue) {
     // Add queue to tracking set only if it is new
     auto queue_is_new = queues.emplace(queue);
     if (queue_is_new.second == true) {
@@ -4078,7 +4078,7 @@ void CoreChecks::RecordGetDeviceQueueState(uint32_t queue_family_index, VkQueue 
 }
 
 bool CoreChecks::ValidateGetDeviceQueue(uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue, const char *valid_qfi_vuid,
-                                        const char *qfi_in_range_vuid) {
+                                        const char *qfi_in_range_vuid) const {
     bool skip = false;
 
     skip |= ValidateDeviceQueueFamily(queueFamilyIndex, "vkGetDeviceQueue", "queueFamilyIndex", valid_qfi_vuid);
@@ -4099,11 +4099,12 @@ bool CoreChecks::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFa
                                   "VUID-vkGetDeviceQueue-queueIndex-00385");
 }
 
-void CoreChecks::PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue) {
+void ValidationStateTracker::PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex,
+                                                          VkQueue *pQueue) {
     RecordGetDeviceQueueState(queueFamilyIndex, *pQueue);
 }
 
-void CoreChecks::PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue) {
+void ValidationStateTracker::PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue) {
     RecordGetDeviceQueueState(pQueueInfo->queueFamilyIndex, *pQueue);
 }
 
@@ -4501,7 +4502,7 @@ void ValidationStateTracker::PostCallRecordBindBufferMemory2KHR(VkDevice device,
     }
 }
 
-void CoreChecks::RecordGetBufferMemoryRequirementsState(VkBuffer buffer, VkMemoryRequirements *pMemoryRequirements) {
+void ValidationStateTracker::RecordGetBufferMemoryRequirementsState(VkBuffer buffer, VkMemoryRequirements *pMemoryRequirements) {
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     if (buffer_state) {
         buffer_state->requirements = *pMemoryRequirements;
@@ -4509,22 +4510,24 @@ void CoreChecks::RecordGetBufferMemoryRequirementsState(VkBuffer buffer, VkMemor
     }
 }
 
-void CoreChecks::PostCallRecordGetBufferMemoryRequirements(VkDevice device, VkBuffer buffer,
-                                                           VkMemoryRequirements *pMemoryRequirements) {
+void ValidationStateTracker::PostCallRecordGetBufferMemoryRequirements(VkDevice device, VkBuffer buffer,
+                                                                       VkMemoryRequirements *pMemoryRequirements) {
     RecordGetBufferMemoryRequirementsState(buffer, pMemoryRequirements);
 }
 
-void CoreChecks::PostCallRecordGetBufferMemoryRequirements2(VkDevice device, const VkBufferMemoryRequirementsInfo2KHR *pInfo,
-                                                            VkMemoryRequirements2KHR *pMemoryRequirements) {
+void ValidationStateTracker::PostCallRecordGetBufferMemoryRequirements2(VkDevice device,
+                                                                        const VkBufferMemoryRequirementsInfo2KHR *pInfo,
+                                                                        VkMemoryRequirements2KHR *pMemoryRequirements) {
     RecordGetBufferMemoryRequirementsState(pInfo->buffer, &pMemoryRequirements->memoryRequirements);
 }
 
-void CoreChecks::PostCallRecordGetBufferMemoryRequirements2KHR(VkDevice device, const VkBufferMemoryRequirementsInfo2KHR *pInfo,
-                                                               VkMemoryRequirements2KHR *pMemoryRequirements) {
+void ValidationStateTracker::PostCallRecordGetBufferMemoryRequirements2KHR(VkDevice device,
+                                                                           const VkBufferMemoryRequirementsInfo2KHR *pInfo,
+                                                                           VkMemoryRequirements2KHR *pMemoryRequirements) {
     RecordGetBufferMemoryRequirementsState(pInfo->buffer, &pMemoryRequirements->memoryRequirements);
 }
 
-bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2 *pInfo) {
+bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2 *pInfo) const {
     bool skip = false;
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
         skip |= ValidateGetImageMemoryRequirements2ANDROID(pInfo->image);
@@ -4542,7 +4545,7 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements2KHR(VkDevice device, 
     return ValidateGetImageMemoryRequirements2(pInfo);
 }
 
-void CoreChecks::RecordGetImageMemoryRequiementsState(VkImage image, VkMemoryRequirements *pMemoryRequirements) {
+void ValidationStateTracker::RecordGetImageMemoryRequiementsState(VkImage image, VkMemoryRequirements *pMemoryRequirements) {
     IMAGE_STATE *image_state = GetImageState(image);
     if (image_state) {
         image_state->requirements = *pMemoryRequirements;
@@ -4550,18 +4553,19 @@ void CoreChecks::RecordGetImageMemoryRequiementsState(VkImage image, VkMemoryReq
     }
 }
 
-void CoreChecks::PostCallRecordGetImageMemoryRequirements(VkDevice device, VkImage image,
-                                                          VkMemoryRequirements *pMemoryRequirements) {
+void ValidationStateTracker::PostCallRecordGetImageMemoryRequirements(VkDevice device, VkImage image,
+                                                                      VkMemoryRequirements *pMemoryRequirements) {
     RecordGetImageMemoryRequiementsState(image, pMemoryRequirements);
 }
 
-void CoreChecks::PostCallRecordGetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2 *pInfo,
-                                                           VkMemoryRequirements2 *pMemoryRequirements) {
+void ValidationStateTracker::PostCallRecordGetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2 *pInfo,
+                                                                       VkMemoryRequirements2 *pMemoryRequirements) {
     RecordGetImageMemoryRequiementsState(pInfo->image, &pMemoryRequirements->memoryRequirements);
 }
 
-void CoreChecks::PostCallRecordGetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2 *pInfo,
-                                                              VkMemoryRequirements2 *pMemoryRequirements) {
+void ValidationStateTracker::PostCallRecordGetImageMemoryRequirements2KHR(VkDevice device,
+                                                                          const VkImageMemoryRequirementsInfo2 *pInfo,
+                                                                          VkMemoryRequirements2 *pMemoryRequirements) {
     RecordGetImageMemoryRequiementsState(pInfo->image, &pMemoryRequirements->memoryRequirements);
 }
 
@@ -4573,9 +4577,9 @@ static void RecordGetImageSparseMemoryRequirementsState(IMAGE_STATE *image_state
     }
 }
 
-void CoreChecks::PostCallRecordGetImageSparseMemoryRequirements(VkDevice device, VkImage image,
-                                                                uint32_t *pSparseMemoryRequirementCount,
-                                                                VkSparseImageMemoryRequirements *pSparseMemoryRequirements) {
+void ValidationStateTracker::PostCallRecordGetImageSparseMemoryRequirements(
+    VkDevice device, VkImage image, uint32_t *pSparseMemoryRequirementCount,
+    VkSparseImageMemoryRequirements *pSparseMemoryRequirements) {
     auto image_state = GetImageState(image);
     image_state->get_sparse_reqs_called = true;
     if (!pSparseMemoryRequirements) return;
@@ -4584,10 +4588,9 @@ void CoreChecks::PostCallRecordGetImageSparseMemoryRequirements(VkDevice device,
     }
 }
 
-void CoreChecks::PostCallRecordGetImageSparseMemoryRequirements2(VkDevice device,
-                                                                 const VkImageSparseMemoryRequirementsInfo2KHR *pInfo,
-                                                                 uint32_t *pSparseMemoryRequirementCount,
-                                                                 VkSparseImageMemoryRequirements2KHR *pSparseMemoryRequirements) {
+void ValidationStateTracker::PostCallRecordGetImageSparseMemoryRequirements2(
+    VkDevice device, const VkImageSparseMemoryRequirementsInfo2KHR *pInfo, uint32_t *pSparseMemoryRequirementCount,
+    VkSparseImageMemoryRequirements2KHR *pSparseMemoryRequirements) {
     auto image_state = GetImageState(pInfo->image);
     image_state->get_sparse_reqs_called = true;
     if (!pSparseMemoryRequirements) return;
@@ -4597,7 +4600,7 @@ void CoreChecks::PostCallRecordGetImageSparseMemoryRequirements2(VkDevice device
     }
 }
 
-void CoreChecks::PostCallRecordGetImageSparseMemoryRequirements2KHR(
+void ValidationStateTracker::PostCallRecordGetImageSparseMemoryRequirements2KHR(
     VkDevice device, const VkImageSparseMemoryRequirementsInfo2KHR *pInfo, uint32_t *pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements2KHR *pSparseMemoryRequirements) {
     auto image_state = GetImageState(pInfo->image);
@@ -6842,7 +6845,7 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevic
     accelerationStructureMap[*pAccelerationStructure] = std::move(as_state);
 }
 
-void CoreChecks::PostCallRecordGetAccelerationStructureMemoryRequirementsNV(
+void ValidationStateTracker::PostCallRecordGetAccelerationStructureMemoryRequirementsNV(
     VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV *pInfo, VkMemoryRequirements2KHR *pMemoryRequirements) {
     ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureState(pInfo->accelerationStructure);
     if (as_state != nullptr) {
@@ -11898,7 +11901,7 @@ void CoreChecks::PostCallRecordInvalidateMappedMemoryRanges(VkDevice device, uin
 
 bool CoreChecks::PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDeviceMemory mem, VkDeviceSize *pCommittedMem) {
     bool skip = false;
-    auto mem_info = GetDevMemState(mem);
+    const auto mem_info = GetDevMemState(mem);
 
     if (mem_info) {
         if ((phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].propertyFlags &
@@ -13322,8 +13325,8 @@ void ValidationStateTracker::PostCallRecordAcquireNextImage2KHR(VkDevice device,
                                 pAcquireInfo->fence, pImageIndex);
 }
 
-void CoreChecks::PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
-                                                        VkPhysicalDevice *pPhysicalDevices, VkResult result) {
+void ValidationStateTracker::PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
+                                                                    VkPhysicalDevice *pPhysicalDevices, VkResult result) {
     if ((NULL != pPhysicalDevices) && ((result == VK_SUCCESS || result == VK_INCOMPLETE))) {
         for (uint32_t i = 0; i < *pPhysicalDeviceCount; i++) {
             auto &phys_device_state = physical_device_map[pPhysicalDevices[i]];
@@ -14294,7 +14297,7 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const
                         "bufferDeviceAddressMultiDevice feature must: be enabled.");
     }
 
-    auto buffer_state = GetBufferState(pInfo->buffer);
+    const auto buffer_state = GetBufferState(pInfo->buffer);
     if (buffer_state) {
         if (!(buffer_state->createInfo.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT)) {
             skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkGetBufferDeviceAddressEXT()",

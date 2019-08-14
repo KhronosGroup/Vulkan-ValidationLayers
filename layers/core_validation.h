@@ -393,6 +393,31 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordEnumeratePhysicalDeviceGroupsKHR(VkInstance instance, uint32_t* pPhysicalDeviceGroupCount,
                                                         VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties,
                                                         VkResult result);
+    void PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
+                                                VkPhysicalDevice* pPhysicalDevices, VkResult result);
+    void PostCallRecordGetAccelerationStructureMemoryRequirementsNV(VkDevice device,
+                                                                    const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
+                                                                    VkMemoryRequirements2KHR* pMemoryRequirements);
+    void PostCallRecordGetBufferMemoryRequirements(VkDevice device, VkBuffer buffer, VkMemoryRequirements* pMemoryRequirements);
+    void PostCallRecordGetBufferMemoryRequirements2(VkDevice device, const VkBufferMemoryRequirementsInfo2KHR* pInfo,
+                                                    VkMemoryRequirements2KHR* pMemoryRequirements);
+    void PostCallRecordGetBufferMemoryRequirements2KHR(VkDevice device, const VkBufferMemoryRequirementsInfo2KHR* pInfo,
+                                                       VkMemoryRequirements2KHR* pMemoryRequirements);
+    void PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue);
+    void PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQueueInfo, VkQueue* pQueue);
+    void PostCallRecordGetImageMemoryRequirements(VkDevice device, VkImage image, VkMemoryRequirements* pMemoryRequirements);
+    void PostCallRecordGetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
+                                                   VkMemoryRequirements2* pMemoryRequirements);
+    void PostCallRecordGetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
+                                                      VkMemoryRequirements2* pMemoryRequirements);
+    void PostCallRecordGetImageSparseMemoryRequirements(VkDevice device, VkImage image, uint32_t* pSparseMemoryRequirementCount,
+                                                        VkSparseImageMemoryRequirements* pSparseMemoryRequirements);
+    void PostCallRecordGetImageSparseMemoryRequirements2(VkDevice device, const VkImageSparseMemoryRequirementsInfo2KHR* pInfo,
+                                                         uint32_t* pSparseMemoryRequirementCount,
+                                                         VkSparseImageMemoryRequirements2KHR* pSparseMemoryRequirements);
+    void PostCallRecordGetImageSparseMemoryRequirements2KHR(VkDevice device, const VkImageSparseMemoryRequirementsInfo2KHR* pInfo,
+                                                            uint32_t* pSparseMemoryRequirementCount,
+                                                            VkSparseImageMemoryRequirements2KHR* pSparseMemoryRequirements);
     void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                   VkDisplayPlanePropertiesKHR* pProperties, VkResult result);
     void PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
@@ -790,6 +815,9 @@ class ValidationStateTracker : public ValidationObject {
     void RecordDestroySamplerYcbcrConversionANDROID(VkSamplerYcbcrConversion ycbcr_conversion);
     void RecordEnumeratePhysicalDeviceGroupsState(uint32_t* pPhysicalDeviceGroupCount,
                                                   VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
+    void RecordGetBufferMemoryRequirementsState(VkBuffer buffer, VkMemoryRequirements* pMemoryRequirements);
+    void RecordGetDeviceQueueState(uint32_t queue_family_index, VkQueue queue);
+    void RecordGetImageMemoryRequiementsState(VkImage image, VkMemoryRequirements* pMemoryRequirements);
     void RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                             void* pProperties);
     void RecordUpdateDescriptorSetWithTemplateState(VkDescriptorSet descriptorSet,
@@ -882,9 +910,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDeviceQueueFamily(uint32_t queue_family, const char* cmd_name, const char* parameter_name, const char* error_code,
                                    bool optional) const;
     bool ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset, const char* api_name) const;
-    void RecordGetBufferMemoryRequirementsState(VkBuffer buffer, VkMemoryRequirements* pMemoryRequirements);
-    bool ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2* pInfo);
-    void RecordGetImageMemoryRequiementsState(VkImage image, VkMemoryRequirements* pMemoryRequirements);
+    bool ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2* pInfo) const;
     bool CheckCommandBuffersInFlight(const COMMAND_POOL_STATE* pPool, const char* action, const char* error_code) const;
     bool CheckCommandBufferInFlight(const CMD_BUFFER_STATE* cb_node, const char* action, const char* error_code) const;
     bool VerifyQueueStateToFence(VkFence fence);
@@ -1034,8 +1060,7 @@ class CoreChecks : public ValidationStateTracker {
                                     const char* vu_id) const;
     bool ValidateCommandBufferSimultaneousUse(const CMD_BUFFER_STATE* pCB, int current_submit_count) const;
     bool ValidateGetDeviceQueue(uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue, const char* valid_qfi_vuid,
-                                const char* qfi_in_range_vuid);
-    void RecordGetDeviceQueueState(uint32_t queue_family_index, VkQueue queue);
+                                const char* qfi_in_range_vuid) const;
     bool ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2KHR* pCreateInfo) const;
     bool AddAttachmentUse(RenderPassCreateVersion rp_version, uint32_t subpass, std::vector<uint8_t>& attachment_uses,
                           std::vector<VkImageLayout>& attachment_layouts, uint32_t attachment, uint8_t new_use,
@@ -1510,7 +1535,7 @@ class CoreChecks : public ValidationStateTracker {
                                                   VkSubresourceLayout* pLayout);
     bool ValidateCreateImageANDROID(const debug_report_data* report_data, const VkImageCreateInfo* create_info);
     bool ValidateCreateImageViewANDROID(const VkImageViewCreateInfo* create_info);
-    bool ValidateGetImageSubresourceLayoutANDROID(const VkImage image);
+    bool ValidateGetImageSubresourceLayoutANDROID(const VkImage image) const;
     bool ValidateQueueFamilies(uint32_t queue_family_count, const uint32_t* queue_families, const char* cmd_name,
                                const char* array_parameter_name, const char* unique_error_code, const char* valid_error_code,
                                bool optional) const;
@@ -1597,8 +1622,6 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                         VkDeviceSize dataSize, const void* pData);
     bool PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue);
-    void PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue);
-    void PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQueueInfo, VkQueue* pQueue);
     bool PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator,
                                                      VkSamplerYcbcrConversion* pYcbcrConversion);
@@ -1634,28 +1657,10 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfoKHR* pBindInfos);
     bool PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfoKHR* pBindInfos);
     bool PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset);
-    void PostCallRecordGetBufferMemoryRequirements(VkDevice device, VkBuffer buffer, VkMemoryRequirements* pMemoryRequirements);
-    void PostCallRecordGetBufferMemoryRequirements2(VkDevice device, const VkBufferMemoryRequirementsInfo2KHR* pInfo,
-                                                    VkMemoryRequirements2KHR* pMemoryRequirements);
-    void PostCallRecordGetBufferMemoryRequirements2KHR(VkDevice device, const VkBufferMemoryRequirementsInfo2KHR* pInfo,
-                                                       VkMemoryRequirements2KHR* pMemoryRequirements);
     bool PreCallValidateGetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
                                                     VkMemoryRequirements2* pMemoryRequirements);
     bool PreCallValidateGetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
                                                        VkMemoryRequirements2* pMemoryRequirements);
-    void PostCallRecordGetImageMemoryRequirements(VkDevice device, VkImage image, VkMemoryRequirements* pMemoryRequirements);
-    void PostCallRecordGetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
-                                                   VkMemoryRequirements2* pMemoryRequirements);
-    void PostCallRecordGetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
-                                                      VkMemoryRequirements2* pMemoryRequirements);
-    void PostCallRecordGetImageSparseMemoryRequirements(VkDevice device, VkImage image, uint32_t* pSparseMemoryRequirementCount,
-                                                        VkSparseImageMemoryRequirements* pSparseMemoryRequirements);
-    void PostCallRecordGetImageSparseMemoryRequirements2(VkDevice device, const VkImageSparseMemoryRequirementsInfo2KHR* pInfo,
-                                                         uint32_t* pSparseMemoryRequirementCount,
-                                                         VkSparseImageMemoryRequirements2KHR* pSparseMemoryRequirements);
-    void PostCallRecordGetImageSparseMemoryRequirements2KHR(VkDevice device, const VkImageSparseMemoryRequirementsInfo2KHR* pInfo,
-                                                            uint32_t* pSparseMemoryRequirementCount,
-                                                            VkSparseImageMemoryRequirements2KHR* pSparseMemoryRequirements);
     bool PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
                                                                 const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                 VkImageFormatProperties2* pImageFormatProperties);
@@ -1710,9 +1715,6 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateCreateAccelerationStructureNV(VkDevice device, const VkAccelerationStructureCreateInfoNV* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator,
                                                       VkAccelerationStructureNV* pAccelerationStructure);
-    void PostCallRecordGetAccelerationStructureMemoryRequirementsNV(VkDevice device,
-                                                                    const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
-                                                                    VkMemoryRequirements2KHR* pMemoryRequirements);
     bool PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                           const VkBindAccelerationStructureMemoryInfoNV* pBindInfos);
     bool PreCallValidateGetAccelerationStructureHandleNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
@@ -1905,8 +1907,6 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                             VkFence fence, uint32_t* pImageIndex);
     bool PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR* pAcquireInfo, uint32_t* pImageIndex);
-    void PostCallRecordEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
-                                                VkPhysicalDevice* pPhysicalDevices, VkResult result);
     bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
                                                                VkQueueFamilyProperties* pQueueFamilyProperties);
     bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
