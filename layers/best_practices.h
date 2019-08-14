@@ -20,12 +20,15 @@
 #pragma once
 
 #include "chassis.h"
+#include "core_validation.h"
 #include <string>
 
 static const uint32_t kMemoryObjectWarningLimit = 250;
 
-class BestPractices : public ValidationObject {
+class BestPractices : public ValidationStateTracker {
    public:
+    using StateTracker = ValidationStateTracker;
+
     std::string GetAPIVersionName(uint32_t version);
 
     bool PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
@@ -48,6 +51,7 @@ class BestPractices : public ValidationObject {
     bool PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory);
     void PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator);
+    bool PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator);
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines);
@@ -81,6 +85,8 @@ class BestPractices : public ValidationObject {
                                                uint32_t drawCount, uint32_t stride);
     bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
                                     uint32_t groupCountZ);
+    bool PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
+                                                            uint32_t* pDisplayCount, VkDisplayKHR* pDisplays);
 
    private:
     uint32_t instance_api_version;

@@ -86,6 +86,13 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
         }
     }
 
+    auto pd_state = GetPhysicalDeviceState(physicalDevice);
+    if ((pd_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState == UNCALLED) && (pCreateInfo->pEnabledFeatures != NULL)) {
+        skip |=
+            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, layer_name.c_str(),
+                    "vkCreateDevice() called before getting physical device features from vkGetPhysicalDeviceFeatures().");
+    }
+
     return skip;
 }
 
@@ -129,6 +136,27 @@ bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkS
                                                       const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) {
     bool skip = false;
 
+    auto physical_device_state = GetPhysicalDeviceState();
+
+    if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState == UNCALLED) {
+        skip |= log_msg(
+            report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, layer_name.c_str(),
+            "vkCreateSwapchainKHR() called before getting surface capabilities from vkGetPhysicalDeviceSurfaceCapabilitiesKHR().");
+    }
+
+    if (physical_device_state->vkGetPhysicalDeviceSurfacePresentModesKHRState != QUERY_DETAILS) {
+        skip |=
+            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, layer_name.c_str(),
+                    "vkCreateSwapchainKHR() called before getting surface present mode(s) from "
+                    "vkGetPhysicalDeviceSurfacePresentModesKHR().");
+    }
+
+    if (physical_device_state->vkGetPhysicalDeviceSurfaceFormatsKHRState != QUERY_DETAILS) {
+        skip |=
+            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, layer_name.c_str(),
+                    "vkCreateSwapchainKHR() called before getting surface format(s) from vkGetPhysicalDeviceSurfaceFormatsKHR().");
+    }
+
     if ((pCreateInfo->queueFamilyIndexCount > 1) && (pCreateInfo->imageSharingMode == VK_SHARING_MODE_EXCLUSIVE)) {
         skip |=
             log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, layer_name.c_str(),
@@ -149,7 +177,7 @@ bool BestPractices::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, ui
         if ((pCreateInfos[i].queueFamilyIndexCount > 1) && (pCreateInfos[i].imageSharingMode == VK_SHARING_MODE_EXCLUSIVE)) {
             skip |= log_msg(
                 report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, layer_name.c_str(),
-                "Warning: A shared swapchain (index %" PRIu32
+                "Warning: A Shared Swapchain (index %" PRIu32
                 ") is being created which specifies a sharing mode of VK_SHARING_MODE_EXCLUSIVE while specifying multiple "
                 "queues (queueFamilyIndexCount of %" PRIu32 ").",
                 i, pCreateInfos[i].queueFamilyIndexCount);
@@ -206,6 +234,22 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
                         kMemoryObjectWarningLimit);
     }
 
+    // TODO: Insert get check for GetPhysicalDeviceMemoryProperties once the state is tracked in the StateTracker
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) {
+    bool skip = false;
+
+    DEVICE_MEMORY_STATE* mem_info = GetDevMemState(memory);
+
+    for (auto& obj : mem_info->obj_bindings) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, get_debug_report_enum[obj.type], 0, layer_name.c_str(),
+                        "VK Object %s still has a reference to mem obj %s.", report_data->FormatHandle(obj).c_str(),
+                        report_data->FormatHandle(mem_info->mem).c_str());
+    }
+
     return skip;
 }
 
@@ -214,6 +258,9 @@ void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memo
         num_mem_objects--;
     }
 }
+
+// TODO: Insert get check for Get[Buffer/Image]MemoryRequirements() inside Bind[Buffer/Image]Memory() once tracked inside of
+// StateTracker State will be tracked in [BUFFER/IMAGE]_STATE->memory_requirements_checked
 
 bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                            const VkGraphicsPipelineCreateInfo* pCreateInfos,
@@ -387,6 +434,22 @@ bool BestPractices::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, ui
                     "Warning: You are calling vkCmdDispatch() while one or more groupCounts are zero (groupCountX = %" PRIu32
                     ", groupCountY = %" PRIu32 ", groupCountZ = %" PRIu32 ").",
                     groupCountX, groupCountY, groupCountZ);
+    }
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
+                                                                       uint32_t* pDisplayCount, VkDisplayKHR* pDisplays) {
+    bool skip = false;
+
+    auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
+
+    if (physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState != QUERY_DETAILS) {
+        skip |=
+            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, layer_name.c_str(),
+                    "vkGetDisplayPlaneSupportedDisplaysKHR() called before getting diplay plane properties from "
+                    "vkGetPhysicalDeviceDisplayPlanePropertiesKHR().");
     }
 
     return skip;
