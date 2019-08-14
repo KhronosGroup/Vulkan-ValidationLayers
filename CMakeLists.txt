@@ -149,7 +149,7 @@ else()
     option(BUILD_TESTS "Build tests" OFF)
 endif()
 
-option(INSTALL_TESTS "Install tests" ON)
+option(INSTALL_TESTS "Install tests" OFF)
 option(BUILD_LAYERS "Build layers" ON)
 option(BUILD_LAYER_SUPPORT_FILES "Generate layer files" OFF) # For generating files when not building layers
 
