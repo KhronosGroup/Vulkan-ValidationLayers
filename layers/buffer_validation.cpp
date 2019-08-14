@@ -1299,10 +1299,10 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *cre
     return skip;
 }
 
-bool CoreChecks::ValidateGetImageSubresourceLayoutANDROID(const VkImage image) {
+bool CoreChecks::ValidateGetImageSubresourceLayoutANDROID(const VkImage image) const {
     bool skip = false;
 
-    IMAGE_STATE *image_state = GetImageState(image);
+    const IMAGE_STATE *image_state = GetImageState(image);
     if (image_state->imported_ahb && (0 == image_state->GetBoundMemory().size())) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image),
                         "VUID-vkGetImageSubresourceLayout-image-01895",
@@ -1323,7 +1323,7 @@ void ValidationStateTracker::RecordCreateImageANDROID(const VkImageCreateInfo *c
 
 bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *create_info) { return false; }
 
-bool CoreChecks::ValidateGetImageSubresourceLayoutANDROID(const VkImage image) { return false; }
+bool CoreChecks::ValidateGetImageSubresourceLayoutANDROID(const VkImage image) const { return false; }
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
@@ -5155,7 +5155,7 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
                         "vkGetImageSubresourceLayout(): VkImageSubresource.aspectMask must have exactly 1 bit set.");
     }
 
-    IMAGE_STATE *image_entry = GetImageState(image);
+    const IMAGE_STATE *image_entry = GetImageState(image);
     if (!image_entry) {
         return skip;
     }
