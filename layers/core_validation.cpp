@@ -44,6 +44,7 @@
 #include <cmath>
 #include <iostream>
 #include <list>
+#include <math.h>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -2642,6 +2643,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_transform_feedback, &phys_dev_props->transform_feedback_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_nv_ray_tracing, &phys_dev_props->ray_tracing_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_texel_buffer_alignment, &phys_dev_props->texel_buffer_alignment_props);
+    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_fragment_density_map, &phys_dev_props->fragment_density_map_props);
     if (state_tracker->device_extensions.vk_nv_cooperative_matrix) {
         // Get the needed cooperative_matrix properties
         auto cooperative_matrix_props = lvl_init_struct<VkPhysicalDeviceCooperativeMatrixPropertiesNV>();
@@ -9515,19 +9517,58 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                         const uint32_t mip_level = ivci.subresourceRange.baseMipLevel;
                         uint32_t mip_width = max(1u, ici->extent.width >> mip_level);
                         uint32_t mip_height = max(1u, ici->extent.height >> mip_level);
-                        if ((ivci.subresourceRange.layerCount < pCreateInfo->layers) || (mip_width < pCreateInfo->width) ||
-                            (mip_height < pCreateInfo->height)) {
-                            skip |= log_msg(
-                                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                "VUID-VkFramebufferCreateInfo-pAttachments-00882",
-                                "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u mip level %u has dimensions "
-                                "smaller than the corresponding framebuffer dimensions. Here are the respective dimensions for "
-                                "attachment #%u, framebuffer:\n"
-                                "width: %u, %u\n"
-                                "height: %u, %u\n"
-                                "layerCount: %u, %u\n",
-                                i, ivci.subresourceRange.baseMipLevel, i, mip_width, pCreateInfo->width, mip_height,
-                                pCreateInfo->height, ivci.subresourceRange.layerCount, pCreateInfo->layers);
+                        if (!(rpci->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT ||
+                              rpci->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT)) {
+                            if ((ivci.subresourceRange.layerCount < pCreateInfo->layers) || (mip_width < pCreateInfo->width) ||
+                                (mip_height < pCreateInfo->height)) {
+                                skip |= log_msg(
+                                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    "VUID-VkFramebufferCreateInfo-pAttachments-00882",
+                                    "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u mip level %u has dimensions "
+                                    "smaller than the corresponding framebuffer dimensions. Here are the respective dimensions for "
+                                    "attachment #%u, framebuffer:\n"
+                                    "width: %u, %u\n"
+                                    "height: %u, %u\n"
+                                    "layerCount: %u, %u\n",
+                                    i, ivci.subresourceRange.baseMipLevel, i, mip_width, pCreateInfo->width, mip_height,
+                                    pCreateInfo->height, ivci.subresourceRange.layerCount, pCreateInfo->layers);
+                            }
+                        } else {
+                            if (device_extensions.vk_ext_fragment_density_map) {
+                                uint32_t ceiling_width = (uint32_t)ceil(
+                                    (float)pCreateInfo->width /
+                                    std::max((float)phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.width,
+                                             1.0f));
+                                if (mip_width < ceiling_width) {
+                                    skip |= log_msg(
+                                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                        "VUID-VkFramebufferCreateInfo-pAttachments-02555",
+                                        "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u mip level %u has width "
+                                        "smaller than the corresponding the ceiling of framebuffer width / "
+                                        "maxFragmentDensityTexelSize.width "
+                                        "Here are the respective dimensions for attachment #%u, the ceiling value:\n "
+                                        "attachment #%u, framebuffer:\n"
+                                        "width: %u, the ceiling value: %u\n",
+                                        i, ivci.subresourceRange.baseMipLevel, i, i, mip_width, ceiling_width);
+                                }
+                                uint32_t ceiling_height = (uint32_t)ceil(
+                                    (float)pCreateInfo->height /
+                                    std::max(
+                                        (float)phys_dev_ext_props.fragment_density_map_props.maxFragmentDensityTexelSize.height,
+                                        1.0f));
+                                if (mip_height < ceiling_height) {
+                                    skip |= log_msg(
+                                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                        "VUID-VkFramebufferCreateInfo-pAttachments-02556",
+                                        "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u mip level %u has height "
+                                        "smaller than the corresponding the ceiling of framebuffer height / "
+                                        "maxFragmentDensityTexelSize.height "
+                                        "Here are the respective dimensions for attachment #%u, the ceiling value:\n "
+                                        "attachment #%u, framebuffer:\n"
+                                        "height: %u, the ceiling value: %u\n",
+                                        i, ivci.subresourceRange.baseMipLevel, i, i, mip_height, ceiling_height);
+                                }
+                            }
                         }
                         if (((ivci.components.r != VK_COMPONENT_SWIZZLE_IDENTITY) &&
                              (ivci.components.r != VK_COMPONENT_SWIZZLE_R)) ||
