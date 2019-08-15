@@ -173,18 +173,19 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
 
     // Save app-enabled features in this device's validation object
     // The enabled features can come from either pEnabledFeatures, or from the pNext chain
-    const VkPhysicalDeviceFeatures *enabled_features_found = pCreateInfo->pEnabledFeatures;
-    if ((nullptr == enabled_features_found) && device_extensions.vk_khr_get_physical_device_properties_2) {
-        const auto *features2 = lvl_find_in_chain<VkPhysicalDeviceFeatures2KHR>(pCreateInfo->pNext);
-        if (features2) {
-            enabled_features_found = &(features2->features);
-        }
-    }
-    if (enabled_features_found) {
-        stateless_validation->physical_device_features = *enabled_features_found;
+    const auto *features2 = lvl_find_in_chain<VkPhysicalDeviceFeatures2>(pCreateInfo->pNext);
+    safe_VkPhysicalDeviceFeatures2 tmp_features2_state;
+    tmp_features2_state.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    if (features2) {
+        tmp_features2_state.features = features2->features;
+    } else if (pCreateInfo->pEnabledFeatures) {
+        tmp_features2_state.features = *pCreateInfo->pEnabledFeatures;
     } else {
-        memset(&stateless_validation->physical_device_features, 0, sizeof(VkPhysicalDeviceFeatures));
+        tmp_features2_state.features = {};
     }
+    // Use pCreateInfo->pNext to get full chain
+    tmp_features2_state.pNext = SafePnextCopy(pCreateInfo->pNext);
+    stateless_validation->physical_device_features2 = tmp_features2_state;
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
