@@ -14265,6 +14265,10 @@ void PIPELINE_STATE::initGraphicsPipeline(ValidationStateTracker *state_data, co
         }
     }
     graphicsPipelineCI.initialize(pCreateInfo, uses_color_attachment, uses_depthstencil_attachment);
+    if (graphicsPipelineCI.pInputAssemblyState) {
+        topology_at_rasterizer = graphicsPipelineCI.pInputAssemblyState->topology;
+    }
+
     stage_state.resize(pCreateInfo->stageCount);
     for (uint32_t i = 0; i < pCreateInfo->stageCount; i++) {
         const VkPipelineShaderStageCreateInfo *pPSSCI = &pCreateInfo->pStages[i];
@@ -14295,9 +14299,6 @@ void PIPELINE_STATE::initGraphicsPipeline(ValidationStateTracker *state_data, co
             this->attachments =
                 std::vector<VkPipelineColorBlendAttachmentState>(pCBCI->pAttachments, pCBCI->pAttachments + pCBCI->attachmentCount);
         }
-    }
-    if (graphicsPipelineCI.pInputAssemblyState) {
-        topology_at_rasterizer = graphicsPipelineCI.pInputAssemblyState->topology;
     }
     rp_state = rpstate;
 }
