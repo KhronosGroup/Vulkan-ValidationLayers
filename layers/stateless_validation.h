@@ -92,7 +92,8 @@ struct LogMiscParams {
 class StatelessValidation : public ValidationObject {
    public:
     VkPhysicalDeviceLimits device_limits = {};
-    VkPhysicalDeviceFeatures physical_device_features = {};
+    safe_VkPhysicalDeviceFeatures2 physical_device_features2;
+    const VkPhysicalDeviceFeatures &physical_device_features = physical_device_features2.features;
 
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.
