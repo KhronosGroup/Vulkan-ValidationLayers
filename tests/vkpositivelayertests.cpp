@@ -7994,3 +7994,28 @@ TEST_F(VkPositiveLayerTest, TestSamplerDataForCombinedImageSampler) {
     m_commandBuffer->end();
     vkDestroySampler(m_device->device(), sampler, NULL);
 }
+
+TEST_F(VkPositiveLayerTest, NotPointSizeGeometryShaderSuccess) {
+    TEST_DESCRIPTION("Create a pipeline using TOPOLOGY_POINT_LIST, but geometry shader doesn't include PointSize.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if ((!m_device->phy().features().geometryShader)) {
+        printf("%s Device does not support the required geometry shader features; skipped.\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+
+    VkShaderObj gs(m_device, bindStateGeomShaderText, VK_SHADER_STAGE_GEOMETRY_BIT, this);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    pipe.InitState();
+
+    m_errorMonitor->ExpectSuccess();
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyNotFound();
+}
