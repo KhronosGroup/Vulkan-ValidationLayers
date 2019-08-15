@@ -30,6 +30,7 @@ NC='\033[0m' # No Color
 # Get user-supplied commit message text for applicable commits and insert
 # a unique separator string identifier. The git command returns ONLY the
 # subject line and body for each of the commits.
+TRAVIS_COMMIT_RANGE="${TRAVIS_COMMIT_RANGE/.../..}"
 COMMIT_TEXT=$(git log ${TRAVIS_COMMIT_RANGE} --pretty=format:"XXXNEWLINEXXX"%n%B)
 
 # Bail if there are none
