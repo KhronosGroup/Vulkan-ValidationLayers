@@ -4100,7 +4100,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
 
         // Finalize
         int max_vertices = overflow ? (m_device->props.limits.maxGeometryTotalOutputComponents / maxGeomOutComp + 1) : 1;
-        gsSourceStr += "layout(points, max_vertices = " + std::to_string(max_vertices) +
+        gsSourceStr += "layout(triangle_strip, max_vertices = " + std::to_string(max_vertices) +
                        ") out;\n"
                        "\n"
                        "void main(){\n"
@@ -4196,7 +4196,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInstanceVertexCount) {
                OpMemoryModel Logical GLSL450
                OpEntryPoint Geometry %main "main"
                OpExecutionMode %main InputPoints
-               OpExecutionMode %main OutputPoints
+               OpExecutionMode %main OutputTriangleStrip
                )";
         if (overflow) {
             gsSourceStr += "OpExecutionMode %main Invocations " +
