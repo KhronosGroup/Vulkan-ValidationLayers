@@ -12656,13 +12656,6 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
                         string_VkSurfaceTransformFlagBitsKHR(currentTransform));
     }
 
-    if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState == UNCALLED) {
-        if (log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
-                    HandleToUint64(physical_device), kVUID_Core_DrawState_SwapchainCreateBeforeQuery,
-                    "%s: surface capabilities not retrieved for this physical device", func_name))
-            return true;
-    }
-
     VkSurfaceCapabilitiesKHR capabilities{};
     DispatchGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_state->phys_device, pCreateInfo->surface, &capabilities);
     // Validate pCreateInfo->minImageCount against VkSurfaceCapabilitiesKHR::{min|max}ImageCount:
@@ -12790,11 +12783,6 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
 
     // Validate pCreateInfo values with the results of vkGetPhysicalDeviceSurfaceFormatsKHR():
     if (physical_device_state->vkGetPhysicalDeviceSurfaceFormatsKHRState != QUERY_DETAILS) {
-        if (log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                    kVUID_Core_DrawState_SwapchainCreateBeforeQuery,
-                    "%s called before getting format(s) from vkGetPhysicalDeviceSurfaceFormatsKHR().", func_name)) {
-            return true;
-        }
         uint32_t surface_format_count = 0;
         DispatchGetPhysicalDeviceSurfaceFormatsKHR(physical_device, pCreateInfo->surface, &surface_format_count, nullptr);
         surface_formats.resize(surface_format_count);
@@ -12841,26 +12829,31 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
         }
     }
 
+    std::vector<VkPresentModeKHR> present_modes;
+    const auto *present_modes_ref = &present_modes;
+
     // Validate pCreateInfo values with the results of vkGetPhysicalDeviceSurfacePresentModesKHR():
     if (physical_device_state->vkGetPhysicalDeviceSurfacePresentModesKHRState != QUERY_DETAILS) {
-        // FIFO is required to always be supported
-        if (pCreateInfo->presentMode != VK_PRESENT_MODE_FIFO_KHR) {
-            if (log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                        HandleToUint64(device), kVUID_Core_DrawState_SwapchainCreateBeforeQuery,
-                        "%s called before getting present mode(s) from vkGetPhysicalDeviceSurfacePresentModesKHR().", func_name))
-                return true;
-        }
+        uint32_t present_mode_count = 0;
+        DispatchGetPhysicalDeviceSurfacePresentModesKHR(physical_device_state->phys_device, pCreateInfo->surface,
+                                                        &present_mode_count, nullptr);
+        present_modes.resize(present_mode_count);
+        DispatchGetPhysicalDeviceSurfacePresentModesKHR(physical_device_state->phys_device, pCreateInfo->surface,
+                                                        &present_mode_count, &present_modes[0]);
     } else {
-        // Validate pCreateInfo->presentMode against vkGetPhysicalDeviceSurfacePresentModesKHR():
-        bool foundMatch = std::find(physical_device_state->present_modes.begin(), physical_device_state->present_modes.end(),
-                                    pCreateInfo->presentMode) != physical_device_state->present_modes.end();
-        if (!foundMatch) {
-            if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        "VUID-VkSwapchainCreateInfoKHR-presentMode-01281", "%s called with a non-supported presentMode (i.e. %s).",
-                        func_name, string_VkPresentModeKHR(pCreateInfo->presentMode)))
-                return true;
-        }
+        present_modes_ref = &physical_device_state->present_modes;
     }
+
+    // Validate pCreateInfo->presentMode against vkGetPhysicalDeviceSurfacePresentModesKHR():
+    bool foundMatch =
+        std::find(present_modes_ref->begin(), present_modes_ref->end(), pCreateInfo->presentMode) != present_modes_ref->end();
+    if (!foundMatch) {
+        if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                    "VUID-VkSwapchainCreateInfoKHR-presentMode-01281", "%s called with a non-supported presentMode (i.e. %s).",
+                    func_name, string_VkPresentModeKHR(pCreateInfo->presentMode)))
+            return true;
+    }
+
     // Validate state for shared presentable case
     if (VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR == pCreateInfo->presentMode ||
         VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR == pCreateInfo->presentMode) {
