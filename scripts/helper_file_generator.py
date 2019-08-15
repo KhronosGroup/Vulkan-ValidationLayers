@@ -1041,7 +1041,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:\n'
                     '        if (descriptorCount && in_struct->pImageInfo) {\n'
                     '            pImageInfo = new VkDescriptorImageInfo[descriptorCount];\n'
-                    '            for (uint32_t i=0; i<descriptorCount; ++i) {\n'
+                    '            for (uint32_t i = 0; i < descriptorCount; ++i) {\n'
                     '                pImageInfo[i] = in_struct->pImageInfo[i];\n'
                     '            }\n'
                     '        }\n'
@@ -1052,7 +1052,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:\n'
                     '        if (descriptorCount && in_struct->pBufferInfo) {\n'
                     '            pBufferInfo = new VkDescriptorBufferInfo[descriptorCount];\n'
-                    '            for (uint32_t i=0; i<descriptorCount; ++i) {\n'
+                    '            for (uint32_t i = 0; i < descriptorCount; ++i) {\n'
                     '                pBufferInfo[i] = in_struct->pBufferInfo[i];\n'
                     '            }\n'
                     '        }\n'
@@ -1061,7 +1061,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:\n'
                     '        if (descriptorCount && in_struct->pTexelBufferView) {\n'
                     '            pTexelBufferView = new VkBufferView[descriptorCount];\n'
-                    '            for (uint32_t i=0; i<descriptorCount; ++i) {\n'
+                    '            for (uint32_t i = 0; i < descriptorCount; ++i) {\n'
                     '                pTexelBufferView[i] = in_struct->pTexelBufferView[i];\n'
                     '            }\n'
                     '        }\n'
@@ -1078,7 +1078,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                 'VkGraphicsPipelineCreateInfo' :
                     '    if (stageCount && in_struct->pStages) {\n'
                     '        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];\n'
-                    '        for (uint32_t i=0; i<stageCount; ++i) {\n'
+                    '        for (uint32_t i = 0; i < stageCount; ++i) {\n'
                     '            pStages[i].initialize(&in_struct->pStages[i]);\n'
                     '        }\n'
                     '    }\n'
@@ -1092,7 +1092,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '        pInputAssemblyState = NULL;\n'
                     '    bool has_tessellation_stage = false;\n'
                     '    if (stageCount && pStages)\n'
-                    '        for (uint32_t i=0; i<stageCount && !has_tessellation_stage; ++i)\n'
+                    '        for (uint32_t i = 0; i < stageCount && !has_tessellation_stage; ++i)\n'
                     '            if (pStages[i].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || pStages[i].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)\n'
                     '                has_tessellation_stage = true;\n'
                     '    if (in_struct->pTessellationState && has_tessellation_stage)\n'
@@ -1155,7 +1155,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '    const bool sampler_type = in_struct->descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER || in_struct->descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;\n'
                     '    if (descriptorCount && in_struct->pImmutableSamplers && sampler_type) {\n'
                     '        pImmutableSamplers = new VkSampler[descriptorCount];\n'
-                    '        for (uint32_t i=0; i<descriptorCount; ++i) {\n'
+                    '        for (uint32_t i = 0; i < descriptorCount; ++i) {\n'
                     '            pImmutableSamplers[i] = in_struct->pImmutableSamplers[i];\n'
                     '        }\n'
                     '    }\n',
@@ -1167,7 +1167,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '    pNext = SafePnextCopy(src.pNext);\n'
                     '    if (stageCount && src.pStages) {\n'
                     '        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];\n'
-                    '        for (uint32_t i=0; i<stageCount; ++i) {\n'
+                    '        for (uint32_t i = 0; i < stageCount; ++i) {\n'
                     '            pStages[i].initialize(&src.pStages[i]);\n'
                     '        }\n'
                     '    }\n'
@@ -1181,7 +1181,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '        pInputAssemblyState = NULL;\n'
                     '    bool has_tessellation_stage = false;\n'
                     '    if (stageCount && pStages)\n'
-                    '        for (uint32_t i=0; i<stageCount && !has_tessellation_stage; ++i)\n'
+                    '        for (uint32_t i = 0; i < stageCount && !has_tessellation_stage; ++i)\n'
                     '            if (pStages[i].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || pStages[i].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)\n'
                     '                has_tessellation_stage = true;\n'
                     '    if (src.pTessellationState && has_tessellation_stage)\n'
@@ -1293,7 +1293,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                     if member.len is None:
                         # Extract length of static array by grabbing val between []
                         static_array_size = re.match(r"[^[]*\[([^]]*)\]", member.cdecl)
-                        construct_txt += '    for (uint32_t i=0; i<%s; ++i) {\n' % static_array_size.group(1)
+                        construct_txt += '    for (uint32_t i = 0; i < %s; ++i) {\n' % static_array_size.group(1)
                         construct_txt += '        %s[i] = in_struct->%s[i];\n' % (member.name, member.name)
                         construct_txt += '    }\n'
                     else:
@@ -1310,7 +1310,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                         construct_txt += '        %s = new %s[%s];\n' % (member.name, m_type, member.len)
                         destruct_txt += '    if (%s)\n' % member.name
                         destruct_txt += '        delete[] %s;\n' % member.name
-                        construct_txt += '        for (uint32_t i=0; i<%s; ++i) {\n' % (member.len)
+                        construct_txt += '        for (uint32_t i = 0; i < %s; ++i) {\n' % (member.len)
                         if 'safe_' in m_type:
                             construct_txt += '            %s[i].initialize(&in_struct->%s[i]);\n' % (member.name, member.name)
                         else:
