@@ -2296,6 +2296,21 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
             skip |= validate_reserved_flags(cmd_name, "pBeginInfo->pInheritanceInfo->pipelineStatistics", pInfo->pipelineStatistics,
                                             "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-00058");
         }
+
+        const auto *conditional_rendering = lvl_find_in_chain<VkCommandBufferInheritanceConditionalRenderingInfoEXT>(pInfo->pNext);
+        if (conditional_rendering) {
+            const auto *cr_features =
+                lvl_find_in_chain<VkPhysicalDeviceConditionalRenderingFeaturesEXT>(physical_device_features2.pNext);
+            const auto inherited_conditional_rendering = cr_features && cr_features->inheritedConditionalRendering;
+            if (!inherited_conditional_rendering && conditional_rendering->conditionalRenderingEnable == VK_TRUE) {
+                skip |= log_msg(
+                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                    HandleToUint64(commandBuffer),
+                    "VUID-VkCommandBufferInheritanceConditionalRenderingInfoEXT-conditionalRenderingEnable-01977",
+                    "vkBeginCommandBuffer: Inherited conditional rendering is disabled, but "
+                    "pBeginInfo->pInheritanceInfo->pNext<VkCommandBufferInheritanceConditionalRenderingInfoEXT> is VK_TRUE.");
+            }
+        }
     }
 
     return skip;
