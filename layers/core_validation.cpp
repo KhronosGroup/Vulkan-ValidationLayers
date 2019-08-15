@@ -4286,7 +4286,7 @@ bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle
 void ValidationStateTracker::InsertMemoryRange(const VulkanTypedHandle &typed_handle, DEVICE_MEMORY_STATE *mem_info,
                                                VkDeviceSize memoryOffset, VkMemoryRequirements memRequirements, bool is_linear) {
     if (typed_handle.type == kVulkanObjectTypeImage) {
-        mem_info->bound_images.insert(typed_handle.handle);
+        mem_info->bound_images.insert(typed_handle.Cast<VkImage>());
     } else if (typed_handle.type == kVulkanObjectTypeBuffer) {
         mem_info->bound_buffers.insert(typed_handle.handle);
     } else if (typed_handle.type == kVulkanObjectTypeAccelerationStructureNV) {
@@ -4329,29 +4329,29 @@ void ValidationStateTracker::InsertAccelerationStructureMemoryRange(VkAccelerati
 }
 
 // This function will remove the handle-to-index mapping from the appropriate map.
-static void RemoveMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE *mem_info, VulkanObjectType object_type) {
-    if (object_type == kVulkanObjectTypeImage) {
-        mem_info->bound_images.erase(handle);
-    } else if (object_type == kVulkanObjectTypeBuffer) {
-        mem_info->bound_buffers.erase(handle);
-    } else if (object_type == kVulkanObjectTypeAccelerationStructureNV) {
-        mem_info->bound_acceleration_structures.erase(handle);
+static void RemoveMemoryRange(const VulkanTypedHandle &typed_handle, DEVICE_MEMORY_STATE *mem_info) {
+    if (typed_handle.type == kVulkanObjectTypeImage) {
+        mem_info->bound_images.erase(typed_handle.Cast<VkImage>());
+    } else if (typed_handle.type == kVulkanObjectTypeBuffer) {
+        mem_info->bound_buffers.erase(typed_handle.handle);
+    } else if (typed_handle.type == kVulkanObjectTypeAccelerationStructureNV) {
+        mem_info->bound_acceleration_structures.erase(typed_handle.handle);
     } else {
         // Unsupported object type
         assert(false);
     }
 }
 
-void ValidationStateTracker::RemoveBufferMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE *mem_info) {
-    RemoveMemoryRange(handle, mem_info, kVulkanObjectTypeBuffer);
+void ValidationStateTracker::RemoveBufferMemoryRange(VkBuffer buffer, DEVICE_MEMORY_STATE *mem_info) {
+    RemoveMemoryRange(VulkanTypedHandle(buffer, kVulkanObjectTypeBuffer), mem_info);
 }
 
-void ValidationStateTracker::RemoveImageMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE *mem_info) {
-    RemoveMemoryRange(handle, mem_info, kVulkanObjectTypeImage);
+void ValidationStateTracker::RemoveImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE *mem_info) {
+    RemoveMemoryRange(VulkanTypedHandle(image, kVulkanObjectTypeImage), mem_info);
 }
 
-void ValidationStateTracker::RemoveAccelerationStructureMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE *mem_info) {
-    RemoveMemoryRange(handle, mem_info, kVulkanObjectTypeAccelerationStructureNV);
+void ValidationStateTracker::RemoveAccelerationStructureMemoryRange(VkAccelerationStructureNV as, DEVICE_MEMORY_STATE *mem_info) {
+    RemoveMemoryRange(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureNV), mem_info);
 }
 
 bool CoreChecks::ValidateMemoryTypes(const DEVICE_MEMORY_STATE *mem_info, const uint32_t memory_type_bits, const char *funcName,
@@ -7212,7 +7212,7 @@ void ValidationStateTracker::PreCallRecordDestroyAccelerationStructureNV(VkDevic
         for (auto mem_binding : as_state->GetBoundMemory()) {
             auto mem_info = GetDevMemState(mem_binding);
             if (mem_info) {
-                RemoveAccelerationStructureMemoryRange(HandleToUint64(accelerationStructure), mem_info);
+                RemoveAccelerationStructureMemoryRange(accelerationStructure, mem_info);
             }
         }
         ClearMemoryObjectBindings(obj_struct);

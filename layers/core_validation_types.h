@@ -378,7 +378,8 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
     VkExternalMemoryHandleTypeFlags export_handle_type_flags;
     std::unordered_set<VulkanTypedHandle> obj_bindings;  // objects bound to this memory
     // Convenience vectors of handles to speed up iterating over objects independently
-    std::unordered_set<uint64_t> bound_images;
+    std::unordered_set<VkImage> bound_images;
+    // TODO: Convert the two sets to the correct types.
     std::unordered_set<uint64_t> bound_buffers;
     std::unordered_set<uint64_t> bound_acceleration_structures;
 

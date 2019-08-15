@@ -1599,7 +1599,7 @@ void ValidationStateTracker::PreCallRecordDestroyImage(VkDevice device, VkImage 
     for (auto mem_binding : image_state->GetBoundMemory()) {
         auto mem_info = GetDevMemState(mem_binding);
         if (mem_info) {
-            RemoveImageMemoryRange(obj_struct.handle, mem_info);
+            RemoveImageMemoryRange(image, mem_info);
         }
     }
     ClearMemoryObjectBindings(obj_struct);
@@ -4695,7 +4695,7 @@ void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffe
     for (auto mem_binding : buffer_state->GetBoundMemory()) {
         auto mem_info = GetDevMemState(mem_binding);
         if (mem_info) {
-            RemoveBufferMemoryRange(HandleToUint64(buffer), mem_info);
+            RemoveBufferMemoryRange(buffer, mem_info);
         }
     }
     ClearMemoryObjectBindings(obj_struct);
