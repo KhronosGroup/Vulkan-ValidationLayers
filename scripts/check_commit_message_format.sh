@@ -65,8 +65,8 @@ printf %s "$COMMIT_TEXT" | while IFS='' read -r line; do
     i=$(($chars-1))
     last_char=${line:$i:1}
     # Output error if last char of subject line is not alpha-numeric
-    if [[ ! $last_char =~ [0-9a-zA-Z] ]]; then
-      echo "For the following commit, the last character of the subject line must not be non-alphanumeric."
+    if [[ $last_char =~ [.,] ]]; then
+      echo "For the following commit, the last character of the subject line must not be a period or comma."
       echo "     '$line'"
       success=0
     fi
