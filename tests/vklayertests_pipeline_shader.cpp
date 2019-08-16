@@ -2829,7 +2829,7 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderBadSpecialization) {
 
     const auto set_info = [&](CreatePipelineHelper &helper) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        helper.shader_stages_[0].pSpecializationInfo = &specialization_info;
+        helper.shader_stages_[1].pSpecializationInfo = &specialization_info;
     };
     CreatePipelineHelper::OneshotTest(
         *this, set_info, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
