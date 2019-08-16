@@ -5596,3 +5596,107 @@ TEST_F(VkLayerTest, CreatePipelineCheckDemoteToHelperInvocation) {
     pipe.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle());
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, CreatePipelineCheckLineRasterization) {
+    TEST_DESCRIPTION("Test VK_EXT_line_rasterization state against feature enables.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    std::array<const char *, 1> required_device_extensions = {{VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME}};
+    for (auto device_extension : required_device_extensions) {
+        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
+            m_device_extension_names.push_back(device_extension);
+        } else {
+            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
+            return;
+        }
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vkGetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto line_rasterization_features = lvl_init_struct<VkPhysicalDeviceLineRasterizationFeaturesEXT>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&line_rasterization_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    line_rasterization_features.rectangularLines = VK_FALSE;
+    line_rasterization_features.bresenhamLines = VK_FALSE;
+    line_rasterization_features.smoothLines = VK_FALSE;
+    line_rasterization_features.stippledRectangularLines = VK_FALSE;
+    line_rasterization_features.stippledBresenhamLines = VK_FALSE;
+    line_rasterization_features.stippledSmoothLines = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    CreatePipelineHelper::OneshotTest(
+        *this,
+        [&](CreatePipelineHelper &helper) {
+            helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT;
+            helper.pipe_ms_state_ci_.alphaToCoverageEnable = VK_TRUE;
+        },
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        std::vector<const char *>{"VUID-VkGraphicsPipelineCreateInfo-lineRasterizationMode-02766",
+                                  "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02769"});
+
+    CreatePipelineHelper::OneshotTest(
+        *this,
+        [&](CreatePipelineHelper &helper) {
+            helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT;
+            helper.line_state_ci_.stippledLineEnable = VK_TRUE;
+        },
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        std::vector<const char *>{"VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
+                                  "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02769",
+                                  "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02772"});
+
+    CreatePipelineHelper::OneshotTest(
+        *this,
+        [&](CreatePipelineHelper &helper) {
+            helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT;
+            helper.line_state_ci_.stippledLineEnable = VK_TRUE;
+        },
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        std::vector<const char *>{"VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
+                                  "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02768",
+                                  "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02771"});
+
+    CreatePipelineHelper::OneshotTest(
+        *this,
+        [&](CreatePipelineHelper &helper) {
+            helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT;
+            helper.line_state_ci_.stippledLineEnable = VK_TRUE;
+        },
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        std::vector<const char *>{"VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
+                                  "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02770",
+                                  "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02773"});
+
+    CreatePipelineHelper::OneshotTest(
+        *this,
+        [&](CreatePipelineHelper &helper) {
+            helper.line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT;
+            helper.line_state_ci_.stippledLineEnable = VK_TRUE;
+        },
+        VK_DEBUG_REPORT_ERROR_BIT_EXT,
+        std::vector<const char *>{"VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
+                                  "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02774"});
+
+    PFN_vkCmdSetLineStippleEXT vkCmdSetLineStippleEXT =
+        (PFN_vkCmdSetLineStippleEXT)vkGetDeviceProcAddr(m_device->device(), "vkCmdSetLineStippleEXT");
+    ASSERT_TRUE(vkCmdSetLineStippleEXT != nullptr);
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetLineStippleEXT-lineStippleFactor-02776");
+    vkCmdSetLineStippleEXT(m_commandBuffer->handle(), 0, 0);
+    m_errorMonitor->VerifyFound();
+    vkCmdSetLineStippleEXT(m_commandBuffer->handle(), 1, 1);
+    m_errorMonitor->VerifyFound();
+}

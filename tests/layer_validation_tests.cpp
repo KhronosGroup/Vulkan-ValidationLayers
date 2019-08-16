@@ -796,6 +796,22 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
             pipelineobj.SetInputAssembly(&ia_state);
             break;
         }
+        case BsoFailLineStipple: {
+            pipelineobj.MakeDynamic(VK_DYNAMIC_STATE_LINE_STIPPLE_EXT);
+            VkPipelineInputAssemblyStateCreateInfo ia_state = {};
+            ia_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+            ia_state.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+            pipelineobj.SetInputAssembly(&ia_state);
+
+            VkPipelineRasterizationLineStateCreateInfoEXT line_state = {};
+            line_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO_EXT;
+            line_state.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT;
+            line_state.stippledLineEnable = VK_TRUE;
+            line_state.lineStippleFactor = 0;
+            line_state.lineStipplePattern = 0;
+            pipelineobj.SetLineState(&line_state);
+            break;
+        }
         case BsoFailDepthBias: {
             pipelineobj.MakeDynamic(VK_DYNAMIC_STATE_DEPTH_BIAS);
             VkPipelineRasterizationStateCreateInfo rs_state = {};
@@ -1460,7 +1476,7 @@ void CreatePipelineHelper::InitShaderInfo() {
 
 void CreatePipelineHelper::InitRasterizationInfo() {
     rs_state_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rs_state_ci_.pNext = nullptr;
+    rs_state_ci_.pNext = &line_state_ci_;
     rs_state_ci_.flags = 0;
     rs_state_ci_.depthClampEnable = VK_FALSE;
     rs_state_ci_.rasterizerDiscardEnable = VK_FALSE;
@@ -1469,6 +1485,15 @@ void CreatePipelineHelper::InitRasterizationInfo() {
     rs_state_ci_.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rs_state_ci_.depthBiasEnable = VK_FALSE;
     rs_state_ci_.lineWidth = 1.0F;
+}
+
+void CreatePipelineHelper::InitLineRasterizationInfo() {
+    line_state_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO_EXT;
+    line_state_ci_.pNext = nullptr;
+    line_state_ci_.lineRasterizationMode = VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT;
+    line_state_ci_.stippledLineEnable = VK_FALSE;
+    line_state_ci_.lineStippleFactor = 0;
+    line_state_ci_.lineStipplePattern = 0;
 }
 
 void CreatePipelineHelper::InitBlendStateInfo() {
@@ -1531,6 +1556,7 @@ void CreatePipelineHelper::InitInfo() {
     InitDynamicStateInfo();
     InitShaderInfo();
     InitRasterizationInfo();
+    InitLineRasterizationInfo();
     InitBlendStateInfo();
     InitGraphicsPipelineInfo();
     InitPipelineCacheInfo();
