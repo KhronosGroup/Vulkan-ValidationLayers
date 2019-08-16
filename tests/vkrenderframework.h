@@ -452,6 +452,7 @@ class VkPipelineObj : public vk_testing::Pipeline {
     void SetTessellation(const VkPipelineTessellationStateCreateInfo *te_state);
     void SetViewport(const vector<VkViewport> viewports);
     void SetScissor(const vector<VkRect2D> scissors);
+    void SetLineState(const VkPipelineRasterizationLineStateCreateInfoEXT *line_state);
 
     void InitGraphicsPipelineCreateInfo(VkGraphicsPipelineCreateInfo *gp_ci);
 
@@ -467,6 +468,7 @@ class VkPipelineObj : public vk_testing::Pipeline {
     VkPipelineMultisampleStateCreateInfo m_ms_state;
     VkPipelineTessellationStateCreateInfo const *m_te_state;
     VkPipelineDynamicStateCreateInfo m_pd_state;
+    VkPipelineRasterizationLineStateCreateInfoEXT m_line_state;
     vector<VkDynamicState> m_dynamic_state_enables;
     vector<VkViewport> m_viewports;
     vector<VkRect2D> m_scissors;
