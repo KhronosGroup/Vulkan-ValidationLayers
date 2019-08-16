@@ -1176,5 +1176,7 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer);
 
+    bool manual_PreCallValidateCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
+                                                    uint16_t lineStipplePattern);
 #include "parameter_validation.h"
 };  // Class StatelessValidation

@@ -10348,6 +10348,7 @@ bool StatelessValidation::PreCallValidateCmdSetLineStippleEXT(
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdSetLineStippleEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_ext_line_rasterization) skip |= OutputExtensionError("vkCmdSetLineStippleEXT", VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
     // No xml-driven validation
+    if (!skip) skip |= manual_PreCallValidateCmdSetLineStippleEXT(commandBuffer, lineStippleFactor, lineStipplePattern);
     return skip;
 }
 

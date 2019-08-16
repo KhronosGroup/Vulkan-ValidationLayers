@@ -917,6 +917,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             bool has_dynamic_sample_locations_ext = false;
             bool has_dynamic_exclusive_scissor_nv = false;
             bool has_dynamic_shading_rate_palette_nv = false;
+            bool has_dynamic_line_stipple = false;
             if (pCreateInfos[i].pDynamicState != nullptr) {
                 const auto &dynamic_state_info = *pCreateInfos[i].pDynamicState;
                 for (uint32_t state_index = 0; state_index < dynamic_state_info.dynamicStateCount; ++state_index) {
@@ -930,6 +931,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     if (dynamic_state == VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV) has_dynamic_exclusive_scissor_nv = true;
                     if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV)
                         has_dynamic_shading_rate_palette_nv = true;
+                    if (dynamic_state == VK_DYNAMIC_STATE_LINE_STIPPLE_EXT) has_dynamic_line_stipple = true;
                 }
             }
 
@@ -1599,6 +1601,113 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                 report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                 "VUID-VkPipelineMultisampleStateCreateInfo-minSampleShading-00786",
                                 "vkCreateGraphicsPipelines(): parameter pCreateInfos[%d].pMultisampleState->minSampleShading.", i);
+                        }
+                    }
+
+                    const auto *line_state = lvl_find_in_chain<VkPipelineRasterizationLineStateCreateInfoEXT>(
+                        pCreateInfos[i].pRasterizationState->pNext);
+
+                    if (line_state) {
+                        if ((line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT ||
+                             line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT)) {
+                            if (pCreateInfos[i].pMultisampleState->alphaToCoverageEnable) {
+                                skip |=
+                                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                            "VUID-VkGraphicsPipelineCreateInfo-lineRasterizationMode-02766",
+                                            "vkCreateGraphicsPipelines(): Bresenham/Smooth line rasterization not supported with "
+                                            "pCreateInfos[%d].pMultisampleState->alphaToCoverageEnable == VK_TRUE.",
+                                            i);
+                            }
+                            if (pCreateInfos[i].pMultisampleState->alphaToOneEnable) {
+                                skip |=
+                                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                            "VUID-VkGraphicsPipelineCreateInfo-lineRasterizationMode-02766",
+                                            "vkCreateGraphicsPipelines(): Bresenham/Smooth line rasterization not supported with "
+                                            "pCreateInfos[%d].pMultisampleState->alphaToOneEnable == VK_TRUE.",
+                                            i);
+                            }
+                            if (pCreateInfos[i].pMultisampleState->sampleShadingEnable) {
+                                skip |=
+                                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                            "VUID-VkGraphicsPipelineCreateInfo-lineRasterizationMode-02766",
+                                            "vkCreateGraphicsPipelines(): Bresenham/Smooth line rasterization not supported with "
+                                            "pCreateInfos[%d].pMultisampleState->sampleShadingEnable == VK_TRUE.",
+                                            i);
+                            }
+                        }
+                        if (line_state->stippledLineEnable && !has_dynamic_line_stipple) {
+                            if (line_state->lineStippleFactor < 1 || line_state->lineStippleFactor > 256) {
+                                skip |=
+                                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                            "VUID-VkGraphicsPipelineCreateInfo-stippledLineEnable-02767",
+                                            "vkCreateGraphicsPipelines(): pCreateInfos[%d] lineStippleFactor = %d must be in the "
+                                            "range [1,256].",
+                                            i, line_state->lineStippleFactor);
+                            }
+                        }
+                        const auto *line_features =
+                            lvl_find_in_chain<VkPhysicalDeviceLineRasterizationFeaturesEXT>(physical_device_features2.pNext);
+                        if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT &&
+                            (!line_features || !line_features->rectangularLines)) {
+                            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                            "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02768",
+                                            "vkCreateGraphicsPipelines(): pCreateInfos[%d] lineRasterizationMode = "
+                                            "VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT requires the rectangularLines feature.",
+                                            i);
+                        }
+                        if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT &&
+                            (!line_features || !line_features->bresenhamLines)) {
+                            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                            "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02769",
+                                            "vkCreateGraphicsPipelines(): pCreateInfos[%d] lineRasterizationMode = "
+                                            "VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT requires the bresenhamLines feature.",
+                                            i);
+                        }
+                        if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT &&
+                            (!line_features || !line_features->smoothLines)) {
+                            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                            "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-lineRasterizationMode-02770",
+                                            "vkCreateGraphicsPipelines(): pCreateInfos[%d] lineRasterizationMode = "
+                                            "VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT requires the smoothLines feature.",
+                                            i);
+                        }
+                        if (line_state->stippledLineEnable) {
+                            if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT &&
+                                (!line_features || !line_features->stippledRectangularLines)) {
+                                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
+                                                0, "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02771",
+                                                "vkCreateGraphicsPipelines(): pCreateInfos[%d] lineRasterizationMode = "
+                                                "VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT with stipple requires the "
+                                                "stippledRectangularLines feature.",
+                                                i);
+                            }
+                            if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT &&
+                                (!line_features || !line_features->stippledBresenhamLines)) {
+                                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
+                                                0, "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02772",
+                                                "vkCreateGraphicsPipelines(): pCreateInfos[%d] lineRasterizationMode = "
+                                                "VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT with stipple requires the "
+                                                "stippledBresenhamLines feature.",
+                                                i);
+                            }
+                            if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT &&
+                                (!line_features || !line_features->stippledSmoothLines)) {
+                                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
+                                                0, "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02773",
+                                                "vkCreateGraphicsPipelines(): pCreateInfos[%d] lineRasterizationMode = "
+                                                "VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT with stipple requires the "
+                                                "stippledSmoothLines feature.",
+                                                i);
+                            }
+                            if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT &&
+                                (!line_features || !line_features->stippledSmoothLines || !device_limits.strictLines)) {
+                                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
+                                                0, "VUID-VkPipelineRasterizationLineStateCreateInfoEXT-stippledLineEnable-02774",
+                                                "vkCreateGraphicsPipelines(): pCreateInfos[%d] lineRasterizationMode = "
+                                                "VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT with stipple requires the "
+                                                "stippledRectangularLines and strictLines features.",
+                                                i);
+                            }
                         }
                     }
                 }
@@ -3417,5 +3526,18 @@ bool StatelessValidation::manual_PreCallValidateCreateFramebuffer(VkDevice devic
         skip |= validate_array("vkCreateFramebuffer", "attachmentCount", "pAttachments", pCreateInfo->attachmentCount,
                                &pCreateInfo->pAttachments, false, true, kVUIDUndefined, kVUIDUndefined);
     }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
+                                                                     uint16_t lineStipplePattern) {
+    bool skip = false;
+
+    if (lineStippleFactor < 1 || lineStippleFactor > 256) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetLineStippleEXT-lineStippleFactor-02776",
+                        "vkCmdSetLineStippleEXT::lineStippleFactor=%d is not in [1,256].", lineStippleFactor);
+    }
+
     return skip;
 }

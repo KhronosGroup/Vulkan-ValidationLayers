@@ -774,6 +774,15 @@ bool CoreChecks::ValidateDrawStateFlags(const CMD_BUFFER_STATE *pCB, const PIPEL
         result |= ValidateStatus(pCB, CBSTATUS_INDEX_BUFFER_BOUND, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                  "Index buffer object not bound to this command buffer when Indexed Draw attempted", msg_code);
     }
+    if (pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_LIST ||
+        pPipe->topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP) {
+        const auto *line_state =
+            lvl_find_in_chain<VkPipelineRasterizationLineStateCreateInfoEXT>(pPipe->graphicsPipelineCI.pRasterizationState->pNext);
+        if (line_state && line_state->stippledLineEnable) {
+            result |= ValidateStatus(pCB, CBSTATUS_LINE_STIPPLE_SET, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                     "Dynamic line stipple state not set for this command buffer", msg_code);
+        }
+    }
 
     return result;
 }
@@ -2246,6 +2255,9 @@ CBStatusFlags MakeStaticStateMask(VkPipelineDynamicStateCreateInfo const *ds) {
                     break;
                 case VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV:
                     flags &= ~CBSTATUS_SHADING_RATE_PALETTE_SET;
+                    break;
+                case VK_DYNAMIC_STATE_LINE_STIPPLE_EXT:
+                    flags &= ~CBSTATUS_LINE_STIPPLE_SET;
                     break;
                 default:
                     break;
@@ -7227,6 +7239,28 @@ bool CoreChecks::PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, f
 void ValidationStateTracker::PreCallRecordCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->status |= CBSTATUS_LINE_WIDTH_SET;
+}
+
+bool CoreChecks::PreCallValidateCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
+                                                     uint16_t lineStipplePattern) {
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    assert(cb_state);
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetLineStippleEXT()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetLineStippleEXT-commandBuffer-cmdpool");
+    skip |= ValidateCmd(cb_state, CMD_SETLINESTIPPLEEXT, "vkCmdSetLineStippleEXT()");
+
+    if (cb_state->static_status & CBSTATUS_LINE_STIPPLE_SET) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetLineStippleEXT-None-02775",
+                        "vkCmdSetLineStippleEXT called but pipeline was created without VK_DYNAMIC_STATE_LINE_STIPPLE_EXT flag.");
+    }
+    return skip;
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
+                                                               uint16_t lineStipplePattern) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->status |= CBSTATUS_LINE_STIPPLE_SET;
 }
 
 bool CoreChecks::PreCallValidateCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
