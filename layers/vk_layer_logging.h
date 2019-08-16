@@ -743,18 +743,6 @@ static inline void layer_disable_tmp_debug_messengers(debug_report_data *debug_d
     }
 }
 
-// Checks if the message will get logged. Allows layer to defer collecting & formating data if the message will be discarded.
-static inline bool will_log_msg(debug_report_data *debug_data, VkFlags msg_flags) {
-    VkFlags local_severity = 0;
-    VkFlags local_type = 0;
-    DebugReportFlagsToAnnotFlags(msg_flags, true, &local_severity, &local_type);
-    if (!debug_data || !(debug_data->active_severities & local_severity) || !(debug_data->active_types & local_type)) {
-        // Message is not wanted
-        return false;
-    }
-
-    return true;
-}
 #ifndef WIN32
 static inline int string_sprintf(std::string *output, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 #endif
