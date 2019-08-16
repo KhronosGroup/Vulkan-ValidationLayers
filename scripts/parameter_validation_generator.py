@@ -180,6 +180,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkGetAccelerationStructureHandleNV',
             'vkCmdBuildAccelerationStructureNV',
             'vkCreateFramebuffer',
+            'vkCmdSetLineStippleEXT',
             ]
 
         # Commands to ignore
