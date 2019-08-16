@@ -2884,6 +2884,65 @@ TEST_F(VkLayerTest, CreatePipelineVertexOutputNotConsumed) {
                                       "not consumed by fragment shader");
 }
 
+TEST_F(VkLayerTest, CreatePipelineCheckShaderSpecializationApplied) {
+    TEST_DESCRIPTION(
+        "Make sure specialization constants get applied during shader validation by using a value that breaks compilation.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // Size an array using a specialization constant of default value equal to 1.
+    std::string const fs_src = R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main"
+               OpExecutionMode %main OriginUpperLeft
+               OpSource GLSL 450
+               OpName %main "main"
+               OpName %size "size"
+               OpName %array "array"
+               OpDecorate %size SpecId 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+        %int = OpTypeInt 32 1
+       %size = OpSpecConstant %int 1
+%_arr_float_size = OpTypeArray %float %size
+%_ptr_Function__arr_float_size = OpTypePointer Function %_arr_float_size
+      %int_0 = OpConstant %int 0
+    %float_0 = OpConstant %float 0
+%_ptr_Function_float = OpTypePointer Function %float
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+      %array = OpVariable %_ptr_Function__arr_float_size Function
+         %15 = OpAccessChain %_ptr_Function_float %array %int_0
+               OpStore %15 %float_0
+               OpReturn
+               OpFunctionEnd)";
+    VkShaderObj fs(m_device, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    // Set the specialization constant to 0.
+    const VkSpecializationMapEntry entry = {
+        0,                // id
+        0,                // offset
+        sizeof(uint32_t)  // size
+    };
+    uint32_t data = 0;
+    const VkSpecializationInfo specialization_info = {
+        1,
+        &entry,
+        1 * sizeof(uint32_t),
+        &data,
+    };
+
+    const auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        helper.shader_stages_[1].pSpecializationInfo = &specialization_info;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "does not contain valid spirv");
+}
+
 TEST_F(VkLayerTest, CreatePipelineCheckShaderBadSpecializationOffsetOutOfBounds) {
     TEST_DESCRIPTION("Challenge core_validation with shader validation issues related to vkCreateGraphicsPipelines.");
 
@@ -5101,8 +5160,12 @@ TEST_F(VkLayerTest, CooperativeMatrixNV) {
     pipe.cs_.reset(new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this, "main", false, &specInfo));
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkPipelineShaderStageCreateInfo-module-parameter");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "UNASSIGNED-CoreValidation-Shader-CooperativeMatrixType");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "UNASSIGNED-CoreValidation-Shader-CooperativeMatrixMulAdd");
+    m_errorMonitor->SetUnexpectedError("VUID-VkPipelineShaderStageCreateInfo-module-parameter");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
