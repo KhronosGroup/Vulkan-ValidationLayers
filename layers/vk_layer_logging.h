@@ -222,8 +222,8 @@ static inline void DebugReportFlagsToAnnotFlags(VkDebugReportFlagsEXT dr_flags, 
                                                 VkDebugUtilsMessageTypeFlagsEXT *da_type) {
     *da_severity = 0;
     *da_type = 0;
-    // If it's explicitly listed as a performance warning, treat it as a performance message.
-    // Otherwise, treat it as a validation issue.
+    // If it's explicitly listed as a performance warning, treat it as a performance message. Otherwise, treat it as a validation
+    // issue.
     if ((dr_flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT) != 0) {
         *da_type |= VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         *da_severity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
@@ -609,8 +609,7 @@ static inline void layer_debug_utils_destroy_instance(debug_report_data *debug_d
 }
 
 static inline debug_report_data *layer_debug_utils_create_device(debug_report_data *instance_debug_data, VkDevice device) {
-    // DEBUG_REPORT shares data between Instance and Device,
-    // so just return instance's data pointer
+    // DEBUG_REPORT shares data between Instance and Device, so just return instance's data pointer
     return instance_debug_data;
 }
 
@@ -739,11 +738,9 @@ static inline PFN_vkVoidFunction debug_utils_get_instance_proc_addr(debug_report
     return NULL;
 }
 
-// This utility (called at vkCreateInstance() time), looks at a pNext chain.
-// It counts any VkDebugUtilsMessengerCreateInfoEXT structs that it finds.  It
-// then allocates an array that can hold that many structs, as well as that
-// many VkDebugUtilsMessengerEXT handles.  It then copies each
-// VkDebugUtilsMessengerCreateInfoEXT, and initializes each handle.
+// This utility (called at vkCreateInstance() time), looks at a pNext chain. It counts any VkDebugUtilsMessengerCreateInfoEXT
+// structs that it finds.  It then allocates an array that can hold that many structs, as well as that  many
+// VkDebugUtilsMessengerEXT handles.  It then copies each VkDebugUtilsMessengerCreateInfoEXT, and initializes each handle.
 static inline VkResult layer_copy_tmp_debug_messengers(const void *pChain, uint32_t *num_messengers,
                                                        VkDebugUtilsMessengerCreateInfoEXT **infos,
                                                        VkDebugUtilsMessengerEXT **messengers) {
@@ -774,9 +771,8 @@ static inline VkResult layer_copy_tmp_debug_messengers(const void *pChain, uint3
         free(pInfos);
         return VK_ERROR_OUT_OF_HOST_MEMORY;
     }
-    // 4th, copy each VkDebugUtilsMessengerCreateInfoEXT for use by
-    // vkDestroyInstance, and assign a unique handle to each callback (just
-    // use the address of the copied VkDebugUtilsMessengerCreateInfoEXT):
+    // 4th, copy each VkDebugUtilsMessengerCreateInfoEXT for use by vkDestroyInstance, and assign a unique handle to each callback
+    // (just use the address of the copied VkDebugUtilsMessengerCreateInfoEXT):
     pNext = pChain;
     while (pNext) {
         if (((VkInstanceCreateInfo *)pNext)->sType == VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT) {
@@ -797,8 +793,7 @@ static inline void layer_free_tmp_debug_messengers(VkDebugUtilsMessengerCreateIn
     free(messengers);
 }
 
-// This utility enables all of the VkDebugUtilsMessengerCreateInfoEXT structs
-// that were copied by layer_copy_tmp_debug_messengers()
+// This utility enables all of the VkDebugUtilsMessengerCreateInfoEXT structs that were copied by layer_copy_tmp_debug_messengers()
 static inline VkResult layer_enable_tmp_debug_messengers(debug_report_data *debug_data, uint32_t num_messengers,
                                                          VkDebugUtilsMessengerCreateInfoEXT *infos,
                                                          VkDebugUtilsMessengerEXT *messengers) {
@@ -815,8 +810,7 @@ static inline VkResult layer_enable_tmp_debug_messengers(debug_report_data *debu
     return rtn;
 }
 
-// This utility disables all of the VkDebugUtilsMessengerCreateInfoEXT structs
-// that were copied by layer_copy_tmp_debug_messengers()
+// This utility disables all of the VkDebugUtilsMessengerCreateInfoEXT structs that were copied by layer_copy_tmp_debug_messengers()
 static inline void layer_disable_tmp_debug_messengers(debug_report_data *debug_data, uint32_t num_messengers,
                                                       VkDebugUtilsMessengerEXT *messengers) {
     for (uint32_t i = 0; i < num_messengers; i++) {
@@ -824,9 +818,7 @@ static inline void layer_disable_tmp_debug_messengers(debug_report_data *debug_d
     }
 }
 
-// Checks if the message will get logged.
-// Allows layer to defer collecting & formating data if the
-// message will be discarded.
+// Checks if the message will get logged. Allows layer to defer collecting & formating data if the message will be discarded.
 static inline bool will_log_msg(debug_report_data *debug_data, VkFlags msg_flags) {
     VkFlags local_severity = 0;
     VkFlags local_type = 0;
@@ -904,8 +896,8 @@ static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flag
 
     // Append the spec error text to the error message, unless it's an UNASSIGNED or UNDEFINED vuid
     if ((vuid_text.find("UNASSIGNED-") == std::string::npos) && (vuid_text.find(kVUIDUndefined) == std::string::npos)) {
-        // Linear search makes no assumptions about the layout of the string table
-        // This is not fast, but it does not need to be at this point in the error reporting path
+        // Linear search makes no assumptions about the layout of the string table. This is not fast, but it does not need to be at
+        // this point in the error reporting path
         uint32_t num_vuids = sizeof(vuid_spec_text) / sizeof(vuid_spec_text_pair);
         const char *spec_text = nullptr;
         for (uint32_t i = 0; i < num_vuids; i++) {
