@@ -39,7 +39,7 @@ void ThreadSafety::PostCallRecordAllocateCommandBuffers(VkDevice device, const V
     // Record mapping from command buffer to command pool
     if(pCommandBuffers) {
         for (uint32_t index = 0; index < pAllocateInfo->commandBufferCount; index++) {
-            auto &bucket = getBucket(pCommandBuffers[index]);
+            auto &bucket = GetBucket(pCommandBuffers[index]);
             std::lock_guard<std::mutex> lock(bucket.command_pool_lock);
             bucket.command_pool_map[pCommandBuffers[index]] = pAllocateInfo->commandPool;
         }
@@ -78,7 +78,7 @@ void ThreadSafety::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPoo
         }
         // Holding the lock for the shortest time while we update the map
         for (uint32_t index = 0; index < commandBufferCount; index++) {
-            auto &bucket = getBucket(pCommandBuffers[index]);
+            auto &bucket = GetBucket(pCommandBuffers[index]);
             std::lock_guard<std::mutex> lock(bucket.command_pool_lock);
             bucket.command_pool_map.erase(pCommandBuffers[index]);
         }
