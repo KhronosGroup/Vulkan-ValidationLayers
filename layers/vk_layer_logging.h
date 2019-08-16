@@ -278,9 +278,6 @@ static inline void RemoveDebugUtilsMessenger(debug_report_data *debug_data, VkLa
                     assert(nullptr != prev_callback);
                     prev_callback->pNext = cur_callback->pNext;
                 }
-                debug_log_msg(debug_data, VK_DEBUG_REPORT_DEBUG_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_EXT,
-                              reinterpret_cast<uint64_t &>(cur_callback->messenger.messenger), 0, "DebugUtilsMessenger",
-                              "Destroyed messenger\n", kVUIDUndefined);
             } else {
                 // If it's not the one we're looking for, just keep the types/severities
                 local_severities |= cur_callback->messenger.messageSeverity;
@@ -332,9 +329,6 @@ static inline void RemoveDebugUtilsMessageCallback(debug_report_data *debug_data
                     assert(nullptr != prev_callback);
                     prev_callback->pNext = cur_callback->pNext;
                 }
-                debug_log_msg(debug_data, VK_DEBUG_REPORT_DEBUG_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_EXT,
-                              reinterpret_cast<uint64_t &>(cur_callback->report.msgCallback), 0, "DebugReport",
-                              "Destroyed callback\n", kVUIDUndefined);
             } else {
                 // If it's not the one we're looking for, just keep the types/severities
                 VkFlags this_severities = 0;
@@ -371,16 +365,6 @@ static inline void RemoveAllMessageCallbacks(debug_report_data *debug_data, VkLa
     VkLayerDbgFunctionNode *current_callback = *list_head;
 
     while (current_callback) {
-        if (!current_callback->is_messenger) {
-            debug_log_msg(debug_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_EXT,
-                          (uint64_t)current_callback->report.msgCallback, 0, "DebugReport",
-                          "Debug Report callbacks not removed before DestroyInstance", kVUIDUndefined);
-        } else {
-            debug_log_msg(debug_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_EXT,
-                          (uint64_t)current_callback->messenger.messenger, 0, "Messenger",
-                          "Debug messengers not removed before DestroyInstance", kVUIDUndefined);
-        }
-
         VkLayerDbgFunctionNode *next_callback = current_callback->pNext;
         free(current_callback);
         current_callback = next_callback;
@@ -519,70 +503,6 @@ static inline void DebugAnnotFlagsToReportFlags(VkDebugUtilsMessageSeverityFlagB
     }
 }
 
-static inline bool debug_messenger_log_msg(const debug_report_data *debug_data,
-                                           VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
-                                           VkDebugUtilsMessageTypeFlagsEXT message_type,
-                                           VkDebugUtilsMessengerCallbackDataEXT *callback_data,
-                                           const VkDebugUtilsMessengerEXT *messenger) {
-    bool bail = false;
-    VkLayerDbgFunctionNode *layer_dbg_node = NULL;
-
-    if (debug_data->debug_callback_list != NULL) {
-        layer_dbg_node = debug_data->debug_callback_list;
-    } else {
-        layer_dbg_node = debug_data->default_debug_callback_list;
-    }
-
-    VkDebugReportFlagsEXT object_flags = 0;
-
-    DebugAnnotFlagsToReportFlags(message_severity, message_type, &object_flags);
-
-    VkDebugUtilsObjectNameInfoEXT object_name_info;
-    object_name_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    object_name_info.pNext = NULL;
-    object_name_info.objectType = VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT;
-    object_name_info.objectHandle = HandleToUint64(*messenger);
-    object_name_info.pObjectName = NULL;
-    callback_data->pObjects = &object_name_info;
-    callback_data->objectCount = 1;
-
-    while (layer_dbg_node) {
-        if (layer_dbg_node->is_messenger && (layer_dbg_node->messenger.messageSeverity & message_severity) &&
-            (layer_dbg_node->messenger.messageType & message_type)) {
-            std::string messenger_label = debug_data->DebugReportGetUtilsObjectName(object_name_info.objectHandle);
-            if (!messenger_label.empty()) {
-                object_name_info.pObjectName = messenger_label.c_str();
-            }
-            if (layer_dbg_node->messenger.pfnUserCallback(message_severity, message_type, callback_data,
-                                                          layer_dbg_node->pUserData)) {
-                bail = true;
-            }
-        } else if (!layer_dbg_node->is_messenger && layer_dbg_node->report.msgFlags & object_flags) {
-            VkDebugReportObjectTypeEXT object_type = convertCoreObjectToDebugReportObject(callback_data->pObjects[0].objectType);
-            std::string marker_label = debug_data->DebugReportGetMarkerObjectName(object_name_info.objectHandle);
-            if (marker_label.empty()) {
-                if (layer_dbg_node->report.pfnMsgCallback(object_flags, object_type, callback_data->pObjects[0].objectHandle, 0,
-                                                          callback_data->messageIdNumber, callback_data->pMessageIdName,
-                                                          callback_data->pMessage, layer_dbg_node->pUserData)) {
-                    bail = true;
-                }
-            } else {
-                std::string newMsg = "SrcObject name = " + marker_label;
-                newMsg.append(" ");
-                newMsg.append(callback_data->pMessage);
-                if (layer_dbg_node->report.pfnMsgCallback(object_flags, object_type, callback_data->pObjects[0].objectHandle, 0,
-                                                          callback_data->messageIdNumber, callback_data->pMessageIdName,
-                                                          newMsg.c_str(), layer_dbg_node->pUserData)) {
-                    bail = true;
-                }
-            }
-        }
-        layer_dbg_node = layer_dbg_node->pNext;
-    }
-
-    return bail;
-}
-
 static inline debug_report_data *debug_utils_create_instance(
     VkLayerInstanceDispatchTable *table, VkInstance inst, uint32_t extension_count,
     const char *const *enabled_extensions)  // layer or extension name to be enabled
@@ -650,21 +570,6 @@ static inline VkResult layer_create_messenger_callback(debug_report_data *debug_
         AddDebugCallbackNode(debug_data, &debug_data->debug_callback_list, pNewDbgFuncNode);
     }
 
-    VkDebugUtilsMessengerCallbackDataEXT callback_data = {};
-    callback_data.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT;
-    callback_data.pNext = NULL;
-    callback_data.flags = 0;
-    callback_data.pMessageIdName = "Layer Internal Message";
-    callback_data.messageIdNumber = 0;
-    callback_data.pMessage = "Added messenger";
-    callback_data.queueLabelCount = 0;
-    callback_data.pQueueLabels = NULL;
-    callback_data.cmdBufLabelCount = 0;
-    callback_data.pCmdBufLabels = NULL;
-    callback_data.objectCount = 0;
-    callback_data.pObjects = NULL;
-    debug_messenger_log_msg(debug_data, VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT,
-                            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT, &callback_data, messenger);
     return VK_SUCCESS;
 }
 
@@ -704,8 +609,6 @@ static inline VkResult layer_create_report_callback(debug_report_data *debug_dat
         AddDebugCallbackNode(debug_data, &debug_data->debug_callback_list, pNewDbgFuncNode);
     }
 
-    debug_log_msg(debug_data, VK_DEBUG_REPORT_DEBUG_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_EXT, (uint64_t)*callback, 0,
-                  "DebugReport", "Added callback", kVUIDUndefined);
     return VK_SUCCESS;
 }
 
