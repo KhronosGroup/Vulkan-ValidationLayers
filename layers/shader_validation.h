@@ -125,6 +125,7 @@ struct SHADER_MODULE_STATE {
     };
     std::unordered_multimap<std::string, EntryPoint> entry_points;
     bool has_valid_spirv;
+    bool has_specialization_constants;
     VkShaderModule vk_shader_module;
     uint32_t gpu_validation_shader_id;
 
@@ -135,7 +136,7 @@ struct SHADER_MODULE_STATE {
         bool has_group_decoration = false;
         bool done = false;
 
-        // Walk through the first part of the SPIR-V module, looking for group decoration instructions.
+        // Walk through the first part of the SPIR-V module, looking for group decoration and specialization constant instructions.
         // Skip the header (5 words).
         auto itr = spirv_inst_iter(src.begin(), src.begin() + 5);
         auto itrend = spirv_inst_iter(src.begin(), src.end());
@@ -146,7 +147,13 @@ struct SHADER_MODULE_STATE {
                 case spv::OpGroupDecorate:
                 case spv::OpGroupMemberDecorate:
                     has_group_decoration = true;
-                    done = true;
+                    break;
+                case spv::OpSpecConstantTrue:
+                case spv::OpSpecConstantFalse:
+                case spv::OpSpecConstant:
+                case spv::OpSpecConstantComposite:
+                case spv::OpSpecConstantOp:
+                    has_specialization_constants = true;
                     break;
                 case spv::OpFunction:
                     // An OpFunction indicates there are no more decorations
