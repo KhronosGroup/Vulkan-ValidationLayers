@@ -2281,16 +2281,14 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
                                    AllVkQueryControlFlagBits, pInfo->queryFlags, kOptionalFlags,
                                    "VUID-VkCommandBufferInheritanceInfo-queryFlags-00057");
         } else {  // !inheritedQueries
-            // TODO: Real VUID should be available when spec 1.1.120 is released
             skip |= validate_reserved_flags(cmd_name, "pBeginInfo->pInheritanceInfo->queryFlags", pInfo->queryFlags,
-                                            kVUID_PVError_ReservedParameter);
+                                            "VUID-VkCommandBufferInheritanceInfo-queryFlags-02788");
         }
 
         if (physical_device_features.pipelineStatisticsQuery) {
-            // TODO: Real VUID should be available when spec 1.1.120 is released
             skip |= validate_flags(cmd_name, "pBeginInfo->pInheritanceInfo->pipelineStatistics", "VkQueryPipelineStatisticFlagBits",
                                    AllVkQueryPipelineStatisticFlagBits, pInfo->pipelineStatistics, kOptionalFlags,
-                                   kVUID_PVError_UnrecognizedValue);
+                                   "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-02789");
         } else {  // !pipelineStatisticsQuery
             skip |= validate_reserved_flags(cmd_name, "pBeginInfo->pInheritanceInfo->pipelineStatistics", pInfo->pipelineStatistics,
                                             "VUID-VkCommandBufferInheritanceInfo-pipelineStatistics-00058");
