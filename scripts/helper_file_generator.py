@@ -460,7 +460,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         safe_struct_helper_header += 'void *SafePnextCopy(const void *pNext);\n'
         safe_struct_helper_header += 'void FreePnextChain(const void *head);\n'
         safe_struct_helper_header += 'void FreePnextChain(void *head);\n'
-        safe_struct_helper_header += 'const char *SafeStringCopy(const char *in_string);\n'
+        safe_struct_helper_header += 'char *SafeStringCopy(const char *in_string);\n'
         safe_struct_helper_header += '\n'
         safe_struct_helper_header += self.GenerateSafeStructHeader()
         return safe_struct_helper_header
@@ -877,7 +877,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         # Construct Safe-struct helper functions
 
         string_copy_proc = '\n\n'
-        string_copy_proc += 'const char *SafeStringCopy(const char *in_string) {\n'
+        string_copy_proc += 'char *SafeStringCopy(const char *in_string) {\n'
         string_copy_proc += '    if (nullptr == in_string) return nullptr;\n'
         string_copy_proc += '    char* dest = new char[std::strlen(in_string) + 1];\n'
         string_copy_proc += '    return std::strcpy(dest, in_string);\n'
@@ -1250,10 +1250,11 @@ class HelperFileOutputGenerator(OutputGenerator):
                             if m_type == 'char':
                                 # Create deep copies of strings
                                 if member.len:
-                                    copy_strings += '    %s = new char *[in_struct->%s];\n' % (member.name, member.len)
+                                    copy_strings += '    char **tmp_%s = new char *[in_struct->%s];\n' % (member.name, member.len)
                                     copy_strings += '    for (uint32_t i = 0; i < %s; ++i) {\n' % member.len
-                                    copy_strings += '        (const_cast<const char **>(%s))[i] = SafeStringCopy(in_struct->%s[i]);\n' % (member.name, member.name)
+                                    copy_strings += '        tmp_%s[i] = SafeStringCopy(in_struct->%s[i]);\n' % (member.name, member.name)
                                     copy_strings += '    }\n'
+                                    copy_strings += '    %s = tmp_%s;\n' % (member.name, member.name)
 
                                     destruct_txt += '    if (%s) {\n' % member.name
                                     destruct_txt += '        for (uint32_t i = 0; i < %s; ++i) {\n' % member.len
