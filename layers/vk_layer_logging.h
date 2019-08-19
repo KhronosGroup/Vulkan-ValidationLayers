@@ -281,14 +281,30 @@ static inline void AddDebugCallbackNode(debug_report_data *debug_data, VkLayerDb
     *list_head = new_node;
 }
 
+static void SetDebugUtilsSeverityFlags(VkLayerDbgFunctionState **list_head, debug_report_data *debug_data) {
+    VkLayerDbgFunctionState *cur_callback = *list_head;
+
+    while (cur_callback) {
+        if (cur_callback->is_messenger) {
+            debug_data->active_severities |= cur_callback->messenger.messageSeverity;
+            debug_data->active_types |= cur_callback->messenger.messageType;
+        } else {
+            VkFlags severities = 0;
+            VkFlags types = 0;
+            DebugReportFlagsToAnnotFlags(cur_callback->report.msgFlags, true, &severities, &types);
+            debug_data->active_severities |= severities;
+            debug_data->active_types |= types;
+        }
+        cur_callback = cur_callback->pNext;
+    }
+}
+
 // Remove specified debug messenger node structure from the specified linked list
 static inline void RemoveDebugUtilsMessenger(debug_report_data *debug_data, VkLayerDbgFunctionState **list_head,
                                              VkDebugUtilsMessengerEXT messenger) {
     VkLayerDbgFunctionState *cur_callback = *list_head;
     VkLayerDbgFunctionState *prev_callback = nullptr;
     bool matched = false;
-    VkFlags local_severities = 0;
-    VkFlags local_types = 0;
 
     while (cur_callback) {
         if (cur_callback->is_messenger) {
@@ -301,18 +317,7 @@ static inline void RemoveDebugUtilsMessenger(debug_report_data *debug_data, VkLa
                     assert(nullptr != prev_callback);
                     prev_callback->pNext = cur_callback->pNext;
                 }
-            } else {
-                // If it's not the one we're looking for, just keep the types/severities
-                local_severities |= cur_callback->messenger.messageSeverity;
-                local_types |= cur_callback->messenger.messageType;
             }
-        } else {
-            // If it's not a messenger, just keep the types/severities
-            VkFlags this_severities = 0;
-            VkFlags this_types = 0;
-            DebugReportFlagsToAnnotFlags(cur_callback->report.msgFlags, true, &this_severities, &this_types);
-            local_severities |= this_severities;
-            local_types |= this_types;
         }
         if (matched) {
             free(cur_callback);
@@ -328,8 +333,8 @@ static inline void RemoveDebugUtilsMessenger(debug_report_data *debug_data, VkLa
             cur_callback = cur_callback->pNext;
         }
     }
-    debug_data->active_severities = local_severities;
-    debug_data->active_types = local_types;
+
+    SetDebugUtilsSeverityFlags(list_head, debug_data);
 }
 
 // Remove specified debug message callback node structure from the specified callback linked list
@@ -338,8 +343,6 @@ static inline void RemoveDebugUtilsMessageCallback(debug_report_data *debug_data
     VkLayerDbgFunctionState *cur_callback = *list_head;
     VkLayerDbgFunctionState *prev_callback = nullptr;
     bool matched = false;
-    VkFlags local_severities = 0;
-    VkFlags local_types = 0;
 
     while (cur_callback) {
         if (!cur_callback->is_messenger) {
@@ -352,18 +355,7 @@ static inline void RemoveDebugUtilsMessageCallback(debug_report_data *debug_data
                     assert(nullptr != prev_callback);
                     prev_callback->pNext = cur_callback->pNext;
                 }
-            } else {
-                // If it's not the one we're looking for, just keep the types/severities
-                VkFlags this_severities = 0;
-                VkFlags this_types = 0;
-                DebugReportFlagsToAnnotFlags(cur_callback->report.msgFlags, true, &this_severities, &this_types);
-                local_severities |= this_severities;
-                local_types |= this_types;
             }
-        } else {
-            // If it's not a callback, just keep the types/severities
-            local_severities |= cur_callback->messenger.messageSeverity;
-            local_types |= cur_callback->messenger.messageType;
         }
         if (matched) {
             free(cur_callback);
@@ -379,8 +371,8 @@ static inline void RemoveDebugUtilsMessageCallback(debug_report_data *debug_data
             cur_callback = cur_callback->pNext;
         }
     }
-    debug_data->active_severities = local_severities;
-    debug_data->active_types = local_types;
+
+    SetDebugUtilsSeverityFlags(list_head, debug_data);
 }
 
 // Removes all debug callback function nodes from the specified callback linked lists and frees their resources
@@ -620,15 +612,12 @@ static inline VkResult layer_create_report_callback(debug_report_data *debug_dat
     pNewDbgFuncNode->report.msgFlags = create_info->flags;
     pNewDbgFuncNode->pUserData = create_info->pUserData;
 
-    VkFlags local_severity = 0;
-    VkFlags local_type = 0;
-    DebugReportFlagsToAnnotFlags(create_info->flags, true, &local_severity, &local_type);
-    debug_data->active_severities |= local_severity;
-    debug_data->active_types |= local_type;
     if (default_callback) {
         AddDebugCallbackNode(debug_data, &debug_data->default_debug_callback_list, pNewDbgFuncNode);
+        SetDebugUtilsSeverityFlags(&debug_data->default_debug_callback_list, debug_data);
     } else {
         AddDebugCallbackNode(debug_data, &debug_data->debug_callback_list, pNewDbgFuncNode);
+        SetDebugUtilsSeverityFlags(&debug_data->debug_callback_list, debug_data);
     }
 
     return VK_SUCCESS;
