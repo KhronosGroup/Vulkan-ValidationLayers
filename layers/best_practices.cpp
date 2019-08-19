@@ -561,3 +561,111 @@ bool BestPractices::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysica
 
     return skip;
 }
+
+bool BestPractices::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
+                                                         VkImage* pSwapchainImages) {
+    bool skip = false;
+
+    auto swapchain_state = GetSwapchainState(swapchain);
+
+    if (swapchain_state && pSwapchainImages) {
+        // Compare the preliminary value of *pSwapchainImageCount with the value this time:
+        if (swapchain_state->vkGetSwapchainImagesKHRState == UNCALLED) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                            HandleToUint64(device), kVUID_Core_Swapchain_PriorCount,
+                            "vkGetSwapchainImagesKHR() called with non-NULL pSwapchainImageCount; but no prior positive value has "
+                            "been seen for pSwapchainImages.");
+        }
+    }
+
+    return skip;
+}
+
+// Common function to handle validation for GetPhysicalDeviceQueueFamilyProperties & 2KHR version
+static bool ValidateCommonGetPhysicalDeviceQueueFamilyProperties(debug_report_data* report_data,
+                                                                 const PHYSICAL_DEVICE_STATE* pd_state,
+                                                                 uint32_t requested_queue_family_property_count, bool qfp_null,
+                                                                 const char* caller_name) {
+    bool skip = false;
+    if (!qfp_null) {
+        // Verify that for each physical device, this command is called first with NULL pQueueFamilyProperties in order to get count
+        if (UNCALLED == pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState) {
+            skip |= log_msg(
+                report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+                HandleToUint64(pd_state->phys_device), kVUID_Core_DevLimit_MissingQueryCount,
+                "%s is called with non-NULL pQueueFamilyProperties before obtaining pQueueFamilyPropertyCount. It is recommended "
+                "to first call %s with NULL pQueueFamilyProperties in order to obtain the maximal pQueueFamilyPropertyCount.",
+                caller_name, caller_name);
+            // Then verify that pCount that is passed in on second call matches what was returned
+        } else if (pd_state->queue_family_known_count != requested_queue_family_property_count) {
+            skip |= log_msg(
+                report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+                HandleToUint64(pd_state->phys_device), kVUID_Core_DevLimit_CountMismatch,
+                "%s is called with non-NULL pQueueFamilyProperties and pQueueFamilyPropertyCount value %" PRIu32
+                ", but the largest previously returned pQueueFamilyPropertyCount for this physicalDevice is %" PRIu32
+                ". It is recommended to instead receive all the properties by calling %s with pQueueFamilyPropertyCount that was "
+                "previously obtained by calling %s with NULL pQueueFamilyProperties.",
+                caller_name, requested_queue_family_property_count, pd_state->queue_family_known_count, caller_name, caller_name);
+        }
+    }
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
+                                                                          uint32_t* pQueueFamilyPropertyCount,
+                                                                          VkQueueFamilyProperties* pQueueFamilyProperties) {
+    const auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
+    assert(physical_device_state);
+    return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(report_data, physical_device_state, *pQueueFamilyPropertyCount,
+                                                                (nullptr == pQueueFamilyProperties),
+                                                                "vkGetPhysicalDeviceQueueFamilyProperties()");
+}
+
+bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
+                                                                           uint32_t* pQueueFamilyPropertyCount,
+                                                                           VkQueueFamilyProperties2KHR* pQueueFamilyProperties) {
+    const auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
+    assert(physical_device_state);
+    return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(report_data, physical_device_state, *pQueueFamilyPropertyCount,
+                                                                (nullptr == pQueueFamilyProperties),
+                                                                "vkGetPhysicalDeviceQueueFamilyProperties2()");
+}
+
+bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                              uint32_t* pQueueFamilyPropertyCount,
+                                                                              VkQueueFamilyProperties2KHR* pQueueFamilyProperties) {
+    auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
+    assert(physical_device_state);
+    return ValidateCommonGetPhysicalDeviceQueueFamilyProperties(report_data, physical_device_state, *pQueueFamilyPropertyCount,
+                                                                (nullptr == pQueueFamilyProperties),
+                                                                "vkGetPhysicalDeviceQueueFamilyProperties2KHR()");
+}
+
+bool BestPractices::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                                      uint32_t* pSurfaceFormatCount,
+                                                                      VkSurfaceFormatKHR* pSurfaceFormats) {
+    if (!pSurfaceFormats) return false;
+    const auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
+    const auto& call_state = physical_device_state->vkGetPhysicalDeviceSurfaceFormatsKHRState;
+    bool skip = false;
+    if (call_state == UNCALLED) {
+        // Since we haven't recorded a preliminary value of *pSurfaceFormatCount, that likely means that the application didn't
+        // previously call this function with a NULL value of pSurfaceFormats:
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+                        HandleToUint64(physicalDevice), kVUID_Core_DevLimit_MustQueryCount,
+                        "vkGetPhysicalDeviceSurfaceFormatsKHR() called with non-NULL pSurfaceFormatCount; but no prior "
+                        "positive value has been seen for pSurfaceFormats.");
+    } else {
+        auto prev_format_count = (uint32_t)physical_device_state->surface_formats.size();
+        if (prev_format_count != *pSurfaceFormatCount) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+                            HandleToUint64(physicalDevice), kVUID_Core_DevLimit_CountMismatch,
+                            "vkGetPhysicalDeviceSurfaceFormatsKHR() called with non-NULL pSurfaceFormatCount, and with "
+                            "pSurfaceFormats set to a value (%u) that is greater than the value (%u) that was returned "
+                            "when pSurfaceFormatCount was NULL.",
+                            *pSurfaceFormatCount, prev_format_count);
+        }
+    }
+    return skip;
+}
