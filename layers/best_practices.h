@@ -87,6 +87,18 @@ class BestPractices : public ValidationStateTracker {
                                     uint32_t groupCountZ);
     bool PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                             uint32_t* pDisplayCount, VkDisplayKHR* pDisplays);
+    bool PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
+                                              VkImage* pSwapchainImages);
+    bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
+                                                               VkQueueFamilyProperties* pQueueFamilyProperties);
+    bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
+                                                                uint32_t* pQueueFamilyPropertyCount,
+                                                                VkQueueFamilyProperties2* pQueueFamilyProperties);
+    bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                   uint32_t* pQueueFamilyPropertyCount,
+                                                                   VkQueueFamilyProperties2* pQueueFamilyProperties);
+    bool PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
+                                                           uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats);
 
    private:
     uint32_t instance_api_version;
