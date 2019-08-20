@@ -1265,14 +1265,14 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBRayTracingShaders) {
         group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
 
         group_create_infos[2].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
-        group_create_infos[2].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
+        group_create_infos[2].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV;
         group_create_infos[2].generalShader = VK_SHADER_UNUSED_NV;
         group_create_infos[2].closestHitShader = 2;
         group_create_infos[2].anyHitShader = 1;
         group_create_infos[2].intersectionShader = 4;
 
         group_create_infos[3].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
-        group_create_infos[3].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
+        group_create_infos[3].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
         group_create_infos[3].generalShader = 5;  // call
         group_create_infos[3].closestHitShader = VK_SHADER_UNUSED_NV;
         group_create_infos[3].anyHitShader = VK_SHADER_UNUSED_NV;
