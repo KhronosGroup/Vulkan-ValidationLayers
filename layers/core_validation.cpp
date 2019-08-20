@@ -2700,7 +2700,6 @@ void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const V
     bufferMap.clear();
     // Queues persist until device is destroyed
     queueMap.clear();
-    layer_debug_utils_destroy_device(device);
 }
 void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     if (!device) return;

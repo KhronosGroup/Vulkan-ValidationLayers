@@ -464,29 +464,11 @@ static inline void layer_debug_utils_destroy_instance(debug_report_data *debug_d
     }
 }
 
-static inline debug_report_data *layer_debug_utils_create_device(debug_report_data *instance_debug_data, VkDevice device) {
-    // DEBUG_REPORT shares data between Instance and Device, so just return instance's data pointer
-    return instance_debug_data;
-}
-
-static inline void layer_debug_utils_destroy_device(VkDevice device) {
-    // Nothing to do since we're using instance data record
-}
-
 template <typename T>
 static inline void layer_destroy_callback(debug_report_data *debug_data, T callback, const VkAllocationCallbacks *allocator) {
     std::unique_lock<std::mutex> lock(debug_data->debug_report_mutex);
     RemoveDebugUtilsCallback(debug_data, debug_data->debug_callback_list, CastToUint64(callback));
     RemoveDebugUtilsCallback(debug_data, debug_data->default_debug_callback_list, CastToUint64(callback));
-}
-static inline void layer_destroy_messenger_callback(debug_report_data *debug_data, VkDebugUtilsMessengerEXT messenger,
-                                                    const VkAllocationCallbacks *allocator) {
-    layer_destroy_callback(debug_data, messenger, allocator);
-}
-
-static inline void layer_destroy_report_callback(debug_report_data *debug_data, VkDebugReportCallbackEXT callback,
-                                                 const VkAllocationCallbacks *allocator) {
-    layer_destroy_callback(debug_data, callback, allocator);
 }
 
 static inline VkResult layer_create_messenger_callback(debug_report_data *debug_data, bool default_callback,
@@ -611,7 +593,7 @@ static inline VkResult layer_enable_tmp_debug_messengers(debug_report_data *debu
         rtn = layer_create_messenger_callback(debug_data, false, &infos[i], NULL, &messengers[i]);
         if (rtn != VK_SUCCESS) {
             for (uint32_t j = 0; j < i; j++) {
-                layer_destroy_messenger_callback(debug_data, messengers[j], NULL);
+                layer_destroy_callback(debug_data, messengers[j], NULL);
             }
             return rtn;
         }
@@ -623,7 +605,7 @@ static inline VkResult layer_enable_tmp_debug_messengers(debug_report_data *debu
 static inline void layer_disable_tmp_debug_messengers(debug_report_data *debug_data, uint32_t num_messengers,
                                                       VkDebugUtilsMessengerEXT *messengers) {
     for (uint32_t i = 0; i < num_messengers; i++) {
-        layer_destroy_messenger_callback(debug_data, messengers[i], NULL);
+        layer_destroy_callback(debug_data, messengers[i], NULL);
     }
 }
 
