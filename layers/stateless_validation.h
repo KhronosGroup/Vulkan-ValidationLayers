@@ -860,13 +860,6 @@ class StatelessValidation : public ValidationObject {
                                                      kMeshShadingPipelineStages | kFragmentDensityStages |
                                                      kConditionalRenderingStages | kCommandProcessingPipelineStages;
 
-        const VkPipelineStageFlags kRayTracingPipelineStages = kCommonStages | VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV;
-        const VkPipelineStageFlags kRayTracingAccellerationStructOpsStages =
-            kCommonStages | VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV;
-        const VkPipelineStageFlags kRayTracingStages = kCommonStages | kRayTracingPipelineStages |
-                                                       kRayTracingAccellerationStructOpsStages | kFragmentDensityStages |
-                                                       kConditionalRenderingStages | kCommandProcessingPipelineStages;
-
         bool skip = false;
 
         const auto IsPipeline = [pCreateInfo](uint32_t subpass, const VkPipelineBindPoint stage) {
@@ -883,18 +876,6 @@ class StatelessValidation : public ValidationObject {
                         "Dependency pDependencies[%" PRIu32
                         "] specifies a %sStageMask that contains stages (%s) that are not part "
                         "of the Graphics pipeline, as specified by the %sSubpass (= %" PRIu32 ") in pipelineBindPoint.",
-                        dependency_index, target, string_VkPipelineStageFlags(stages & ~kGraphicsStages).c_str(), target, subpass);
-        }
-
-        // TODO: Raytracing also allowed here? See https://github.com/KhronosGroup/Vulkan-Docs/issues/1021
-        // There's no harm in validating it even if not sure, I think...
-        const bool is_all_raytracing_stages = (stages & ~kRayTracingStages) == 0;
-        if (IsPipeline(subpass, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) && !is_all_raytracing_stages) {
-            skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT, 0, vuid,
-                        "Dependency pDependencies[%" PRIu32
-                        "] specifies a %sStageMask that contains stages (%s) that are not part "
-                        "of the Ray Tracing pipeline, as specified by the %sSubpass (= %" PRIu32 ") in pipelineBindPoint.",
                         dependency_index, target, string_VkPipelineStageFlags(stages & ~kGraphicsStages).c_str(), target, subpass);
         }
 
