@@ -198,6 +198,7 @@ class LayerChassisOutputGenerator(OutputGenerator):
 
     inline_custom_header_preamble = """
 #define NOMINMAX
+#include <atomic>
 #include <mutex>
 #include <cinttypes>
 #include <stdio.h>
@@ -225,8 +226,8 @@ class LayerChassisOutputGenerator(OutputGenerator):
 #include "vk_typemap_helper.h"
 
 
-extern uint64_t global_unique_id;
-extern std::unordered_map<uint64_t, uint64_t> unique_id_mapping;
+extern std::atomic<uint64_t> global_unique_id;
+extern vl_concurrent_unordered_map<uint64_t, uint64_t, 4> unique_id_mapping;
 """
 
     inline_custom_header_class_definition = """
@@ -346,7 +347,7 @@ class ValidationObject {
 
         // Handle Wrapping Data
         // Reverse map display handles
-        std::unordered_map<VkDisplayKHR, uint64_t> display_id_reverse_mapping;
+        vl_concurrent_unordered_map<VkDisplayKHR, uint64_t, 0> display_id_reverse_mapping;
         // Wrapping Descriptor Template Update structures requires access to the template createinfo structs
         std::unordered_map<uint64_t, std::unique_ptr<TEMPLATE_STATE>> desc_template_createinfo_map;
         struct SubpassesUsageStates {
@@ -362,31 +363,33 @@ class ValidationObject {
         std::unordered_map<VkDescriptorPool, std::unordered_set<VkDescriptorSet>> pool_descriptor_sets_map;
 
 
-        // Unwrap a handle.  Must hold lock.
+        // Unwrap a handle.
         template <typename HandleType>
         HandleType Unwrap(HandleType wrappedHandle) {
-            // TODO: don't use operator[] here.
-            return (HandleType)unique_id_mapping[reinterpret_cast<uint64_t const &>(wrappedHandle)];
+            auto iter = unique_id_mapping.find(reinterpret_cast<uint64_t const &>(wrappedHandle));
+            if (iter == unique_id_mapping.end())
+                return (HandleType)0;
+            return (HandleType)iter->second;
         }
 
-        // Wrap a newly created handle with a new unique ID, and return the new ID -- must hold lock.
+        // Wrap a newly created handle with a new unique ID, and return the new ID.
         template <typename HandleType>
         HandleType WrapNew(HandleType newlyCreatedHandle) {
             auto unique_id = global_unique_id++;
-            unique_id_mapping[unique_id] = reinterpret_cast<uint64_t const &>(newlyCreatedHandle);
+            unique_id_mapping.insert_or_assign(unique_id, reinterpret_cast<uint64_t const &>(newlyCreatedHandle));
             return (HandleType)unique_id;
         }
 
-        // Specialized handling for VkDisplayKHR. Adds an entry to enable reverse-lookup. Must hold lock.
+        // Specialized handling for VkDisplayKHR. Adds an entry to enable reverse-lookup.
         VkDisplayKHR WrapDisplay(VkDisplayKHR newlyCreatedHandle, ValidationObject *map_data) {
             auto unique_id = global_unique_id++;
-            unique_id_mapping[unique_id] = reinterpret_cast<uint64_t const &>(newlyCreatedHandle);
-            map_data->display_id_reverse_mapping[newlyCreatedHandle] = unique_id;
+            unique_id_mapping.insert_or_assign(unique_id, reinterpret_cast<uint64_t const &>(newlyCreatedHandle));
+            map_data->display_id_reverse_mapping.insert_or_assign(newlyCreatedHandle, unique_id);
             return (VkDisplayKHR)unique_id;
         }
 
         // VkDisplayKHR objects don't have a single point of creation, so we need to see if one already exists in the map before
-        // creating another. Must hold lock.
+        // creating another.
         VkDisplayKHR MaybeWrapDisplay(VkDisplayKHR handle, ValidationObject *map_data) {
             // See if this display is already known
             auto it = map_data->display_id_reverse_mapping.find(handle);
@@ -434,10 +437,11 @@ class ValidationObject {
 
 std::unordered_map<void*, ValidationObject*> layer_data_map;
 
-// Global unique object identifier.  All increments must be guarded by a lock.
-uint64_t global_unique_id = 1;
-// Map uniqueID to actual object handle
-std::unordered_map<uint64_t, uint64_t> unique_id_mapping;
+// Global unique object identifier.
+std::atomic<uint64_t> global_unique_id(1ULL);
+// Map uniqueID to actual object handle. Accesses to the map itself are
+// internally synchronized.
+vl_concurrent_unordered_map<uint64_t, uint64_t, 4> unique_id_mapping;
 
 // TODO: This variable controls handle wrapping -- in the future it should be hooked
 //       up to the new VALIDATION_FEATURES extension. Temporarily, control with a compile-time flag.
