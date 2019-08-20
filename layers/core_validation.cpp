@@ -110,10 +110,7 @@ using std::unordered_map;
 using std::unordered_set;
 using std::vector;
 
-// WSI Image Objects bypass usual Image Object creation methods.  A special Memory
-// Object value will be used to identify them internally.
-static const VkDeviceMemory MEMTRACKER_SWAP_CHAIN_IMAGE_KEY = (VkDeviceMemory)(-1);
-// 2nd special memory handle used to flag object as unbound from memory
+// A special memory handle used to flag object as unbound from memory
 static const VkDeviceMemory MEMORY_UNBOUND = VkDeviceMemory(~((uint64_t)(0)) - 1);
 
 // Get the global maps of pending releases
@@ -386,7 +383,7 @@ void ValidationStateTracker::AddCommandBufferBindingImage(CMD_BUFFER_STATE *cb_n
         return;
     }
     // Skip validation if this image was created through WSI
-    if (image_state->binding.mem != MEMTRACKER_SWAP_CHAIN_IMAGE_KEY) {
+    if (image_state->create_from_swapchain == VK_NULL_HANDLE) {
         // First update cb binding for image
         auto image_inserted = cb_node->object_bindings.emplace(image_state->image, kVulkanObjectTypeImage);
         if (image_inserted.second) {
