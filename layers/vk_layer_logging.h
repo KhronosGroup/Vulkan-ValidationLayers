@@ -72,7 +72,6 @@ static const char DECORATE_UNUSED *kVUIDUndefined = "VUID_Undefined";
 
 #undef DECORATE_UNUSED
 
-// Linked list node for tree of debug callbacks
 typedef struct VkDebugReportContent {
     VkDebugReportCallbackEXT msgCallback;
     PFN_vkDebugReportCallbackEXT pfnMsgCallback;
@@ -273,9 +272,9 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
                                  uint64_t src_object, size_t location, const char *layer_prefix, const char *message,
                                  const char *text_vuid);
 
-static void SetDebugUtilsSeverityFlags(std::vector<VkLayerDbgFunctionState> &list_head, debug_report_data *debug_data) {
+static void SetDebugUtilsSeverityFlags(std::vector<VkLayerDbgFunctionState> &callbacks, debug_report_data *debug_data) {
     // For all callback in list, return their complete set of severities and modes
-    for (auto item : list_head) {
+    for (auto item : callbacks) {
         if (item.is_messenger) {
             debug_data->active_severities |= item.messenger.messageSeverity;
             debug_data->active_types |= item.messenger.messageType;
@@ -289,25 +288,25 @@ static void SetDebugUtilsSeverityFlags(std::vector<VkLayerDbgFunctionState> &lis
     }
 }
 
-static inline void RemoveDebugUtilsCallback(debug_report_data *debug_data, std::vector<VkLayerDbgFunctionState> &list_head,
+static inline void RemoveDebugUtilsCallback(debug_report_data *debug_data, std::vector<VkLayerDbgFunctionState> &callbacks,
                                             uint64_t callback) {
-    auto item = list_head.begin();
-    for (item = list_head.begin(); item != list_head.end(); item++) {
+    auto item = callbacks.begin();
+    for (item = callbacks.begin(); item != callbacks.end(); item++) {
         if (item->is_messenger) {
             if (item->messenger.messenger == CastToHandle<VkDebugUtilsMessengerEXT>(callback)) break;
         } else {
             if (item->report.msgCallback == CastToHandle<VkDebugReportCallbackEXT>(callback)) break;
         }
     }
-    if (item != list_head.end()) {
-        list_head.erase(item);
+    if (item != callbacks.end()) {
+        callbacks.erase(item);
     }
-    SetDebugUtilsSeverityFlags(list_head, debug_data);
+    SetDebugUtilsSeverityFlags(callbacks, debug_data);
 }
 
-// Removes all debug callback function nodes from the specified callback linked lists and frees their resources
-static inline void RemoveAllMessageCallbacks(debug_report_data *debug_data, std::vector<VkLayerDbgFunctionState> &list_head) {
-    list_head.clear();
+// Deletes all debug callback function structs
+static inline void RemoveAllMessageCallbacks(debug_report_data *debug_data, std::vector<VkLayerDbgFunctionState> &callbacks) {
+    callbacks.clear();
 }
 
 static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
