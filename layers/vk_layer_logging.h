@@ -289,28 +289,14 @@ static void SetDebugUtilsSeverityFlags(std::vector<VkLayerDbgFunctionState> &lis
     }
 }
 
-// Delete specified debug messenger callback structure
-static inline void RemoveDebugUtilsMessenger(debug_report_data *debug_data, std::vector<VkLayerDbgFunctionState> &list_head,
-                                             VkDebugUtilsMessengerEXT messenger) {
+static inline void RemoveDebugUtilsCallback(debug_report_data *debug_data, std::vector<VkLayerDbgFunctionState> &list_head,
+                                            uint64_t callback) {
     auto item = list_head.begin();
     for (item = list_head.begin(); item != list_head.end(); item++) {
-        if ((item->is_messenger) && item->messenger.messenger == messenger) {
-            break;
-        }
-    }
-    if (item != list_head.end()) {
-        list_head.erase(item);
-    }
-    SetDebugUtilsSeverityFlags(list_head, debug_data);
-}
-
-// Delete specified debug report callback structure
-static inline void RemoveDebugUtilsMessageCallback(debug_report_data *debug_data, std::vector<VkLayerDbgFunctionState> &list_head,
-                                                   VkDebugReportCallbackEXT callback) {
-    auto item = list_head.begin();
-    for (item = list_head.begin(); item != list_head.end(); item++) {
-        if ((!item->is_messenger) && item->report.msgCallback == callback) {
-            break;
+        if (item->is_messenger) {
+            if (item->messenger.messenger == CastToHandle<VkDebugUtilsMessengerEXT>(callback)) break;
+        } else {
+            if (item->report.msgCallback == CastToHandle<VkDebugReportCallbackEXT>(callback)) break;
         }
     }
     if (item != list_head.end()) {
@@ -487,11 +473,20 @@ static inline void layer_debug_utils_destroy_device(VkDevice device) {
     // Nothing to do since we're using instance data record
 }
 
+template <typename T>
+static inline void layer_destroy_callback(debug_report_data *debug_data, T callback, const VkAllocationCallbacks *allocator) {
+    std::unique_lock<std::mutex> lock(debug_data->debug_report_mutex);
+    RemoveDebugUtilsCallback(debug_data, debug_data->debug_callback_list, CastToUint64(callback));
+    RemoveDebugUtilsCallback(debug_data, debug_data->default_debug_callback_list, CastToUint64(callback));
+}
 static inline void layer_destroy_messenger_callback(debug_report_data *debug_data, VkDebugUtilsMessengerEXT messenger,
                                                     const VkAllocationCallbacks *allocator) {
-    std::unique_lock<std::mutex> lock(debug_data->debug_report_mutex);
-    RemoveDebugUtilsMessenger(debug_data, debug_data->debug_callback_list, messenger);
-    RemoveDebugUtilsMessenger(debug_data, debug_data->default_debug_callback_list, messenger);
+    layer_destroy_callback(debug_data, messenger, allocator);
+}
+
+static inline void layer_destroy_report_callback(debug_report_data *debug_data, VkDebugReportCallbackEXT callback,
+                                                 const VkAllocationCallbacks *allocator) {
+    layer_destroy_callback(debug_data, callback, allocator);
 }
 
 static inline VkResult layer_create_messenger_callback(debug_report_data *debug_data, bool default_callback,
@@ -522,13 +517,6 @@ static inline VkResult layer_create_messenger_callback(debug_report_data *debug_
     }
 
     return VK_SUCCESS;
-}
-
-static inline void layer_destroy_report_callback(debug_report_data *debug_data, VkDebugReportCallbackEXT callback,
-                                                 const VkAllocationCallbacks *allocator) {
-    std::unique_lock<std::mutex> lock(debug_data->debug_report_mutex);
-    RemoveDebugUtilsMessageCallback(debug_data, debug_data->debug_callback_list, callback);
-    RemoveDebugUtilsMessageCallback(debug_data, debug_data->default_debug_callback_list, callback);
 }
 
 static inline VkResult layer_create_report_callback(debug_report_data *debug_data, bool default_callback,
