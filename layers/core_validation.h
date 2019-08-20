@@ -1188,7 +1188,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateExecutionModes(SHADER_MODULE_STATE const* src, spirv_inst_iter entrypoint) const;
 
     // Gpu Validation Functions
-    void GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, std::unique_ptr<safe_VkDeviceCreateInfo>& modified_create_info,
+    void GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, safe_VkDeviceCreateInfo* modified_create_info,
                                       VkPhysicalDeviceFeatures* supported_features);
     void GpuPostCallRecordCreateDevice(const CHECK_ENABLED* enables, const VkDeviceCreateInfo* pCreateInfo);
     void GpuPreCallRecordDestroyDevice();
@@ -1587,7 +1587,7 @@ class CoreChecks : public ValidationStateTracker {
                                      const VkAllocationCallbacks* pAllocator, VkDevice* pDevice);
     void PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
-                                   std::unique_ptr<safe_VkDeviceCreateInfo>& modified_create_info);
+                                   safe_VkDeviceCreateInfo* modified_create_info);
     void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                     const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, VkResult result);
     bool PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,

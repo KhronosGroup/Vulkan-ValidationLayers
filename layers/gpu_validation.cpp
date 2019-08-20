@@ -229,16 +229,17 @@ void CoreChecks::ReportSetupProblem(VkDebugReportObjectTypeEXT object_type, uint
 }
 
 // Turn on necessary device features.
-void CoreChecks::GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, std::unique_ptr<safe_VkDeviceCreateInfo> &create_info,
+void CoreChecks::GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, safe_VkDeviceCreateInfo *modified_create_info,
                                               VkPhysicalDeviceFeatures *supported_features) {
     if (supported_features->fragmentStoresAndAtomics || supported_features->vertexPipelineStoresAndAtomics) {
         VkPhysicalDeviceFeatures *features = nullptr;
-        if (create_info->pEnabledFeatures) {
+        if (modified_create_info->pEnabledFeatures) {
             // If pEnabledFeatures, VkPhysicalDeviceFeatures2 in pNext chain is not allowed
-            features = const_cast<VkPhysicalDeviceFeatures *>(create_info->pEnabledFeatures);
+            features = const_cast<VkPhysicalDeviceFeatures *>(modified_create_info->pEnabledFeatures);
         } else {
             VkPhysicalDeviceFeatures2 *features2 = nullptr;
-            features2 = const_cast<VkPhysicalDeviceFeatures2 *>(lvl_find_in_chain<VkPhysicalDeviceFeatures2>(create_info->pNext));
+            features2 =
+                const_cast<VkPhysicalDeviceFeatures2 *>(lvl_find_in_chain<VkPhysicalDeviceFeatures2>(modified_create_info->pNext));
             if (features2) features = &features2->features;
         }
         if (features) {
@@ -249,7 +250,7 @@ void CoreChecks::GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, std::unique_
             new_features.fragmentStoresAndAtomics = supported_features->fragmentStoresAndAtomics;
             new_features.vertexPipelineStoresAndAtomics = supported_features->vertexPipelineStoresAndAtomics;
             delete modified_create_info->pEnabledFeatures;
-            create_info->pEnabledFeatures = new VkPhysicalDeviceFeatures(new_features);
+            modified_create_info->pEnabledFeatures = new VkPhysicalDeviceFeatures(new_features);
         }
     }
 }

@@ -2405,7 +2405,7 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
 
 void CoreChecks::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                           std::unique_ptr<safe_VkDeviceCreateInfo> &modified_create_info) {
+                                           safe_VkDeviceCreateInfo *modified_create_info) {
     // GPU Validation can possibly turn on device features, so give it a chance to change the create info.
     if (enabled.gpu_validation) {
         VkPhysicalDeviceFeatures supported_features;
