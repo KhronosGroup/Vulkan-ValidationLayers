@@ -30,6 +30,7 @@ NC='\033[0m' # No Color
 # Get user-supplied commit message text for applicable commits and insert
 # a unique separator string identifier. The git command returns ONLY the
 # subject line and body for each of the commits.
+TRAVIS_COMMIT_RANGE="${TRAVIS_COMMIT_RANGE/.../..}"
 COMMIT_TEXT=$(git log ${TRAVIS_COMMIT_RANGE} --pretty=format:"XXXNEWLINEXXX"%n%B)
 
 # Bail if there are none
@@ -55,17 +56,17 @@ printf %s "$COMMIT_TEXT" | while IFS='' read -r line; do
   fi
   chars=${#line}
   if [ $current_line -eq 1 ]; then
-    # Subject line should be 50 chars or less (but give some slack here)
-    if [ $chars -gt 54 ]; then
-      echo "The following subject line exceeds 50 characters in length."
+    # Subject line should be 64 chars or less
+    if [ $chars -gt 64 ]; then
+      echo "The following subject line exceeds 64 characters in length."
       echo "     '$line'"
       success=0
     fi
     i=$(($chars-1))
     last_char=${line:$i:1}
     # Output error if last char of subject line is not alpha-numeric
-    if [[ ! $last_char =~ [0-9a-zA-Z] ]]; then
-      echo "For the following commit, the last character of the subject line must not be non-alphanumeric."
+    if [[ $last_char =~ [.,] ]]; then
+      echo "For the following commit, the last character of the subject line must not be a period or comma."
       echo "     '$line'"
       success=0
     fi
@@ -73,6 +74,14 @@ printf %s "$COMMIT_TEXT" | while IFS='' read -r line; do
     prefix=$(echo $line | cut -f1 -d " ")
     if [ "${prefix: -1}" != ":" ]; then
       echo "The following subject line must start with a single word specifying the functional area of the change, followed by a colon and space. I.e., 'layers: Subject line here'"
+      echo "     '$line'"
+      success=0
+    fi
+    # Check if first character after the colon is lower-case
+    subject=$(echo $line | cut -f2 -d " ")
+    firstchar=$(echo ${subject} | cut -c 1)
+    if [[ "${firstchar}" =~ [a-z] ]]; then
+      echo "The first word of the subject line after the ':' character must be capitalized."
       echo "     '$line'"
       success=0
     fi

@@ -20,6 +20,18 @@
  * Author: Tobin Ehlis <tobine@google.com>
  */
 
+// shared_mutex support added in MSVC 2015 update 2
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918
+#include <shared_mutex>
+typedef std::shared_mutex object_lifetime_mutex_t;
+typedef std::shared_lock<object_lifetime_mutex_t> read_object_lifetime_mutex_t;
+typedef std::unique_lock<object_lifetime_mutex_t> write_object_lifetime_mutex_t;
+#else
+typedef std::mutex object_lifetime_mutex_t;
+typedef std::unique_lock<object_lifetime_mutex_t> read_object_lifetime_mutex_t;
+typedef std::unique_lock<object_lifetime_mutex_t> write_object_lifetime_mutex_t;
+#endif
+
 // Suppress unused warning on Linux
 #if defined(__GNUC__)
 #define DECORATE_UNUSED __attribute__((unused))
@@ -71,6 +83,17 @@ typedef std::unordered_map<uint64_t, ObjTrackState *> object_map_type;
 
 class ObjectLifetimes : public ValidationObject {
    public:
+    // Override chassis read/write locks for this validation object
+    // This override takes a deferred lock. i.e. it is not acquired.
+    // This class does its own locking with a shared mutex.
+    virtual std::unique_lock<std::mutex> write_lock() {
+        return std::unique_lock<std::mutex>(validation_object_mutex, std::defer_lock);
+    }
+
+    object_lifetime_mutex_t object_lifetime_mutex;
+    write_object_lifetime_mutex_t write_shared_lock() { return write_object_lifetime_mutex_t(object_lifetime_mutex); }
+    read_object_lifetime_mutex_t read_shared_lock() { return read_object_lifetime_mutex_t(object_lifetime_mutex); }
+
     uint64_t num_objects[kVulkanObjectTypeMax + 1];
     uint64_t num_total_objects;
     // Vector of unordered_maps per object type to hold ObjTrackState info
@@ -96,7 +119,8 @@ class ObjectLifetimes : public ValidationObject {
     void CreateSwapchainImageObject(VkDevice dispatchable_object, VkImage swapchain_image, VkSwapchainKHR swapchain);
     bool ReportUndestroyedObjects(VkDevice device, const std::string &error_code);
     void DestroyUndestroyedObjects(VkDevice device);
-    bool ValidateDeviceObject(uint64_t device_handle, const char *invalid_handle_code, const char *wrong_device_code);
+    bool ValidateDeviceObject(const VulkanTypedHandle &device_typed, const char *invalid_handle_code,
+                              const char *wrong_device_code);
     void DestroyQueueDataStructures(VkDevice device);
     bool ValidateCommandBuffer(VkDevice device, VkCommandPool command_pool, VkCommandBuffer command_buffer);
     bool ValidateDescriptorSet(VkDevice device, VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
@@ -122,7 +146,7 @@ class ObjectLifetimes : public ValidationObject {
         auto object_handle = HandleToUint64(object);
 
         if (object_type == kVulkanObjectTypeDevice) {
-            return ValidateDeviceObject(object_handle, invalid_handle_code, wrong_device_code);
+            return ValidateDeviceObject(VulkanTypedHandle(object, object_type), invalid_handle_code, wrong_device_code);
         }
 
         VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[object_type];
@@ -170,11 +194,6 @@ class ObjectLifetimes : public ValidationObject {
         uint64_t object_handle = HandleToUint64(object);
         bool custom_allocator = (pAllocator != nullptr);
         if (!object_map[object_type].count(object_handle)) {
-            VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[object_type];
-            log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, debug_object_type, object_handle, kVUID_ObjectTracker_Info,
-                    "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64, object_track_index++, object_string[object_type],
-                    object_handle);
-
             ObjTrackState *pNewObjNode = new ObjTrackState;
             pNewObjNode->object_type = object_type;
             pNewObjNode->status = custom_allocator ? OBJSTATUS_CUSTOM_ALLOCATOR : OBJSTATUS_NONE;
@@ -234,12 +253,6 @@ class ObjectLifetimes : public ValidationObject {
             auto item = object_map[object_type].find(object_handle);
             if (item != object_map[object_type].end()) {
                 ObjTrackState *pNode = item->second;
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, debug_object_type, object_handle,
-                                kVUID_ObjectTracker_Info,
-                                "OBJ_STAT Destroy %s obj 0x%" PRIxLEAST64 " (%" PRIu64 " total objs remain & %" PRIu64 " %s objs).",
-                                object_string[object_type], HandleToUint64(object), num_total_objects - 1,
-                                num_objects[pNode->object_type] - 1, object_string[object_type]);
-
                 auto allocated_with_custom = (pNode->status & OBJSTATUS_CUSTOM_ALLOCATOR) ? true : false;
                 if (allocated_with_custom && !custom_allocator && expected_custom_allocator_code != kVUIDUndefined) {
                     // This check only verifies that custom allocation callbacks were provided to both Create and Destroy calls,

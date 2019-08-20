@@ -35,7 +35,7 @@
 #include <vector>
 
 class CoreChecks;
-typedef CoreChecks layer_data;
+class ValidationStateTracker;
 
 // Descriptor Data structures
 namespace cvdescriptorset {
@@ -48,7 +48,6 @@ struct IndexRange {
     uint32_t start;
     uint32_t end;
 };
-typedef std::map<uint32_t, descriptor_req> BindingReqMap;
 
 /*
  * DescriptorSetLayoutDef/DescriptorSetLayout classes
@@ -101,9 +100,6 @@ class DescriptorSetLayoutDef {
     const std::set<uint32_t> &GetSortedBindingSet() const { return non_empty_bindings_; }
     // Return true if given binding is present in this layout
     bool HasBinding(const uint32_t binding) const { return binding_to_index_map_.count(binding) > 0; };
-    // Return true if this DSL Def (referenced by the 1st layout) is compatible with another DSL Def (ref'd from the 2nd layout)
-    // else return false and update error_msg with description of incompatibility
-    bool IsCompatible(VkDescriptorSetLayout, VkDescriptorSetLayout, DescriptorSetLayoutDef const *const, std::string *) const;
     // Return true if binding 1 beyond given exists and has same type, stageFlags & immutable sampler use
     bool IsNextBindingConsistent(const uint32_t) const;
     uint32_t GetIndexFromBinding(uint32_t binding) const;
@@ -130,10 +126,6 @@ class DescriptorSetLayoutDef {
     VkDescriptorBindingFlagsEXT GetDescriptorBindingFlagsFromBinding(const uint32_t binding) const {
         return GetDescriptorBindingFlagsFromIndex(GetIndexFromBinding(binding));
     }
-    uint32_t GetIndexFromGlobalIndex(const uint32_t global_index) const;
-    VkDescriptorType GetTypeFromGlobalIndex(const uint32_t global_index) const {
-        return GetTypeFromIndex(GetIndexFromGlobalIndex(global_index));
-    }
     VkSampler const *GetImmutableSamplerPtrFromBinding(const uint32_t) const;
     VkSampler const *GetImmutableSamplerPtrFromIndex(const uint32_t) const;
     // For a given binding and array index, return the corresponding index into the dynamic offset array
@@ -148,12 +140,10 @@ class DescriptorSetLayoutDef {
     // For a particular binding, get the global index range
     //  This call should be guarded by a call to "HasBinding(binding)" to verify that the given binding exists
     const IndexRange &GetGlobalIndexRangeFromBinding(const uint32_t) const;
+    const cvdescriptorset::IndexRange &GetGlobalIndexRangeFromIndex(uint32_t index) const;
 
     // Helper function to get the next valid binding for a descriptor
     uint32_t GetNextValidBinding(const uint32_t) const;
-    // For a particular binding starting at offset and having update_count descriptors
-    //  updated, verify that for any binding boundaries crossed, the update is consistent
-    bool VerifyUpdateConsistency(uint32_t, uint32_t, uint32_t, const char *, const VkDescriptorSet, std::string *) const;
     bool IsPushDescriptor() const { return GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR; };
 
     struct BindingTypeStats {
@@ -174,8 +164,7 @@ class DescriptorSetLayoutDef {
     std::set<uint32_t> non_empty_bindings_;  // Containing non-emtpy bindings in numerical order
     std::unordered_map<uint32_t, uint32_t> binding_to_index_map_;
     // The following map allows an non-iterative lookup of a binding from a global index...
-    std::map<uint32_t, uint32_t> global_start_to_index_map_;  // The index corresponding for a starting global (descriptor) index
-    std::unordered_map<uint32_t, IndexRange> binding_to_global_index_range_map_;  // range is exclusive of .end
+    std::vector<IndexRange> global_index_range_;  // range is exclusive of .end
     // For a given binding map to associated index in the dynamic offset array
     std::unordered_map<uint32_t, uint32_t> binding_to_dynamic_array_idx_map_;
 
@@ -199,15 +188,11 @@ class DescriptorSetLayout {
    public:
     // Constructors and destructor
     DescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *p_create_info, const VkDescriptorSetLayout layout);
-    // Validate create info - should be called prior to creation
-    static bool ValidateCreateInfo(const debug_report_data *, const VkDescriptorSetLayoutCreateInfo *, const bool, const uint32_t,
-                                   const bool, const VkPhysicalDeviceDescriptorIndexingFeaturesEXT *descriptor_indexing_features,
-                                   const VkPhysicalDeviceInlineUniformBlockFeaturesEXT *inline_uniform_block_features,
-                                   const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props);
     bool HasBinding(const uint32_t binding) const { return layout_id_->HasBinding(binding); }
     // Return true if this layout is compatible with passed in layout from a pipelineLayout,
     //   else return false and update error_msg with description of incompatibility
-    bool IsCompatible(DescriptorSetLayout const *const, std::string *) const;
+    // Return true if this layout is compatible with passed in layout
+    bool IsCompatible(DescriptorSetLayout const *rh_ds_layout) const;
     // Straightforward Get functions
     VkDescriptorSetLayout GetDescriptorSetLayout() const { return layout_; };
     bool IsDestroyed() const { return layout_destroyed_; }
@@ -230,6 +215,7 @@ class DescriptorSetLayout {
         return layout_id_->GetDescriptorSetLayoutBindingPtrFromBinding(binding);
     }
     const std::vector<safe_VkDescriptorSetLayoutBinding> &GetBindings() const { return layout_id_->GetBindings(); }
+    const std::set<uint32_t> &GetSortedBindingSet() const { return layout_id_->GetSortedBindingSet(); }
     uint32_t GetDescriptorCountFromIndex(const uint32_t index) const { return layout_id_->GetDescriptorCountFromIndex(index); }
     uint32_t GetDescriptorCountFromBinding(const uint32_t binding) const {
         return layout_id_->GetDescriptorCountFromBinding(binding);
@@ -246,12 +232,6 @@ class DescriptorSetLayout {
     VkDescriptorBindingFlagsEXT GetDescriptorBindingFlagsFromBinding(const uint32_t binding) const {
         return layout_id_->GetDescriptorBindingFlagsFromBinding(binding);
     }
-    uint32_t GetIndexFromGlobalIndex(const uint32_t global_index) const {
-        return layout_id_->GetIndexFromGlobalIndex(global_index);
-    }
-    VkDescriptorType GetTypeFromGlobalIndex(const uint32_t global_index) const {
-        return GetTypeFromIndex(GetIndexFromGlobalIndex(global_index));
-    }
     VkSampler const *GetImmutableSamplerPtrFromBinding(const uint32_t binding) const {
         return layout_id_->GetImmutableSamplerPtrFromBinding(binding);
     }
@@ -267,18 +247,94 @@ class DescriptorSetLayout {
     const IndexRange &GetGlobalIndexRangeFromBinding(const uint32_t binding) const {
         return layout_id_->GetGlobalIndexRangeFromBinding(binding);
     }
+    const IndexRange &GetGlobalIndexRangeFromIndex(uint32_t index) const { return layout_id_->GetGlobalIndexRangeFromIndex(index); }
+
     // Helper function to get the next valid binding for a descriptor
     uint32_t GetNextValidBinding(const uint32_t binding) const { return layout_id_->GetNextValidBinding(binding); }
-    // For a particular binding starting at offset and having update_count descriptors
-    //  updated, verify that for any binding boundaries crossed, the update is consistent
-    bool VerifyUpdateConsistency(uint32_t current_binding, uint32_t offset, uint32_t update_count, const char *type,
-                                 const VkDescriptorSet set, std::string *error_msg) const {
-        return layout_id_->VerifyUpdateConsistency(current_binding, offset, update_count, type, set, error_msg);
-    }
     bool IsPushDescriptor() const { return layout_id_->IsPushDescriptor(); }
+    bool IsVariableDescriptorCountFromIndex(uint32_t index) const {
+        return !!(GetDescriptorBindingFlagsFromIndex(index) & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT);
+    }
+    bool IsVariableDescriptorCount(uint32_t binding) const {
+        return IsVariableDescriptorCountFromIndex(GetIndexFromBinding(binding));
+    }
 
     using BindingTypeStats = DescriptorSetLayoutDef::BindingTypeStats;
     const BindingTypeStats &GetBindingTypeStats() const { return layout_id_->GetBindingTypeStats(); }
+
+    // Binding Iterator
+    class ConstBindingIterator {
+       public:
+        ConstBindingIterator() = delete;
+        ConstBindingIterator(const ConstBindingIterator &other) = default;
+        ConstBindingIterator &operator=(const ConstBindingIterator &rhs) = default;
+
+        ConstBindingIterator(const DescriptorSetLayout *layout) : layout_(layout), index_(0) { assert(layout); }
+        ConstBindingIterator(const DescriptorSetLayout *layout, uint32_t binding) : ConstBindingIterator(layout) {
+            index_ = layout->GetIndexFromBinding(binding);
+        }
+
+        VkDescriptorSetLayoutBinding const *GetDescriptorSetLayoutBindingPtr() const {
+            return layout_->GetDescriptorSetLayoutBindingPtrFromIndex(index_);
+        }
+        uint32_t GetDescriptorCount() const { return layout_->GetDescriptorCountFromIndex(index_); }
+        VkDescriptorType GetType() const { return layout_->GetTypeFromIndex(index_); }
+        VkShaderStageFlags GetStageFlags() const { return layout_->GetStageFlagsFromIndex(index_); }
+
+        VkDescriptorBindingFlagsEXT GetDescriptorBindingFlags() const {
+            return layout_->GetDescriptorBindingFlagsFromIndex(index_);
+        }
+
+        bool IsVariableDescriptorCount() const { return layout_->IsVariableDescriptorCountFromIndex(index_); }
+
+        VkSampler const *GetImmutableSamplerPtr() const { return layout_->GetImmutableSamplerPtrFromIndex(index_); }
+        const IndexRange &GetGlobalIndexRange() const { return layout_->GetGlobalIndexRangeFromIndex(index_); }
+        bool AtEnd() const { return index_ == layout_->GetBindingCount(); }
+
+        // Return index into dynamic offset array for given binding
+        int32_t GetDynamicOffsetIndex() const {
+            return layout_->GetDynamicOffsetIndexFromBinding(Binding());  //  There is only binding mapped access in layout_
+        }
+
+        bool operator==(const ConstBindingIterator &rhs) { return (index_ = rhs.index_) && (layout_ == rhs.layout_); }
+
+        ConstBindingIterator &operator++() {
+            if (!AtEnd()) {
+                index_++;
+            }
+            return *this;
+        }
+
+        bool IsConsistent(const ConstBindingIterator &other) const {
+            if (AtEnd() || other.AtEnd()) {
+                return false;
+            }
+            const auto *binding_ci = GetDescriptorSetLayoutBindingPtr();
+            const auto *other_binding_ci = other.GetDescriptorSetLayoutBindingPtr();
+            assert((binding_ci != nullptr) && (other_binding_ci != nullptr));
+
+            if ((binding_ci->descriptorType != other_binding_ci->descriptorType) ||
+                (binding_ci->stageFlags != other_binding_ci->stageFlags) ||
+                (!hash_util::similar_for_nullity(binding_ci->pImmutableSamplers, other_binding_ci->pImmutableSamplers)) ||
+                (GetDescriptorBindingFlags() != other.GetDescriptorBindingFlags())) {
+                return false;
+            }
+            return true;
+        }
+
+        const DescriptorSetLayout *Layout() const { return layout_; }
+        uint32_t Binding() const { return layout_->GetBindings()[index_].binding; }
+        ConstBindingIterator Next() {
+            ConstBindingIterator next(*this);
+            ++next;
+            return next;
+        }
+
+       private:
+        const DescriptorSetLayout *layout_;
+        uint32_t index_;
+    };
+    ConstBindingIterator end() const { return ConstBindingIterator(this, GetBindingCount()); }
 
    private:
     VkDescriptorSetLayout layout_;
@@ -302,7 +358,7 @@ class Descriptor {
     virtual void WriteUpdate(const VkWriteDescriptorSet *, const uint32_t) = 0;
     virtual void CopyUpdate(const Descriptor *) = 0;
     // Create binding between resources of this descriptor and given cb_node
-    virtual void UpdateDrawState(layer_data *, GLOBAL_CB_NODE *) = 0;
+    virtual void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) = 0;
     virtual DescriptorClass GetClass() const { return descriptor_class; };
     // Special fast-path check for SamplerDescriptors that are immutable
     virtual bool IsImmutableSampler() const { return false; };
@@ -313,23 +369,28 @@ class Descriptor {
     bool updated;  // Has descriptor been updated?
     DescriptorClass descriptor_class;
 };
-// Shared helper functions - These are useful because the shared sampler image descriptor type
-//  performs common functions with both sampler and image descriptors so they can share their common functions
-bool ValidateSampler(const VkSampler, layer_data *);
-bool ValidateImageUpdate(VkImageView, VkImageLayout, VkDescriptorType, layer_data *, const char *func_name, std::string *,
-                         std::string *);
+
+// Return true if this layout is compatible with passed in layout from a pipelineLayout,
+//   else return false and update error_msg with description of incompatibility
+bool VerifySetLayoutCompatibility(DescriptorSetLayout const *lh_ds_layout, DescriptorSetLayout const *rh_ds_layout,
+                                  std::string *error_msg);
+bool ValidateDescriptorSetLayoutCreateInfo(const debug_report_data *report_data, const VkDescriptorSetLayoutCreateInfo *create_info,
+                                           const bool push_descriptor_ext, const uint32_t max_push_descriptors,
+                                           const bool descriptor_indexing_ext,
+                                           const VkPhysicalDeviceDescriptorIndexingFeaturesEXT *descriptor_indexing_features,
+                                           const VkPhysicalDeviceInlineUniformBlockFeaturesEXT *inline_uniform_block_features,
+                                           const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props);
 
 class SamplerDescriptor : public Descriptor {
    public:
     SamplerDescriptor(const VkSampler *);
     void WriteUpdate(const VkWriteDescriptorSet *, const uint32_t) override;
     void CopyUpdate(const Descriptor *) override;
-    void UpdateDrawState(layer_data *, GLOBAL_CB_NODE *) override;
+    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
     virtual bool IsImmutableSampler() const override { return immutable_; };
     VkSampler GetSampler() const { return sampler_; }
 
    private:
-    // bool ValidateSampler(const VkSampler) const;
     VkSampler sampler_;
     bool immutable_;
 };
@@ -339,7 +400,7 @@ class ImageSamplerDescriptor : public Descriptor {
     ImageSamplerDescriptor(const VkSampler *);
     void WriteUpdate(const VkWriteDescriptorSet *, const uint32_t) override;
     void CopyUpdate(const Descriptor *) override;
-    void UpdateDrawState(layer_data *, GLOBAL_CB_NODE *) override;
+    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
     virtual bool IsImmutableSampler() const override { return immutable_; };
     VkSampler GetSampler() const { return sampler_; }
     VkImageView GetImageView() const { return image_view_; }
@@ -357,7 +418,7 @@ class ImageDescriptor : public Descriptor {
     ImageDescriptor(const VkDescriptorType);
     void WriteUpdate(const VkWriteDescriptorSet *, const uint32_t) override;
     void CopyUpdate(const Descriptor *) override;
-    void UpdateDrawState(layer_data *, GLOBAL_CB_NODE *) override;
+    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
     virtual bool IsStorage() const override { return storage_; }
     VkImageView GetImageView() const { return image_view_; }
     VkImageLayout GetImageLayout() const { return image_layout_; }
@@ -373,7 +434,7 @@ class TexelDescriptor : public Descriptor {
     TexelDescriptor(const VkDescriptorType);
     void WriteUpdate(const VkWriteDescriptorSet *, const uint32_t) override;
     void CopyUpdate(const Descriptor *) override;
-    void UpdateDrawState(layer_data *, GLOBAL_CB_NODE *) override;
+    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
     virtual bool IsStorage() const override { return storage_; }
     VkBufferView GetBufferView() const { return buffer_view_; }
 
@@ -387,7 +448,7 @@ class BufferDescriptor : public Descriptor {
     BufferDescriptor(const VkDescriptorType);
     void WriteUpdate(const VkWriteDescriptorSet *, const uint32_t) override;
     void CopyUpdate(const Descriptor *) override;
-    void UpdateDrawState(layer_data *, GLOBAL_CB_NODE *) override;
+    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
     virtual bool IsDynamic() const override { return dynamic_; }
     virtual bool IsStorage() const override { return storage_; }
     VkBuffer GetBuffer() const { return buffer_; }
@@ -410,7 +471,7 @@ class InlineUniformDescriptor : public Descriptor {
     }
     void WriteUpdate(const VkWriteDescriptorSet *, const uint32_t) override { updated = true; }
     void CopyUpdate(const Descriptor *) override { updated = true; }
-    void UpdateDrawState(layer_data *, GLOBAL_CB_NODE *) override {}
+    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override {}
 };
 
 class AccelerationStructureDescriptor : public Descriptor {
@@ -421,7 +482,7 @@ class AccelerationStructureDescriptor : public Descriptor {
     }
     void WriteUpdate(const VkWriteDescriptorSet *, const uint32_t) override { updated = true; }
     void CopyUpdate(const Descriptor *) override { updated = true; }
-    void UpdateDrawState(layer_data *, GLOBAL_CB_NODE *) override {}
+    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override {}
 };
 
 // Structs to contain common elements that need to be shared between Validate* and Perform* calls below
@@ -432,17 +493,29 @@ struct AllocateDescriptorSetsData {
 };
 // Helper functions for descriptor set functions that cross multiple sets
 // "Validate" will make sure an update is ok without actually performing it
-bool ValidateUpdateDescriptorSets(const debug_report_data *, const layer_data *, uint32_t, const VkWriteDescriptorSet *, uint32_t,
+bool ValidateUpdateDescriptorSets(const debug_report_data *, const CoreChecks *, uint32_t, const VkWriteDescriptorSet *, uint32_t,
                                   const VkCopyDescriptorSet *, const char *func_name);
 // "Perform" does the update with the assumption that ValidateUpdateDescriptorSets() has passed for the given update
-void PerformUpdateDescriptorSets(layer_data *, uint32_t, const VkWriteDescriptorSet *, uint32_t, const VkCopyDescriptorSet *);
+void PerformUpdateDescriptorSets(ValidationStateTracker *, uint32_t, const VkWriteDescriptorSet *, uint32_t,
+                                 const VkCopyDescriptorSet *);
+
+// Core Validation specific validation checks using DescriptorSet and DescriptorSetLayoutAccessors
+// TODO: migrate out of descriptor_set.cpp/h
+// For a particular binding starting at offset and having update_count descriptors
+// updated, verify that for any binding boundaries crossed, the update is consistent
+bool VerifyUpdateConsistency(DescriptorSetLayout::ConstBindingIterator current_binding, uint32_t offset, uint32_t update_count,
+                             const char *type, const VkDescriptorSet set, std::string *error_msg);
+
+// Validate buffer descriptor update info
+bool ValidateBufferUsage(BUFFER_STATE const *buffer_node, VkDescriptorType type, std::string *error_code, std::string *error_msg);
 
 // Helper class to encapsulate the descriptor update template decoding logic
 struct DecodedTemplateUpdate {
     std::vector<VkWriteDescriptorSet> desc_writes;
     std::vector<VkWriteDescriptorSetInlineUniformBlockEXT> inline_infos;
-    DecodedTemplateUpdate(layer_data *device_data, VkDescriptorSet descriptorSet, const TEMPLATE_STATE *template_state,
-                          const void *pData, VkDescriptorSetLayout push_layout = VK_NULL_HANDLE);
+    DecodedTemplateUpdate(const ValidationStateTracker *device_data, VkDescriptorSet descriptorSet,
+                          const TEMPLATE_STATE *template_state, const void *pData,
+                          VkDescriptorSetLayout push_layout = VK_NULL_HANDLE);
 };
 
 /*
@@ -465,15 +538,15 @@ struct DecodedTemplateUpdate {
  */
 class DescriptorSet : public BASE_NODE {
    public:
+    using StateTracker = ValidationStateTracker;
     DescriptorSet(const VkDescriptorSet, const VkDescriptorPool, const std::shared_ptr<DescriptorSetLayout const> &,
-                  uint32_t variable_count, layer_data *);
+                  uint32_t variable_count, StateTracker *);
     ~DescriptorSet();
     // A number of common Get* functions that return data based on layout from which this set was created
     uint32_t GetTotalDescriptorCount() const { return p_layout_->GetTotalDescriptorCount(); };
     uint32_t GetDynamicDescriptorCount() const { return p_layout_->GetDynamicDescriptorCount(); };
     uint32_t GetBindingCount() const { return p_layout_->GetBindingCount(); };
     VkDescriptorType GetTypeFromIndex(const uint32_t index) const { return p_layout_->GetTypeFromIndex(index); };
-    VkDescriptorType GetTypeFromGlobalIndex(const uint32_t index) const { return p_layout_->GetTypeFromGlobalIndex(index); };
     VkDescriptorType GetTypeFromBinding(const uint32_t binding) const { return p_layout_->GetTypeFromBinding(binding); };
     uint32_t GetDescriptorCountFromIndex(const uint32_t index) const { return p_layout_->GetDescriptorCountFromIndex(index); };
     uint32_t GetDescriptorCountFromBinding(const uint32_t binding) const {
@@ -485,54 +558,40 @@ class DescriptorSet : public BASE_NODE {
     }
     // Return true if given binding is present in this set
     bool HasBinding(const uint32_t binding) const { return p_layout_->HasBinding(binding); };
-    // Is this set compatible with the given layout?
-    bool IsCompatible(DescriptorSetLayout const *const, std::string *) const;
-    // For given bindings validate state at time of draw is correct, returning false on error and writing error details into string*
-    bool ValidateDrawState(const std::map<uint32_t, descriptor_req> &, const std::vector<uint32_t> &, GLOBAL_CB_NODE *,
-                           const char *caller, std::string *) const;
-    // For given set of bindings, add any buffers and images that will be updated to their respective unordered_sets & return number
-    // of objects inserted
-    uint32_t GetStorageUpdates(const std::map<uint32_t, descriptor_req> &, std::unordered_set<VkBuffer> *,
-                               std::unordered_set<VkImageView> *) const;
 
     std::string StringifySetAndLayout() const;
-    // Descriptor Update functions. These functions validate state and perform update separately
-    // Validate contents of a push descriptor update
-    bool ValidatePushDescriptorsUpdate(const debug_report_data *report_data, uint32_t write_count,
-                                       const VkWriteDescriptorSet *p_wds, const char *func_name);
+
     // Perform a push update whose contents were just validated using ValidatePushDescriptorsUpdate
     void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *p_wds);
-    // Validate contents of a WriteUpdate
-    bool ValidateWriteUpdate(const debug_report_data *, const VkWriteDescriptorSet *, const char *, std::string *, std::string *);
     // Perform a WriteUpdate whose contents were just validated using ValidateWriteUpdate
     void PerformWriteUpdate(const VkWriteDescriptorSet *);
-    // Validate contents of a CopyUpdate
-    bool ValidateCopyUpdate(const debug_report_data *, const VkCopyDescriptorSet *, const DescriptorSet *, const char *func_name,
-                            std::string *, std::string *);
     // Perform a CopyUpdate whose contents were just validated using ValidateCopyUpdate
     void PerformCopyUpdate(const VkCopyDescriptorSet *, const DescriptorSet *);
 
     const std::shared_ptr<DescriptorSetLayout const> GetLayout() const { return p_layout_; };
+    VkDescriptorSetLayout GetDescriptorSetLayout() const { return p_layout_->GetDescriptorSetLayout(); }
     VkDescriptorSet GetSet() const { return set_; };
     // Return unordered_set of all command buffers that this set is bound to
-    std::unordered_set<GLOBAL_CB_NODE *> GetBoundCmdBuffers() const { return cb_bindings; }
+    std::unordered_set<CMD_BUFFER_STATE *> GetBoundCmdBuffers() const { return cb_bindings; }
     // Bind given cmd_buffer to this descriptor set and
     // update CB image layout map with image/imagesampler descriptor image layouts
-    void UpdateDrawState(GLOBAL_CB_NODE *, const std::map<uint32_t, descriptor_req> &);
+    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *, const std::map<uint32_t, descriptor_req> &);
 
     // Track work that has been bound or validated to avoid duplicate work, important when large descriptor arrays
     // are present
     typedef std::unordered_set<uint32_t> TrackedBindings;
-    static void FilterAndTrackOneBindingReq(const BindingReqMap::value_type &binding_req_pair, const BindingReqMap &in_req,
-                                            BindingReqMap *out_req, TrackedBindings *set);
-    static void FilterAndTrackOneBindingReq(const BindingReqMap::value_type &binding_req_pair, const BindingReqMap &in_req,
-                                            BindingReqMap *out_req, TrackedBindings *set, uint32_t limit);
-    void FilterAndTrackBindingReqs(GLOBAL_CB_NODE *, const BindingReqMap &in_req, BindingReqMap *out_req);
-    void FilterAndTrackBindingReqs(GLOBAL_CB_NODE *, PIPELINE_STATE *, const BindingReqMap &in_req, BindingReqMap *out_req);
-    void ClearCachedDynamicDescriptorValidation(GLOBAL_CB_NODE *cb_state) { cached_validation_[cb_state].dynamic_buffers.clear(); }
-    void ClearCachedValidation(GLOBAL_CB_NODE *cb_state) { cached_validation_.erase(cb_state); }
+    static void FilterOneBindingReq(const BindingReqMap::value_type &binding_req_pair, BindingReqMap *out_req,
+                                    const TrackedBindings &set, uint32_t limit);
+    void FilterBindingReqs(const CMD_BUFFER_STATE &, const PIPELINE_STATE &, const BindingReqMap &in_req,
+                           BindingReqMap *out_req) const;
+    void UpdateValidationCache(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &pipeline,
+                               const BindingReqMap &updated_bindings);
+    void ClearCachedDynamicDescriptorValidation(CMD_BUFFER_STATE *cb_state) {
+        cached_validation_[cb_state].dynamic_buffers.clear();
+    }
+    void ClearCachedValidation(CMD_BUFFER_STATE *cb_state) { cached_validation_.erase(cb_state); }
     // If given cmd_buffer is in the cb_bindings set, remove it
-    void RemoveBoundCommandBuffer(GLOBAL_CB_NODE *cb_node) {
+    void RemoveBoundCommandBuffer(CMD_BUFFER_STATE *cb_node) {
         cb_bindings.erase(cb_node);
         ClearCachedValidation(cb_node);
     }
@@ -540,25 +599,28 @@ class DescriptorSet : public BASE_NODE {
         return p_layout_->GetImmutableSamplerPtrFromBinding(index);
     };
     // For a particular binding, get the global index
-    const IndexRange &GetGlobalIndexRangeFromBinding(const uint32_t binding) const {
+    const IndexRange GetGlobalIndexRangeFromBinding(const uint32_t binding, bool actual_length = false) const {
+        if (actual_length && binding == p_layout_->GetMaxBinding() && IsVariableDescriptorCount(binding)) {
+            IndexRange range = p_layout_->GetGlobalIndexRangeFromBinding(binding);
+            auto diff = GetDescriptorCountFromBinding(binding) - GetVariableDescriptorCount();
+            range.end -= diff;
+            return range;
+        }
         return p_layout_->GetGlobalIndexRangeFromBinding(binding);
     };
     // Return true if any part of set has ever been updated
     bool IsUpdated() const { return some_update_; };
     bool IsPushDescriptor() const { return p_layout_->IsPushDescriptor(); };
-    bool IsVariableDescriptorCount(uint32_t binding) const {
-        return !!(p_layout_->GetDescriptorBindingFlagsFromBinding(binding) &
-                  VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT);
+    bool IsVariableDescriptorCount(uint32_t binding) const { return p_layout_->IsVariableDescriptorCount(binding); }
+    bool IsUpdateAfterBind(uint32_t binding) const {
+        return !!(p_layout_->GetDescriptorBindingFlagsFromBinding(binding) & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT);
     }
     uint32_t GetVariableDescriptorCount() const { return variable_count_; }
     DESCRIPTOR_POOL_STATE *GetPoolState() const { return pool_state_; }
+    const Descriptor *GetDescriptorFromGlobalIndex(const uint32_t index) const { return descriptors_[index].get(); }
+    uint64_t GetChangeCount() const { return change_count_; }
 
    private:
-    bool VerifyWriteUpdateContents(const VkWriteDescriptorSet *, const uint32_t, const char *, std::string *, std::string *) const;
-    bool VerifyCopyUpdateContents(const VkCopyDescriptorSet *, const DescriptorSet *, VkDescriptorType, uint32_t, const char *,
-                                  std::string *, std::string *) const;
-    bool ValidateBufferUsage(BUFFER_STATE const *, VkDescriptorType, std::string *, std::string *) const;
-    bool ValidateBufferUpdate(VkDescriptorBufferInfo const *, VkDescriptorType, const char *, std::string *, std::string *) const;
     // Private helper to set all bound cmd buffers to INVALID state
     void InvalidateBoundCmdBuffers();
     bool some_update_;  // has any part of the set ever been updated?
@@ -566,25 +628,24 @@ class DescriptorSet : public BASE_NODE {
     DESCRIPTOR_POOL_STATE *pool_state_;
     const std::shared_ptr<DescriptorSetLayout const> p_layout_;
     std::vector<std::unique_ptr<Descriptor>> descriptors_;
-    layer_data *device_data_;
-    const VkPhysicalDeviceLimits limits_;
+    StateTracker *state_data_;
     uint32_t variable_count_;
+    uint64_t change_count_;
 
     // Cached binding and validation support:
     //
     // For the lifespan of a given command buffer recording, do lazy evaluation, caching, and dirtying of
     // expensive validation operation (typically per-draw)
-    typedef std::unordered_map<GLOBAL_CB_NODE *, TrackedBindings> TrackedBindingMap;
-    typedef std::unordered_map<PIPELINE_STATE *, TrackedBindingMap> ValidatedBindings;
+    typedef std::unordered_map<CMD_BUFFER_STATE *, TrackedBindings> TrackedBindingMap;
     // Track the validation caching of bindings vs. the command buffer and draw state
-    typedef std::unordered_map<uint32_t, GLOBAL_CB_NODE::ImageLayoutUpdateCount> VersionedBindings;
+    typedef std::unordered_map<uint32_t, CMD_BUFFER_STATE::ImageLayoutUpdateCount> VersionedBindings;
     struct CachedValidation {
-        TrackedBindings command_binding_and_usage;                               // Persistent for the life of the recording
-        TrackedBindings non_dynamic_buffers;                                     // Persistent for the life of the recording
-        TrackedBindings dynamic_buffers;                                         // Dirtied (flushed) each BindDescriptorSet
-        std::unordered_map<PIPELINE_STATE *, VersionedBindings> image_samplers;  // Tested vs. changes to CB's ImageLayout
+        TrackedBindings command_binding_and_usage;                                     // Persistent for the life of the recording
+        TrackedBindings non_dynamic_buffers;                                           // Persistent for the life of the recording
+        TrackedBindings dynamic_buffers;                                               // Dirtied (flushed) each BindDescriptorSet
+        std::unordered_map<const PIPELINE_STATE *, VersionedBindings> image_samplers;  // Tested vs. changes to CB's ImageLayout
     };
-    typedef std::unordered_map<GLOBAL_CB_NODE *, CachedValidation> CachedValidationMap;
+    typedef std::unordered_map<const CMD_BUFFER_STATE *, CachedValidation> CachedValidationMap;
     // Image and ImageView bindings are validated per pipeline and not invalidate by repeated binding
     CachedValidationMap cached_validation_;
 };
@@ -594,10 +655,12 @@ class PrefilterBindRequestMap {
     static const uint32_t kManyDescriptors_ = 64;  // TODO base this number on measured data
     std::unique_ptr<BindingReqMap> filtered_map_;
     const BindingReqMap &orig_map_;
+    const DescriptorSet &descriptor_set_;
 
-    PrefilterBindRequestMap(DescriptorSet &ds, const BindingReqMap &in_map, GLOBAL_CB_NODE *cb_state);
-    PrefilterBindRequestMap(DescriptorSet &ds, const BindingReqMap &in_map, GLOBAL_CB_NODE *cb_state, PIPELINE_STATE *);
-    const BindingReqMap &Map() const { return (filtered_map_) ? *filtered_map_ : orig_map_; }
+    PrefilterBindRequestMap(const DescriptorSet &ds, const BindingReqMap &in_map)
+        : filtered_map_(), orig_map_(in_map), descriptor_set_(ds) {}
+    const BindingReqMap &FilteredMap(const CMD_BUFFER_STATE &cb_state, const PIPELINE_STATE &);
+    bool IsManyDescriptors() const { return descriptor_set_.GetTotalDescriptorCount() > kManyDescriptors_; }
 };
 }  // namespace cvdescriptorset
 #endif  // CORE_VALIDATION_DESCRIPTOR_SETS_H_

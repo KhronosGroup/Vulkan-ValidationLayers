@@ -20,7 +20,10 @@
 #ifndef VULKAN_SHADER_VALIDATION_H
 #define VULKAN_SHADER_VALIDATION_H
 
-#include <spirv_tools_commit_id.h>
+#include <unordered_map>
+
+#include <SPIRV/spirv.hpp>
+#include <generated/spirv_tools_commit_id.h>
 #include "spirv-tools/optimizer.hpp"
 
 // A forward iterator over spirv instructions. Provides easy access to len, opcode, and content words
@@ -29,7 +32,7 @@ struct spirv_inst_iter {
     std::vector<uint32_t>::const_iterator zero;
     std::vector<uint32_t>::const_iterator it;
 
-    uint32_t len() {
+    uint32_t len() const {
         auto result = *it >> 16;
         assert(result > 0);
         return result;
@@ -37,7 +40,7 @@ struct spirv_inst_iter {
 
     uint32_t opcode() { return *it & 0x0ffffu; }
 
-    uint32_t const &word(unsigned n) {
+    uint32_t const &word(unsigned n) const {
         assert(n < len());
         return it[n];
     }
@@ -48,9 +51,9 @@ struct spirv_inst_iter {
 
     spirv_inst_iter(std::vector<uint32_t>::const_iterator zero, std::vector<uint32_t>::const_iterator it) : zero(zero), it(it) {}
 
-    bool operator==(spirv_inst_iter const &other) { return it == other.it; }
+    bool operator==(spirv_inst_iter const &other) const { return it == other.it; }
 
-    bool operator!=(spirv_inst_iter const &other) { return it != other.it; }
+    bool operator!=(spirv_inst_iter const &other) const { return it != other.it; }
 
     spirv_inst_iter operator++(int) {  // x++
         spirv_inst_iter ii = *this;
@@ -68,26 +71,104 @@ struct spirv_inst_iter {
     spirv_inst_iter const &operator*() const { return *this; }
 };
 
-struct shader_module {
+struct decoration_set {
+    enum {
+        location_bit = 1 << 0,
+        patch_bit = 1 << 1,
+        relaxed_precision_bit = 1 << 2,
+        block_bit = 1 << 3,
+        buffer_block_bit = 1 << 4,
+        component_bit = 1 << 5,
+        input_attachment_index_bit = 1 << 6,
+        descriptor_set_bit = 1 << 7,
+        binding_bit = 1 << 8,
+        nonwritable_bit = 1 << 9,
+        builtin_bit = 1 << 10,
+    };
+    uint32_t flags = 0;
+    uint32_t location = static_cast<uint32_t>(-1);
+    uint32_t component = 0;
+    uint32_t input_attachment_index = 0;
+    uint32_t descriptor_set = 0;
+    uint32_t binding = 0;
+    uint32_t builtin = static_cast<uint32_t>(-1);
+
+    void merge(decoration_set const &other) {
+        if (other.flags & location_bit) location = other.location;
+        if (other.flags & component_bit) component = other.component;
+        if (other.flags & input_attachment_index_bit) input_attachment_index = other.input_attachment_index;
+        if (other.flags & descriptor_set_bit) descriptor_set = other.descriptor_set;
+        if (other.flags & binding_bit) binding = other.binding;
+        if (other.flags & builtin_bit) builtin = other.builtin;
+        flags |= other.flags;
+    }
+
+    void add(uint32_t decoration, uint32_t value);
+};
+
+struct SHADER_MODULE_STATE {
     // The spirv image itself
     std::vector<uint32_t> words;
     // A mapping of <id> to the first word of its def. this is useful because walking type
     // trees, constant expressions, etc requires jumping all over the instruction stream.
     std::unordered_map<unsigned, unsigned> def_index;
+    std::unordered_map<unsigned, decoration_set> decorations;
+    struct EntryPoint {
+        uint32_t offset;
+        VkShaderStageFlags stage;
+    };
+    std::unordered_multimap<std::string, EntryPoint> entry_points;
     bool has_valid_spirv;
     VkShaderModule vk_shader_module;
     uint32_t gpu_validation_shader_id;
 
     std::vector<uint32_t> PreprocessShaderBinary(uint32_t *src_binary, size_t binary_size, spv_target_env env) {
-        spvtools::Optimizer optimizer(env);
-        optimizer.RegisterPass(spvtools::CreateFlattenDecorationPass());
-        std::vector<uint32_t> optimized_binary;
-        auto result = optimizer.Run(src_binary, binary_size / sizeof(uint32_t), &optimized_binary);
-        return (result ? optimized_binary : std::vector<uint32_t>(src_binary, src_binary + binary_size / sizeof(uint32_t)));
+        std::vector<uint32_t> src(src_binary, src_binary + binary_size / sizeof(uint32_t));
+
+        // Check if there are any group decoration instructions, and flatten them if found.
+        bool has_group_decoration = false;
+        bool done = false;
+
+        // Walk through the first part of the SPIR-V module, looking for group decoration instructions.
+        // Skip the header (5 words).
+        auto itr = spirv_inst_iter(src.begin(), src.begin() + 5);
+        auto itrend = spirv_inst_iter(src.begin(), src.end());
+        while (itr != itrend && !done) {
+            spv::Op opcode = (spv::Op)itr.opcode();
+            switch (opcode) {
+                case spv::OpDecorationGroup:
+                case spv::OpGroupDecorate:
+                case spv::OpGroupMemberDecorate:
+                    has_group_decoration = true;
+                    done = true;
+                    break;
+                case spv::OpFunction:
+                    // An OpFunction indicates there are no more decorations
+                    done = true;
+                    break;
+                default:
+                    break;
+            }
+            itr++;
+        }
+
+        if (has_group_decoration) {
+            spvtools::Optimizer optimizer(env);
+            optimizer.RegisterPass(spvtools::CreateFlattenDecorationPass());
+            std::vector<uint32_t> optimized_binary;
+            // Run optimizer to flatten decorations only, set skip_validation so as to not re-run validator
+            auto result =
+                optimizer.Run(src_binary, binary_size / sizeof(uint32_t), &optimized_binary, spvtools::ValidatorOptions(), true);
+            if (result) {
+                return optimized_binary;
+            }
+        }
+        // Return the original module.
+        return src;
     }
 
-    shader_module(VkShaderModuleCreateInfo const *pCreateInfo, VkShaderModule shaderModule, spv_target_env env,
-                  uint32_t unique_shader_id)
+    SHADER_MODULE_STATE(VkShaderModuleCreateInfo const *pCreateInfo, VkShaderModule shaderModule, spv_target_env env,
+                        uint32_t unique_shader_id)
         : words(PreprocessShaderBinary((uint32_t *)pCreateInfo->pCode, pCreateInfo->codeSize, env)),
           def_index(),
           has_valid_spirv(true),
@@ -96,7 +177,14 @@ struct shader_module {
         BuildDefIndex();
     }
 
-    shader_module() : has_valid_spirv(false), vk_shader_module(VK_NULL_HANDLE) {}
+    SHADER_MODULE_STATE() : has_valid_spirv(false), vk_shader_module(VK_NULL_HANDLE) {}
+
+    decoration_set get_decorations(unsigned id) const {
+        // return the actual decorations for this id, or a default set.
+        auto it = decorations.find(id);
+        if (it != decorations.end()) return it->second;
+        return decoration_set();
+    }
 
     // Expose begin() / end() to enable range-based for
     spirv_inst_iter begin() const { return spirv_inst_iter(words.begin(), words.begin() + 5); }  // First insn
@@ -205,7 +293,5 @@ class ValidationCache {
         }
     }
 };
-
-typedef std::pair<unsigned, unsigned> descriptor_slot_t;
 
 #endif  // VULKAN_SHADER_VALIDATION_H

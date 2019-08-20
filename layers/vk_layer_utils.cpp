@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2016 The Khronos Group Inc.
- * Copyright (c) 2015-2016 Valve Corporation
- * Copyright (c) 2015-2016 LunarG, Inc.
+/* Copyright (c) 2015-2016, 2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2016, 2019 Valve Corporation
+ * Copyright (c) 2015-2016, 2019 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 #include <map>
+
 #include "vulkan/vulkan.h"
 #include "vk_layer_config.h"
 #include "vk_layer_utils.h"
@@ -138,6 +139,15 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
 
     if (debug_action & VK_DBG_LAYER_ACTION_DEBUG_OUTPUT) {
         dbgCreateInfo.pfnUserCallback = messenger_win32_debug_output_msg;
+        dbgCreateInfo.pUserData = NULL;
+        layer_create_messenger_callback(report_data, default_layer_callback, &dbgCreateInfo, pAllocator, &messenger);
+        logging_messenger.push_back(messenger);
+    }
+
+    messenger = VK_NULL_HANDLE;
+
+    if (debug_action & VK_DBG_LAYER_ACTION_BREAK) {
+        dbgCreateInfo.pfnUserCallback = MessengerBreakCallback;
         dbgCreateInfo.pUserData = NULL;
         layer_create_messenger_callback(report_data, default_layer_callback, &dbgCreateInfo, pAllocator, &messenger);
         logging_messenger.push_back(messenger);

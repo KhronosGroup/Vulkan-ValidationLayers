@@ -12,8 +12,9 @@
 [3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
 
-GPU-Assisted validation is implemented in the SPIR-V Tools optimizer and the `VK_LAYER_LUNARG_core_validation` layer.
-This document covers the design of the layer portion of the implementation.
+GPU-Assisted validation is implemented in the SPIR-V Tools optimizer and the `VK_LAYER_KHRONOS_validation layer (or, in the
+soon-to-be-deprecated `VK_LAYER_LUNARG_core_validation` layer). This document covers the design of the layer portion of the
+implementation.
 
 ## Basic Operation
 
@@ -24,6 +25,9 @@ The layer then reports the errors to the user via the same reporting mechanisms 
 The layer instruments the shaders by passing the shader's SPIR-V bytecode to the SPIR-V optimizer component and
 instructs the optimizer to perform an instrumentation pass to add the additional instructions to perform the run-time checking.
 The layer then passes the resulting modified SPIR-V bytecode to the driver as part of the process of creating a ShaderModule.
+
+The layer also allocates a buffer that describes the length of all descriptor arrays and the write state of each element of each array.
+It only does this if the VK_EXT_descriptor_indexing extension is enabled.
 
 As the shader is executed, the instrumented shader code performs the run-time checks.
 If a check detects an error condition, the instrumentation code writes an error record into the GPU's device memory.
@@ -43,8 +47,8 @@ also provides the line of shader source code that provoked the error as part of 
 The initial release (Jan 2019) of GPU-Assisted Validation includes checking for out-of-bounds descriptor array indexing
 for image/texel descriptor types.
 
-Future releases are planned to add checking for other hazards such as proper population of descriptors when using the
-`descriptorBindingPartiallyBound` feature of the `VK_EXT_descriptor_indexing` extension.
+The second release (Apr 2019) adds validation for out-of-bounds descriptor array indexing and use of unwritten descriptors when the 
+VK_EXT_descriptor_indexing extension is enabled.  Also added (June 2019) was validation for buffer descriptors.
 
 ### Out-of-Bounds(OOB) Descriptor Array Indexing
 
@@ -71,6 +75,18 @@ ERROR : VALIDATION - Message Id Number: 0 | Message Id Name: UNASSIGNED-Image de
         /home/user/src/Vulkan-ValidationLayers/external/Vulkan-Tools/cube/cube.frag at line 45.
 45:    uFragColor = light * texture(tex[tex_ind], texcoord.xy);
 ```
+The VK_EXT_descriptor_indexing extension allows a shader to declare a descriptor array without specifying its size
+```glsl
+layout(set = 0, binding = 1) uniform sampler2D tex[];
+```
+In this case, the layer needs to tell the optimization code how big the descriptor array is so the code can determine what is out of 
+bounds and what is not.
+
+The extension also allows descriptor set bindings to be partially bound, meaning that as long as the shader doesn't use certain
+array elements, those elements are not required to have been written.
+The instrumentation code needs to know which elements of a descriptor array have been written, so that it can tell if one is used
+that has not been written.
+
 
 ## GPU-Assisted Validation Options
 
@@ -102,14 +118,17 @@ To turn on GPU validation, add the following to your layer settings file, which 
 named `vk_layer_settings.txt`.
 
 ```code
-lunarg_core_validation.gpu_validation = all
+khronos_validation.gpu_validation = all
 ```
 
 To turn on GPU validation and request to reserve a binding slot:
 
 ```code
-lunarg_core_validation.gpu_validation = all,reserve_binding_slot
+khronos_validation.gpu_validation = all,reserve_binding_slot
 ```
+
+Note: When using the core_validation layer, the above settings should use `lunarg_core_validation` in place of
+`khronos_validation`.
 
 Some platforms do not support configuration of the validation layers with this configuration file.
 Programs running on these platforms must then use the programmatic interface.
@@ -144,7 +163,7 @@ Vulkan 1,1 is required to ensure that SPIR-V 1.3 is available.
 
 ### Descriptor Types
 
-The current implementation works with image and texel descriptor types.
+The current implementation works with image, texel, and buffer descriptor types.
 A complete list appears later in this document.
 
 ### Descriptor Set Binding Limit
@@ -172,11 +191,20 @@ changing the application to free a slot is difficult.
 
 ### Device Memory
 
-GPU-Assisted Validation does allocate device memory for the error report buffers.
+GPU-Assisted Validation does allocate device memory for the error report buffers, and if
+descriptor indexing is enabled, for the input buffer of descriptor sizes and write state.
 This can lead to a greater chance of memory exhaustion, especially in cases where
 the application is trying to use all of the available memory.
 The extra memory allocations are also not visible to the application, making it
 impossible for the application to account for them.
+
+Note that if descriptor indexing is enabled, the input buffer size will be equal to
+(1 + (number_of_sets * 2) + (binding_count * 2) + descriptor_count) words of memory where
+binding_count is the binding number of the largest binding in the set.  
+This means that sparsely populated sets and sets with a very large binding will cause
+the input buffer to be much larger than it could be with more densely packed binding numbers.
+As a best practice, when using GPU-Assisted Validation with descriptor indexing enabled,
+make sure descriptor bindings are densely packed.
 
 If GPU-Assisted Validation device memory allocations fail, the device could become
 unstable because some previously-built pipelines may contain instrumented shaders.
@@ -228,11 +256,13 @@ It isn't necessarily required for using the feature.
 
 In general, the implementation does:
 
-* For each draw call, allocate a block of device memory to hold a single debug output record written by the
+* For each draw, dispatch, and trace rays call, allocate a buffer with enough device memory to hold a single debug output record written by the
     instrumented shader code.
-    There is a device memory manager to handle this efficiently.
+    If descriptor indexing is enabled, calculate the amount of memory needed to describe the descriptor arrays sizes and
+    write states and allocate device memory and a buffer for input to the instrumented shader.
+    The Vulkan Memory Allocator is used to handle this efficiently.
 
-    There is probably little advantage in providing a larger buffer in order to obtain more debug records.
+    There is probably little advantage in providing a larger output buffer in order to obtain more debug records.
     It is likely, especially for fragment shaders, that multiple errors occurring near each other have the same root cause.
 
     A block is allocated on a per draw basis to make it possible to associate a shader debug error record with
@@ -241,12 +271,14 @@ In general, the implementation does:
     An alternative design allocates this block on a per-device or per-queue basis and should work.
     However, it is not possible to identify the command buffer that causes the error if multiple command buffers
     are submitted at once.
-* For each draw call, allocate a descriptor set and update it to point to the block of device memory just allocated.
+* For each draw, dispatch, and trace rays call, allocate a descriptor set and update it to point to the block of device memory just allocated.
+    If descriptor indexing is enabled, also update the descriptor set to point to the allocated input buffer.
+    Fill the input buffer with the size and write state information for each descriptor array.
     There is a descriptor set manager to handle this efficiently.
     Also make an additional call down the chain to create a bind descriptor set command to bind our descriptor set at the desired index.
     This has the effect of binding the device memory block belonging to this draw so that the GPU instrumentation
     writes into this buffer for when the draw is executed.
-    The end result is that each draw call has its own device memory block containing GPU instrumentation error
+    The end result is that each draw call has its own buffer containing GPU instrumentation error
     records, if any occurred while executing that draw.
 * Determine the descriptor set binding index that is eventually used to bind the descriptor set just allocated and updated.
     Usually, it is `VkPhysicalDeviceLimits::maxBoundDescriptorSets` minus one.
@@ -255,6 +287,7 @@ In general, the implementation does:
 * When creating a ShaderModule, pass the SPIR-V bytecode to the SPIR-V optimizer to perform the instrumentation pass.
     Pass the desired descriptor set binding index to the optimizer via a parameter so that the instrumented
     code knows which descriptor to use for writing error report data to the memory block.
+    If descriptor indexing is enabled, turn on OOB and write state checking in the instrumentation pass.
     Use the instrumented bytecode to create the ShaderModule.
 * For all pipeline layouts, add our descriptor set to the layout, at the binding index determined earlier.
     Fill any gaps with empty descriptor sets.
@@ -264,10 +297,13 @@ In general, the implementation does:
     Instead, the layer leaves the layout alone and later replaces the instrumented shaders with
     non-instrumented ones when the pipeline layout is later used to create a graphics pipeline.
     The layer issues an error message to report this condition.
-* When creating a GraphicsPipeline, check to see if the pipeline is using the debug binding index.
+* When creating a GraphicsPipeline, ComputePipeline, or RayTracingPipeline, check to see if the pipeline is using the debug binding index.
     If it is, replace the instrumented shaders in the pipeline with non-instrumented ones.
+* Before calling QueueSubmit, if descriptor indexing is enabled, check to see if there were any unwritten descriptors that were declared
+    update-after-bind.
+    If there were, update the write state of those elements.
 * After calling QueueSubmit, perform a wait on the queue to allow the queue to finish executing.
-    Then map and examine the device memory block for each draw that was submitted.
+    Then map and examine the device memory block for each draw or trace ray command that was submitted.
     If any debug record is found, generate a validation error message for each record found.
 
 The above describes only the high-level details of GPU-Assisted Validation operation.
@@ -275,22 +311,21 @@ More detail is found in the discussion of the individual hooked functions below.
 
 ### Initialization
 
-When the core validation layer loads, it examines the user options from both the layer settings file and the
+When the validation layer loads, it examines the user options from both the layer settings file and the
 `VK_EXT_validation_features` extension.
 Note that it also processes the subsumed `VK_EXT_validation_flags` extension for simple backwards compatibility.
-From these options, the layer sets instance-scope flags in the core validation layer tracking data to indicate if
+From these options, the layer sets instance-scope flags in the validation layer tracking data to indicate if
 GPU-Assisted Validation has been requested, along with any other associated options.
 
 ### "Calling Down the Chain"
 
 Much of the GPU-Assisted Validation implementation involves making "application level" Vulkan API
 calls outside of the application's API usage to create resources and perform its required operations
-inside of the core validation layer.
+inside of the validation layer.
 These calls are not routed up through the top of the loader/layer/driver call stack via the loader.
-Instead, they are simply dispatched via the core validation layer's dispatch table.
+Instead, they are simply dispatched via the containing layer's dispatch table.
 
-These calls therefore don't pass through core validation or any other validation layers that may be
-loaded/dispatched prior to code validation.
+These calls therefore don't pass through any validation checks that occur before the gpu validation checks are run.
 This doesn't present any particular problem, but it does raise some issues:
 
 * The additional API calls are not fully validated
@@ -299,22 +334,22 @@ This doesn't present any particular problem, but it does raise some issues:
   To address this, the code can "just" be written carefully so that it is "valid" Vulkan,
   which is hard to do.
 
-  Or, this code can be checked by loading a core validation layer with
+  Or, this code can be checked by loading a khronos validation layer with
   GPU validation enabled on top of "normal" standard validation in the
   layer stack, which effectively validates the API usage of this code.
   This sort of checking is performed by layer developers to check that the additional
   Vulkan usage is valid.
 
   This validation can be accomplished by:
-  
-  * Building the core validation layer with a hack to force GPU-Assisted Validation to be enabled.
+
+  * Building the validation layer with a hack to force GPU-Assisted Validation to be enabled.
   Can't use the exposed mechanisms because we probably don't want it on twice.
-  * Rename this layer binary to something else like "core_validation2" to keep it apart from the
-  "normal" core validation.
+  * Rename this layer binary to something else like "khronos_validation2" to keep it apart from the
+  "normal" khronos validation.
   * Create a new JSON file with the new layer name.
-  * Set up the layer stack so that the "core_validation2" layer is on top of or before the standard validation
-  layer
-  * Then run tests and check for validation errors pointing to API usage in the "core_validation2" layer.
+  * Set up the layer stack so that the "khronos_validation2" layer is on top of or before the actual khronos
+    validation layer
+  * Then run tests and check for validation errors pointing to API usage in the "khronos_validation2" layer.
 
   This should only need to be done after making any major changes to the implementation.
 
@@ -338,8 +373,8 @@ This doesn't present any particular problem, but it does raise some issues:
 
 The GPU-Assisted Validation code is largely contained in one
 [file](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/layers/gpu_validation.cpp), with "hooks" in
-the other core validation code that call functions in this file.
-These hooks in the core validation code look something like this:
+the other validation code that call functions in this file.
+These hooks in the validation code look something like this:
 
 ```C
 if (GetEnables(dev_data)->gpu_validation) {
@@ -347,11 +382,11 @@ if (GetEnables(dev_data)->gpu_validation) {
 }
 ```
 
-The GPU-Assisted Validation code is linked into the shared library for the core validation layer.
+The GPU-Assisted Validation code is linked into the shared library for the khronos and core validation layers.
 
-#### Review of Core Validation Code Structure
+#### Review of Khronos Validation Code Structure
 
-Each function for a Vulkan API command intercepted in the core validation layer is usually split up
+Each function for a Vulkan API command intercepted in the khronos validation layer is usually split up
 into several decomposed functions in order to organize the implementation.
 These functions take the form of:
 
@@ -360,11 +395,8 @@ These functions take the form of:
 * PreCallRecord&lt;foo&gt;: Perform state recording before calling down the chain
 * PostCallRecord&lt;foo&gt;: Perform state recording after calling down the chain
 
-The GPU-Assisted Validation functions follow this pattern not by hooking into the top-level core validation API shim, but
+The GPU-Assisted Validation functions follow this pattern not by hooking into the top-level validation API shim, but
 by hooking one of these decomposed functions.
-In a few unusual cases, the GPU-Assisted Validation function "takes over" the call to the driver (down the chain) and so
-must hook the top-level API shim.
-These functions deviate from the above naming convention to make their purpose more evident.
 
 The design of each hooked function follows:
 
@@ -377,7 +409,7 @@ The design of each hooked function follows:
 #### GpuPostCallRecordCreateDevice
 
 * Determine and record (save in device state) the desired descriptor set binding index.
-* Initialize device memory manager
+* Initialize Vulkan Memory Allocator
   * Determine error record block size based on the maximum size of the error record and alignment limits of the device.
 * Initialize descriptor set manager
 * Make a descriptor set layout to describe our descriptor set
@@ -389,31 +421,31 @@ The design of each hooked function follows:
 
 * Destroy descriptor set layouts created in CreateDevice
 * Clean up descriptor set manager
-* Clean up device memory manager
+* Clean up Vulkan Memory Allocator (VMA)
 * Clean up device state
 
 #### GpuAllocateValidationResources
 
-* For each Draw or Dispatch call:
+* For each Draw, Dispatch, or TraceRays call:
   * Get a descriptor set from the descriptor set manager
-  * Get a device memory block from the device memory manager
+  * Get an output buffer and associated memory from VMA
+  * If descriptor indexing is enabled, get an input buffer and fill with descriptor array information
   * Update (write) the descriptor set with the memory info
   * Check to see if the layout for the pipeline just bound is using our selected bind index
   * If no conflict, add an additional command to the command buffer to bind our descriptor set at our selected index
 * Record the above objects in the per-CB state
-Note that the Draw and Dispatch calls include vkCmdDraw, vkCmdDrawIndexed, vkCmdDrawIndirect, vkCmdDrawIndexedIndirect, vkCmdDispatch, and vkCmdDispatchIndirect. 
+Note that the Draw and Dispatch calls include vkCmdDraw, vkCmdDrawIndexed, vkCmdDrawIndirect, vkCmdDrawIndexedIndirect, vkCmdDispatch, vkCmdDispatchIndirect, and vkCmdTraceRaysNV.
 
 #### GpuPreCallRecordFreeCommandBuffers
 
 * For each command buffer:
-  * Give the memory blocks back to the device memory manager
+  * Destroy the VMA buffer(s), releasing the memory
   * Give the descriptor sets back to the descriptor set manager
   * Clean up CB state
 
 #### GpuOverrideDispatchCreateShaderModule
 
-This function is called from CreateShaderModule and can't really be called from one of the decomposed functions
-because it replaces the SPIR-V, which requires modifying the bytecode passed down to the driver.
+This function is called from PreCallRecordCreateShaderModule.
 This routine sets up to call the SPIR-V optimizer to run the "BindlessCheckPass", replacing the original SPIR-V with the instrumented SPIR-V
 which is then used in the call down the chain to CreateShaderModule.
 
@@ -442,7 +474,7 @@ This ensures that the original SPIR-V bytecode is available if we need it to rep
 
 #### GpuOverrideDispatchCreatePipelineLayout
 
-This is another function that replaces the parameters and so can't be called from a decomposed function.
+This is function is called through PreCallRecordCreatePipelineLayout.
 
 * Check for a descriptor set binding index conflict.
   * If there is one, issue an error message and leave the pipeline layout unmodified
@@ -453,6 +485,11 @@ This is another function that replaces the parameters and so can't be called fro
     * Add our descriptor set layout as the last one in the new pipeline layout
 * Create the pipeline layouts by calling down the chain with the original or modified create info
 
+#### GpuPreCallQueueSubmit
+
+* For each primary and secondary command buffer in the submission:
+  * Call helper function to see if there are any update after bind descriptors whose write state may need to be updated
+    and if so, map the input buffer and update the state.
 
 #### GpuPostCallQueueSubmit
 
@@ -487,7 +524,7 @@ This is another function that replaces the parameters and so can't be called fro
 This tracker is used to attach the shader bytecode to the shader in case it is needed
 later to get the shader source code debug info.
 
-The current shader module tracker in core validation stores the bytecode,
+The current shader module tracker in the validation code stores the bytecode,
 but this tracker has the same life cycle as the shader module itself.
 It is possible for the application to destroy the shader module after
 creating graphics pipeline and before submitting work that uses the shader,
@@ -513,6 +550,10 @@ to descriptors of the following types:
     VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER
     VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER
+    VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+    VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+    VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC
+    VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC
 
 Instrumentation is applied to the following SPIR-V operations:
 
@@ -548,6 +589,12 @@ Instrumentation is applied to the following SPIR-V operations:
     OpImageSparseFetch
     OpImageSparseRead
     OpImageWrite
+
+Also, OpLoad and OpStore with an AccessChain into a base of OpVariable with
+either Uniform or StorageBuffer storage class and a type which is either a
+struct decorated with Block, or a runtime or statically-sized array of such
+a struct.
+
 
 ### Shader Instrumentation Error Record Format
 
@@ -606,29 +653,41 @@ The Instruction Index is the instruction within the original function at which t
 For bindless, this will be the instruction which consumes the descriptor in question,
 or the instruction that consumes the OpSampledImage that consumes the descriptor.
 
-The Stage is the integer value used in SPIR-V for each of the Graphics Execution Models:
+The Stage is the integer value used in SPIR-V for each of the Execution Models:
 
-| Stage  | Value |
-|--------|:-----:|
-|Vertex  |0      |
-|TessCtrl|1      |
-|TessEval|2      |
-|Geometry|3      |
-|Fragment|4      |
-|Compute |5      |
+| Stage         | Value |
+|---------------|:-----:|
+|Vertex         |0      |
+|TessCtrl       |1      |
+|TessEval       |2      |
+|Geometry       |3      |
+|Fragment       |4      |
+|Compute        |5      |
+|RayGenerationNV|5313   |
+|IntersectionNV |5314   |
+|AnyHitNV       |5315   |
+|ClosestHitNV   |5316   |
+|MissNV         |5317   |
+|CallableNV     |5318   |
 
 ### Stage Specific Words
 
 These are words that identify which "instance" of the shader the validation error occurred in.
 Here are words for each stage:
 
-| Stage  | Word 0           | Word 1     |
-|--------|------------------|------------|
-|Vertex  |VertexID          |InstanceID  |
-|Tess*   |InvocationID      |unused      |
-|Geometry|PrimitiveID       |InvocationID|
-|Fragment|FragCoord.x       |FragCoord.y |
-|Compute |GlobalInvocationID|unused      |
+| Stage         | Word 0           | Word 1     | World 2    |
+|---------------|------------------|------------|------------|
+|Vertex         |VertexID          |InstanceID  | unused     |
+|Tess*          |InvocationID      |unused      | unused     |
+|Geometry       |PrimitiveID       |InvocationID| unused     |
+|Fragment       |FragCoord.x       |FragCoord.y | unused     |
+|Compute        |GlobalInvocationID|unused      | unused     |
+|RayGenerationNV|LaunchIdNV.x      |LaunchIdNV.y|LaunchIdNV.z|
+|IntersectionNV |LaunchIdNV.x      |LaunchIdNV.y|LaunchIdNV.z|
+|AnyHitNV       |LaunchIdNV.x      |LaunchIdNV.y|LaunchIdNV.z|
+|ClosestHitNV   |LaunchIdNV.x      |LaunchIdNV.y|LaunchIdNV.z|
+|MissNV         |LaunchIdNV.x      |LaunchIdNV.y|LaunchIdNV.z|
+|CallableNV     |LaunchIdNV.x      |LaunchIdNV.y|LaunchIdNV.z|
 
 "unused" means not relevant, but still present.
 
@@ -755,6 +814,56 @@ then added to the validation error message.
 
 For example, if the OpLine line number is 15, and there is a "#line 10" on line 40
 in the OpSource source, then line 45 in the OpSource contains the correct source line.
+
+### Shader Instrumentation Input Record Format
+
+Although the input buffer is a linear array of unsigned integers, conceptually there are arrays within the linear array
+
+Word 1 starts an array (denoted by sets_to_sizes) that is number_of_sets long, with an index that indicates the start of that set's entries in the sizes array
+
+After the sets_to_sizes array is the sizes array, that contains the array size (or 1 if descriptor is not an array) of each descriptor in the set.  Bindings with no descriptor are filled in with zeros
+
+After the sizes array is the sets_to_bindings array that for each descriptor set, indexes into the bindings_to_written array.  Word 0 contains the index that is the start of the sets_to_bindings array
+
+After the sets_to_bindings array, is the bindings_to_written array that for each binding in the set, indexes to the start of that binding's entries in the written array
+
+Lastly comes the written array, which indicates whether a given binding / array element has been written
+
+Example:
+```
+Assume Descriptor Set 0 looks like:                        And Descriptor Set 1 looks like:
+  Binding                                                    Binding
+     0          Array[3]                                       2          Array[4]
+     1          Non Array                                      3          Array[5]
+     3          Array[2]
+
+Here is what the input buffer should look like:
+
+   Index of                     sets_to_sizes                     sizes             sets_to_bindings                       bindings_to_written    written
+   sets_to_bindings
+
+     0 |11| sets_to_bindings     1 |3| set 0 sizes start at 3     3  |3| S0B0       11 |13| set 0 bindings start at 13        13 |21| S0B0        21 |1| S0B0I0 was written
+            starts at 11         2 |7| set 1 sizes start at 7     4  |1| S0B1       12 |17| set 1 bindings start at 17        14 |24| S0B1        22 |1| S0B0I1 was written
+                                                                  5  |0| S0B2                                                 15 |0 | S0B2        23 |1| S0B0I3 was written
+                                                                  6  |2| S0B3                                                 16 |25| S0B3        24 |1| S0B1 was written
+                                                                  7  |0| S1B0                                                 17 |0 | S1B0        25 |1| S0B3I0 was written
+                                                                  8  |0| S1B1                                                 18 |0 | S1B1        26 |1| S0B3I1 was written
+                                                                  9  |4| S1B2                                                 19 |27| S1B2        27 |0| S1B2I0 was not written
+                                                                  10 |5| S1B3                                                 20 |31| S1B3        28 |1| S1B2I1 was written
+                                                                                                                                                  29 |1| S1B2I2 was written
+                                                                                                                                                  30 |1| S1B2I3 was written
+                                                                                                                                                  31 |1| S1B3I0 was written
+                                                                                                                                                  32 |1| S1B3I1 was written
+                                                                                                                                                  33 |1| S1B3I2 was written
+                                                                                                                                                  34 |1| S1B3I3 was written
+                                                                                                                                                  35 |1| S1B3I4 was written
+```
+Alternately, you could describe the array size and write state data as:
+(set = s, binding = b, index = i) is not initialized if 
+```
+Input[ i + Input[ b + Input[ s + Input[ Input[0] ] ] ] ] == 0
+```
+and the array's size = Input[ Input[ s + 1 ] + b ] 
 
 ## GPU-Assisted Validation Testing
 

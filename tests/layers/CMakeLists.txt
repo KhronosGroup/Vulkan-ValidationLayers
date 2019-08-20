@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2016-2018 Valve Corporation
-# Copyright (c) 2016-2018 LunarG, Inc.
+# Copyright (c) 2016-2019 Valve Corporation
+# Copyright (c) 2016-2019 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ if(WIN32)
         set_target_properties(copy-${target}-def-file PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
 
         add_library(VkLayer_${target} SHARED ${ARGN} VkLayer_${target}.def)
-        add_dependencies(VkLayer_${target} VulkanVL_generate_helper_files VkLayer_utils)
+        add_dependencies(VkLayer_${target} VkLayer_utils)
         target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
         target_compile_definitions(VkLayer_${target} PRIVATE "_CRT_SECURE_NO_WARNINGS")
         target_compile_options(VkLayer_${target} PRIVATE $<$<CONFIG:Debug>:/bigobj>)
@@ -77,7 +77,7 @@ if(WIN32)
 elseif(APPLE)
     macro(AddVkLayer target)
         add_library(VkLayer_${target} SHARED ${ARGN})
-        add_dependencies(VkLayer_${target} VulkanVL_generate_helper_files VkLayer_utils)
+        add_dependencies(VkLayer_${target} VkLayer_utils)
         set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl")
         target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
         target_compile_options(VkLayer_${target} PRIVATE "-Wpointer-arith" "-Wno-unused-function")
@@ -85,8 +85,8 @@ elseif(APPLE)
 else(UNIX AND NOT APPLE) # i.e.: Linux
     macro(AddVkLayer target)
         add_library(VkLayer_${target} SHARED ${ARGN})
-        add_dependencies(VkLayer_${target} VulkanVL_generate_helper_files VkLayer_utils)
-        set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl,-Bsymbolic")
+        add_dependencies(VkLayer_${target} VkLayer_utils)
+        set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_${target}.map,-Bsymbolic")
         target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
         target_compile_options(VkLayer_${target} PRIVATE "-Wpointer-arith" "-Wno-unused-function")
     endmacro()
@@ -96,29 +96,31 @@ AddVkLayer(device_profile_api device_profile_api.cpp ${PROJECT_SOURCE_DIR}/layer
 
 # --------------------------------------------------------------------------------------------------------------------------------
 
-# TODO: Clear out this list
 target_include_directories(${TEST_LAYER_NAME}
-                           PRIVATE ${VulkanHeaders_INCLUDE_DIR}
-                                   ${CMAKE_CURRENT_SOURCE_DIR}
+                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
                                    ${PROJECT_SOURCE_DIR}/layers
                                    ${CMAKE_CURRENT_BINARY_DIR}
                                    ${PROJECT_BINARY_DIR}
                                    ${PROJECT_BINARY_DIR}/layers
-                                   ${CMAKE_BINARY_DIR})
+                                   ${CMAKE_BINARY_DIR}
+                                   ${VulkanHeaders_INCLUDE_DIR})
 
 if(WIN32)
-    # For Windows, copy necessary gtest DLLs to the right spot for the vk_layer_tests...
-    if (MSVC_IDE)
-        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/*device_profile_api.* SRC_LAYER)
-    else()
-        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/*device_profile_api.* SRC_LAYER)
-    endif()
-
+    # For Windows, copy necessary device_profile_api layer files for the layer_tests
     file(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/windows/${TEST_LAYER_NAME}.json SRC_JSON)
-    file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/layers/$<CONFIG> DST_LAYER)
+    file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/layers/$<CONFIG>/${TEST_LAYER_NAME}.json DST_JSON)
     add_custom_command(TARGET ${TEST_LAYER_NAME} POST_BUILD
-                       COMMAND xcopy /Y /I ${SRC_LAYER} ${DST_LAYER}
-                       COMMAND xcopy /Y /I ${SRC_JSON} ${DST_LAYER})
+                       COMMAND ${CMAKE_COMMAND} -E copy ${SRC_JSON} ${DST_JSON})
+    SET(DEVICE_PROFILE_LAYER_FILES
+        VkLayer_device_profile_api.dll
+        VkLayer_device_profile_api.exp
+        VkLayer_device_profile_api.lib)
+    file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/layers/$<CONFIG> DST_LAYER)
+    foreach(DEV_PROF_FILE ${DEVICE_PROFILE_LAYER_FILES})
+        file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/${DEV_PROF_FILE} SRC_LAYER)
+        add_custom_command(TARGET ${TEST_LAYER_NAME} POST_BUILD
+                           COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SRC_LAYER} ${DST_LAYER})
+    endforeach()
 elseif(APPLE)
     if(CMAKE_GENERATOR MATCHES "^Xcode.*")
         add_custom_command(TARGET ${TEST_LAYER_NAME} POST_BUILD

@@ -44,46 +44,38 @@ else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
 
-# Custom targets for generated validation layer helper file dependencies
-add_custom_target(spirv_tools_revision_file DEPENDS spirv_tools_commit_id.h)
-set_target_properties(spirv_tools_revision_file PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
-
-if(BUILD_LAYERS)
-    # generate header file containing commit IDs of external dependencies
-    add_custom_command(OUTPUT spirv_tools_commit_id.h
-                       COMMAND ${PYTHON_EXECUTABLE} ${SCRIPTS_DIR}/external_revision_generator.py
-                               --from_uuid -s SPIRV_TOOLS_COMMIT_ID -o spirv_tools_commit_id.h
-                       DEPENDS ${SCRIPTS_DIR}/external_revision_generator.py)
+# Configure installation of source files that are dependencies of other repos.
+if(BUILD_LAYER_SUPPORT_FILES)
+    set(LAYER_UTIL_FILES
+        cast_utils.h
+        hash_util.h
+        hash_vk_types.h
+        vk_format_utils.h
+        vk_format_utils.cpp
+        vk_layer_config.h
+        vk_layer_config.cpp
+        vk_layer_data.h
+        vk_layer_extension_utils.h
+        vk_layer_extension_utils.cpp
+        vk_layer_logging.h
+        vk_layer_utils.h
+        vk_layer_utils.cpp
+        vk_loader_layer.h
+        vk_loader_platform.h
+        generated/vk_validation_error_messages.h
+        generated/vk_layer_dispatch_table.h
+        generated/vk_dispatch_table_helper.h
+        generated/vk_safe_struct.h
+        generated/vk_safe_struct.cpp
+        generated/vk_enum_string_helper.h
+        generated/vk_object_types.h
+        generated/vk_extension_helper.h
+        generated/vk_typemap_helper.h)
+    install(FILES ${LAYER_UTIL_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 
-# Configure installation of source files that are dependencies of other repos.
-set(LAYER_UTIL_FILES
-    hash_util.h
-    hash_vk_types.h
-    vk_format_utils.h
-    vk_format_utils.cpp
-    vk_layer_config.h
-    vk_layer_config.cpp
-    vk_layer_data.h
-    vk_layer_extension_utils.h
-    vk_layer_extension_utils.cpp
-    vk_layer_logging.h
-    vk_layer_utils.h
-    vk_layer_utils.cpp
-    vk_loader_layer.h
-    vk_loader_platform.h
-    vk_validation_error_messages.h
-    ${PROJECT_BINARY_DIR}/vk_layer_dispatch_table.h
-    ${PROJECT_BINARY_DIR}/vk_dispatch_table_helper.h
-    ${PROJECT_BINARY_DIR}/vk_safe_struct.h
-    ${PROJECT_BINARY_DIR}/vk_safe_struct.cpp
-    ${PROJECT_BINARY_DIR}/vk_enum_string_helper.h
-    ${PROJECT_BINARY_DIR}/vk_object_types.h
-    ${PROJECT_BINARY_DIR}/vk_extension_helper.h
-    ${PROJECT_BINARY_DIR}/vk_typemap_helper.h)
-install(FILES ${LAYER_UTIL_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
 set(TARGET_NAMES
+    VkLayer_khronos_validation
     VkLayer_core_validation
     VkLayer_object_lifetimes
     VkLayer_unique_objects
@@ -123,7 +115,7 @@ if(WIN32)
         add_library(VkLayer_${target} SHARED ${ARGN} VkLayer_${target}.def)
         target_compile_definitions(VkLayer_${target} PUBLIC ${LAYER_COMPILE_DEFINITIONS})
         target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
-        add_dependencies(VkLayer_${target} VulkanVL_generate_helper_files VulkanVL_generate_chassis_files VkLayer_utils)
+        add_dependencies(VkLayer_${target} VkLayer_utils)
         install(TARGETS VkLayer_${target} DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endmacro()
 elseif(APPLE)
@@ -131,7 +123,7 @@ elseif(APPLE)
         add_library(VkLayer_${target} SHARED ${ARGN})
         target_compile_definitions(VkLayer_${target} PUBLIC ${LAYER_COMPILE_DEFINITIONS})
         target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
-        add_dependencies(VkLayer_${target} VulkanVL_generate_helper_files VulkanVL_generate_chassis_files VkLayer_utils)
+        add_dependencies(VkLayer_${target} VkLayer_utils)
         set_target_properties(VkLayer_${target}
                               PROPERTIES LINK_FLAGS
                                          "-Wl"
@@ -144,19 +136,21 @@ else(UNIX AND NOT APPLE) # i.e.: Linux
         add_library(VkLayer_${target} SHARED ${ARGN})
         target_compile_definitions(VkLayer_${target} PUBLIC ${LAYER_COMPILE_DEFINITIONS})
         target_link_libraries(VkLayer_${target} PRIVATE VkLayer_utils)
-        add_dependencies(VkLayer_${target} VulkanVL_generate_helper_files VulkanVL_generate_chassis_files VkLayer_utils)
-        set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl,-Bsymbolic,--exclude-libs,ALL")
+        add_dependencies(VkLayer_${target} VkLayer_utils)
+        set_target_properties(VkLayer_${target} PROPERTIES LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libVkLayer_${target}.map,-Bsymbolic,--exclude-libs,ALL")
         install(TARGETS VkLayer_${target} DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endmacro()
 endif()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${VulkanHeaders_INCLUDE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/generated ${VulkanHeaders_INCLUDE_DIR})
 
 if(WIN32)
     # Applies to all configurations
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     # Avoid: fatal error C1128: number of sections exceeded object file format limit: compile with /bigobj
     add_compile_options("/bigobj")
+    # Allow Windows to use multiprocessor compilation
+    add_compile_options(/MP)
     # Turn off transitional "changed behavior" warning message for Visual Studio versions prior to 2015. The changed behavior is
     # that constructor initializers are now fixed to clear the struct members.
     add_compile_options("$<$<AND:$<CXX_COMPILER_ID:MSVC>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,19>>:/wd4351>")
@@ -170,44 +164,61 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     set_source_files_properties(parameter_validation.cpp PROPERTIES COMPILE_FLAGS "-Wno-unused-const-variable")
 endif()
 
-GenerateFromVkXml(thread_safety_generator.py thread_safety.h)
-GenerateFromVkXml(thread_safety_generator.py thread_safety.cpp)
-GenerateFromVkXml(parameter_validation_generator.py parameter_validation.cpp)
-GenerateFromVkXml(parameter_validation_generator.py parameter_validation.h)
-GenerateFromVkXml(dispatch_table_helper_generator.py vk_dispatch_table_helper.h)
-GenerateFromVkXml(object_tracker_generator.py object_tracker.cpp)
-GenerateFromVkXml(object_tracker_generator.py object_tracker.h)
-GenerateFromVkXml(layer_chassis_generator.py chassis.cpp)
-GenerateFromVkXml(layer_chassis_generator.py chassis.h)
-GenerateFromVkXml(layer_chassis_dispatch_generator.py layer_chassis_dispatch.h)
-GenerateFromVkXml(layer_chassis_dispatch_generator.py layer_chassis_dispatch.cpp)
+set(CHASSIS_LIBRARY_FILES
+    generated/chassis.cpp
+    generated/layer_chassis_dispatch.cpp)
 
-# This target causes the chassis source files to be generated.
-add_custom_target(VulkanVL_generate_chassis_files
-                  DEPENDS chassis.cpp
-                          chassis.h
-                          layer_chassis_dispatch.h
-                          layer_chassis_dispatch.cpp)
-set_target_properties(VulkanVL_generate_chassis_files PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
+set(CORE_VALIDATION_LIBRARY_FILES
+    core_validation.cpp
+    drawdispatch.cpp
+    convert_to_renderpass2.cpp
+    descriptor_sets.cpp
+    buffer_validation.cpp
+    shader_validation.cpp
+    gpu_validation.cpp
+    xxhash.c)
 
-# Inter-layer dependencies are temporarily necessary to serialize layer builds which avoids contention for common generated files
+set(OBJECT_LIFETIMES_LIBRARY_FILES
+    generated/object_tracker.cpp
+    generated/object_tracker.h
+    object_tracker_utils.cpp)
+
+set(THREAD_SAFETY_LIBRARY_FILES
+    generated/thread_safety.cpp
+    generated/thread_safety.h)
+
+set(STATELESS_VALIDATION_LIBRARY_FILES
+    generated/parameter_validation.cpp
+    generated/parameter_validation.h
+    parameter_validation_utils.cpp)
+
+set(BEST_PRACTICES_LIBRARY_FILES
+    best_practices.cpp
+    best_practices.h)
+
 if(BUILD_LAYERS)
-    AddVkLayer(core_validation "BUILD_CORE_VALIDATION" chassis.cpp layer_chassis_dispatch.cpp core_validation.cpp convert_to_renderpass2.cpp descriptor_sets.cpp buffer_validation.cpp shader_validation.cpp gpu_validation.cpp xxhash.c)
-    add_dependencies(VkLayer_core_validation VulkanVL_generate_chassis_files)
-    AddVkLayer(object_lifetimes "BUILD_OBJECT_TRACKER" object_tracker.cpp object_tracker.h object_tracker_utils.cpp chassis.cpp layer_chassis_dispatch.cpp)
-    add_dependencies(VkLayer_object_lifetimes VkLayer_core_validation)
-    AddVkLayer(thread_safety "BUILD_THREAD_SAFETY" thread_safety.cpp thread_safety.h chassis.cpp layer_chassis_dispatch.cpp)
-    add_dependencies(VkLayer_thread_safety VkLayer_object_lifetimes)
-    AddVkLayer(unique_objects "LAYER_CHASSIS_CAN_WRAP_HANDLES" chassis.cpp layer_chassis_dispatch.cpp)
-    add_dependencies(VkLayer_unique_objects VkLayer_thread_safety)
-    AddVkLayer(stateless_validation "BUILD_PARAMETER_VALIDATION" parameter_validation.cpp parameter_validation.h parameter_validation_utils.cpp chassis.cpp layer_chassis_dispatch.cpp)
-    add_dependencies(VkLayer_stateless_validation VkLayer_unique_objects)
+    AddVkLayer(core_validation "BUILD_CORE_VALIDATION"
+        ${CHASSIS_LIBRARY_FILES}
+        ${CORE_VALIDATION_LIBRARY_FILES})
+    AddVkLayer(object_lifetimes "BUILD_OBJECT_TRACKER" ${CHASSIS_LIBRARY_FILES} ${OBJECT_LIFETIMES_LIBRARY_FILES})
+    AddVkLayer(thread_safety "BUILD_THREAD_SAFETY" ${CHASSIS_LIBRARY_FILES} ${THREAD_SAFETY_LIBRARY_FILES})
+    AddVkLayer(stateless_validation "BUILD_PARAMETER_VALIDATION" ${CHASSIS_LIBRARY_FILES} ${STATELESS_VALIDATION_LIBRARY_FILES})
+    AddVkLayer(unique_objects "LAYER_CHASSIS_CAN_WRAP_HANDLES" ${CHASSIS_LIBRARY_FILES})
+    AddVkLayer(khronos_validation "BUILD_KHRONOS_VALIDATION;BUILD_CORE_VALIDATION;BUILD_OBJECT_TRACKER;BUILD_THREAD_SAFETY;BUILD_PARAMETER_VALIDATION;LAYER_CHASSIS_CAN_WRAP_HANDLES;BUILD_BEST_PRACTICES"
+        ${CHASSIS_LIBRARY_FILES}
+        ${CORE_VALIDATION_LIBRARY_FILES}
+        ${OBJECT_LIFETIMES_LIBRARY_FILES}
+        ${THREAD_SAFETY_LIBRARY_FILES}
+        ${STATELESS_VALIDATION_LIBRARY_FILES}
+        ${BEST_PRACTICES_LIBRARY_FILES})
 
-    # Core validation has additional dependencies
+    # Core validation and Khronos validation have additional dependencies
     target_include_directories(VkLayer_core_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})
     target_include_directories(VkLayer_core_validation PRIVATE ${SPIRV_TOOLS_INCLUDE_DIR})
     target_link_libraries(VkLayer_core_validation PRIVATE ${SPIRV_TOOLS_LIBRARIES})
-    add_dependencies(VkLayer_core_validation spirv_tools_revision_file)
+    target_include_directories(VkLayer_khronos_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})
+    target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_INCLUDE_DIR})
+    target_link_libraries(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_LIBRARIES})
 
     # The output file needs Unix "/" separators or Windows "\" separators On top of that, Windows separators actually need to be doubled
     # because the json format uses backslash escapes

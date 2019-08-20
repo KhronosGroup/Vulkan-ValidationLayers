@@ -77,7 +77,7 @@ a good reason is "This violates the style guide, but it improves type safety."
 >        $ git commit
 
 * **Commit Messages**
-    * Limit the subject line to 50 characters -- this allows the information to display correctly in git/Github logs
+    * Limit the subject line to 64 characters -- this allows the information to display correctly in git/GitHub logs
     * Begin subject line with a one-word component description followed by a colon (e.g. build, docs, layers, tests, etc.)
     * Separate subject from body with a blank line
     * Wrap the body at 72 characters
@@ -92,7 +92,7 @@ that to be accepted into the repository, the pull request must [pass all tests](
 -- the automatic Github Travis and AppVeyor continuous integration features will assist in enforcing this requirement.
 
 #### **Testing Your Changes**
-* Run the existing tests in the repository before and after each if your commits to check for any regressions.
+* Run the existing tests in the repository before and after each of your commits to check for any regressions.
   There are some tests that appear in all repositories.
   These tests can be found in the following folders inside of your target build directory:
 
@@ -124,16 +124,22 @@ if the report is received.  Otherwise, the test should indicate "failure".
 This new test should be added to the validation layer test program in the `tests` directory and contributed
 at the same time as the new validation check itself. There are many existing validation tests in this directory that can be
 used as a starting point.
-* **Validation Checks:**  The majority of validation checks are carried out by the Core Validation layer. In general, this layer
-contains checks that require some amount of application state to carry out. In contrast, the parameter validation layer contains
+* **Validation Checks:**  Validation checks are carried out by the Khronos Validation layer. The CoreChecks validation object
+contains checks that require significant amounts of application state to carry out. In contrast, the stateless validation object contains
 checks that require (mostly) no state at all. Please inquire if you are unsure of the location for your contribution. The other
-layers (threading, object_tracker, unique_objects) are more special-purpose and are mostly code-generated from the specification.
+validation objects (thread_safety, object lifetimes) are more special-purpose and are mostly code-generated from the specification.
 * **Validation Error/Warning Messages:**  Strive to give specific information describing the particulars of the failure, including
 output all of the applicable Vulkan Objects and related values. Also, ensure that when messages can give suggestions about _how_ to
 fix the problem, they should do so to better assist the user.
 * **Validation Statistics:** The `vk_validation_stats.py` script (in the scripts directory) inspects the layer and test source files
 and reports a variety of statistics on validation completeness and correctness. Before submitting a change you should run this
 script with the consistency check (`-c`) argument to ensure that your changes have not introduced any inconsistencies in the code.
+* **Generated Source Code:** The `layers/generated` directory contains source code that is created by several
+generator scripts in the `scripts` directory. All changes to these scripts _must_ be submitted with the
+corresponding generated output to keep the repository self-consistent. This requirement is enforced by both
+Travis CI and AppVeyor test configurations. Regenerate source files after modifying any of the generator
+scripts and before building and testing your changes. More details can be found in
+[BUILD.md](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/BUILD.md#generated-source-code).
 
 #### Coding Conventions for [CMake](http://cmake.org) files
 

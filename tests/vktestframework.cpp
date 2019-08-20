@@ -144,6 +144,7 @@ bool VkTestFramework::m_canonicalize_spv = false;
 bool VkTestFramework::m_strip_spv = false;
 bool VkTestFramework::m_do_everything_spv = false;
 bool VkTestFramework::m_devsim_layer = false;
+bool VkTestFramework::m_khronos_layer_disable = false;
 int VkTestFramework::m_width = 0;
 int VkTestFramework::m_height = 0;
 
@@ -164,6 +165,8 @@ void VkTestFramework::InitArgs(int *argc, char *argv[]) {
             m_canonicalize_spv = true;
         else if (optionMatch("--devsim", argv[i]))
             m_devsim_layer = true;
+        else if (optionMatch("--disable_uberlayer", argv[i]))
+            m_khronos_layer_disable = true;
         else if (optionMatch("--help", argv[i]) || optionMatch("-h", argv[i])) {
             printf("\nOther options:\n");
             printf(

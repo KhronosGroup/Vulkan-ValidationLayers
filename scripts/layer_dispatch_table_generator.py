@@ -1,9 +1,9 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2017 The Khronos Group Inc.
-# Copyright (c) 2015-2017 Valve Corporation
-# Copyright (c) 2015-2017 LunarG, Inc.
-# Copyright (c) 2015-2017 Google Inc.
+# Copyright (c) 2015-2019 The Khronos Group Inc.
+# Copyright (c) 2015-2019 Valve Corporation
+# Copyright (c) 2015-2019 LunarG, Inc.
+# Copyright (c) 2015-2019 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ ADD_INST_CMDS = ['vkCreateInstance',
 # LayerDispatchTableGeneratorOptions - subclass of GeneratorOptions.
 class LayerDispatchTableGeneratorOptions(GeneratorOptions):
     def __init__(self,
+                 conventions = None,
                  filename = None,
                  directory = '.',
                  apiname = None,
@@ -57,7 +58,7 @@ class LayerDispatchTableGeneratorOptions(GeneratorOptions):
                  indentFuncPointer = False,
                  alignFuncParam = 0,
                  expandEnumerants = True):
-        GeneratorOptions.__init__(self, filename, directory, apiname, profile,
+        GeneratorOptions.__init__(self, conventions, filename, directory, apiname, profile,
                                   versions, emitversions, defaultExtensions,
                                   addExtensions, removeExtensions, emitExtensions, sortProcedure)
         self.prefixText      = prefixText
@@ -92,6 +93,9 @@ class LayerDispatchTableOutputGenerator(OutputGenerator):
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
 
+        # Initialize members that require the tree
+        self.handle_types = GetHandleTypes(self.registry.tree)
+
         # User-supplied prefix text, if any (list of strings)
         if (genOpts.prefixText):
             for s in genOpts.prefixText:
@@ -104,9 +108,9 @@ class LayerDispatchTableOutputGenerator(OutputGenerator):
 
         # Copyright Notice
         copyright =  '/*\n'
-        copyright += ' * Copyright (c) 2015-2018 The Khronos Group Inc.\n'
-        copyright += ' * Copyright (c) 2015-2018 Valve Corporation\n'
-        copyright += ' * Copyright (c) 2015-2018 LunarG, Inc.\n'
+        copyright += ' * Copyright (c) 2015-2019 The Khronos Group Inc.\n'
+        copyright += ' * Copyright (c) 2015-2019 Valve Corporation\n'
+        copyright += ' * Copyright (c) 2015-2019 LunarG, Inc.\n'
         copyright += ' *\n'
         copyright += ' * Licensed under the Apache License, Version 2.0 (the "License");\n'
         copyright += ' * you may not use this file except in compliance with the License.\n'
@@ -197,8 +201,6 @@ class LayerDispatchTableOutputGenerator(OutputGenerator):
     #
     # Determine if this API should be ignored or added to the instance or device dispatch table
     def AddCommandToDispatchList(self, extension_name, extension_type, name, cmdinfo, handle_type):
-        handle = self.registry.tree.find("types/type/[name='" + handle_type + "'][@category='handle']")
-
         return_type =  cmdinfo.elem.find('proto/type')
         if (return_type is not None and return_type.text == 'void'):
            return_type = None
@@ -222,7 +224,7 @@ class LayerDispatchTableOutputGenerator(OutputGenerator):
             cmd_params.append(self.CommandParam(type=param_type, name=param_name,
                                                 cdecl=param_cdecl))
 
-        if handle is not None and handle_type != 'VkInstance' and handle_type != 'VkPhysicalDevice':
+        if handle_type in self.handle_types and handle_type != 'VkInstance' and handle_type != 'VkPhysicalDevice':
             # The Core Vulkan code will be wrapped in a feature called VK_VERSION_#_#
             # For example: VK_VERSION_1_0 wraps the core 1.0 Vulkan functionality
             if 'VK_VERSION_' in extension_name:

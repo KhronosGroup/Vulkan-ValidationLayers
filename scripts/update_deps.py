@@ -343,7 +343,7 @@ class GoodRepo(object):
     def Checkout(self):
         print('Checking out {n} in {d}'.format(n=self.name, d=self.repo_dir))
         if self._args.do_clean_repo:
-            shutil.rmtree(self.repo_dir)
+            shutil.rmtree(self.repo_dir, ignore_errors=True)
         if not os.path.exists(os.path.join(self.repo_dir, '.git')):
             self.Clone()
         self.Fetch()
@@ -415,6 +415,12 @@ class GoodRepo(object):
                 cmake_cmd.append('-A')
                 cmake_cmd.append('x64')
 
+        # Apply a generator, if one is specified.  This can be used to supply
+        # a specific generator for the dependent repositories to match
+        # that of the main repository.
+        if self._args.generator is not None:
+            cmake_cmd.extend(['-G', self._args.generator])
+
         if VERBOSE:
             print("CMake command: " + " ".join(cmake_cmd))
 
@@ -435,8 +441,15 @@ class GoodRepo(object):
         # Speed up the build.
         if platform.system() == 'Linux' or platform.system() == 'Darwin':
             cmake_cmd.append('--')
-            cmake_cmd.append('-j{ncpu}'
-                             .format(ncpu=multiprocessing.cpu_count()))
+            num_make_jobs = multiprocessing.cpu_count()
+            env_make_jobs = os.environ.get('MAKE_JOBS', None)
+            if env_make_jobs is not None:
+                try:
+                    num_make_jobs = min(num_make_jobs, int(env_make_jobs))
+                except ValueError:
+                    print('warning: environment variable MAKE_JOBS has non-numeric value "{}".  '
+                          'Using {} (CPU count) instead.'.format(env_make_jobs, num_make_jobs))
+            cmake_cmd.append('-j{}'.format(num_make_jobs))
         if platform.system() == 'Windows':
             cmake_cmd.append('--')
             cmake_cmd.append('/maxcpucount')
@@ -594,6 +607,11 @@ def main():
         type=str.lower,
         help="Set build files configuration",
         default='debug')
+    parser.add_argument(
+        '--generator',
+        dest='generator',
+        help="Set the CMake generator",
+        default=None)
 
     args = parser.parse_args()
     save_cwd = os.getcwd()
@@ -628,7 +646,7 @@ def main():
                       'build_platforms',
                       'repo_dir',
                       'on_build_platform')
-        repo_dict[repo.name] = {field: getattr(repo, field) for field in field_list};
+        repo_dict[repo.name] = {field: getattr(repo, field) for field in field_list}
 
         # If the repo has a CI whitelist, skip the repo unless
         # one of the CI's environment variable is set to true.

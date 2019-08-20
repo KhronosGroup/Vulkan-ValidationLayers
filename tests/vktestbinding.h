@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2016 The Khronos Group Inc.
- * Copyright (c) 2015-2016 Valve Corporation
- * Copyright (c) 2015-2016 LunarG, Inc.
+ * Copyright (c) 2015-2016, 2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2016, 2019 Valve Corporation
+ * Copyright (c) 2015-2016, 2019 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -387,7 +387,10 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
     // vkCreateBuffer()
     void init(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props);
     void init(const Device &dev, const VkBufferCreateInfo &info) { init(dev, info, 0); }
-    void init(const Device &dev, VkDeviceSize size, VkMemoryPropertyFlags mem_props) { init(dev, create_info(size, 0), mem_props); }
+    void init(const Device &dev, VkDeviceSize size, VkMemoryPropertyFlags mem_props,
+              VkBufferUsageFlags usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, const std::vector<uint32_t> &queue_families = {}) {
+        init(dev, create_info(size, usage, &queue_families), mem_props);
+    }
     void init(const Device &dev, VkDeviceSize size) { init(dev, size, 0); }
     void init_as_src(const Device &dev, VkDeviceSize size, VkMemoryPropertyFlags &reqs,
                      const std::vector<uint32_t> *queue_families = nullptr) {
@@ -398,8 +401,12 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
         init(dev, create_info(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, queue_families), reqs);
     }
     void init_as_src_and_dst(const Device &dev, VkDeviceSize size, VkMemoryPropertyFlags &reqs,
-                             const std::vector<uint32_t> *queue_families = nullptr) {
-        init(dev, create_info(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, queue_families), reqs);
+                             const std::vector<uint32_t> *queue_families = nullptr, bool memory = true) {
+        if (memory)
+            init(dev, create_info(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, queue_families), reqs);
+        else
+            init_no_mem(dev,
+                        create_info(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, queue_families));
     }
     void init_no_mem(const Device &dev, const VkBufferCreateInfo &info);
 
@@ -489,16 +496,16 @@ class Image : public internal::NonDispHandle<VkImage> {
     bool transparent() const;
     bool copyable() const { return (format_features_ & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT); }
 
-    VkImageSubresourceRange subresource_range(VkImageAspectFlagBits aspect) const {
-        return subresource_range(create_info_, aspect);
-    }
+    VkImageSubresourceRange subresource_range(VkImageAspectFlags aspect) const { return subresource_range(create_info_, aspect); }
     VkExtent3D extent() const { return create_info_.extent; }
     VkExtent3D extent(uint32_t mip_level) const { return extent(create_info_.extent, mip_level); }
     VkFormat format() const { return create_info_.format; }
     VkImageUsageFlags usage() const { return create_info_.usage; }
     VkSharingMode sharing_mode() const { return create_info_.sharingMode; }
     VkImageMemoryBarrier image_memory_barrier(VkFlags output_mask, VkFlags input_mask, VkImageLayout old_layout,
-                                              VkImageLayout new_layout, const VkImageSubresourceRange &range) const {
+                                              VkImageLayout new_layout, const VkImageSubresourceRange &range,
+                                              uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                                              uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED) const {
         VkImageMemoryBarrier barrier = {};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.srcAccessMask = output_mask;
@@ -507,11 +514,8 @@ class Image : public internal::NonDispHandle<VkImage> {
         barrier.newLayout = new_layout;
         barrier.image = handle();
         barrier.subresourceRange = range;
-
-        if (sharing_mode() == VK_SHARING_MODE_CONCURRENT) {
-            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        }
+        barrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
+        barrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
         return barrier;
     }
 
@@ -549,6 +553,34 @@ class ImageView : public internal::NonDispHandle<VkImageView> {
 
     // vkCreateImageView()
     void init(const Device &dev, const VkImageViewCreateInfo &info);
+};
+
+class AccelerationStructure : public internal::NonDispHandle<VkAccelerationStructureNV> {
+   public:
+    explicit AccelerationStructure(const Device &dev, const VkAccelerationStructureCreateInfoNV &info, bool init_memory = true) {
+        init(dev, info, init_memory);
+    }
+    ~AccelerationStructure();
+
+    // vkCreateAccelerationStructureNV
+    void init(const Device &dev, const VkAccelerationStructureCreateInfoNV &info, bool init_memory = true);
+
+    // vkGetAccelerationStructureMemoryRequirementsNV()
+    VkMemoryRequirements2 memory_requirements() const;
+    VkMemoryRequirements2 build_scratch_memory_requirements() const;
+
+    uint64_t opaque_handle() const { return opaque_handle_; }
+
+    const VkAccelerationStructureInfoNV &info() const { return info_; }
+
+    const VkDevice &dev() const { return device(); }
+
+    void create_scratch_buffer(const Device &dev, Buffer *buffer);
+
+   private:
+    VkAccelerationStructureInfoNV info_;
+    DeviceMemory memory_;
+    uint64_t opaque_handle_;
 };
 
 class ShaderModule : public internal::NonDispHandle<VkShaderModule> {

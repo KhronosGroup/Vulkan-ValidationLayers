@@ -12,15 +12,25 @@ version: "{build}"
 max_jobs: 4
 
 os:
-  - Visual Studio 2013
+  - Visual Studio 2015
+
+init:
+  - git config --global core.autocrlf true
 
 environment:
   PYTHON_PATH: "C:/Python35"
   PYTHON_PACKAGE_PATH: "C:/Python35/Scripts"
+  CMAKE_URL: "http://cmake.org/files/v3.10/cmake-3.10.2-win64-x64.zip"
 
 branches:
   only:
     - master
+
+install:
+  - appveyor DownloadFile %CMAKE_URL% -FileName cmake.zip
+  - 7z x cmake.zip -oC:\cmake > nul
+  - set path=C:\cmake\bin;%path%
+  - cmake --version
 
 before_build:
   - "SET PATH=C:\\Python35;C:\\Python35\\Scripts;%PATH%"
@@ -34,6 +44,8 @@ before_build:
   - git checkout tags/release-1.8.1
   - cd %APPVEYOR_BUILD_FOLDER%
   - python scripts/update_deps.py --dir=external --arch=%PLATFORM% --config=%CONFIGURATION% 
+  - echo Verifying consistency between source file generators and output
+  - python scripts/generate_source.py --verify external/Vulkan-Headers/registry
   - echo Generating Vulkan-ValidationLayers CMake files for %PLATFORM% %CONFIGURATION%
   - mkdir build
   - cd build
@@ -62,3 +74,7 @@ build:
   parallel: true                              # enable MSBuild parallel builds
   project: build/Vulkan-ValidationLayers.sln  # path to Visual Studio solution or project
   verbosity: quiet                            # quiet|minimal|normal|detailed
+
+artifacts:
+  - path: build\layers\$(configuration)
+    name: Vulkan-ValidationLayers-$(platform)-$(configuration)

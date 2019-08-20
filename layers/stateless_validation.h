@@ -21,8 +21,6 @@
 
 #pragma once
 
-#include <bitset>
-
 #include "parameter_name.h"
 #include "vk_typemap_helper.h"
 
@@ -44,6 +42,7 @@ static const char DECORATE_UNUSED *kVUID_PVError_DeviceLimit = "UNASSIGNED-Gener
 static const char DECORATE_UNUSED *kVUID_PVError_DeviceFeature = "UNASSIGNED-GeneralParameterError-DeviceFeature";
 static const char DECORATE_UNUSED *kVUID_PVError_FailureCode = "UNASSIGNED-GeneralParameterError-FailureCode";
 static const char DECORATE_UNUSED *kVUID_PVError_ExtensionNotEnabled = "UNASSIGNED-GeneralParameterError-ExtensionNotEnabled";
+static const char DECORATE_UNUSED *kVUID_PVPerfWarn_SuboptimalSwapchain = "UNASSIGNED-GeneralParameterPerfWarn-SuboptimalSwapchain";
 
 #undef DECORATE_UNUSED
 
@@ -54,6 +53,7 @@ extern const VkColorComponentFlags AllVkColorComponentFlagBits;
 extern const VkShaderStageFlags AllVkShaderStageFlagBits;
 extern const VkQueryControlFlags AllVkQueryControlFlagBits;
 extern const VkImageUsageFlags AllVkImageUsageFlagBits;
+extern const VkSampleCountFlags AllVkSampleCountFlagBits;
 
 extern const std::vector<VkCompareOp> AllVkCompareOpEnums;
 extern const std::vector<VkStencilOp> AllVkStencilOpEnums;
@@ -62,11 +62,9 @@ extern const std::vector<VkBlendOp> AllVkBlendOpEnums;
 extern const std::vector<VkLogicOp> AllVkLogicOpEnums;
 extern const std::vector<VkBorderColor> AllVkBorderColorEnums;
 extern const std::vector<VkImageLayout> AllVkImageLayoutEnums;
-
-struct GenericHeader {
-    VkStructureType sType;
-    const void *pNext;
-};
+extern const std::vector<VkFormat> AllVkFormatEnums;
+extern const std::vector<VkVertexInputRate> AllVkVertexInputRateEnums;
+extern const std::vector<VkPrimitiveTopology> AllVkPrimitiveTopologyEnums;
 
 // String returned by string_VkStructureType for an unrecognized type.
 const std::string UnsupportedStructureTypeString = "Unhandled VkStructureType";
@@ -92,9 +90,8 @@ struct LogMiscParams {
 class StatelessValidation : public ValidationObject {
    public:
     VkPhysicalDeviceLimits device_limits = {};
-    VkPhysicalDeviceFeatures physical_device_features = {};
-    VkDevice device = VK_NULL_HANDLE;
-    uint32_t api_version;
+    safe_VkPhysicalDeviceFeatures2 physical_device_features2;
+    const VkPhysicalDeviceFeatures &physical_device_features = physical_device_features2.features;
 
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.
@@ -104,6 +101,7 @@ class StatelessValidation : public ValidationObject {
     struct DeviceExtensionProperties {
         VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
         VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props;
+        VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
 
@@ -476,7 +474,7 @@ class StatelessValidation : public ValidationObject {
     }
 
     // Forward declaration for pNext validation
-    bool ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const GenericHeader *header);
+    bool ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure *header);
 
     /**
      * Validate a structure's pNext member.
@@ -523,7 +521,7 @@ class StatelessValidation : public ValidationObject {
             } else {
                 const VkStructureType *start = allowed_types;
                 const VkStructureType *end = allowed_types + allowed_type_count;
-                const GenericHeader *current = reinterpret_cast<const GenericHeader *>(next);
+                const VkBaseOutStructure *current = reinterpret_cast<const VkBaseOutStructure *>(next);
 
                 cycle_check.insert(next);
 
@@ -576,7 +574,7 @@ class StatelessValidation : public ValidationObject {
                         }
                         skip_call |= ValidatePnextStructContents(api_name, parameter_name, current);
                     }
-                    current = reinterpret_cast<const GenericHeader *>(current->pNext);
+                    current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);
                 }
             }
         }
@@ -706,6 +704,8 @@ class StatelessValidation : public ValidationObject {
         return skip_call;
     }
 
+    enum FlagType { kRequiredFlags, kOptionalFlags, kRequiredSingleBit, kOptionalSingleBit };
+
     /**
      * Validate a Vulkan bitmask value.
      *
@@ -717,27 +717,37 @@ class StatelessValidation : public ValidationObject {
      * @param flag_bits_name Name of the VkFlags type being validated.
      * @param all_flags A bit mask combining all valid flag bits for the VkFlags type being validated.
      * @param value VkFlags value to validate.
-     * @param flags_required The 'value' parameter may not be 0 when true.
-     * @param singleFlag The 'value' parameter may not contain more than one bit from all_flags.
+     * @param flag_type The type of flag, like optional, or single bit.
+     * @param vuid VUID used for flag that is outside defined bits (or has more than one bit for Bits type).
+     * @param flags_zero_vuid VUID used for non-optional Flags that are zero.
      * @return Boolean value indicating that the call should be skipped.
      */
     bool validate_flags(const char *api_name, const ParameterName &parameter_name, const char *flag_bits_name, VkFlags all_flags,
-                        VkFlags value, bool flags_required, bool singleFlag, const char *vuid) {
+                        VkFlags value, const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) {
         bool skip_call = false;
 
-        if (value == 0) {
-            if (flags_required) {
-                skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                                     "%s: value of %s must not be 0.", api_name, parameter_name.get_name().c_str());
-            }
-        } else if ((value & (~all_flags)) != 0) {
-            skip_call |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        kVUID_PVError_UnrecognizedValue, "%s: value of %s contains flag bits that are not recognized members of %s",
-                        api_name, parameter_name.get_name().c_str(), flag_bits_name);
-        } else if (singleFlag && (std::bitset<sizeof(VkFlags) * 8>(value).count() > 1)) {
-            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                 kVUID_PVError_UnrecognizedValue,
+        if ((value & ~all_flags) != 0) {
+            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
+                                 "%s: value of %s contains flag bits that are not recognized members of %s", api_name,
+                                 parameter_name.get_name().c_str(), flag_bits_name);
+        }
+
+        const bool required = flag_type == kRequiredFlags || flag_type == kRequiredSingleBit;
+        const char *zero_vuid = flag_type == kRequiredFlags ? flags_zero_vuid : vuid;
+        if (required && value == 0) {
+            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, zero_vuid,
+                                 "%s: value of %s must not be 0.", api_name, parameter_name.get_name().c_str());
+        }
+
+        const auto HasMaxOneBitSet = [](const VkFlags f) {
+            // Decrement flips bits from right upto first 1.
+            // Rest stays same, and if there was any other 1s &ded together they would be non-zero. QED
+            return f == 0 || !(f & (f - 1));
+        };
+
+        const bool is_bits_type = flag_type == kRequiredSingleBit || flag_type == kOptionalSingleBit;
+        if (is_bits_type && !HasMaxOneBitSet(value)) {
+            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                                  "%s: value of %s contains multiple members of %s when only a single value is allowed", api_name,
                                  parameter_name.get_name().c_str(), flag_bits_name);
         }
@@ -827,6 +837,71 @@ class StatelessValidation : public ValidationObject {
     enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
 
     template <typename RenderPassCreateInfoGeneric>
+    bool ValidateSubpassGraphicsFlags(const debug_report_data *report_data, const RenderPassCreateInfoGeneric *pCreateInfo,
+                                      uint32_t dependency_index, uint32_t subpass, VkPipelineStageFlags stages, const char *vuid,
+                                      const char *target) {
+        const VkPipelineStageFlags kCommonStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT | VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        const VkPipelineStageFlags kFramebufferStages =
+            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+            VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        const VkPipelineStageFlags kPrimitiveShadingPipelineStages =
+            kCommonStages | VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_VERTEX_INPUT_BIT |
+            VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
+            VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT | VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |
+            VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT | VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV | kFramebufferStages;
+        const VkPipelineStageFlags kMeshShadingPipelineStages =
+            kCommonStages | VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV |
+            VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV | VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV | kFramebufferStages;
+        const VkPipelineStageFlags kFragmentDensityStages = VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT;
+        const VkPipelineStageFlags kConditionalRenderingStages = VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT;
+        const VkPipelineStageFlags kCommandProcessingPipelineStages = kCommonStages | VK_PIPELINE_STAGE_COMMAND_PROCESS_BIT_NVX;
+
+        const VkPipelineStageFlags kGraphicsStages = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | kPrimitiveShadingPipelineStages |
+                                                     kMeshShadingPipelineStages | kFragmentDensityStages |
+                                                     kConditionalRenderingStages | kCommandProcessingPipelineStages;
+
+        const VkPipelineStageFlags kRayTracingPipelineStages = kCommonStages | VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV;
+        const VkPipelineStageFlags kRayTracingAccellerationStructOpsStages =
+            kCommonStages | VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV;
+        const VkPipelineStageFlags kRayTracingStages = kCommonStages | kRayTracingPipelineStages |
+                                                       kRayTracingAccellerationStructOpsStages | kFragmentDensityStages |
+                                                       kConditionalRenderingStages | kCommandProcessingPipelineStages;
+
+        bool skip = false;
+
+        const auto IsPipeline = [pCreateInfo](uint32_t subpass, const VkPipelineBindPoint stage) {
+            if (subpass == VK_SUBPASS_EXTERNAL)
+                return false;
+            else
+                return pCreateInfo->pSubpasses[subpass].pipelineBindPoint == stage;
+        };
+
+        const bool is_all_graphics_stages = (stages & ~kGraphicsStages) == 0;
+        if (IsPipeline(subpass, VK_PIPELINE_BIND_POINT_GRAPHICS) && !is_all_graphics_stages) {
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT, 0, vuid,
+                        "Dependency pDependencies[%" PRIu32
+                        "] specifies a %sStageMask that contains stages (%s) that are not part "
+                        "of the Graphics pipeline, as specified by the %sSubpass (= %" PRIu32 ") in pipelineBindPoint.",
+                        dependency_index, target, string_VkPipelineStageFlags(stages & ~kGraphicsStages).c_str(), target, subpass);
+        }
+
+        // TODO: Raytracing also allowed here? See https://github.com/KhronosGroup/Vulkan-Docs/issues/1021
+        // There's no harm in validating it even if not sure, I think...
+        const bool is_all_raytracing_stages = (stages & ~kRayTracingStages) == 0;
+        if (IsPipeline(subpass, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) && !is_all_raytracing_stages) {
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT, 0, vuid,
+                        "Dependency pDependencies[%" PRIu32
+                        "] specifies a %sStageMask that contains stages (%s) that are not part "
+                        "of the Ray Tracing pipeline, as specified by the %sSubpass (= %" PRIu32 ") in pipelineBindPoint.",
+                        dependency_index, target, string_VkPipelineStageFlags(stages & ~kGraphicsStages).c_str(), target, subpass);
+        }
+
+        return skip;
+    };
+
+    template <typename RenderPassCreateInfoGeneric>
     bool CreateRenderPassGeneric(VkDevice device, const RenderPassCreateInfoGeneric *pCreateInfo,
                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                  RenderPassCreateVersion rp_version) {
@@ -865,6 +940,22 @@ class StatelessValidation : public ValidationObject {
                                 pCreateInfo->pSubpasses[i].colorAttachmentCount, max_color_attachments);
             }
         }
+
+        for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
+            const auto &dependency = pCreateInfo->pDependencies[i];
+
+            // Spec currently only supports Graphics pipeline in render pass -- so only that pipeline is currently checked
+            vuid =
+                use_rp2 ? "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03054" : "VUID-VkRenderPassCreateInfo-pDependencies-00837";
+            skip |= ValidateSubpassGraphicsFlags(report_data, pCreateInfo, i, dependency.srcSubpass, dependency.srcStageMask, vuid,
+                                                 "src");
+
+            vuid =
+                use_rp2 ? "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03055" : "VUID-VkRenderPassCreateInfo-pDependencies-00838";
+            skip |= ValidateSubpassGraphicsFlags(report_data, pCreateInfo, i, dependency.dstSubpass, dependency.dstStageMask, vuid,
+                                                 "dst");
+        }
+
         return skip;
     }
 
@@ -906,6 +997,15 @@ class StatelessValidation : public ValidationObject {
     bool ValidateDeviceQueueFamily(uint32_t queue_family, const char *cmd_name, const char *parameter_name,
                                    const std::string &error_code, bool optional);
 
+    bool ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triangles, VkDebugReportObjectTypeEXT object_type,
+                                     uint64_t object_handle, const char *func_name) const;
+    bool ValidateGeometryAABBNV(const VkGeometryAABBNV &geometry, VkDebugReportObjectTypeEXT object_type, uint64_t object_handle,
+                                const char *func_name) const;
+    bool ValidateGeometryNV(const VkGeometryNV &geometry, VkDebugReportObjectTypeEXT object_type, uint64_t object_handle,
+                            const char *func_name) const;
+    bool ValidateAccelerationStructureInfoNV(const VkAccelerationStructureInfoNV &info, VkDebugReportObjectTypeEXT object_type,
+                                             uint64_t object_handle, const char *func_nam) const;
+
     bool OutputExtensionError(const std::string &api_name, const std::string &extension_name);
 
     void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
@@ -918,6 +1018,8 @@ class StatelessValidation : public ValidationObject {
 
     void PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                       VkInstance *pInstance, VkResult result);
+
+    void PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo, VkResult result);
 
     bool manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool);
@@ -933,9 +1035,6 @@ class StatelessValidation : public ValidationObject {
 
     bool manual_PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkImage *pImage);
-
-    bool manual_PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
-                                               const VkAllocationCallbacks *pAllocator, VkImageView *pView);
 
     bool manual_PreCallValidateViewport(const VkViewport &viewport, const char *fn_name, const ParameterName &parameter_name,
                                         VkDebugReportObjectTypeEXT object_type, uint64_t object);
@@ -956,7 +1055,7 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                                     const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
                                                     const VkCopyDescriptorSet *pDescriptorCopies);
-    ;
+
     bool manual_PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
                                                   const VkDescriptorSet *pDescriptorSets);
 
@@ -986,6 +1085,10 @@ class StatelessValidation : public ValidationObject {
 
     bool manual_PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                       uint32_t count, uint32_t stride);
+
+    bool manual_PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+                                                   const VkClearAttachment *pAttachments, uint32_t rectCount,
+                                                   const VkClearRect *pRects);
 
     bool manual_PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                             VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
@@ -1049,5 +1152,31 @@ class StatelessValidation : public ValidationObject {
                                                                   uint32_t *pPropertyCount, VkExtensionProperties *pProperties);
     bool manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
                                               const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory);
+
+    bool manual_PreCallValidateCreateAccelerationStructureNV(VkDevice device,
+                                                             const VkAccelerationStructureCreateInfoNV *pCreateInfo,
+                                                             const VkAllocationCallbacks *pAllocator,
+                                                             VkAccelerationStructureNV *pAccelerationStructure);
+    bool manual_PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer,
+                                                               const VkAccelerationStructureInfoNV *pInfo, VkBuffer instanceData,
+                                                               VkDeviceSize instanceOffset, VkBool32 update,
+                                                               VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
+                                                               VkBuffer scratch, VkDeviceSize scratchOffset);
+    bool manual_PreCallValidateGetAccelerationStructureHandleNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
+                                                                size_t dataSize, void *pData);
+    bool manual_PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                           const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
+                                                           const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines);
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    bool PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
+                                                              VkDeviceGroupPresentModeFlagsKHR *pModes);
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+
+    bool manual_PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
+                                                 const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer);
+
+    bool manual_PreCallValidateCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
+                                                    uint16_t lineStipplePattern);
 #include "parameter_validation.h"
 };  // Class StatelessValidation

@@ -59,6 +59,7 @@ from common_codegen import *
 #     separate line, align parameter names at the specified column
 class ThreadGeneratorOptions(GeneratorOptions):
     def __init__(self,
+                 conventions = None,
                  filename = None,
                  directory = '.',
                  apiname = None,
@@ -81,7 +82,7 @@ class ThreadGeneratorOptions(GeneratorOptions):
                  indentFuncPointer = False,
                  alignFuncParam = 0,
                  expandEnumerants = True):
-        GeneratorOptions.__init__(self, filename, directory, apiname, profile,
+        GeneratorOptions.__init__(self, conventions, filename, directory, apiname, profile,
                                   versions, emitversions, defaultExtensions,
                                   addExtensions, removeExtensions, emitExtensions, sortProcedure)
         self.prefixText      = prefixText
@@ -118,7 +119,7 @@ class ThreadOutputGenerator(OutputGenerator):
 
     inline_copyright_message = """
 // This file is ***GENERATED***.  Do Not Edit.
-// See layer_chassis_dispatch_generator.py for modifications.
+// See thread_safety_generator.py for modifications.
 
 /* Copyright (c) 2015-2019 The Khronos Group Inc.
  * Copyright (c) 2015-2019 Valve Corporation
@@ -357,8 +358,8 @@ public:
             use_data->thread = tid;
         } else if (uses[object].writer_count > 0 && uses[object].thread != tid) {
             // There is a writer of the object.
-            skip |= false;
-            log_msg(*report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object), kVUID_Threading_MultipleThreads,
+            skip |= log_msg(*report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object),
+                kVUID_Threading_MultipleThreads,
                 "THREADING ERROR : object of type %s is simultaneously used in "
                 "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
                 typeName, (uint64_t)uses[object].thread, (uint64_t)tid);
@@ -522,9 +523,11 @@ void ThreadSafety::PostCallRecordAllocateCommandBuffers(VkDevice device, const V
     FinishWriteObject(pAllocateInfo->commandPool);
 
     // Record mapping from command buffer to command pool
-    for (uint32_t index = 0; index < pAllocateInfo->commandBufferCount; index++) {
+    if(pCommandBuffers) {
         std::lock_guard<std::mutex> lock(command_pool_lock);
-        command_pool_map[pCommandBuffers[index]] = pAllocateInfo->commandPool;
+        for (uint32_t index = 0; index < pAllocateInfo->commandBufferCount; index++) {
+            command_pool_map[pCommandBuffers[index]] = pAllocateInfo->commandPool;
+        }
     }
 }
 
@@ -547,15 +550,22 @@ void ThreadSafety::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPoo
     const bool lockCommandPool = false;  // pool is already directly locked
     StartReadObject(device);
     StartWriteObject(commandPool);
-    for (uint32_t index = 0; index < commandBufferCount; index++) {
-        StartWriteObject(pCommandBuffers[index], lockCommandPool);
-    }
-    // The driver may immediately reuse command buffers in another thread.
-    // These updates need to be done before calling down to the driver.
-    for (uint32_t index = 0; index < commandBufferCount; index++) {
-        FinishWriteObject(pCommandBuffers[index], lockCommandPool);
+    if(pCommandBuffers) {
+        // Even though we're immediately "finishing" below, we still are testing for concurrency with any call in process
+        // so this isn't a no-op
+        for (uint32_t index = 0; index < commandBufferCount; index++) {
+            StartWriteObject(pCommandBuffers[index], lockCommandPool);
+        }
+        // The driver may immediately reuse command buffers in another thread.
+        // These updates need to be done before calling down to the driver.
+        for (uint32_t index = 0; index < commandBufferCount; index++) {
+            FinishWriteObject(pCommandBuffers[index], lockCommandPool);
+        }
+        // Holding the lock for the shortest time while we update the map
         std::lock_guard<std::mutex> lock(command_pool_lock);
-        command_pool_map.erase(pCommandBuffers[index]);
+        for (uint32_t index = 0; index < commandBufferCount; index++) {
+            command_pool_map.erase(pCommandBuffers[index]);
+        }
     }
 }
 
@@ -667,25 +677,9 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
     def paramIsPointer(self, param):
         ispointer = False
         for elem in param:
-            if ((elem.tag is not 'type') and (elem.tail is not None)) and '*' in elem.tail:
+            if elem.tag == 'type' and elem.tail is not None and '*' in elem.tail:
                 ispointer = True
         return ispointer
-
-    # Check if an object is a non-dispatchable handle
-    def isHandleTypeNonDispatchable(self, handletype):
-        handle = self.registry.tree.find("types/type/[name='" + handletype + "'][@category='handle']")
-        if handle is not None and handle.find('type').text == 'VK_DEFINE_NON_DISPATCHABLE_HANDLE':
-            return True
-        else:
-            return False
-
-    # Check if an object is a dispatchable handle
-    def isHandleTypeDispatchable(self, handletype):
-        handle = self.registry.tree.find("types/type/[name='" + handletype + "'][@category='handle']")
-        if handle is not None and handle.find('type').text == 'VK_DEFINE_HANDLE':
-            return True
-        else:
-            return False
 
     def makeThreadUseBlock(self, cmd, functionprefix):
         """Generate C function pointer typedef for <command> Element"""
@@ -700,16 +694,19 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
                 externsync = param.attrib.get('externsync')
                 if externsync == 'true':
                     if self.paramIsArray(param):
-                        paramdecl += 'for (uint32_t index=0;index<' + param.attrib.get('len') + ';index++) {\n'
-                        paramdecl += '    ' + functionprefix + 'WriteObject(' + paramname.text + '[index]);\n'
+                        paramdecl += 'if (' + paramname.text + ') {\n'
+                        paramdecl += '    for (uint32_t index=0; index < ' + param.attrib.get('len') + '; index++) {\n'
+                        paramdecl += '        ' + functionprefix + 'WriteObject(' + paramname.text + '[index]);\n'
+                        paramdecl += '    }\n'
                         paramdecl += '}\n'
                     else:
                         paramdecl += functionprefix + 'WriteObject(' + paramname.text + ');\n'
                 elif (param.attrib.get('externsync')):
                     if self.paramIsArray(param):
                         # Externsync can list pointers to arrays of members to synchronize
-                        paramdecl += 'for (uint32_t index=0;index<' + param.attrib.get('len') + ';index++) {\n'
-                        second_indent = ''
+                        paramdecl += 'if (' + paramname.text + ') {\n'
+                        paramdecl += '    for (uint32_t index=0; index < ' + param.attrib.get('len') + '; index++) {\n'
+                        second_indent = '    '
                         for member in externsync.split(","):
                             # Replace first empty [] in member name with index
                             element = member.replace('[]','[index]',1)
@@ -717,21 +714,22 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
                                 # TODO: These null checks can be removed if threading ends up behind parameter
                                 #       validation in layer order
                                 element_ptr = element.split('[]')[0]
-                                paramdecl += '    if (' + element_ptr + ') {\n'
+                                paramdecl += '        if (' + element_ptr + ') {\n'
                                 # Replace any second empty [] in element name with inner array index based on mapping array
                                 # names like "pSomeThings[]" to "someThingCount" array size. This could be more robust by
                                 # mapping a param member name to a struct type and "len" attribute.
                                 limit = element[0:element.find('s[]')] + 'Count'
                                 dotp = limit.rfind('.p')
                                 limit = limit[0:dotp+1] + limit[dotp+2:dotp+3].lower() + limit[dotp+3:]
-                                paramdecl += '        for(uint32_t index2=0;index2<'+limit+';index2++) {\n'
+                                paramdecl += '            for (uint32_t index2=0; index2 < '+limit+'; index2++) {\n'
                                 element = element.replace('[]','[index2]')
-                                second_indent = '   '
+                                second_indent = '        '
                                 paramdecl += '        ' + second_indent + functionprefix + 'WriteObject(' + element + ');\n'
+                                paramdecl += '            }\n'
                                 paramdecl += '        }\n'
-                                paramdecl += '    }\n'
                             else:
                                 paramdecl += '    ' + second_indent + functionprefix + 'WriteObject(' + element + ');\n'
+                        paramdecl += '    }\n'
                         paramdecl += '}\n'
                     else:
                         # externsync can list members to synchronize
@@ -745,7 +743,7 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
                         paramtype = paramtype.text
                     else:
                         paramtype = 'None'
-                    if (self.isHandleTypeDispatchable(paramtype) or self.isHandleTypeNonDispatchable(paramtype)) and paramtype != 'VkPhysicalDevice':
+                    if paramtype in self.handle_types and paramtype != 'VkPhysicalDevice':
                         if self.paramIsArray(param) and ('pPipelines' != paramname.text):
                             # Add pointer dereference for array counts that are pointer values
                             dereference = ''
@@ -754,8 +752,10 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
                                     if self.paramIsPointer(candidate):
                                         dereference = '*'
                             param_len = str(param.attrib.get('len')).replace("::", "->")
-                            paramdecl += 'for (uint32_t index = 0; index < ' + dereference + param_len + '; index++) {\n'
-                            paramdecl += '    ' + functionprefix + 'ReadObject(' + paramname.text + '[index]);\n'
+                            paramdecl += 'if (' + paramname.text + ') {\n'
+                            paramdecl += '    for (uint32_t index = 0; index < ' + dereference + param_len + '; index++) {\n'
+                            paramdecl += '        ' + functionprefix + 'ReadObject(' + paramname.text + '[index]);\n'
+                            paramdecl += '    }\n'
                             paramdecl += '}\n'
                         elif not self.paramIsPointer(param):
                             # Pointer params are often being created.
@@ -792,7 +792,10 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
             return paramdecl
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
-        #
+        
+        # Initialize members that require the tree
+        self.handle_types = GetHandleTypes(self.registry.tree)
+
         # TODO: LUGMAL -- remove this and add our copyright
         # User-supplied prefix text, if any (list of strings)
         write(self.inline_copyright_message, file=self.outFile)
@@ -818,7 +821,7 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
         counter_class_instances = ''
         counter_class_bodies = ''
 
-        for obj in self.non_dispatchable_types:
+        for obj in sorted(self.non_dispatchable_types):
             counter_class_defs += '    counter<%s> c_%s;\n' % (obj, obj)
             if obj in self.object_to_debug_report_type:
                 obj_type = self.object_to_debug_report_type[obj]
@@ -866,11 +869,8 @@ void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapch
     # Type generation
     def genType(self, typeinfo, name, alias):
         OutputGenerator.genType(self, typeinfo, name, alias)
-        type_elem = typeinfo.elem
-        category = type_elem.get('category')
-        if category == 'handle':
-            if self.isHandleTypeNonDispatchable(name):
-                self.non_dispatchable_types.add(name)
+        if self.handle_types.IsNonDispatchable(name):
+            self.non_dispatchable_types.add(name)
     #
     # Struct (e.g. C "struct" type) generation.
     # This is a special case of the <type> tag where the contents are

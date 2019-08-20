@@ -26,6 +26,8 @@ VkTestFramework::~VkTestFramework() {}
 
 // Define static elements
 bool VkTestFramework::m_devsim_layer = false;
+bool VkTestFramework::m_khronos_layer_disable = false;
+ANativeWindow *VkTestFramework::window = nullptr;
 
 VkFormat VkTestFramework::GetFormat(VkInstance instance, vk_testing::Device *device) {
     VkFormatProperties format_props;
@@ -89,7 +91,7 @@ bool VkTestFramework::GLSLtoSPV(const VkShaderStageFlagBits shader_type, const c
     shaderc::SpvCompilationResult result =
         compiler.CompileGlslToSpv(pshader, strlen(pshader), MapShadercType(shader_type), "shader", options);
     if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
-        __android_log_print(ANDROID_LOG_ERROR, "VkLayerValidationTest", "GLSLtoSPV compilation failed: %s",
+        __android_log_print(ANDROID_LOG_ERROR, "VkLayerValidationTests", "GLSLtoSPV compilation failed: %s",
                             result.GetErrorMessage().c_str());
         return false;
     }

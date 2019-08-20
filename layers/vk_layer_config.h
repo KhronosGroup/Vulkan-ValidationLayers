@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2016 The Khronos Group Inc.
- * Copyright (c) 2015-2016 Valve Corporation
- * Copyright (c) 2015-2016 LunarG, Inc.
+/* Copyright (c) 2015-2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2019 Valve Corporation
+ * Copyright (c) 2015-2019 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,8 @@ const std::unordered_map<std::string, VkFlags> report_flags_option_definitions =
     {std::string("debug"), VK_DEBUG_REPORT_DEBUG_BIT_EXT}};
 
 VK_LAYER_EXPORT const char *getLayerOption(const char *_option);
+VK_LAYER_EXPORT const char *GetLayerEnvVar(const char *_option);
+
 VK_LAYER_EXPORT FILE *getLayerLogOutput(const char *_option, const char *layerName);
 VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(std::string _option, std::unordered_map<std::string, VkFlags> const &enum_data,
                                             uint32_t option_default);

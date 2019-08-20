@@ -59,9 +59,6 @@ class VkImageObj;
 
 class VkTestFramework : public ::testing::Test {
    public:
-    VkTestFramework();
-    ~VkTestFramework();
-
     VkFormat GetFormat(VkInstance instance, vk_testing::Device *device);
     static bool optionMatch(const char *option, char *optionLine);
     static void InitArgs(int *argc, char *argv[]);
@@ -74,9 +71,14 @@ class VkTestFramework : public ::testing::Test {
     static bool m_strip_spv;
     static bool m_do_everything_spv;
     static bool m_devsim_layer;
+    static bool m_khronos_layer_disable;
 
     char **ReadFileData(const char *fileName);
     void FreeFileData(char **data);
+
+   protected:
+    VkTestFramework();
+    virtual ~VkTestFramework() = 0;
 
    private:
     int m_compile_options;
