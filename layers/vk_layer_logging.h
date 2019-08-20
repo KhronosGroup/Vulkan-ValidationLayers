@@ -559,35 +559,6 @@ static inline VkResult layer_create_report_callback(debug_report_data *debug_dat
     return VK_SUCCESS;
 }
 
-static inline PFN_vkVoidFunction debug_utils_get_instance_proc_addr(debug_report_data *debug_data, const char *func_name) {
-    if (!debug_data) {
-        return NULL;
-    }
-    if (debug_data->g_DEBUG_REPORT) {
-        if (!strcmp(func_name, "vkCreateDebugReportCallbackEXT")) {
-            return (PFN_vkVoidFunction)vkCreateDebugReportCallbackEXT;
-        }
-        if (!strcmp(func_name, "vkDestroyDebugReportCallbackEXT")) {
-            return (PFN_vkVoidFunction)vkDestroyDebugReportCallbackEXT;
-        }
-        if (!strcmp(func_name, "vkDebugReportMessageEXT")) {
-            return (PFN_vkVoidFunction)vkDebugReportMessageEXT;
-        }
-    }
-    if (debug_data->g_DEBUG_UTILS) {
-        if (!strcmp(func_name, "vkCreateDebugUtilsMessengerEXT")) {
-            return (PFN_vkVoidFunction)vkCreateDebugUtilsMessengerEXT;
-        }
-        if (!strcmp(func_name, "vkDestroyDebugUtilsMessengerEXT")) {
-            return (PFN_vkVoidFunction)vkDestroyDebugUtilsMessengerEXT;
-        }
-        if (!strcmp(func_name, "vkSubmitDebugUtilsMessageEXT")) {
-            return (PFN_vkVoidFunction)vkSubmitDebugUtilsMessageEXT;
-        }
-    }
-    return NULL;
-}
-
 // This utility (called at vkCreateInstance() time), looks at a pNext chain. It counts any VkDebugUtilsMessengerCreateInfoEXT
 // structs that it finds.  It then allocates an array that can hold that many structs, as well as that  many
 // VkDebugUtilsMessengerEXT handles.  It then copies each VkDebugUtilsMessengerCreateInfoEXT, and initializes each handle.
