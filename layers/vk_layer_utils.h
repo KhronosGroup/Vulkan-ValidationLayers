@@ -159,3 +159,127 @@ static inline int u_ffs(int val) {
 #ifdef __cplusplus
 }
 #endif
+
+// shared_mutex support added in MSVC 2015 update 2
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918
+#include <shared_mutex>
+#endif
+
+// Limited concurrent_unordered_map that supports internally-synchronized
+// insert/erase/access. Splits locking across N buckets and uses shared_mutex
+// for read/write locking. Iterators are not supported. The following
+// operations are supported:
+//
+// insert_or_assign: Insert a new element or update an existing element.
+// erase: Remove an element.
+// find: Returns != end() if found, value is in ret->second.
+// pop: Erases and returns the erased value if found.
+//
+// find/end: find returns a vaguely iterator-like type that can be compared to
+// end and can use iter->second to retrieve the reference. This is to ease porting
+// for existing code that combines the existence check and lookup in a single
+// operation (and thus a single lock). i.e.:
+//
+//      auto iter = map.find(key);
+//      if (iter != map.end()) {
+//          T t = iter->second;
+//          ...
+template <typename Key, typename T, int BUCKETSLOG2 = 2>
+class vl_concurrent_unordered_map {
+   public:
+    void insert_or_assign(const Key &key, const T &value) {
+        uint32_t h = ConcurrentMapHashObject(key);
+        write_lock_guard_t lock(locks[h].lock);
+        maps[h][key] = value;
+    }
+
+    // returns size_type
+    size_t erase(const Key &key) {
+        uint32_t h = ConcurrentMapHashObject(key);
+        write_lock_guard_t lock(locks[h].lock);
+        return maps[h].erase(key);
+    }
+
+    // type returned by find() and end().
+    class FindResult {
+       public:
+        FindResult(bool a, T b) : result(a, b) {}
+
+        // == and != only support comparing against end()
+        bool operator==(const FindResult &other) const {
+            if (result.first == false && other.result.first == false) {
+                return true;
+            }
+            return false;
+        }
+        bool operator!=(const FindResult &other) const { return !(*this == other); }
+
+        // Make -> act kind of like an iterator.
+        std::pair<bool, T> *operator->() { return &result; }
+        const std::pair<bool, T> *operator->() const { return &result; }
+
+       private:
+        // (found, reference to element)
+        std::pair<bool, T> result;
+    };
+
+    // find()/end() return a FindResult containing a reference. For end(), that
+    // reference is to this dummy member.
+    T dummy;
+    FindResult end() { return FindResult(false, dummy); }
+
+    FindResult find(const Key &key) {
+        uint32_t h = ConcurrentMapHashObject(key);
+        read_lock_guard_t lock(locks[h].lock);
+
+        auto itr = maps[h].find(key);
+        bool found = itr != maps[h].end();
+
+        return found ? FindResult(true, itr->second) : end();
+    }
+
+    FindResult pop(const Key &key) {
+        uint32_t h = ConcurrentMapHashObject(key);
+        write_lock_guard_t lock(locks[h].lock);
+
+        auto itr = maps[h].find(key);
+        bool found = itr != maps[h].end();
+
+        if (found) {
+            auto ret = FindResult(true, itr->second);
+            maps[h].erase(itr);
+            return ret;
+        } else {
+            return end();
+        }
+    }
+
+   private:
+    static const int BUCKETS = (1 << BUCKETSLOG2);
+// shared_mutex support added in MSVC 2015 update 2
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918
+#include <shared_mutex>
+    typedef std::shared_mutex lock_t;
+    typedef std::shared_lock<lock_t> read_lock_guard_t;
+    typedef std::unique_lock<lock_t> write_lock_guard_t;
+#else
+    typedef std::mutex lock_t;
+    typedef std::unique_lock<lock_t> read_lock_guard_t;
+    typedef std::unique_lock<lock_t> write_lock_guard_t;
+#endif
+
+    std::unordered_map<Key, T> maps[BUCKETS];
+    struct {
+        lock_t lock;
+        // Put each lock on its own cache line to avoid false cache line sharing.
+        char padding[64 - sizeof(lock_t)];
+    } locks[BUCKETS];
+
+    uint32_t ConcurrentMapHashObject(const Key &object) const {
+        uint64_t u64 = (uint64_t)(uintptr_t)object;
+        uint32_t hash = (uint32_t)(u64 >> 32) + (uint32_t)u64;
+        hash ^= (hash >> BUCKETSLOG2) ^ (hash >> (2 * BUCKETSLOG2));
+        hash &= (BUCKETS - 1);
+        return hash;
+    }
+};

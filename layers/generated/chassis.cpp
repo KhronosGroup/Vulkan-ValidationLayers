@@ -33,10 +33,11 @@
 
 std::unordered_map<void*, ValidationObject*> layer_data_map;
 
-// Global unique object identifier.  All increments must be guarded by a lock.
-uint64_t global_unique_id = 1;
-// Map uniqueID to actual object handle
-std::unordered_map<uint64_t, uint64_t> unique_id_mapping;
+// Global unique object identifier.
+std::atomic<uint64_t> global_unique_id(1ULL);
+// Map uniqueID to actual object handle. Accesses to the map itself are
+// internally synchronized.
+vl_concurrent_unordered_map<uint64_t, uint64_t, 4> unique_id_mapping;
 
 // TODO: This variable controls handle wrapping -- in the future it should be hooked
 //       up to the new VALIDATION_FEATURES extension. Temporarily, control with a compile-time flag.
