@@ -248,6 +248,7 @@ void CoreChecks::GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, std::unique_
             VkPhysicalDeviceFeatures new_features = {};
             new_features.fragmentStoresAndAtomics = supported_features->fragmentStoresAndAtomics;
             new_features.vertexPipelineStoresAndAtomics = supported_features->vertexPipelineStoresAndAtomics;
+            delete modified_create_info->pEnabledFeatures;
             create_info->pEnabledFeatures = new VkPhysicalDeviceFeatures(new_features);
         }
     }
