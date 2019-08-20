@@ -7732,6 +7732,8 @@ static VkDeviceSize GetIndexAlignment(VkIndexType indexType) {
             return 2;
         case VK_INDEX_TYPE_UINT32:
             return 4;
+        case VK_INDEX_TYPE_UINT8_EXT:
+            return 1;
         default:
             // Not a real index type. Express no alignment requirement here; we expect upper layer
             // to have already picked up on the enum being nonsense.

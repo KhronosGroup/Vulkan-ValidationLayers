@@ -108,6 +108,8 @@ bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, ui
             index_size = 2;
         } else if (index_buffer_binding.index_type == VK_INDEX_TYPE_UINT32) {
             index_size = 4;
+        } else if (index_buffer_binding.index_type == VK_INDEX_TYPE_UINT8_EXT) {
+            index_size = 1;
         }
         VkDeviceSize end_offset = (index_size * ((VkDeviceSize)firstIndex + indexCount)) + index_buffer_binding.offset;
         if (end_offset > index_buffer_binding.size) {
