@@ -104,7 +104,6 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
     VkDebugReportFlagsEXT report_flags = GetLayerOptionFlags(report_flags_key, report_flags_option_definitions, 0);
     VkLayerDbgActionFlags debug_action = GetLayerOptionFlags(debug_action_key, debug_actions_option_definitions, 0);
     // Flag as default if these settings are not from a vk_layer_settings.txt file
-    bool default_layer_callback = (debug_action & VK_DBG_LAYER_ACTION_DEFAULT) ? true : false;
     VkDebugUtilsMessengerCreateInfoEXT dbgCreateInfo;
     memset(&dbgCreateInfo, 0, sizeof(dbgCreateInfo));
     dbgCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
@@ -131,7 +130,7 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
         FILE *log_output = getLayerLogOutput(log_filename, layer_identifier);
         dbgCreateInfo.pfnUserCallback = messenger_log_callback;
         dbgCreateInfo.pUserData = (void *)log_output;
-        layer_create_messenger_callback(report_data, default_layer_callback, &dbgCreateInfo, pAllocator, &messenger);
+        layer_create_messenger_callback(report_data, true, &dbgCreateInfo, pAllocator, &messenger);
         logging_messenger.push_back(messenger);
     }
 
@@ -140,7 +139,7 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
     if (debug_action & VK_DBG_LAYER_ACTION_DEBUG_OUTPUT) {
         dbgCreateInfo.pfnUserCallback = messenger_win32_debug_output_msg;
         dbgCreateInfo.pUserData = NULL;
-        layer_create_messenger_callback(report_data, default_layer_callback, &dbgCreateInfo, pAllocator, &messenger);
+        layer_create_messenger_callback(report_data, true, &dbgCreateInfo, pAllocator, &messenger);
         logging_messenger.push_back(messenger);
     }
 
@@ -149,7 +148,7 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
     if (debug_action & VK_DBG_LAYER_ACTION_BREAK) {
         dbgCreateInfo.pfnUserCallback = MessengerBreakCallback;
         dbgCreateInfo.pUserData = NULL;
-        layer_create_messenger_callback(report_data, default_layer_callback, &dbgCreateInfo, pAllocator, &messenger);
+        layer_create_messenger_callback(report_data, true, &dbgCreateInfo, pAllocator, &messenger);
         logging_messenger.push_back(messenger);
     }
 }
