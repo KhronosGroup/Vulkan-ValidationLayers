@@ -5475,6 +5475,19 @@ static inline const char* string_VkCoarseSampleOrderTypeNV(VkCoarseSampleOrderTy
     }
 }
 
+static inline const char* string_VkAccelerationStructureTypeNV(VkAccelerationStructureTypeNV input_value)
+{
+    switch ((VkAccelerationStructureTypeNV)input_value)
+    {
+        case VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV:
+            return "VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV";
+        case VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV:
+            return "VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV";
+        default:
+            return "Unhandled VkAccelerationStructureTypeNV";
+    }
+}
+
 static inline const char* string_VkRayTracingShaderGroupTypeNV(VkRayTracingShaderGroupTypeNV input_value)
 {
     switch ((VkRayTracingShaderGroupTypeNV)input_value)
@@ -5563,19 +5576,6 @@ static inline std::string string_VkGeometryInstanceFlagsNV(VkGeometryInstanceFla
     }
     if( ret.empty()) ret.append(string_VkGeometryInstanceFlagBitsNV(static_cast<VkGeometryInstanceFlagBitsNV>(0)));
     return ret;
-}
-
-static inline const char* string_VkAccelerationStructureTypeNV(VkAccelerationStructureTypeNV input_value)
-{
-    switch ((VkAccelerationStructureTypeNV)input_value)
-    {
-        case VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV:
-            return "VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV";
-        case VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV:
-            return "VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV";
-        default:
-            return "Unhandled VkAccelerationStructureTypeNV";
-    }
 }
 
 static inline const char* string_VkBuildAccelerationStructureFlagBitsNV(VkBuildAccelerationStructureFlagBitsNV input_value)
@@ -5792,6 +5792,8 @@ static inline const char* string_VkValidationFeatureEnableEXT(VkValidationFeatur
 {
     switch ((VkValidationFeatureEnableEXT)input_value)
     {
+        case VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT:
+            return "VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT";
         case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT:
             return "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT";
         case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT:
