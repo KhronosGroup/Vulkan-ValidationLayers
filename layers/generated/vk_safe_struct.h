@@ -32,11 +32,9 @@
 
 #pragma once
 #include <vulkan/vulkan.h>
-#include <vulkan/vk_layer.h>
 
 void *SafePnextCopy(const void *pNext);
-void FreePnextChain(const void *head);
-void FreePnextChain(void *head);
+void FreePnextChain(const void *pNext);
 char *SafeStringCopy(const char *in_string);
 
 

@@ -455,11 +455,9 @@ class HelperFileOutputGenerator(OutputGenerator):
         safe_struct_helper_header = '\n'
         safe_struct_helper_header += '#pragma once\n'
         safe_struct_helper_header += '#include <vulkan/vulkan.h>\n'
-        safe_struct_helper_header += '#include <vulkan/vk_layer.h>\n'
         safe_struct_helper_header += '\n'
         safe_struct_helper_header += 'void *SafePnextCopy(const void *pNext);\n'
-        safe_struct_helper_header += 'void FreePnextChain(const void *head);\n'
-        safe_struct_helper_header += 'void FreePnextChain(void *head);\n'
+        safe_struct_helper_header += 'void FreePnextChain(const void *pNext);\n'
         safe_struct_helper_header += 'char *SafeStringCopy(const char *in_string);\n'
         safe_struct_helper_header += '\n'
         safe_struct_helper_header += self.GenerateSafeStructHeader()
@@ -885,91 +883,82 @@ class HelperFileOutputGenerator(OutputGenerator):
 
         build_pnext_proc = '\n'
         build_pnext_proc += 'void *SafePnextCopy(const void *pNext) {\n'
-        build_pnext_proc += '    void *cur_pnext = const_cast<void *>(pNext);\n'
-        build_pnext_proc += '    void *cur_ext_struct = NULL;\n'
-        build_pnext_proc += '    bool unrecognized_stype = true;\n\n'
-        build_pnext_proc += '    while (unrecognized_stype) {\n'
-        build_pnext_proc += '        unrecognized_stype = false;\n'
-        build_pnext_proc += '        if (cur_pnext == nullptr) {\n'
-        build_pnext_proc += '            return nullptr;\n'
-        build_pnext_proc += '        } else {\n'
-        build_pnext_proc += '            VkBaseOutStructure *header = reinterpret_cast<VkBaseOutStructure *>(cur_pnext);\n\n'
-        build_pnext_proc += '            switch (header->sType) {\n\n'
+        build_pnext_proc += '    if (!pNext) return nullptr;\n'
+        build_pnext_proc += '\n'
+        build_pnext_proc += '    void *safe_pNext;\n'
+        build_pnext_proc += '    const VkBaseOutStructure *header = reinterpret_cast<const VkBaseOutStructure *>(pNext);\n'
+        build_pnext_proc += '\n'
+        build_pnext_proc += '    switch (header->sType) {\n'
         # Add special-case code to copy beloved secret loader structs
-        build_pnext_proc += '                // Special-case Loader Instance Struct passed to/from layer in pNext chain\n'
-        build_pnext_proc += '                case VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO: {\n'
-        build_pnext_proc += '                        VkLayerInstanceCreateInfo *safe_struct = new VkLayerInstanceCreateInfo;\n'
-        build_pnext_proc += '                        memcpy((void *)safe_struct, (void *)cur_pnext, sizeof(VkLayerInstanceCreateInfo));\n'
-        build_pnext_proc += '                        safe_struct->pNext = SafePnextCopy(safe_struct->pNext);\n'
-        build_pnext_proc += '                        cur_ext_struct = reinterpret_cast<void *>(safe_struct);\n'
-        build_pnext_proc += '                    } break;\n\n'
-        build_pnext_proc += '                // Special-case Loader Device Struct passed to/from layer in pNext chain\n'
-        build_pnext_proc += '                case VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO: {\n'
-        build_pnext_proc += '                        VkLayerDeviceCreateInfo *safe_struct = new VkLayerDeviceCreateInfo;\n'
-        build_pnext_proc += '                        memcpy((void *)safe_struct, (void *)cur_pnext, sizeof(VkLayerDeviceCreateInfo));\n'
-        build_pnext_proc += '                        safe_struct->pNext = SafePnextCopy(safe_struct->pNext);\n'
-        build_pnext_proc += '                        cur_ext_struct = reinterpret_cast<void *>(safe_struct);\n'
-        build_pnext_proc += '                    } break;\n\n'
-
-        free_pnext_proc = '\n\n'
-        free_pnext_proc += '// Free a const pNext extension chain\n'
-        free_pnext_proc += 'void FreePnextChain(const void *head) {\n'
-        free_pnext_proc += '    FreePnextChain(const_cast<void *>(head));\n'
-        free_pnext_proc += '}\n\n'
-        free_pnext_proc += '// Free a pNext extension chain\n'
-        free_pnext_proc += 'void FreePnextChain(void *head) {\n'
-        free_pnext_proc += '    if (nullptr == head) return;\n'
-        free_pnext_proc += '    VkBaseOutStructure *header = reinterpret_cast<VkBaseOutStructure *>(head);\n\n'
-        free_pnext_proc += '    switch (header->sType) {\n\n'
-        free_pnext_proc += '        // Special-case Loader Instance Struct passed to/from layer in pNext chain\n'
-        free_pnext_proc += '        case VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO: {\n'
-        free_pnext_proc += '            if (header->pNext) FreePnextChain(header->pNext);\n'
-        free_pnext_proc += '            delete reinterpret_cast<VkLayerInstanceCreateInfo *>(head);\n'
-        free_pnext_proc += '        } break;\n\n'
-        free_pnext_proc += '        // Special-case Loader Device Struct passed to/from layer in pNext chain\n'
-        free_pnext_proc += '        case VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO: {\n'
-        free_pnext_proc += '            if (header->pNext) FreePnextChain(header->pNext);\n'
-        free_pnext_proc += '            delete reinterpret_cast<VkLayerDeviceCreateInfo *>(head);\n'
-        free_pnext_proc += '        } break;\n\n'
-
-        for item in self.structextends_list:
-
-            struct = next((v for v in self.structMembers if v.name == item), None)
-            if struct is None:
-                continue
-            
-            if struct.ifdef_protect is not None:
-                build_pnext_proc += '#ifdef %s\n' % struct.ifdef_protect
-                free_pnext_proc += '#ifdef %s\n' % struct.ifdef_protect
-            build_pnext_proc += '                case %s: {\n' % self.structTypes[item].value
-            build_pnext_proc += '                        safe_%s *safe_struct = new safe_%s;\n' % (item, item)
-            build_pnext_proc += '                        safe_struct->initialize(reinterpret_cast<const %s *>(cur_pnext));\n' % item
-            build_pnext_proc += '                        cur_ext_struct = reinterpret_cast<void *>(safe_struct);\n'
-            build_pnext_proc += '                    } break;\n'
-
-            free_pnext_proc += '        case %s:\n' % self.structTypes[item].value
-            free_pnext_proc += '            delete reinterpret_cast<safe_%s *>(header);\n' % item
-            free_pnext_proc += '            break;\n'
-
-            if struct.ifdef_protect is not None:
-                build_pnext_proc += '#endif // %s\n' % struct.ifdef_protect
-                free_pnext_proc += '#endif // %s\n' % struct.ifdef_protect
-            build_pnext_proc += '\n'
-            free_pnext_proc += '\n'
-
-        build_pnext_proc += '                default:\n'
-        build_pnext_proc += '                    // Encountered an unknown sType -- skip (do not copy) this entry in the chain\n'
-        build_pnext_proc += '                    unrecognized_stype = true;\n'
-        build_pnext_proc += '                    cur_pnext = header->pNext;\n'
-        build_pnext_proc += '                    break;\n'
-        build_pnext_proc += '            }\n'
+        build_pnext_proc += '        // Special-case Loader Instance Struct passed to/from layer in pNext chain\n'
+        build_pnext_proc += '        case VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO: {\n'
+        build_pnext_proc += '            VkLayerInstanceCreateInfo *struct_copy = new VkLayerInstanceCreateInfo;\n'
+        build_pnext_proc += '            // TODO: Uses original VkLayerInstanceLink* chain, which should be okay for our uses\n'
+        build_pnext_proc += '            memcpy(struct_copy, pNext, sizeof(VkLayerInstanceCreateInfo));\n'
+        build_pnext_proc += '            struct_copy->pNext = SafePnextCopy(header->pNext);\n'
+        build_pnext_proc += '            safe_pNext = struct_copy;\n'
+        build_pnext_proc += '            break;\n'
         build_pnext_proc += '        }\n'
-        build_pnext_proc += '    }\n'
-        build_pnext_proc += '    return cur_ext_struct;\n'
-        build_pnext_proc += '}\n\n'
+        build_pnext_proc += '        // Special-case Loader Device Struct passed to/from layer in pNext chain\n'
+        build_pnext_proc += '        case VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO: {\n'
+        build_pnext_proc += '            VkLayerDeviceCreateInfo *struct_copy = new VkLayerDeviceCreateInfo;\n'
+        build_pnext_proc += '            // TODO: Uses original VkLayerDeviceLink*, which should be okay for our uses\n'
+        build_pnext_proc += '            memcpy(struct_copy, pNext, sizeof(VkLayerDeviceCreateInfo));\n'
+        build_pnext_proc += '            struct_copy->pNext = SafePnextCopy(header->pNext);\n'
+        build_pnext_proc += '            safe_pNext = struct_copy;\n'
+        build_pnext_proc += '            break;\n'
+        build_pnext_proc += '        }\n'
 
-        free_pnext_proc += '        default:\n'
-        free_pnext_proc += '            // Do nothing -- skip unrecognized sTypes\n'
+        free_pnext_proc = '\n'
+        free_pnext_proc += 'void FreePnextChain(const void *pNext) {\n'
+        free_pnext_proc += '    if (!pNext) return;\n'
+        free_pnext_proc += '\n'
+        free_pnext_proc += '    auto header = reinterpret_cast<const VkBaseOutStructure *>(pNext);\n'
+        free_pnext_proc += '\n'
+        free_pnext_proc += '    switch (header->sType) {\n'
+        free_pnext_proc += '        // Special-case Loader Instance Struct passed to/from layer in pNext chain\n'
+        free_pnext_proc += '        case VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO:\n'
+        free_pnext_proc += '            FreePnextChain(header->pNext);\n'
+        free_pnext_proc += '            delete reinterpret_cast<const VkLayerInstanceCreateInfo *>(pNext);\n'
+        free_pnext_proc += '            break;\n'
+        free_pnext_proc += '        // Special-case Loader Device Struct passed to/from layer in pNext chain\n'
+        free_pnext_proc += '        case VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO:\n'
+        free_pnext_proc += '            FreePnextChain(header->pNext);\n'
+        free_pnext_proc += '            delete reinterpret_cast<const VkLayerDeviceCreateInfo *>(pNext);\n'
+        free_pnext_proc += '            break;\n'
+
+        chain_structs = tuple(s for s in self.structMembers if s.name in self.structextends_list)
+        ifdefs = sorted({cs.ifdef_protect for cs in chain_structs}, key = lambda i : i if i is not None else '')
+        for ifdef in ifdefs:
+            if ifdef is not None:
+                build_pnext_proc += '#ifdef %s\n' % ifdef
+                free_pnext_proc += '#ifdef %s\n' % ifdef
+
+            assorted_chain_structs = tuple(s for s in chain_structs if s.ifdef_protect == ifdef)
+            for struct in assorted_chain_structs:
+                build_pnext_proc += '        case %s:\n' % self.structTypes[struct.name].value
+                build_pnext_proc += '            safe_pNext = new safe_%s(reinterpret_cast<const %s *>(pNext));\n' % (struct.name, struct.name)
+                build_pnext_proc += '            break;\n'
+
+                free_pnext_proc += '        case %s:\n' % self.structTypes[struct.name].value
+                free_pnext_proc += '            delete reinterpret_cast<const safe_%s *>(header);\n' % struct.name
+                free_pnext_proc += '            break;\n'
+
+            if ifdef is not None:
+                build_pnext_proc += '#endif // %s\n' % ifdef
+                free_pnext_proc += '#endif // %s\n' % ifdef
+
+        build_pnext_proc += '        default: // Encountered an unknown sType -- skip (do not copy) this entry in the chain\n'
+        build_pnext_proc += '            safe_pNext = SafePnextCopy(header->pNext);\n'
+        build_pnext_proc += '            break;\n'
+        build_pnext_proc += '    }\n'
+        build_pnext_proc += '\n'
+        build_pnext_proc += '    return safe_pNext;\n'
+        build_pnext_proc += '}\n'
+
+        free_pnext_proc += '        default: // Encountered an unknown sType -- panic, there should be none such in safe chain\n'
+        free_pnext_proc += '            assert(false);\n'
+        free_pnext_proc += '            FreePnextChain(header->pNext);\n'
         free_pnext_proc += '            break;\n'
         free_pnext_proc += '    }\n'
         free_pnext_proc += '}\n'
@@ -993,8 +982,12 @@ class HelperFileOutputGenerator(OutputGenerator):
     def GenerateSafeStructHelperSource(self):
         safe_struct_helper_source = '\n'
         safe_struct_helper_source += '#include "vk_safe_struct.h"\n'
+        safe_struct_helper_source += '\n'
         safe_struct_helper_source += '#include <string.h>\n'
+        safe_struct_helper_source += '#include <cassert>\n'
         safe_struct_helper_source += '#include <cstring>\n'
+        safe_struct_helper_source += '\n'
+        safe_struct_helper_source += '#include <vulkan/vk_layer.h>\n'
         safe_struct_helper_source += '\n'
         safe_struct_helper_source += self.GenerateSafeStructSource()
         safe_struct_helper_source += self.build_safe_struct_utility_funcs()
