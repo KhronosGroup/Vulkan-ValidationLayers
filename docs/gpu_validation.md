@@ -87,6 +87,8 @@ array elements, those elements are not required to have been written.
 The instrumentation code needs to know which elements of a descriptor array have been written, so that it can tell if one is used
 that has not been written.
 
+Note that currently, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT validation is not working and all accesses are reported as valid.
+
 
 ## GPU-Assisted Validation Options
 

@@ -1353,7 +1353,15 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
             if (bindings.size() > 0) {
                 binding_count += desc->GetLayout()->GetMaxBinding() + 1;
                 for (auto binding : bindings) {
-                    if (binding == desc->GetLayout()->GetMaxBinding() && desc->IsVariableDescriptorCount(binding)) {
+                    // Shader instrumentation is tracking inline uniform blocks as scalers. Don't try to validate inline uniform
+                    // blocks
+                    if (VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT == desc->GetLayout()->GetTypeFromBinding(binding)) {
+                        descriptor_count++;
+                        log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
+                                VK_NULL_HANDLE, "UNASSIGNED-GPU-Assisted Validation Warning",
+                                "VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT descriptors will not be validated by GPU assisted "
+                                "validation");
+                    } else if (binding == desc->GetLayout()->GetMaxBinding() && desc->IsVariableDescriptorCount(binding)) {
                         descriptor_count += desc->GetVariableDescriptorCount();
                     } else {
                         descriptor_count += desc->GetDescriptorCountFromBinding(binding);
@@ -1409,13 +1417,24 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
                 *sets_to_bindings++ = bindCounter + number_of_sets + binding_count;
                 for (auto binding : bindings) {
                     // For each binding, fill in its size in the sizes array
-                    if (binding == layout->GetMaxBinding() && desc->IsVariableDescriptorCount(binding)) {
+                    // Shader instrumentation is tracking inline uniform blocks as scalers. Don't try to validate inline uniform
+                    // blocks
+                    if (VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT == desc->GetLayout()->GetTypeFromBinding(binding)) {
+                        sizes[binding] = 1;
+                    } else if (binding == layout->GetMaxBinding() && desc->IsVariableDescriptorCount(binding)) {
                         sizes[binding] = desc->GetVariableDescriptorCount();
                     } else {
                         sizes[binding] = desc->GetDescriptorCountFromBinding(binding);
                     }
                     // Fill in the starting index for this binding in the written array in the bindings_to_written array
                     bindings_to_written[binding] = written_index;
+
+                    // Shader instrumentation is tracking inline uniform blocks as scalers. Don't try to validate inline uniform
+                    // blocks
+                    if (VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT == desc->GetLayout()->GetTypeFromBinding(binding)) {
+                        pData[written_index++] = 1;
+                        continue;
+                    }
 
                     auto index_range = desc->GetGlobalIndexRangeFromBinding(binding, true);
                     // For each array element in the binding, update the written array with whether it has been written
