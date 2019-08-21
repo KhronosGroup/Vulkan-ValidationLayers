@@ -3541,3 +3541,24 @@ bool StatelessValidation::manual_PreCallValidateCmdSetLineStippleEXT(VkCommandBu
 
     return skip;
 }
+
+bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                   VkDeviceSize offset, VkIndexType indexType) {
+    bool skip = false;
+
+    if (indexType == VK_INDEX_TYPE_NONE_NV) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdBindIndexBuffer-indexType-02507",
+                        "vkCmdBindIndexBuffer() indexType must not be VK_INDEX_TYPE_NONE_NV.");
+    }
+
+    const auto *index_type_uint8_features =
+        lvl_find_in_chain<VkPhysicalDeviceIndexTypeUint8FeaturesEXT>(physical_device_features2.pNext);
+    if (indexType == VK_INDEX_TYPE_UINT8_EXT && !index_type_uint8_features->indexTypeUint8) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdBindIndexBuffer-indexType-02765",
+                        "vkCmdBindIndexBuffer() indexType is VK_INDEX_TYPE_UINT8_EXT but indexTypeUint8 feature is not enabled.");
+    }
+
+    return skip;
+}

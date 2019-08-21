@@ -158,6 +158,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdDrawIndexedIndirect',
             'vkCmdClearAttachments',
             'vkCmdCopyImage',
+            'vkCmdBindIndexBuffer',
             'vkCmdBlitImage',
             'vkCmdCopyBufferToImage',
             'vkCmdCopyImageToBuffer',

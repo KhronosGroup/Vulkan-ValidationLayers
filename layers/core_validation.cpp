@@ -7768,16 +7768,6 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer
                         "vkCmdBindIndexBuffer() offset (0x%" PRIxLEAST64 ") does not fall on alignment (%s) boundary.", offset,
                         string_VkIndexType(indexType));
     }
-    if (indexType == VK_INDEX_TYPE_NONE_NV) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), "VUID-vkCmdBindIndexBuffer-indexType-02507",
-                        "vkCmdBindIndexBuffer() indexType must not be VK_INDEX_TYPE_NONE_NV.");
-    }
-    if (indexType == VK_INDEX_TYPE_UINT8_EXT && !enabled_features.index_type_uint8_features.indexTypeUint8) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), "VUID-vkCmdBindIndexBuffer-indexType-02765",
-                        "vkCmdBindIndexBuffer() indexType is VK_INDEX_TYPE_UINT8_EXT but indexTypeUint8 feature is not enabled.");
-    }
 
     return skip;
 }
