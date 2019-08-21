@@ -475,24 +475,21 @@ static inline VkResult layer_create_messenger_callback(debug_report_data *debug_
                                                        const VkAllocationCallbacks *allocator,
                                                        VkDebugUtilsMessengerEXT *messenger) {
     std::unique_lock<std::mutex> lock(debug_data->debug_report_mutex);
-    auto callback_state = new VkLayerDbgFunctionState;
-    if (!callback_state) return VK_ERROR_OUT_OF_HOST_MEMORY;
-
-    callback_state->is_messenger = true;
-    callback_state->is_default = default_callback;
+    debug_data->debug_callback_list.emplace_back(VkLayerDbgFunctionState());
+    auto &callback_state = debug_data->debug_callback_list.back();
+    callback_state.is_messenger = true;
+    callback_state.is_default = default_callback;
     // Internally constructed default callbacks have no handle -- so use struct address as unique handle
     if (!(*messenger)) {
         *messenger = reinterpret_cast<VkDebugUtilsMessengerEXT>(&callback_state);
     }
-    callback_state->messenger.messenger = *messenger;
-    callback_state->messenger.pfnUserCallback = create_info->pfnUserCallback;
-    callback_state->messenger.messageSeverity = create_info->messageSeverity;
-    callback_state->messenger.messageType = create_info->messageType;
-    callback_state->pUserData = create_info->pUserData;
+    callback_state.messenger.messenger = *messenger;
+    callback_state.messenger.pfnUserCallback = create_info->pfnUserCallback;
+    callback_state.messenger.messageSeverity = create_info->messageSeverity;
+    callback_state.messenger.messageType = create_info->messageType;
+    callback_state.pUserData = create_info->pUserData;
 
-    debug_data->debug_callback_list.emplace_back(*callback_state);
     SetDebugUtilsSeverityFlags(debug_data->debug_callback_list, debug_data);
-
     return VK_SUCCESS;
 }
 
@@ -501,21 +498,20 @@ static inline VkResult layer_create_report_callback(debug_report_data *debug_dat
                                                     const VkAllocationCallbacks *allocator, VkDebugReportCallbackEXT *callback) {
     std::unique_lock<std::mutex> lock(debug_data->debug_report_mutex);
 
-    auto callback_state = new VkLayerDbgFunctionState;
-    if (!callback_state) return VK_ERROR_OUT_OF_HOST_MEMORY;
+    debug_data->debug_callback_list.emplace_back(VkLayerDbgFunctionState());
+    auto &callback_state = debug_data->debug_callback_list.back();
 
-    callback_state->is_messenger = false;
-    callback_state->is_default = default_callback;
+    callback_state.is_messenger = false;
+    callback_state.is_default = default_callback;
     // Internally constructed default callbacks have no handle -- so use struct address as unique handle
     if (!(*callback)) {
         *callback = reinterpret_cast<VkDebugReportCallbackEXT>(&callback_state);
     }
-    callback_state->report.msgCallback = *callback;
-    callback_state->report.pfnMsgCallback = create_info->pfnCallback;
-    callback_state->report.msgFlags = create_info->flags;
-    callback_state->pUserData = create_info->pUserData;
+    callback_state.report.msgCallback = *callback;
+    callback_state.report.pfnMsgCallback = create_info->pfnCallback;
+    callback_state.report.msgFlags = create_info->flags;
+    callback_state.pUserData = create_info->pUserData;
 
-    debug_data->debug_callback_list.emplace_back(*callback_state);
     SetDebugUtilsSeverityFlags(debug_data->debug_callback_list, debug_data);
     return VK_SUCCESS;
 }
