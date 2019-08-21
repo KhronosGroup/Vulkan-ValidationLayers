@@ -34,31 +34,8 @@ VulkanTypedHandle ObjTrackStateTypedHandle(const ObjTrackState &track_state) {
     return typed_handle;
 }
 
-// Add new queue to head of global queue list
-void ObjectLifetimes::AddQueueInfo(VkDevice device, uint32_t queue_node_index, VkQueue queue) {
-    auto queueItem = queue_info_map.find(queue);
-    if (queueItem == queue_info_map.end()) {
-        ObjTrackQueueInfo *p_queue_info = new ObjTrackQueueInfo;
-        if (p_queue_info != NULL) {
-            memset(p_queue_info, 0, sizeof(ObjTrackQueueInfo));
-            p_queue_info->queue = queue;
-            p_queue_info->queue_node_index = queue_node_index;
-            queue_info_map[queue] = p_queue_info;
-        } else {
-            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT, HandleToUint64(queue),
-                    kVUID_ObjectTracker_InternalError,
-                    "ERROR:  VK_ERROR_OUT_OF_HOST_MEMORY -- could not allocate memory for Queue Information");
-        }
-    }
-}
-
 // Destroy memRef lists and free all memory
 void ObjectLifetimes::DestroyQueueDataStructures(VkDevice device) {
-    for (auto queue_item : queue_info_map) {
-        delete queue_item.second;
-    }
-    queue_info_map.clear();
-
     // Destroy the items in the queue map
     auto queue = object_map[kVulkanObjectTypeQueue].begin();
     while (queue != object_map[kVulkanObjectTypeQueue].end()) {
@@ -69,21 +46,6 @@ void ObjectLifetimes::DestroyQueueDataStructures(VkDevice device) {
         num_objects[obj_index]--;
         delete queue->second;
         queue = object_map[kVulkanObjectTypeQueue].erase(queue);
-    }
-}
-
-// Check Queue type flags for selected queue operations
-void ObjectLifetimes::ValidateQueueFlags(VkQueue queue, const char *function) {
-    auto queue_item = queue_info_map.find(queue);
-    if (queue_item != queue_info_map.end()) {
-        ObjTrackQueueInfo *pQueueInfo = queue_item->second;
-        if (pQueueInfo != NULL) {
-            if ((queue_family_properties[pQueueInfo->queue_node_index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) == 0) {
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT, HandleToUint64(queue),
-                        "VUID-vkQueueBindSparse-queuetype",
-                        "Attempting %s on a non-memory-management capable queue -- VK_QUEUE_SPARSE_BINDING_BIT not set.", function);
-            }
-        }
     }
 }
 
@@ -403,7 +365,6 @@ void ObjectLifetimes::PostCallRecordGetDeviceQueue(VkDevice device, uint32_t que
                                                    VkQueue *pQueue) {
     auto lock = write_shared_lock();
     CreateQueue(device, *pQueue);
-    AddQueueInfo(device, queueFamilyIndex, *pQueue);
 }
 
 bool ObjectLifetimes::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue) {
@@ -415,7 +376,6 @@ bool ObjectLifetimes::PreCallValidateGetDeviceQueue2(VkDevice device, const VkDe
 void ObjectLifetimes::PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2 *pQueueInfo, VkQueue *pQueue) {
     auto lock = write_shared_lock();
     CreateQueue(device, *pQueue);
-    AddQueueInfo(device, pQueueInfo->queueFamilyIndex, *pQueue);
 }
 
 bool ObjectLifetimes::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
@@ -607,17 +567,7 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPh
 
 void ObjectLifetimes::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
                                                                            uint32_t *pQueueFamilyPropertyCount,
-                                                                           VkQueueFamilyProperties *pQueueFamilyProperties) {
-    auto lock = write_shared_lock();
-    if (pQueueFamilyProperties != NULL) {
-        if (queue_family_properties.size() < *pQueueFamilyPropertyCount) {
-            queue_family_properties.resize(*pQueueFamilyPropertyCount);
-        }
-        for (uint32_t i = 0; i < *pQueueFamilyPropertyCount; i++) {
-            queue_family_properties[i] = pQueueFamilyProperties[i];
-        }
-    }
-}
+                                                                           VkQueueFamilyProperties *pQueueFamilyProperties) {}
 
 void ObjectLifetimes::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                                    VkInstance *pInstance, VkResult result) {
@@ -850,30 +800,10 @@ bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(
 
 void ObjectLifetimes::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
                                                                             uint32_t *pQueueFamilyPropertyCount,
-                                                                            VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {
-    auto lock = write_shared_lock();
-    if (pQueueFamilyProperties != NULL) {
-        if (queue_family_properties.size() < *pQueueFamilyPropertyCount) {
-            queue_family_properties.resize(*pQueueFamilyPropertyCount);
-        }
-        for (uint32_t i = 0; i < *pQueueFamilyPropertyCount; i++) {
-            queue_family_properties[i] = pQueueFamilyProperties[i].queueFamilyProperties;
-        }
-    }
-}
+                                                                            VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {}
 
 void ObjectLifetimes::PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(
-    VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {
-    auto lock = write_shared_lock();
-    if (pQueueFamilyProperties != NULL) {
-        if (queue_family_properties.size() < *pQueueFamilyPropertyCount) {
-            queue_family_properties.resize(*pQueueFamilyPropertyCount);
-        }
-        for (uint32_t i = 0; i < *pQueueFamilyPropertyCount; i++) {
-            queue_family_properties[i] = pQueueFamilyProperties[i].queueFamilyProperties;
-        }
-    }
-}
+    VkPhysicalDevice physicalDevice, uint32_t *pQueueFamilyPropertyCount, VkQueueFamilyProperties2KHR *pQueueFamilyProperties) {}
 
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice,
                                                                            uint32_t *pPropertyCount,

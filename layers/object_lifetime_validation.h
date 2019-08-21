@@ -54,14 +54,8 @@ extern uint64_t object_track_index;
 typedef VkFlags ObjectStatusFlags;
 enum ObjectStatusFlagBits {
     OBJSTATUS_NONE = 0x00000000,                      // No status is set
-    OBJSTATUS_FENCE_IS_SUBMITTED = 0x00000001,        // Fence has been submitted
-    OBJSTATUS_VIEWPORT_BOUND = 0x00000002,            // Viewport state object has been bound
-    OBJSTATUS_RASTER_BOUND = 0x00000004,              // Viewport state object has been bound
-    OBJSTATUS_COLOR_BLEND_BOUND = 0x00000008,         // Viewport state object has been bound
-    OBJSTATUS_DEPTH_STENCIL_BOUND = 0x00000010,       // Viewport state object has been bound
-    OBJSTATUS_GPU_MEM_MAPPED = 0x00000020,            // Memory object is currently mapped
-    OBJSTATUS_COMMAND_BUFFER_SECONDARY = 0x00000040,  // Command Buffer is of type SECONDARY
-    OBJSTATUS_CUSTOM_ALLOCATOR = 0x00000080,          // Allocated with custom allocator
+    OBJSTATUS_COMMAND_BUFFER_SECONDARY = 0x00000001,  // Command Buffer is of type SECONDARY
+    OBJSTATUS_CUSTOM_ALLOCATOR = 0x00000002,          // Allocated with custom allocator
 };
 
 // Object and state information structure
@@ -71,12 +65,6 @@ struct ObjTrackState {
     ObjectStatusFlags status;                                      // Object state
     uint64_t parent_object;                                        // Parent object
     std::unique_ptr<std::unordered_set<uint64_t> > child_objects;  // Child objects (used for VkDescriptorPool only)
-};
-
-// Track Queue information
-struct ObjTrackQueueInfo {
-    uint32_t queue_node_index;
-    VkQueue queue;
 };
 
 typedef std::unordered_map<uint64_t, ObjTrackState *> object_map_type;
@@ -100,10 +88,6 @@ class ObjectLifetimes : public ValidationObject {
     std::vector<object_map_type> object_map;
     // Special-case map for swapchain images
     std::unordered_map<uint64_t, ObjTrackState *> swapchainImageMap;
-    // Map of queue information structures, one per queue
-    std::unordered_map<VkQueue, ObjTrackQueueInfo *> queue_info_map;
-
-    std::vector<VkQueueFamilyProperties> queue_family_properties;
 
     // Constructor for object lifetime tracking
     ObjectLifetimes() : num_objects{}, num_total_objects(0), object_map{} { object_map.resize(kVulkanObjectTypeMax + 1); }
@@ -111,8 +95,6 @@ class ObjectLifetimes : public ValidationObject {
     bool DeviceReportUndestroyedObjects(VkDevice device, VulkanObjectType object_type, const std::string &error_code);
     void DeviceDestroyUndestroyedObjects(VkDevice device, VulkanObjectType object_type);
     void CreateQueue(VkDevice device, VkQueue vkObj);
-    void AddQueueInfo(VkDevice device, uint32_t queue_node_index, VkQueue queue);
-    void ValidateQueueFlags(VkQueue queue, const char *function);
     void AllocateCommandBuffer(VkDevice device, const VkCommandPool command_pool, const VkCommandBuffer command_buffer,
                                VkCommandBufferLevel level);
     void AllocateDescriptorSet(VkDevice device, VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
