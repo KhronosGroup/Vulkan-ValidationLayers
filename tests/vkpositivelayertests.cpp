@@ -5543,6 +5543,167 @@ TEST_F(VkPositiveLayerTest, CreateDescriptorSetBindingWithIgnoredSamplers) {
         m_errorMonitor->VerifyNotFound();
     }
 }
+TEST_F(VkPositiveLayerTest, GpuValidationInlineUniformBlock) {
+    TEST_DESCRIPTION("GPU validation: Make sure inline uniform blocks don't generate false validation errors");
+    m_errorMonitor->ExpectSuccess();
+    VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
+    VkValidationFeaturesEXT features = {};
+    features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+    features.enabledValidationFeatureCount = 1;
+    features.pEnabledValidationFeatures = enables;
+    bool descriptor_indexing = CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names,
+                                                                              m_device_extension_names, &features, m_errorMonitor);
+    if (DeviceIsMockICD() || DeviceSimulation()) {
+        printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
+        return;
+    }
+    VkPhysicalDeviceFeatures2KHR features2 = {};
+    auto indexing_features = lvl_init_struct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
+    auto inline_uniform_block_features = lvl_init_struct<VkPhysicalDeviceInlineUniformBlockFeaturesEXT>(&indexing_features);
+    bool inline_uniform_block = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
+    if (!(descriptor_indexing && inline_uniform_block)) {
+        printf("Descriptor indexing and/or inline uniform block not supported Skipping test\n");
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vkGetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&inline_uniform_block_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    if (!indexing_features.descriptorBindingPartiallyBound || !inline_uniform_block_features.inlineUniformBlock) {
+        printf("Not all features supported, skipping test\n");
+        return;
+    }
+    auto inline_uniform_props = lvl_init_struct<VkPhysicalDeviceInlineUniformBlockPropertiesEXT>();
+    auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&inline_uniform_props);
+    vkGetPhysicalDeviceProperties2(gpu(), &prop2);
+
+    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
+    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
+        printf("%s GPU-Assisted validation test requires Vulkan 1.1+.\n", kSkipPrefix);
+        return;
+    }
+    auto c_queue = m_device->GetDefaultComputeQueue();
+    if (nullptr == c_queue) {
+        printf("Compute not supported, skipping test\n");
+        return;
+    }
+
+    uint32_t qfi = 0;
+    VkBufferCreateInfo bci = {};
+    bci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    bci.size = 4;
+    bci.queueFamilyIndexCount = 1;
+    bci.pQueueFamilyIndices = &qfi;
+    VkBufferObj buffer0;
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    buffer0.init(*m_device, bci, mem_props);
+
+    VkDescriptorBindingFlagsEXT ds_binding_flags[2] = {};
+    ds_binding_flags[1] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT;
+    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT layout_createinfo_binding_flags[1] = {};
+    layout_createinfo_binding_flags[0].sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
+    layout_createinfo_binding_flags[0].pNext = NULL;
+    layout_createinfo_binding_flags[0].bindingCount = 2;
+    layout_createinfo_binding_flags[0].pBindingFlags = ds_binding_flags;
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT, 20, VK_SHADER_STAGE_ALL,
+                                            nullptr},  // 16 bytes for ivec4, 4 more for int
+                                       },
+                                       0, layout_createinfo_binding_flags, 0);
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&descriptor_set.layout_});
+
+    VkDescriptorBufferInfo buffer_info[1] = {};
+    buffer_info[0].buffer = buffer0.handle();
+    buffer_info[0].offset = 0;
+    buffer_info[0].range = sizeof(uint32_t);
+
+    const uint32_t test_data = 0xdeadca7;
+    VkWriteDescriptorSetInlineUniformBlockEXT write_inline_uniform = {};
+    write_inline_uniform.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK_EXT;
+    write_inline_uniform.dataSize = 4;
+    write_inline_uniform.pData = &test_data;
+
+    VkWriteDescriptorSet descriptor_writes[2] = {};
+    descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_writes[0].dstSet = descriptor_set.set_;
+    descriptor_writes[0].dstBinding = 0;
+    descriptor_writes[0].descriptorCount = 1;
+    descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_writes[0].pBufferInfo = buffer_info;
+
+    descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_writes[1].dstSet = descriptor_set.set_;
+    descriptor_writes[1].dstBinding = 1;
+    descriptor_writes[1].dstArrayElement = 16;  // Skip first 16 bytes (dummy)
+    descriptor_writes[1].descriptorCount = 4;   // Write 4 bytes to val
+    descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
+    descriptor_writes[1].pNext = &write_inline_uniform;
+    vkUpdateDescriptorSets(m_device->device(), 2, descriptor_writes, 0, NULL);
+
+    char const *csSource =
+        "#version 450\n"
+        "#extension GL_EXT_nonuniform_qualifier : enable\n "
+        "layout(set = 0, binding = 0) buffer StorageBuffer { uint index; } u_index;"
+        "layout(set = 0, binding = 1) uniform inlineubodef { ivec4 dummy; int val; } inlineubo;\n"
+
+        "void main() {\n"
+        "    u_index.index = inlineubo.val;\n"
+        "}\n";
+
+    auto shader_module = new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this);
+
+    VkPipelineShaderStageCreateInfo stage;
+    stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    stage.pNext = nullptr;
+    stage.flags = 0;
+    stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    stage.module = shader_module->handle();
+    stage.pName = "main";
+    stage.pSpecializationInfo = nullptr;
+
+    // CreateComputePipelines
+    VkComputePipelineCreateInfo pipeline_info = {};
+    pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pipeline_info.pNext = nullptr;
+    pipeline_info.flags = 0;
+    pipeline_info.layout = pipeline_layout.handle();
+    pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+    pipeline_info.basePipelineIndex = -1;
+    pipeline_info.stage = stage;
+
+    VkPipeline c_pipeline;
+    vkCreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &c_pipeline);
+
+    m_commandBuffer->begin();
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, c_pipeline);
+    vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                            &descriptor_set.set_, 0, nullptr);
+    vkCmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+
+    VkSubmitInfo submit_info = {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    vkQueueSubmit(c_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(m_device->m_queue);
+    m_errorMonitor->VerifyNotFound();
+    vkDestroyPipeline(m_device->handle(), c_pipeline, NULL);
+    vkDestroyShaderModule(m_device->handle(), shader_module->handle(), NULL);
+
+    uint32_t *data = (uint32_t *)buffer0.memory().map();
+    ASSERT_TRUE(*data = test_data);
+    buffer0.memory().unmap();
+}
 
 TEST_F(VkPositiveLayerTest, Maintenance1Tests) {
     TEST_DESCRIPTION("Validate various special cases for the Maintenance1_KHR extension");
