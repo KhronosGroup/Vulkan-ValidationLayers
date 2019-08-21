@@ -2620,12 +2620,6 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.pipeline_exe_props_features = *pipeline_exe_props_features;
     }
 
-    const auto *index_type_uint8_features =
-        lvl_find_in_chain<VkPhysicalDeviceIndexTypeUint8FeaturesEXT>(pCreateInfo->pNext);
-    if (index_type_uint8_features) {
-        state_tracker->enabled_features.index_type_uint8_features = *index_type_uint8_features;
-    }
-
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);
