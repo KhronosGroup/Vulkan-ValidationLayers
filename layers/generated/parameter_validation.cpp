@@ -4192,6 +4192,7 @@ bool StatelessValidation::PreCallValidateCmdBindIndexBuffer(
     bool skip = false;
     skip |= validate_required_handle("vkCmdBindIndexBuffer", "buffer", buffer);
     skip |= validate_ranged_enum("vkCmdBindIndexBuffer", "indexType", "VkIndexType", AllVkIndexTypeEnums, indexType, "VUID-vkCmdBindIndexBuffer-indexType-parameter");
+    if (!skip) skip |= manual_PreCallValidateCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
     return skip;
 }
 

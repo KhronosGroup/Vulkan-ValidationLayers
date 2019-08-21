@@ -1178,5 +1178,9 @@ class StatelessValidation : public ValidationObject {
 
     bool manual_PreCallValidateCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                                     uint16_t lineStipplePattern);
+
+    bool manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                  VkIndexType indexType);
+
 #include "parameter_validation.h"
 };  // Class StatelessValidation
