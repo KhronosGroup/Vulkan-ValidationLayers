@@ -1122,7 +1122,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
             write('#include "vk_safe_struct.cpp"', file=self.outFile)
             self.newline()
             write('// shared_mutex support added in MSVC 2015 update 2', file=self.outFile)
-            write('#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918', file=self.outFile)
+            write('#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2', file=self.outFile)
             write('    #include <shared_mutex>', file=self.outFile)
             write('    typedef std::shared_mutex dispatch_lock_t;', file=self.outFile)
             write('    typedef std::shared_lock<dispatch_lock_t> read_dispatch_lock_guard_t;', file=self.outFile)

@@ -161,7 +161,7 @@ static inline int u_ffs(int val) {
 #endif
 
 // shared_mutex support added in MSVC 2015 update 2
-#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
 #include <shared_mutex>
 #endif
 
@@ -291,7 +291,7 @@ class vl_concurrent_unordered_map {
    private:
     static const int BUCKETS = (1 << BUCKETSLOG2);
 // shared_mutex support added in MSVC 2015 update 2
-#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
 #include <shared_mutex>
     typedef std::shared_mutex lock_t;
     typedef std::shared_lock<lock_t> read_lock_guard_t;

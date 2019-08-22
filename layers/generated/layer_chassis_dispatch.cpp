@@ -31,7 +31,7 @@
 #include "vk_safe_struct.cpp"
 
 // shared_mutex support added in MSVC 2015 update 2
-#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
     #include <shared_mutex>
     typedef std::shared_mutex dispatch_lock_t;
     typedef std::shared_lock<dispatch_lock_t> read_dispatch_lock_guard_t;
