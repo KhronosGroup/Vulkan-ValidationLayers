@@ -1966,13 +1966,33 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             }
 
             if (pCreateInfos[i].pRasterizationState) {
-                if ((pCreateInfos[i].pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL) &&
-                    (physical_device_features.fillModeNonSolid == false)) {
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                    kVUID_PVError_DeviceFeature,
+                if (!device_extensions.vk_nv_fill_rectangle) {
+                    if (pCreateInfos[i].pRasterizationState->polygonMode == VK_POLYGON_MODE_FILL_RECTANGLE_NV) {
+                        skip |=
+                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01414",
                                     "vkCreateGraphicsPipelines parameter, VkPolygonMode "
-                                    "pCreateInfos->pRasterizationState->polygonMode cannot be VK_POLYGON_MODE_POINT or "
-                                    "VK_POLYGON_MODE_LINE if VkPhysicalDeviceFeatures->fillModeNonSolid is false.");
+                                    "pCreateInfos->pRasterizationState->polygonMode cannot be VK_POLYGON_MODE_FILL_RECTANGLE_NV "
+                                    "if the extension VK_NV_fill_rectangle is not enabled.");
+                    } else if ((pCreateInfos[i].pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL) &&
+                               (physical_device_features.fillModeNonSolid == false)) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                        kVUID_PVError_DeviceFeature,
+                                        "vkCreateGraphicsPipelines parameter, VkPolygonMode "
+                                        "pCreateInfos->pRasterizationState->polygonMode cannot be VK_POLYGON_MODE_POINT or "
+                                        "VK_POLYGON_MODE_LINE if VkPhysicalDeviceFeatures->fillModeNonSolid is false.");
+                    }
+                } else {
+                    if ((pCreateInfos[i].pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL) &&
+                        (pCreateInfos[i].pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL_RECTANGLE_NV) &&
+                        (physical_device_features.fillModeNonSolid == false)) {
+                        skip |=
+                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507",
+                                    "vkCreateGraphicsPipelines parameter, VkPolygonMode "
+                                    "pCreateInfos->pRasterizationState->polygonMode must be VK_POLYGON_MODE_FILL or "
+                                    "VK_POLYGON_MODE_FILL_RECTANGLE_NV if VkPhysicalDeviceFeatures->fillModeNonSolid is false.");
+                    }
                 }
 
                 if (!has_dynamic_line_width && !physical_device_features.wideLines &&
