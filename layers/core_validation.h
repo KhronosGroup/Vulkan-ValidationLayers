@@ -602,6 +602,7 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, VkResult result);
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                    VkResult result);
+    void PreCallRecordSetEvent(VkDevice device, VkEvent event);
 
     // Allocate/Free
     void PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pCreateInfo,
@@ -703,6 +704,7 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents);
     void PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfoKHR* pSubpassBeginInfo,
                                           const VkSubpassEndInfoKHR* pSubpassEndInfo);
+    void PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
     void PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                          uint32_t queryCount);
     void PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
@@ -712,6 +714,7 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
                                       float depthBiasSlopeFactor);
     void PreCallRecordCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds);
+    void PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
     void PreCallRecordCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
                                                uint32_t exclusiveScissorCount, const VkRect2D* pExclusiveScissors);
     void PreCallRecordCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth);
@@ -728,7 +731,11 @@ class ValidationStateTracker : public ValidationObject {
                                                          const VkShadingRatePaletteNV* pShadingRatePalettes);
     void PostCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                        VkDeviceSize dataSize, const void* pData);
-
+    void PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                    VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
+                                    uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                    uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers);
     // WSI
     void PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                            VkFence fence, uint32_t* pImageIndex, VkResult result);
@@ -838,6 +845,7 @@ class ValidationStateTracker : public ValidationObject {
     void RemoveImageMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
     void ResetCommandBufferState(const VkCommandBuffer cb);
     void RetireWorkOnQueue(QUEUE_STATE* pQueue, uint64_t seq, bool switch_finished_queries);
+    bool SetEventStageMask(VkQueue queue, VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
     void SetMemBinding(VkDeviceMemory mem, BINDABLE* mem_binding, VkDeviceSize memory_offset,
                        const VulkanTypedHandle& typed_handle);
     bool SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject object, QueryState value);
@@ -1002,7 +1010,6 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateStageMasksAgainstQueueCapabilities(const CMD_BUFFER_STATE* cb_state, VkPipelineStageFlags source_stage_mask,
                                                     VkPipelineStageFlags dest_stage_mask, BarrierOperationsType barrier_op_type,
                                                     const char* function, const char* error_code) const;
-    bool SetEventStageMask(VkQueue queue, VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
     bool ValidateRenderPassImageBarriers(const char* funcName, const CMD_BUFFER_STATE* cb_state, uint32_t active_subpass,
                                          const safe_VkSubpassDescription2KHR& sub_desc, const VulkanTypedHandle& rp_handle,
                                          const safe_VkSubpassDependency2KHR* dependencies,
@@ -1788,9 +1795,7 @@ class CoreChecks : public ValidationStateTracker {
     void PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
                                       uint32_t stride);
     bool PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
-    void PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
     bool PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
-    void PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
     bool PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                       VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
                                       uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
@@ -1877,7 +1882,6 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfoKHR* pBindInfos);
     bool PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfoKHR* pBindInfos);
     bool PreCallValidateSetEvent(VkDevice device, VkEvent event);
-    void PreCallRecordSetEvent(VkDevice device, VkEvent event);
     bool PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence);
     void PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence,
                                        VkResult result);

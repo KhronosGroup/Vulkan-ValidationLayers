@@ -7891,7 +7891,8 @@ void ValidationStateTracker::PostCallRecordCmdUpdateBuffer(VkCommandBuffer comma
     AddCommandBufferBindingBuffer(cb_state, dst_buffer_state);
 }
 
-bool CoreChecks::SetEventStageMask(VkQueue queue, VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
+bool ValidationStateTracker::SetEventStageMask(VkQueue queue, VkCommandBuffer commandBuffer, VkEvent event,
+                                               VkPipelineStageFlags stageMask) {
     CMD_BUFFER_STATE *pCB = GetCBState(commandBuffer);
     if (pCB) {
         pCB->eventToStageMap[event] = stageMask;
@@ -7904,7 +7905,7 @@ bool CoreChecks::SetEventStageMask(VkQueue queue, VkCommandBuffer commandBuffer,
 }
 
 bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetEvent()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                       "VUID-vkCmdSetEvent-commandBuffer-cmdpool");
@@ -7916,7 +7917,8 @@ bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEve
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
+void ValidationStateTracker::PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event,
+                                                      VkPipelineStageFlags stageMask) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     auto event_state = GetEventState(event);
     if (event_state) {
@@ -7931,7 +7933,7 @@ void CoreChecks::PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent
 }
 
 bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
 
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdResetEvent()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
@@ -7944,7 +7946,8 @@ bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkE
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) {
+void ValidationStateTracker::PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event,
+                                                        VkPipelineStageFlags stageMask) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     auto event_state = GetEventState(event);
     if (event_state) {
@@ -7955,7 +7958,7 @@ void CoreChecks::PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEve
     if (!cb_state->waitedEvents.count(event)) {
         cb_state->writeEventsBeforeWait.push_back(event);
     }
-    // TODO : Add check for "VUID-vkResetEvent-event-01148"
+
     cb_state->eventUpdates.emplace_back(
         [=](VkQueue q) { return SetEventStageMask(q, commandBuffer, event, VkPipelineStageFlags(0)); });
 }
@@ -8919,13 +8922,14 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                            VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
-                                            uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                            uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                            uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
+void ValidationStateTracker::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                                        VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
+                                                        uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                                        uint32_t bufferMemoryBarrierCount,
+                                                        const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                                        uint32_t imageMemoryBarrierCount,
+                                                        const VkImageMemoryBarrier *pImageMemoryBarriers) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    auto first_event_index = cb_state->events.size();
     for (uint32_t i = 0; i < eventCount; ++i) {
         auto event_state = GetEventState(pEvents[i]);
         if (event_state) {
@@ -8935,6 +8939,18 @@ void CoreChecks::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint3
         cb_state->waitedEvents.insert(pEvents[i]);
         cb_state->events.push_back(pEvents[i]);
     }
+}
+
+void CoreChecks::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                            VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
+                                            uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                            uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                            uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
+    StateTracker::PreCallRecordCmdWaitEvents(commandBuffer, eventCount, pEvents, sourceStageMask, dstStageMask, memoryBarrierCount,
+                                             pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+                                             imageMemoryBarrierCount, pImageMemoryBarriers);
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    auto first_event_index = cb_state->events.size();
     cb_state->eventUpdates.emplace_back(
         [=](VkQueue q) { return ValidateEventStageMask(q, cb_state, eventCount, first_event_index, sourceStageMask); });
     TransitionImageLayouts(cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
@@ -12136,7 +12152,7 @@ void ValidationStateTracker::PostCallRecordBindImageMemory2KHR(VkDevice device, 
 
 bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event) {
     bool skip = false;
-    auto event_state = GetEventState(event);
+    const auto event_state = GetEventState(event);
     if (event_state) {
         if (event_state->write_in_use) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT,
@@ -12148,7 +12164,7 @@ bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event) {
     return skip;
 }
 
-void CoreChecks::PreCallRecordSetEvent(VkDevice device, VkEvent event) {
+void ValidationStateTracker::PreCallRecordSetEvent(VkDevice device, VkEvent event) {
     auto event_state = GetEventState(event);
     if (event_state) {
         event_state->stageMask = VK_PIPELINE_STAGE_HOST_BIT;
