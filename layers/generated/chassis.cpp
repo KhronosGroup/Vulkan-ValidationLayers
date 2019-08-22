@@ -425,7 +425,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     std::vector<ValidationObject*> local_object_dispatch;
     // Add VOs to dispatch vector. Order here will be the validation dispatch order!
 #if BUILD_THREAD_SAFETY
-    auto thread_checker = new ThreadSafety;
+    auto thread_checker = new ThreadSafety(nullptr);
     if (!local_disables.thread_safety) {
         local_object_dispatch.emplace_back(thread_checker);
     }
@@ -633,7 +633,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     // Note that this defines the order in which the layer validation objects are called
 #if BUILD_THREAD_SAFETY
-    auto thread_safety = new ThreadSafety;
+    auto thread_safety = new ThreadSafety(reinterpret_cast<ThreadSafety *>(instance_interceptor->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeThreading)));
     thread_safety->container_type = LayerObjectTypeThreading;
     if (!instance_interceptor->disabled.thread_safety) {
         device_interceptor->object_dispatch.emplace_back(thread_safety);
