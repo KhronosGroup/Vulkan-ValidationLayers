@@ -665,7 +665,7 @@ bool VerifyAspectsPresent(VkImageAspectFlags aspect_mask, VkFormat format) {
 // Verify an ImageMemoryBarrier's old/new ImageLayouts are compatible with the Image's ImageUsageFlags.
 bool CoreChecks::ValidateBarrierLayoutToImageUsage(const VkImageMemoryBarrier &img_barrier, bool new_not_old,
                                                    VkImageUsageFlags usage_flags, const char *func_name,
-                                                   const char *barrier_pname) {
+                                                   const char *barrier_pname) const {
     bool skip = false;
     const VkImageLayout layout = (new_not_old) ? img_barrier.newLayout : img_barrier.oldLayout;
     const char *msg_code = kVUIDUndefined;  // sentinel value meaning "no error"
@@ -722,8 +722,8 @@ bool CoreChecks::ValidateBarrierLayoutToImageUsage(const VkImageMemoryBarrier &i
 }
 
 // Verify image barriers are compatible with the images they reference.
-bool CoreChecks::ValidateBarriersToImages(CMD_BUFFER_STATE const *cb_state, uint32_t imageMemoryBarrierCount,
-                                          const VkImageMemoryBarrier *pImageMemoryBarriers, const char *func_name) {
+bool CoreChecks::ValidateBarriersToImages(const CMD_BUFFER_STATE *cb_state, uint32_t imageMemoryBarrierCount,
+                                          const VkImageMemoryBarrier *pImageMemoryBarriers, const char *func_name) const {
     bool skip = false;
 
     // Scoreboard for checking for duplicate and inconsistent barriers to images
@@ -795,9 +795,9 @@ bool CoreChecks::ValidateBarriersToImages(CMD_BUFFER_STATE const *cb_state, uint
                     string_VkImageLayout(img_barrier.newLayout));
             }
 
-            VkImageCreateInfo *image_create_info = &image_state->createInfo;
+            const VkImageCreateInfo &image_create_info = image_state->createInfo;
             // For a Depth/Stencil image both aspects MUST be set
-            if (FormatIsDepthAndStencil(image_create_info->format)) {
+            if (FormatIsDepthAndStencil(image_create_info.format)) {
                 auto const aspect_mask = img_barrier.subresourceRange.aspectMask;
                 auto const ds_mask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
                 if ((aspect_mask & ds_mask) != (ds_mask)) {
@@ -806,7 +806,7 @@ bool CoreChecks::ValidateBarriersToImages(CMD_BUFFER_STATE const *cb_state, uint
                                     "%s: Image barrier %s references %s of format %s that must have the depth and stencil "
                                     "aspects set, but its aspectMask is 0x%" PRIx32 ".",
                                     func_name, barrier_pname.c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
-                                    string_VkFormat(image_create_info->format), aspect_mask);
+                                    string_VkFormat(image_create_info.format), aspect_mask);
                 }
             }
 
@@ -849,8 +849,8 @@ bool CoreChecks::IsReleaseOp(CMD_BUFFER_STATE *cb_state, const VkImageMemoryBarr
 }
 
 template <typename Barrier>
-bool CoreChecks::ValidateQFOTransferBarrierUniqueness(const char *func_name, CMD_BUFFER_STATE *cb_state, uint32_t barrier_count,
-                                                      const Barrier *barriers) {
+bool CoreChecks::ValidateQFOTransferBarrierUniqueness(const char *func_name, const CMD_BUFFER_STATE *cb_state,
+                                                      uint32_t barrier_count, const Barrier *barriers) const {
     using BarrierRecord = QFOTransferBarrier<Barrier>;
     bool skip = false;
     auto pool = GetCommandPoolState(cb_state->createInfo.commandPool);
@@ -862,14 +862,14 @@ bool CoreChecks::ValidateQFOTransferBarrierUniqueness(const char *func_name, CMD
         if (!IsTransferOp(&barriers[b])) continue;
         const BarrierRecord *barrier_record = nullptr;
         if (TempIsReleaseOp<Barrier, true /* Assume IsTransfer */>(pool, &barriers[b]) &&
-            !IsSpecial(barriers[b].dstQueueFamilyIndex)) {
+            !QueueFamilyIsSpecial(barriers[b].dstQueueFamilyIndex)) {
             const auto found = barrier_sets.release.find(barriers[b]);
             if (found != barrier_sets.release.cend()) {
                 barrier_record = &(*found);
                 transfer_type = "releasing";
             }
         } else if (IsAcquireOp<Barrier, true /*Assume IsTransfer */>(pool, &barriers[b]) &&
-                   !IsSpecial(barriers[b].srcQueueFamilyIndex)) {
+                   !QueueFamilyIsSpecial(barriers[b].srcQueueFamilyIndex)) {
             const auto found = barrier_sets.acquire.find(barriers[b]);
             if (found != barrier_sets.acquire.cend()) {
                 barrier_record = &(*found);
@@ -889,37 +889,75 @@ bool CoreChecks::ValidateQFOTransferBarrierUniqueness(const char *func_name, CMD
     return skip;
 }
 
+VulkanTypedHandle BarrierTypedHandle(const VkImageMemoryBarrier &barrier) {
+    return VulkanTypedHandle(barrier.image, kVulkanObjectTypeImage);
+}
+
+const IMAGE_STATE *BarrierHandleState(const ValidationStateTracker &device_state, const VkImageMemoryBarrier &barrier) {
+    return device_state.GetImageState(barrier.image);
+}
+
+VulkanTypedHandle BarrierTypedHandle(const VkBufferMemoryBarrier &barrier) {
+    return VulkanTypedHandle(barrier.buffer, kVulkanObjectTypeBuffer);
+}
+
+const BUFFER_STATE *BarrierHandleState(const ValidationStateTracker &device_state, const VkBufferMemoryBarrier &barrier) {
+    return device_state.GetBufferState(barrier.buffer);
+}
+
+VkBuffer BarrierHandle(const VkBufferMemoryBarrier &barrier) { return barrier.buffer; }
+
 template <typename Barrier>
-void CoreChecks::RecordQFOTransferBarriers(CMD_BUFFER_STATE *cb_state, uint32_t barrier_count, const Barrier *barriers) {
+void CoreChecks::RecordBarrierArrayValidationInfo(const char *func_name, CMD_BUFFER_STATE *cb_state, uint32_t barrier_count,
+                                                  const Barrier *barriers) {
     auto pool = GetCommandPoolState(cb_state->createInfo.commandPool);
     auto &barrier_sets = GetQFOBarrierSets(cb_state, typename QFOTransferBarrier<Barrier>::Tag());
     for (uint32_t b = 0; b < barrier_count; b++) {
-        if (!IsTransferOp(&barriers[b])) continue;
-        if (TempIsReleaseOp<Barrier, true /* Assume IsTransfer*/>(pool, &barriers[b]) &&
-            !IsSpecial(barriers[b].dstQueueFamilyIndex)) {
-            barrier_sets.release.emplace(barriers[b]);
-        } else if (IsAcquireOp<Barrier, true /*Assume IsTransfer */>(pool, &barriers[b]) &&
-                   !IsSpecial(barriers[b].srcQueueFamilyIndex)) {
-            barrier_sets.acquire.emplace(barriers[b]);
+        auto &barrier = barriers[b];
+        if (IsTransferOp(&barrier)) {
+            if (TempIsReleaseOp<Barrier, true /* Assume IsTransfer*/>(pool, &barrier) &&
+                !QueueFamilyIsSpecial(barrier.dstQueueFamilyIndex)) {
+                barrier_sets.release.emplace(barrier);
+            } else if (IsAcquireOp<Barrier, true /*Assume IsTransfer */>(pool, &barrier) &&
+                       !QueueFamilyIsSpecial(barrier.srcQueueFamilyIndex)) {
+                barrier_sets.acquire.emplace(barrier);
+            }
+        }
+
+        const uint32_t src_queue_family = barrier.srcQueueFamilyIndex;
+        const uint32_t dst_queue_family = barrier.dstQueueFamilyIndex;
+        if (!QueueFamilyIsIgnored(src_queue_family) && !QueueFamilyIsIgnored(dst_queue_family)) {
+            // Only enqueue submit time check if it is needed. If more submit time checks are added, change the criteria
+            // TODO create a better named list, or rename the submit time lists to something that matches the broader usage...
+            auto handle_state = BarrierHandleState(*this, barrier);
+            bool mode_concurrent = handle_state ? handle_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT : false;
+            if (!mode_concurrent) {
+                const auto typed_handle = BarrierTypedHandle(barrier);
+                cb_state->eventUpdates.emplace_back(
+                    [this, func_name, cb_state, typed_handle, src_queue_family, dst_queue_family](VkQueue queue) {
+                        return ValidateConcurrentBarrierAtSubmit(queue, func_name, cb_state, typed_handle, src_queue_family,
+                                                                 dst_queue_family);
+                    });
+            }
         }
     }
 }
 
-bool CoreChecks::ValidateBarriersQFOTransferUniqueness(const char *func_name, CMD_BUFFER_STATE *cb_state,
+bool CoreChecks::ValidateBarriersQFOTransferUniqueness(const char *func_name, const CMD_BUFFER_STATE *cb_state,
                                                        uint32_t bufferBarrierCount, const VkBufferMemoryBarrier *pBufferMemBarriers,
                                                        uint32_t imageMemBarrierCount,
-                                                       const VkImageMemoryBarrier *pImageMemBarriers) {
+                                                       const VkImageMemoryBarrier *pImageMemBarriers) const {
     bool skip = false;
     skip |= ValidateQFOTransferBarrierUniqueness(func_name, cb_state, bufferBarrierCount, pBufferMemBarriers);
     skip |= ValidateQFOTransferBarrierUniqueness(func_name, cb_state, imageMemBarrierCount, pImageMemBarriers);
     return skip;
 }
 
-void CoreChecks::RecordBarriersQFOTransfers(CMD_BUFFER_STATE *cb_state, uint32_t bufferBarrierCount,
-                                            const VkBufferMemoryBarrier *pBufferMemBarriers, uint32_t imageMemBarrierCount,
-                                            const VkImageMemoryBarrier *pImageMemBarriers) {
-    RecordQFOTransferBarriers(cb_state, bufferBarrierCount, pBufferMemBarriers);
-    RecordQFOTransferBarriers(cb_state, imageMemBarrierCount, pImageMemBarriers);
+void CoreChecks::RecordBarrierValidationInfo(const char *func_name, CMD_BUFFER_STATE *cb_state, uint32_t bufferBarrierCount,
+                                             const VkBufferMemoryBarrier *pBufferMemBarriers, uint32_t imageMemBarrierCount,
+                                             const VkImageMemoryBarrier *pImageMemBarriers) {
+    RecordBarrierArrayValidationInfo(func_name, cb_state, bufferBarrierCount, pBufferMemBarriers);
+    RecordBarrierArrayValidationInfo(func_name, cb_state, imageMemBarrierCount, pImageMemBarriers);
 }
 
 template <typename BarrierRecord, typename Scoreboard>
@@ -4276,7 +4314,7 @@ bool CoreChecks::ValidateCmdClearDepthSubresourceRange(const IMAGE_STATE *image_
 
 bool CoreChecks::ValidateImageBarrierSubresourceRange(const IMAGE_STATE *image_state,
                                                       const VkImageSubresourceRange &subresourceRange, const char *cmd_name,
-                                                      const char *param_name) {
+                                                      const char *param_name) const {
     SubresourceRangeErrorCodes subresourceRangeErrorCodes = {};
     subresourceRangeErrorCodes.base_mip_err = "VUID-VkImageMemoryBarrier-subresourceRange-01486";
     subresourceRangeErrorCodes.mip_count_err = "VUID-VkImageMemoryBarrier-subresourceRange-01724";
