@@ -1662,7 +1662,7 @@ void CreateNVRayTracingPipelineHelper::InitShaderInfo() {  // DONE
 
 void CreateNVRayTracingPipelineHelper::InitNVRayTracingPipelineInfo() {
     rp_ci_.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
-
+    rp_ci_.maxRecursionDepth = 0;
     rp_ci_.stageCount = shader_stages_.size();
     rp_ci_.pStages = shader_stages_.data();
     rp_ci_.groupCount = groups_.size();
