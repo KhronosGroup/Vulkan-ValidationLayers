@@ -7669,7 +7669,7 @@ bool CoreChecks::ValidatePipelineBindPoint(const CMD_BUFFER_STATE *cb_state, VkP
 bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                         VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
                                                         const VkWriteDescriptorSet *pDescriptorWrites) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     const char *func_name = "vkCmdPushDescriptorSetKHR()";
     bool skip = false;
@@ -7683,7 +7683,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
         std::make_pair(VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, "VUID-vkCmdPushDescriptorSetKHR-pipelineBindPoint-00363")};
 
     skip |= ValidatePipelineBindPoint(cb_state, pipelineBindPoint, func_name, bind_errors);
-    auto layout_data = GetPipelineLayout(layout);
+    const auto layout_data = GetPipelineLayout(layout);
 
     // Validate the set index points to a push descriptor set and is in range
     if (layout_data) {
@@ -7716,9 +7716,9 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
     return skip;
 }
 
-void CoreChecks::RecordCmdPushDescriptorSetState(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint pipelineBindPoint,
-                                                 VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
-                                                 const VkWriteDescriptorSet *pDescriptorWrites) {
+void ValidationStateTracker::RecordCmdPushDescriptorSetState(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint pipelineBindPoint,
+                                                             VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                                             const VkWriteDescriptorSet *pDescriptorWrites) {
     const auto &pipeline_layout = GetPipelineLayout(layout);
     // Short circuit invalid updates
     if (!pipeline_layout || (set >= pipeline_layout->set_layouts.size()) || !pipeline_layout->set_layouts[set] ||
@@ -7742,9 +7742,10 @@ void CoreChecks::RecordCmdPushDescriptorSetState(CMD_BUFFER_STATE *cb_state, VkP
     push_descriptor_set->PerformPushDescriptorsUpdate(descriptorWriteCount, pDescriptorWrites);
 }
 
-void CoreChecks::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                      VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
-                                                      const VkWriteDescriptorSet *pDescriptorWrites) {
+void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer,
+                                                                  VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout,
+                                                                  uint32_t set, uint32_t descriptorWriteCount,
+                                                                  const VkWriteDescriptorSet *pDescriptorWrites) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     RecordCmdPushDescriptorSetState(cb_state, pipelineBindPoint, layout, set, descriptorWriteCount, pDescriptorWrites);
 }
@@ -9346,7 +9347,7 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
                                                  VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
                                                  const void *pValues) {
     bool skip = false;
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     skip |= ValidateCmdQueueFlags(cb_state, "vkCmdPushConstants()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdPushConstants-commandBuffer-cmdpool");
@@ -14016,14 +14017,14 @@ static std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> GetDslFromPip
 bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
                                                                     VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                                     VkPipelineLayout layout, uint32_t set, const void *pData) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     const char *const func_name = "vkPushDescriptorSetWithTemplateKHR()";
     bool skip = false;
     skip |= ValidateCmd(cb_state, CMD_PUSHDESCRIPTORSETWITHTEMPLATEKHR, func_name);
 
-    auto layout_data = GetPipelineLayout(layout);
-    auto dsl = GetDslFromPipelineLayout(layout_data, set);
+    const auto layout_data = GetPipelineLayout(layout);
+    const auto dsl = GetDslFromPipelineLayout(layout_data, set);
     const VulkanTypedHandle layout_typed(layout, kVulkanObjectTypePipelineLayout);
 
     // Validate the set index points to a push descriptor set and is in range
@@ -14090,9 +14091,9 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
     return skip;
 }
 
-void CoreChecks::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
-                                                                  VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
-                                                                  VkPipelineLayout layout, uint32_t set, const void *pData) {
+void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(
+    VkCommandBuffer commandBuffer, VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, VkPipelineLayout layout, uint32_t set,
+    const void *pData) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
 
     const auto template_state = GetDescriptorTemplateState(descriptorUpdateTemplate);
