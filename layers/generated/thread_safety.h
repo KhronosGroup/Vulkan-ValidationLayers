@@ -24,12 +24,17 @@
 
 #pragma once
 
+#include <atomic>
 #include <chrono>
-#include <thread>
 #include <mutex>
-#include <vector>
-#include <unordered_set>
 #include <string>
+#include <thread>
+#include <unordered_set>
+#include <vector>
+// shared_mutex support added in MSVC 2015 update 2
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
+    #include <shared_mutex>
+#endif
 
 VK_DEFINE_NON_DISPATCHABLE_HANDLE(DISTINCT_NONDISPATCHABLE_PHONY_HANDLE)
 // The following line must match the vulkan_core.h condition guarding VK_DEFINE_NON_DISPATCHABLE_HANDLE
@@ -61,23 +66,64 @@ static const char DECORATE_UNUSED *kVUID_Threading_SingleThreadReuse = "UNASSIGN
 
 #undef DECORATE_UNUSED
 
-struct object_use_data {
-    loader_platform_thread_id thread;
-    int reader_count;
-    int writer_count;
+class ObjectUseData
+{
+public:
+    class WriteReadCount
+    {
+    public:
+        WriteReadCount(int64_t v) : count(v) {}
+
+        int32_t GetReadCount() const { return (int32_t)(count & 0xFFFFFFFF); }
+        int32_t GetWriteCount() const { return (int32_t)(count >> 32); }
+
+    private:
+        int64_t count;
+    };
+
+    ObjectUseData() : thread(0), writer_reader_count(0) {
+        // silence -Wunused-private-field warning
+        padding[0] = 0;
+    }
+
+    WriteReadCount AddWriter() {
+        int64_t prev = writer_reader_count.fetch_add(1ULL << 32);
+        return WriteReadCount(prev);
+    }
+    WriteReadCount AddReader() {
+        int64_t prev = writer_reader_count.fetch_add(1ULL);
+        return WriteReadCount(prev);
+    }
+    WriteReadCount RemoveWriter() {
+        int64_t prev = writer_reader_count.fetch_add(-(1LL << 32));
+        return WriteReadCount(prev);
+    }
+    WriteReadCount RemoveReader() {
+        int64_t prev = writer_reader_count.fetch_add(-1LL);
+        return WriteReadCount(prev);
+    }
+    WriteReadCount GetCount() {
+        return WriteReadCount(writer_reader_count);
+    }
+
+    void WaitForObjectIdle(bool is_writer)  {
+        // Wait for thread-safe access to object instead of skipping call.
+        while (GetCount().GetReadCount() > (int)(!is_writer) || GetCount().GetWriteCount() > (int)is_writer) {
+            std::this_thread::sleep_for(std::chrono::microseconds(1));
+        }
+    }
+
+    std::atomic<loader_platform_thread_id> thread;
+
+private:
+    // need to update write and read counts atomically. Writer in high
+    // 32 bits, reader in low 32 bits.
+    std::atomic<int64_t> writer_reader_count;
+
+    // Put each lock on its own cache line to avoid false cache line sharing.
+    char padding[(-int(sizeof(std::atomic<loader_platform_thread_id>) + sizeof(std::atomic<int64_t>))) & 63];
 };
 
-#define THREAD_SAFETY_BUCKETS_LOG2 6
-#define THREAD_SAFETY_BUCKETS (1 << THREAD_SAFETY_BUCKETS_LOG2)
-
-template <typename T> inline uint32_t ThreadSafetyHashObject(T object)
-{
-    uint64_t u64 = (uint64_t)(uintptr_t)object;
-    uint32_t hash = (uint32_t)(u64 >> 32) + (uint32_t)u64;
-    hash ^= (hash >> THREAD_SAFETY_BUCKETS_LOG2) ^ (hash >> (2*THREAD_SAFETY_BUCKETS_LOG2));
-    hash &= (THREAD_SAFETY_BUCKETS-1);
-    return hash;
-}
 
 template <typename T>
 class counter {
@@ -86,35 +132,51 @@ public:
     VkDebugReportObjectTypeEXT objectType;
     debug_report_data **report_data;
 
-    // Per-bucket locking, to reduce contention.
-    struct CounterBucket {
-        small_unordered_map<T, object_use_data> uses;
-        std::mutex counter_lock;
-    };
+    vl_concurrent_unordered_map<T, std::shared_ptr<ObjectUseData>, 6> object_table;
 
-    CounterBucket buckets[THREAD_SAFETY_BUCKETS];
-    CounterBucket &GetBucket(T object)
-    {
-        return buckets[ThreadSafetyHashObject(object)];
+    void CreateObject(T object) {
+        object_table.insert_or_assign(object, std::make_shared<ObjectUseData>());
+    }
+
+    void DestroyObject(T object) {
+        if (object) {
+            object_table.erase(object);
+        }
+    }
+
+    std::shared_ptr<ObjectUseData> FindObject(T object) {
+        assert(object_table.contains(object));
+        auto iter = std::move(object_table.find(object));
+        if (iter != object_table.end()) {
+            return std::move(iter->second);
+        } else {
+            log_msg(*report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object), kVUID_Threading_Info,
+                    "Couldn't find %s Object 0x%" PRIxLEAST64
+                    ". This should not happen and may indicate a bug in the application.",
+                    object_string[objectType], (uint64_t)(object));
+            return nullptr;
+        }
     }
 
     void StartWrite(T object) {
         if (object == VK_NULL_HANDLE) {
             return;
         }
-        auto &bucket = GetBucket(object);
         bool skip = false;
         loader_platform_thread_id tid = loader_platform_get_thread_id();
-        std::unique_lock<std::mutex> lock(bucket.counter_lock);
-        if (!bucket.uses.contains(object)) {
+
+        auto use_data = FindObject(object);
+        if (!use_data) {
+            return;
+        }
+        const ObjectUseData::WriteReadCount prevCount = use_data->AddWriter();
+
+        if (prevCount.GetReadCount() == 0 && prevCount.GetWriteCount() == 0) {
             // There is no current use of the object.  Record writer thread.
-            struct object_use_data *use_data = &bucket.uses[object];
-            use_data->reader_count = 0;
-            use_data->writer_count = 1;
             use_data->thread = tid;
         } else {
-            struct object_use_data *use_data = &bucket.uses[object];
-            if (use_data->reader_count == 0) {
+            if (prevCount.GetReadCount() == 0) {
+                assert(prevCount.GetWriteCount() != 0);
                 // There are no readers.  Two writers just collided.
                 if (use_data->thread != tid) {
                     skip |= log_msg(*report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object),
@@ -123,21 +185,17 @@ public:
                         "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
                         typeName, (uint64_t)use_data->thread, (uint64_t)tid);
                     if (skip) {
-                        WaitForObjectIdle(bucket, object, lock);
+                        // Wait for thread-safe access to object instead of skipping call.
+                        use_data->WaitForObjectIdle(true);
                         // There is now no current use of the object.  Record writer thread.
-                        struct object_use_data *new_use_data = &bucket.uses[object];
-                        new_use_data->thread = tid;
-                        new_use_data->reader_count = 0;
-                        new_use_data->writer_count = 1;
-                    } else {
-                        // Continue with an unsafe use of the object.
                         use_data->thread = tid;
-                        use_data->writer_count += 1;
+                    } else {
+                        // There is now no current use of the object.  Record writer thread.
+                        use_data->thread = tid;
                     }
                 } else {
                     // This is either safe multiple use in one call, or recursive use.
                     // There is no way to make recursion safe.  Just forge ahead.
-                    use_data->writer_count += 1;
                 }
             } else {
                 // There are readers.  This writer collided with them.
@@ -148,21 +206,17 @@ public:
                         "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
                         typeName, (uint64_t)use_data->thread, (uint64_t)tid);
                     if (skip) {
-                        WaitForObjectIdle(bucket, object, lock);
+                        // Wait for thread-safe access to object instead of skipping call.
+                        use_data->WaitForObjectIdle(true);
                         // There is now no current use of the object.  Record writer thread.
-                        struct object_use_data *new_use_data = &bucket.uses[object];
-                        new_use_data->thread = tid;
-                        new_use_data->reader_count = 0;
-                        new_use_data->writer_count = 1;
+                        use_data->thread = tid;
                     } else {
                         // Continue with an unsafe use of the object.
                         use_data->thread = tid;
-                        use_data->writer_count += 1;
                     }
                 } else {
                     // This is either safe multiple use in one call, or recursive use.
                     // There is no way to make recursion safe.  Just forge ahead.
-                    use_data->writer_count += 1;
                 }
             }
         }
@@ -172,63 +226,56 @@ public:
         if (object == VK_NULL_HANDLE) {
             return;
         }
-        auto &bucket = GetBucket(object);
         // Object is no longer in use
-        std::unique_lock<std::mutex> lock(bucket.counter_lock);
-        struct object_use_data *use_data = &bucket.uses[object];
-        use_data->writer_count -= 1;
-        if ((use_data->reader_count == 0) && (use_data->writer_count == 0)) {
-            bucket.uses.erase(object);
+        auto use_data = FindObject(object);
+        if (!use_data) {
+            return;
         }
+        use_data->RemoveWriter();
     }
 
     void StartRead(T object) {
         if (object == VK_NULL_HANDLE) {
             return;
         }
-        auto &bucket = GetBucket(object);
         bool skip = false;
         loader_platform_thread_id tid = loader_platform_get_thread_id();
-        std::unique_lock<std::mutex> lock(bucket.counter_lock);
-        if (!bucket.uses.contains(object)) {
-            // There is no current use of the object.  Record reader count
-            struct object_use_data *use_data = &bucket.uses[object];
-            use_data->reader_count = 1;
-            use_data->writer_count = 0;
+
+        auto use_data = FindObject(object);
+        if (!use_data) {
+            return;
+        }
+        const ObjectUseData::WriteReadCount prevCount = use_data->AddReader();
+
+        if (prevCount.GetReadCount() == 0 && prevCount.GetWriteCount() == 0) {
+            // There is no current use of the object.
             use_data->thread = tid;
-        } else if (bucket.uses[object].writer_count > 0 && bucket.uses[object].thread != tid) {
+        } else if (prevCount.GetWriteCount() > 0 && use_data->thread != tid) {
             // There is a writer of the object.
             skip |= log_msg(*report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object),
                 kVUID_Threading_MultipleThreads,
                 "THREADING ERROR : object of type %s is simultaneously used in "
                 "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
-                typeName, (uint64_t)bucket.uses[object].thread, (uint64_t)tid);
+                typeName, (uint64_t)use_data->thread, (uint64_t)tid);
             if (skip) {
-                WaitForObjectIdle(bucket, object, lock);
-                // There is no current use of the object.  Record reader count
-                struct object_use_data *use_data = &bucket.uses[object];
-                use_data->reader_count = 1;
-                use_data->writer_count = 0;
+                // Wait for thread-safe access to object instead of skipping call.
+                use_data->WaitForObjectIdle(false);
                 use_data->thread = tid;
-            } else {
-                bucket.uses[object].reader_count += 1;
             }
         } else {
-            // There are other readers of the object.  Increase reader count
-            bucket.uses[object].reader_count += 1;
+            // There are other readers of the object.
         }
     }
     void FinishRead(T object) {
         if (object == VK_NULL_HANDLE) {
             return;
         }
-        auto &bucket = GetBucket(object);
-        std::unique_lock<std::mutex> lock(bucket.counter_lock);
-        struct object_use_data *use_data = &bucket.uses[object];
-        use_data->reader_count -= 1;
-        if ((use_data->reader_count == 0) && (use_data->writer_count == 0)) {
-            bucket.uses.erase(object);
+
+        auto use_data = FindObject(object);
+        if (!use_data) {
+            return;
         }
+        use_data->RemoveReader();
     }
     counter(const char *name = "", VkDebugReportObjectTypeEXT type = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, debug_report_data **rep_data = nullptr) {
         typeName = name;
@@ -237,22 +284,22 @@ public:
     }
 
 private:
-    void WaitForObjectIdle(CounterBucket &bucket, T object, std::unique_lock<std::mutex> &lock) {
-        // Wait for thread-safe access to object instead of skipping call.
-        // Don't use condition_variable to wait because it should be extremely
-        // rare to have collisions, but signaling would be very frequent.
-        while (bucket.uses.contains(object)) {
-            lock.unlock();
-            std::this_thread::sleep_for(std::chrono::microseconds(1));
-            lock.lock();
-        }
-    }
 };
-
-
 
 class ThreadSafety : public ValidationObject {
 public:
+
+// shared_mutex support added in MSVC 2015 update 2
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918
+    typedef std::shared_mutex thread_safety_lock_t;
+    typedef std::shared_lock<thread_safety_lock_t> read_lock_guard_t;
+    typedef std::unique_lock<thread_safety_lock_t> write_lock_guard_t;
+#else
+    typedef std::mutex thread_safety_lock_t;
+    typedef std::unique_lock<thread_safety_lock_t> read_lock_guard_t;
+    typedef std::unique_lock<thread_safety_lock_t> write_lock_guard_t;
+#endif
+    thread_safety_lock_t thread_safety_lock;
 
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.
@@ -260,17 +307,14 @@ public:
         return std::unique_lock<std::mutex>(validation_object_mutex, std::defer_lock);
     }
 
-    // Per-bucket locking, to reduce contention.
-    struct CommandBufferBucket {
-        std::mutex command_pool_lock;
-        small_unordered_map<VkCommandBuffer, VkCommandPool> command_pool_map;
-    };
+    // If this ThreadSafety is for a VkDevice, then parent_instance points to the
+    // ThreadSafety object of its parent VkInstance. This is used to get to the counters
+    // for objects created with the instance as parent.
+    ThreadSafety *parent_instance;
 
-    CommandBufferBucket buckets[THREAD_SAFETY_BUCKETS];
-    CommandBufferBucket &GetBucket(VkCommandBuffer object)
-    {
-        return buckets[ThreadSafetyHashObject(object)];
-    }
+    vl_concurrent_unordered_map<VkCommandBuffer, VkCommandPool, 6> command_pool_map;
+    std::unordered_map<VkCommandPool, std::unordered_set<VkCommandBuffer>> pool_command_buffers_map;
+    std::unordered_map<VkDevice, std::unordered_set<VkQueue>> device_queues_map;
 
     counter<VkCommandBuffer> c_VkCommandBuffer;
     counter<VkDevice> c_VkDevice;
@@ -322,8 +366,9 @@ public:
     counter<uint64_t> c_uint64_t;
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
 
-    ThreadSafety()
-        : c_VkCommandBuffer("VkCommandBuffer", VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, &report_data),
+    ThreadSafety(ThreadSafety *parent)
+        : parent_instance(parent),
+          c_VkCommandBuffer("VkCommandBuffer", VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, &report_data),
           c_VkDevice("VkDevice", VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, &report_data),
           c_VkInstance("VkInstance", VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT, &report_data),
           c_VkQueue("VkQueue", VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT, &report_data),
@@ -370,18 +415,20 @@ public:
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
               {};
 
-#define WRAPPER(type)                                                    void StartWriteObject(type object) {                                     c_##type.StartWrite(object);                                     }                                                                    void FinishWriteObject(type object) {                                    c_##type.FinishWrite(object);                                    }                                                                    void StartReadObject(type object) {                                      c_##type.StartRead(object);                                      }                                                                    void FinishReadObject(type object) {                                     c_##type.FinishRead(object);                                     }
+#define WRAPPER(type)                                                    void StartWriteObject(type object) {                                     c_##type.StartWrite(object);                                     }                                                                    void FinishWriteObject(type object) {                                    c_##type.FinishWrite(object);                                    }                                                                    void StartReadObject(type object) {                                      c_##type.StartRead(object);                                      }                                                                    void FinishReadObject(type object) {                                     c_##type.FinishRead(object);                                     }                                                                    void CreateObject(type object) {                                         c_##type.CreateObject(object);                                   }                                                                    void DestroyObject(type object) {                                        c_##type.DestroyObject(object);                                  }
 
-WRAPPER(VkDevice)
-WRAPPER(VkInstance)
+#define WRAPPER_PARENT_INSTANCE(type)                                    void StartWriteObjectParentInstance(type object) {                                     (parent_instance ? parent_instance : this)->c_##type.StartWrite(object);                                     }                                                                    void FinishWriteObjectParentInstance(type object) {                                    (parent_instance ? parent_instance : this)->c_##type.FinishWrite(object);                                    }                                                                    void StartReadObjectParentInstance(type object) {                                      (parent_instance ? parent_instance : this)->c_##type.StartRead(object);                                      }                                                                    void FinishReadObjectParentInstance(type object) {                                     (parent_instance ? parent_instance : this)->c_##type.FinishRead(object);                                     }                                                                    void CreateObjectParentInstance(type object) {                                         (parent_instance ? parent_instance : this)->c_##type.CreateObject(object);                                   }                                                                    void DestroyObjectParentInstance(type object) {                                        (parent_instance ? parent_instance : this)->c_##type.DestroyObject(object);                                  }
+
+WRAPPER_PARENT_INSTANCE(VkDevice)
+WRAPPER_PARENT_INSTANCE(VkInstance)
 WRAPPER(VkQueue)
 #ifdef DISTINCT_NONDISPATCHABLE_HANDLES
 WRAPPER(VkAccelerationStructureNV)
 WRAPPER(VkBuffer)
 WRAPPER(VkBufferView)
 WRAPPER(VkCommandPool)
-WRAPPER(VkDebugReportCallbackEXT)
-WRAPPER(VkDebugUtilsMessengerEXT)
+WRAPPER_PARENT_INSTANCE(VkDebugReportCallbackEXT)
+WRAPPER_PARENT_INSTANCE(VkDebugUtilsMessengerEXT)
 WRAPPER(VkDescriptorPool)
 WRAPPER(VkDescriptorSet)
 WRAPPER(VkDescriptorSetLayout)
@@ -406,55 +453,74 @@ WRAPPER(VkSampler)
 WRAPPER(VkSamplerYcbcrConversion)
 WRAPPER(VkSemaphore)
 WRAPPER(VkShaderModule)
-WRAPPER(VkSurfaceKHR)
+WRAPPER_PARENT_INSTANCE(VkSurfaceKHR)
 WRAPPER(VkSwapchainKHR)
 WRAPPER(VkValidationCacheEXT)
 
 
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
 WRAPPER(uint64_t)
+WRAPPER_PARENT_INSTANCE(uint64_t)
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
+
+    void CreateObject(VkCommandBuffer object) {
+        c_VkCommandBuffer.CreateObject(object);
+    }
+    void DestroyObject(VkCommandBuffer object) {
+        c_VkCommandBuffer.DestroyObject(object);
+    }
 
     // VkCommandBuffer needs check for implicit use of command pool
     void StartWriteObject(VkCommandBuffer object, bool lockPool = true) {
         if (lockPool) {
-            auto &bucket = GetBucket(object);
-            std::unique_lock<std::mutex> lock(bucket.command_pool_lock);
-            VkCommandPool pool = bucket.command_pool_map[object];
-            lock.unlock();
-            StartWriteObject(pool);
+            auto iter = command_pool_map.find(object);
+            if (iter != command_pool_map.end()) {
+                VkCommandPool pool = iter->second;
+                StartWriteObject(pool);
+            }
         }
         c_VkCommandBuffer.StartWrite(object);
     }
     void FinishWriteObject(VkCommandBuffer object, bool lockPool = true) {
         c_VkCommandBuffer.FinishWrite(object);
         if (lockPool) {
-            auto &bucket = GetBucket(object);
-            std::unique_lock<std::mutex> lock(bucket.command_pool_lock);
-            VkCommandPool pool = bucket.command_pool_map[object];
-            lock.unlock();
-            FinishWriteObject(pool);
+            auto iter = command_pool_map.find(object);
+            if (iter != command_pool_map.end()) {
+                VkCommandPool pool = iter->second;
+                FinishWriteObject(pool);
+            }
         }
     }
     void StartReadObject(VkCommandBuffer object) {
-        auto &bucket = GetBucket(object);
-        std::unique_lock<std::mutex> lock(bucket.command_pool_lock);
-        VkCommandPool pool = bucket.command_pool_map[object];
-        lock.unlock();
-        // We set up a read guard against the "Contents" counter to catch conflict vs. vkResetCommandPool and vkDestroyCommandPool
-        // while *not* establishing a read guard against the command pool counter itself to avoid false postives for
-        // non-externally sync'd command buffers
-        c_VkCommandPoolContents.StartRead(pool);
+        auto iter = command_pool_map.find(object);
+        if (iter != command_pool_map.end()) {
+            VkCommandPool pool = iter->second;
+            // We set up a read guard against the "Contents" counter to catch conflict vs. vkResetCommandPool and vkDestroyCommandPool
+            // while *not* establishing a read guard against the command pool counter itself to avoid false postives for
+            // non-externally sync'd command buffers
+            c_VkCommandPoolContents.StartRead(pool);
+        }
         c_VkCommandBuffer.StartRead(object);
     }
     void FinishReadObject(VkCommandBuffer object) {
-        auto &bucket = GetBucket(object);
         c_VkCommandBuffer.FinishRead(object);
-        std::unique_lock<std::mutex> lock(bucket.command_pool_lock);
-        VkCommandPool pool = bucket.command_pool_map[object];
-        lock.unlock();
-        c_VkCommandPoolContents.FinishRead(pool);
+        auto iter = command_pool_map.find(object);
+        if (iter != command_pool_map.end()) {
+            VkCommandPool pool = iter->second;
+            c_VkCommandPoolContents.FinishRead(pool);
+        }
     } 
+
+void PreCallRecordCreateInstance(
+    const VkInstanceCreateInfo*                 pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkInstance*                                 pInstance);
+
+void PostCallRecordCreateInstance(
+    const VkInstanceCreateInfo*                 pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkInstance*                                 pInstance,
+    VkResult                                    result);
 
 void PreCallRecordDestroyInstance(
     VkInstance                                  instance,
@@ -490,6 +556,19 @@ void PreCallRecordGetDeviceProcAddr(
 void PostCallRecordGetDeviceProcAddr(
     VkDevice                                    device,
     const char*                                 pName);
+
+void PreCallRecordCreateDevice(
+    VkPhysicalDevice                            physicalDevice,
+    const VkDeviceCreateInfo*                   pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkDevice*                                   pDevice);
+
+void PostCallRecordCreateDevice(
+    VkPhysicalDevice                            physicalDevice,
+    const VkDeviceCreateInfo*                   pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkDevice*                                   pDevice,
+    VkResult                                    result);
 
 void PreCallRecordDestroyDevice(
     VkDevice                                    device,
