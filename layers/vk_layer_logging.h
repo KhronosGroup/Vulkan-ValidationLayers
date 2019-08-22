@@ -73,25 +73,20 @@ static const char DECORATE_UNUSED *kVUIDUndefined = "VUID_Undefined";
 #undef DECORATE_UNUSED
 
 typedef struct {
-    VkDebugReportCallbackEXT msgCallback;
-    PFN_vkDebugReportCallbackEXT pfnMsgCallback;
-    VkFlags msgFlags;
-} VkDebugReportContent;
-
-typedef struct {
-    VkDebugUtilsMessengerEXT messenger;
-    VkDebugUtilsMessageSeverityFlagsEXT messageSeverity;
-    VkDebugUtilsMessageTypeFlagsEXT messageType;
-    PFN_vkDebugUtilsMessengerCallbackEXT pfnUserCallback;
-} VkDebugUtilsMessengerContent;
-
-typedef struct {
     bool is_messenger;  // This struct describes a VK_EXT_debug_utils callback
     bool is_default;    // An internally created callback, used if no user-defined callbacks are registered
-    union {
-        VkDebugReportContent report;
-        VkDebugUtilsMessengerContent messenger;
-    };
+
+    // Debug report related information
+    VkDebugReportCallbackEXT debug_report_callback_object;
+    PFN_vkDebugReportCallbackEXT debug_report_callback_function_ptr;
+    VkFlags debug_report_msg_flags;
+
+    // Debug utils related information
+    VkDebugUtilsMessengerEXT debug_utils_callback_object;
+    VkDebugUtilsMessageSeverityFlagsEXT debug_utils_msg_flags;
+    VkDebugUtilsMessageTypeFlagsEXT debug_utils_msg_type;
+    PFN_vkDebugUtilsMessengerCallbackEXT debug_utils_callback_function_ptr;
+
     void *pUserData;
 } VkLayerDbgFunctionState;
 
@@ -276,12 +271,12 @@ static void SetDebugUtilsSeverityFlags(std::vector<VkLayerDbgFunctionState> &cal
     // For all callback in list, return their complete set of severities and modes
     for (auto item : callbacks) {
         if (item.is_messenger) {
-            debug_data->active_severities |= item.messenger.messageSeverity;
-            debug_data->active_types |= item.messenger.messageType;
+            debug_data->active_severities |= item.debug_utils_msg_flags;
+            debug_data->active_types |= item.debug_utils_msg_type;
         } else {
             VkFlags severities = 0;
             VkFlags types = 0;
-            DebugReportFlagsToAnnotFlags(item.report.msgFlags, true, &severities, &types);
+            DebugReportFlagsToAnnotFlags(item.debug_report_msg_flags, true, &severities, &types);
             debug_data->active_severities |= severities;
             debug_data->active_types |= types;
         }
@@ -293,9 +288,9 @@ static inline void RemoveDebugUtilsCallback(debug_report_data *debug_data, std::
     auto item = callbacks.begin();
     for (item = callbacks.begin(); item != callbacks.end(); item++) {
         if (item->is_messenger) {
-            if (item->messenger.messenger == CastToHandle<VkDebugUtilsMessengerEXT>(callback)) break;
+            if (item->debug_utils_callback_object == CastToHandle<VkDebugUtilsMessengerEXT>(callback)) break;
         } else {
-            if (item->report.msgCallback == CastToHandle<VkDebugReportCallbackEXT>(callback)) break;
+            if (item->debug_report_callback_object == CastToHandle<VkDebugReportCallbackEXT>(callback)) break;
         }
     }
     if (item != callbacks.end()) {
@@ -398,22 +393,22 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
         if (current_callback.is_default && !use_default_callbacks) continue;
 
         // VK_EXT_debug_report callback (deprecated)
-        if (!current_callback.is_messenger && (current_callback.report.msgFlags & msg_flags)) {
+        if (!current_callback.is_messenger && (current_callback.debug_report_msg_flags & msg_flags)) {
             if (text_vuid != nullptr) {
                 // If a text vuid is supplied for the old debug report extension, prepend it to the message string
                 new_debug_report_message.insert(0, " ] ");
                 new_debug_report_message.insert(0, text_vuid);
                 new_debug_report_message.insert(0, " [ ");
             }
-            if (current_callback.report.pfnMsgCallback(msg_flags, object_type, src_object, location, 0, layer_prefix,
-                                                       new_debug_report_message.c_str(), current_callback.pUserData)) {
+            if (current_callback.debug_report_callback_function_ptr(msg_flags, object_type, src_object, location, 0, layer_prefix,
+                                                                    new_debug_report_message.c_str(), current_callback.pUserData)) {
                 bail = true;
             }
             // VK_EXT_debug_utils callback
-        } else if (current_callback.is_messenger && (current_callback.messenger.messageSeverity & severity) &&
-                   (current_callback.messenger.messageType & types)) {
-            if (current_callback.messenger.pfnUserCallback(static_cast<VkDebugUtilsMessageSeverityFlagBitsEXT>(severity), types,
-                                                           &callback_data, current_callback.pUserData)) {
+        } else if (current_callback.is_messenger && (current_callback.debug_utils_msg_flags & severity) &&
+                   (current_callback.debug_utils_msg_type & types)) {
+            if (current_callback.debug_utils_callback_function_ptr(static_cast<VkDebugUtilsMessageSeverityFlagBitsEXT>(severity),
+                                                                   types, &callback_data, current_callback.pUserData)) {
                 bail = true;
             }
         }
@@ -470,49 +465,56 @@ static inline void layer_destroy_callback(debug_report_data *debug_data, T callb
     RemoveDebugUtilsCallback(debug_data, debug_data->debug_callback_list, CastToUint64(callback));
 }
 
+template <typename TCreateInfo, typename TCallback>
+static inline void layer_create_callback(bool is_utils_callback, debug_report_data *debug_data, bool default_callback,
+                                         const TCreateInfo *create_info, const VkAllocationCallbacks *allocator,
+                                         TCallback *callback) {
+    std::unique_lock<std::mutex> lock(debug_data->debug_report_mutex);
+
+    debug_data->debug_callback_list.emplace_back(VkLayerDbgFunctionState());
+    auto &callback_state = debug_data->debug_callback_list.back();
+    callback_state.is_messenger = is_utils_callback;
+    callback_state.is_default = default_callback;
+    callback_state.pUserData = create_info->pUserData;
+
+    if (is_utils_callback) {
+        auto utils_create_info = reinterpret_cast<const VkDebugUtilsMessengerCreateInfoEXT *>(create_info);
+        auto utils_callback = reinterpret_cast<VkDebugUtilsMessengerEXT *>(callback);
+        if (!(*utils_callback)) {
+            // callback constructed default callbacks have no handle -- so use struct address as unique handle
+            *utils_callback = reinterpret_cast<VkDebugUtilsMessengerEXT>(&callback_state);
+        }
+        callback_state.debug_utils_callback_object = *utils_callback;
+        callback_state.debug_utils_callback_function_ptr = utils_create_info->pfnUserCallback;
+        callback_state.debug_utils_msg_flags = utils_create_info->messageSeverity;
+        callback_state.debug_utils_msg_type = utils_create_info->messageType;
+    } else {  // Debug report callback
+        auto report_create_info = reinterpret_cast<const VkDebugReportCallbackCreateInfoEXT *>(create_info);
+        auto report_callback = reinterpret_cast<VkDebugReportCallbackEXT *>(callback);
+        if (!(*report_callback)) {
+            // Internally constructed default callbacks have no handle -- so use struct address as unique handle
+            *report_callback = reinterpret_cast<VkDebugReportCallbackEXT>(&callback_state);
+        }
+        callback_state.debug_report_callback_object = *report_callback;
+        callback_state.debug_report_callback_function_ptr = report_create_info->pfnCallback;
+        callback_state.debug_report_msg_flags = report_create_info->flags;
+    }
+
+    SetDebugUtilsSeverityFlags(debug_data->debug_callback_list, debug_data);
+}
+
 static inline VkResult layer_create_messenger_callback(debug_report_data *debug_data, bool default_callback,
                                                        const VkDebugUtilsMessengerCreateInfoEXT *create_info,
                                                        const VkAllocationCallbacks *allocator,
                                                        VkDebugUtilsMessengerEXT *messenger) {
-    std::unique_lock<std::mutex> lock(debug_data->debug_report_mutex);
-    debug_data->debug_callback_list.emplace_back(VkLayerDbgFunctionState());
-    auto &callback_state = debug_data->debug_callback_list.back();
-    callback_state.is_messenger = true;
-    callback_state.is_default = default_callback;
-    // Internally constructed default callbacks have no handle -- so use struct address as unique handle
-    if (!(*messenger)) {
-        *messenger = reinterpret_cast<VkDebugUtilsMessengerEXT>(&callback_state);
-    }
-    callback_state.messenger.messenger = *messenger;
-    callback_state.messenger.pfnUserCallback = create_info->pfnUserCallback;
-    callback_state.messenger.messageSeverity = create_info->messageSeverity;
-    callback_state.messenger.messageType = create_info->messageType;
-    callback_state.pUserData = create_info->pUserData;
-
-    SetDebugUtilsSeverityFlags(debug_data->debug_callback_list, debug_data);
+    layer_create_callback(true, debug_data, default_callback, create_info, allocator, messenger);
     return VK_SUCCESS;
 }
 
 static inline VkResult layer_create_report_callback(debug_report_data *debug_data, bool default_callback,
                                                     const VkDebugReportCallbackCreateInfoEXT *create_info,
                                                     const VkAllocationCallbacks *allocator, VkDebugReportCallbackEXT *callback) {
-    std::unique_lock<std::mutex> lock(debug_data->debug_report_mutex);
-
-    debug_data->debug_callback_list.emplace_back(VkLayerDbgFunctionState());
-    auto &callback_state = debug_data->debug_callback_list.back();
-
-    callback_state.is_messenger = false;
-    callback_state.is_default = default_callback;
-    // Internally constructed default callbacks have no handle -- so use struct address as unique handle
-    if (!(*callback)) {
-        *callback = reinterpret_cast<VkDebugReportCallbackEXT>(&callback_state);
-    }
-    callback_state.report.msgCallback = *callback;
-    callback_state.report.pfnMsgCallback = create_info->pfnCallback;
-    callback_state.report.msgFlags = create_info->flags;
-    callback_state.pUserData = create_info->pUserData;
-
-    SetDebugUtilsSeverityFlags(debug_data->debug_callback_list, debug_data);
+    layer_create_callback(false, debug_data, default_callback, create_info, allocator, callback);
     return VK_SUCCESS;
 }
 
