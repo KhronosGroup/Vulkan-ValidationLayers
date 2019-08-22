@@ -931,16 +931,19 @@ TEST_F(VkLayerTest, TemporaryExternalSemaphore) {
     vkQueueSubmit(m_device->m_queue, 4, si, VK_NULL_HANDLE);
     m_errorMonitor->VerifyFound();
 
-    // Wait on the imported semaphore twice in vkQueueBindSparse, the second wait should be an error
-    VkBindSparseInfo bi[] = {
-        {VK_STRUCTURE_TYPE_BIND_SPARSE_INFO, nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 1, &export_semaphore},
-        {VK_STRUCTURE_TYPE_BIND_SPARSE_INFO, nullptr, 1, &import_semaphore, 0, nullptr, 0, nullptr, 0, nullptr, 0, nullptr},
-        {VK_STRUCTURE_TYPE_BIND_SPARSE_INFO, nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 1, &export_semaphore},
-        {VK_STRUCTURE_TYPE_BIND_SPARSE_INFO, nullptr, 1, &import_semaphore, 0, nullptr, 0, nullptr, 0, nullptr, 0, nullptr},
-    };
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "has no way to be signaled");
-    vkQueueBindSparse(m_device->m_queue, 4, bi, VK_NULL_HANDLE);
-    m_errorMonitor->VerifyFound();
+    auto index = m_device->graphics_queue_node_index_;
+    if (m_device->queue_props[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) {
+        // Wait on the imported semaphore twice in vkQueueBindSparse, the second wait should be an error
+        VkBindSparseInfo bi[] = {
+            {VK_STRUCTURE_TYPE_BIND_SPARSE_INFO, nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 1, &export_semaphore},
+            {VK_STRUCTURE_TYPE_BIND_SPARSE_INFO, nullptr, 1, &import_semaphore, 0, nullptr, 0, nullptr, 0, nullptr, 0, nullptr},
+            {VK_STRUCTURE_TYPE_BIND_SPARSE_INFO, nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 1, &export_semaphore},
+            {VK_STRUCTURE_TYPE_BIND_SPARSE_INFO, nullptr, 1, &import_semaphore, 0, nullptr, 0, nullptr, 0, nullptr, 0, nullptr},
+        };
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "has no way to be signaled");
+        vkQueueBindSparse(m_device->m_queue, 4, bi, VK_NULL_HANDLE);
+        m_errorMonitor->VerifyFound();
+    }
 
     // Cleanup
     err = vkQueueWaitIdle(m_device->m_queue);
