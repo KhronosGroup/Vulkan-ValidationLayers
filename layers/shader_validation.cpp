@@ -3142,13 +3142,77 @@ bool CoreChecks::ValidateComputePipeline(PIPELINE_STATE *pipeline) const {
 
 bool CoreChecks::ValidateRayTracingPipelineNV(PIPELINE_STATE *pipeline) const {
     bool skip = false;
+
+    if (pipeline->raytracingPipelineCI.maxRecursionDepth > phys_dev_ext_props.ray_tracing_props.maxRecursionDepth) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        "VUID-VkRayTracingPipelineCreateInfoNV-maxRecursionDepth-02412", ": %d > %d",
+                        pipeline->raytracingPipelineCI.maxRecursionDepth, phys_dev_ext_props.ray_tracing_props.maxRecursionDepth);
+    }
+
+    const auto *stages = pipeline->raytracingPipelineCI.ptr()->pStages;
+    const auto *groups = pipeline->raytracingPipelineCI.ptr()->pGroups;
+
+    uint32_t raygen_stages_found = 0;
     for (uint32_t stage_index = 0; stage_index < pipeline->raytracingPipelineCI.stageCount; stage_index++) {
-        const auto &stage = pipeline->raytracingPipelineCI.ptr()->pStages[stage_index];
+        const auto &stage = stages[stage_index];
 
         const SHADER_MODULE_STATE *module = GetShaderModuleState(stage.module);
         const spirv_inst_iter entrypoint = FindEntrypoint(module, stage.pName, stage.stage);
 
         skip |= ValidatePipelineShaderStage(&stage, pipeline, pipeline->stage_state[stage_index], module, entrypoint, false);
+
+        if (stage.stage == VK_SHADER_STAGE_RAYGEN_BIT_NV) {
+            raygen_stages_found++;
+        }
+    }
+    if (raygen_stages_found != 1) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        "VUID-VkRayTracingPipelineCreateInfoNV-stage-02408", " : %d raygen stages specified", raygen_stages_found);
+    }
+
+    for (uint32_t group_index = 0; group_index < pipeline->raytracingPipelineCI.groupCount; group_index++) {
+        const auto &group = groups[group_index];
+
+        if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV) {
+            if (group.generalShader >= pipeline->raytracingPipelineCI.stageCount ||
+                (stages[group.generalShader].stage != VK_SHADER_STAGE_RAYGEN_BIT_NV &&
+                 stages[group.generalShader].stage != VK_SHADER_STAGE_MISS_BIT_NV &&
+                 stages[group.generalShader].stage != VK_SHADER_STAGE_CALLABLE_BIT_NV)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02413", ": pGroups[%d]", group_index);
+            }
+            if (group.anyHitShader != VK_SHADER_UNUSED_NV || group.closestHitShader != VK_SHADER_UNUSED_NV ||
+                group.intersectionShader != VK_SHADER_UNUSED_NV) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02414", ": pGroups[%d]", group_index);
+            }
+        } else if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV) {
+            if (group.intersectionShader >= pipeline->raytracingPipelineCI.stageCount ||
+                stages[group.intersectionShader].stage != VK_SHADER_STAGE_INTERSECTION_BIT_NV) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02415", ": pGroups[%d]", group_index);
+            }
+        } else if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV) {
+            if (group.intersectionShader != VK_SHADER_UNUSED_NV) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02416", ": pGroups[%d]", group_index);
+            }
+        }
+
+        if (group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV ||
+            group.type == VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV) {
+            if (group.anyHitShader != VK_SHADER_UNUSED_NV && (group.anyHitShader >= pipeline->raytracingPipelineCI.stageCount ||
+                                                              stages[group.anyHitShader].stage != VK_SHADER_STAGE_ANY_HIT_BIT_NV)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkRayTracingShaderGroupCreateInfoNV-anyHitShader-02418", ": pGroups[%d]", group_index);
+            }
+            if (group.closestHitShader != VK_SHADER_UNUSED_NV &&
+                (group.closestHitShader >= pipeline->raytracingPipelineCI.stageCount ||
+                 stages[group.closestHitShader].stage != VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkRayTracingShaderGroupCreateInfoNV-closestHitShader-02417", ": pGroups[%d]", group_index);
+            }
+        }
     }
     return skip;
 }
