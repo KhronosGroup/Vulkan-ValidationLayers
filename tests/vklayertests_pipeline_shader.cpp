@@ -28,7 +28,7 @@
 #include "layer_validation_tests.h"
 
 TEST_F(VkLayerTest, PSOPolygonModeInvalid) {
-    TEST_DESCRIPTION("Attempt to use a non-solid polygon fill mode in a pipeline when this feature is not enabled.");
+    TEST_DESCRIPTION("Attempt to use invalid polygon fill modes.");
     VkPhysicalDeviceFeatures device_features = {};
     device_features.fillModeNonSolid = VK_FALSE;
     // The sacrificial device object
@@ -43,17 +43,23 @@ TEST_F(VkLayerTest, PSOPolygonModeInvalid) {
 
     auto set_polygonMode = [&](CreatePipelineHelper &helper) { helper.rs_state_ci_ = rs_ci; };
 
-    // Set polygonMode to unsupported value POINT, should fail
+    // Set polygonMode to POINT while the non-solid fill mode feature is disabled.
     // Introduce failure by setting unsupported polygon mode
     rs_ci.polygonMode = VK_POLYGON_MODE_POINT;
     CreatePipelineHelper::OneshotTest(*this, set_polygonMode, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                       "polygonMode cannot be VK_POLYGON_MODE_POINT or VK_POLYGON_MODE_LINE");
 
-    // Try again with polygonMode=LINE, should fail
+    // Set polygonMode to LINE while the non-solid fill mode feature is disabled.
     // Introduce failure by setting unsupported polygon mode
     rs_ci.polygonMode = VK_POLYGON_MODE_LINE;
     CreatePipelineHelper::OneshotTest(*this, set_polygonMode, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                       "polygonMode cannot be VK_POLYGON_MODE_POINT or VK_POLYGON_MODE_LINE");
+
+    // Set polygonMode to FILL_RECTANGLE_NV while the extension is not enabled.
+    // Introduce failure by setting unsupported polygon mode
+    rs_ci.polygonMode = VK_POLYGON_MODE_FILL_RECTANGLE_NV;
+    CreatePipelineHelper::OneshotTest(*this, set_polygonMode, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01414");
 }
 
 TEST_F(VkLayerTest, PipelineNotBound) {
@@ -5699,4 +5705,50 @@ TEST_F(VkLayerTest, CreatePipelineCheckLineRasterization) {
     m_errorMonitor->VerifyFound();
     vkCmdSetLineStippleEXT(m_commandBuffer->handle(), 1, 1);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, FillRectangleNV) {
+    TEST_DESCRIPTION("Verify VK_NV_fill_rectangle");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    VkPhysicalDeviceFeatures device_features = {};
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
+
+    // Disable non-solid fill modes to make sure that the usage of VK_POLYGON_MODE_LINE and
+    // VK_POLYGON_MODE_POINT will cause an error when the VK_NV_fill_rectangle extension is enabled.
+    device_features.fillModeNonSolid = VK_FALSE;
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_FILL_RECTANGLE_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_NV_FILL_RECTANGLE_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_NV_FILL_RECTANGLE_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkPolygonMode polygon_mode = VK_POLYGON_MODE_LINE;
+
+    auto set_polygon_mode = [&polygon_mode](CreatePipelineHelper &helper) { helper.rs_state_ci_.polygonMode = polygon_mode; };
+
+    // Set unsupported polygon mode VK_POLYGON_MODE_LINE
+    CreatePipelineHelper::OneshotTest(*this, set_polygon_mode, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507", false);
+
+    // Set unsupported polygon mode VK_POLYGON_MODE_POINT
+    polygon_mode = VK_POLYGON_MODE_POINT;
+    CreatePipelineHelper::OneshotTest(*this, set_polygon_mode, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507", false);
+
+    // Set supported polygon mode VK_POLYGON_MODE_FILL
+    polygon_mode = VK_POLYGON_MODE_FILL;
+    CreatePipelineHelper::OneshotTest(*this, set_polygon_mode, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507", true);
+
+    // Set supported polygon mode VK_POLYGON_MODE_FILL_RECTANGLE_NV
+    polygon_mode = VK_POLYGON_MODE_FILL_RECTANGLE_NV;
+    CreatePipelineHelper::OneshotTest(*this, set_polygon_mode, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507", true);
 }
