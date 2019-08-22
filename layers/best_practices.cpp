@@ -19,6 +19,7 @@
 
 #include "best_practices.h"
 #include "layer_chassis_dispatch.h"
+#include "core_validation_error_enums.h"
 
 #include <string>
 #include <iomanip>
@@ -42,10 +43,10 @@ bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pC
 
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         if (white_list(pCreateInfo->ppEnabledExtensionNames[i], kDeviceExtensionNames)) {
-            skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        layer_name.c_str(), "vkCreateInstance(): Attempting to enable Device Extension %s at CreateInstance time.",
-                        pCreateInfo->ppEnabledExtensionNames[i]);
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            kVUID_BestPractices_CreateInstance_ExtensionMismatch,
+                            "vkCreateInstance(): Attempting to enable Device Extension %s at CreateInstance time.",
+                            pCreateInfo->ppEnabledExtensionNames[i]);
         }
     }
 
@@ -71,26 +72,26 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
         std::string inst_api_name = GetAPIVersionName(instance_api_version);
         std::string dev_api_name = GetAPIVersionName(device_api_version);
 
-        skip |=
-            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, layer_name.c_str(),
-                    "vkCreateDevice(): API Version of current instance, %s is higher than API Version on device, %s",
-                    inst_api_name.c_str(), dev_api_name.c_str());
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        kVUID_BestPractices_CreateDevice_API_Mismatch,
+                        "vkCreateDevice(): API Version of current instance, %s is higher than API Version on device, %s",
+                        inst_api_name.c_str(), dev_api_name.c_str());
     }
 
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         if (white_list(pCreateInfo->ppEnabledExtensionNames[i], kInstanceExtensionNames)) {
-            skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        layer_name.c_str(), "vkCreateDevice(): Attempting to enable Instance Extension %s at CreateDevice time.",
-                        pCreateInfo->ppEnabledExtensionNames[i]);
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            kVUID_BestPractices_CreateInstance_ExtensionMismatch,
+                            "vkCreateDevice(): Attempting to enable Instance Extension %s at CreateDevice time.",
+                            pCreateInfo->ppEnabledExtensionNames[i]);
         }
     }
 
     auto pd_state = GetPhysicalDeviceState(physicalDevice);
     if ((pd_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState == UNCALLED) && (pCreateInfo->pEnabledFeatures != NULL)) {
-        skip |=
-            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, layer_name.c_str(),
-                    "vkCreateDevice() called before getting physical device features from vkGetPhysicalDeviceFeatures().");
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        kVUID_BestPractices_CreateDevice_PDFeaturesNotCalled,
+                        "vkCreateDevice() called before getting physical device features from vkGetPhysicalDeviceFeatures().");
     }
 
     return skip;
@@ -105,7 +106,8 @@ bool BestPractices::PreCallValidateCreateBuffer(VkDevice device, const VkBufferC
         bufferHex << "0x" << std::hex << HandleToUint64(pBuffer);
 
         skip |=
-            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, layer_name.c_str(),
+            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    kVUID_BestPractices_SharingModeExclusive,
                     "Warning: Buffer (%s) specifies a sharing mode of VK_SHARING_MODE_EXCLUSIVE while specifying multiple queues "
                     "(queueFamilyIndexCount of %" PRIu32 ").",
                     bufferHex.str().c_str(), pCreateInfo->queueFamilyIndexCount);
@@ -123,7 +125,8 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
         imageHex << "0x" << std::hex << HandleToUint64(pImage);
 
         skip |=
-            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, layer_name.c_str(),
+            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    kVUID_BestPractices_SharingModeExclusive,
                     "Warning: Image (%s) specifies a sharing mode of VK_SHARING_MODE_EXCLUSIVE while specifying multiple queues "
                     "(queueFamilyIndexCount of %" PRIu32 ").",
                     imageHex.str().c_str(), pCreateInfo->queueFamilyIndexCount);
@@ -140,29 +143,31 @@ bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkS
 
     if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState == UNCALLED) {
         skip |= log_msg(
-            report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, layer_name.c_str(),
+            report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+            kVUID_BestPractices_Swapchain_GetSurfaceNotCalled,
             "vkCreateSwapchainKHR() called before getting surface capabilities from vkGetPhysicalDeviceSurfaceCapabilitiesKHR().");
     }
 
     if (physical_device_state->vkGetPhysicalDeviceSurfacePresentModesKHRState != QUERY_DETAILS) {
-        skip |=
-            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, layer_name.c_str(),
-                    "vkCreateSwapchainKHR() called before getting surface present mode(s) from "
-                    "vkGetPhysicalDeviceSurfacePresentModesKHR().");
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        kVUID_BestPractices_Swapchain_GetSurfaceNotCalled,
+                        "vkCreateSwapchainKHR() called before getting surface present mode(s) from "
+                        "vkGetPhysicalDeviceSurfacePresentModesKHR().");
     }
 
     if (physical_device_state->vkGetPhysicalDeviceSurfaceFormatsKHRState != QUERY_DETAILS) {
         skip |=
-            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, layer_name.c_str(),
+            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    kVUID_BestPractices_Swapchain_GetSurfaceNotCalled,
                     "vkCreateSwapchainKHR() called before getting surface format(s) from vkGetPhysicalDeviceSurfaceFormatsKHR().");
     }
 
     if ((pCreateInfo->queueFamilyIndexCount > 1) && (pCreateInfo->imageSharingMode == VK_SHARING_MODE_EXCLUSIVE)) {
-        skip |=
-            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, layer_name.c_str(),
-                    "Warning: A Swapchain is being created which specifies a sharing mode of VK_SHARING_MODE_EXCULSIVE while "
-                    "specifying multiple queues (queueFamilyIndexCount of %" PRIu32 ").",
-                    pCreateInfo->queueFamilyIndexCount);
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        kVUID_BestPractices_SharingModeExclusive,
+                        "Warning: A Swapchain is being created which specifies a sharing mode of VK_SHARING_MODE_EXCULSIVE while "
+                        "specifying multiple queues (queueFamilyIndexCount of %" PRIu32 ").",
+                        pCreateInfo->queueFamilyIndexCount);
     }
 
     return skip;
@@ -175,12 +180,13 @@ bool BestPractices::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, ui
 
     for (uint32_t i = 0; i < swapchainCount; i++) {
         if ((pCreateInfos[i].queueFamilyIndexCount > 1) && (pCreateInfos[i].imageSharingMode == VK_SHARING_MODE_EXCLUSIVE)) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, layer_name.c_str(),
-                "Warning: A Shared Swapchain (index %" PRIu32
-                ") is being created which specifies a sharing mode of VK_SHARING_MODE_EXCLUSIVE while specifying multiple "
-                "queues (queueFamilyIndexCount of %" PRIu32 ").",
-                i, pCreateInfos[i].queueFamilyIndexCount);
+            skip |=
+                log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        kVUID_BestPractices_SharingModeExclusive,
+                        "Warning: A shared swapchain (index %" PRIu32
+                        ") is being created which specifies a sharing mode of VK_SHARING_MODE_EXCLUSIVE while specifying multiple "
+                        "queues (queueFamilyIndexCount of %" PRIu32 ").",
+                        i, pCreateInfos[i].queueFamilyIndexCount);
         }
     }
 
@@ -197,7 +203,7 @@ bool BestPractices::PreCallValidateCreateRenderPass(VkDevice device, const VkRen
             if ((FormatIsColor(format) || FormatHasDepth(format)) &&
                 pCreateInfo->pAttachments[i].loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                layer_name.c_str(),
+                                kVUID_BestPractices_RenderPass_Attatchment,
                                 "Render pass has an attachment with loadOp == VK_ATTACHMENT_LOAD_OP_LOAD and "
                                 "initialLayout == VK_IMAGE_LAYOUT_UNDEFINED.  This is probably not what you "
                                 "intended.  Consider using VK_ATTACHMENT_LOAD_OP_DONT_CARE instead if the "
@@ -205,7 +211,7 @@ bool BestPractices::PreCallValidateCreateRenderPass(VkDevice device, const VkRen
             }
             if (FormatHasStencil(format) && pCreateInfo->pAttachments[i].stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                layer_name.c_str(),
+                                kVUID_BestPractices_RenderPass_Attatchment,
                                 "Render pass has an attachment with stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD "
                                 "and initialLayout == VK_IMAGE_LAYOUT_UNDEFINED.  This is probably not what you "
                                 "intended.  Consider using VK_ATTACHMENT_LOAD_OP_DONT_CARE instead if the "
@@ -230,8 +236,8 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
 
     if (num_mem_objects > kMemoryObjectWarningLimit) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        layer_name.c_str(), "Performance Warning: This app has > %" PRIu32 " memory objects.",
-                        kMemoryObjectWarningLimit);
+                        kVUID_BestPractices_AllocateMemory_TooManyObjects,
+                        "Performance Warning: This app has > %" PRIu32 " memory objects.", kMemoryObjectWarningLimit);
     }
 
     // TODO: Insert get check for GetPhysicalDeviceMemoryProperties once the state is tracked in the StateTracker
@@ -270,7 +276,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
     if ((createInfoCount > 1) && (!pipelineCache)) {
         skip |=
             log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                    layer_name.c_str(),
+                    kVUID_BestPractices_CreatePipelines_MultiplePipelines,
                     "Performance Warning: This vkCreateGraphicsPipelines call is creating multiple pipelines but is not using a "
                     "pipeline cache, which may help with performance");
     }
@@ -285,7 +291,7 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
 
     if ((createInfoCount > 1) && (!pipelineCache)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        layer_name.c_str(),
+                        kVUID_BestPractices_CreatePipelines_MultiplePipelines,
                         "Performance Warning: This vkCreateComputePipelines call is creating multiple pipelines but is not using a "
                         "pipeline cache, which may help with performance");
     }
@@ -297,13 +303,13 @@ bool BestPractices::CheckPipelineStageFlags(std::string api_name, const VkPipeli
     bool skip = false;
 
     if (flags & VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT) {
-        skip |=
-            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, layer_name.c_str(),
-                    "You are using VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT when %s is called\n", api_name.c_str());
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        kVUID_BestPractices_PipelineStageFlags,
+                        "You are using VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT when %s is called\n", api_name.c_str());
     } else if (flags & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) {
-        skip |=
-            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, layer_name.c_str(),
-                    "You are using VK_PIPELINE_STAGE_ALL_COMMANDS_BIT when %s is called\n", api_name.c_str());
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        kVUID_BestPractices_PipelineStageFlags,
+                        "You are using VK_PIPELINE_STAGE_ALL_COMMANDS_BIT when %s is called\n", api_name.c_str());
     }
 
     return skip;
@@ -382,7 +388,8 @@ bool BestPractices::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32
 
     if (instanceCount == 0) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        layer_name.c_str(), "Warning: You are calling vkCmdDraw() with an instanceCount of Zero.");
+                        kVUID_BestPractices_CmdDraw_InstanceCountZero,
+                        "Warning: You are calling vkCmdDraw() with an instanceCount of Zero.");
     }
 
     return skip;
@@ -394,7 +401,8 @@ bool BestPractices::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer,
 
     if (instanceCount == 0) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        layer_name.c_str(), "Warning: You are calling vkCmdDrawIndexed() with an instanceCount of Zero.");
+                        kVUID_BestPractices_CmdDraw_InstanceCountZero,
+                        "Warning: You are calling vkCmdDrawIndexed() with an instanceCount of Zero.");
     }
 
     return skip;
@@ -406,7 +414,8 @@ bool BestPractices::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer
 
     if (drawCount == 0) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        layer_name.c_str(), "Warning: You are calling vkCmdDrawIndirect() with a drawCount of Zero.");
+                        kVUID_BestPractices_CmdDraw_DrawCountZero,
+                        "Warning: You are calling vkCmdDrawIndirect() with a drawCount of Zero.");
     }
 
     return skip;
@@ -418,7 +427,8 @@ bool BestPractices::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer comman
 
     if (drawCount == 0) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        layer_name.c_str(), "Warning: You are calling vkCmdDrawIndexedIndirect() with a drawCount of Zero.");
+                        kVUID_BestPractices_CmdDraw_DrawCountZero,
+                        "Warning: You are calling vkCmdDrawIndexedIndirect() with a drawCount of Zero.");
     }
 
     return skip;
@@ -429,11 +439,11 @@ bool BestPractices::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, ui
     bool skip = false;
 
     if ((groupCountX == 0) || (groupCountY == 0) || (groupCountZ == 0)) {
-        skip |=
-            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, layer_name.c_str(),
-                    "Warning: You are calling vkCmdDispatch() while one or more groupCounts are zero (groupCountX = %" PRIu32
-                    ", groupCountY = %" PRIu32 ", groupCountZ = %" PRIu32 ").",
-                    groupCountX, groupCountY, groupCountZ);
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        kVUID_BestPractices_CmdDispatch_GroupCountZero,
+                        "Warning: You are calling vkCmdDispatch() while one or more groupCounts are zero (groupCountX = %" PRIu32
+                        ", groupCountY = %" PRIu32 ", groupCountZ = %" PRIu32 ").",
+                        groupCountX, groupCountY, groupCountZ);
     }
 
     return skip;
@@ -446,10 +456,10 @@ bool BestPractices::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysica
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
 
     if (physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState != QUERY_DETAILS) {
-        skip |=
-            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, layer_name.c_str(),
-                    "vkGetDisplayPlaneSupportedDisplaysKHR() called before getting diplay plane properties from "
-                    "vkGetPhysicalDeviceDisplayPlanePropertiesKHR().");
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        kVUID_BestPractices_DisplayPlane_PropertiesNotCalled,
+                        "vkGetDisplayPlaneSupportedDisplaysKHR() called before getting diplay plane properties from "
+                        "vkGetPhysicalDeviceDisplayPlanePropertiesKHR().");
     }
 
     return skip;
