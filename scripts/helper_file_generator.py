@@ -1318,10 +1318,11 @@ class HelperFileOutputGenerator(OutputGenerator):
                         construct_txt += '        }\n'
                         construct_txt += '    }\n'
                 elif member.ispointer == True:
+                    default_init_list += '\n    %s(nullptr),' % (member.name)
+                    init_list += '\n    %s(nullptr),' % (member.name)
+                    init_func_txt += '    %s = nullptr;\n' % (member.name)
                     construct_txt += '    if (in_struct->%s)\n' % member.name
                     construct_txt += '        %s = new %s(in_struct->%s);\n' % (member.name, m_type, member.name)
-                    construct_txt += '    else\n'
-                    construct_txt += '        %s = NULL;\n' % member.name
                     destruct_txt += '    if (%s)\n' % member.name
                     destruct_txt += '        delete %s;\n' % member.name
                 elif 'safe_' in m_type:

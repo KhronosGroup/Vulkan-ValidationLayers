@@ -116,6 +116,7 @@ void safe_VkApplicationInfo::initialize(const safe_VkApplicationInfo* src)
 safe_VkInstanceCreateInfo::safe_VkInstanceCreateInfo(const VkInstanceCreateInfo* in_struct) :
     sType(in_struct->sType),
     flags(in_struct->flags),
+    pApplicationInfo(nullptr),
     enabledLayerCount(in_struct->enabledLayerCount),
     enabledExtensionCount(in_struct->enabledExtensionCount)
 {
@@ -130,12 +131,11 @@ safe_VkInstanceCreateInfo::safe_VkInstanceCreateInfo(const VkInstanceCreateInfo*
     }
     if (in_struct->pApplicationInfo)
         pApplicationInfo = new safe_VkApplicationInfo(in_struct->pApplicationInfo);
-    else
-        pApplicationInfo = NULL;
 }
 
 safe_VkInstanceCreateInfo::safe_VkInstanceCreateInfo() :
     pNext(nullptr),
+    pApplicationInfo(nullptr),
     ppEnabledLayerNames(nullptr),
     ppEnabledExtensionNames(nullptr)
 {}
@@ -144,6 +144,7 @@ safe_VkInstanceCreateInfo::safe_VkInstanceCreateInfo(const safe_VkInstanceCreate
 {
     sType = src.sType;
     flags = src.flags;
+    pApplicationInfo = nullptr;
     enabledLayerCount = src.enabledLayerCount;
     enabledExtensionCount = src.enabledExtensionCount;
     pNext = SafePnextCopy(src.pNext);
@@ -157,8 +158,6 @@ safe_VkInstanceCreateInfo::safe_VkInstanceCreateInfo(const safe_VkInstanceCreate
     }
     if (src.pApplicationInfo)
         pApplicationInfo = new safe_VkApplicationInfo(*src.pApplicationInfo);
-    else
-        pApplicationInfo = NULL;
 }
 
 safe_VkInstanceCreateInfo& safe_VkInstanceCreateInfo::operator=(const safe_VkInstanceCreateInfo& src)
@@ -184,6 +183,7 @@ safe_VkInstanceCreateInfo& safe_VkInstanceCreateInfo::operator=(const safe_VkIns
 
     sType = src.sType;
     flags = src.flags;
+    pApplicationInfo = nullptr;
     enabledLayerCount = src.enabledLayerCount;
     enabledExtensionCount = src.enabledExtensionCount;
     pNext = SafePnextCopy(src.pNext);
@@ -197,8 +197,6 @@ safe_VkInstanceCreateInfo& safe_VkInstanceCreateInfo::operator=(const safe_VkIns
     }
     if (src.pApplicationInfo)
         pApplicationInfo = new safe_VkApplicationInfo(*src.pApplicationInfo);
-    else
-        pApplicationInfo = NULL;
 
     return *this;
 }
@@ -227,6 +225,7 @@ void safe_VkInstanceCreateInfo::initialize(const VkInstanceCreateInfo* in_struct
 {
     sType = in_struct->sType;
     flags = in_struct->flags;
+    pApplicationInfo = nullptr;
     enabledLayerCount = in_struct->enabledLayerCount;
     enabledExtensionCount = in_struct->enabledExtensionCount;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -240,14 +239,13 @@ void safe_VkInstanceCreateInfo::initialize(const VkInstanceCreateInfo* in_struct
     }
     if (in_struct->pApplicationInfo)
         pApplicationInfo = new safe_VkApplicationInfo(in_struct->pApplicationInfo);
-    else
-        pApplicationInfo = NULL;
 }
 
 void safe_VkInstanceCreateInfo::initialize(const safe_VkInstanceCreateInfo* src)
 {
     sType = src->sType;
     flags = src->flags;
+    pApplicationInfo = nullptr;
     enabledLayerCount = src->enabledLayerCount;
     enabledExtensionCount = src->enabledExtensionCount;
     pNext = SafePnextCopy(src->pNext);
@@ -261,8 +259,6 @@ void safe_VkInstanceCreateInfo::initialize(const safe_VkInstanceCreateInfo* src)
     }
     if (src->pApplicationInfo)
         pApplicationInfo = new safe_VkApplicationInfo(*src->pApplicationInfo);
-    else
-        pApplicationInfo = NULL;
 }
 
 safe_VkAllocationCallbacks::safe_VkAllocationCallbacks(const VkAllocationCallbacks* in_struct) :
@@ -2300,19 +2296,19 @@ safe_VkPipelineShaderStageCreateInfo::safe_VkPipelineShaderStageCreateInfo(const
     sType(in_struct->sType),
     flags(in_struct->flags),
     stage(in_struct->stage),
-    module(in_struct->module)
+    module(in_struct->module),
+    pSpecializationInfo(nullptr)
 {
     pNext = SafePnextCopy(in_struct->pNext);
     pName = SafeStringCopy(in_struct->pName);
     if (in_struct->pSpecializationInfo)
         pSpecializationInfo = new safe_VkSpecializationInfo(in_struct->pSpecializationInfo);
-    else
-        pSpecializationInfo = NULL;
 }
 
 safe_VkPipelineShaderStageCreateInfo::safe_VkPipelineShaderStageCreateInfo() :
     pNext(nullptr),
-    pName(nullptr)
+    pName(nullptr),
+    pSpecializationInfo(nullptr)
 {}
 
 safe_VkPipelineShaderStageCreateInfo::safe_VkPipelineShaderStageCreateInfo(const safe_VkPipelineShaderStageCreateInfo& src)
@@ -2321,12 +2317,11 @@ safe_VkPipelineShaderStageCreateInfo::safe_VkPipelineShaderStageCreateInfo(const
     flags = src.flags;
     stage = src.stage;
     module = src.module;
+    pSpecializationInfo = nullptr;
     pNext = SafePnextCopy(src.pNext);
     pName = SafeStringCopy(src.pName);
     if (src.pSpecializationInfo)
         pSpecializationInfo = new safe_VkSpecializationInfo(*src.pSpecializationInfo);
-    else
-        pSpecializationInfo = NULL;
 }
 
 safe_VkPipelineShaderStageCreateInfo& safe_VkPipelineShaderStageCreateInfo::operator=(const safe_VkPipelineShaderStageCreateInfo& src)
@@ -2343,12 +2338,11 @@ safe_VkPipelineShaderStageCreateInfo& safe_VkPipelineShaderStageCreateInfo::oper
     flags = src.flags;
     stage = src.stage;
     module = src.module;
+    pSpecializationInfo = nullptr;
     pNext = SafePnextCopy(src.pNext);
     pName = SafeStringCopy(src.pName);
     if (src.pSpecializationInfo)
         pSpecializationInfo = new safe_VkSpecializationInfo(*src.pSpecializationInfo);
-    else
-        pSpecializationInfo = NULL;
 
     return *this;
 }
@@ -2368,12 +2362,11 @@ void safe_VkPipelineShaderStageCreateInfo::initialize(const VkPipelineShaderStag
     flags = in_struct->flags;
     stage = in_struct->stage;
     module = in_struct->module;
+    pSpecializationInfo = nullptr;
     pNext = SafePnextCopy(in_struct->pNext);
     pName = SafeStringCopy(in_struct->pName);
     if (in_struct->pSpecializationInfo)
         pSpecializationInfo = new safe_VkSpecializationInfo(in_struct->pSpecializationInfo);
-    else
-        pSpecializationInfo = NULL;
 }
 
 void safe_VkPipelineShaderStageCreateInfo::initialize(const safe_VkPipelineShaderStageCreateInfo* src)
@@ -2382,12 +2375,11 @@ void safe_VkPipelineShaderStageCreateInfo::initialize(const safe_VkPipelineShade
     flags = src->flags;
     stage = src->stage;
     module = src->module;
+    pSpecializationInfo = nullptr;
     pNext = SafePnextCopy(src->pNext);
     pName = SafeStringCopy(src->pName);
     if (src->pSpecializationInfo)
         pSpecializationInfo = new safe_VkSpecializationInfo(*src->pSpecializationInfo);
-    else
-        pSpecializationInfo = NULL;
 }
 
 safe_VkPipelineVertexInputStateCreateInfo::safe_VkPipelineVertexInputStateCreateInfo(const VkPipelineVertexInputStateCreateInfo* in_struct) :
@@ -3278,6 +3270,15 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const VkGra
     flags(in_struct->flags),
     stageCount(in_struct->stageCount),
     pStages(nullptr),
+    pVertexInputState(nullptr),
+    pInputAssemblyState(nullptr),
+    pTessellationState(nullptr),
+    pViewportState(nullptr),
+    pRasterizationState(nullptr),
+    pMultisampleState(nullptr),
+    pDepthStencilState(nullptr),
+    pColorBlendState(nullptr),
+    pDynamicState(nullptr),
     layout(in_struct->layout),
     renderPass(in_struct->renderPass),
     subpass(in_struct->subpass),
@@ -3349,7 +3350,16 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const VkGra
 
 safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo() :
     pNext(nullptr),
-    pStages(nullptr)
+    pStages(nullptr),
+    pVertexInputState(nullptr),
+    pInputAssemblyState(nullptr),
+    pTessellationState(nullptr),
+    pViewportState(nullptr),
+    pRasterizationState(nullptr),
+    pMultisampleState(nullptr),
+    pDepthStencilState(nullptr),
+    pColorBlendState(nullptr),
+    pDynamicState(nullptr)
 {}
 
 safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const safe_VkGraphicsPipelineCreateInfo& src)
@@ -3358,6 +3368,15 @@ safe_VkGraphicsPipelineCreateInfo::safe_VkGraphicsPipelineCreateInfo(const safe_
     flags = src.flags;
     stageCount = src.stageCount;
     pStages = nullptr;
+    pVertexInputState = nullptr;
+    pInputAssemblyState = nullptr;
+    pTessellationState = nullptr;
+    pViewportState = nullptr;
+    pRasterizationState = nullptr;
+    pMultisampleState = nullptr;
+    pDepthStencilState = nullptr;
+    pColorBlendState = nullptr;
+    pDynamicState = nullptr;
     layout = src.layout;
     renderPass = src.renderPass;
     subpass = src.subpass;
@@ -3445,6 +3464,15 @@ safe_VkGraphicsPipelineCreateInfo& safe_VkGraphicsPipelineCreateInfo::operator=(
     flags = src.flags;
     stageCount = src.stageCount;
     pStages = nullptr;
+    pVertexInputState = nullptr;
+    pInputAssemblyState = nullptr;
+    pTessellationState = nullptr;
+    pViewportState = nullptr;
+    pRasterizationState = nullptr;
+    pMultisampleState = nullptr;
+    pDepthStencilState = nullptr;
+    pColorBlendState = nullptr;
+    pDynamicState = nullptr;
     layout = src.layout;
     renderPass = src.renderPass;
     subpass = src.subpass;
@@ -3535,6 +3563,15 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const VkGraphicsPipelineCreat
     flags = in_struct->flags;
     stageCount = in_struct->stageCount;
     pStages = nullptr;
+    pVertexInputState = nullptr;
+    pInputAssemblyState = nullptr;
+    pTessellationState = nullptr;
+    pViewportState = nullptr;
+    pRasterizationState = nullptr;
+    pMultisampleState = nullptr;
+    pDepthStencilState = nullptr;
+    pColorBlendState = nullptr;
+    pDynamicState = nullptr;
     layout = in_struct->layout;
     renderPass = in_struct->renderPass;
     subpass = in_struct->subpass;
@@ -3609,6 +3646,15 @@ void safe_VkGraphicsPipelineCreateInfo::initialize(const safe_VkGraphicsPipeline
     flags = src->flags;
     stageCount = src->stageCount;
     pStages = nullptr;
+    pVertexInputState = nullptr;
+    pInputAssemblyState = nullptr;
+    pTessellationState = nullptr;
+    pViewportState = nullptr;
+    pRasterizationState = nullptr;
+    pMultisampleState = nullptr;
+    pDepthStencilState = nullptr;
+    pColorBlendState = nullptr;
+    pDynamicState = nullptr;
     layout = src->layout;
     renderPass = src->renderPass;
     subpass = src->subpass;
@@ -5427,28 +5473,27 @@ void safe_VkCommandBufferInheritanceInfo::initialize(const safe_VkCommandBufferI
 
 safe_VkCommandBufferBeginInfo::safe_VkCommandBufferBeginInfo(const VkCommandBufferBeginInfo* in_struct) :
     sType(in_struct->sType),
-    flags(in_struct->flags)
+    flags(in_struct->flags),
+    pInheritanceInfo(nullptr)
 {
     pNext = SafePnextCopy(in_struct->pNext);
     if (in_struct->pInheritanceInfo)
         pInheritanceInfo = new safe_VkCommandBufferInheritanceInfo(in_struct->pInheritanceInfo);
-    else
-        pInheritanceInfo = NULL;
 }
 
 safe_VkCommandBufferBeginInfo::safe_VkCommandBufferBeginInfo() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pInheritanceInfo(nullptr)
 {}
 
 safe_VkCommandBufferBeginInfo::safe_VkCommandBufferBeginInfo(const safe_VkCommandBufferBeginInfo& src)
 {
     sType = src.sType;
     flags = src.flags;
+    pInheritanceInfo = nullptr;
     pNext = SafePnextCopy(src.pNext);
     if (src.pInheritanceInfo)
         pInheritanceInfo = new safe_VkCommandBufferInheritanceInfo(*src.pInheritanceInfo);
-    else
-        pInheritanceInfo = NULL;
 }
 
 safe_VkCommandBufferBeginInfo& safe_VkCommandBufferBeginInfo::operator=(const safe_VkCommandBufferBeginInfo& src)
@@ -5462,11 +5507,10 @@ safe_VkCommandBufferBeginInfo& safe_VkCommandBufferBeginInfo::operator=(const sa
 
     sType = src.sType;
     flags = src.flags;
+    pInheritanceInfo = nullptr;
     pNext = SafePnextCopy(src.pNext);
     if (src.pInheritanceInfo)
         pInheritanceInfo = new safe_VkCommandBufferInheritanceInfo(*src.pInheritanceInfo);
-    else
-        pInheritanceInfo = NULL;
 
     return *this;
 }
@@ -5483,22 +5527,20 @@ void safe_VkCommandBufferBeginInfo::initialize(const VkCommandBufferBeginInfo* i
 {
     sType = in_struct->sType;
     flags = in_struct->flags;
+    pInheritanceInfo = nullptr;
     pNext = SafePnextCopy(in_struct->pNext);
     if (in_struct->pInheritanceInfo)
         pInheritanceInfo = new safe_VkCommandBufferInheritanceInfo(in_struct->pInheritanceInfo);
-    else
-        pInheritanceInfo = NULL;
 }
 
 void safe_VkCommandBufferBeginInfo::initialize(const safe_VkCommandBufferBeginInfo* src)
 {
     sType = src->sType;
     flags = src->flags;
+    pInheritanceInfo = nullptr;
     pNext = SafePnextCopy(src->pNext);
     if (src->pInheritanceInfo)
         pInheritanceInfo = new safe_VkCommandBufferInheritanceInfo(*src->pInheritanceInfo);
-    else
-        pInheritanceInfo = NULL;
 }
 
 safe_VkMemoryBarrier::safe_VkMemoryBarrier(const VkMemoryBarrier* in_struct) :
@@ -12855,6 +12897,7 @@ safe_VkSubpassDescription2KHR::safe_VkSubpassDescription2KHR(const VkSubpassDesc
     colorAttachmentCount(in_struct->colorAttachmentCount),
     pColorAttachments(nullptr),
     pResolveAttachments(nullptr),
+    pDepthStencilAttachment(nullptr),
     preserveAttachmentCount(in_struct->preserveAttachmentCount),
     pPreserveAttachments(nullptr)
 {
@@ -12879,8 +12922,6 @@ safe_VkSubpassDescription2KHR::safe_VkSubpassDescription2KHR(const VkSubpassDesc
     }
     if (in_struct->pDepthStencilAttachment)
         pDepthStencilAttachment = new safe_VkAttachmentReference2KHR(in_struct->pDepthStencilAttachment);
-    else
-        pDepthStencilAttachment = NULL;
     if (in_struct->pPreserveAttachments) {
         pPreserveAttachments = new uint32_t[in_struct->preserveAttachmentCount];
         memcpy ((void *)pPreserveAttachments, (void *)in_struct->pPreserveAttachments, sizeof(uint32_t)*in_struct->preserveAttachmentCount);
@@ -12892,6 +12933,7 @@ safe_VkSubpassDescription2KHR::safe_VkSubpassDescription2KHR() :
     pInputAttachments(nullptr),
     pColorAttachments(nullptr),
     pResolveAttachments(nullptr),
+    pDepthStencilAttachment(nullptr),
     pPreserveAttachments(nullptr)
 {}
 
@@ -12906,6 +12948,7 @@ safe_VkSubpassDescription2KHR::safe_VkSubpassDescription2KHR(const safe_VkSubpas
     colorAttachmentCount = src.colorAttachmentCount;
     pColorAttachments = nullptr;
     pResolveAttachments = nullptr;
+    pDepthStencilAttachment = nullptr;
     preserveAttachmentCount = src.preserveAttachmentCount;
     pPreserveAttachments = nullptr;
     pNext = SafePnextCopy(src.pNext);
@@ -12929,8 +12972,6 @@ safe_VkSubpassDescription2KHR::safe_VkSubpassDescription2KHR(const safe_VkSubpas
     }
     if (src.pDepthStencilAttachment)
         pDepthStencilAttachment = new safe_VkAttachmentReference2KHR(*src.pDepthStencilAttachment);
-    else
-        pDepthStencilAttachment = NULL;
     if (src.pPreserveAttachments) {
         pPreserveAttachments = new uint32_t[src.preserveAttachmentCount];
         memcpy ((void *)pPreserveAttachments, (void *)src.pPreserveAttachments, sizeof(uint32_t)*src.preserveAttachmentCount);
@@ -12963,6 +13004,7 @@ safe_VkSubpassDescription2KHR& safe_VkSubpassDescription2KHR::operator=(const sa
     colorAttachmentCount = src.colorAttachmentCount;
     pColorAttachments = nullptr;
     pResolveAttachments = nullptr;
+    pDepthStencilAttachment = nullptr;
     preserveAttachmentCount = src.preserveAttachmentCount;
     pPreserveAttachments = nullptr;
     pNext = SafePnextCopy(src.pNext);
@@ -12986,8 +13028,6 @@ safe_VkSubpassDescription2KHR& safe_VkSubpassDescription2KHR::operator=(const sa
     }
     if (src.pDepthStencilAttachment)
         pDepthStencilAttachment = new safe_VkAttachmentReference2KHR(*src.pDepthStencilAttachment);
-    else
-        pDepthStencilAttachment = NULL;
     if (src.pPreserveAttachments) {
         pPreserveAttachments = new uint32_t[src.preserveAttachmentCount];
         memcpy ((void *)pPreserveAttachments, (void *)src.pPreserveAttachments, sizeof(uint32_t)*src.preserveAttachmentCount);
@@ -13023,6 +13063,7 @@ void safe_VkSubpassDescription2KHR::initialize(const VkSubpassDescription2KHR* i
     colorAttachmentCount = in_struct->colorAttachmentCount;
     pColorAttachments = nullptr;
     pResolveAttachments = nullptr;
+    pDepthStencilAttachment = nullptr;
     preserveAttachmentCount = in_struct->preserveAttachmentCount;
     pPreserveAttachments = nullptr;
     pNext = SafePnextCopy(in_struct->pNext);
@@ -13046,8 +13087,6 @@ void safe_VkSubpassDescription2KHR::initialize(const VkSubpassDescription2KHR* i
     }
     if (in_struct->pDepthStencilAttachment)
         pDepthStencilAttachment = new safe_VkAttachmentReference2KHR(in_struct->pDepthStencilAttachment);
-    else
-        pDepthStencilAttachment = NULL;
     if (in_struct->pPreserveAttachments) {
         pPreserveAttachments = new uint32_t[in_struct->preserveAttachmentCount];
         memcpy ((void *)pPreserveAttachments, (void *)in_struct->pPreserveAttachments, sizeof(uint32_t)*in_struct->preserveAttachmentCount);
@@ -13065,6 +13104,7 @@ void safe_VkSubpassDescription2KHR::initialize(const safe_VkSubpassDescription2K
     colorAttachmentCount = src->colorAttachmentCount;
     pColorAttachments = nullptr;
     pResolveAttachments = nullptr;
+    pDepthStencilAttachment = nullptr;
     preserveAttachmentCount = src->preserveAttachmentCount;
     pPreserveAttachments = nullptr;
     pNext = SafePnextCopy(src->pNext);
@@ -13088,8 +13128,6 @@ void safe_VkSubpassDescription2KHR::initialize(const safe_VkSubpassDescription2K
     }
     if (src->pDepthStencilAttachment)
         pDepthStencilAttachment = new safe_VkAttachmentReference2KHR(*src->pDepthStencilAttachment);
-    else
-        pDepthStencilAttachment = NULL;
     if (src->pPreserveAttachments) {
         pPreserveAttachments = new uint32_t[src->preserveAttachmentCount];
         memcpy ((void *)pPreserveAttachments, (void *)src->pPreserveAttachments, sizeof(uint32_t)*src->preserveAttachmentCount);
@@ -14747,17 +14785,17 @@ void safe_VkPhysicalDeviceFloatControlsPropertiesKHR::initialize(const safe_VkPh
 safe_VkSubpassDescriptionDepthStencilResolveKHR::safe_VkSubpassDescriptionDepthStencilResolveKHR(const VkSubpassDescriptionDepthStencilResolveKHR* in_struct) :
     sType(in_struct->sType),
     depthResolveMode(in_struct->depthResolveMode),
-    stencilResolveMode(in_struct->stencilResolveMode)
+    stencilResolveMode(in_struct->stencilResolveMode),
+    pDepthStencilResolveAttachment(nullptr)
 {
     pNext = SafePnextCopy(in_struct->pNext);
     if (in_struct->pDepthStencilResolveAttachment)
         pDepthStencilResolveAttachment = new safe_VkAttachmentReference2KHR(in_struct->pDepthStencilResolveAttachment);
-    else
-        pDepthStencilResolveAttachment = NULL;
 }
 
 safe_VkSubpassDescriptionDepthStencilResolveKHR::safe_VkSubpassDescriptionDepthStencilResolveKHR() :
-    pNext(nullptr)
+    pNext(nullptr),
+    pDepthStencilResolveAttachment(nullptr)
 {}
 
 safe_VkSubpassDescriptionDepthStencilResolveKHR::safe_VkSubpassDescriptionDepthStencilResolveKHR(const safe_VkSubpassDescriptionDepthStencilResolveKHR& src)
@@ -14765,11 +14803,10 @@ safe_VkSubpassDescriptionDepthStencilResolveKHR::safe_VkSubpassDescriptionDepthS
     sType = src.sType;
     depthResolveMode = src.depthResolveMode;
     stencilResolveMode = src.stencilResolveMode;
+    pDepthStencilResolveAttachment = nullptr;
     pNext = SafePnextCopy(src.pNext);
     if (src.pDepthStencilResolveAttachment)
         pDepthStencilResolveAttachment = new safe_VkAttachmentReference2KHR(*src.pDepthStencilResolveAttachment);
-    else
-        pDepthStencilResolveAttachment = NULL;
 }
 
 safe_VkSubpassDescriptionDepthStencilResolveKHR& safe_VkSubpassDescriptionDepthStencilResolveKHR::operator=(const safe_VkSubpassDescriptionDepthStencilResolveKHR& src)
@@ -14784,11 +14821,10 @@ safe_VkSubpassDescriptionDepthStencilResolveKHR& safe_VkSubpassDescriptionDepthS
     sType = src.sType;
     depthResolveMode = src.depthResolveMode;
     stencilResolveMode = src.stencilResolveMode;
+    pDepthStencilResolveAttachment = nullptr;
     pNext = SafePnextCopy(src.pNext);
     if (src.pDepthStencilResolveAttachment)
         pDepthStencilResolveAttachment = new safe_VkAttachmentReference2KHR(*src.pDepthStencilResolveAttachment);
-    else
-        pDepthStencilResolveAttachment = NULL;
 
     return *this;
 }
@@ -14806,11 +14842,10 @@ void safe_VkSubpassDescriptionDepthStencilResolveKHR::initialize(const VkSubpass
     sType = in_struct->sType;
     depthResolveMode = in_struct->depthResolveMode;
     stencilResolveMode = in_struct->stencilResolveMode;
+    pDepthStencilResolveAttachment = nullptr;
     pNext = SafePnextCopy(in_struct->pNext);
     if (in_struct->pDepthStencilResolveAttachment)
         pDepthStencilResolveAttachment = new safe_VkAttachmentReference2KHR(in_struct->pDepthStencilResolveAttachment);
-    else
-        pDepthStencilResolveAttachment = NULL;
 }
 
 void safe_VkSubpassDescriptionDepthStencilResolveKHR::initialize(const safe_VkSubpassDescriptionDepthStencilResolveKHR* src)
@@ -14818,11 +14853,10 @@ void safe_VkSubpassDescriptionDepthStencilResolveKHR::initialize(const safe_VkSu
     sType = src->sType;
     depthResolveMode = src->depthResolveMode;
     stencilResolveMode = src->stencilResolveMode;
+    pDepthStencilResolveAttachment = nullptr;
     pNext = SafePnextCopy(src->pNext);
     if (src->pDepthStencilResolveAttachment)
         pDepthStencilResolveAttachment = new safe_VkAttachmentReference2KHR(*src->pDepthStencilResolveAttachment);
-    else
-        pDepthStencilResolveAttachment = NULL;
 }
 
 safe_VkPhysicalDeviceDepthStencilResolvePropertiesKHR::safe_VkPhysicalDeviceDepthStencilResolvePropertiesKHR(const VkPhysicalDeviceDepthStencilResolvePropertiesKHR* in_struct) :
