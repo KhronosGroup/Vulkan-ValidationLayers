@@ -21,7 +21,7 @@
  */
 
 // shared_mutex support added in MSVC 2015 update 2
-#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
 #include <shared_mutex>
 typedef std::shared_mutex object_lifetime_mutex_t;
 typedef std::shared_lock<object_lifetime_mutex_t> read_object_lifetime_mutex_t;
