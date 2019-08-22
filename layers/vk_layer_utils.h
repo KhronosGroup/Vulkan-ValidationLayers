@@ -171,7 +171,9 @@ static inline int u_ffs(int val) {
 // operations are supported:
 //
 // insert_or_assign: Insert a new element or update an existing element.
+// insert: Insert a new element and return whether it was inserted.
 // erase: Remove an element.
+// contains: Returns true if the key is in the map.
 // find: Returns != end() if found, value is in ret->second.
 // pop: Erases and returns the erased value if found.
 //
@@ -184,6 +186,9 @@ static inline int u_ffs(int val) {
 //      if (iter != map.end()) {
 //          T t = iter->second;
 //          ...
+//
+// snapshot: Return an array of elements (key, value pairs) that satisfy an optional
+// predicate. This can be used as a substitute for iterators in exceptional cases.
 template <typename Key, typename T, int BUCKETSLOG2 = 2>
 class vl_concurrent_unordered_map {
    public:
@@ -193,6 +198,13 @@ class vl_concurrent_unordered_map {
         maps[h][key] = value;
     }
 
+    bool insert(const Key &key, const T &value) {
+        uint32_t h = ConcurrentMapHashObject(key);
+        write_lock_guard_t lock(locks[h].lock);
+        auto ret = maps[h].insert(typename std::unordered_map<Key, T>::value_type(key, value));
+        return ret.second;
+    }
+
     // returns size_type
     size_t erase(const Key &key) {
         uint32_t h = ConcurrentMapHashObject(key);
@@ -200,10 +212,16 @@ class vl_concurrent_unordered_map {
         return maps[h].erase(key);
     }
 
+    bool contains(const Key &key) {
+        uint32_t h = ConcurrentMapHashObject(key);
+        read_lock_guard_t lock(locks[h].lock);
+        return maps[h].count(key) != 0;
+    }
+
     // type returned by find() and end().
     class FindResult {
        public:
-        FindResult(bool a, T b) : result(a, b) {}
+        FindResult(bool a, T b) : result(a, std::move(b)) {}
 
         // == and != only support comparing against end()
         bool operator==(const FindResult &other) const {
@@ -223,10 +241,9 @@ class vl_concurrent_unordered_map {
         std::pair<bool, T> result;
     };
 
-    // find()/end() return a FindResult containing a reference. For end(), that
-    // reference is to this dummy member.
-    T dummy;
-    FindResult end() { return FindResult(false, dummy); }
+    // find()/end() return a FindResult containing a copy of the value. For end(),
+    // return a default value.
+    FindResult end() { return FindResult(false, T()); }
 
     FindResult find(const Key &key) {
         uint32_t h = ConcurrentMapHashObject(key);
@@ -235,7 +252,11 @@ class vl_concurrent_unordered_map {
         auto itr = maps[h].find(key);
         bool found = itr != maps[h].end();
 
-        return found ? FindResult(true, itr->second) : end();
+        if (found) {
+            return FindResult(true, itr->second);
+        } else {
+            return end();
+        }
     }
 
     FindResult pop(const Key &key) {
@@ -246,12 +267,25 @@ class vl_concurrent_unordered_map {
         bool found = itr != maps[h].end();
 
         if (found) {
-            auto ret = FindResult(true, itr->second);
+            auto ret = std::move(FindResult(true, itr->second));
             maps[h].erase(itr);
             return ret;
         } else {
             return end();
         }
+    }
+
+    std::vector<std::pair<const Key, T>> snapshot(std::function<bool(T)> f = nullptr) {
+        std::vector<std::pair<const Key, T>> ret;
+        for (int h = 0; h < BUCKETS; ++h) {
+            read_lock_guard_t lock(locks[h].lock);
+            for (auto j : maps[h]) {
+                if (!f || f(j.second)) {
+                    ret.push_back(j);
+                }
+            }
+        }
+        return ret;
     }
 
    private:
