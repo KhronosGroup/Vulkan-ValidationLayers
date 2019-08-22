@@ -195,7 +195,8 @@ VkResult CoreChecks::GpuInitializeVma() {
     VmaAllocatorCreateInfo allocatorInfo = {};
     allocatorInfo.device = device;
     ValidationObject *device_object = GetLayerDataPtr(get_dispatch_key(allocatorInfo.device), layer_data_map);
-    ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, LayerObjectTypeCoreValidation);
+    ValidationObject *validation_data =
+        ValidationObject::GetValidationObject(device_object->object_dispatch, LayerObjectTypeCoreValidation);
     CoreChecks *core_checks = static_cast<CoreChecks *>(validation_data);
     allocatorInfo.physicalDevice = core_checks->physical_device;
 
@@ -598,7 +599,7 @@ void CoreChecks::GpuPostCallRecordPipelineCreations(const uint32_t count, const 
         return;
     }
     for (uint32_t pipeline = 0; pipeline < count; ++pipeline) {
-        auto pipeline_state = GetPipelineState(pPipelines[pipeline]);
+        auto pipeline_state = ValidationStateTracker::GetPipelineState(pPipelines[pipeline]);
         if (nullptr == pipeline_state) continue;
 
         uint32_t stageCount = 0;

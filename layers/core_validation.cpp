@@ -571,7 +571,7 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHand
     bool skip = false;
     // It's an error to bind an object to NULL memory
     if (mem != VK_NULL_HANDLE) {
-        const BINDABLE *mem_binding = GetObjectMemBinding(typed_handle);
+        const BINDABLE *mem_binding = ValidationStateTracker::GetObjectMemBinding(typed_handle);
         assert(mem_binding);
         if (mem_binding->sparse) {
             const char *error_code = "VUID-vkBindImageMemory-image-01045";
@@ -589,9 +589,9 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHand
                             apiName, report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(typed_handle).c_str(),
                             handle_type);
         }
-        const DEVICE_MEMORY_STATE *mem_info = GetDevMemState(mem);
+        const DEVICE_MEMORY_STATE *mem_info = ValidationStateTracker::GetDevMemState(mem);
         if (mem_info) {
-            const DEVICE_MEMORY_STATE *prev_binding = GetDevMemState(mem_binding->binding.mem);
+            const DEVICE_MEMORY_STATE *prev_binding = ValidationStateTracker::GetDevMemState(mem_binding->binding.mem);
             if (prev_binding) {
                 const char *error_code = "VUID-vkBindImageMemory-image-01044";
                 if (typed_handle.type == kVulkanObjectTypeBuffer) {
