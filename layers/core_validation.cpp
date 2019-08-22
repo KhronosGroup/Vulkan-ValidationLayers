@@ -141,6 +141,14 @@ IMAGE_VIEW_STATE *ValidationStateTracker::GetAttachmentImageViewState(FRAMEBUFFE
     return GetImageViewState(image_view);
 }
 
+// Get the image viewstate for a given framebuffer attachment
+const IMAGE_VIEW_STATE *ValidationStateTracker::GetAttachmentImageViewState(const FRAMEBUFFER_STATE *framebuffer,
+                                                                            uint32_t index) const {
+    assert(framebuffer && (index < framebuffer->createInfo.attachmentCount));
+    const VkImageView &image_view = framebuffer->createInfo.pAttachments[index];
+    return GetImageViewState(image_view);
+}
+
 EVENT_STATE *ValidationStateTracker::GetEventState(VkEvent event) {
     auto it = eventMap.find(event);
     if (it == eventMap.end()) {
@@ -8057,10 +8065,10 @@ static VkPipelineStageFlagBits GetLogicallyLatestGraphicsPipelineStage(VkPipelin
 }
 
 // Verify image barrier image state and that the image is consistent with FB image
-bool CoreChecks::ValidateImageBarrierImage(const char *funcName, CMD_BUFFER_STATE const *cb_state, VkFramebuffer framebuffer,
-                                           uint32_t active_subpass, const safe_VkSubpassDescription2KHR &sub_desc,
-                                           const VulkanTypedHandle &rp_handle, uint32_t img_index,
-                                           const VkImageMemoryBarrier &img_barrier) {
+bool CoreChecks::ValidateImageBarrierAttachment(const char *funcName, CMD_BUFFER_STATE const *cb_state, VkFramebuffer framebuffer,
+                                                uint32_t active_subpass, const safe_VkSubpassDescription2KHR &sub_desc,
+                                                const VulkanTypedHandle &rp_handle, uint32_t img_index,
+                                                const VkImageMemoryBarrier &img_barrier) const {
     bool skip = false;
     const auto &fb_state = GetFramebufferState(framebuffer);
     assert(fb_state);
@@ -8140,11 +8148,11 @@ bool CoreChecks::ValidateImageBarrierImage(const char *funcName, CMD_BUFFER_STAT
 }
 
 // Validate image barriers within a renderPass
-bool CoreChecks::ValidateRenderPassImageBarriers(const char *funcName, CMD_BUFFER_STATE *cb_state, uint32_t active_subpass,
+bool CoreChecks::ValidateRenderPassImageBarriers(const char *funcName, const CMD_BUFFER_STATE *cb_state, uint32_t active_subpass,
                                                  const safe_VkSubpassDescription2KHR &sub_desc, const VulkanTypedHandle &rp_handle,
                                                  const safe_VkSubpassDependency2KHR *dependencies,
                                                  const std::vector<uint32_t> &self_dependencies, uint32_t image_mem_barrier_count,
-                                                 const VkImageMemoryBarrier *image_barriers) {
+                                                 const VkImageMemoryBarrier *image_barriers) const {
     bool skip = false;
     for (uint32_t i = 0; i < image_mem_barrier_count; ++i) {
         const auto &img_barrier = image_barriers[i];
@@ -8181,16 +8189,10 @@ bool CoreChecks::ValidateRenderPassImageBarriers(const char *funcName, CMD_BUFFE
                             "pImageMemoryBarriers[%d].dstQueueFamilyIndex is %d but both must be VK_QUEUE_FAMILY_IGNORED.",
                             funcName, i, img_barrier.srcQueueFamilyIndex, i, img_barrier.dstQueueFamilyIndex);
         }
-        // Secondary CBs can have null framebuffer so queue up validation in that case 'til FB is known
-        if (VK_NULL_HANDLE == cb_state->activeFramebuffer) {
-            assert(VK_COMMAND_BUFFER_LEVEL_SECONDARY == cb_state->createInfo.level);
-            // Secondary CB case w/o FB specified delay validation
-            cb_state->cmd_execute_commands_functions.emplace_back([=](const CMD_BUFFER_STATE *primary_cb, VkFramebuffer fb) {
-                return ValidateImageBarrierImage(funcName, cb_state, fb, active_subpass, sub_desc, rp_handle, i, img_barrier);
-            });
-        } else {
-            skip |= ValidateImageBarrierImage(funcName, cb_state, cb_state->activeFramebuffer, active_subpass, sub_desc, rp_handle,
-                                              i, img_barrier);
+        // Secondary CBs can have null framebuffer so record will queue up validation in that case 'til FB is known
+        if (VK_NULL_HANDLE != cb_state->activeFramebuffer) {
+            skip |= ValidateImageBarrierAttachment(funcName, cb_state, cb_state->activeFramebuffer, active_subpass, sub_desc,
+                                                   rp_handle, i, img_barrier);
         }
     }
     return skip;
@@ -8198,12 +8200,13 @@ bool CoreChecks::ValidateRenderPassImageBarriers(const char *funcName, CMD_BUFFE
 
 // Validate VUs for Pipeline Barriers that are within a renderPass
 // Pre: cb_state->activeRenderPass must be a pointer to valid renderPass state
-bool CoreChecks::ValidateRenderPassPipelineBarriers(const char *funcName, CMD_BUFFER_STATE *cb_state,
+bool CoreChecks::ValidateRenderPassPipelineBarriers(const char *funcName, const CMD_BUFFER_STATE *cb_state,
                                                     VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
                                                     VkDependencyFlags dependency_flags, uint32_t mem_barrier_count,
                                                     const VkMemoryBarrier *mem_barriers, uint32_t buffer_mem_barrier_count,
                                                     const VkBufferMemoryBarrier *buffer_mem_barriers,
-                                                    uint32_t image_mem_barrier_count, const VkImageMemoryBarrier *image_barriers) {
+                                                    uint32_t image_mem_barrier_count,
+                                                    const VkImageMemoryBarrier *image_barriers) const {
     bool skip = false;
     const auto rp_state = cb_state->activeRenderPass;
     const auto active_subpass = cb_state->activeSubpass;
@@ -8445,27 +8448,15 @@ static const std::string buffer_error_codes[] = {
 class ValidatorState {
    public:
     ValidatorState(const CoreChecks *device_data, const char *func_name, const CMD_BUFFER_STATE *cb_state,
-                   const VulkanTypedHandle &barrier_handle, const VkSharingMode sharing_mode, const std::string *val_codes)
+                   const VulkanTypedHandle &barrier_handle, const VkSharingMode sharing_mode)
         : report_data_(device_data->report_data),
           func_name_(func_name),
           cb_handle64_(HandleToUint64(cb_state->commandBuffer)),
           barrier_handle_(barrier_handle),
           sharing_mode_(sharing_mode),
-          val_codes_(val_codes),
+          val_codes_(barrier_handle.type == kVulkanObjectTypeImage ? image_error_codes : buffer_error_codes),
           limit_(static_cast<uint32_t>(device_data->physical_device_state->queue_family_properties.size())),
           mem_ext_(device_data->device_extensions.vk_khr_external_memory) {}
-
-    // Create a validator state from an image state... reducing the image specific to the generic version.
-    ValidatorState(const CoreChecks *device_data, const char *func_name, const CMD_BUFFER_STATE *cb_state,
-                   const VkImageMemoryBarrier *barrier, const IMAGE_STATE *state)
-        : ValidatorState(device_data, func_name, cb_state, VulkanTypedHandle(barrier->image, kVulkanObjectTypeImage),
-                         state->createInfo.sharingMode, image_error_codes) {}
-
-    // Create a validator state from an buffer state... reducing the buffer specific to the generic version.
-    ValidatorState(const CoreChecks *device_data, const char *func_name, const CMD_BUFFER_STATE *cb_state,
-                   const VkBufferMemoryBarrier *barrier, const BUFFER_STATE *state)
-        : ValidatorState(device_data, func_name, cb_state, VulkanTypedHandle(barrier->buffer, kVulkanObjectTypeBuffer),
-                         state->createInfo.sharingMode, buffer_error_codes) {}
 
     // Log the messages using boilerplate from object state, and Vu specific information from the template arg
     // One and two family versions, in the single family version, Vu holds the name of the passed parameter
@@ -8516,9 +8507,8 @@ class ValidatorState {
     inline bool KhrExternalMem() const { return mem_ext_; }
     inline bool IsValid(uint32_t queue_family) const { return (queue_family < limit_); }
     inline bool IsValidOrSpecial(uint32_t queue_family) const {
-        return IsValid(queue_family) || (mem_ext_ && IsSpecial(queue_family));
+        return IsValid(queue_family) || (mem_ext_ && QueueFamilyIsSpecial(queue_family));
     }
-    inline bool IsIgnored(uint32_t queue_family) const { return queue_family == VK_QUEUE_FAMILY_IGNORED; }
 
     // Helpers for LogMsg (and log_msg)
     const char *GetModeString() const { return string_VkSharingMode(sharing_mode_); }
@@ -8558,20 +8548,20 @@ class ValidatorState {
     const bool mem_ext_;
 };
 
-bool Validate(const CoreChecks *device_data, const char *func_name, CMD_BUFFER_STATE *cb_state, const ValidatorState &val,
+bool Validate(const CoreChecks *device_data, const char *func_name, const CMD_BUFFER_STATE *cb_state, const ValidatorState &val,
               const uint32_t src_queue_family, const uint32_t dst_queue_family) {
     bool skip = false;
 
     const bool mode_concurrent = val.GetSharingMode() == VK_SHARING_MODE_CONCURRENT;
-    const bool src_ignored = val.IsIgnored(src_queue_family);
-    const bool dst_ignored = val.IsIgnored(dst_queue_family);
+    const bool src_ignored = QueueFamilyIsIgnored(src_queue_family);
+    const bool dst_ignored = QueueFamilyIsIgnored(dst_queue_family);
     if (val.KhrExternalMem()) {
         if (mode_concurrent) {
             if (!(src_ignored || dst_ignored)) {
                 skip |= val.LogMsg(kSrcOrDstMustBeIgnore, src_queue_family, dst_queue_family);
             }
-            if ((src_ignored && !(dst_ignored || IsSpecial(dst_queue_family))) ||
-                (dst_ignored && !(src_ignored || IsSpecial(src_queue_family)))) {
+            if ((src_ignored && !(dst_ignored || QueueFamilyIsSpecial(dst_queue_family))) ||
+                (dst_ignored && !(src_ignored || QueueFamilyIsSpecial(src_queue_family)))) {
                 skip |= val.LogMsg(kSpecialOrIgnoreOnly, src_queue_family, dst_queue_family);
             }
         } else {
@@ -8599,54 +8589,55 @@ bool Validate(const CoreChecks *device_data, const char *func_name, CMD_BUFFER_S
             }
         }
     }
-    if (!mode_concurrent && !src_ignored && !dst_ignored) {
-        // Only enqueue submit time check if it is needed. If more submit time checks are added, change the criteria
-        // TODO create a better named list, or rename the submit time lists to something that matches the broader usage...
-        // Note: if we want to create a semantic that separates state lookup, validation, and state update this should go
-        // to a local queue of update_state_actions or something.
-        cb_state->eventUpdates.emplace_back([device_data, src_queue_family, dst_queue_family, val](VkQueue queue) {
-            return ValidatorState::ValidateAtQueueSubmit(queue, device_data, src_queue_family, dst_queue_family, val);
-        });
-    }
     return skip;
 }
 }  // namespace barrier_queue_families
 
+bool CoreChecks::ValidateConcurrentBarrierAtSubmit(VkQueue queue, const char *func_name, const CMD_BUFFER_STATE *cb_state,
+                                                   const VulkanTypedHandle &typed_handle, uint32_t src_queue_family,
+                                                   uint32_t dst_queue_family) const {
+    using barrier_queue_families::ValidatorState;
+    ValidatorState val(this, func_name, cb_state, typed_handle, VK_SHARING_MODE_CONCURRENT);
+    return ValidatorState::ValidateAtQueueSubmit(queue, this, src_queue_family, dst_queue_family, val);
+}
+
 // Type specific wrapper for image barriers
-bool CoreChecks::ValidateBarrierQueueFamilies(const char *func_name, CMD_BUFFER_STATE *cb_state,
-                                              const VkImageMemoryBarrier &barrier, const IMAGE_STATE *state_data) {
+bool CoreChecks::ValidateBarrierQueueFamilies(const char *func_name, const CMD_BUFFER_STATE *cb_state,
+                                              const VkImageMemoryBarrier &barrier, const IMAGE_STATE *state_data) const {
     // State data is required
     if (!state_data) {
         return false;
     }
 
     // Create the validator state from the image state
-    barrier_queue_families::ValidatorState val(this, func_name, cb_state, &barrier, state_data);
+    barrier_queue_families::ValidatorState val(this, func_name, cb_state, VulkanTypedHandle(barrier.image, kVulkanObjectTypeImage),
+                                               state_data->createInfo.sharingMode);
     const uint32_t src_queue_family = barrier.srcQueueFamilyIndex;
     const uint32_t dst_queue_family = barrier.dstQueueFamilyIndex;
     return barrier_queue_families::Validate(this, func_name, cb_state, val, src_queue_family, dst_queue_family);
 }
 
 // Type specific wrapper for buffer barriers
-bool CoreChecks::ValidateBarrierQueueFamilies(const char *func_name, CMD_BUFFER_STATE *cb_state,
-                                              const VkBufferMemoryBarrier &barrier, const BUFFER_STATE *state_data) {
+bool CoreChecks::ValidateBarrierQueueFamilies(const char *func_name, const CMD_BUFFER_STATE *cb_state,
+                                              const VkBufferMemoryBarrier &barrier, const BUFFER_STATE *state_data) const {
     // State data is required
     if (!state_data) {
         return false;
     }
 
     // Create the validator state from the buffer state
-    barrier_queue_families::ValidatorState val(this, func_name, cb_state, &barrier, state_data);
+    barrier_queue_families::ValidatorState val(
+        this, func_name, cb_state, VulkanTypedHandle(barrier.buffer, kVulkanObjectTypeBuffer), state_data->createInfo.sharingMode);
     const uint32_t src_queue_family = barrier.srcQueueFamilyIndex;
     const uint32_t dst_queue_family = barrier.dstQueueFamilyIndex;
     return barrier_queue_families::Validate(this, func_name, cb_state, val, src_queue_family, dst_queue_family);
 }
 
-bool CoreChecks::ValidateBarriers(const char *funcName, CMD_BUFFER_STATE *cb_state, VkPipelineStageFlags src_stage_mask,
+bool CoreChecks::ValidateBarriers(const char *funcName, const CMD_BUFFER_STATE *cb_state, VkPipelineStageFlags src_stage_mask,
                                   VkPipelineStageFlags dst_stage_mask, uint32_t memBarrierCount,
                                   const VkMemoryBarrier *pMemBarriers, uint32_t bufferBarrierCount,
                                   const VkBufferMemoryBarrier *pBufferMemBarriers, uint32_t imageMemBarrierCount,
-                                  const VkImageMemoryBarrier *pImageMemBarriers) {
+                                  const VkImageMemoryBarrier *pImageMemBarriers) const {
     bool skip = false;
     for (uint32_t i = 0; i < memBarrierCount; ++i) {
         const auto &mem_barrier = pMemBarriers[i];
@@ -8821,7 +8812,7 @@ static const VkPipelineStageFlags stage_flag_bit_array[] = {VK_PIPELINE_STAGE_CO
 
 bool CoreChecks::CheckStageMaskQueueCompatibility(VkCommandBuffer command_buffer, VkPipelineStageFlags stage_mask,
                                                   VkQueueFlags queue_flags, const char *function, const char *src_or_dest,
-                                                  const char *error_code) {
+                                                  const char *error_code) const {
     bool skip = false;
     // Lookup each bit in the stagemask and check for overlap between its table bits and queue_flags
     for (const auto &item : stage_flag_bit_array) {
@@ -8849,10 +8840,10 @@ bool AllTransferOp(const COMMAND_POOL_STATE *pool, OpCheck &op_check, uint32_t c
 }
 
 // Look at the barriers to see if we they are all release or all acquire, the result impacts queue properties validation
-BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(CMD_BUFFER_STATE *cb_state, uint32_t buffer_barrier_count,
+BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(const CMD_BUFFER_STATE *cb_state, uint32_t buffer_barrier_count,
                                                                const VkBufferMemoryBarrier *buffer_barriers,
                                                                uint32_t image_barrier_count,
-                                                               const VkImageMemoryBarrier *image_barriers) {
+                                                               const VkImageMemoryBarrier *image_barriers) const {
     auto pool = GetCommandPoolState(cb_state->createInfo.commandPool);
     BarrierOperationsType op_type = kGeneral;
 
@@ -8871,13 +8862,13 @@ BarrierOperationsType CoreChecks::ComputeBarrierOperationsType(CMD_BUFFER_STATE 
     return op_type;
 }
 
-bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(CMD_BUFFER_STATE const *cb_state,
+bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(const CMD_BUFFER_STATE *cb_state,
                                                             VkPipelineStageFlags source_stage_mask,
                                                             VkPipelineStageFlags dest_stage_mask,
                                                             BarrierOperationsType barrier_op_type, const char *function,
-                                                            const char *error_code) {
+                                                            const char *error_code) const {
     bool skip = false;
-    uint32_t queue_family_index = commandPoolMap[cb_state->createInfo.commandPool].get()->queueFamilyIndex;
+    uint32_t queue_family_index = GetCommandPoolState(cb_state->createInfo.commandPool)->queueFamilyIndex;
     auto physical_device_state = GetPhysicalDeviceState();
 
     // Any pipeline stage included in srcStageMask or dstStageMask must be supported by the capabilities of the queue family
@@ -8958,8 +8949,8 @@ void CoreChecks::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint
                                              uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                              uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    RecordBarriersQFOTransfers(cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
-                               pImageMemoryBarriers);
+    RecordBarrierValidationInfo("vkCmdWaitEvents", cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+                                imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
 bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
@@ -8969,7 +8960,7 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer
                                                    const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                                    uint32_t imageMemoryBarrierCount,
                                                    const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
 
     bool skip = false;
@@ -9001,6 +8992,26 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer
     return skip;
 }
 
+void CoreChecks::EnqueueSubmitTimeValidateImageBarrierAttachment(const char *func_name, CMD_BUFFER_STATE *cb_state,
+                                                                 uint32_t imageMemBarrierCount,
+                                                                 const VkImageMemoryBarrier *pImageMemBarriers) {
+    // Secondary CBs can have null framebuffer so queue up validation in that case 'til FB is known
+    if ((cb_state->activeRenderPass) && (VK_NULL_HANDLE == cb_state->activeFramebuffer) &&
+        (VK_COMMAND_BUFFER_LEVEL_SECONDARY == cb_state->createInfo.level)) {
+        const auto active_subpass = cb_state->activeSubpass;
+        const auto rp_state = cb_state->activeRenderPass;
+        const auto &sub_desc = rp_state->createInfo.pSubpasses[active_subpass];
+        const VulkanTypedHandle rp_handle(rp_state->renderPass, kVulkanObjectTypeRenderPass);
+        for (uint32_t i = 0; i < imageMemBarrierCount; ++i) {
+            const auto &img_barrier = pImageMemBarriers[i];
+            // Secondary CB case w/o FB specified delay validation
+            cb_state->cmd_execute_commands_functions.emplace_back([=](const CMD_BUFFER_STATE *primary_cb, VkFramebuffer fb) {
+                return ValidateImageBarrierAttachment(func_name, cb_state, fb, active_subpass, sub_desc, rp_handle, i, img_barrier);
+            });
+        }
+    }
+}
+
 void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                                  VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
                                                  uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
@@ -9009,9 +9020,12 @@ void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, 
                                                  uint32_t imageMemoryBarrierCount,
                                                  const VkImageMemoryBarrier *pImageMemoryBarriers) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const char *func_name = "vkCmdPipelineBarrier";
 
-    RecordBarriersQFOTransfers(cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
-                               pImageMemoryBarriers);
+    RecordBarrierValidationInfo(func_name, cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount,
+                                pImageMemoryBarriers);
+
+    EnqueueSubmitTimeValidateImageBarrierAttachment(func_name, cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
     TransitionImageLayouts(cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
