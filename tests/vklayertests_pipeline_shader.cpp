@@ -6180,3 +6180,518 @@ TEST_F(VkLayerTest, NotCompatibleForSet) {
 
     vk::DestroyPipeline(device(), c_pipeline, nullptr);
 }
+
+TEST_F(VkLayerTest, RayTracingPipelineShaderGroups) {
+    TEST_DESCRIPTION("Validate shader groups during ray-tracing pipeline creation");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_RAY_TRACING_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_NV_RAY_TRACING_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_NV_RAY_TRACING_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
+
+    const std::string empty_shader = R"glsl(#version 460
+        #extension GL_NV_ray_tracing : require
+        void main() {}
+    )glsl";
+
+    VkShaderObj rgen_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_RAYGEN_BIT_NV, this, "main");
+    VkShaderObj ahit_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_ANY_HIT_BIT_NV, this, "main");
+    VkShaderObj chit_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV, this, "main");
+    VkShaderObj miss_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_MISS_BIT_NV, this, "main");
+    VkShaderObj intr_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_INTERSECTION_BIT_NV, this, "main");
+    VkShaderObj call_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_CALLABLE_BIT_NV, this, "main");
+
+    m_errorMonitor->VerifyNotFound();
+
+    PFN_vkCreateRayTracingPipelinesNV vkCreateRayTracingPipelinesNV =
+        reinterpret_cast<PFN_vkCreateRayTracingPipelinesNV>(vk::GetInstanceProcAddr(instance(), "vkCreateRayTracingPipelinesNV"));
+    ASSERT_TRUE(vkCreateRayTracingPipelinesNV != nullptr);
+
+    VkPipeline pipeline = VK_NULL_HANDLE;
+
+    // No raygen stage
+    {
+        VkPipelineShaderStageCreateInfo stage_create_info = {};
+        stage_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_info.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
+        stage_create_info.module = chit_shader.handle();
+        stage_create_info.pName = "main";
+
+        VkRayTracingShaderGroupCreateInfoNV group_create_info = {};
+        group_create_info.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
+        group_create_info.generalShader = VK_SHADER_UNUSED_NV;
+        group_create_info.closestHitShader = 0;
+        group_create_info.anyHitShader = VK_SHADER_UNUSED_NV;
+        group_create_info.intersectionShader = VK_SHADER_UNUSED_NV;
+
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
+        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        pipeline_ci.stageCount = 1;
+        pipeline_ci.pStages = &stage_create_info;
+        pipeline_ci.groupCount = 1;
+        pipeline_ci.pGroups = &group_create_info;
+        pipeline_ci.layout = empty_pipeline_layout.handle();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingPipelineCreateInfoNV-stage-02408");
+        vkCreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Two raygen stages
+    {
+        VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
+        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
+        stage_create_infos[0].module = rgen_shader.handle();
+        stage_create_infos[0].pName = "main";
+
+        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
+        stage_create_infos[1].module = rgen_shader.handle();
+        stage_create_infos[1].pName = "main";
+
+        VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
+        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
+        group_create_infos[0].generalShader = 0;
+        group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
+
+        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
+        group_create_infos[1].generalShader = 1;
+        group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
+
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
+        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        pipeline_ci.stageCount = 2;
+        pipeline_ci.pStages = stage_create_infos;
+        pipeline_ci.groupCount = 2;
+        pipeline_ci.pGroups = group_create_infos;
+        pipeline_ci.layout = empty_pipeline_layout.handle();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingPipelineCreateInfoNV-stage-02408");
+        vkCreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // General shader index doesn't exist
+    {
+        VkPipelineShaderStageCreateInfo stage_create_info = {};
+        stage_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
+        stage_create_info.module = rgen_shader.handle();
+        stage_create_info.pName = "main";
+
+        VkRayTracingShaderGroupCreateInfoNV group_create_info = {};
+        group_create_info.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+        group_create_info.generalShader = 1;  // Bad index here
+        group_create_info.closestHitShader = VK_SHADER_UNUSED_NV;
+        group_create_info.anyHitShader = VK_SHADER_UNUSED_NV;
+        group_create_info.intersectionShader = VK_SHADER_UNUSED_NV;
+
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
+        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        pipeline_ci.stageCount = 1;
+        pipeline_ci.pStages = &stage_create_info;
+        pipeline_ci.groupCount = 1;
+        pipeline_ci.pGroups = &group_create_info;
+        pipeline_ci.layout = empty_pipeline_layout.handle();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02413");
+        vkCreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // General shader index doesn't correspond to a raygen/miss/callable shader
+    {
+        VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
+        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
+        stage_create_infos[0].module = rgen_shader.handle();
+        stage_create_infos[0].pName = "main";
+
+        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
+        stage_create_infos[1].module = chit_shader.handle();
+        stage_create_infos[1].pName = "main";
+
+        VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
+        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+        group_create_infos[0].generalShader = 0;
+        group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
+
+        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+        group_create_infos[1].generalShader = 1;  // Index 1 corresponds to a closest hit shader
+        group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
+
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
+        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        pipeline_ci.stageCount = 2;
+        pipeline_ci.pStages = stage_create_infos;
+        pipeline_ci.groupCount = 2;
+        pipeline_ci.pGroups = group_create_infos;
+        pipeline_ci.layout = empty_pipeline_layout.handle();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02413");
+        vkCreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // General shader group should not specify non general shader
+    {
+        VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
+        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
+        stage_create_infos[0].module = rgen_shader.handle();
+        stage_create_infos[0].pName = "main";
+
+        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
+        stage_create_infos[1].module = chit_shader.handle();
+        stage_create_infos[1].pName = "main";
+
+        VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
+        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+        group_create_infos[0].generalShader = 0;
+        group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
+
+        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+        group_create_infos[1].generalShader = 0;
+        group_create_infos[1].closestHitShader = 0;  // This should not be set for a general shader group
+        group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
+
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
+        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        pipeline_ci.stageCount = 2;
+        pipeline_ci.pStages = stage_create_infos;
+        pipeline_ci.groupCount = 2;
+        pipeline_ci.pGroups = group_create_infos;
+        pipeline_ci.layout = empty_pipeline_layout.handle();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02414");
+        vkCreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Intersection shader invalid index
+    {
+        VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
+        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
+        stage_create_infos[0].module = rgen_shader.handle();
+        stage_create_infos[0].pName = "main";
+
+        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1].stage = VK_SHADER_STAGE_INTERSECTION_BIT_NV;
+        stage_create_infos[1].module = intr_shader.handle();
+        stage_create_infos[1].pName = "main";
+
+        VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
+        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+        group_create_infos[0].generalShader = 0;
+        group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
+
+        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV;
+        group_create_infos[1].generalShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].intersectionShader = 5;  // invalid index
+
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
+        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        pipeline_ci.stageCount = 2;
+        pipeline_ci.pStages = stage_create_infos;
+        pipeline_ci.groupCount = 2;
+        pipeline_ci.pGroups = group_create_infos;
+        pipeline_ci.layout = empty_pipeline_layout.handle();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02415");
+        vkCreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Intersection shader index does not correspond to intersection shader
+    {
+        VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
+        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
+        stage_create_infos[0].module = rgen_shader.handle();
+        stage_create_infos[0].pName = "main";
+
+        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1].stage = VK_SHADER_STAGE_INTERSECTION_BIT_NV;
+        stage_create_infos[1].module = intr_shader.handle();
+        stage_create_infos[1].pName = "main";
+
+        VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
+        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+        group_create_infos[0].generalShader = 0;
+        group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
+
+        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV;
+        group_create_infos[1].generalShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].intersectionShader = 0;  // Index 0 corresponds to a raygen shader
+
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
+        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        pipeline_ci.stageCount = 2;
+        pipeline_ci.pStages = stage_create_infos;
+        pipeline_ci.groupCount = 2;
+        pipeline_ci.pGroups = group_create_infos;
+        pipeline_ci.layout = empty_pipeline_layout.handle();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02415");
+        vkCreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Intersection shader must not be specified for triangle hit group
+    {
+        VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
+        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
+        stage_create_infos[0].module = rgen_shader.handle();
+        stage_create_infos[0].pName = "main";
+
+        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1].stage = VK_SHADER_STAGE_INTERSECTION_BIT_NV;
+        stage_create_infos[1].module = intr_shader.handle();
+        stage_create_infos[1].pName = "main";
+
+        VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
+        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+        group_create_infos[0].generalShader = 0;
+        group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
+
+        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
+        group_create_infos[1].generalShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].intersectionShader = 1;
+
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
+        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        pipeline_ci.stageCount = 2;
+        pipeline_ci.pStages = stage_create_infos;
+        pipeline_ci.groupCount = 2;
+        pipeline_ci.pGroups = group_create_infos;
+        pipeline_ci.layout = empty_pipeline_layout.handle();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingShaderGroupCreateInfoNV-type-02416");
+        vkCreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Any hit shader index invalid
+    {
+        VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
+        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
+        stage_create_infos[0].module = rgen_shader.handle();
+        stage_create_infos[0].pName = "main";
+
+        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1].stage = VK_SHADER_STAGE_ANY_HIT_BIT_NV;
+        stage_create_infos[1].module = ahit_shader.handle();
+        stage_create_infos[1].pName = "main";
+
+        VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
+        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+        group_create_infos[0].generalShader = 0;
+        group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
+
+        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
+        group_create_infos[1].generalShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].anyHitShader = 5;  // Invalid index
+        group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
+
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
+        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        pipeline_ci.stageCount = 2;
+        pipeline_ci.pStages = stage_create_infos;
+        pipeline_ci.groupCount = 2;
+        pipeline_ci.pGroups = group_create_infos;
+        pipeline_ci.layout = empty_pipeline_layout.handle();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-VkRayTracingShaderGroupCreateInfoNV-anyHitShader-02418");
+        vkCreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Any hit shader index does not correspond to an any hit shader
+    {
+        VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
+        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
+        stage_create_infos[0].module = rgen_shader.handle();
+        stage_create_infos[0].pName = "main";
+
+        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
+        stage_create_infos[1].module = chit_shader.handle();
+        stage_create_infos[1].pName = "main";
+
+        VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
+        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+        group_create_infos[0].generalShader = 0;
+        group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
+
+        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
+        group_create_infos[1].generalShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].anyHitShader = 1;  // Index 1 corresponds to a closest hit shader
+        group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
+
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
+        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        pipeline_ci.stageCount = 2;
+        pipeline_ci.pStages = stage_create_infos;
+        pipeline_ci.groupCount = 2;
+        pipeline_ci.pGroups = group_create_infos;
+        pipeline_ci.layout = empty_pipeline_layout.handle();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-VkRayTracingShaderGroupCreateInfoNV-anyHitShader-02418");
+        vkCreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Closest hit shader index invalid
+    {
+        VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
+        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
+        stage_create_infos[0].module = rgen_shader.handle();
+        stage_create_infos[0].pName = "main";
+
+        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
+        stage_create_infos[1].module = chit_shader.handle();
+        stage_create_infos[1].pName = "main";
+
+        VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
+        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+        group_create_infos[0].generalShader = 0;
+        group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
+
+        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
+        group_create_infos[1].generalShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].closestHitShader = 5;  // Invalid index
+        group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
+
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
+        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        pipeline_ci.stageCount = 2;
+        pipeline_ci.pStages = stage_create_infos;
+        pipeline_ci.groupCount = 2;
+        pipeline_ci.pGroups = group_create_infos;
+        pipeline_ci.layout = empty_pipeline_layout.handle();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-VkRayTracingShaderGroupCreateInfoNV-closestHitShader-02417");
+        vkCreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Closest hit shader index does not correspond to an closest hit shader
+    {
+        VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
+        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
+        stage_create_infos[0].module = rgen_shader.handle();
+        stage_create_infos[0].pName = "main";
+
+        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_create_infos[1].stage = VK_SHADER_STAGE_ANY_HIT_BIT_NV;
+        stage_create_infos[1].module = ahit_shader.handle();
+        stage_create_infos[1].pName = "main";
+
+        VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
+        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+        group_create_infos[0].generalShader = 0;
+        group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
+
+        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+        group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
+        group_create_infos[1].generalShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].closestHitShader = 1;  // Index 1 corresponds to an any hit shader
+        group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
+        group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
+
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
+        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        pipeline_ci.stageCount = 2;
+        pipeline_ci.pStages = stage_create_infos;
+        pipeline_ci.groupCount = 2;
+        pipeline_ci.pGroups = group_create_infos;
+        pipeline_ci.layout = empty_pipeline_layout.handle();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-VkRayTracingShaderGroupCreateInfoNV-closestHitShader-02417");
+        vkCreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
+    }
+}
