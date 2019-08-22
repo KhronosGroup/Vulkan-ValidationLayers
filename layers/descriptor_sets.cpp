@@ -1299,7 +1299,7 @@ cvdescriptorset::SamplerDescriptor::SamplerDescriptor(const VkSampler *immut) : 
 bool CoreChecks::ValidateSampler(const VkSampler sampler) const { return (GetSamplerState(sampler) != nullptr); }
 
 bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image_layout, VkDescriptorType type,
-                                     const char *func_name, std::string *error_code, std::string *error_msg) {
+                                     const char *func_name, std::string *error_code, std::string *error_msg) const {
     *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00326";
     auto iv_state = GetImageViewState(image_view);
     assert(iv_state);
@@ -1864,7 +1864,7 @@ std::string cvdescriptorset::DescriptorSet::StringifySetAndLayout() const {
 
 // Loop through the write updates to validate for a push descriptor set, ignoring dstSet
 bool CoreChecks::ValidatePushDescriptorsUpdate(const DescriptorSet *push_set, uint32_t write_count,
-                                               const VkWriteDescriptorSet *p_wds, const char *func_name) {
+                                               const VkWriteDescriptorSet *p_wds, const char *func_name) const {
     assert(push_set->IsPushDescriptor());
     bool skip = false;
     for (uint32_t i = 0; i < write_count; i++) {
@@ -1934,7 +1934,7 @@ bool cvdescriptorset::ValidateBufferUsage(BUFFER_STATE const *buffer_node, VkDes
 //  5. range and offset are within the device's limits
 // If there's an error, update the error_msg string with details and return false, else return true
 bool CoreChecks::ValidateBufferUpdate(VkDescriptorBufferInfo const *buffer_info, VkDescriptorType type, const char *func_name,
-                                      std::string *error_code, std::string *error_msg) {
+                                      std::string *error_code, std::string *error_msg) const {
     // First make sure that buffer is valid
     auto buffer_node = GetBufferState(buffer_info->buffer);
     // Any invalid buffer should already be caught by object_tracker
@@ -2322,7 +2322,7 @@ bool cvdescriptorset::VerifyUpdateConsistency(DescriptorSetLayout::ConstBindingI
 // Validate the state for a given write update but don't actually perform the update
 //  If an error would occur for this update, return false and fill in details in error_msg string
 bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWriteDescriptorSet *update, const char *func_name,
-                                     std::string *error_code, std::string *error_msg) {
+                                     std::string *error_code, std::string *error_msg) const {
     const auto dest_layout = dest_set->GetLayout();
 
     // Verify dst layout still valid
@@ -2458,7 +2458,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
 
 // Verify that the contents of the update are ok, but don't perform actual update
 bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const VkWriteDescriptorSet *update, const uint32_t index,
-                                           const char *func_name, std::string *error_code, std::string *error_msg) {
+                                           const char *func_name, std::string *error_code, std::string *error_msg) const {
     using ImageSamplerDescriptor = cvdescriptorset::ImageSamplerDescriptor;
     using SamplerDescriptor = cvdescriptorset::SamplerDescriptor;
 
