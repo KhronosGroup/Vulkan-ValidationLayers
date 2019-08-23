@@ -2050,7 +2050,7 @@ bool CoreChecks::ValidateDeviceMaskToCommandBuffer(const CMD_BUFFER_STATE *pCB, 
 
 bool CoreChecks::ValidateDeviceMaskToRenderPass(const CMD_BUFFER_STATE *pCB, uint32_t deviceMask,
                                                 VkDebugReportObjectTypeEXT VUID_handle_type, uint64_t VUID_handle,
-                                                const char *VUID) {
+                                                const char *VUID) const {
     bool skip = false;
     if ((deviceMask & pCB->active_render_pass_device_mask) != deviceMask) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VUID_handle_type, VUID_handle, VUID,
@@ -9387,7 +9387,7 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
 bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                   VkQueryPool queryPool, uint32_t slot) {
     if (disabled.query_validation) return false;
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdWriteTimestamp()",
                                       VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
@@ -9396,18 +9396,23 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer,
     return skip;
 }
 
-void CoreChecks::PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
-                                                 VkQueryPool queryPool, uint32_t slot) {
+void ValidationStateTracker::PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
+                                                             VkQueryPool queryPool, uint32_t slot) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    QueryObject query = {queryPool, slot};
-    cb_state->queryUpdates.emplace_back([this, commandBuffer, query](VkQueue q) {
-        bool skip = false;
-        skip |= VerifyQueryIsReset(q, commandBuffer, query);
-        skip |= SetQueryState(q, commandBuffer, query, QUERYSTATE_ENDED);
-        return skip;
-    });
     AddCommandBufferBinding(&GetQueryPoolState(queryPool)->cb_bindings, VulkanTypedHandle(queryPool, kVulkanObjectTypeQueryPool),
                             cb_state);
+    QueryObject query = {queryPool, slot};
+    cb_state->queryUpdates.emplace_back(
+        [this, commandBuffer, query](VkQueue q) { return SetQueryState(q, commandBuffer, query, QUERYSTATE_ENDED); });
+}
+
+void CoreChecks::PreCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
+                                                VkQueryPool queryPool, uint32_t slot) {
+    // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    QueryObject query = {queryPool, slot};
+    cb_state->queryUpdates.emplace_back(
+        [this, commandBuffer, query](VkQueue q) { return VerifyQueryIsReset(q, commandBuffer, query); });
 }
 
 bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2KHR *attachments, const VkFramebufferCreateInfo *fbci,
@@ -14466,10 +14471,10 @@ VkResult CoreChecks::CoreLayerMergeValidationCachesEXT(VkDevice device, VkValida
     return result;
 }
 
-bool CoreChecks::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask) {
+bool CoreChecks::ValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask, const char *func_name) const {
     bool skip = false;
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-
+    skip |= ValidateCmd(cb_state, CMD_SETDEVICEMASK, func_name);
     skip |= ValidateDeviceMaskToPhysicalDeviceCount(deviceMask, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                                     HandleToUint64(commandBuffer), "VUID-vkCmdSetDeviceMask-deviceMask-00108");
     skip |= ValidateDeviceMaskToZero(deviceMask, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(commandBuffer),
@@ -14481,6 +14486,14 @@ bool CoreChecks::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, 
                                                HandleToUint64(commandBuffer), "VUID-vkCmdSetDeviceMask-deviceMask-00111");
     }
     return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask) {
+    return ValidateCmdSetDeviceMask(commandBuffer, deviceMask, "vkSetDeviceMask()");
+}
+
+bool CoreChecks::PreCallValidateCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask) {
+    return ValidateCmdSetDeviceMask(commandBuffer, deviceMask, "vkSetDeviceMaskKHR()");
 }
 
 bool CoreChecks::ValidateQueryPoolStride(const std::string &vuid_not_64, const std::string &vuid_64, const VkDeviceSize stride,
