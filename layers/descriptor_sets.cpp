@@ -318,7 +318,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
     const uint32_t max_push_descriptors, const bool descriptor_indexing_ext,
     const VkPhysicalDeviceDescriptorIndexingFeaturesEXT *descriptor_indexing_features,
     const VkPhysicalDeviceInlineUniformBlockFeaturesEXT *inline_uniform_block_features,
-    const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props) {
+    const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props, const DeviceExtensions *device_extensions) {
     bool skip = false;
     std::unordered_set<uint32_t> bindings;
     uint64_t total_descriptors = 0;
@@ -370,16 +370,24 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
         }
 
         if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT) {
-            if ((binding_info.descriptorCount % 4) != 0) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                "VUID-VkDescriptorSetLayoutBinding-descriptorType-02209",
-                                "descriptorCount =(%" PRIu32 ") must be a multiple of 4", binding_info.descriptorCount);
-            }
-            if (binding_info.descriptorCount > inline_uniform_block_props->maxInlineUniformBlockSize) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                "VUID-VkDescriptorSetLayoutBinding-descriptorType-02210",
-                                "descriptorCount =(%" PRIu32 ") must be less than or equal to maxInlineUniformBlockSize",
-                                binding_info.descriptorCount);
+            if (!device_extensions->vk_ext_inline_uniform_block) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, 0,
+                                "UNASSIGNED-Extension not enabled",
+                                "Creating VkDescriptorSetLayout with descriptor type  VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT "
+                                "but extension %s is missing",
+                                VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME);
+            } else {
+                if ((binding_info.descriptorCount % 4) != 0) {
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    "VUID-VkDescriptorSetLayoutBinding-descriptorType-02209",
+                                    "descriptorCount =(%" PRIu32 ") must be a multiple of 4", binding_info.descriptorCount);
+                }
+                if (binding_info.descriptorCount > inline_uniform_block_props->maxInlineUniformBlockSize) {
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                    "VUID-VkDescriptorSetLayoutBinding-descriptorType-02210",
+                                    "descriptorCount =(%" PRIu32 ") must be less than or equal to maxInlineUniformBlockSize",
+                                    binding_info.descriptorCount);
+                }
             }
         }
 
