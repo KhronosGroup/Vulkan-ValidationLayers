@@ -2786,14 +2786,14 @@ void ValidationStateTracker::IncrementResources(CMD_BUFFER_STATE *cb_node) {
 // For the given queue, verify the queue state up to the given seq number.
 // Currently the only check is to make sure that if there are events to be waited on prior to
 //  a QueryReset, make sure that all such events have been signalled.
-bool CoreChecks::VerifyQueueStateToSeq(QUEUE_STATE *initial_queue, uint64_t initial_seq) {
+bool CoreChecks::VerifyQueueStateToSeq(const QUEUE_STATE *initial_queue, uint64_t initial_seq) const {
     bool skip = false;
 
     // sequence number we want to validate up to, per queue
-    std::unordered_map<QUEUE_STATE *, uint64_t> target_seqs{{initial_queue, initial_seq}};
+    std::unordered_map<const QUEUE_STATE *, uint64_t> target_seqs{{initial_queue, initial_seq}};
     // sequence number we've completed validation for, per queue
-    std::unordered_map<QUEUE_STATE *, uint64_t> done_seqs;
-    std::vector<QUEUE_STATE *> worklist{initial_queue};
+    std::unordered_map<const QUEUE_STATE *, uint64_t> done_seqs;
+    std::vector<const QUEUE_STATE *> worklist{initial_queue};
 
     while (worklist.size()) {
         auto queue = worklist.back();
@@ -2830,7 +2830,7 @@ bool CoreChecks::VerifyQueueStateToSeq(QUEUE_STATE *initial_queue, uint64_t init
 }
 
 // When the given fence is retired, verify outstanding queue operations through the point of the fence
-bool CoreChecks::VerifyQueueStateToFence(VkFence fence) {
+bool CoreChecks::VerifyQueueStateToFence(VkFence fence) const {
     auto fence_state = GetFenceState(fence);
     if (fence_state && fence_state->scope == kSyncScopeInternal && VK_NULL_HANDLE != fence_state->signaler.first) {
         return VerifyQueueStateToSeq(GetQueueState(fence_state->signaler.first), fence_state->signaler.second);
@@ -4030,7 +4030,7 @@ void CoreChecks::InitializeAndTrackMemory(VkDeviceMemory mem, VkDeviceSize offse
     }
 }
 
-void CoreChecks::RetireFence(VkFence fence) {
+void ValidationStateTracker::RetireFence(VkFence fence) {
     auto pFence = GetFenceState(fence);
     if (pFence && pFence->scope == kSyncScopeInternal) {
         if (pFence->signaler.first != VK_NULL_HANDLE) {
@@ -4054,8 +4054,8 @@ bool CoreChecks::PreCallValidateWaitForFences(VkDevice device, uint32_t fenceCou
     return skip;
 }
 
-void CoreChecks::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences, VkBool32 waitAll,
-                                             uint64_t timeout, VkResult result) {
+void ValidationStateTracker::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences,
+                                                         VkBool32 waitAll, uint64_t timeout, VkResult result) {
     if (VK_SUCCESS != result) return;
 
     // When we know that all fences are complete we can clean/remove their CBs
@@ -4069,7 +4069,7 @@ void CoreChecks::PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCoun
     //  vkGetFenceStatus() at which point we'll clean/remove their CBs if complete.
 }
 
-void CoreChecks::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result) {
+void ValidationStateTracker::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result) {
     if (VK_SUCCESS != result) return;
     RetireFence(fence);
 }
@@ -4117,11 +4117,11 @@ void ValidationStateTracker::PostCallRecordGetDeviceQueue2(VkDevice device, cons
 }
 
 bool CoreChecks::PreCallValidateQueueWaitIdle(VkQueue queue) {
-    QUEUE_STATE *queue_state = GetQueueState(queue);
+    const QUEUE_STATE *queue_state = GetQueueState(queue);
     return VerifyQueueStateToSeq(queue_state, queue_state->seq + queue_state->submissions.size());
 }
 
-void CoreChecks::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) {
+void ValidationStateTracker::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) {
     if (VK_SUCCESS != result) return;
     QUEUE_STATE *queue_state = GetQueueState(queue);
     RetireWorkOnQueue(queue_state, queue_state->seq + queue_state->submissions.size(), true);
@@ -4129,13 +4129,14 @@ void CoreChecks::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) {
 
 bool CoreChecks::PreCallValidateDeviceWaitIdle(VkDevice device) {
     bool skip = false;
-    for (auto &queue : queueMap) {
+    const auto &const_queue_map = queueMap;
+    for (auto &queue : const_queue_map) {
         skip |= VerifyQueueStateToSeq(&queue.second, queue.second.seq + queue.second.submissions.size());
     }
     return skip;
 }
 
-void CoreChecks::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) {
+void ValidationStateTracker::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) {
     if (VK_SUCCESS != result) return;
     for (auto &queue : queueMap) {
         RetireWorkOnQueue(&queue.second, queue.second.seq + queue.second.submissions.size(), true);
@@ -12546,7 +12547,7 @@ void CoreChecks::PostCallRecordImportFenceFdKHR(VkDevice device, const VkImportF
     RecordImportFenceState(pImportFenceFdInfo->fence, pImportFenceFdInfo->handleType, pImportFenceFdInfo->flags);
 }
 
-void CoreChecks::RecordGetExternalFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type) {
+void ValidationStateTracker::RecordGetExternalFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type) {
     FENCE_STATE *fence_state = GetFenceState(fence);
     if (fence_state) {
         if (handle_type != VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR) {
@@ -12560,14 +12561,16 @@ void CoreChecks::RecordGetExternalFenceState(VkFence fence, VkExternalFenceHandl
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-void CoreChecks::PostCallRecordGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR *pGetWin32HandleInfo,
-                                                      HANDLE *pHandle, VkResult result) {
+void ValidationStateTracker::PostCallRecordGetFenceWin32HandleKHR(VkDevice device,
+                                                                  const VkFenceGetWin32HandleInfoKHR *pGetWin32HandleInfo,
+                                                                  HANDLE *pHandle, VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordGetExternalFenceState(pGetWin32HandleInfo->fence, pGetWin32HandleInfo->handleType);
 }
 #endif
 
-void CoreChecks::PostCallRecordGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR *pGetFdInfo, int *pFd, VkResult result) {
+void ValidationStateTracker::PostCallRecordGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR *pGetFdInfo, int *pFd,
+                                                         VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordGetExternalFenceState(pGetFdInfo->fence, pGetFdInfo->handleType);
 }

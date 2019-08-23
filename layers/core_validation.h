@@ -406,6 +406,12 @@ class ValidationStateTracker : public ValidationObject {
                                                        VkMemoryRequirements2KHR* pMemoryRequirements);
     void PostCallRecordGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue);
     void PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQueueInfo2* pQueueInfo, VkQueue* pQueue);
+    void PostCallRecordGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR* pGetFdInfo, int* pFd, VkResult result);
+    void PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result);
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    void PostCallRecordGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo,
+                                              HANDLE* pHandle, VkResult result);
+#endif  // VK_USE_PLATFORM_WIN32_KHR
     void PostCallRecordGetImageMemoryRequirements(VkDevice device, VkImage image, VkMemoryRequirements* pMemoryRequirements);
     void PostCallRecordGetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
                                                    VkMemoryRequirements2* pMemoryRequirements);
@@ -597,10 +603,14 @@ class ValidationStateTracker : public ValidationObject {
 
     // CommandBuffer Control
     void PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo);
+    void PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result);
     void PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, VkResult result);
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                    VkResult result);
+    void PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result);
     void PreCallRecordSetEvent(VkDevice device, VkEvent event);
+    void PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll,
+                                     uint64_t timeout, VkResult result);
 
     // Allocate/Free
     void PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pCreateInfo,
@@ -837,6 +847,7 @@ class ValidationStateTracker : public ValidationObject {
                                                   VkPhysicalDeviceGroupPropertiesKHR* pPhysicalDeviceGroupProperties);
     void RecordGetBufferMemoryRequirementsState(VkBuffer buffer, VkMemoryRequirements* pMemoryRequirements);
     void RecordGetDeviceQueueState(uint32_t queue_family_index, VkQueue queue);
+    void RecordGetExternalFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type);
     void RecordGetImageMemoryRequiementsState(VkImage image, VkMemoryRequirements* pMemoryRequirements);
     void RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                             void* pProperties);
@@ -854,6 +865,7 @@ class ValidationStateTracker : public ValidationObject {
     void RemoveBufferMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
     void RemoveImageMemoryRange(uint64_t handle, DEVICE_MEMORY_STATE* mem_info);
     void ResetCommandBufferState(const VkCommandBuffer cb);
+    void RetireFence(VkFence fence);
     void RetireWorkOnQueue(QUEUE_STATE* pQueue, uint64_t seq, bool switch_finished_queries);
     bool SetEventStageMask(VkQueue queue, VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
     void SetMemBinding(VkDeviceMemory mem, BINDABLE* mem_binding, VkDeviceSize memory_offset,
@@ -925,7 +937,7 @@ class CoreChecks : public ValidationStateTracker {
 
     std::unique_ptr<GpuValidationState> gpu_validation_state;
 
-    bool VerifyQueueStateToSeq(QUEUE_STATE* initial_queue, uint64_t initial_seq);
+    bool VerifyQueueStateToSeq(const QUEUE_STATE* initial_queue, uint64_t initial_seq) const;
     bool ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHandle& typed_handle, const char* apiName) const;
     bool SetSparseMemBinding(MEM_BINDING binding, const VulkanTypedHandle& typed_handle);
     bool ValidateDeviceQueueFamily(uint32_t queue_family, const char* cmd_name, const char* parameter_name, const char* error_code,
@@ -934,9 +946,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2* pInfo) const;
     bool CheckCommandBuffersInFlight(const COMMAND_POOL_STATE* pPool, const char* action, const char* error_code) const;
     bool CheckCommandBufferInFlight(const CMD_BUFFER_STATE* cb_node, const char* action, const char* error_code) const;
-    bool VerifyQueueStateToFence(VkFence fence);
-    bool VerifyWaitFenceState(VkFence fence, const char* apiCall);
-    void RetireFence(VkFence fence);
+    bool VerifyQueueStateToFence(VkFence fence) const;
     void StoreMemRanges(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size);
     bool ValidateIdleDescriptorSet(VkDescriptorSet set, const char* func_str);
     void InitializeAndTrackMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
@@ -1028,7 +1038,6 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCreateSamplerYcbcrConversion(const char* func_name, const VkSamplerYcbcrConversionCreateInfo* create_info) const;
     bool ValidateImportFence(VkFence fence, const char* caller_name);
     void RecordImportFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type, VkFenceImportFlagsKHR flags);
-    void RecordGetExternalFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type);
     bool ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore, VkFence fence,
                                   uint32_t* pImageIndex, const char* func_name) const;
     bool VerifyRenderAreaBounds(const VkRenderPassBeginInfo* pRenderPassBegin) const;
@@ -1665,13 +1674,8 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory mem, const VkAllocationCallbacks* pAllocator);
     bool PreCallValidateWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll,
                                       uint64_t timeout);
-    void PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll,
-                                     uint64_t timeout, VkResult result);
-    void PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result);
     bool PreCallValidateQueueWaitIdle(VkQueue queue);
-    void PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result);
     bool PreCallValidateDeviceWaitIdle(VkDevice device);
-    void PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result);
     bool PreCallValidateDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator);
     bool PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator);
     bool PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator);
@@ -1904,14 +1908,11 @@ class CoreChecks : public ValidationStateTracker {
                                                  VkResult result);
     void PostCallRecordGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                   HANDLE* pHandle, VkResult result);
-    void PostCallRecordGetFenceWin32HandleKHR(VkDevice device, const VkFenceGetWin32HandleInfoKHR* pGetWin32HandleInfo,
-                                              HANDLE* pHandle, VkResult result);
 #endif  // VK_USE_PLATFORM_WIN32_KHR
     bool PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo);
     void PostCallRecordImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo, VkResult result);
 
     void PostCallRecordGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR* pGetFdInfo, int* pFd, VkResult result);
-    void PostCallRecordGetFenceFdKHR(VkDevice device, const VkFenceGetFdInfoKHR* pGetFdInfo, int* pFd, VkResult result);
     bool PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain);
     void PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator);
