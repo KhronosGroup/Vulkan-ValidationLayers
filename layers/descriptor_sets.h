@@ -379,7 +379,8 @@ bool ValidateDescriptorSetLayoutCreateInfo(const debug_report_data *report_data,
                                            const bool descriptor_indexing_ext,
                                            const VkPhysicalDeviceDescriptorIndexingFeaturesEXT *descriptor_indexing_features,
                                            const VkPhysicalDeviceInlineUniformBlockFeaturesEXT *inline_uniform_block_features,
-                                           const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props);
+                                           const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props,
+                                           const DeviceExtensions *device_extensions);
 
 class SamplerDescriptor : public Descriptor {
    public:
