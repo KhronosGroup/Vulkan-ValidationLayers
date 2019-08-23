@@ -534,22 +534,39 @@ static inline void ActivateInstanceDebugCallbacks(debug_report_data *debug_data)
     auto current = debug_data->instance_pnext_chain;
     for (;;) {
         auto create_info = lvl_find_in_chain<VkDebugUtilsMessengerCreateInfoEXT>(current);
-        if (!create_info) return;
+        if (!create_info) break;
         current = create_info->pNext;
         VkDebugUtilsMessengerEXT utils_callback{};
         layer_create_callback((DEBUG_CALLBACK_UTILS | DEBUG_CALLBACK_INSTANCE), debug_data, create_info, nullptr, &utils_callback);
     }
+    for (;;) {
+        auto create_info = lvl_find_in_chain<VkDebugReportCallbackCreateInfoEXT>(current);
+        if (!create_info) break;
+        current = create_info->pNext;
+        VkDebugReportCallbackEXT report_callback{};
+        layer_create_callback(DEBUG_CALLBACK_INSTANCE, debug_data, create_info, nullptr, &report_callback);
+    }
 }
 
 static inline void DeactivateInstanceDebugCallbacks(debug_report_data *debug_data) {
-    if (!lvl_find_in_chain<VkDebugUtilsMessengerCreateInfoEXT>(debug_data->instance_pnext_chain)) return;
-    std::vector<VkDebugUtilsMessengerEXT> instance_callback_handles{};
+    if (!lvl_find_in_chain<VkDebugUtilsMessengerCreateInfoEXT>(debug_data->instance_pnext_chain) &&
+        !lvl_find_in_chain<VkDebugReportCallbackCreateInfoEXT>(debug_data->instance_pnext_chain))
+        return;
+    std::vector<VkDebugUtilsMessengerEXT> instance_utils_callback_handles{};
+    std::vector<VkDebugReportCallbackEXT> instance_report_callback_handles{};
     for (auto item : debug_data->debug_callback_list) {
         if (item.IsInstance()) {
-            instance_callback_handles.push_back(item.debug_utils_callback_object);
+            if (item.IsUtils()) {
+                instance_utils_callback_handles.push_back(item.debug_utils_callback_object);
+            } else {
+                instance_report_callback_handles.push_back(item.debug_report_callback_object);
+            }
         }
     }
-    for (auto item : instance_callback_handles) {
+    for (auto item : instance_utils_callback_handles) {
+        layer_destroy_callback(debug_data, item, nullptr);
+    }
+    for (auto item : instance_report_callback_handles) {
         layer_destroy_callback(debug_data, item, nullptr);
     }
 }
