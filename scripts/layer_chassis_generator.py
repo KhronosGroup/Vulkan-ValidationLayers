@@ -227,7 +227,21 @@ class LayerChassisOutputGenerator(OutputGenerator):
 
 
 extern std::atomic<uint64_t> global_unique_id;
-extern vl_concurrent_unordered_map<uint64_t, uint64_t, 4> unique_id_mapping;
+
+// To avoid re-hashing unique ids on each use, we precompute the hash and store the
+// hash's LSBs in the high 24 bits.
+struct HashedUint64 {
+    static const int HASHED_UINT64_SHIFT = 40;
+    size_t operator()(const uint64_t &t) const { return t >> HASHED_UINT64_SHIFT; }
+
+    static uint64_t hash(uint64_t id) {
+        uint64_t h = (uint64_t)std::hash<uint64_t>()(id);
+        id |= h << HASHED_UINT64_SHIFT;
+        return id;
+    }
+};
+
+extern vl_concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
 """
 
     inline_custom_header_class_definition = """
@@ -376,6 +390,7 @@ class ValidationObject {
         template <typename HandleType>
         HandleType WrapNew(HandleType newlyCreatedHandle) {
             auto unique_id = global_unique_id++;
+            unique_id = HashedUint64::hash(unique_id);
             unique_id_mapping.insert_or_assign(unique_id, reinterpret_cast<uint64_t const &>(newlyCreatedHandle));
             return (HandleType)unique_id;
         }
@@ -383,6 +398,7 @@ class ValidationObject {
         // Specialized handling for VkDisplayKHR. Adds an entry to enable reverse-lookup.
         VkDisplayKHR WrapDisplay(VkDisplayKHR newlyCreatedHandle, ValidationObject *map_data) {
             auto unique_id = global_unique_id++;
+            unique_id = HashedUint64::hash(unique_id);
             unique_id_mapping.insert_or_assign(unique_id, reinterpret_cast<uint64_t const &>(newlyCreatedHandle));
             map_data->display_id_reverse_mapping.insert_or_assign(newlyCreatedHandle, unique_id);
             return (VkDisplayKHR)unique_id;
@@ -441,7 +457,7 @@ small_unordered_map<void*, ValidationObject*, 2> layer_data_map;
 std::atomic<uint64_t> global_unique_id(1ULL);
 // Map uniqueID to actual object handle. Accesses to the map itself are
 // internally synchronized.
-vl_concurrent_unordered_map<uint64_t, uint64_t, 4> unique_id_mapping;
+vl_concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
 
 // TODO: This variable controls handle wrapping -- in the future it should be hooked
 //       up to the new VALIDATION_FEATURES extension. Temporarily, control with a compile-time flag.
