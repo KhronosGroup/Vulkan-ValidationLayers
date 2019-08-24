@@ -3736,4 +3736,4 @@ class ValidationObject {
         };
 };
 
-extern std::unordered_map<void*, ValidationObject*> layer_data_map;
+extern small_unordered_map<void*, ValidationObject*, 2> layer_data_map;

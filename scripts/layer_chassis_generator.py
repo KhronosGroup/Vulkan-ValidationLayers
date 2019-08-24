@@ -435,7 +435,7 @@ class ValidationObject {
 #include "chassis.h"
 #include "layer_chassis_dispatch.h"
 
-std::unordered_map<void*, ValidationObject*> layer_data_map;
+small_unordered_map<void*, ValidationObject*, 2> layer_data_map;
 
 // Global unique object identifier.
 std::atomic<uint64_t> global_unique_id(1ULL);
@@ -1604,7 +1604,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
             # Output Layer Factory Class Definitions
             self.layer_factory += self.inline_custom_validation_class_definitions
             self.layer_factory += '};\n\n'
-            self.layer_factory += 'extern std::unordered_map<void*, ValidationObject*> layer_data_map;'
+            self.layer_factory += 'extern small_unordered_map<void*, ValidationObject*, 2> layer_data_map;'
             write(self.layer_factory, file=self.outFile)
         else:
             write(self.inline_custom_source_postamble, file=self.outFile)
