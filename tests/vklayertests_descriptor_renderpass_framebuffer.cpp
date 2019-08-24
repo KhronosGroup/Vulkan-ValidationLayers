@@ -1991,7 +1991,7 @@ TEST_F(VkLayerTest, RenderPassCreateOverlappingCorrelationMasks) {
         correlationMasks[0] = 0;
         correlationMasks[1] = 0;
         safe_VkRenderPassCreateInfo2KHR safe_rpci2;
-        ConvertVkRenderPassCreateInfoToV2KHR(&rpci, &safe_rpci2);
+        ConvertVkRenderPassCreateInfoToV2KHR(rpci, &safe_rpci2);
 
         TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), safe_rpci2.ptr(),
                                  "VUID-VkRenderPassCreateInfo2KHR-viewMask-03057");
