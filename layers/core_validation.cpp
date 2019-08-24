@@ -13000,8 +13000,10 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
             image_layout_node.layout = VK_IMAGE_LAYOUT_UNDEFINED;
             image_layout_node.format = swapchain_state->createInfo.imageFormat;
             // Add imageMap entries for each swapchain image
-            VkImageCreateInfo image_ci = {};
-            image_ci.flags = 0;
+            VkImageCreateInfo image_ci;
+            image_ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+            image_ci.pNext = nullptr;  // to be set later
+            image_ci.flags = 0;        // to be set later
             image_ci.imageType = VK_IMAGE_TYPE_2D;
             image_ci.format = swapchain_state->createInfo.imageFormat;
             image_ci.extent.width = swapchain_state->createInfo.imageExtent.width;
@@ -13013,6 +13015,19 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
             image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
             image_ci.usage = swapchain_state->createInfo.imageUsage;
             image_ci.sharingMode = swapchain_state->createInfo.imageSharingMode;
+            image_ci.queueFamilyIndexCount = swapchain_state->createInfo.queueFamilyIndexCount;
+            image_ci.pQueueFamilyIndices = swapchain_state->createInfo.pQueueFamilyIndices;
+            image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+            image_ci.pNext = lvl_find_in_chain<VkImageFormatListCreateInfoKHR>(swapchain_state->createInfo.pNext);
+
+            if (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR)
+                image_ci.flags |= VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
+            if (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR)
+                image_ci.flags |= VK_IMAGE_CREATE_PROTECTED_BIT;
+            if (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR)
+                image_ci.flags |= (VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT_KHR);
+
             imageMap[pSwapchainImages[i]] = unique_ptr<IMAGE_STATE>(new IMAGE_STATE(pSwapchainImages[i], &image_ci));
             auto &image_state = imageMap[pSwapchainImages[i]];
             image_state->valid = false;
