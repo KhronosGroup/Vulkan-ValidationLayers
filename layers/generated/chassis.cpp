@@ -31,7 +31,7 @@
 #include "chassis.h"
 #include "layer_chassis_dispatch.h"
 
-std::unordered_map<void*, ValidationObject*> layer_data_map;
+small_unordered_map<void*, ValidationObject*, 2> layer_data_map;
 
 // Global unique object identifier.
 std::atomic<uint64_t> global_unique_id(1ULL);

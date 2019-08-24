@@ -193,56 +193,6 @@ struct object_use_data {
     int writer_count;
 };
 
-// This is a wrapper around unordered_map that optimizes for the common case
-// of only containing a single element. The "first" element's use is stored
-// inline in the class and doesn't require hashing or memory (de)allocation.
-// TODO: Consider generalizing this from one element to N elements (where N
-// is a template parameter).
-template <typename Key, typename T>
-class small_unordered_map {
-
-    bool first_data_allocated;
-    Key first_data_key;
-    T first_data;
-
-    std::unordered_map<Key, T> uses;
-
-public:
-    small_unordered_map() : first_data_allocated(false) {}
-
-    bool contains(const Key& object) const {
-        if (first_data_allocated && object == first_data_key) {
-            return true;
-        // check size() first to avoid hashing object unnecessarily.
-        } else if (uses.size() == 0) {
-            return false;
-        } else {
-            return uses.find(object) != uses.end();
-        }
-    }
-
-    T& operator[](const Key& object) {
-        if (first_data_allocated && first_data_key == object) {
-            return first_data;
-        } else if (!first_data_allocated && uses.size() == 0) {
-            first_data_allocated = true;
-            first_data_key = object;
-            return first_data;
-        } else {
-            return uses[object];
-        }
-    }
-
-    typename std::unordered_map<Key, T>::size_type erase(const Key& object) {
-        if (first_data_allocated && first_data_key == object) {
-            first_data_allocated = false;
-            return 1;
-        } else {
-            return uses.erase(object);
-        }
-    }
-};
-
 #define THREAD_SAFETY_BUCKETS_LOG2 6
 #define THREAD_SAFETY_BUCKETS (1 << THREAD_SAFETY_BUCKETS_LOG2)
 
