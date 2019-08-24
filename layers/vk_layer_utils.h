@@ -189,7 +189,7 @@ static inline int u_ffs(int val) {
 //
 // snapshot: Return an array of elements (key, value pairs) that satisfy an optional
 // predicate. This can be used as a substitute for iterators in exceptional cases.
-template <typename Key, typename T, int BUCKETSLOG2 = 2>
+template <typename Key, typename T, int BUCKETSLOG2 = 2, typename Hash = std::hash<Key>>
 class vl_concurrent_unordered_map {
    public:
     void insert_or_assign(const Key &key, const T &value) {
@@ -302,7 +302,7 @@ class vl_concurrent_unordered_map {
     typedef std::unique_lock<lock_t> write_lock_guard_t;
 #endif
 
-    std::unordered_map<Key, T> maps[BUCKETS];
+    std::unordered_map<Key, T, Hash> maps[BUCKETS];
     struct {
         lock_t lock;
         // Put each lock on its own cache line to avoid false cache line sharing.
