@@ -557,27 +557,29 @@ VkResult DispatchCreateDescriptorUpdateTemplate(VkDevice device, const VkDescrip
     if (!wrap_handles)
         return layer_data->device_dispatch_table.CreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator,
                                                                                 pDescriptorUpdateTemplate);
-    safe_VkDescriptorUpdateTemplateCreateInfo *local_create_info = NULL;
-    {
-        if (pCreateInfo) {
-            local_create_info = new safe_VkDescriptorUpdateTemplateCreateInfo(pCreateInfo);
-            if (pCreateInfo->descriptorSetLayout) {
-                local_create_info->descriptorSetLayout = layer_data->Unwrap(pCreateInfo->descriptorSetLayout);
-            }
-            if (pCreateInfo->pipelineLayout) {
-                local_create_info->pipelineLayout = layer_data->Unwrap(pCreateInfo->pipelineLayout);
-            }
+    safe_VkDescriptorUpdateTemplateCreateInfo var_local_pCreateInfo;
+    safe_VkDescriptorUpdateTemplateCreateInfo *local_pCreateInfo = NULL;
+    if (pCreateInfo) {
+        local_pCreateInfo = &var_local_pCreateInfo;
+        local_pCreateInfo->initialize(pCreateInfo);
+        if (pCreateInfo->descriptorSetLayout ) {
+            local_pCreateInfo->descriptorSetLayout = layer_data->Unwrap(pCreateInfo->descriptorSetLayout);
+        }
+        if (pCreateInfo->pipelineLayout) {
+            local_pCreateInfo->pipelineLayout = layer_data->Unwrap(pCreateInfo->pipelineLayout);
         }
     }
-    VkResult result = layer_data->device_dispatch_table.CreateDescriptorUpdateTemplate(device, local_create_info->ptr(), pAllocator,
+    VkResult result = layer_data->device_dispatch_table.CreateDescriptorUpdateTemplate(device, local_pCreateInfo->ptr(), pAllocator,
                                                                                        pDescriptorUpdateTemplate);
     if (VK_SUCCESS == result) {
-        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pDescriptorUpdateTemplate = layer_data->WrapNew(*pDescriptorUpdateTemplate);
 
         // Shadow template createInfo for later updates
-        std::unique_ptr<TEMPLATE_STATE> template_state(new TEMPLATE_STATE(*pDescriptorUpdateTemplate, local_create_info));
-        layer_data->desc_template_createinfo_map[(uint64_t)*pDescriptorUpdateTemplate] = std::move(template_state);
+        if (local_pCreateInfo) {
+            write_dispatch_lock_guard_t lock(dispatch_lock);
+            std::unique_ptr<TEMPLATE_STATE> template_state(new TEMPLATE_STATE(*pDescriptorUpdateTemplate, local_pCreateInfo));
+            layer_data->desc_template_createinfo_map[(uint64_t)*pDescriptorUpdateTemplate] = std::move(template_state);
+        }
     }
     return result;
 }
@@ -590,27 +592,30 @@ VkResult DispatchCreateDescriptorUpdateTemplateKHR(VkDevice device, const VkDesc
     if (!wrap_handles)
         return layer_data->device_dispatch_table.CreateDescriptorUpdateTemplateKHR(device, pCreateInfo, pAllocator,
                                                                                    pDescriptorUpdateTemplate);
-    safe_VkDescriptorUpdateTemplateCreateInfo *local_create_info = NULL;
-    {
-        if (pCreateInfo) {
-            local_create_info = new safe_VkDescriptorUpdateTemplateCreateInfo(pCreateInfo);
-            if (pCreateInfo->descriptorSetLayout) {
-                local_create_info->descriptorSetLayout = layer_data->Unwrap(pCreateInfo->descriptorSetLayout);
-            }
-            if (pCreateInfo->pipelineLayout) {
-                local_create_info->pipelineLayout = layer_data->Unwrap(pCreateInfo->pipelineLayout);
-            }
+    safe_VkDescriptorUpdateTemplateCreateInfo var_local_pCreateInfo;
+    safe_VkDescriptorUpdateTemplateCreateInfo *local_pCreateInfo = NULL;
+    if (pCreateInfo) {
+        local_pCreateInfo = &var_local_pCreateInfo;
+        local_pCreateInfo->initialize(pCreateInfo);
+        if (pCreateInfo->descriptorSetLayout) {
+            local_pCreateInfo->descriptorSetLayout = layer_data->Unwrap(pCreateInfo->descriptorSetLayout);
+        }
+        if (pCreateInfo->pipelineLayout) {
+            local_pCreateInfo->pipelineLayout = layer_data->Unwrap(pCreateInfo->pipelineLayout);
         }
     }
-    VkResult result = layer_data->device_dispatch_table.CreateDescriptorUpdateTemplateKHR(device, local_create_info->ptr(), pAllocator,
-                                                                                          pDescriptorUpdateTemplate);
+    VkResult result = layer_data->device_dispatch_table.CreateDescriptorUpdateTemplateKHR(device, local_pCreateInfo->ptr(),
+                                                                                          pAllocator, pDescriptorUpdateTemplate);
+
     if (VK_SUCCESS == result) {
-        write_dispatch_lock_guard_t lock(dispatch_lock);
         *pDescriptorUpdateTemplate = layer_data->WrapNew(*pDescriptorUpdateTemplate);
 
         // Shadow template createInfo for later updates
-        std::unique_ptr<TEMPLATE_STATE> template_state(new TEMPLATE_STATE(*pDescriptorUpdateTemplate, local_create_info));
-        layer_data->desc_template_createinfo_map[(uint64_t)*pDescriptorUpdateTemplate] = std::move(template_state);
+        if (local_pCreateInfo) {
+            write_dispatch_lock_guard_t lock(dispatch_lock);
+            std::unique_ptr<TEMPLATE_STATE> template_state(new TEMPLATE_STATE(*pDescriptorUpdateTemplate, local_pCreateInfo));
+            layer_data->desc_template_createinfo_map[(uint64_t)*pDescriptorUpdateTemplate] = std::move(template_state);
+        }
     }
     return result;
 }
