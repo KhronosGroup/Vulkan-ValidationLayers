@@ -582,10 +582,10 @@ VkResult DispatchCreateDescriptorUpdateTemplate(VkDevice device, const VkDescrip
     if (pCreateInfo) {
         local_pCreateInfo = &var_local_pCreateInfo;
         local_pCreateInfo->initialize(pCreateInfo);
-        if (pCreateInfo->descriptorSetLayout ) {
+        if (pCreateInfo->templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
             local_pCreateInfo->descriptorSetLayout = layer_data->Unwrap(pCreateInfo->descriptorSetLayout);
         }
-        if (pCreateInfo->pipelineLayout) {
+        if (pCreateInfo->templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR) {
             local_pCreateInfo->pipelineLayout = layer_data->Unwrap(pCreateInfo->pipelineLayout);
         }
     }
@@ -617,10 +617,10 @@ VkResult DispatchCreateDescriptorUpdateTemplateKHR(VkDevice device, const VkDesc
     if (pCreateInfo) {
         local_pCreateInfo = &var_local_pCreateInfo;
         local_pCreateInfo->initialize(pCreateInfo);
-        if (pCreateInfo->descriptorSetLayout) {
+        if (pCreateInfo->templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
             local_pCreateInfo->descriptorSetLayout = layer_data->Unwrap(pCreateInfo->descriptorSetLayout);
         }
-        if (pCreateInfo->pipelineLayout) {
+        if (pCreateInfo->templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR) {
             local_pCreateInfo->pipelineLayout = layer_data->Unwrap(pCreateInfo->pipelineLayout);
         }
     }
@@ -684,9 +684,6 @@ void DispatchDestroyDescriptorUpdateTemplateKHR(VkDevice device, VkDescriptorUpd
 
 void *BuildUnwrappedUpdateTemplateBuffer(ValidationObject *layer_data, uint64_t descriptorUpdateTemplate, const void *pData) {
     auto const template_map_entry = layer_data->desc_template_createinfo_map.find(descriptorUpdateTemplate);
-    if (template_map_entry == layer_data->desc_template_createinfo_map.end()) {
-        assert(0);
-    }
     auto const &create_info = template_map_entry->second->create_info;
     size_t allocation_size = 0;
     std::vector<std::tuple<size_t, VulkanObjectType, uint64_t, size_t>> template_entries;
