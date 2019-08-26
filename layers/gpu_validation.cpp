@@ -1264,6 +1264,19 @@ void CoreChecks::GpuPreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount
 // Check the debug buffers for all the command buffers that were submitted.
 void CoreChecks::GpuPostCallQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence) {
     if (gpu_validation_state->aborted) return;
+    bool buffers_present = false;
+    // Don't QueueWaitIdle if there's nothing to process
+    for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
+        const VkSubmitInfo *submit = &pSubmits[submit_idx];
+        for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
+            auto cb_node = GetCBState(submit->pCommandBuffers[i]);
+            if (gpu_validation_state->GetGpuBufferInfo(cb_node->commandBuffer).size()) buffers_present = true;
+            for (auto secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
+                if (gpu_validation_state->GetGpuBufferInfo(secondaryCmdBuffer->commandBuffer).size()) buffers_present = true;
+            }
+        }
+    }
+    if (!buffers_present) return;
 
     SubmitBarrier(queue);
 
