@@ -421,6 +421,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     uint32_t specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
     uint32_t api_version = (specified_version < VK_API_VERSION_1_1) ? VK_API_VERSION_1_0 : VK_API_VERSION_1_1;
     auto report_data = new debug_report_data{};
+    report_data->instance_pnext_chain = SafePnextCopy(pCreateInfo->pNext);
+    ActivateInstanceDebugCallbacks(report_data);
 
     CHECK_ENABLED local_enables {};
     CHECK_DISABLED local_disables {};
@@ -444,6 +446,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     }
     thread_checker->container_type = LayerObjectTypeThreading;
     thread_checker->api_version = api_version;
+    thread_checker->report_data = report_data;
 #endif
 #if BUILD_PARAMETER_VALIDATION
     auto parameter_validation = new StatelessValidation;
@@ -452,6 +455,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     }
     parameter_validation->container_type = LayerObjectTypeParameterValidation;
     parameter_validation->api_version = api_version;
+    parameter_validation->report_data = report_data;
 #endif
 #if BUILD_OBJECT_TRACKER
     auto object_tracker = new ObjectLifetimes;
@@ -460,6 +464,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     }
     object_tracker->container_type = LayerObjectTypeObjectTracker;
     object_tracker->api_version = api_version;
+    object_tracker->report_data = report_data;
 #endif
 #if BUILD_CORE_VALIDATION
     auto core_checks = new CoreChecks;
@@ -468,6 +473,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     }
     core_checks->container_type = LayerObjectTypeCoreValidation;
     core_checks->api_version = api_version;
+    core_checks->report_data = report_data;
 #endif
 #if BUILD_BEST_PRACTICES
     auto best_practices = new BestPractices;
@@ -476,6 +482,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     }
     best_practices->container_type = LayerObjectTypeBestPractices;
     best_practices->api_version = api_version;
+    best_practices->report_data = report_data;
 #endif
 
     // If handle wrapping is disabled via the ValidationFeatures extension, override build flag
@@ -510,25 +517,21 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     layer_debug_messenger_actions(framework->report_data, pAllocator, OBJECT_LAYER_DESCRIPTION);
 
 #if BUILD_OBJECT_TRACKER
-    object_tracker->report_data = framework->report_data;
     object_tracker->instance_dispatch_table = framework->instance_dispatch_table;
     object_tracker->enabled = framework->enabled;
     object_tracker->disabled = framework->disabled;
 #endif
 #if BUILD_THREAD_SAFETY
-    thread_checker->report_data = framework->report_data;
     thread_checker->instance_dispatch_table = framework->instance_dispatch_table;
     thread_checker->enabled = framework->enabled;
     thread_checker->disabled = framework->disabled;
 #endif
 #if BUILD_PARAMETER_VALIDATION
-    parameter_validation->report_data = framework->report_data;
     parameter_validation->instance_dispatch_table = framework->instance_dispatch_table;
     parameter_validation->enabled = framework->enabled;
     parameter_validation->disabled = framework->disabled;
 #endif
 #if BUILD_CORE_VALIDATION
-    core_checks->report_data = framework->report_data;
     core_checks->instance_dispatch_table = framework->instance_dispatch_table;
     core_checks->instance = *pInstance;
     core_checks->enabled = framework->enabled;
@@ -536,7 +539,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     core_checks->instance_state = core_checks;
 #endif
 #if BUILD_BEST_PRACTICES
-    best_practices->report_data = framework->report_data;
     best_practices->instance_dispatch_table = framework->instance_dispatch_table;
     best_practices->enabled = framework->enabled;
     best_practices->disabled = framework->disabled;
@@ -547,13 +549,15 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     }
 
     InstanceExtensionWhitelist(framework, pCreateInfo, *pInstance);
-
+    DeactivateInstanceDebugCallbacks(report_data);
     return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) {
     dispatch_key key = get_dispatch_key(instance);
     auto layer_data = GetLayerDataPtr(key, layer_data_map);
+    ActivateInstanceDebugCallbacks(layer_data->report_data);
+
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
         intercept->PreCallValidateDestroyInstance(instance, pAllocator);
@@ -569,6 +573,9 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
         auto lock = intercept->write_lock();
         intercept->PostCallRecordDestroyInstance(instance, pAllocator);
     }
+
+    DeactivateInstanceDebugCallbacks(layer_data->report_data);
+    FreePnextChain(layer_data->report_data->instance_pnext_chain);
 
     layer_debug_utils_destroy_instance(layer_data->report_data);
 
