@@ -171,8 +171,6 @@ typedef struct _debug_report_data {
     std::vector<VkLayerDbgFunctionState> debug_callback_list;
     VkDebugUtilsMessageSeverityFlagsEXT active_severities{0};
     VkDebugUtilsMessageTypeFlagsEXT active_types{0};
-    bool g_DEBUG_REPORT{false};
-    bool g_DEBUG_UTILS{false};
     bool queueLabelHasInsert{false};
     bool cmdBufLabelHasInsert{false};
     std::unordered_map<uint64_t, std::string> debugObjectNameMap;
@@ -445,21 +443,6 @@ static inline void DebugAnnotFlagsToReportFlags(VkDebugUtilsMessageSeverityFlagB
     } else if ((da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) != 0) {
         *dr_flags |= VK_DEBUG_REPORT_DEBUG_BIT_EXT;
     }
-}
-
-static inline debug_report_data *debug_utils_create_instance(
-    VkLayerInstanceDispatchTable *table, VkInstance inst, uint32_t extension_count,
-    const char *const *enabled_extensions)  // layer or extension name to be enabled
-{
-    debug_report_data *debug_data = new debug_report_data;
-    for (uint32_t i = 0; i < extension_count; i++) {
-        if (strcmp(enabled_extensions[i], VK_EXT_DEBUG_REPORT_EXTENSION_NAME) == 0) {
-            debug_data->g_DEBUG_REPORT = true;
-        } else if (strcmp(enabled_extensions[i], VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0) {
-            debug_data->g_DEBUG_UTILS = true;
-        }
-    }
-    return debug_data;
 }
 
 static inline void layer_debug_utils_destroy_instance(debug_report_data *debug_data) {
