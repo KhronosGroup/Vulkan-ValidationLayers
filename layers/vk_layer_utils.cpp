@@ -89,7 +89,6 @@ VK_LAYER_EXPORT bool white_list(const char *item, const std::set<std::string> &l
 // will be active.  If no vk_layer_settings.txt file is present, creating an application-defined debug
 // callback will cause the default callbacks to be unregisterd and removed.
 VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_data,
-                                                   std::vector<VkDebugUtilsMessengerEXT> &logging_messenger,
                                                    const VkAllocationCallbacks *pAllocator, const char *layer_identifier) {
     VkDebugUtilsMessengerEXT messenger = VK_NULL_HANDLE;
 
@@ -131,7 +130,6 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
         dbgCreateInfo.pfnUserCallback = messenger_log_callback;
         dbgCreateInfo.pUserData = (void *)log_output;
         layer_create_messenger_callback(report_data, true, &dbgCreateInfo, pAllocator, &messenger);
-        logging_messenger.push_back(messenger);
     }
 
     messenger = VK_NULL_HANDLE;
@@ -140,7 +138,6 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
         dbgCreateInfo.pfnUserCallback = messenger_win32_debug_output_msg;
         dbgCreateInfo.pUserData = NULL;
         layer_create_messenger_callback(report_data, true, &dbgCreateInfo, pAllocator, &messenger);
-        logging_messenger.push_back(messenger);
     }
 
     messenger = VK_NULL_HANDLE;
@@ -149,14 +146,12 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
         dbgCreateInfo.pfnUserCallback = MessengerBreakCallback;
         dbgCreateInfo.pUserData = NULL;
         layer_create_messenger_callback(report_data, true, &dbgCreateInfo, pAllocator, &messenger);
-        logging_messenger.push_back(messenger);
     }
 }
 
 // NOTE: This function has been deprecated, and the above function (layer_debug_messenger_actions) should be
 //       used in its place.
 VK_LAYER_EXPORT void layer_debug_report_actions(debug_report_data *report_data,
-                                                std::vector<VkDebugReportCallbackEXT> &logging_callback,
                                                 const VkAllocationCallbacks *pAllocator, const char *layer_identifier) {
     VkDebugReportCallbackEXT callback = VK_NULL_HANDLE;
 
@@ -183,7 +178,6 @@ VK_LAYER_EXPORT void layer_debug_report_actions(debug_report_data *report_data,
         dbgCreateInfo.pfnCallback = report_log_callback;
         dbgCreateInfo.pUserData = (void *)log_output;
         layer_create_report_callback(report_data, default_layer_callback, &dbgCreateInfo, pAllocator, &callback);
-        logging_callback.push_back(callback);
     }
 
     callback = VK_NULL_HANDLE;
@@ -196,7 +190,6 @@ VK_LAYER_EXPORT void layer_debug_report_actions(debug_report_data *report_data,
         dbgCreateInfo.pfnCallback = report_win32_debug_output_msg;
         dbgCreateInfo.pUserData = NULL;
         layer_create_report_callback(report_data, default_layer_callback, &dbgCreateInfo, pAllocator, &callback);
-        logging_callback.push_back(callback);
     }
 
     callback = VK_NULL_HANDLE;
@@ -209,7 +202,6 @@ VK_LAYER_EXPORT void layer_debug_report_actions(debug_report_data *report_data,
         dbgCreateInfo.pfnCallback = DebugBreakCallback;
         dbgCreateInfo.pUserData = NULL;
         layer_create_report_callback(report_data, default_layer_callback, &dbgCreateInfo, pAllocator, &callback);
-        logging_callback.push_back(callback);
     }
 }
 
