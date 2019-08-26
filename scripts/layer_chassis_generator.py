@@ -819,6 +819,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
     uint32_t specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
     uint32_t api_version = (specified_version < VK_API_VERSION_1_1) ? VK_API_VERSION_1_0 : VK_API_VERSION_1_1;
+    auto report_data = new debug_report_data{};
 
     CHECK_ENABLED local_enables {};
     CHECK_DISABLED local_disables {};
@@ -901,8 +902,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     framework->instance = *pInstance;
     layer_init_instance_dispatch_table(*pInstance, &framework->instance_dispatch_table, fpGetInstanceProcAddr);
-    framework->report_data = debug_utils_create_instance(&framework->instance_dispatch_table, *pInstance, pCreateInfo->enabledExtensionCount,
-                                                         pCreateInfo->ppEnabledExtensionNames);
+    framework->report_data = report_data;
     framework->api_version = api_version;
     framework->instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
 
