@@ -275,6 +275,7 @@ static const std::set<std::string> kInstanceExtensionNames = {
 struct DeviceExtensions : public InstanceExtensions {
     bool vk_feature_version_1_1{false};
     bool vk_amd_buffer_marker{false};
+    bool vk_amd_device_coherent_memory{false};
     bool vk_amd_display_native_hdr{false};
     bool vk_amd_draw_indirect_count{false};
     bool vk_amd_gcn_shader{false};
@@ -443,6 +444,7 @@ struct DeviceExtensions : public InstanceExtensions {
         static const DeviceInfoMap info_map = {
             std::make_pair("VK_VERSION_1_1", DeviceInfo(&DeviceExtensions::vk_feature_version_1_1, {})),
             std::make_pair(VK_AMD_BUFFER_MARKER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_buffer_marker, {})),
+            std::make_pair(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_device_coherent_memory, {})),
             std::make_pair(VK_AMD_DISPLAY_NATIVE_HDR_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_display_native_hdr, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_get_surface_capabilities_2, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME},
@@ -791,6 +793,7 @@ struct DeviceExtensions : public InstanceExtensions {
 
 static const std::set<std::string> kDeviceExtensionNames = {
     VK_AMD_BUFFER_MARKER_EXTENSION_NAME,
+    VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME,
     VK_AMD_DISPLAY_NATIVE_HDR_EXTENSION_NAME,
     VK_AMD_DRAW_INDIRECT_COUNT_EXTENSION_NAME,
     VK_AMD_GCN_SHADER_EXTENSION_NAME,

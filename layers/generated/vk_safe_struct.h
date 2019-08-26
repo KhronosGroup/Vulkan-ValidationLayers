@@ -6177,6 +6177,21 @@ struct safe_VkPhysicalDeviceShaderCoreProperties2AMD {
     VkPhysicalDeviceShaderCoreProperties2AMD const *ptr() const { return reinterpret_cast<VkPhysicalDeviceShaderCoreProperties2AMD const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 deviceCoherentMemory;
+    safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD(const VkPhysicalDeviceCoherentMemoryFeaturesAMD* in_struct);
+    safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD(const safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD& src);
+    safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD& operator=(const safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD& src);
+    safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD();
+    ~safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD();
+    void initialize(const VkPhysicalDeviceCoherentMemoryFeaturesAMD* in_struct);
+    void initialize(const safe_VkPhysicalDeviceCoherentMemoryFeaturesAMD* src);
+    VkPhysicalDeviceCoherentMemoryFeaturesAMD *ptr() { return reinterpret_cast<VkPhysicalDeviceCoherentMemoryFeaturesAMD *>(this); }
+    VkPhysicalDeviceCoherentMemoryFeaturesAMD const *ptr() const { return reinterpret_cast<VkPhysicalDeviceCoherentMemoryFeaturesAMD const *>(this); }
+};
+
 struct safe_VkPhysicalDeviceMemoryBudgetPropertiesEXT {
     VkStructureType sType;
     void* pNext;

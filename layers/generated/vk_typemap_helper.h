@@ -3165,6 +3165,15 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PRO
     typedef VkPhysicalDeviceShaderCoreProperties2AMD Type;
 };
 
+// Map type VkPhysicalDeviceCoherentMemoryFeaturesAMD to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD
+template <> struct LvlTypeMap<VkPhysicalDeviceCoherentMemoryFeaturesAMD> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD> {
+    typedef VkPhysicalDeviceCoherentMemoryFeaturesAMD Type;
+};
+
 // Map type VkPhysicalDeviceMemoryBudgetPropertiesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT
 template <> struct LvlTypeMap<VkPhysicalDeviceMemoryBudgetPropertiesEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
