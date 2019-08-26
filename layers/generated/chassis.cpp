@@ -507,7 +507,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     framework->api_version = api_version;
     framework->instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
 
-    layer_debug_messenger_actions(framework->report_data, framework->logging_messenger, pAllocator, OBJECT_LAYER_DESCRIPTION);
+    layer_debug_messenger_actions(framework->report_data, pAllocator, OBJECT_LAYER_DESCRIPTION);
 
 #if BUILD_OBJECT_TRACKER
     object_tracker->report_data = framework->report_data;
@@ -568,17 +568,6 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
         intercept->PostCallRecordDestroyInstance(instance, pAllocator);
-    }
-    // Clean up logging callback, if any
-    while (layer_data->logging_messenger.size() > 0) {
-        VkDebugUtilsMessengerEXT messenger = layer_data->logging_messenger.back();
-        layer_destroy_callback(layer_data->report_data, messenger, pAllocator);
-        layer_data->logging_messenger.pop_back();
-    }
-    while (layer_data->logging_callback.size() > 0) {
-        VkDebugReportCallbackEXT callback = layer_data->logging_callback.back();
-        layer_destroy_callback(layer_data->report_data, callback, pAllocator);
-        layer_data->logging_callback.pop_back();
     }
 
     layer_debug_utils_destroy_instance(layer_data->report_data);

@@ -2441,8 +2441,6 @@ class ValidationObject {
     public:
         uint32_t api_version;
         debug_report_data* report_data = nullptr;
-        std::vector<VkDebugReportCallbackEXT> logging_callback;
-        std::vector<VkDebugUtilsMessengerEXT> logging_messenger;
 
         VkLayerInstanceDispatchTable instance_dispatch_table;
         VkLayerDispatchTable device_dispatch_table;
