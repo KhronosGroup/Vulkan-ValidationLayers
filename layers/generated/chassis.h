@@ -2377,6 +2377,7 @@ enum LayerObjectTypeId {
     LayerObjectTypeObjectTracker,               // Instance or device object tracker layer object
     LayerObjectTypeCoreValidation,              // Instance or device core validation layer object
     LayerObjectTypeBestPractices,               // Instance or device best practices layer object
+    LayerObjectTypeMaxEnum,                     // Max enum count
 };
 
 struct TEMPLATE_STATE {

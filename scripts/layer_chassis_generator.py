@@ -255,6 +255,7 @@ enum LayerObjectTypeId {
     LayerObjectTypeObjectTracker,               // Instance or device object tracker layer object
     LayerObjectTypeCoreValidation,              // Instance or device core validation layer object
     LayerObjectTypeBestPractices,               // Instance or device best practices layer object
+    LayerObjectTypeMaxEnum,                     // Max enum count
 };
 
 struct TEMPLATE_STATE {
@@ -1173,29 +1174,29 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(
     bool skip = false;
 
 #ifdef BUILD_CORE_VALIDATION
-        create_graphics_pipeline_api_state cgpl_state{};
+        create_graphics_pipeline_api_state cgpl_state[LayerObjectTypeMaxEnum]{};
 #else
         struct create_graphics_pipeline_api_state {
             const VkGraphicsPipelineCreateInfo* pCreateInfos;
-        } cgpl_state;
+        } cgpl_state[LayerObjectTypeMaxEnum];
 #endif
-    cgpl_state.pCreateInfos = pCreateInfos;
 
     for (auto intercept : layer_data->object_dispatch) {
+        cgpl_state[intercept->container_type].pCreateInfos = pCreateInfos;
         auto lock = intercept->write_lock();
-        skip |= intercept->PreCallValidateCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &cgpl_state);
+        skip |= intercept->PreCallValidateCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &(cgpl_state[intercept->container_type]));
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PreCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &cgpl_state);
+        intercept->PreCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &(cgpl_state[intercept->container_type]));
     }
 
-    VkResult result = DispatchCreateGraphicsPipelines(device, pipelineCache, createInfoCount, cgpl_state.pCreateInfos, pAllocator, pPipelines);
+    VkResult result = DispatchCreateGraphicsPipelines(device, pipelineCache, createInfoCount, cgpl_state[LayerObjectTypeCoreValidation].pCreateInfos, pAllocator, pPipelines);
 
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, &cgpl_state);
+        intercept->PostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, &(cgpl_state[intercept->container_type]));
     }
     return result;
 }
