@@ -2428,6 +2428,23 @@ TEST_F(VkLayerTest, Maintenance1AndNegativeViewport) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, InstanceDebugReportCallback) {
+    TEST_DESCRIPTION("Test that a pNext-installed debug callback will catch a CreateInstance-time error.");
+
+    // This instance extension requires that the VK_KHR_get_surface_capabilities2 also be enabled
+    if (!InstanceExtensionSupported(VK_KHR_SURFACE_PROTECTED_CAPABILITIES_EXTENSION_NAME)) {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_SURFACE_PROTECTED_CAPABILITIES_EXTENSION_NAME);
+        return;
+    }
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCreateInstance-ppEnabledExtensionNames-01388");
+    // Enable the instance extension, but none of the extensions it depends on
+    m_instance_extension_names.push_back(VK_KHR_SURFACE_PROTECTED_CAPABILITIES_EXTENSION_NAME);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, HostQueryResetNotEnabled) {
     TEST_DESCRIPTION("Use vkResetQueryPoolEXT without enabling the feature");
 
