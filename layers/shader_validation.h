@@ -20,8 +20,14 @@
 #ifndef VULKAN_SHADER_VALIDATION_H
 #define VULKAN_SHADER_VALIDATION_H
 
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
+#include "vulkan/vulkan.h"
 #include <SPIRV/spirv.hpp>
 #include <generated/spirv_tools_commit_id.h>
 #include "spirv-tools/optimizer.hpp"
@@ -177,7 +183,7 @@ struct SHADER_MODULE_STATE {
         BuildDefIndex();
     }
 
-    SHADER_MODULE_STATE() : has_valid_spirv(false), vk_shader_module(VK_NULL_HANDLE) {}
+    SHADER_MODULE_STATE() : has_valid_spirv(false), vk_shader_module(VK_NULL_HANDLE), gpu_validation_shader_id(UINT32_MAX) {}
 
     decoration_set get_decorations(unsigned id) const {
         // return the actual decorations for this id, or a default set.
@@ -279,17 +285,16 @@ class ValidationCache {
     void Insert(uint32_t hash) { good_shader_hashes.insert(hash); }
 
    private:
-    void Sha1ToVkUuid(const char *sha1_str, uint8_t uuid[VK_UUID_SIZE]) {
-        // Convert sha1_str from a hex string to binary. We only need VK_UUID_BYTES of
+    void Sha1ToVkUuid(const char *sha1_str, uint8_t *uuid) {
+        // Convert sha1_str from a hex string to binary. We only need VK_UUID_SIZE bytes of
         // output, so pad with zeroes if the input string is shorter than that, and truncate
         // if it's longer.
-        char padded_sha1_str[2 * VK_UUID_SIZE + 1] = {};
-        strncpy(padded_sha1_str, sha1_str, 2 * VK_UUID_SIZE + 1);
-        char byte_str[3] = {};
+        char padded_sha1_str[2 * VK_UUID_SIZE + 1] = {};  // 2 hex digits == 1 byte
+        std::strncpy(padded_sha1_str, sha1_str, 2 * VK_UUID_SIZE);
+
         for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
-            byte_str[0] = padded_sha1_str[2 * i + 0];
-            byte_str[1] = padded_sha1_str[2 * i + 1];
-            uuid[i] = static_cast<uint8_t>(strtol(byte_str, NULL, 16));
+            const char byte_str[] = {padded_sha1_str[2 * i + 0], padded_sha1_str[2 * i + 1], '\0'};
+            uuid[i] = static_cast<uint8_t>(std::strtoul(byte_str, nullptr, 16));
         }
     }
 };

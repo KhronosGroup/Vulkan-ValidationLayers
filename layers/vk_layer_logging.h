@@ -369,10 +369,8 @@ static inline void RemoveDebugUtilsMessageCallback(debug_report_data *debug_data
 // Removes all debug callback function nodes from the specified callback linked lists and frees their resources
 static inline void RemoveAllMessageCallbacks(debug_report_data *debug_data, VkLayerDbgFunctionNode **list_head) {
     VkLayerDbgFunctionNode *current_callback = *list_head;
-    VkLayerDbgFunctionNode *prev_callback = current_callback;
 
     while (current_callback) {
-        prev_callback = current_callback->pNext;
         if (!current_callback->is_messenger) {
             debug_log_msg(debug_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_EXT,
                           (uint64_t)current_callback->report.msgCallback, 0, "DebugReport",
@@ -382,9 +380,12 @@ static inline void RemoveAllMessageCallbacks(debug_report_data *debug_data, VkLa
                           (uint64_t)current_callback->messenger.messenger, 0, "Messenger",
                           "Debug messengers not removed before DestroyInstance", kVUIDUndefined);
         }
+
+        VkLayerDbgFunctionNode *next_callback = current_callback->pNext;
         free(current_callback);
-        current_callback = prev_callback;
+        current_callback = next_callback;
     }
+
     *list_head = NULL;
 }
 
@@ -1149,7 +1150,6 @@ static LoggingLabelState *GetLoggingLabelState(Map *map, typename Map::key_type 
     if (iter == map->end()) {
         if (insert) {
             // Add a label state if not present
-            label_state = new LoggingLabelState();
             auto inserted = map->insert(std::make_pair(key, std::unique_ptr<LoggingLabelState>(new LoggingLabelState())));
             assert(inserted.second);
             iter = inserted.first;

@@ -61,7 +61,7 @@ class ParameterName {
      *
      * @pre The source string must not contain the %i format specifier.
      */
-    ParameterName(const char *source) : source_(source), num_indices_(0) { assert(IsValid()); }
+    ParameterName(const char *source) : source_(source), args_(nullptr), num_indices_(0) { assert(IsValid()); }
 
     /**
      * Construct a ParameterName object from a string literal, with formatting.

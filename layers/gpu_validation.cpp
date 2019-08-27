@@ -557,7 +557,7 @@ void CoreChecks::GpuPreCallRecordPipelineCreations(uint32_t count, const CreateI
                 create_info.codeSize = shader->words.size() * sizeof(uint32_t);
                 VkResult result = DispatchCreateShaderModule(device, &create_info, pAllocator, &shader_module);
                 if (result == VK_SUCCESS) {
-                    Accessor::SetShaderModule(new_pipeline_create_infos[pipeline].data(), shader_module, stage);
+                    Accessor::SetShaderModule(&(*new_pipeline_create_infos)[pipeline], shader_module, stage);
                 } else {
                     uint64_t moduleHandle = HandleToUint64(Accessor::GetShaderModule(pCreateInfos[pipeline], stage));
                     ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT, moduleHandle,
@@ -1116,16 +1116,16 @@ void CoreChecks::AnalyzeAndReportError(CMD_BUFFER_STATE *cb_node, VkQueue queue,
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
 void CoreChecks::ProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE *cb_node) {
-    auto gpu_buffer_list = gpu_validation_state->GetGpuBufferInfo(cb_node->commandBuffer);
-    if (cb_node && (cb_node->hasDrawCmd || cb_node->hasTraceRaysCmd || cb_node->hasDispatchCmd) && gpu_buffer_list.size() > 0) {
-        VkResult result;
-        char *pData;
+    if (cb_node && (cb_node->hasDrawCmd || cb_node->hasTraceRaysCmd || cb_node->hasDispatchCmd)) {
+        auto gpu_buffer_list = gpu_validation_state->GetGpuBufferInfo(cb_node->commandBuffer);
         uint32_t draw_index = 0;
         uint32_t compute_index = 0;
         uint32_t ray_trace_index = 0;
 
         for (auto &buffer_info : gpu_buffer_list) {
-            result = vmaMapMemory(gpu_validation_state->vmaAllocator, buffer_info.output_mem_block.allocation, (void **)&pData);
+            char *pData;
+            VkResult result =
+                vmaMapMemory(gpu_validation_state->vmaAllocator, buffer_info.output_mem_block.allocation, (void **)&pData);
             // Analyze debug output buffer
             if (result == VK_SUCCESS) {
                 uint32_t operation_index = 0;
