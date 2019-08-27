@@ -19,13 +19,17 @@
  * Author: Dave Houlton <daveh@lunarg.com>
  */
 
-#include <cinttypes>
+#include "shader_validation.h"
+
 #include <cassert>
 #include <chrono>
-#include <vector>
-#include <unordered_map>
-#include <string>
+#include <cinttypes>
+#include <map>
 #include <sstream>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 #include <SPIRV/spirv.hpp>
 #include "vk_loader_platform.h"
 #include "vk_enum_string_helper.h"
@@ -34,7 +38,7 @@
 #include "vk_layer_utils.h"
 #include "chassis.h"
 #include "core_validation.h"
-#include "shader_validation.h"
+
 #include "spirv-tools/libspirv.h"
 #include "xxhash.h"
 
@@ -938,58 +942,53 @@ static bool ValidateViAgainstVsInputs(debug_report_data const *report_data, VkPi
                                       SHADER_MODULE_STATE const *vs, spirv_inst_iter entrypoint) {
     bool skip = false;
 
-    auto inputs = CollectInterfaceByLocation(vs, entrypoint, spv::StorageClassInput, false);
+    const auto inputs = CollectInterfaceByLocation(vs, entrypoint, spv::StorageClassInput, false);
 
     // Build index by location
-    std::map<uint32_t, VkVertexInputAttributeDescription const *> attribs;
+    std::map<uint32_t, const VkVertexInputAttributeDescription *> attribs;
     if (vi) {
-        for (unsigned i = 0; i < vi->vertexAttributeDescriptionCount; i++) {
-            auto num_locations = GetLocationsConsumedByFormat(vi->pVertexAttributeDescriptions[i].format);
-            for (auto j = 0u; j < num_locations; j++) {
+        for (uint32_t i = 0; i < vi->vertexAttributeDescriptionCount; ++i) {
+            const auto num_locations = GetLocationsConsumedByFormat(vi->pVertexAttributeDescriptions[i].format);
+            for (uint32_t j = 0; j < num_locations; ++j) {
                 attribs[vi->pVertexAttributeDescriptions[i].location + j] = &vi->pVertexAttributeDescriptions[i];
             }
         }
     }
 
-    auto it_a = attribs.begin();
-    auto it_b = inputs.begin();
-    bool used = false;
+    struct AttribInputPair {
+        const VkVertexInputAttributeDescription *attrib = nullptr;
+        const interface_var *input = nullptr;
+    };
+    std::map<uint32_t, AttribInputPair> location_map;
+    for (const auto &attrib_it : attribs) location_map[attrib_it.first].attrib = attrib_it.second;
+    for (const auto &input_it : inputs) location_map[input_it.first.first].input = &input_it.second;
 
-    while ((attribs.size() > 0 && it_a != attribs.end()) || (inputs.size() > 0 && it_b != inputs.end())) {
-        bool a_at_end = attribs.size() == 0 || it_a == attribs.end();
-        bool b_at_end = inputs.size() == 0 || it_b == inputs.end();
-        auto a_first = a_at_end ? 0 : it_a->first;
-        auto b_first = b_at_end ? 0 : it_b->first.first;
+    for (const auto location_it : location_map) {
+        const auto location = location_it.first;
+        const auto attrib = location_it.second.attrib;
+        const auto input = location_it.second.input;
 
-        if (!a_at_end && (b_at_end || a_first < b_first)) {
-            if (!used &&
-                log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
-                        HandleToUint64(vs->vk_shader_module), kVUID_Core_Shader_OutputNotConsumed,
-                        "Vertex attribute at location %d not consumed by vertex shader", a_first)) {
-                skip = true;
-            }
-            used = false;
-            it_a++;
-        } else if (!b_at_end && (a_at_end || b_first < a_first)) {
+        if (attrib && !input) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                            HandleToUint64(vs->vk_shader_module), kVUID_Core_Shader_OutputNotConsumed,
+                            "Vertex attribute at location %" PRIu32 " not consumed by vertex shader", location);
+        } else if (!attrib && input) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
                             HandleToUint64(vs->vk_shader_module), kVUID_Core_Shader_InputNotProduced,
-                            "Vertex shader consumes input at location %d but not provided", b_first);
-            it_b++;
-        } else {
-            unsigned attrib_type = GetFormatType(it_a->second->format);
-            unsigned input_type = GetFundamentalType(vs, it_b->second.type_id);
+                            "Vertex shader consumes input at location %" PRIu32 " but not provided", location);
+        } else if (attrib && input) {
+            const auto attrib_type = GetFormatType(attrib->format);
+            const auto input_type = GetFundamentalType(vs, input->type_id);
 
             // Type checking
             if (!(attrib_type & input_type)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
                                 HandleToUint64(vs->vk_shader_module), kVUID_Core_Shader_InterfaceTypeMismatch,
-                                "Attribute type of `%s` at location %d does not match vertex shader input type of `%s`",
-                                string_VkFormat(it_a->second->format), a_first, DescribeType(vs, it_b->second.type_id).c_str());
+                                "Attribute type of `%s` at location %" PRIu32 " does not match vertex shader input type of `%s`",
+                                string_VkFormat(attrib->format), location, DescribeType(vs, input->type_id).c_str());
             }
-
-            // OK!
-            used = true;
-            it_b++;
+        } else {            // !attrib && !input
+            assert(false);  // at least one exists in the map
         }
     }
 
@@ -998,80 +997,73 @@ static bool ValidateViAgainstVsInputs(debug_report_data const *report_data, VkPi
 
 static bool ValidateFsOutputsAgainstRenderPass(debug_report_data const *report_data, SHADER_MODULE_STATE const *fs,
                                                spirv_inst_iter entrypoint, PIPELINE_STATE const *pipeline, uint32_t subpass_index) {
-    auto rpci = pipeline->rp_state->createInfo.ptr();
+    bool skip = false;
 
-    std::map<uint32_t, VkFormat> color_attachments;
-    auto subpass = rpci->pSubpasses[subpass_index];
-    for (auto i = 0u; i < subpass.colorAttachmentCount; ++i) {
-        uint32_t attachment = subpass.pColorAttachments[i].attachment;
-        if (attachment == VK_ATTACHMENT_UNUSED) continue;
-        if (rpci->pAttachments[attachment].format != VK_FORMAT_UNDEFINED) {
-            color_attachments[i] = rpci->pAttachments[attachment].format;
+    const auto rpci = pipeline->rp_state->createInfo.ptr();
+
+    std::map<uint32_t, const VkAttachmentDescription2KHR *> color_attachments;
+    const auto subpass = rpci->pSubpasses[subpass_index];
+    for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
+        const uint32_t attachment = subpass.pColorAttachments[i].attachment;
+        if (attachment != VK_ATTACHMENT_UNUSED && rpci->pAttachments[attachment].format != VK_FORMAT_UNDEFINED) {
+            color_attachments[i] = &rpci->pAttachments[attachment];
         }
     }
-
-    bool skip = false;
 
     // TODO: dual source blend index (spv::DecIndex, zero if not provided)
 
-    auto outputs = CollectInterfaceByLocation(fs, entrypoint, spv::StorageClassOutput, false);
+    const auto outputs = CollectInterfaceByLocation(fs, entrypoint, spv::StorageClassOutput, false);
 
-    auto it_a = outputs.begin();
-    auto it_b = color_attachments.begin();
-    bool used = false;
-    bool alphaToCoverageEnabled = pipeline->graphicsPipelineCI.pMultisampleState != NULL &&
-                                  pipeline->graphicsPipelineCI.pMultisampleState->alphaToCoverageEnable == VK_TRUE;
-    bool locationZeroHasAlpha = false;
+    struct AttachmentOutputPair {
+        const VkAttachmentDescription2KHR *attachment = nullptr;
+        const interface_var *output = nullptr;
+    };
+    std::map<uint32_t, AttachmentOutputPair> location_map;
+    for (const auto &attachment_it : color_attachments) location_map[attachment_it.first].attachment = attachment_it.second;
+    for (const auto &output_it : outputs) location_map[output_it.first.first].output = &output_it.second;
 
-    // Walk attachment list and outputs together
+    const bool alphaToCoverageEnabled = pipeline->graphicsPipelineCI.pMultisampleState != NULL &&
+                                        pipeline->graphicsPipelineCI.pMultisampleState->alphaToCoverageEnable == VK_TRUE;
 
-    while ((outputs.size() > 0 && it_a != outputs.end()) || (color_attachments.size() > 0 && it_b != color_attachments.end())) {
-        bool a_at_end = outputs.size() == 0 || it_a == outputs.end();
-        bool b_at_end = color_attachments.size() == 0 || it_b == color_attachments.end();
+    for (const auto location_it : location_map) {
+        const auto location = location_it.first;
+        const auto attachment = location_it.second.attachment;
+        const auto output = location_it.second.output;
 
-        if (!a_at_end && it_a->first.first == 0 && fs->get_def(it_a->second.type_id) != fs->end() &&
-            GetComponentsConsumedByType(fs, it_a->second.type_id, false) == 4)
-            locationZeroHasAlpha = true;
-
-        if (!a_at_end && (b_at_end || it_a->first.first < it_b->first)) {
-            if (!alphaToCoverageEnabled || it_a->first.first != 0) {
+        if (attachment && !output) {
+            if (pipeline->attachments[location].colorWriteMask != 0) {
+                skip |=
+                    log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                            HandleToUint64(fs->vk_shader_module), kVUID_Core_Shader_InputNotProduced,
+                            "Attachment %" PRIu32 " not written by fragment shader; undefined values will be written to attachment",
+                            location);
+            }
+        } else if (!attachment && output) {
+            if (!(alphaToCoverageEnabled && location == 0)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
                                 HandleToUint64(fs->vk_shader_module), kVUID_Core_Shader_OutputNotConsumed,
-                                "fragment shader writes to output location %d with no matching attachment", it_a->first.first);
+                                "fragment shader writes to output location %" PRIu32 " with no matching attachment", location);
             }
-            it_a++;
-        } else if (!b_at_end && (a_at_end || it_a->first.first > it_b->first)) {
-            // Only complain if there are unmasked channels for this attachment. If the writemask is 0, it's acceptable for the
-            // shader to not produce a matching output.
-            if (!used) {
-                if (pipeline->attachments[it_b->first].colorWriteMask != 0) {
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
-                                    HandleToUint64(fs->vk_shader_module), kVUID_Core_Shader_InputNotProduced,
-                                    "Attachment %d not written by fragment shader; undefined values will be written to attachment",
-                                    it_b->first);
-                }
-            }
-            used = false;
-            it_b++;
-        } else {
-            unsigned output_type = GetFundamentalType(fs, it_a->second.type_id);
-            unsigned att_type = GetFormatType(it_b->second);
+        } else if (attachment && output) {
+            const auto attachment_type = GetFormatType(attachment->format);
+            const auto output_type = GetFundamentalType(fs, output->type_id);
 
             // Type checking
-            if (!(output_type & att_type)) {
-                skip |= log_msg(
-                    report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
-                    HandleToUint64(fs->vk_shader_module), kVUID_Core_Shader_InterfaceTypeMismatch,
-                    "Attachment %d of type `%s` does not match fragment shader output type of `%s`; resulting values are undefined",
-                    it_b->first, string_VkFormat(it_b->second), DescribeType(fs, it_a->second.type_id).c_str());
+            if (!(output_type & attachment_type)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
+                                HandleToUint64(fs->vk_shader_module), kVUID_Core_Shader_InterfaceTypeMismatch,
+                                "Attachment %" PRIu32
+                                " of type `%s` does not match fragment shader output type of `%s`; resulting values are undefined",
+                                location, string_VkFormat(attachment->format), DescribeType(fs, output->type_id).c_str());
             }
-
-            // OK!
-            it_a++;
-            used = true;
+        } else {            // !attachment && !output
+            assert(false);  // at least one exists in the map
         }
     }
 
+    const auto output_zero = location_map.count(0) ? location_map[0].output : nullptr;
+    bool locationZeroHasAlpha = output_zero && fs->get_def(output_zero->type_id) != fs->end() &&
+                                GetComponentsConsumedByType(fs, output_zero->type_id, false) == 4;
     if (alphaToCoverageEnabled && !locationZeroHasAlpha) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT,
                         HandleToUint64(fs->vk_shader_module), kVUID_Core_Shader_NoAlphaAtLocation0WithAlphaToCoverage,

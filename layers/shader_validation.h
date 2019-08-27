@@ -20,8 +20,14 @@
 #ifndef VULKAN_SHADER_VALIDATION_H
 #define VULKAN_SHADER_VALIDATION_H
 
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
+#include "vulkan/vulkan.h"
 #include <SPIRV/spirv.hpp>
 #include <generated/spirv_tools_commit_id.h>
 #include "spirv-tools/optimizer.hpp"
