@@ -792,27 +792,29 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(
     bool skip = false;
 
 #ifdef BUILD_CORE_VALIDATION
-    create_compute_pipeline_api_state ccpl_state{};
+    create_compute_pipeline_api_state ccpl_state[LayerObjectTypeMaxEnum]{};
 #else
     struct create_compute_pipeline_api_state {
         const VkComputePipelineCreateInfo* pCreateInfos;
-    } ccpl_state;
+    } ccpl_state[LayerObjectTypeMaxEnum];
 #endif
-    ccpl_state.pCreateInfos = pCreateInfos;
 
     for (auto intercept : layer_data->object_dispatch) {
+        ccpl_state[intercept->container_type].pCreateInfos = pCreateInfos;
         auto lock = intercept->write_lock();
-        skip |= intercept->PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &ccpl_state);
+        skip |= intercept->PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &(ccpl_state[intercept->container_type]));
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PreCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &ccpl_state);
+        intercept->PreCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &(ccpl_state[intercept->container_type]));
     }
-    VkResult result = DispatchCreateComputePipelines(device, pipelineCache, createInfoCount, ccpl_state.pCreateInfos, pAllocator, pPipelines);
+
+    VkResult result = DispatchCreateComputePipelines(device, pipelineCache, createInfoCount, ccpl_state[LayerObjectTypeCoreValidation].pCreateInfos, pAllocator, pPipelines);
+
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
-        intercept->PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, &ccpl_state);
+        intercept->PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, &(ccpl_state[intercept->container_type]));
     }
     return result;
 }
