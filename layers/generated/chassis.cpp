@@ -815,30 +815,32 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(
     bool skip = false;
 
 #ifdef BUILD_CORE_VALIDATION
-    create_ray_tracing_pipeline_api_state crtpl_state{};
+    create_ray_tracing_pipeline_api_state crtpl_state[LayerObjectTypeMaxEnum]{};
 #else
     struct create_ray_tracing_pipeline_api_state {
         const VkRayTracingPipelineCreateInfoNV* pCreateInfos;
-    } crtpl_state;
+    } crtpl_state[LayerObjectTypeMaxEnum];
 #endif
-    crtpl_state.pCreateInfos = pCreateInfos;
 
     for (auto intercept : layer_data->object_dispatch) {
+        crtpl_state[intercept->container_type].pCreateInfos = pCreateInfos;
         auto lock = intercept->write_lock();
         skip |= intercept->PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos,
-                                                                      pAllocator, pPipelines, &crtpl_state);
+                                                                      pAllocator, pPipelines, &(crtpl_state[intercept->container_type]));
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
         intercept->PreCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                            pPipelines, &crtpl_state);
+                                                            pPipelines, &(crtpl_state[intercept->container_type]));
     }
+
     VkResult result = DispatchCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
         intercept->PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                             pPipelines, result, &crtpl_state);
+                                                             pPipelines, result, &(crtpl_state[intercept->container_type]));
     }
     return result;
 }
