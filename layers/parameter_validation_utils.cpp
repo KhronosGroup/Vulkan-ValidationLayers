@@ -76,9 +76,14 @@ bool StatelessValidation::validate_api_version(uint32_t api_version, uint32_t ef
 
 bool StatelessValidation::validate_instance_extensions(const VkInstanceCreateInfo *pCreateInfo) {
     bool skip = false;
+    // Create and use a local instance extension object, as an actual instance has not been created yet
+    uint32_t specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
+    InstanceExtensions local_instance_extensions;
+    local_instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
+
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
-        skip |= validate_extension_reqs(instance_extensions, "VUID-vkCreateInstance-ppEnabledExtensionNames-01388", "instance",
-                                        pCreateInfo->ppEnabledExtensionNames[i]);
+        skip |= validate_extension_reqs(local_instance_extensions, "VUID-vkCreateInstance-ppEnabledExtensionNames-01388",
+                                        "instance", pCreateInfo->ppEnabledExtensionNames[i]);
     }
 
     return skip;
