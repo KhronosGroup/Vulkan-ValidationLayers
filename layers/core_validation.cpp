@@ -2472,7 +2472,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     }
 
     ValidationObject *device_object = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
-    ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, LayerObjectTypeCoreValidation);
+    ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, this->container_type);
     ValidationStateTracker *state_tracker = static_cast<ValidationStateTracker *>(validation_data);
 
     if (nullptr == enabled_features_found) {
