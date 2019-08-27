@@ -1,7 +1,7 @@
 Source: vulkan-validationlayers
 Priority: optional
-Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
-Uploaders: Timo Aaltonen <tjaalton@debian.org>
+Maintainer: John Zupin <johnz@lunarg.com>
+Uploaders: John Zupin <johnz@lunarg.com>
 Build-Depends: debhelper (>= 9),
  vulkan-headers (>=__VKAPIVERSION__), vulkan-headers (<=__VKAPIVERSION__.99),
  libvulkan-dev (>=__VKAPIVERSION__), libvulkan-dev (<=__VKAPIVERSION__.99),
