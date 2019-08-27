@@ -1474,7 +1474,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
             pre_call_code += '%s    if (%s%s) {\n' % (indent, prefix, ndo_name)
             indent = self.incIndent(indent)
             if top_level == True:
-                pre_call_code += '%s    local_%s%s = %s > DISPATCH_MAX_STACK_ALLOCATIONS ? new %s[%s] : &var_local_%s%s[0];\n' % (indent, prefix, ndo_name, ndo_count, ndo_type, ndo_count, prefix, ndo_name)
+                pre_call_code += '%s    local_%s%s = %s > DISPATCH_MAX_STACK_ALLOCATIONS ? new %s[%s] : var_local_%s%s;\n' % (indent, prefix, ndo_name, ndo_count, ndo_type, ndo_count, prefix, ndo_name)
                 pre_call_code += '%s    for (uint32_t %s = 0; %s < %s; ++%s) {\n' % (indent, index, index, ndo_count, index)
                 indent = self.incIndent(indent)
                 pre_call_code += '%s    local_%s%s[%s] = layer_data->Unwrap(%s[%s]);\n' % (indent, prefix, ndo_name, index, ndo_name, index)
@@ -1487,7 +1487,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
             indent = self.decIndent(indent)
             pre_call_code += '%s    }\n' % indent
             if top_level == True:
-                post_call_code += '%sif (local_%s%s != &var_local_%s%s[0])\n' % (indent, prefix, ndo_name, prefix, ndo_name)
+                post_call_code += '%sif (local_%s%s != var_local_%s%s)\n' % (indent, prefix, ndo_name, prefix, ndo_name)
                 indent = self.incIndent(indent)
                 post_call_code += '%sdelete[] local_%s;\n' % (indent, ndo_name)
         else:

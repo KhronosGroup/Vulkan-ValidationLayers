@@ -1539,14 +1539,14 @@ VkResult DispatchResetFences(
     VkFence *local_pFences = NULL;
     {
         if (pFences) {
-            local_pFences = fenceCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkFence[fenceCount] : &var_local_pFences[0];
+            local_pFences = fenceCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkFence[fenceCount] : var_local_pFences;
             for (uint32_t index0 = 0; index0 < fenceCount; ++index0) {
                 local_pFences[index0] = layer_data->Unwrap(pFences[index0]);
             }
         }
     }
     VkResult result = layer_data->device_dispatch_table.ResetFences(device, fenceCount, (const VkFence*)local_pFences);
-    if (local_pFences != &var_local_pFences[0])
+    if (local_pFences != var_local_pFences)
         delete[] local_pFences;
     return result;
 }
@@ -1578,14 +1578,14 @@ VkResult DispatchWaitForFences(
     VkFence *local_pFences = NULL;
     {
         if (pFences) {
-            local_pFences = fenceCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkFence[fenceCount] : &var_local_pFences[0];
+            local_pFences = fenceCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkFence[fenceCount] : var_local_pFences;
             for (uint32_t index0 = 0; index0 < fenceCount; ++index0) {
                 local_pFences[index0] = layer_data->Unwrap(pFences[index0]);
             }
         }
     }
     VkResult result = layer_data->device_dispatch_table.WaitForFences(device, fenceCount, (const VkFence*)local_pFences, waitAll, timeout);
-    if (local_pFences != &var_local_pFences[0])
+    if (local_pFences != var_local_pFences)
         delete[] local_pFences;
     return result;
 }
@@ -2034,14 +2034,14 @@ VkResult DispatchMergePipelineCaches(
     {
         dstCache = layer_data->Unwrap(dstCache);
         if (pSrcCaches) {
-            local_pSrcCaches = srcCacheCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkPipelineCache[srcCacheCount] : &var_local_pSrcCaches[0];
+            local_pSrcCaches = srcCacheCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkPipelineCache[srcCacheCount] : var_local_pSrcCaches;
             for (uint32_t index0 = 0; index0 < srcCacheCount; ++index0) {
                 local_pSrcCaches[index0] = layer_data->Unwrap(pSrcCaches[index0]);
             }
         }
     }
     VkResult result = layer_data->device_dispatch_table.MergePipelineCaches(device, dstCache, srcCacheCount, (const VkPipelineCache*)local_pSrcCaches);
-    if (local_pSrcCaches != &var_local_pSrcCaches[0])
+    if (local_pSrcCaches != var_local_pSrcCaches)
         delete[] local_pSrcCaches;
     return result;
 }
@@ -2616,14 +2616,14 @@ void DispatchCmdBindDescriptorSets(
     {
         layout = layer_data->Unwrap(layout);
         if (pDescriptorSets) {
-            local_pDescriptorSets = descriptorSetCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkDescriptorSet[descriptorSetCount] : &var_local_pDescriptorSets[0];
+            local_pDescriptorSets = descriptorSetCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkDescriptorSet[descriptorSetCount] : var_local_pDescriptorSets;
             for (uint32_t index0 = 0; index0 < descriptorSetCount; ++index0) {
                 local_pDescriptorSets[index0] = layer_data->Unwrap(pDescriptorSets[index0]);
             }
         }
     }
     layer_data->device_dispatch_table.CmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, (const VkDescriptorSet*)local_pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
-    if (local_pDescriptorSets != &var_local_pDescriptorSets[0])
+    if (local_pDescriptorSets != var_local_pDescriptorSets)
         delete[] local_pDescriptorSets;
 }
 
@@ -2655,14 +2655,14 @@ void DispatchCmdBindVertexBuffers(
     VkBuffer *local_pBuffers = NULL;
     {
         if (pBuffers) {
-            local_pBuffers = bindingCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkBuffer[bindingCount] : &var_local_pBuffers[0];
+            local_pBuffers = bindingCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkBuffer[bindingCount] : var_local_pBuffers;
             for (uint32_t index0 = 0; index0 < bindingCount; ++index0) {
                 local_pBuffers[index0] = layer_data->Unwrap(pBuffers[index0]);
             }
         }
     }
     layer_data->device_dispatch_table.CmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, (const VkBuffer*)local_pBuffers, pOffsets);
-    if (local_pBuffers != &var_local_pBuffers[0])
+    if (local_pBuffers != var_local_pBuffers)
         delete[] local_pBuffers;
 }
 
@@ -2986,7 +2986,7 @@ void DispatchCmdWaitEvents(
     safe_VkImageMemoryBarrier *local_pImageMemoryBarriers = NULL;
     {
         if (pEvents) {
-            local_pEvents = eventCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkEvent[eventCount] : &var_local_pEvents[0];
+            local_pEvents = eventCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkEvent[eventCount] : var_local_pEvents;
             for (uint32_t index0 = 0; index0 < eventCount; ++index0) {
                 local_pEvents[index0] = layer_data->Unwrap(pEvents[index0]);
             }
@@ -3011,7 +3011,7 @@ void DispatchCmdWaitEvents(
         }
     }
     layer_data->device_dispatch_table.CmdWaitEvents(commandBuffer, eventCount, (const VkEvent*)local_pEvents, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, (const VkBufferMemoryBarrier*)local_pBufferMemoryBarriers, imageMemoryBarrierCount, (const VkImageMemoryBarrier*)local_pImageMemoryBarriers);
-    if (local_pEvents != &var_local_pEvents[0])
+    if (local_pEvents != var_local_pEvents)
         delete[] local_pEvents;
     if (local_pBufferMemoryBarriers) {
         delete[] local_pBufferMemoryBarriers;
@@ -5027,14 +5027,14 @@ void DispatchCmdBindTransformFeedbackBuffersEXT(
     VkBuffer *local_pBuffers = NULL;
     {
         if (pBuffers) {
-            local_pBuffers = bindingCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkBuffer[bindingCount] : &var_local_pBuffers[0];
+            local_pBuffers = bindingCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkBuffer[bindingCount] : var_local_pBuffers;
             for (uint32_t index0 = 0; index0 < bindingCount; ++index0) {
                 local_pBuffers[index0] = layer_data->Unwrap(pBuffers[index0]);
             }
         }
     }
     layer_data->device_dispatch_table.CmdBindTransformFeedbackBuffersEXT(commandBuffer, firstBinding, bindingCount, (const VkBuffer*)local_pBuffers, pOffsets, pSizes);
-    if (local_pBuffers != &var_local_pBuffers[0])
+    if (local_pBuffers != var_local_pBuffers)
         delete[] local_pBuffers;
 }
 
@@ -5051,14 +5051,14 @@ void DispatchCmdBeginTransformFeedbackEXT(
     VkBuffer *local_pCounterBuffers = NULL;
     {
         if (pCounterBuffers) {
-            local_pCounterBuffers = counterBufferCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkBuffer[counterBufferCount] : &var_local_pCounterBuffers[0];
+            local_pCounterBuffers = counterBufferCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkBuffer[counterBufferCount] : var_local_pCounterBuffers;
             for (uint32_t index0 = 0; index0 < counterBufferCount; ++index0) {
                 local_pCounterBuffers[index0] = layer_data->Unwrap(pCounterBuffers[index0]);
             }
         }
     }
     layer_data->device_dispatch_table.CmdBeginTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount, (const VkBuffer*)local_pCounterBuffers, pCounterBufferOffsets);
-    if (local_pCounterBuffers != &var_local_pCounterBuffers[0])
+    if (local_pCounterBuffers != var_local_pCounterBuffers)
         delete[] local_pCounterBuffers;
 }
 
@@ -5075,14 +5075,14 @@ void DispatchCmdEndTransformFeedbackEXT(
     VkBuffer *local_pCounterBuffers = NULL;
     {
         if (pCounterBuffers) {
-            local_pCounterBuffers = counterBufferCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkBuffer[counterBufferCount] : &var_local_pCounterBuffers[0];
+            local_pCounterBuffers = counterBufferCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkBuffer[counterBufferCount] : var_local_pCounterBuffers;
             for (uint32_t index0 = 0; index0 < counterBufferCount; ++index0) {
                 local_pCounterBuffers[index0] = layer_data->Unwrap(pCounterBuffers[index0]);
             }
         }
     }
     layer_data->device_dispatch_table.CmdEndTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount, (const VkBuffer*)local_pCounterBuffers, pCounterBufferOffsets);
-    if (local_pCounterBuffers != &var_local_pCounterBuffers[0])
+    if (local_pCounterBuffers != var_local_pCounterBuffers)
         delete[] local_pCounterBuffers;
 }
 
@@ -5682,14 +5682,14 @@ void DispatchSetHdrMetadataEXT(
     VkSwapchainKHR *local_pSwapchains = NULL;
     {
         if (pSwapchains) {
-            local_pSwapchains = swapchainCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkSwapchainKHR[swapchainCount] : &var_local_pSwapchains[0];
+            local_pSwapchains = swapchainCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkSwapchainKHR[swapchainCount] : var_local_pSwapchains;
             for (uint32_t index0 = 0; index0 < swapchainCount; ++index0) {
                 local_pSwapchains[index0] = layer_data->Unwrap(pSwapchains[index0]);
             }
         }
     }
     layer_data->device_dispatch_table.SetHdrMetadataEXT(device, swapchainCount, (const VkSwapchainKHR*)local_pSwapchains, pMetadata);
-    if (local_pSwapchains != &var_local_pSwapchains[0])
+    if (local_pSwapchains != var_local_pSwapchains)
         delete[] local_pSwapchains;
 }
 
@@ -5949,14 +5949,14 @@ VkResult DispatchMergeValidationCachesEXT(
     {
         dstCache = layer_data->Unwrap(dstCache);
         if (pSrcCaches) {
-            local_pSrcCaches = srcCacheCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkValidationCacheEXT[srcCacheCount] : &var_local_pSrcCaches[0];
+            local_pSrcCaches = srcCacheCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkValidationCacheEXT[srcCacheCount] : var_local_pSrcCaches;
             for (uint32_t index0 = 0; index0 < srcCacheCount; ++index0) {
                 local_pSrcCaches[index0] = layer_data->Unwrap(pSrcCaches[index0]);
             }
         }
     }
     VkResult result = layer_data->device_dispatch_table.MergeValidationCachesEXT(device, dstCache, srcCacheCount, (const VkValidationCacheEXT*)local_pSrcCaches);
-    if (local_pSrcCaches != &var_local_pSrcCaches[0])
+    if (local_pSrcCaches != var_local_pSrcCaches)
         delete[] local_pSrcCaches;
     return result;
 }
@@ -6304,7 +6304,7 @@ void DispatchCmdWriteAccelerationStructuresPropertiesNV(
     VkAccelerationStructureNV *local_pAccelerationStructures = NULL;
     {
         if (pAccelerationStructures) {
-            local_pAccelerationStructures = accelerationStructureCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkAccelerationStructureNV[accelerationStructureCount] : &var_local_pAccelerationStructures[0];
+            local_pAccelerationStructures = accelerationStructureCount > DISPATCH_MAX_STACK_ALLOCATIONS ? new VkAccelerationStructureNV[accelerationStructureCount] : var_local_pAccelerationStructures;
             for (uint32_t index0 = 0; index0 < accelerationStructureCount; ++index0) {
                 local_pAccelerationStructures[index0] = layer_data->Unwrap(pAccelerationStructures[index0]);
             }
@@ -6312,7 +6312,7 @@ void DispatchCmdWriteAccelerationStructuresPropertiesNV(
         queryPool = layer_data->Unwrap(queryPool);
     }
     layer_data->device_dispatch_table.CmdWriteAccelerationStructuresPropertiesNV(commandBuffer, accelerationStructureCount, (const VkAccelerationStructureNV*)local_pAccelerationStructures, queryType, queryPool, firstQuery);
-    if (local_pAccelerationStructures != &var_local_pAccelerationStructures[0])
+    if (local_pAccelerationStructures != var_local_pAccelerationStructures)
         delete[] local_pAccelerationStructures;
 }
 
