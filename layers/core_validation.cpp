@@ -1375,7 +1375,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
 
     if (pPipeline->graphicsPipelineCI.pColorBlendState != NULL) {
         const safe_VkPipelineColorBlendStateCreateInfo *color_blend_state = pPipeline->graphicsPipelineCI.pColorBlendState;
-        if (color_blend_state->attachmentCount != subpass_desc->colorAttachmentCount) {
+        if (subpass_desc && color_blend_state->attachmentCount != subpass_desc->colorAttachmentCount) {
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                         "VUID-VkGraphicsPipelineCreateInfo-attachmentCount-00746",
@@ -1689,7 +1689,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         }
     }
 
-    if (pPipeline->graphicsPipelineCI.pMultisampleState) {
+    if (subpass_desc && pPipeline->graphicsPipelineCI.pMultisampleState) {
         auto accumColorSamples = [subpass_desc, pPipeline](uint32_t &samples) {
             for (uint32_t i = 0; i < subpass_desc->colorAttachmentCount; i++) {
                 const auto attachment = subpass_desc->pColorAttachments[i].attachment;
@@ -2669,7 +2669,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     }
 
     // Store queue family data
-    if ((pCreateInfo != nullptr) && (pCreateInfo->pQueueCreateInfos != nullptr)) {
+    if (pCreateInfo->pQueueCreateInfos != nullptr) {
         for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {
             state_tracker->queue_family_index_map.insert(
                 std::make_pair(pCreateInfo->pQueueCreateInfos[i].queueFamilyIndex, pCreateInfo->pQueueCreateInfos[i].queueCount));
@@ -3922,9 +3922,10 @@ void ValidationStateTracker::PreCallRecordFreeMemory(VkDevice device, VkDeviceMe
                 assert(0);
         }
 
-        assert(bindable_state);
-        bindable_state->binding.mem = MEMORY_UNBOUND;
-        bindable_state->UpdateBoundMemorySet();
+        if (bindable_state) {
+            bindable_state->binding.mem = MEMORY_UNBOUND;
+            bindable_state->UpdateBoundMemorySet();
+        }
     }
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(mem_info->cb_bindings, obj_struct);
@@ -11761,11 +11762,13 @@ bool CoreChecks::PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory mem)
 
 void CoreChecks::PreCallRecordUnmapMemory(VkDevice device, VkDeviceMemory mem) {
     auto mem_info = GetDevMemState(mem);
-    mem_info->mem_range.size = 0;
-    if (mem_info->shadow_copy) {
-        free(mem_info->shadow_copy_base);
-        mem_info->shadow_copy_base = 0;
-        mem_info->shadow_copy = 0;
+    if (mem_info) {
+        mem_info->mem_range.size = 0;
+        if (mem_info->shadow_copy) {
+            free(mem_info->shadow_copy_base);
+            mem_info->shadow_copy_base = 0;
+            mem_info->shadow_copy = 0;
+        }
     }
 }
 
@@ -11861,14 +11864,16 @@ bool CoreChecks::ValidateMappedMemoryRangeDeviceLimits(const char *func_name, ui
                             func_name, i, mem_ranges[i].offset, atom_size);
         }
         auto mem_info = GetDevMemState(mem_ranges[i].memory);
-        if ((mem_ranges[i].size != VK_WHOLE_SIZE) &&
-            (mem_ranges[i].size + mem_ranges[i].offset != mem_info->alloc_info.allocationSize) &&
-            (SafeModulo(mem_ranges[i].size, atom_size) != 0)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
-                            HandleToUint64(mem_ranges->memory), "VUID-VkMappedMemoryRange-size-01390",
-                            "%s: Size in pMemRanges[%d] is 0x%" PRIxLEAST64
-                            ", which is not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (0x%" PRIxLEAST64 ").",
-                            func_name, i, mem_ranges[i].size, atom_size);
+        if (mem_info) {
+            if ((mem_ranges[i].size != VK_WHOLE_SIZE) &&
+                (mem_ranges[i].size + mem_ranges[i].offset != mem_info->alloc_info.allocationSize) &&
+                (SafeModulo(mem_ranges[i].size, atom_size) != 0)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
+                                HandleToUint64(mem_ranges->memory), "VUID-VkMappedMemoryRange-size-01390",
+                                "%s: Size in pMemRanges[%d] is 0x%" PRIxLEAST64
+                                ", which is not a multiple of VkPhysicalDeviceLimits::nonCoherentAtomSize (0x%" PRIxLEAST64 ").",
+                                func_name, i, mem_ranges[i].size, atom_size);
+            }
         }
     }
     return skip;
@@ -13103,7 +13108,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
             }
         }
     }
-    if (pPresentInfo && pPresentInfo->pNext) {
+    if (pPresentInfo->pNext) {
         // Verify ext struct
         const auto *present_regions = lvl_find_in_chain<VkPresentRegionsKHR>(pPresentInfo->pNext);
         if (present_regions) {
@@ -13866,8 +13871,8 @@ void ValidationStateTracker::PreCallRecordDestroyDescriptorUpdateTemplateKHR(VkD
 
 void ValidationStateTracker::RecordCreateDescriptorUpdateTemplateState(const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
                                                                        VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
-    safe_VkDescriptorUpdateTemplateCreateInfo *local_create_info = new safe_VkDescriptorUpdateTemplateCreateInfo(pCreateInfo);
-    std::unique_ptr<TEMPLATE_STATE> template_state(new TEMPLATE_STATE(*pDescriptorUpdateTemplate, local_create_info));
+    safe_VkDescriptorUpdateTemplateCreateInfo local_create_info(pCreateInfo);
+    std::unique_ptr<TEMPLATE_STATE> template_state(new TEMPLATE_STATE(*pDescriptorUpdateTemplate, &local_create_info));
     desc_template_map[*pDescriptorUpdateTemplate] = std::move(template_state);
 }
 

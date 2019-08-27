@@ -23,6 +23,7 @@
  * Author: Mark Lobodzinski <mark@lunarg.com>
  **************************************************************************/
 #include "vk_layer_config.h"
+
 #include "vulkan/vk_sdk_platform.h"
 #include <fstream>
 #include <iostream>
@@ -362,12 +363,12 @@ VK_LAYER_EXPORT void PrintMessageType(VkFlags vk_flags, char *msg_flags) {
         separator = true;
     }
     if (vk_flags & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
+        if (separator) strcat(msg_flags, ",");
         strcat(msg_flags, "SPEC");
         separator = true;
     }
     if (vk_flags & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) {
         if (separator) strcat(msg_flags, ",");
         strcat(msg_flags, "PERF");
-        separator = true;
     }
 }

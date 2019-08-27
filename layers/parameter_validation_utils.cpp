@@ -191,34 +191,29 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
 bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator, VkDevice *pDevice) {
     bool skip = false;
-    bool maint1 = false;
-    bool negative_viewport = false;
 
-    if ((pCreateInfo->enabledLayerCount > 0) && (pCreateInfo->ppEnabledLayerNames != NULL)) {
-        for (size_t i = 0; i < pCreateInfo->enabledLayerCount; i++) {
-            skip |= validate_string("vkCreateDevice", "pCreateInfo->ppEnabledLayerNames",
-                                    "VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter", pCreateInfo->ppEnabledLayerNames[i]);
-        }
+    for (size_t i = 0; i < pCreateInfo->enabledLayerCount; i++) {
+        skip |= validate_string("vkCreateDevice", "pCreateInfo->ppEnabledLayerNames",
+                                "VUID-VkDeviceCreateInfo-ppEnabledLayerNames-parameter", pCreateInfo->ppEnabledLayerNames[i]);
     }
 
-    if ((pCreateInfo->enabledExtensionCount > 0) && (pCreateInfo->ppEnabledExtensionNames != NULL)) {
-        maint1 = extension_state_by_name(device_extensions, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
-        negative_viewport = extension_state_by_name(device_extensions, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME);
-
-        for (size_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
-            skip |= validate_string("vkCreateDevice", "pCreateInfo->ppEnabledExtensionNames",
-                                    "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-parameter",
-                                    pCreateInfo->ppEnabledExtensionNames[i]);
-            skip |= validate_extension_reqs(device_extensions, "VUID-vkCreateDevice-ppEnabledExtensionNames-01387", "device",
-                                            pCreateInfo->ppEnabledExtensionNames[i]);
-        }
+    for (size_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+        skip |=
+            validate_string("vkCreateDevice", "pCreateInfo->ppEnabledExtensionNames",
+                            "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-parameter", pCreateInfo->ppEnabledExtensionNames[i]);
+        skip |= validate_extension_reqs(device_extensions, "VUID-vkCreateDevice-ppEnabledExtensionNames-01387", "device",
+                                        pCreateInfo->ppEnabledExtensionNames[i]);
     }
 
-    if (maint1 && negative_viewport) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-00374",
-                        "VkDeviceCreateInfo->ppEnabledExtensionNames must not simultaneously include VK_KHR_maintenance1 and "
-                        "VK_AMD_negative_viewport_height.");
+    {
+        bool maint1 = extension_state_by_name(device_extensions, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        bool negative_viewport = extension_state_by_name(device_extensions, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME);
+        if (maint1 && negative_viewport) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-00374",
+                            "VkDeviceCreateInfo->ppEnabledExtensionNames must not simultaneously include VK_KHR_maintenance1 and "
+                            "VK_AMD_negative_viewport_height.");
+        }
     }
 
     if (pCreateInfo->pNext != NULL && pCreateInfo->pEnabledFeatures) {

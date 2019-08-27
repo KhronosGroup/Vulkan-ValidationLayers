@@ -52,8 +52,8 @@ namespace sparse_container {
 //
 // either clears the map (kSetReplaces==true) or prevents further
 // updates to the vector (kSetReplaces==false).  If the map becomes
-// more than // 1/kConversionThreshold (4) full, the SparseVector is
-// converted into "Dense access" mode.  Entries are copied from map,
+// more than 1/kConversionThreshold (=4) full, the SparseVector is
+// converted into "Dense access" mode. Entries are copied from map,
 // with non-present indices set to the default value (kDefaultValue)
 // or the full range value (if present).
 //
@@ -70,14 +70,14 @@ namespace sparse_container {
 // Given the variable semantics and effective compression of Sparse
 // access mode, all access is through Get, Set, and SetRange functions
 // and a constant iterator. Get return either the value found (using
-// the current access mode) or the kDefaultValue.  Set and SetRange
+// the current access mode) or the kDefaultValue. Set and SetRange
 // return whether or not state was updated, in order to support dirty
 // bit updates for any dependent state.
 //
 // The iterator ConstIterator provides basic, "by value" access. The
 // "by value" nature of the access reflect the compressed nature
 // operators *, ++, ==, and != are provided, with the latter two only
-// suitable for comparisons vs. cend.  The iterator skips all
+// suitable for comparisons vs. cend. The iterator skips all
 // kDefaultValue entries in either access mode, returning a std::pair
 // containing {IndexType, ValueType}. The multiple access modes give
 // the iterator a bit more complexity than is optimal, but hides the
@@ -107,7 +107,7 @@ class SparseVector {
         has_full_range_value_ = false;
         full_range_value_ = kDefaultValue;
         size_t count = range_max_ - range_min_;
-        if (kSparseThreshold && (count > kSparseThreshold)) {
+        if (kSparseThreshold > 0 && (count > kSparseThreshold)) {
             sparse_.reset(new SparseType());
             dense_.reset();
         } else {
@@ -339,7 +339,7 @@ class SparseVector {
         return value;
     }
     // Note that IsSparse is compile-time reducible if kSparseThreshold is zero...
-    inline bool IsSparse() const { return kSparseThreshold && sparse_.get(); }
+    inline bool IsSparse() const { return kSparseThreshold > 0 && sparse_.get(); }
     bool IsFullRange(IndexType start, IndexType end) const { return (start == range_min_) && (end == range_max_); }
     bool IsFullRangeValue(const ValueType &value) const { return has_full_range_value_ && (value == full_range_value_); }
     bool HasFullRange() const { return IsSparse() && has_full_range_value_; }
