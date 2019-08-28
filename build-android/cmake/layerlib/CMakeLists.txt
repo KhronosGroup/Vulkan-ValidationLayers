@@ -43,8 +43,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_ANDROID_KHR \
         -fvisibility=hidden")
 include_directories(${SRC_DIR}/include
                     ${COMMON_DIR}/include
-                    ${SRC_DIR}/layers
-                    ${SRC_DIR}/loader)
+                    ${SRC_DIR}/layers)
 add_library(layer_utils STATIC
         ${SRC_DIR}/layers/vk_layer_config.cpp
         ${SRC_DIR}/layers/vk_layer_extension_utils.cpp
@@ -81,7 +80,6 @@ target_include_directories(VkLayer_khronos_validation PRIVATE
         ${SRC_DIR}/include
         ${SRC_DIR}/layers
         ${COMMON_DIR}/include
-        ${SRC_DIR}/loader
         ${EXTERNAL_DIR}/glslang
         ${EXTERNAL_DIR}/spirv-tools/include)
 target_link_libraries(VkLayer_khronos_validation PRIVATE

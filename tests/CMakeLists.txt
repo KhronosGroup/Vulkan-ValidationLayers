@@ -75,34 +75,11 @@ set(COMMON_CPP
     vktestframework.cpp
     test_environment.cpp)
 
-# ~~~
-# The vulkan loader search is:
-#     Existing vulkan target already present in the build
-#     User-supplied setting of CMAKE_PREFIX_PATH
-#     VULKAN_LOADER_INSTALL_DIR defined via cmake option
-#     VULKAN_LOADER_INSTALL_DIR defined via environment variable
-#     Default findVulkan operation if the VULKAN_SDK environment variable is defined
-# ~~~
-set(VULKAN_LOADER_INSTALL_DIR "LOADER-NOTFOUND" CACHE PATH "Absolute path to a Vulkan-Loader install directory")
-
 if(NOT TARGET vulkan)
-    if(VULKAN_LOADER_INSTALL_DIR)
-        message(STATUS "VULKAN_LOADER_INSTALL_DIR specified, using find_package to locate Vulkan")
-    elseif(ENV{VULKAN_LOADER_INSTALL_DIR})
-        message(STATUS "VULKAN_LOADER_INSTALL_DIR environment variable specified, using find_package to locate Vulkan")
-    else()
-        set(LOCAL_LOADER TRUE)
-        if(CMAKE_CL_64)
-            set(VULKAN_LOADER_INSTALL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../external/x64")
-        else()
-            set(VULKAN_LOADER_INSTALL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../external/x86")
-        endif()
-    endif()
     set(
         CMAKE_PREFIX_PATH
-        ${CMAKE_PREFIX_PATH};${VULKAN_LOADER_INSTALL_DIR};${VULKAN_HEADERS_INSTALL_DIR};$ENV{VULKAN_LOADER_INSTALL_DIR};$ENV{VULKAN_HEADERS_INSTALL_DIR}
+        ${CMAKE_PREFIX_PATH};${VULKAN_HEADERS_INSTALL_DIR};$ENV{VULKAN_HEADERS_INSTALL_DIR}
         )
-    find_package(Vulkan)
 endif()
 
 set_source_files_properties(${PROJECT_BINARY_DIR}/vk_safe_struct.cpp PROPERTIES GENERATED TRUE)
@@ -114,7 +91,7 @@ add_executable(vk_layer_validation_tests
                ../layers/generated/lvt_function_pointers.cpp
                ${COMMON_CPP})
 add_test(NAME vk_layer_validation_tests COMMAND vk_layer_validation_tests)
-add_dependencies(vk_layer_validation_tests Vulkan::Vulkan VkLayer_khronos_validation VkLayer_khronos_validation-json)
+add_dependencies(vk_layer_validation_tests VkLayer_khronos_validation VkLayer_khronos_validation-json)
 if(NOT GTEST_IS_STATIC_LIB)
     set_target_properties(vk_layer_validation_tests PROPERTIES COMPILE_DEFINITIONS "GTEST_LINKED_AS_SHARED_LIBRARY=1")
 endif()
@@ -128,6 +105,7 @@ target_include_directories(vk_layer_validation_tests
                                   ${CMAKE_CURRENT_BINARY_DIR}
                                   ${CMAKE_BINARY_DIR}
                                   ${PROJECT_BINARY_DIR}
+                                  ${VulkanHeaders_INCLUDE_DIR}
                                   ${PROJECT_BINARY_DIR}/layers)
 add_dependencies(vk_layer_validation_tests
                  VkLayer_utils)
@@ -137,16 +115,14 @@ if(WIN32)
     set_target_properties(gtest PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
     set_target_properties(gtest_main PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
     target_link_libraries(vk_layer_validation_tests
-                          PRIVATE Vulkan::Vulkan
-                                  gtest
+                          PRIVATE gtest
                                   gtest_main
                                   ${GLSLANG_LIBRARIES})
 else()
     target_compile_options(vk_layer_validation_tests PRIVATE "-Wno-sign-compare")
     if(BUILD_WSI_XCB_SUPPORT OR BUILD_WSI_XLIB_SUPPORT)
         target_link_libraries(vk_layer_validation_tests
-                              PRIVATE Vulkan::Vulkan
-                                      ${XCB_LIBRARIES}
+                              PRIVATE ${XCB_LIBRARIES}
                                       ${X11_LIBRARIES}
                                       gtest
                                       gtest_main
@@ -154,8 +130,7 @@ else()
                                       ${GLSLANG_LIBRARIES})
     else()
         target_link_libraries(vk_layer_validation_tests
-                              PRIVATE Vulkan::Vulkan
-                                      gtest
+                              PRIVATE gtest
                                       gtest_main
                                       dl
                                       ${GLSLANG_LIBRARIES})
@@ -169,12 +144,6 @@ if(WIN32)
         file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG> DST_GTEST_DLLS)
         add_custom_command(TARGET vk_layer_validation_tests POST_BUILD
                            COMMAND xcopy /Y /I ${SRC_GTEST_DLLS} ${DST_GTEST_DLLS})
-    endif()
-    # Copy the loader shared lib (if supplied) to the test application directory so the test app finds it.
-    if(VULKAN_LOADER_INSTALL_DIR AND NOT LOCAL_LOADER)
-        add_custom_command(TARGET vk_layer_validation_tests POST_BUILD
-                           COMMAND ${CMAKE_COMMAND} -E copy ${VULKAN_LOADER_INSTALL_DIR}/bin/vulkan-1.dll
-                                   $<TARGET_FILE_DIR:vk_layer_validation_tests>)
     endif()
 endif()
 

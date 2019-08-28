@@ -186,7 +186,6 @@ if(BUILD_TESTS OR BUILD_LAYERS)
             add_library(HLSL STATIC IMPORTED)
             add_library(SPIRV STATIC IMPORTED)
             add_library(SPVRemapper STATIC IMPORTED)
-            add_library(Loader STATIC IMPORTED)
 
             find_library(GLSLANG_DLIB NAMES glslangd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
             find_library(OGLCompiler_DLIB NAMES OGLCompilerd HINTS ${GLSLANG_DEBUG_SEARCH_PATH})
