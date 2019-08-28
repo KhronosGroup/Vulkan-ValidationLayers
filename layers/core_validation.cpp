@@ -6173,15 +6173,26 @@ void ValidationStateTracker::PostCallRecordResetDescriptorPool(VkDevice device, 
     pPool->availableSets = pPool->maxSets;
 }
 
+bool ValidationStateTracker::PreCallValidateAllocateDescriptorSets(VkDevice device,
+                                                                   const VkDescriptorSetAllocateInfo *pAllocateInfo,
+                                                                   VkDescriptorSet *pDescriptorSets, void *ads_state_data) {
+    // Always update common data
+    cvdescriptorset::AllocateDescriptorSetsData *ads_state =
+        reinterpret_cast<cvdescriptorset::AllocateDescriptorSetsData *>(ads_state_data);
+    UpdateAllocateDescriptorSetsData(pAllocateInfo, ads_state);
+
+    return false;
+}
+
 // Ensure the pool contains enough descriptors and descriptor sets to satisfy
 // an allocation request. Fills common_data with the total number of descriptors of each type required,
 // as well as DescriptorSetLayout ptrs used for later update.
 bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
                                                        VkDescriptorSet *pDescriptorSets, void *ads_state_data) {
-    // Always update common data
+    StateTracker::PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, ads_state_data);
+
     cvdescriptorset::AllocateDescriptorSetsData *ads_state =
         reinterpret_cast<cvdescriptorset::AllocateDescriptorSetsData *>(ads_state_data);
-    UpdateAllocateDescriptorSetsData(pAllocateInfo, ads_state);
     // All state checks for AllocateDescriptorSets is done in single function
     return ValidateAllocateDescriptorSets(pAllocateInfo, ads_state);
 }
