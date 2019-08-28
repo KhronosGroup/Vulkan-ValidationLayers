@@ -1172,7 +1172,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(
         intercept->PreCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &(cgpl_state[intercept->container_type]));
     }
 
-    VkResult result = DispatchCreateGraphicsPipelines(device, pipelineCache, createInfoCount, cgpl_state[LayerObjectTypeCoreValidation].pCreateInfos, pAllocator, pPipelines);
+    auto usepCreateInfos = (!cgpl_state[LayerObjectTypeCoreValidation].pCreateInfos) ? pCreateInfos : cgpl_state[LayerObjectTypeCoreValidation].pCreateInfos; 
+
+    VkResult result = DispatchCreateGraphicsPipelines(device, pipelineCache, createInfoCount, usepCreateInfos, pAllocator, pPipelines);
 
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
