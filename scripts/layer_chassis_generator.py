@@ -1340,7 +1340,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
 
-#ifdef BUILD_CORE_VALIDATION
+#if defined BUILD_CORE_VALIDATION || defined BUILD_BEST_PRACTICES
     cvdescriptorset::AllocateDescriptorSetsData ads_state(pAllocateInfo->descriptorSetCount);
 #else
     struct ads_state {} ads_state;
