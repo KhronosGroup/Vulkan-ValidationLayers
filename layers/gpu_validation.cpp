@@ -257,7 +257,8 @@ void CoreChecks::GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, safe_VkDevic
 }
 
 // Perform initializations that can be done at Create Device time.
-void CoreChecks::GpuPostCallRecordCreateDevice(const CHECK_ENABLED *enables, const VkDeviceCreateInfo *pCreateInfo) {
+void CoreChecks::GpuPostCallRecordCreateDevice(const CHECK_ENABLED *enables, const VkDeviceCreateInfo *pCreateInfo,
+                                               VkPhysicalDeviceFeatures *enabled_features) {
     // Set instance-level enables in device-enable data structure if using legacy settings
     enabled.gpu_validation = enables->gpu_validation;
     enabled.gpu_validation_reserve_binding_slot = enables->gpu_validation_reserve_binding_slot;
@@ -268,6 +269,14 @@ void CoreChecks::GpuPostCallRecordCreateDevice(const CHECK_ENABLED *enables, con
     if (phys_dev_props.apiVersion < VK_API_VERSION_1_1) {
         ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                            "GPU-Assisted validation requires Vulkan 1.1 or later.  GPU-Assisted Validation disabled.");
+        gpu_validation_state->aborted = true;
+        return;
+    }
+
+    if (!enabled_features->fragmentStoresAndAtomics || !enabled_features->vertexPipelineStoresAndAtomics) {
+        ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                           "GPU-Assisted validation requires fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics.  "
+                           "GPU-Assisted Validation disabled.");
         gpu_validation_state->aborted = true;
         return;
     }

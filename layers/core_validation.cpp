@@ -2448,7 +2448,8 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     if (enabled.gpu_validation) {
         // The only CoreCheck specific init is for gpu_validation
-        core_checks->GpuPostCallRecordCreateDevice(&enabled, pCreateInfo);
+        auto *device_state = static_cast<StateTracker *>(validation_data);
+        core_checks->GpuPostCallRecordCreateDevice(&enabled, pCreateInfo, &device_state->enabled_features.core);
         core_checks->SetCommandBufferResetCallback(
             [core_checks](VkCommandBuffer command_buffer) -> void { core_checks->GpuResetCommandBuffer(command_buffer); });
     }
