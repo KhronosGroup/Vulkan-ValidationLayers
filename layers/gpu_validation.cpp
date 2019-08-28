@@ -232,27 +232,34 @@ void CoreChecks::ReportSetupProblem(VkDebugReportObjectTypeEXT object_type, uint
 // Turn on necessary device features.
 void CoreChecks::GpuPreCallRecordCreateDevice(VkPhysicalDevice gpu, safe_VkDeviceCreateInfo *modified_create_info,
                                               VkPhysicalDeviceFeatures *supported_features) {
-    if (supported_features->fragmentStoresAndAtomics || supported_features->vertexPipelineStoresAndAtomics) {
-        VkPhysicalDeviceFeatures *features = nullptr;
-        if (modified_create_info->pEnabledFeatures) {
-            // If pEnabledFeatures, VkPhysicalDeviceFeatures2 in pNext chain is not allowed
-            features = const_cast<VkPhysicalDeviceFeatures *>(modified_create_info->pEnabledFeatures);
-        } else {
-            VkPhysicalDeviceFeatures2 *features2 = nullptr;
-            features2 =
-                const_cast<VkPhysicalDeviceFeatures2 *>(lvl_find_in_chain<VkPhysicalDeviceFeatures2>(modified_create_info->pNext));
-            if (features2) features = &features2->features;
-        }
-        if (features) {
-            features->fragmentStoresAndAtomics = supported_features->fragmentStoresAndAtomics;
-            features->vertexPipelineStoresAndAtomics = supported_features->vertexPipelineStoresAndAtomics;
-        } else {
-            VkPhysicalDeviceFeatures new_features = {};
-            new_features.fragmentStoresAndAtomics = supported_features->fragmentStoresAndAtomics;
-            new_features.vertexPipelineStoresAndAtomics = supported_features->vertexPipelineStoresAndAtomics;
-            delete modified_create_info->pEnabledFeatures;
-            modified_create_info->pEnabledFeatures = new VkPhysicalDeviceFeatures(new_features);
-        }
+    if (!supported_features->fragmentStoresAndAtomics || !supported_features->vertexPipelineStoresAndAtomics) {
+        log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT, HandleToUint64(gpu),
+                "UNASSIGNED-GPU-Assisted Validation Warning",
+                "GPU-Assisted validation requires both fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics. "
+                "GPU-Assisted Validation disabled.");
+        gpu_validation_state->aborted = true;
+        return;
+    }
+
+    VkPhysicalDeviceFeatures *features = nullptr;
+    if (modified_create_info->pEnabledFeatures) {
+        // If pEnabledFeatures, VkPhysicalDeviceFeatures2 in pNext chain is not allowed
+        features = const_cast<VkPhysicalDeviceFeatures *>(modified_create_info->pEnabledFeatures);
+    } else {
+        VkPhysicalDeviceFeatures2 *features2 = nullptr;
+        features2 =
+            const_cast<VkPhysicalDeviceFeatures2 *>(lvl_find_in_chain<VkPhysicalDeviceFeatures2>(modified_create_info->pNext));
+        if (features2) features = &features2->features;
+    }
+    if (features) {
+        features->fragmentStoresAndAtomics = true;
+        features->vertexPipelineStoresAndAtomics = true;
+    } else {
+        VkPhysicalDeviceFeatures new_features = {};
+        new_features.fragmentStoresAndAtomics = true;
+        new_features.vertexPipelineStoresAndAtomics = true;
+        delete modified_create_info->pEnabledFeatures;
+        modified_create_info->pEnabledFeatures = new VkPhysicalDeviceFeatures(new_features);
     }
 }
 
