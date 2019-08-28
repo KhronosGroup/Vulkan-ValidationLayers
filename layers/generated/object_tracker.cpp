@@ -33,7 +33,17 @@
 
 
 // ObjectTracker undestroyed objects validation function
-bool ObjectLifetimes::ReportUndestroyedObjects(VkDevice device, const std::string& error_code) {
+bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance, const std::string& error_code) {
+    bool skip = false;
+    skip |= InstanceReportUndestroyedObjects(instance, kVulkanObjectTypeSurfaceKHR, error_code);
+    skip |= InstanceReportUndestroyedObjects(instance, kVulkanObjectTypeSwapchainKHR, error_code);
+    skip |= InstanceReportUndestroyedObjects(instance, kVulkanObjectTypeDisplayKHR, error_code);
+    skip |= InstanceReportUndestroyedObjects(instance, kVulkanObjectTypeDisplayModeKHR, error_code);
+    skip |= InstanceReportUndestroyedObjects(instance, kVulkanObjectTypeDebugReportCallbackEXT, error_code);
+    skip |= InstanceReportUndestroyedObjects(instance, kVulkanObjectTypeDebugUtilsMessengerEXT, error_code);
+    return skip;
+}
+bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const std::string& error_code) {
     bool skip = false;
     skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeCommandBuffer, error_code);
     skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeSemaphore, error_code);
@@ -58,55 +68,51 @@ bool ObjectLifetimes::ReportUndestroyedObjects(VkDevice device, const std::strin
     skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeCommandPool, error_code);
     skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeSamplerYcbcrConversion, error_code);
     skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeDescriptorUpdateTemplate, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeSurfaceKHR, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeSwapchainKHR, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeDisplayKHR, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeDisplayModeKHR, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeDebugReportCallbackEXT, error_code);
     skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeObjectTableNVX, error_code);
     skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeIndirectCommandsLayoutNVX, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeDebugUtilsMessengerEXT, error_code);
     skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeValidationCacheEXT, error_code);
     skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeAccelerationStructureNV, error_code);
     skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypePerformanceConfigurationINTEL, error_code);
     return skip;
 }
 
-void ObjectLifetimes::DestroyUndestroyedObjects(VkDevice device) {
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeCommandBuffer);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeSemaphore);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeFence);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeDeviceMemory);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeBuffer);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeImage);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeEvent);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeQueryPool);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeBufferView);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeImageView);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeShaderModule);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypePipelineCache);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypePipelineLayout);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeRenderPass);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypePipeline);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeDescriptorSetLayout);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeSampler);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeDescriptorPool);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeDescriptorSet);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeFramebuffer);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeCommandPool);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeSamplerYcbcrConversion);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeDescriptorUpdateTemplate);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeSurfaceKHR);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeSwapchainKHR);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeDisplayKHR);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeDisplayModeKHR);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeDebugReportCallbackEXT);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeObjectTableNVX);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeIndirectCommandsLayoutNVX);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeDebugUtilsMessengerEXT);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeValidationCacheEXT);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeAccelerationStructureNV);
-    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypePerformanceConfigurationINTEL);
+void ObjectLifetimes::DestroyUndestroyedInstanceObjects(VkInstance instance) {
+    DestroyUndestroyedObjects(instance, kVulkanObjectTypeSurfaceKHR);
+    DestroyUndestroyedObjects(instance, kVulkanObjectTypeSwapchainKHR);
+    DestroyUndestroyedObjects(instance, kVulkanObjectTypeDisplayKHR);
+    DestroyUndestroyedObjects(instance, kVulkanObjectTypeDisplayModeKHR);
+    DestroyUndestroyedObjects(instance, kVulkanObjectTypeDebugReportCallbackEXT);
+    DestroyUndestroyedObjects(instance, kVulkanObjectTypeDebugUtilsMessengerEXT);
+}
+void ObjectLifetimes::DestroyUndestroyedDeviceObjects(VkDevice device) {
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeCommandBuffer);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeSemaphore);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeFence);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeDeviceMemory);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeBuffer);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeImage);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeEvent);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeQueryPool);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeBufferView);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeImageView);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeShaderModule);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypePipelineCache);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypePipelineLayout);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeRenderPass);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypePipeline);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeDescriptorSetLayout);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeSampler);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeDescriptorPool);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeDescriptorSet);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeFramebuffer);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeCommandPool);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeSamplerYcbcrConversion);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeDescriptorUpdateTemplate);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeObjectTableNVX);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeIndirectCommandsLayoutNVX);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeValidationCacheEXT);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypeAccelerationStructureNV);
+    DestroyUndestroyedObjects(device, kVulkanObjectTypePerformanceConfigurationINTEL);
 }
 
 
