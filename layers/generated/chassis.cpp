@@ -812,7 +812,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(
         intercept->PreCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &(ccpl_state[intercept->container_type]));
     }
 
-    VkResult result = DispatchCreateComputePipelines(device, pipelineCache, createInfoCount, ccpl_state[LayerObjectTypeCoreValidation].pCreateInfos, pAllocator, pPipelines);
+    auto usepCreateInfos = (!ccpl_state[LayerObjectTypeCoreValidation].pCreateInfos) ? pCreateInfos : ccpl_state[LayerObjectTypeCoreValidation].pCreateInfos; 
+
+    VkResult result = DispatchCreateComputePipelines(device, pipelineCache, createInfoCount, usepCreateInfos, pAllocator, pPipelines);
 
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
