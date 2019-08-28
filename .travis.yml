@@ -90,7 +90,17 @@ script:
   - set -e
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
-      # Build all dependencies for Vulkan-ValidationLayers
+      # Build Vulkan-Loader to run Vulkan-ValidationLayer tests
+      cd ${TRAVIS_BUILD_DIR}/external
+      git clone https://github.com/KhronosGroup/Vulkan-Loader.git
+      cd Vulkan-Loader
+      python scripts/update_deps.py --dir=external
+      mkdir build
+      cd build
+      cmake -DCMAKE_BUILD_TYPE=Debug -C../external/helper.cmake -DCMAKE_INSTALL_PREFIX=install ..
+      cmake --build . --target install -- -j$core_count
+      cd ${TRAVIS_BUILD_DIR}
+      # Build all remaining dependencies for Vulkan-ValidationLayers
       if [[ "$TRAVIS_EVENT_TYPE" == "cron" ]]; then
         # Build master branch when triggered by (daily) cron job
         ${TRAVIS_BUILD_DIR}/scripts/update_deps.py --dir=${TRAVIS_BUILD_DIR}/external --ref=master
@@ -120,6 +130,7 @@ script:
       mkdir build
       cd build
       cmake -C ${TRAVIS_BUILD_DIR}/external/helper.cmake -DCMAKE_BUILD_TYPE=Debug \
+            -DVULKAN_LOADER_INSTALL_DIR=${TRAVIS_BUILD_DIR}/external/Vulkan-Loader/build/install \
             -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR}/build/install -DBUILD_LAYER_SUPPORT_FILES=ON \
             -DUSE_CCACHE=ON ..
       cmake --build . --target install -- -j$core_count
@@ -146,7 +157,7 @@ script:
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
       # Run Tests
       cd ${TRAVIS_BUILD_DIR}
-      export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/external/Vulkan-Loader/install/lib:${LD_LIBRARY_PATH}
+      export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/external/Vulkan-Loader/build/install/lib:${LD_LIBRARY_PATH}
       export VK_LAYER_PATH=${TRAVIS_BUILD_DIR}/external/VulkanTools/build/layersvt:${TRAVIS_BUILD_DIR}/build/layers
       export VK_ICD_FILENAMES=${TRAVIS_BUILD_DIR}/external/Vulkan-Tools/build/icd/VkICD_mock_icd.json
       build/tests/vk_layer_validation_tests
