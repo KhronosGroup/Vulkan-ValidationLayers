@@ -298,26 +298,35 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
     # Generate the object tracker undestroyed object validation function
     def GenReportFunc(self):
         output_func = ''
-        output_func += 'bool ObjectLifetimes::ReportUndestroyedObjects(VkDevice device, const std::string& error_code) {\n'
-        output_func += '    bool skip = false;\n'
-        output_func += '    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeCommandBuffer, error_code);\n'
-        for handle in self.object_types:
-            if self.handle_types.IsNonDispatchable(handle):
-                output_func += '    skip |= DeviceReportUndestroyedObjects(device, %s, error_code);\n' % (self.GetVulkanObjType(handle))
-        output_func += '    return skip;\n'
-        output_func += '}\n'
+        for objtype in ['instance', 'device']:
+            upper_objtype = objtype.capitalize();
+            output_func += 'bool ObjectLifetimes::ReportUndestroyed%sObjects(Vk%s %s, const std::string& error_code) {\n' % (upper_objtype, upper_objtype, objtype)
+            output_func += '    bool skip = false;\n'
+            if objtype == 'device':
+                output_func += '    skip |= %sReportUndestroyedObjects(%s, kVulkanObjectTypeCommandBuffer, error_code);\n' % (upper_objtype, objtype)
+            for handle in self.object_types:
+                if self.handle_types.IsNonDispatchable(handle):
+                    if (objtype == 'device' and self.handle_parents.IsParentDevice(handle)) or (objtype == 'instance' and not self.handle_parents.IsParentDevice(handle)):
+                        output_func += '    skip |= %sReportUndestroyedObjects(%s, %s, error_code);\n' % (upper_objtype, objtype, self.GetVulkanObjType(handle))
+            output_func += '    return skip;\n'
+            output_func += '}\n'
         return output_func
 
     #
     # Generate the object tracker undestroyed object destruction function
     def GenDestroyFunc(self):
         output_func = ''
-        output_func += 'void ObjectLifetimes::DestroyUndestroyedObjects(VkDevice device) {\n'
-        output_func += '    DeviceDestroyUndestroyedObjects(device, kVulkanObjectTypeCommandBuffer);\n'
-        for handle in self.object_types:
-            if self.handle_types.IsNonDispatchable(handle):
-                output_func += '    DeviceDestroyUndestroyedObjects(device, %s);\n' % (self.GetVulkanObjType(handle))
-        output_func += '}\n'
+        for objtype in ['instance', 'device']:
+            upper_objtype = objtype.capitalize();
+            output_func += 'void ObjectLifetimes::DestroyUndestroyed%sObjects(Vk%s %s) {\n' % (upper_objtype, upper_objtype, objtype)
+            if objtype == 'device':
+                output_func += '    DestroyUndestroyedObjects(%s, kVulkanObjectTypeCommandBuffer);\n' % objtype
+            for handle in self.object_types:
+                if self.handle_types.IsNonDispatchable(handle):
+                    if (objtype == 'device' and self.handle_parents.IsParentDevice(handle)) or (objtype == 'instance' and not self.handle_parents.IsParentDevice(handle)):
+                        output_func += '    DestroyUndestroyedObjects(%s, %s);\n' % (objtype, self.GetVulkanObjType(handle))
+            output_func += '}\n'
+
         return output_func
 
     #
@@ -349,6 +358,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
 
         # Initialize members that require the tree
         self.handle_types = GetHandleTypes(self.registry.tree)
+        self.handle_parents = GetHandleParents(self.registry.tree)
         self.type_categories = GetTypeCategories(self.registry.tree)
 
         header_file = (genOpts.filename == 'object_tracker.h')

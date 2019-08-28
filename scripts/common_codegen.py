@@ -87,6 +87,25 @@ def GetHandleTypes(tree):
             handles[name] = elem.find('type').text
     return handles
 
+# Return a dict containing the parent of every handle
+def GetHandleParents(tree):
+    # Extend OrderedDict with common handle operations
+    class HandleParentDict(OrderedDict):
+        def IsParentDevice(self, handle_type):
+            next_object = self.get(handle_type)
+            while next_object != 'VkDevice' and next_object != 'VkInstance' and next_object != 'VkPhysicalDevice' and next_object is not None:
+                next_object = self.get(next_object)
+            return next_object == 'VkDevice'
+        def GetHandleParent(self, handle_type):
+            return self.get(handle_type)
+
+    handle_parents = HandleParentDict()
+    for elem in tree.findall("types/type/[@category='handle']"):
+        if not elem.get('alias') or not elem.get('parent'):
+            name = elem.get('name')
+            handle_parents[name] = elem.get('parent')
+    return handle_parents
+
 # Return a dict containing the category attribute of every type
 def GetTypeCategories(tree):
     type_categories = OrderedDict()
