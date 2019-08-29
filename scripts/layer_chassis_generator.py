@@ -280,11 +280,6 @@ typedef enum ValidationCheckDisables {
     VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION,
 } ValidationCheckDisables;
 
-typedef enum VkValidationFeatureEnable {
-    VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES,
-} VkValidationFeatureEnable;
-
-
 // CHECK_DISABLED struct is a container for bools that can block validation checks from being performed.
 // These bools are all "false" by default meaning that all checks are enabled. Enum values can be specified
 // via the vk_layer_setting.txt config file or at CreateInstance time via the VK_EXT_validation_features extension
@@ -573,10 +568,7 @@ static const std::unordered_map<std::string, VkValidationFeatureDisableEXT> VkVa
 static const std::unordered_map<std::string, VkValidationFeatureEnableEXT> VkValFeatureEnableLookup = {
     {"VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT", VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT},
     {"VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT", VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT},
-};
-
-static const std::unordered_map<std::string, VkValidationFeatureEnable> VkValFeatureEnableLookup2 = {
-    {"VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES", VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES},
+    {"VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT", VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT},
 };
 
 static const std::unordered_map<std::string, ValidationCheckDisables> ValidationDisableLookup = {
@@ -653,14 +645,7 @@ void SetValidationFeatureEnable(CHECK_ENABLED *enable_data, const VkValidationFe
         case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT:
             enable_data->gpu_validation_reserve_binding_slot = true;
             break;
-        default:
-            break;
-    }
-}
-
-void SetValidationFeatureEnable(CHECK_ENABLED *enable_data, const VkValidationFeatureEnable feature_enable) {
-    switch(feature_enable) {
-        case VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES:
+        case VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT:
             enable_data->best_practices = true;
             break;
         default:
@@ -712,11 +697,6 @@ void SetLocalEnableSetting(std::string list_of_enables, std::string delimiter, C
             auto result = VkValFeatureEnableLookup.find(token);
             if (result != VkValFeatureEnableLookup.end()) {
                 SetValidationFeatureEnable(enables, result->second);
-            } else {
-                auto result2 = VkValFeatureEnableLookup2.find(token);
-                if (result2 != VkValFeatureEnableLookup2.end()) {
-                    SetValidationFeatureEnable(enables, result2->second);
-                }
             }
         }
         list_of_enables.erase(0, pos + delimiter.length());
