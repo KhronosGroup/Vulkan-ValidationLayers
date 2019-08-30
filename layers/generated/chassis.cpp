@@ -669,6 +669,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 #if BUILD_BEST_PRACTICES
     auto best_practices = new BestPractices;
     best_practices->container_type = LayerObjectTypeBestPractices;
+    best_practices->instance_state = reinterpret_cast<BestPractices *>(
+        best_practices->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeBestPractices));
     if (instance_interceptor->enabled.best_practices) {
         device_interceptor->object_dispatch.emplace_back(best_practices);
     }
