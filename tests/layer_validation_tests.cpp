@@ -607,169 +607,6 @@ bool CheckDescriptorIndexingSupportAndInitFramework(VkRenderFramework *renderFra
     return false;
 }
 
-ErrorMonitor::ErrorMonitor() {
-    test_platform_thread_create_mutex(&mutex_);
-    test_platform_thread_lock_mutex(&mutex_);
-    Reset();
-    test_platform_thread_unlock_mutex(&mutex_);
-}
-
-ErrorMonitor::~ErrorMonitor() { test_platform_thread_delete_mutex(&mutex_); }
-
-void ErrorMonitor::Reset() {
-    message_flags_ = VK_DEBUG_REPORT_ERROR_BIT_EXT;
-    bailout_ = NULL;
-    message_found_ = VK_FALSE;
-    failure_message_strings_.clear();
-    desired_message_strings_.clear();
-    ignore_message_strings_.clear();
-    other_messages_.clear();
-}
-
-void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msgFlags, const std::string msg) {
-    SetDesiredFailureMsg(msgFlags, msg.c_str());
-}
-
-void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msgFlags, const char *const msgString) {
-    test_platform_thread_lock_mutex(&mutex_);
-    desired_message_strings_.insert(msgString);
-    message_flags_ |= msgFlags;
-    test_platform_thread_unlock_mutex(&mutex_);
-}
-
-void ErrorMonitor::SetUnexpectedError(const char *const msg) {
-    test_platform_thread_lock_mutex(&mutex_);
-
-    ignore_message_strings_.emplace_back(msg);
-
-    test_platform_thread_unlock_mutex(&mutex_);
-}
-
-VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *const msgString) {
-    VkBool32 result = VK_FALSE;
-    test_platform_thread_lock_mutex(&mutex_);
-    if (bailout_ != nullptr) {
-        *bailout_ = true;
-    }
-    string errorString(msgString);
-    bool found_expected = false;
-
-    if (!IgnoreMessage(errorString)) {
-        for (auto desired_msg_it = desired_message_strings_.begin(); desired_msg_it != desired_message_strings_.end();
-             ++desired_msg_it) {
-            if ((*desired_msg_it).length() == 0) {
-                // An empty desired_msg string "" indicates a positive test - not expecting an error.
-                // Return true to avoid calling layers/driver with this error.
-                // And don't erase the "" string, so it remains if another error is found.
-                result = VK_TRUE;
-                found_expected = true;
-                message_found_ = true;
-                failure_message_strings_.insert(errorString);
-            } else if (errorString.find(*desired_msg_it) != string::npos) {
-                found_expected = true;
-                failure_message_strings_.insert(errorString);
-                message_found_ = true;
-                result = VK_TRUE;
-                // Remove a maximum of one failure message from the set
-                // Multiset mutation is acceptable because `break` causes flow of control to exit the for loop
-                desired_message_strings_.erase(desired_msg_it);
-                break;
-            }
-        }
-
-        if (!found_expected) {
-            printf("Unexpected: %s\n", msgString);
-            other_messages_.push_back(errorString);
-        }
-    }
-
-    test_platform_thread_unlock_mutex(&mutex_);
-    return result;
-}
-
-vector<string> ErrorMonitor::GetOtherFailureMsgs() const { return other_messages_; }
-
-VkDebugReportFlagsEXT ErrorMonitor::GetMessageFlags() const { return message_flags_; }
-
-bool ErrorMonitor::AnyDesiredMsgFound() const { return message_found_; }
-
-bool ErrorMonitor::AllDesiredMsgsFound() const { return desired_message_strings_.empty(); }
-
-void ErrorMonitor::SetError(const char *const errorString) {
-    message_found_ = true;
-    failure_message_strings_.insert(errorString);
-}
-
-void ErrorMonitor::SetBailout(bool *bailout) { bailout_ = bailout; }
-
-void ErrorMonitor::DumpFailureMsgs() const {
-    vector<string> otherMsgs = GetOtherFailureMsgs();
-    if (otherMsgs.size()) {
-        cout << "Other error messages logged for this test were:" << endl;
-        for (auto iter = otherMsgs.begin(); iter != otherMsgs.end(); iter++) {
-            cout << "     " << *iter << endl;
-        }
-    }
-}
-
-void ErrorMonitor::ExpectSuccess(VkDebugReportFlagsEXT const message_flag_mask) {
-    // Match ANY message matching specified type
-    SetDesiredFailureMsg(message_flag_mask, "");
-    message_flags_ = message_flag_mask;  // override mask handling in SetDesired...
-}
-
-void ErrorMonitor::VerifyFound() {
-    // Not receiving expected message(s) is a failure. /Before/ throwing, dump any other messages
-    if (!AllDesiredMsgsFound()) {
-        DumpFailureMsgs();
-        for (const auto desired_msg : desired_message_strings_) {
-            ADD_FAILURE() << "Did not receive expected error '" << desired_msg << "'";
-        }
-    } else if (GetOtherFailureMsgs().size() > 0) {
-        // Fail test case for any unexpected errors
-#if defined(ANDROID)
-        // This will get unexpected errors into the adb log
-        for (auto msg : other_messages_) {
-            __android_log_print(ANDROID_LOG_INFO, "VulkanLayerValidationTests", "[ UNEXPECTED_ERR ] '%s'", msg.c_str());
-        }
-#else
-        ADD_FAILURE() << "Received unexpected error(s).";
-#endif
-    }
-    Reset();
-}
-
-void ErrorMonitor::VerifyNotFound() {
-    // ExpectSuccess() configured us to match anything. Any error is a failure.
-    if (AnyDesiredMsgFound()) {
-        DumpFailureMsgs();
-        for (const auto msg : failure_message_strings_) {
-            ADD_FAILURE() << "Expected to succeed but got error: " << msg;
-        }
-    } else if (GetOtherFailureMsgs().size() > 0) {
-        // Fail test case for any unexpected errors
-#if defined(ANDROID)
-        // This will get unexpected errors into the adb log
-        for (auto msg : other_messages_) {
-            __android_log_print(ANDROID_LOG_INFO, "VulkanLayerValidationTests", "[ UNEXPECTED_ERR ] '%s'", msg.c_str());
-        }
-#else
-        ADD_FAILURE() << "Received unexpected error(s).";
-#endif
-    }
-    Reset();
-}
-
-bool ErrorMonitor::IgnoreMessage(std::string const &msg) const {
-    if (ignore_message_strings_.empty()) {
-        return false;
-    }
-
-    return std::find_if(ignore_message_strings_.begin(), ignore_message_strings_.end(), [&msg](std::string const &str) {
-               return msg.find(str) != std::string::npos;
-           }) != ignore_message_strings_.end();
-}
-
 void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
     ASSERT_TRUE(m_device && m_device->initialized());  // VKTriangleTest assumes Init() has finished
 
@@ -989,8 +826,6 @@ void VkLayerTest::Init(VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatu
     InitState(features, features2, flags);
 }
 
-ErrorMonitor *VkLayerTest::Monitor() { return m_errorMonitor; }
-
 VkCommandBufferObj *VkLayerTest::CommandBuffer() { return m_commandBuffer; }
 
 VkLayerTest::VkLayerTest() {
@@ -1028,8 +863,6 @@ VkLayerTest::VkLayerTest() {
     this->app_info.pEngineName = "unittest";
     this->app_info.engineVersion = 1;
     this->app_info.apiVersion = VK_API_VERSION_1_0;
-
-    m_errorMonitor = new ErrorMonitor;
 
     // Find out what version the instance supports and record the default target instance
     auto enumerateInstanceVersion = (PFN_vkEnumerateInstanceVersion)vkGetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion");
@@ -1134,11 +967,6 @@ bool VkLayerTest::LoadDeviceProfileLayer(
     }
 
     return 1;
-}
-
-VkLayerTest::~VkLayerTest() {
-    // Clean up resources before we reset
-    delete m_errorMonitor;
 }
 
 bool VkBufferTest::GetTestConditionValid(VkDeviceObj *aVulkanDevice, eTestEnFlags aTestFlag, VkBufferUsageFlags aBufferUsage) {
