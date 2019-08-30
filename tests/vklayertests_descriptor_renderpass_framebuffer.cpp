@@ -30,10 +30,6 @@
 TEST_F(VkLayerTest, GpuValidationArrayOOBGraphicsShaders) {
     TEST_DESCRIPTION(
         "GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors.");
-    if (!VkRenderFramework::DeviceCanDraw()) {
-        printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
-        return;
-    }
 
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
     VkValidationFeaturesEXT features = {};
@@ -42,6 +38,11 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBGraphicsShaders) {
     features.pEnabledValidationFeatures = enables;
     bool descriptor_indexing = CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names,
                                                                               m_device_extension_names, &features, m_errorMonitor);
+    if (DeviceIsMockICD() || DeviceSimulation()) {
+        printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
+        return;
+    }
+
     VkPhysicalDeviceFeatures2KHR features2 = {};
     auto indexing_features = lvl_init_struct<VkPhysicalDeviceDescriptorIndexingFeaturesEXT>();
     if (descriptor_indexing) {
