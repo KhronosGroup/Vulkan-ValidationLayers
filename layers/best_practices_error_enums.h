@@ -28,18 +28,29 @@
 #define DECORATE_UNUSED
 #endif
 
-static const char DECORATE_UNUSED *kVUID_BestPractices_CreateInstance_ExtensionMismatch = "UNASSIGNED-BestPractices-vkCreateInstance-extension-mismatch";
-static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_API_Mismatch = "UNASSIGNED-BestPractices-vkCreateDevice-API-version-mismatch";
-static const char DECORATE_UNUSED *kVUID_BestPractices_SharingModeExclusive = "UNASSIGNED-BestPractices-vkCreateBuffer-sharing-mode-exclusive";
-static const char DECORATE_UNUSED *kVUID_BestPractices_RenderPass_Attatchment = "UNASSIGNED-BestPractices-vkCreateRenderPass-attatchment";
-static const char DECORATE_UNUSED *kVUID_BestPractices_AllocateMemory_TooManyObjects = "UNASSIGNED-BestPractices-vkAllocateMemory-too-many-objects";
-static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelines_MultiplePipelines = "UNASSIGNED-BestPractices-vkCreatePipelines-multiple-pipelines-no-cache";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateInstance_ExtensionMismatch =
+    "UNASSIGNED-BestPractices-vkCreateInstance-extension-mismatch";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_API_Mismatch =
+    "UNASSIGNED-BestPractices-vkCreateDevice-API-version-mismatch";
+static const char DECORATE_UNUSED *kVUID_BestPractices_SharingModeExclusive =
+    "UNASSIGNED-BestPractices-vkCreateBuffer-sharing-mode-exclusive";
+static const char DECORATE_UNUSED *kVUID_BestPractices_RenderPass_Attatchment =
+    "UNASSIGNED-BestPractices-vkCreateRenderPass-attatchment";
+static const char DECORATE_UNUSED *kVUID_BestPractices_AllocateMemory_TooManyObjects =
+    "UNASSIGNED-BestPractices-vkAllocateMemory-too-many-objects";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelines_MultiplePipelines =
+    "UNASSIGNED-BestPractices-vkCreatePipelines-multiple-pipelines-no-cache";
 static const char DECORATE_UNUSED *kVUID_BestPractices_PipelineStageFlags = "UNASSIGNED-BestPractices-pipeline-stage-flags";
-static const char DECORATE_UNUSED *kVUID_BestPractices_CmdDraw_InstanceCountZero = "UNASSIGNED-BestPractices-vkCmdDraw-instance-count-zero";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CmdDraw_InstanceCountZero =
+    "UNASSIGNED-BestPractices-vkCmdDraw-instance-count-zero";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CmdDraw_DrawCountZero = "UNASSIGNED-BestPractices-vkCmdDraw-draw-count-zero";
-static const char DECORATE_UNUSED *kVUID_BestPractices_CmdDispatch_GroupCountZero = "UNASSIGNED-BestPractices-vkCmdDispatch-group-count-zero";
-static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_PDFeaturesNotCalled = "UNASSIGNED-BestPractices-vkCreateDevice-physical-device-features-not-retrieved";
-static const char DECORATE_UNUSED *kVUID_BestPractices_Swapchain_GetSurfaceNotCalled = "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-surface-not-retrieved";
-static const char DECORATE_UNUSED *kVUID_BestPractices_DisplayPlane_PropertiesNotCalled = "UNASSIGNED-BestPractices-vkGetDisplayPlaneSupportedDisplaysKHR-properties-not-retrieved";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CmdDispatch_GroupCountZero =
+    "UNASSIGNED-BestPractices-vkCmdDispatch-group-count-zero";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_PDFeaturesNotCalled =
+    "UNASSIGNED-BestPractices-vkCreateDevice-physical-device-features-not-retrieved";
+static const char DECORATE_UNUSED *kVUID_BestPractices_Swapchain_GetSurfaceNotCalled =
+    "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-surface-not-retrieved";
+static const char DECORATE_UNUSED *kVUID_BestPractices_DisplayPlane_PropertiesNotCalled =
+    "UNASSIGNED-BestPractices-vkGetDisplayPlaneSupportedDisplaysKHR-properties-not-retrieved";
 
 #endif
