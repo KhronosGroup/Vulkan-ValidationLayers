@@ -29,11 +29,19 @@ class VkImageObj;
 #include "vktestframework.h"
 #endif
 
+#if defined(ANDROID)
+#include <android/log.h>
+#if defined(VALIDATION_APK)
+#include <android_native_app_glue.h>
+#endif
+#endif
+
 #include <algorithm>
 #include <array>
 #include <map>
 #include <memory>
 #include <vector>
+#include <unordered_set>
 
 using namespace std;
 
@@ -72,6 +80,75 @@ class VkDeviceObj : public vk_testing::Device {
     VkQueue m_queue;
 };
 
+// ErrorMonitor Usage:
+//
+// Call SetDesiredFailureMsg with a string to be compared against all
+// encountered log messages, or a validation error enum identifying
+// desired error message. Passing NULL or VALIDATION_ERROR_MAX_ENUM
+// will match all log messages. logMsg will return true for skipCall
+// only if msg is matched or NULL.
+//
+// Call VerifyFound to determine if all desired failure messages
+// were encountered. Call VerifyNotFound to determine if any unexpected
+// failure was encountered.
+class ErrorMonitor {
+   public:
+    ErrorMonitor();
+
+    ~ErrorMonitor();
+
+    // Set monitor to pristine state
+    void Reset();
+
+    // ErrorMonitor will look for an error message containing the specified string(s)
+    void SetDesiredFailureMsg(const VkFlags msgFlags, const std::string msg);
+    void SetDesiredFailureMsg(const VkFlags msgFlags, const char *const msgString);
+
+    // ErrorMonitor will look for an error message containing the specified string(s)
+    template <typename Iter>
+    void SetDesiredFailureMsg(const VkFlags msgFlags, Iter iter, const Iter end) {
+        for (; iter != end; ++iter) {
+            SetDesiredFailureMsg(msgFlags, *iter);
+        }
+    }
+
+    // Set an error that the error monitor will ignore. Do not use this function if you are creating a new test.
+    // TODO: This is stopgap to block new unexpected errors from being introduced. The long-term goal is to remove the use of this
+    // function and its definition.
+    void SetUnexpectedError(const char *const msg);
+
+    VkBool32 CheckForDesiredMsg(const char *const msgString);
+    vector<string> GetOtherFailureMsgs() const;
+    VkDebugReportFlagsEXT GetMessageFlags() const;
+    bool AnyDesiredMsgFound() const;
+    bool AllDesiredMsgsFound() const;
+    void SetError(const char *const errorString);
+    void SetBailout(bool *bailout);
+    void DumpFailureMsgs() const;
+
+    // Helpers
+
+    // ExpectSuccess now takes an optional argument allowing a custom combination of debug flags
+    void ExpectSuccess(VkDebugReportFlagsEXT const message_flag_mask = VK_DEBUG_REPORT_ERROR_BIT_EXT);
+
+    void VerifyFound();
+    void VerifyNotFound();
+
+   private:
+    // TODO: This is stopgap to block new unexpected errors from being introduced. The long-term goal is to remove the use of this
+    // function and its definition.
+    bool IgnoreMessage(std::string const &msg) const;
+
+    VkFlags message_flags_;
+    std::unordered_multiset<std::string> desired_message_strings_;
+    std::unordered_multiset<std::string> failure_message_strings_;
+    std::vector<std::string> ignore_message_strings_;
+    vector<string> other_messages_;
+    test_platform_thread_mutex mutex_;
+    bool *bailout_;
+    bool message_found_;
+};
+
 class VkCommandPoolObj;
 class VkCommandBufferObj;
 class VkDepthStencilObj;
@@ -85,6 +162,8 @@ class VkRenderFramework : public VkTestFramework {
     VkRenderPass renderPass() { return m_renderPass; }
     const VkRenderPassCreateInfo &RenderPassInfo() const { return renderPass_info_; };
     VkFramebuffer framebuffer() { return m_framebuffer; }
+    ErrorMonitor *Monitor();
+
     void InitViewport(float width, float height);
     void InitViewport();
     bool InitSurface();
@@ -134,6 +213,7 @@ class VkRenderFramework : public VkTestFramework {
     VkFramebuffer m_framebuffer;
     VkSurfaceKHR m_surface;
     VkSwapchainKHR m_swapchain;
+    ErrorMonitor *m_errorMonitor = {};
     std::vector<VkViewport> m_viewports;
     std::vector<VkRect2D> m_scissors;
     float m_lineWidth;
