@@ -117,7 +117,6 @@ class VkRenderFramework : public VkTestFramework {
     bool DeviceExtensionEnabled(const char *name);
     bool DeviceIsMockICD();
     bool DeviceSimulation();
-    bool DeviceCanDraw();
 
    protected:
     VkRenderFramework();
