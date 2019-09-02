@@ -4543,6 +4543,75 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
     imageViewMap[*pView] = std::unique_ptr<IMAGE_VIEW_STATE>(new IMAGE_VIEW_STATE(image_state, *pView, pCreateInfo));
 }
 
+static inline bool ValidateCmdCopyBufferBounds(const debug_report_data *report_data, const BUFFER_STATE *src_buffer_state,
+                                               const BUFFER_STATE *dst_buffer_state, uint32_t regionCount,
+                                               const VkBufferCopy *pRegions) {
+    bool skip = false;
+
+    VkDeviceSize src_buffer_size = src_buffer_state->createInfo.size;
+    VkDeviceSize dst_buffer_size = dst_buffer_state->createInfo.size;
+    VkDeviceSize src_min = UINT64_MAX;
+    VkDeviceSize src_max = 0;
+    VkDeviceSize dst_min = UINT64_MAX;
+    VkDeviceSize dst_max = 0;
+
+    for (uint32_t i = 0; i < regionCount; i++) {
+        src_min = std::min(src_min, pRegions[i].srcOffset);
+        src_max = std::max(src_max, (pRegions[i].srcOffset + pRegions[i].size));
+        dst_min = std::min(dst_min, pRegions[i].dstOffset);
+        dst_max = std::max(dst_max, (pRegions[i].dstOffset + pRegions[i].size));
+
+        // The srcOffset member of each element of pRegions must be less than the size of srcBuffer
+        if (pRegions[i].srcOffset >= src_buffer_size) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                            HandleToUint64(src_buffer_state->buffer), "VUID-vkCmdCopyBuffer-srcOffset-00113",
+                            "vkCmdCopyBuffer(): pRegions[%d].srcOffset (%" PRIuLEAST64
+                            ") is greater than pRegions[%d].size (%" PRIuLEAST64 ").",
+                            i, pRegions[i].srcOffset, i, pRegions[i].size);
+        }
+
+        // The dstOffset member of each element of pRegions must be less than the size of dstBuffer
+        if (pRegions[i].dstOffset >= dst_buffer_size) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                            HandleToUint64(dst_buffer_state->buffer), "VUID-vkCmdCopyBuffer-dstOffset-00114",
+                            "vkCmdCopyBuffer(): pRegions[%d].dstOffset (%" PRIuLEAST64
+                            ") is greater than pRegions[%d].size (%" PRIuLEAST64 ").",
+                            i, pRegions[i].dstOffset, i, pRegions[i].size);
+        }
+
+        // The size member of each element of pRegions must be less than or equal to the size of srcBuffer minus srcOffset
+        if (pRegions[i].size > (src_buffer_size - pRegions[i].srcOffset)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                            HandleToUint64(src_buffer_state->buffer), "VUID-vkCmdCopyBuffer-size-00115",
+                            "vkCmdCopyBuffer(): pRegions[%d].size (%" PRIuLEAST64
+                            ") is greater than the source buffer size (%" PRIuLEAST64
+                            ") minus pRegions[%d].srcOffset (%" PRIuLEAST64 ").",
+                            i, pRegions[i].size, src_buffer_size, i, pRegions[i].srcOffset);
+        }
+
+        // The size member of each element of pRegions must be less than or equal to the size of dstBuffer minus dstOffset
+        if (pRegions[i].size > (dst_buffer_size - pRegions[i].dstOffset)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                            HandleToUint64(dst_buffer_state->buffer), "VUID-vkCmdCopyBuffer-size-00116",
+                            "vkCmdCopyBuffer(): pRegions[%d].size (%" PRIuLEAST64
+                            ") is greater than the destination buffer size (%" PRIuLEAST64
+                            ") minus pRegions[%d].dstOffset (%" PRIuLEAST64 ").",
+                            i, pRegions[i].size, dst_buffer_size, i, pRegions[i].dstOffset);
+        }
+    }
+
+    // The union of the source regions, and the union of the destination regions, must not overlap in memory
+    if (src_buffer_state->buffer == dst_buffer_state->buffer) {
+        if (((src_min > dst_min) && (src_min < dst_max)) || ((src_max > dst_min) && (src_max < dst_max))) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                            HandleToUint64(src_buffer_state->buffer), "VUID-vkCmdCopyBuffer-pRegions-00117",
+                            "vkCmdCopyBuffer(): Detected overlap between source and dest regions in memory.");
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
                                               uint32_t regionCount, const VkBufferCopy *pRegions) {
     const auto cb_node = GetCBState(commandBuffer);
@@ -4564,6 +4633,7 @@ bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkB
                               "VUID-vkCmdCopyBuffer-commandBuffer-cmdpool");
     skip |= ValidateCmd(cb_node, CMD_COPYBUFFER, "vkCmdCopyBuffer()");
     skip |= InsideRenderPass(cb_node, "vkCmdCopyBuffer()", "VUID-vkCmdCopyBuffer-renderpass");
+    skip |= ValidateCmdCopyBufferBounds(report_data, src_buffer_state, dst_buffer_state, regionCount, pRegions);
     return skip;
 }
 
