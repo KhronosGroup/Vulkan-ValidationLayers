@@ -27,6 +27,50 @@
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
 
+TEST_F(VkLayerTest, BufferExtents) {
+    TEST_DESCRIPTION("Perform copies across a buffer, provoking out-of-range errors.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    const VkDeviceSize buffer_size = 2048;
+
+    VkBufferObj buffer_one;
+    VkBufferObj buffer_two;
+    VkMemoryPropertyFlags reqs = 0;
+    buffer_one.init_as_src_and_dst(*m_device, buffer_size, reqs);
+    buffer_two.init_as_src_and_dst(*m_device, buffer_size, reqs);
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyBuffer-srcOffset-00113");
+    VkBufferCopy copy_info = {4096, 256, 256};
+    vkCmdCopyBuffer(m_commandBuffer->handle(), buffer_one.handle(), buffer_two.handle(), 1, &copy_info);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyBuffer-dstOffset-00114");
+    copy_info = {256, 4096, 256};
+    vkCmdCopyBuffer(m_commandBuffer->handle(), buffer_one.handle(), buffer_two.handle(), 1, &copy_info);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyBuffer-size-00115");
+    copy_info = {1024, 256, 1280};
+    vkCmdCopyBuffer(m_commandBuffer->handle(), buffer_one.handle(), buffer_two.handle(), 1, &copy_info);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyBuffer-size-00116");
+    copy_info = {256, 1024, 1280};
+    vkCmdCopyBuffer(m_commandBuffer->handle(), buffer_one.handle(), buffer_two.handle(), 1, &copy_info);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyBuffer-pRegions-00117");
+    copy_info = {256, 512, 512};
+    vkCmdCopyBuffer(m_commandBuffer->handle(), buffer_two.handle(), buffer_two.handle(), 1, &copy_info);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, MirrorClampToEdgeNotEnabled) {
     TEST_DESCRIPTION("Validation should catch using CLAMP_TO_EDGE addressing mode if the extension is not enabled.");
 
