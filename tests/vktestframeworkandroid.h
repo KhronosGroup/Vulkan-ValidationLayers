@@ -23,12 +23,6 @@
 #include "spirv-tools/libspirv.h"
 #include "test_common.h"
 
-#if defined(NDEBUG)
-#define U_ASSERT_ONLY __attribute__((unused))
-#else
-#define U_ASSERT_ONLY
-#endif
-
 // Can be used by tests to record additional details / description of test
 #define TEST_DESCRIPTION(desc) RecordProperty("description", desc)
 
