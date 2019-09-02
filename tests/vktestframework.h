@@ -58,7 +58,7 @@ using namespace std;
 class VkImageObj;
 
 class VkTestFramework : public ::testing::Test {
-   public:
+  public:
     VkFormat GetFormat(VkInstance instance, vk_testing::Device *device);
     static bool optionMatch(const char *option, char *optionLine);
     static void InitArgs(int *argc, char *argv[]);
@@ -76,11 +76,11 @@ class VkTestFramework : public ::testing::Test {
     char **ReadFileData(const char *fileName);
     void FreeFileData(char **data);
 
-   protected:
+  protected:
     VkTestFramework();
     virtual ~VkTestFramework() = 0;
 
-   private:
+  private:
     int m_compile_options;
     int m_num_shader_strings;
     TBuiltInResource Resources;
@@ -96,7 +96,7 @@ class VkTestFramework : public ::testing::Test {
 };
 
 class TestEnvironment : public ::testing::Environment {
-   public:
+  public:
     void SetUp();
 
     void TearDown();

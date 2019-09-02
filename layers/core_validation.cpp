@@ -8441,7 +8441,7 @@ static const std::string buffer_error_codes[] = {
 };
 
 class ValidatorState {
-   public:
+  public:
     ValidatorState(const CoreChecks *device_data, const char *func_name, const CMD_BUFFER_STATE *cb_state,
                    const VulkanTypedHandle &barrier_handle, const VkSharingMode sharing_mode)
         : report_data_(device_data->report_data),
@@ -8532,7 +8532,7 @@ class ValidatorState {
     const char *GetTypeString() const { return object_string[barrier_handle_.type]; }
     VkSharingMode GetSharingMode() const { return sharing_mode_; }
 
-   protected:
+  protected:
     const debug_report_data *const report_data_;
     const char *const func_name_;
     const uint64_t cb_handle64_;

@@ -86,7 +86,7 @@ struct IndexRange {
  *  global indices for the lowest binding#.
  */
 class DescriptorSetLayoutDef {
-   public:
+  public:
     // Constructors and destructor
     DescriptorSetLayoutDef(const VkDescriptorSetLayoutCreateInfo *p_create_info);
     size_t hash() const;
@@ -153,7 +153,7 @@ class DescriptorSetLayoutDef {
     };
     const BindingTypeStats &GetBindingTypeStats() const { return binding_type_stats_; }
 
-   private:
+  private:
     // Only the first three data members are used for hash and equality checks, the other members are derived from them, and are
     // used to speed up the various lookups/queries/validations
     VkDescriptorSetLayoutCreateFlags flags_;
@@ -185,7 +185,7 @@ using DescriptorSetLayoutDict = hash_util::Dictionary<DescriptorSetLayoutDef, ha
 using DescriptorSetLayoutId = DescriptorSetLayoutDict::Id;
 
 class DescriptorSetLayout {
-   public:
+  public:
     // Constructors and destructor
     DescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *p_create_info, const VkDescriptorSetLayout layout);
     bool HasBinding(const uint32_t binding) const { return layout_id_->HasBinding(binding); }
@@ -264,7 +264,7 @@ class DescriptorSetLayout {
 
     // Binding Iterator
     class ConstBindingIterator {
-       public:
+      public:
         ConstBindingIterator() = delete;
         ConstBindingIterator(const ConstBindingIterator &other) = default;
         ConstBindingIterator &operator=(const ConstBindingIterator &rhs) = default;
@@ -330,13 +330,13 @@ class DescriptorSetLayout {
             return next;
         }
 
-       private:
+      private:
         const DescriptorSetLayout *layout_;
         uint32_t index_;
     };
     ConstBindingIterator end() const { return ConstBindingIterator(this, GetBindingCount()); }
 
-   private:
+  private:
     VkDescriptorSetLayout layout_;
     bool layout_destroyed_;
     DescriptorSetLayoutId layout_id_;
@@ -353,7 +353,7 @@ class DescriptorSetLayout {
 enum DescriptorClass { PlainSampler, ImageSampler, Image, TexelBuffer, GeneralBuffer, InlineUniform, AccelerationStructure };
 
 class Descriptor {
-   public:
+  public:
     virtual ~Descriptor(){};
     virtual void WriteUpdate(const VkWriteDescriptorSet *, const uint32_t) = 0;
     virtual void CopyUpdate(const Descriptor *) = 0;
@@ -383,7 +383,7 @@ bool ValidateDescriptorSetLayoutCreateInfo(const debug_report_data *report_data,
                                            const DeviceExtensions *device_extensions);
 
 class SamplerDescriptor : public Descriptor {
-   public:
+  public:
     SamplerDescriptor(const VkSampler *);
     void WriteUpdate(const VkWriteDescriptorSet *, const uint32_t) override;
     void CopyUpdate(const Descriptor *) override;
@@ -391,13 +391,13 @@ class SamplerDescriptor : public Descriptor {
     virtual bool IsImmutableSampler() const override { return immutable_; };
     VkSampler GetSampler() const { return sampler_; }
 
-   private:
+  private:
     VkSampler sampler_;
     bool immutable_;
 };
 
 class ImageSamplerDescriptor : public Descriptor {
-   public:
+  public:
     ImageSamplerDescriptor(const VkSampler *);
     void WriteUpdate(const VkWriteDescriptorSet *, const uint32_t) override;
     void CopyUpdate(const Descriptor *) override;
@@ -407,7 +407,7 @@ class ImageSamplerDescriptor : public Descriptor {
     VkImageView GetImageView() const { return image_view_; }
     VkImageLayout GetImageLayout() const { return image_layout_; }
 
-   private:
+  private:
     VkSampler sampler_;
     bool immutable_;
     VkImageView image_view_;
@@ -415,7 +415,7 @@ class ImageSamplerDescriptor : public Descriptor {
 };
 
 class ImageDescriptor : public Descriptor {
-   public:
+  public:
     ImageDescriptor(const VkDescriptorType);
     void WriteUpdate(const VkWriteDescriptorSet *, const uint32_t) override;
     void CopyUpdate(const Descriptor *) override;
@@ -424,14 +424,14 @@ class ImageDescriptor : public Descriptor {
     VkImageView GetImageView() const { return image_view_; }
     VkImageLayout GetImageLayout() const { return image_layout_; }
 
-   private:
+  private:
     bool storage_;
     VkImageView image_view_;
     VkImageLayout image_layout_;
 };
 
 class TexelDescriptor : public Descriptor {
-   public:
+  public:
     TexelDescriptor(const VkDescriptorType);
     void WriteUpdate(const VkWriteDescriptorSet *, const uint32_t) override;
     void CopyUpdate(const Descriptor *) override;
@@ -439,13 +439,13 @@ class TexelDescriptor : public Descriptor {
     virtual bool IsStorage() const override { return storage_; }
     VkBufferView GetBufferView() const { return buffer_view_; }
 
-   private:
+  private:
     VkBufferView buffer_view_;
     bool storage_;
 };
 
 class BufferDescriptor : public Descriptor {
-   public:
+  public:
     BufferDescriptor(const VkDescriptorType);
     void WriteUpdate(const VkWriteDescriptorSet *, const uint32_t) override;
     void CopyUpdate(const Descriptor *) override;
@@ -456,7 +456,7 @@ class BufferDescriptor : public Descriptor {
     VkDeviceSize GetOffset() const { return offset_; }
     VkDeviceSize GetRange() const { return range_; }
 
-   private:
+  private:
     bool storage_;
     bool dynamic_;
     VkBuffer buffer_;
@@ -465,7 +465,7 @@ class BufferDescriptor : public Descriptor {
 };
 
 class InlineUniformDescriptor : public Descriptor {
-   public:
+  public:
     InlineUniformDescriptor(const VkDescriptorType) {
         updated = false;
         descriptor_class = InlineUniform;
@@ -476,7 +476,7 @@ class InlineUniformDescriptor : public Descriptor {
 };
 
 class AccelerationStructureDescriptor : public Descriptor {
-   public:
+  public:
     AccelerationStructureDescriptor(const VkDescriptorType) {
         updated = false;
         descriptor_class = AccelerationStructure;
@@ -538,7 +538,7 @@ struct DecodedTemplateUpdate {
  *   be correct at the time of update.
  */
 class DescriptorSet : public BASE_NODE {
-   public:
+  public:
     using StateTracker = ValidationStateTracker;
     DescriptorSet(const VkDescriptorSet, const VkDescriptorPool, const std::shared_ptr<DescriptorSetLayout const> &,
                   uint32_t variable_count, StateTracker *);
@@ -621,7 +621,7 @@ class DescriptorSet : public BASE_NODE {
     const Descriptor *GetDescriptorFromGlobalIndex(const uint32_t index) const { return descriptors_[index].get(); }
     uint64_t GetChangeCount() const { return change_count_; }
 
-   private:
+  private:
     // Private helper to set all bound cmd buffers to INVALID state
     void InvalidateBoundCmdBuffers();
     bool some_update_;  // has any part of the set ever been updated?
@@ -652,7 +652,7 @@ class DescriptorSet : public BASE_NODE {
 };
 // For the "bindless" style resource usage with many descriptors, need to optimize binding and validation
 class PrefilterBindRequestMap {
-   public:
+  public:
     static const uint32_t kManyDescriptors_ = 64;  // TODO base this number on measured data
     std::unique_ptr<BindingReqMap> filtered_map_;
     const BindingReqMap &orig_map_;

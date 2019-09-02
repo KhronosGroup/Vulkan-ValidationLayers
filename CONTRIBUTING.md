@@ -56,7 +56,9 @@ to work on an issue that is assigned, simply coordinate with the current assigne
 #### **Coding Conventions and Formatting**
 * Use the **[Google style guide](https://google.github.io/styleguide/cppguide.html)** for source code with the following exceptions:
     * The column limit is 132 (as opposed to the default value 80). The clang-format tool will handle this. See below.
-    * The indent is 4 spaces instead of the default 2 spaces. Again, the clang-format tool will handle this.
+    * The indent is 4 spaces instead of the default 2 spaces. Access modifier (e.g. `public:`) is indented 2 spaces instead of the
+      default 1 space. Again, the clang-format tool will handle this.
+    * The C++ file extension is `*.cpp` instead of the default `*.cc`.
     * If you can justify a reason for violating a rule in the guidelines, then you are free to do so. Be prepared to defend your
 decision during code review. This should be used responsibly. An example of a bad reason is "I don't like that rule." An example of
 a good reason is "This violates the style guide, but it improves type safety."

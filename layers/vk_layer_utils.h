@@ -133,11 +133,11 @@ typedef enum VkStringErrorFlagBits {
 } VkStringErrorFlagBits;
 typedef VkFlags VkStringErrorFlags;
 
-VK_LAYER_EXPORT void layer_debug_report_actions(debug_report_data *report_data,
-                                                const VkAllocationCallbacks *pAllocator, const char *layer_identifier);
+VK_LAYER_EXPORT void layer_debug_report_actions(debug_report_data *report_data, const VkAllocationCallbacks *pAllocator,
+                                                const char *layer_identifier);
 
-VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_data,
-                                                   const VkAllocationCallbacks *pAllocator, const char *layer_identifier);
+VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_data, const VkAllocationCallbacks *pAllocator,
+                                                   const char *layer_identifier);
 
 VK_LAYER_EXPORT VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
 VK_LAYER_EXPORT bool white_list(const char *item, const std::set<std::string> &whitelist);
@@ -189,7 +189,7 @@ static inline int u_ffs(int val) {
 // predicate. This can be used as a substitute for iterators in exceptional cases.
 template <typename Key, typename T, int BUCKETSLOG2 = 2, typename Hash = std::hash<Key>>
 class vl_concurrent_unordered_map {
-   public:
+  public:
     void insert_or_assign(const Key &key, const T &value) {
         uint32_t h = ConcurrentMapHashObject(key);
         write_lock_guard_t lock(locks[h].lock);
@@ -218,7 +218,7 @@ class vl_concurrent_unordered_map {
 
     // type returned by find() and end().
     class FindResult {
-       public:
+      public:
         FindResult(bool a, T b) : result(a, std::move(b)) {}
 
         // == and != only support comparing against end()
@@ -234,7 +234,7 @@ class vl_concurrent_unordered_map {
         std::pair<bool, T> *operator->() { return &result; }
         const std::pair<bool, T> *operator->() const { return &result; }
 
-       private:
+      private:
         // (found, reference to element)
         std::pair<bool, T> result;
     };
@@ -286,7 +286,7 @@ class vl_concurrent_unordered_map {
         return ret;
     }
 
-   private:
+  private:
     static const int BUCKETS = (1 << BUCKETSLOG2);
 // shared_mutex support added in MSVC 2015 update 2
 #if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
