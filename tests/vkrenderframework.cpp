@@ -388,8 +388,6 @@ void VkRenderFramework::InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction, 
     }
 
     VkInstanceCreateInfo instInfo = {};
-    VkResult U_ASSERT_ONLY err;
-
     instInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instInfo.pNext = instance_pnext;
     instInfo.pApplicationInfo = &app_info;
@@ -412,6 +410,8 @@ void VkRenderFramework::InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction, 
         instInfo.pNext = &dbgCreateInfo;
     }
 
+    VkResult err;
+
     err = vkCreateInstance(&instInfo, NULL, &this->inst);
     ASSERT_VK_SUCCESS(err);
 
@@ -421,6 +421,7 @@ void VkRenderFramework::InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction, 
     err = vkEnumeratePhysicalDevices(inst, &this->gpu_count, objs);
     ASSERT_VK_SUCCESS(err);
     ASSERT_GE(this->gpu_count, (uint32_t)1) << "No GPU available";
+
     if (dbgFunction) {
         m_CreateDebugReportCallback =
             (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(this->inst, "vkCreateDebugReportCallbackEXT");
@@ -1605,10 +1606,6 @@ VkPipelineShaderStageCreateInfo const &VkShaderObj::GetStageCreateInfo() const {
 
 VkShaderObj::VkShaderObj(VkDeviceObj *device, const char *shader_code, VkShaderStageFlagBits stage, VkRenderFramework *framework,
                          char const *name, bool debug, VkSpecializationInfo *specInfo) {
-    VkResult U_ASSERT_ONLY err = VK_SUCCESS;
-    std::vector<unsigned int> spv;
-    VkShaderModuleCreateInfo moduleCreateInfo;
-
     m_device = device;
     m_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     m_stage_info.pNext = nullptr;
@@ -1618,25 +1615,20 @@ VkShaderObj::VkShaderObj(VkDeviceObj *device, const char *shader_code, VkShaderS
     m_stage_info.pName = name;
     m_stage_info.pSpecializationInfo = specInfo;
 
-    moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    moduleCreateInfo.pNext = nullptr;
-
+    std::vector<unsigned int> spv;
     framework->GLSLtoSPV(stage, shader_code, spv, debug);
-    moduleCreateInfo.pCode = spv.data();
-    moduleCreateInfo.codeSize = spv.size() * sizeof(unsigned int);
-    moduleCreateInfo.flags = 0;
 
-    err = init_try(*m_device, moduleCreateInfo);
+    VkShaderModuleCreateInfo moduleCreateInfo = {};
+    moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    moduleCreateInfo.codeSize = spv.size() * sizeof(unsigned int);
+    moduleCreateInfo.pCode = spv.data();
+
+    init(*m_device, moduleCreateInfo);
     m_stage_info.module = handle();
-    assert(VK_SUCCESS == err);
 }
 
 VkShaderObj::VkShaderObj(VkDeviceObj *device, const std::string spv_source, VkShaderStageFlagBits stage,
                          VkRenderFramework *framework, char const *name, VkSpecializationInfo *specInfo) {
-    VkResult U_ASSERT_ONLY err = VK_SUCCESS;
-    std::vector<unsigned int> spv;
-    VkShaderModuleCreateInfo moduleCreateInfo;
-
     m_device = device;
     m_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     m_stage_info.pNext = nullptr;
@@ -1646,17 +1638,16 @@ VkShaderObj::VkShaderObj(VkDeviceObj *device, const std::string spv_source, VkSh
     m_stage_info.pName = name;
     m_stage_info.pSpecializationInfo = specInfo;
 
-    moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    moduleCreateInfo.pNext = nullptr;
-
+    std::vector<unsigned int> spv;
     framework->ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, spv_source.data(), spv);
-    moduleCreateInfo.pCode = spv.data();
-    moduleCreateInfo.codeSize = spv.size() * sizeof(unsigned int);
-    moduleCreateInfo.flags = 0;
 
-    err = init_try(*m_device, moduleCreateInfo);
+    VkShaderModuleCreateInfo moduleCreateInfo = {};
+    moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    moduleCreateInfo.codeSize = spv.size() * sizeof(unsigned int);
+    moduleCreateInfo.pCode = spv.data();
+
+    init(*m_device, moduleCreateInfo);
     m_stage_info.module = handle();
-    assert(VK_SUCCESS == err);
 }
 
 VkPipelineLayoutObj::VkPipelineLayoutObj(VkDeviceObj *device,
