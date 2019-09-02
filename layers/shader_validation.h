@@ -218,7 +218,7 @@ class ValidationCache {
     std::unordered_set<uint32_t> good_shader_hashes;
     ValidationCache() {}
 
-   public:
+  public:
     static VkValidationCacheEXT Create(VkValidationCacheCreateInfoEXT const *pCreateInfo) {
         auto cache = new ValidationCache();
         cache->Load(pCreateInfo);
@@ -284,7 +284,7 @@ class ValidationCache {
 
     void Insert(uint32_t hash) { good_shader_hashes.insert(hash); }
 
-   private:
+  private:
     void Sha1ToVkUuid(const char *sha1_str, uint8_t *uuid) {
         // Convert sha1_str from a hex string to binary. We only need VK_UUID_SIZE bytes of
         // output, so pad with zeroes if the input string is shorter than that, and truncate

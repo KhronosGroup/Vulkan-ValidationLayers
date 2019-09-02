@@ -73,7 +73,7 @@ enum CALL_STATE {
 };
 
 class BASE_NODE {
-   public:
+  public:
     // Track when object is being used by an in-flight command buffer
     std::atomic_int in_use;
     // Track command buffers that this object is bound to
@@ -209,7 +209,7 @@ struct hash<MEM_BINDING> {
 
 // Superclass for bindable object state (currently images and buffers)
 class BINDABLE : public BASE_NODE {
-   public:
+  public:
     bool sparse;  // Is this object being bound with sparse memory or not?
     // Non-sparse binding data
     MEM_BINDING binding;
@@ -246,7 +246,7 @@ class BINDABLE : public BASE_NODE {
 };
 
 class BUFFER_STATE : public BINDABLE {
-   public:
+  public:
     VkBuffer buffer;
     VkBufferCreateInfo createInfo;
     BUFFER_STATE(VkBuffer buff, const VkBufferCreateInfo *pCreateInfo) : buffer(buff), createInfo(*pCreateInfo) {
@@ -274,7 +274,7 @@ class BUFFER_STATE : public BINDABLE {
 };
 
 class BUFFER_VIEW_STATE : public BASE_NODE {
-   public:
+  public:
     VkBufferView buffer_view;
     VkBufferViewCreateInfo create_info;
     BUFFER_VIEW_STATE(VkBufferView bv, const VkBufferViewCreateInfo *ci) : buffer_view(bv), create_info(*ci){};
@@ -293,7 +293,7 @@ struct SAMPLER_STATE : public BASE_NODE {
 };
 
 class IMAGE_STATE : public BINDABLE {
-   public:
+  public:
     VkImage image;
     VkImageCreateInfo createInfo;
     bool valid;               // If this is a swapchain image backing memory track valid here as it doesn't have DEVICE_MEMORY_STATE
@@ -328,7 +328,7 @@ class IMAGE_STATE : public BINDABLE {
 };
 
 class IMAGE_VIEW_STATE : public BASE_NODE {
-   public:
+  public:
     VkImageView image_view;
     VkImageViewCreateInfo create_info;
     VkImageSubresourceRange normalized_subresource_range;
@@ -340,7 +340,7 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
 };
 
 class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
-   public:
+  public:
     VkAccelerationStructureNV acceleration_structure;
     safe_VkAccelerationStructureCreateInfoNV create_info;
     bool memory_requirements_checked = false;
@@ -405,7 +405,7 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
 };
 
 class SWAPCHAIN_NODE {
-   public:
+  public:
     safe_VkSwapchainCreateInfoKHR createInfo;
     VkSwapchainKHR swapchain;
     std::vector<VkImage> images;
@@ -507,7 +507,7 @@ std::string FormatDebugLabel(const char *prefix, const LoggingLabel &label);
 const static VkImageLayout kInvalidLayout = VK_IMAGE_LAYOUT_MAX_ENUM;
 // Interface class.
 class ImageSubresourceLayoutMap {
-   public:
+  public:
     typedef std::function<bool(const VkImageSubresource &, VkImageLayout, VkImageLayout)> Callback;
     struct InitialLayoutState {
         VkImageView image_view;          // For relaxed matching rule evaluation, else VK_NULL_HANDLE
@@ -528,7 +528,7 @@ class ImageSubresourceLayoutMap {
     };
 
     class ConstIteratorInterface {
-       public:
+      public:
         // Make the value accessor non virtual
         const SubresourceLayout &operator*() const { return value_; }
 
@@ -536,12 +536,12 @@ class ImageSubresourceLayoutMap {
         virtual bool AtEnd() const = 0;
         virtual ~ConstIteratorInterface(){};
 
-       protected:
+      protected:
         SubresourceLayout value_;
     };
 
     class ConstIterator {
-       public:
+      public:
         ConstIterator &operator++() {
             ++(*it_);
             return *this;
@@ -550,7 +550,7 @@ class ImageSubresourceLayoutMap {
         ConstIterator(ConstIteratorInterface *it) : it_(it){};
         bool AtEnd() const { return it_->AtEnd(); }
 
-       protected:
+      protected:
         std::unique_ptr<ConstIteratorInterface> it_;
     };
 
@@ -574,7 +574,7 @@ class ImageSubresourceLayoutMap {
 
 template <typename AspectTraits_, size_t kSparseThreshold = 64U>
 class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
-   public:
+  public:
     typedef ImageSubresourceLayoutMap Base;
     typedef AspectTraits_ AspectTraits;
     typedef Base::SubresourceLayout SubresourceLayout;
@@ -589,7 +589,7 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
 
     template <typename Container>
     class ConstIteratorImpl : public Base::ConstIteratorInterface {
-       public:
+      public:
         ConstIteratorImpl &operator++() override {
             ++it_;
             UpdateValue();
@@ -604,7 +604,7 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
         ~ConstIteratorImpl() override {}
         virtual bool AtEnd() const override { return the_end_; }
 
-       protected:
+      protected:
         void UpdateValue() {
             if (it_ != container_->cend()) {
                 value_.subresource = map_->Decode((*it_).first);
@@ -785,7 +785,7 @@ class ImageSubresourceLayoutMapImpl : public ImageSubresourceLayoutMap {
     }
     ~ImageSubresourceLayoutMapImpl() override {}
 
-   protected:
+  protected:
     // This looks a bit ponderous but kAspectCount is a compile time constant
     VkImageSubresource Decode(size_t index) const {
         VkImageSubresource subres;
@@ -1131,7 +1131,7 @@ struct interface_var {
 typedef std::pair<unsigned, unsigned> descriptor_slot_t;
 
 class PIPELINE_STATE : public BASE_NODE {
-   public:
+  public:
     struct StageState {
         std::unordered_set<uint32_t> accessible_ids;
         std::vector<std::pair<descriptor_slot_t, interface_var>> descriptor_uses;
@@ -1530,7 +1530,7 @@ struct MT_FB_ATTACHMENT_INFO {
 };
 
 class FRAMEBUFFER_STATE : public BASE_NODE {
-   public:
+  public:
     VkFramebuffer framebuffer;
     safe_VkFramebufferCreateInfo createInfo;
     std::shared_ptr<RENDER_PASS_STATE> rp_state;

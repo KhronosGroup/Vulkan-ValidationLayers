@@ -88,7 +88,7 @@ struct LogMiscParams {
 };
 
 class StatelessValidation : public ValidationObject {
-   public:
+  public:
     VkPhysicalDeviceLimits device_limits = {};
     safe_VkPhysicalDeviceFeatures2 physical_device_features2;
     const VkPhysicalDeviceFeatures &physical_device_features = physical_device_features2.features;

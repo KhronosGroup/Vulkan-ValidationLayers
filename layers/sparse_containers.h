@@ -88,7 +88,7 @@ namespace sparse_container {
 
 template <typename IndexType_, typename T, bool kSetReplaces, T kDefaultValue = T(), size_t kSparseThreshold = 16>
 class SparseVector {
-   public:
+  public:
     typedef IndexType_ IndexType;
     typedef T value_type;
     typedef value_type ValueType;
@@ -227,7 +227,7 @@ class SparseVector {
 
     friend class ConstIterator;
     class ConstIterator {
-       public:
+      public:
         using SparseType = typename SparseVector::SparseType;
         using SparseIterator = typename SparseType::const_iterator;
         using IndexType = typename SparseVector::IndexType;
@@ -288,7 +288,7 @@ class SparseVector {
 
         ConstIterator() : vec_(nullptr), the_end_(true) {}
 
-       protected:
+      protected:
         const SparseVector *vec_;
         bool the_end_;
         SparseIterator it_sparse_;

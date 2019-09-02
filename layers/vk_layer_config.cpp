@@ -41,7 +41,7 @@
 #define MAX_CHARS_PER_LINE 4096
 
 class ConfigFile {
-   public:
+  public:
     ConfigFile();
     ~ConfigFile();
 
@@ -49,7 +49,7 @@ class ConfigFile {
     void setOption(const std::string &_option, const std::string &_val);
     std::string vk_layer_disables_env_var{};
 
-   private:
+  private:
     bool m_fileIsParsed;
     std::map<std::string, std::string> m_valueMap;
 

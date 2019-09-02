@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2016 The Khronos Group Inc.
- * Copyright (c) 2015-2016 Valve Corporation
- * Copyright (c) 2015-2016 LunarG, Inc.
+ * Copyright (c) 2015-2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2019 Valve Corporation
+ * Copyright (c) 2015-2019 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@
 
 namespace vk_testing {
 class Environment : public ::testing::Environment {
-   public:
+  public:
     Environment();
 
     bool parse_args(int argc, char **argv);
@@ -44,7 +44,7 @@ class Environment : public ::testing::Environment {
     VkInstance get_instance() { return inst; }
     VkPhysicalDevice gpus[16];
 
-   private:
+  private:
     VkApplicationInfo app_;
     uint32_t default_dev_;
     VkInstance inst;

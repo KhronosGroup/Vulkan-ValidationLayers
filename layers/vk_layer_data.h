@@ -33,7 +33,7 @@ class small_unordered_map {
 
     std::unordered_map<Key, T> inner_map;
 
-   public:
+  public:
     small_unordered_map() {
         for (int i = 0; i < N; ++i) {
             small_data_allocated[i] = false;
@@ -48,7 +48,7 @@ class small_unordered_map {
         int index;
         inner_iterator it;
 
-       public:
+      public:
         iterator() {}
 
         iterator operator++() {

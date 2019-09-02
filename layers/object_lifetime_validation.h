@@ -70,7 +70,7 @@ struct ObjTrackState {
 typedef vl_concurrent_unordered_map<uint64_t, std::shared_ptr<ObjTrackState>, 6> object_map_type;
 
 class ObjectLifetimes : public ValidationObject {
-   public:
+  public:
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.
     // This class does its own locking with a shared mutex.

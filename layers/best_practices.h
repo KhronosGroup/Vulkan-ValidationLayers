@@ -26,7 +26,7 @@
 static const uint32_t kMemoryObjectWarningLimit = 250;
 
 class BestPractices : public ValidationStateTracker {
-   public:
+  public:
     using StateTracker = ValidationStateTracker;
 
     std::string GetAPIVersionName(uint32_t version);
@@ -88,7 +88,7 @@ class BestPractices : public ValidationStateTracker {
     bool PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                             uint32_t* pDisplayCount, VkDisplayKHR* pDisplays);
 
-   private:
+  private:
     uint32_t instance_api_version;
     uint32_t device_api_version;
 

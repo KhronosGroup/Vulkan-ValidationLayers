@@ -51,14 +51,14 @@ struct GpuQueueBarrierCommandInfo {
 // Class to encapsulate Descriptor Set allocation.  This manager creates and destroys Descriptor Pools
 // as needed to satisfy requests for descriptor sets.
 class GpuDescriptorSetManager {
-   public:
+  public:
     GpuDescriptorSetManager(CoreChecks *dev_data);
     ~GpuDescriptorSetManager();
 
     VkResult GetDescriptorSets(uint32_t count, VkDescriptorPool *pool, std::vector<VkDescriptorSet> *desc_sets);
     void PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set);
 
-   private:
+  private:
     static const uint32_t kItemsPerChunk = 512;
     struct PoolTracker {
         uint32_t size;

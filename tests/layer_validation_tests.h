@@ -224,7 +224,7 @@ T NearestSmaller(const T from) {
 }
 
 class VkLayerTest : public VkRenderFramework {
-   public:
+  public:
     void VKTriangleTest(BsoFailSelect failCase);
 
     void GenericDrawPreparation(VkCommandBufferObj *commandBuffer, VkPipelineObj &pipelineobj, VkDescriptorSetObj &descriptorSet,
@@ -236,7 +236,7 @@ class VkLayerTest : public VkRenderFramework {
     bool AddSwapchainDeviceExtension();
     VkCommandBufferObj *CommandBuffer();
 
-   protected:
+  protected:
     uint32_t m_instance_api_version = 0;
     uint32_t m_target_api_version = 0;
     bool m_enableWSI;
@@ -251,18 +251,18 @@ class VkLayerTest : public VkRenderFramework {
 };
 
 class VkPositiveLayerTest : public VkLayerTest {
-   public:
-   protected:
+  public:
+  protected:
 };
 
 class VkWsiEnabledLayerTest : public VkLayerTest {
-   public:
-   protected:
+  public:
+  protected:
     VkWsiEnabledLayerTest() { m_enableWSI = true; }
 };
 
 class VkBufferTest {
-   public:
+  public:
     enum eTestEnFlags {
         eDoubleDelete,
         eInvalidDeviceOffset,
@@ -283,7 +283,7 @@ class VkBufferTest {
     const VkBuffer &GetBuffer();
     void TestDoubleDestroy();
 
-   protected:
+  protected:
     bool AllocateCurrent;
     bool BoundCurrent;
     bool CreateCurrent;
@@ -296,7 +296,7 @@ class VkBufferTest {
 
 struct CreatePipelineHelper;
 class VkVerticesObj {
-   public:
+  public:
     VkVerticesObj(VkDeviceObj *aVulkanDevice, unsigned aAttributeCount, unsigned aBindingCount, unsigned aByteStride,
                   VkDeviceSize aVertexCount, const float *aVerticies);
     ~VkVerticesObj();
@@ -304,7 +304,7 @@ class VkVerticesObj {
     bool AddVertexInputToPipeHelpr(CreatePipelineHelper *pipelineHelper);
     void BindVertexBuffers(VkCommandBuffer aCommandBuffer, unsigned aOffsetCount = 0, VkDeviceSize *aOffsetList = nullptr);
 
-   protected:
+  protected:
     static uint32_t BindIdGenerator;
 
     bool BoundCurrent;
@@ -351,7 +351,7 @@ bool IsValidVkStruct(const T &s) {
 // Designed with minimal error checking to ensure easy error state creation
 // See OneshotTest for typical usage
 struct CreatePipelineHelper {
-   public:
+  public:
     std::vector<VkDescriptorSetLayoutBinding> dsl_bindings_;
     std::unique_ptr<OneOffDescriptorSet> descriptor_set_;
     std::vector<VkPipelineShaderStageCreateInfo> shader_stages_;
@@ -431,7 +431,7 @@ struct CreatePipelineHelper {
 };
 
 struct CreateComputePipelineHelper {
-   public:
+  public:
     std::vector<VkDescriptorSetLayoutBinding> dsl_bindings_;
     std::unique_ptr<OneOffDescriptorSet> descriptor_set_;
     VkPipelineLayoutCreateInfo pipeline_layout_ci_ = {};
@@ -491,7 +491,7 @@ struct CreateComputePipelineHelper {
 // Designed with minimal error checking to ensure easy error state creation
 // See OneshotTest for typical usage
 struct CreateNVRayTracingPipelineHelper {
-   public:
+  public:
     std::vector<VkDescriptorSetLayoutBinding> dsl_bindings_;
     std::unique_ptr<OneOffDescriptorSet> descriptor_set_;
     std::vector<VkPipelineShaderStageCreateInfo> shader_stages_;
@@ -575,7 +575,7 @@ class ExtensionChain {
     typedef std::vector<const char *> List;
     List *list_;
 
-   public:
+  public:
     template <typename F>
     ExtensionChain(F &add_if, List *list) : add_if_(add_if), list_(list) {}
 
@@ -601,7 +601,7 @@ VkPhysicalDevicePushDescriptorPropertiesKHR GetPushDescriptorProperties(VkInstan
 VkPhysicalDeviceSubgroupProperties GetSubgroupProperties(VkInstance instance, VkPhysicalDevice gpu);
 
 class BarrierQueueFamilyTestHelper {
-   public:
+  public:
     struct QueueFamilyObjs {
         uint32_t index;
         // We would use std::unique_ptr, but this triggers a compiler error on older compilers

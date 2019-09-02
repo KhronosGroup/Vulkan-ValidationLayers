@@ -51,7 +51,7 @@ enum SyncScope {
 enum FENCE_STATUS { FENCE_UNSIGNALED, FENCE_INFLIGHT, FENCE_RETIRED };
 
 class FENCE_STATE {
-   public:
+  public:
     VkFence fence;
     VkFenceCreateInfo createInfo;
     std::pair<VkQueue, uint64_t> signaler;
@@ -63,20 +63,20 @@ class FENCE_STATE {
 };
 
 class SEMAPHORE_STATE : public BASE_NODE {
-   public:
+  public:
     std::pair<VkQueue, uint64_t> signaler;
     bool signaled;
     SyncScope scope;
 };
 
 class EVENT_STATE : public BASE_NODE {
-   public:
+  public:
     int write_in_use;
     VkPipelineStageFlags stageMask;
 };
 
 class QUEUE_STATE {
-   public:
+  public:
     VkQueue queue;
     uint32_t queueFamilyIndex;
     std::unordered_map<VkEvent, VkPipelineStageFlags> eventToStageMap;
@@ -87,7 +87,7 @@ class QUEUE_STATE {
 };
 
 class QUERY_POOL_STATE : public BASE_NODE {
-   public:
+  public:
     VkQueryPoolCreateInfo createInfo;
 };
 
@@ -204,7 +204,7 @@ struct GpuValidationState;
     VALSTATETRACK_MAP_AND_TRAITS_IMPL(handle_type, state_type, map_member, true)
 
 class ValidationStateTracker : public ValidationObject {
-   public:
+  public:
     //  TODO -- move to private
     //  TODO -- make consistent with traits approach below.
     unordered_map<VkQueue, QUEUE_STATE> queueMap;
@@ -256,7 +256,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE, accelerationStructureMap)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, SURFACE_STATE, surface_map)
 
-   public:
+  public:
     template <typename State>
     typename AccessorTraits<State>::ReturnType Get(typename AccessorTraits<State>::Handle handle) {
         using Traits = AccessorTraits<State>;
@@ -929,7 +929,7 @@ class ValidationStateTracker : public ValidationObject {
 };
 
 class CoreChecks : public ValidationStateTracker {
-   public:
+  public:
     using StateTracker = ValidationStateTracker;
     std::unordered_set<uint64_t> ahb_ext_formats_set;
     GlobalQFOTransferBarrierMap<VkImageMemoryBarrier> qfo_release_image_barrier_map;

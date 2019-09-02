@@ -88,8 +88,8 @@ VK_LAYER_EXPORT bool white_list(const char *item, const std::set<std::string> &l
 // If a vk_layer_settings.txt file is present and an application defines a debug callback, both callbacks
 // will be active.  If no vk_layer_settings.txt file is present, creating an application-defined debug
 // callback will cause the default callbacks to be unregisterd and removed.
-VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_data,
-                                                   const VkAllocationCallbacks *pAllocator, const char *layer_identifier) {
+VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_data, const VkAllocationCallbacks *pAllocator,
+                                                   const char *layer_identifier) {
     VkDebugUtilsMessengerEXT messenger = VK_NULL_HANDLE;
 
     std::string report_flags_key = layer_identifier;
@@ -151,8 +151,8 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
 
 // NOTE: This function has been deprecated, and the above function (layer_debug_messenger_actions) should be
 //       used in its place.
-VK_LAYER_EXPORT void layer_debug_report_actions(debug_report_data *report_data,
-                                                const VkAllocationCallbacks *pAllocator, const char *layer_identifier) {
+VK_LAYER_EXPORT void layer_debug_report_actions(debug_report_data *report_data, const VkAllocationCallbacks *pAllocator,
+                                                const char *layer_identifier) {
     VkDebugReportCallbackEXT callback = VK_NULL_HANDLE;
 
     std::string report_flags_key = layer_identifier;
