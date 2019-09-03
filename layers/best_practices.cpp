@@ -265,6 +265,36 @@ void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memo
     }
 }
 
+bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, const char* api_name) {
+    bool skip = false;
+    BUFFER_STATE* buffer_state = GetBufferState(buffer);
+
+    if (!buffer_state->memory_requirements_checked) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        kVUID_BestPractices_BufferMemReqNotCalled,
+                        "%s: Binding memory to %s but vkGetBufferMemoryRequirements() has not been called on that buffer.",
+                        api_name, report_data->FormatHandle(buffer).c_str());
+    }
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory,
+                                                    VkDeviceSize memoryOffset) {
+    bool skip = false;
+    const char* api_name = "BindBufferMemory()";
+
+    skip |= ValidateBindBufferMemory(buffer, api_name);
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
+                                                     const VkBindBufferMemoryInfo* pBindInfos) {}
+
+bool BestPractices::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount,
+                                                        const VkBindBufferMemoryInfo* pBindInfos) {}
+
 // TODO: Insert get check for Get[Buffer/Image]MemoryRequirements() inside Bind[Buffer/Image]Memory() once tracked inside of
 // StateTracker State will be tracked in [BUFFER/IMAGE]_STATE->memory_requirements_checked
 
