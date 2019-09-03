@@ -691,3 +691,82 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysical
     }
     return skip;
 }
+
+bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
+                                                   VkFence fence) {
+    bool skip = false;
+
+    for (uint32_t bindIdx = 0; bindIdx < bindInfoCount; bindIdx++) {
+        const VkBindSparseInfo& bindInfo = pBindInfo[bindIdx];
+        // Store sparse binding image_state and after binding is complete make sure that any requiring metadata have it bound
+        std::unordered_set<IMAGE_STATE*> sparse_images;
+        // If we're binding sparse image memory make sure reqs were queried and note if metadata is required and bound
+        for (uint32_t i = 0; i < bindInfo.imageBindCount; ++i) {
+            const auto& image_bind = bindInfo.pImageBinds[i];
+            auto image_state = GetImageState(image_bind.image);
+            if (!image_state)
+                continue;  // Param/Object validation should report image_bind.image handles being invalid, so just skip here.
+            sparse_images.insert(image_state);
+            if (image_state->createInfo.flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) {
+                if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
+                    // For now just warning if sparse image binding occurs without calling to get reqs first
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                                    HandleToUint64(image_state->image), kVUID_Core_MemTrack_InvalidState,
+                                    "vkQueueBindSparse(): Binding sparse memory to %s without first calling "
+                                    "vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
+                                    report_data->FormatHandle(image_state->image).c_str());
+                }
+            }
+            if (!image_state->memory_requirements_checked) {
+                // For now just warning if sparse image binding occurs without calling to get reqs first
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                                HandleToUint64(image_state->image), kVUID_Core_MemTrack_InvalidState,
+                                "vkQueueBindSparse(): Binding sparse memory to %s without first calling "
+                                "vkGetImageMemoryRequirements() to retrieve requirements.",
+                                report_data->FormatHandle(image_state->image).c_str());
+            }
+        }
+        for (uint32_t i = 0; i < bindInfo.imageOpaqueBindCount; ++i) {
+            const auto& image_opaque_bind = bindInfo.pImageOpaqueBinds[i];
+            auto image_state = GetImageState(bindInfo.pImageOpaqueBinds[i].image);
+            if (!image_state)
+                continue;  // Param/Object validation should report image_bind.image handles being invalid, so just skip here.
+            sparse_images.insert(image_state);
+            if (image_state->createInfo.flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) {
+                if (!image_state->get_sparse_reqs_called || image_state->sparse_requirements.empty()) {
+                    // For now just warning if sparse image binding occurs without calling to get reqs first
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                                    HandleToUint64(image_state->image), kVUID_Core_MemTrack_InvalidState,
+                                    "vkQueueBindSparse(): Binding opaque sparse memory to %s without first calling "
+                                    "vkGetImageSparseMemoryRequirements[2KHR]() to retrieve requirements.",
+                                    report_data->FormatHandle(image_state->image).c_str());
+                }
+            }
+            if (!image_state->memory_requirements_checked) {
+                // For now just warning if sparse image binding occurs without calling to get reqs first
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                                HandleToUint64(image_state->image), kVUID_Core_MemTrack_InvalidState,
+                                "vkQueueBindSparse(): Binding opaque sparse memory to %s without first calling "
+                                "vkGetImageMemoryRequirements() to retrieve requirements.",
+                                report_data->FormatHandle(image_state->image).c_str());
+            }
+            for (uint32_t j = 0; j < image_opaque_bind.bindCount; ++j) {
+                if (image_opaque_bind.pBinds[j].flags & VK_SPARSE_MEMORY_BIND_METADATA_BIT) {
+                    image_state->sparse_metadata_bound = true;
+                }
+            }
+        }
+        for (const auto& sparse_image_state : sparse_images) {
+            if (sparse_image_state->sparse_metadata_required && !sparse_image_state->sparse_metadata_bound) {
+                // Warn if sparse image binding metadata required for image with sparse binding, but metadata not bound
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                                HandleToUint64(sparse_image_state->image), kVUID_Core_MemTrack_InvalidState,
+                                "vkQueueBindSparse(): Binding sparse memory to %s which requires a metadata aspect but no "
+                                "binding with VK_SPARSE_MEMORY_BIND_METADATA_BIT set was made.",
+                                report_data->FormatHandle(sparse_image_state->image).c_str());
+            }
+        }
+    }
+
+    return skip;
+}
