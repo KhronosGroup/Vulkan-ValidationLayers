@@ -290,13 +290,80 @@ bool BestPractices::PreCallValidateBindBufferMemory(VkDevice device, VkBuffer bu
 }
 
 bool BestPractices::PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
-                                                     const VkBindBufferMemoryInfo* pBindInfos) {}
+                                                     const VkBindBufferMemoryInfo* pBindInfos) {
+    char api_name[64];
+    bool skip = false;
+
+    for (uint32_t i = 0; i < bindInfoCount; i++) {
+        sprintf(api_name, "vkBindBufferMemory2() pBindInfos[%u]", i);
+        skip |= ValidateBindBufferMemory(pBindInfos[i].buffer, api_name);
+    }
+
+    return skip;
+}
 
 bool BestPractices::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount,
-                                                        const VkBindBufferMemoryInfo* pBindInfos) {}
+                                                        const VkBindBufferMemoryInfo* pBindInfos) {
+    char api_name[64];
+    bool skip = false;
 
-// TODO: Insert get check for Get[Buffer/Image]MemoryRequirements() inside Bind[Buffer/Image]Memory() once tracked inside of
-// StateTracker State will be tracked in [BUFFER/IMAGE]_STATE->memory_requirements_checked
+    for (uint32_t i = 0; i < bindInfoCount; i++) {
+        sprintf(api_name, "vkBindBufferMemory2KHR() pBindInfos[%u]", i);
+        skip |= ValidateBindBufferMemory(pBindInfos[i].buffer, api_name);
+    }
+
+    return skip;
+}
+
+bool BestPractices::ValidateBindImageMemory(VkImage image, const char* api_name) {
+    bool skip = false;
+    IMAGE_STATE* image_state = GetImageState(image);
+
+    if (!image_state->memory_requirements_checked) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        kVUID_BestPractices_ImageMemReqNotCalled,
+                        "%s: Binding memory to %s but vkGetImageMemoryRequirements() has not been called on that image.", api_name,
+                        report_data->FormatHandle(image).c_str());
+    }
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory,
+                                                   VkDeviceSize memoryOffset) {
+    bool skip = false;
+    const char* api_name = "vkBindImageMemory()";
+
+    skip |= ValidateBindImageMemory(image, api_name);
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoCount,
+                                                    const VkBindImageMemoryInfo* pBindInfos) {
+    char api_name[64];
+    bool skip = false;
+
+    for (uint32_t i = 0; i < bindInfoCount; i++) {
+        sprintf(api_name, "vkBindImageMemory2() pBindInfos[%u]", i);
+        skip |= ValidateBindImageMemory(pBindInfos[i].image, api_name);
+    }
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount,
+                                                       const VkBindImageMemoryInfo* pBindInfos) {
+    char api_name[64];
+    bool skip = false;
+
+    for (uint32_t i = 0; i < bindInfoCount; i++) {
+        sprintf(api_name, "vkBindImageMemory2KHR() pBindInfos[%u]", i);
+        skip |= ValidateBindImageMemory(pBindInfos[i].image, api_name);
+    }
+
+    return skip;
+}
 
 bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                            const VkGraphicsPipelineCreateInfo* pCreateInfos,
