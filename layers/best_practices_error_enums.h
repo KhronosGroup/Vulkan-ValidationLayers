@@ -52,5 +52,7 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_Swapchain_GetSurfaceNotCa
     "UNASSIGNED-BestPractices-vkCreateSwapchainKHR-surface-not-retrieved";
 static const char DECORATE_UNUSED *kVUID_BestPractices_DisplayPlane_PropertiesNotCalled =
     "UNASSIGNED-BestPractices-vkGetDisplayPlaneSupportedDisplaysKHR-properties-not-retrieved";
+static const char DECORATE_UNUSED *kVUID_BestPractices_BufferMemReqNotCalled =
+    "UNASSIGNED-BestPractices-vkBindBufferMemory-requirements-not-retrieved";
 
 #endif
