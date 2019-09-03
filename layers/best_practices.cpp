@@ -612,6 +612,28 @@ static bool ValidateCommonGetPhysicalDeviceQueueFamilyProperties(debug_report_da
     return skip;
 }
 
+bool BestPractices::PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
+                                                                     const VkBindAccelerationStructureMemoryInfoNV* pBindInfos) {
+    bool skip = false;
+
+    for (uint32_t i = 0; i < bindInfoCount; i++) {
+        const ACCELERATION_STRUCTURE_STATE* as_state = GetAccelerationStructureState(pBindInfos[i].accelerationStructure);
+        if (!as_state->memory_requirements_checked) {
+            // There's not an explicit requirement in the spec to call vkGetImageMemoryRequirements() prior to calling
+            // BindAccelerationStructureMemoryNV but it's implied in that memory being bound must conform with
+            // VkAccelerationStructureMemoryRequirementsInfoNV from vkGetAccelerationStructureMemoryRequirementsNV
+            skip |= log_msg(
+                report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
+                kVUID_BestPractices_BindAccelNV_NoMemReqQuery,
+                "vkBindAccelerationStructureMemoryNV(): "
+                "Binding memory to %s but vkGetAccelerationStructureMemoryRequirementsNV() has not been called on that structure.",
+                report_data->FormatHandle(pBindInfos[i].accelerationStructure).c_str());
+        }
+    }
+
+    return skip;
+}
+
 bool BestPractices::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice,
                                                                           uint32_t* pQueueFamilyPropertyCount,
                                                                           VkQueueFamilyProperties* pQueueFamilyProperties) {

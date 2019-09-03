@@ -107,6 +107,8 @@ class BestPractices : public ValidationStateTracker {
                                                                    VkQueueFamilyProperties2* pQueueFamilyProperties);
     bool PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
                                                            uint32_t* pSurfaceFormatCount, VkSurfaceFormatKHR* pSurfaceFormats);
+    bool PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
+                                                          const VkBindAccelerationStructureMemoryInfoNV* pBindInfos);
 
   private:
     uint32_t instance_api_version;
