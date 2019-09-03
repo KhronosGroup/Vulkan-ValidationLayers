@@ -6888,19 +6888,6 @@ bool CoreChecks::ValidateBindAccelerationStructureMemoryNV(VkDevice device,
                     "vkBindAccelerationStructureMemoryNV(): accelerationStructure must not already be backed by a memory object.");
     }
 
-    if (!as_state->memory_requirements_checked) {
-        // There's not an explicit requirement in the spec to call vkGetImageMemoryRequirements() prior to calling
-        // BindAccelerationStructureMemoryNV but it's implied in that memory being bound must conform with
-        // VkAccelerationStructureMemoryRequirementsInfoNV from vkGetAccelerationStructureMemoryRequirementsNV
-        skip |= log_msg(
-            report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, as_handle,
-            kVUID_Core_BindAccelNV_NoMemReqQuery,
-            "vkBindAccelerationStructureMemoryNV(): "
-            "Binding memory to %s but vkGetAccelerationStructureMemoryRequirementsNV() has not been called on that structure.",
-            report_data->FormatHandle(info.accelerationStructure).c_str());
-        // Use requirements gathered at create time for validation below...
-    }
-
     // Validate bound memory range information
     const auto mem_info = GetDevMemState(info.memory);
     if (mem_info) {
