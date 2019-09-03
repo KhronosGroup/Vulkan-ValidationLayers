@@ -362,8 +362,8 @@ class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
 };
 
 struct MemRange {
-    VkDeviceSize offset;
-    VkDeviceSize size;
+    VkDeviceSize offset = 0;
+    VkDeviceSize size = 0;
 };
 
 // Data struct for tracking memory object
@@ -382,7 +382,7 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
     std::unordered_set<uint64_t> bound_buffers;
     std::unordered_set<uint64_t> bound_acceleration_structures;
 
-    MemRange mem_range;
+    MemRange mapped_range;
     void *shadow_copy_base;    // Base of layer's allocation for guard band, data, and alignment space
     void *shadow_copy;         // Pointer to start of guard-band data before mapped region
     uint64_t shadow_pad_size;  // Size of the guard-band data before and after actual data. It MUST be a
@@ -398,7 +398,7 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
           dedicated_image(VK_NULL_HANDLE),
           is_export(false),
           export_handle_type_flags(0),
-          mem_range{},
+          mapped_range{},
           shadow_copy_base(0),
           shadow_copy(0),
           shadow_pad_size(0),

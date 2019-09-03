@@ -3944,62 +3944,58 @@ void ValidationStateTracker::PreCallRecordFreeMemory(VkDevice device, VkDeviceMe
 //  and that the size of the map range should be:
 //  1. Not zero
 //  2. Within the size of the memory allocation
-bool CoreChecks::ValidateMapMemRange(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size) {
+bool CoreChecks::ValidateMapMemRange(const DEVICE_MEMORY_STATE *mem_info, VkDeviceSize offset, VkDeviceSize size) const {
     bool skip = false;
-
+    assert(mem_info);
+    const auto mem = mem_info->mem;
     if (size == 0) {
         skip =
             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT, HandleToUint64(mem),
                     kVUID_Core_MemTrack_InvalidMap, "VkMapMemory: Attempting to map memory range of size zero");
     }
 
-    auto mem_element = memObjMap.find(mem);
-    if (mem_element != memObjMap.end()) {
-        auto mem_info = mem_element->second.get();
-        // It is an application error to call VkMapMemory on an object that is already mapped
-        if (mem_info->mem_range.size != 0) {
-            skip =
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
-                        HandleToUint64(mem), kVUID_Core_MemTrack_InvalidMap,
-                        "VkMapMemory: Attempting to map memory on an already-mapped %s.", report_data->FormatHandle(mem).c_str());
-        }
+    // It is an application error to call VkMapMemory on an object that is already mapped
+    if (mem_info->mapped_range.size != 0) {
+        skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
+                       HandleToUint64(mem), kVUID_Core_MemTrack_InvalidMap,
+                       "VkMapMemory: Attempting to map memory on an already-mapped %s.", report_data->FormatHandle(mem).c_str());
+    }
 
-        // Validate that offset + size is within object's allocationSize
-        if (size == VK_WHOLE_SIZE) {
-            if (offset >= mem_info->alloc_info.allocationSize) {
-                skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
-                               HandleToUint64(mem), kVUID_Core_MemTrack_InvalidMap,
-                               "Mapping Memory from 0x%" PRIx64 " to 0x%" PRIx64
-                               " with size of VK_WHOLE_SIZE oversteps total array size 0x%" PRIx64,
-                               offset, mem_info->alloc_info.allocationSize, mem_info->alloc_info.allocationSize);
-            }
-        } else {
-            if ((offset + size) > mem_info->alloc_info.allocationSize) {
-                skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
-                               HandleToUint64(mem), "VUID-vkMapMemory-size-00681",
-                               "Mapping Memory from 0x%" PRIx64 " to 0x%" PRIx64 " oversteps total array size 0x%" PRIx64 ".",
-                               offset, size + offset, mem_info->alloc_info.allocationSize);
-            }
+    // Validate that offset + size is within object's allocationSize
+    if (size == VK_WHOLE_SIZE) {
+        if (offset >= mem_info->alloc_info.allocationSize) {
+            skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
+                           HandleToUint64(mem), kVUID_Core_MemTrack_InvalidMap,
+                           "Mapping Memory from 0x%" PRIx64 " to 0x%" PRIx64
+                           " with size of VK_WHOLE_SIZE oversteps total array size 0x%" PRIx64,
+                           offset, mem_info->alloc_info.allocationSize, mem_info->alloc_info.allocationSize);
+        }
+    } else {
+        if ((offset + size) > mem_info->alloc_info.allocationSize) {
+            skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
+                           HandleToUint64(mem), "VUID-vkMapMemory-size-00681",
+                           "Mapping Memory from 0x%" PRIx64 " to 0x%" PRIx64 " oversteps total array size 0x%" PRIx64 ".", offset,
+                           size + offset, mem_info->alloc_info.allocationSize);
         }
     }
     return skip;
 }
 
-void CoreChecks::StoreMemRanges(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size) {
+void ValidationStateTracker::RecordMappedMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void **ppData) {
     auto mem_info = GetDevMemState(mem);
     if (mem_info) {
-        mem_info->mem_range.offset = offset;
-        mem_info->mem_range.size = size;
+        mem_info->mapped_range.offset = offset;
+        mem_info->mapped_range.size = size;
+        mem_info->p_driver_data = *ppData;
     }
 }
 
 // Guard value for pad data
 static char NoncoherentMemoryFillValue = 0xb;
 
-void CoreChecks::InitializeAndTrackMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void **ppData) {
+void CoreChecks::InitializeShadowMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void **ppData) {
     auto mem_info = GetDevMemState(mem);
     if (mem_info) {
-        mem_info->p_driver_data = *ppData;
         uint32_t index = mem_info->alloc_info.memoryTypeIndex;
         if (phys_dev_mem_props.memoryTypes[index].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) {
             mem_info->shadow_copy = 0;
@@ -11751,7 +11747,7 @@ void ValidationStateTracker::PreCallRecordCmdExecuteCommands(VkCommandBuffer com
 bool CoreChecks::PreCallValidateMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size,
                                           VkFlags flags, void **ppData) {
     bool skip = false;
-    DEVICE_MEMORY_STATE *mem_info = GetDevMemState(mem);
+    const DEVICE_MEMORY_STATE *mem_info = GetDevMemState(mem);
     if (mem_info) {
         if ((phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].propertyFlags &
              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0) {
@@ -11760,23 +11756,28 @@ bool CoreChecks::PreCallValidateMapMemory(VkDevice device, VkDeviceMemory mem, V
                            "Mapping Memory without VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT set: %s.",
                            report_data->FormatHandle(mem).c_str());
         }
+        skip |= ValidateMapMemRange(mem_info, offset, size);
     }
-    skip |= ValidateMapMemRange(mem, offset, size);
     return skip;
+}
+
+void ValidationStateTracker::PostCallRecordMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size,
+                                                     VkFlags flags, void **ppData, VkResult result) {
+    if (VK_SUCCESS != result) return;
+    RecordMappedMemory(mem, offset, size, ppData);
 }
 
 void CoreChecks::PostCallRecordMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, VkFlags flags,
                                          void **ppData, VkResult result) {
     if (VK_SUCCESS != result) return;
-    // TODO : What's the point of this range? See comment on creating new "bound_range" above, which may replace this
-    StoreMemRanges(mem, offset, size);
-    InitializeAndTrackMemory(mem, offset, size, ppData);
+    StateTracker::PostCallRecordMapMemory(device, mem, offset, size, flags, ppData, result);
+    InitializeShadowMemory(mem, offset, size, ppData);
 }
 
 bool CoreChecks::PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory mem) {
     bool skip = false;
-    auto mem_info = GetDevMemState(mem);
-    if (mem_info && !mem_info->mem_range.size) {
+    const auto mem_info = GetDevMemState(mem);
+    if (mem_info && !mem_info->mapped_range.size) {
         // Valid Usage: memory must currently be mapped
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
                         HandleToUint64(mem), "VUID-vkUnmapMemory-memory-00689", "Unmapping Memory without memory being mapped: %s.",
@@ -11785,37 +11786,45 @@ bool CoreChecks::PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory mem)
     return skip;
 }
 
-void CoreChecks::PreCallRecordUnmapMemory(VkDevice device, VkDeviceMemory mem) {
+void ValidationStateTracker::PreCallRecordUnmapMemory(VkDevice device, VkDeviceMemory mem) {
     auto mem_info = GetDevMemState(mem);
     if (mem_info) {
-        mem_info->mem_range.size = 0;
-        if (mem_info->shadow_copy) {
-            free(mem_info->shadow_copy_base);
-            mem_info->shadow_copy_base = 0;
-            mem_info->shadow_copy = 0;
-        }
+        mem_info->mapped_range = MemRange();
+        mem_info->p_driver_data = nullptr;
     }
 }
 
-bool CoreChecks::ValidateMemoryIsMapped(const char *funcName, uint32_t memRangeCount, const VkMappedMemoryRange *pMemRanges) {
+void CoreChecks::PreCallRecordUnmapMemory(VkDevice device, VkDeviceMemory mem) {
+    // Only core checks uses the shadow copy, clear that up here
+    auto mem_info = GetDevMemState(mem);
+    if (mem_info && mem_info->shadow_copy_base) {
+        free(mem_info->shadow_copy_base);
+        mem_info->shadow_copy_base = nullptr;
+        mem_info->shadow_copy = nullptr;
+        mem_info->shadow_pad_size = 0;
+    }
+    StateTracker::PreCallRecordUnmapMemory(device, mem);
+}
+
+bool CoreChecks::ValidateMemoryIsMapped(const char *funcName, uint32_t memRangeCount, const VkMappedMemoryRange *pMemRanges) const {
     bool skip = false;
     for (uint32_t i = 0; i < memRangeCount; ++i) {
         auto mem_info = GetDevMemState(pMemRanges[i].memory);
         if (mem_info) {
             if (pMemRanges[i].size == VK_WHOLE_SIZE) {
-                if (mem_info->mem_range.offset > pMemRanges[i].offset) {
+                if (mem_info->mapped_range.offset > pMemRanges[i].offset) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
                                     HandleToUint64(pMemRanges[i].memory), "VUID-VkMappedMemoryRange-size-00686",
                                     "%s: Flush/Invalidate offset (" PRINTF_SIZE_T_SPECIFIER
                                     ") is less than Memory Object's offset (" PRINTF_SIZE_T_SPECIFIER ").",
                                     funcName, static_cast<size_t>(pMemRanges[i].offset),
-                                    static_cast<size_t>(mem_info->mem_range.offset));
+                                    static_cast<size_t>(mem_info->mapped_range.offset));
                 }
             } else {
-                const uint64_t data_end = (mem_info->mem_range.size == VK_WHOLE_SIZE)
+                const uint64_t data_end = (mem_info->mapped_range.size == VK_WHOLE_SIZE)
                                               ? mem_info->alloc_info.allocationSize
-                                              : (mem_info->mem_range.offset + mem_info->mem_range.size);
-                if ((mem_info->mem_range.offset > pMemRanges[i].offset) ||
+                                              : (mem_info->mapped_range.offset + mem_info->mapped_range.size);
+                if ((mem_info->mapped_range.offset > pMemRanges[i].offset) ||
                     (data_end < (pMemRanges[i].offset + pMemRanges[i].size))) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
                                     HandleToUint64(pMemRanges[i].memory), "VUID-VkMappedMemoryRange-size-00685",
@@ -11830,15 +11839,15 @@ bool CoreChecks::ValidateMemoryIsMapped(const char *funcName, uint32_t memRangeC
     return skip;
 }
 
-bool CoreChecks::ValidateAndCopyNoncoherentMemoryToDriver(uint32_t mem_range_count, const VkMappedMemoryRange *mem_ranges) {
+bool CoreChecks::ValidateAndCopyNoncoherentMemoryToDriver(uint32_t mem_range_count, const VkMappedMemoryRange *mem_ranges) const {
     bool skip = false;
     for (uint32_t i = 0; i < mem_range_count; ++i) {
         auto mem_info = GetDevMemState(mem_ranges[i].memory);
         if (mem_info) {
             if (mem_info->shadow_copy) {
-                VkDeviceSize size = (mem_info->mem_range.size != VK_WHOLE_SIZE)
-                                        ? mem_info->mem_range.size
-                                        : (mem_info->alloc_info.allocationSize - mem_info->mem_range.offset);
+                VkDeviceSize size = (mem_info->mapped_range.size != VK_WHOLE_SIZE)
+                                        ? mem_info->mapped_range.size
+                                        : (mem_info->alloc_info.allocationSize - mem_info->mapped_range.offset);
                 char *data = static_cast<char *>(mem_info->shadow_copy);
                 for (uint64_t j = 0; j < mem_info->shadow_pad_size; ++j) {
                     if (data[j] != NoncoherentMemoryFillValue) {
@@ -11867,8 +11876,8 @@ void CoreChecks::CopyNoncoherentMemoryFromDriver(uint32_t mem_range_count, const
     for (uint32_t i = 0; i < mem_range_count; ++i) {
         auto mem_info = GetDevMemState(mem_ranges[i].memory);
         if (mem_info && mem_info->shadow_copy) {
-            VkDeviceSize size = (mem_info->mem_range.size != VK_WHOLE_SIZE)
-                                    ? mem_info->mem_range.size
+            VkDeviceSize size = (mem_info->mapped_range.size != VK_WHOLE_SIZE)
+                                    ? mem_info->mapped_range.size
                                     : (mem_info->alloc_info.allocationSize - mem_ranges[i].offset);
             char *data = static_cast<char *>(mem_info->shadow_copy);
             memcpy(data + mem_info->shadow_pad_size, mem_info->p_driver_data, (size_t)(size));
@@ -11877,7 +11886,7 @@ void CoreChecks::CopyNoncoherentMemoryFromDriver(uint32_t mem_range_count, const
 }
 
 bool CoreChecks::ValidateMappedMemoryRangeDeviceLimits(const char *func_name, uint32_t mem_range_count,
-                                                       const VkMappedMemoryRange *mem_ranges) {
+                                                       const VkMappedMemoryRange *mem_ranges) const {
     bool skip = false;
     for (uint32_t i = 0; i < mem_range_count; ++i) {
         uint64_t atom_size = phys_dev_props.limits.nonCoherentAtomSize;
