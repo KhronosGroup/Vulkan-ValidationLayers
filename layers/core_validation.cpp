@@ -4390,16 +4390,6 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
         uint64_t buffer_handle = HandleToUint64(buffer);
         const VulkanTypedHandle obj_struct(buffer, kVulkanObjectTypeBuffer);
         skip = ValidateSetMemBinding(mem, obj_struct, api_name);
-        if (!buffer_state->memory_requirements_checked) {
-            // There's not an explicit requirement in the spec to call vkGetBufferMemoryRequirements() prior to calling
-            // BindBufferMemory, but it's implied in that memory being bound must conform with VkMemoryRequirements from
-            // vkGetBufferMemoryRequirements()
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, buffer_handle,
-                            kVUID_Core_BindBuffer_NoMemReqQuery,
-                            "%s: Binding memory to %s but vkGetBufferMemoryRequirements() has not been called on that buffer.",
-                            api_name, report_data->FormatHandle(buffer).c_str());
-            // In the following we'll use the information we got in CreateBuffer
-        }
 
         // Validate bound memory range information
         const auto mem_info = GetDevMemState(mem);
@@ -11987,16 +11977,6 @@ bool CoreChecks::ValidateBindImageMemory(const VkBindImageMemoryInfo &bindInfo, 
             return skip;
         }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-        if (!image_state->memory_requirements_checked) {
-            // There's not an explicit requirement in the spec to call vkGetImageMemoryRequirements() prior to calling
-            // BindImageMemory but it's implied in that memory being bound must conform with VkMemoryRequirements from
-            // vkGetImageMemoryRequirements()
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
-                            kVUID_Core_BindImage_NoMemReqQuery,
-                            "%s: Binding memory to %s but vkGetImageMemoryRequirements() has not been called on that image.",
-                            api_name, report_data->FormatHandle(bindInfo.image).c_str());
-            // Use this information fetched at CreateImage time, in validation below.
-        }
 
         // Validate bound memory range information
         const auto mem_info = GetDevMemState(bindInfo.memory);
