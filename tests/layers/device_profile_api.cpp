@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2018 The Khronos Group Inc.
- * Copyright (c) 2015-2018 Valve Corporation
- * Copyright (c) 2015-2018 LunarG, Inc.
- * Copyright (C) 2015-2018 Google Inc.
+ * Copyright (c) 2015-2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2019 Valve Corporation
+ * Copyright (c) 2015-2019 LunarG, Inc.
+ * Copyright (C) 2015-2019 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,10 @@
  */
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
-#include <unordered_map>
+#include <cassert>
 #include <mutex>
+#include <unordered_map>
+#include <vector>
 
 #include "vk_layer_data.h"
 #include "vk_dispatch_table_helper.h"
@@ -112,12 +113,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     uint32_t physical_device_count = 0;
     instance_data->dispatch_table.EnumeratePhysicalDevices(*pInstance, &physical_device_count, NULL);
 
-    VkPhysicalDevice *physical_devices = (VkPhysicalDevice *)malloc(sizeof(physical_devices[0]) * physical_device_count);
-    result = instance_data->dispatch_table.EnumeratePhysicalDevices(*pInstance, &physical_device_count, physical_devices);
+    std::vector<VkPhysicalDevice> physical_devices(physical_device_count);
+    result = instance_data->dispatch_table.EnumeratePhysicalDevices(*pInstance, &physical_device_count, physical_devices.data());
+    if (result != VK_SUCCESS) return result;
 
-    for (uint8_t i = 0; i < physical_device_count; i++) {
-        layer_data *phy_dev_data = GetLayerDataPtr(physical_devices[i], device_profile_api_dev_data_map);
-        instance_data->dispatch_table.GetPhysicalDeviceProperties(physical_devices[i], &phy_dev_data->phy_device_props);
+    for (VkPhysicalDevice physical_device : physical_devices) {
+        layer_data *phy_dev_data = GetLayerDataPtr(physical_device, device_profile_api_dev_data_map);
+        instance_data->dispatch_table.GetPhysicalDeviceProperties(physical_device, &phy_dev_data->phy_device_props);
         phy_dev_data->instance = *pInstance;
     }
     return result;
