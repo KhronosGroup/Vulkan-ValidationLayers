@@ -76,7 +76,6 @@ add_library(VkLayer_khronos_validation SHARED
         ${SRC_DIR}/layers/object_tracker_utils.cpp
         ${COMMON_DIR}/include/thread_safety.cpp
         ${SRC_DIR}/layers/xxhash.c)
-target_compile_definitions(VkLayer_khronos_validation PUBLIC "BUILD_KHRONOS_VALIDATION;BUILD_CORE_VALIDATION;BUILD_PARAMETER_VALIDATION;BUILD_OBJECT_TRACKER;BUILD_THREAD_SAFETY;BUILD_BEST_PRACTICES;LAYER_CHASSIS_CAN_WRAP_HANDLES")
 target_include_directories(VkLayer_khronos_validation PRIVATE
         ${SRC_DIR}/include
         ${SRC_DIR}/layers
