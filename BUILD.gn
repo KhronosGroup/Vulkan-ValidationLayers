@@ -133,48 +133,12 @@ chassis_sources = [
 
 layers = [
   [
-    "core_validation",
-    core_validation_sources + chassis_sources + thread_safety_sources,
-    [ ":vulkan_core_validation_glslang" ],
-    [ "BUILD_CORE_VALIDATION" ],
-  ],
-  [
-    "object_lifetimes",
-    object_lifetimes_sources + chassis_sources + thread_safety_sources + core_validation_sources,
-    [ ":vulkan_core_validation_glslang" ],
-    [ "BUILD_OBJECT_TRACKER" ],
-  ],
-  [
-    "stateless_validation",
-    stateless_validation_sources + chassis_sources + core_validation_sources,
-    [ ":vulkan_core_validation_glslang" ],
-    [ "BUILD_PARAMETER_VALIDATION" ],
-  ],
-  [
-    "thread_safety",
-    thread_safety_sources + chassis_sources + core_validation_sources,
-    [ ":vulkan_core_validation_glslang" ],
-    [ "BUILD_THREAD_SAFETY" ],
-  ],
-  [
-    "unique_objects",
-    unique_objects_sources + chassis_sources + core_validation_sources,
-    [ ":vulkan_core_validation_glslang" ],
-    [ "LAYER_CHASSIS_CAN_WRAP_HANDLES" ],
-  ],
-  [
     "khronos_validation",
     core_validation_sources + object_lifetimes_sources +
         stateless_validation_sources + thread_safety_sources +
         unique_objects_sources + chassis_sources,
     [ ":vulkan_core_validation_glslang" ],
     [
-      "BUILD_KHRONOS_VALIDATION",
-      "BUILD_CORE_VALIDATION",
-      "BUILD_OBJECT_TRACKER",
-      "BUILD_THREAD_SAFETY",
-      "BUILD_PARAMETER_VALIDATION",
-      "LAYER_CHASSIS_CAN_WRAP_HANDLES",
     ],
   ],
 ]
@@ -186,12 +150,6 @@ if (!is_android) {
       ":vulkan_clean_old_validation_layer_objects",
     ]
     json_names = [
-      "VkLayer_core_validation.json",
-      "VkLayer_object_lifetimes.json",
-      "VkLayer_stateless_validation.json",
-      "VkLayer_standard_validation.json",
-      "VkLayer_thread_safety.json",
-      "VkLayer_unique_objects.json",
       "VkLayer_khronos_validation.json",
     ]
     sources = [
