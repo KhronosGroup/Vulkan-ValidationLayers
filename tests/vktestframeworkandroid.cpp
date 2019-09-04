@@ -26,7 +26,6 @@ VkTestFramework::~VkTestFramework() {}
 
 // Define static elements
 bool VkTestFramework::m_devsim_layer = false;
-bool VkTestFramework::m_khronos_layer_disable = false;
 ANativeWindow *VkTestFramework::window = nullptr;
 
 VkFormat VkTestFramework::GetFormat(VkInstance instance, vk_testing::Device *device) {
