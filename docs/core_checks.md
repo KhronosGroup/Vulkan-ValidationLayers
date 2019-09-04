@@ -6,15 +6,18 @@
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
 [2]: https://www.khronos.org/vulkan/
 
-# VK\_LAYER\_LUNARG\_core\_validation
+# Core Validation Checks
 
 [![Creative Commons][3]][4]
 
 [3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
-The `VK_LAYER_LUNARG_core_validation` layer validates the status of descriptor sets, command buffers, shader modules, pipeline states, renderpass usage, synchronization, dynamic states and is the workhorse layer for many other types of valid usage.
+Implemented as part of the `VK_LAYER_KHRONOS_validation` layer,  this validation object is reponsiblie for validating
+the status of descriptor sets, command buffers, shader modules, pipeline states, renderpass usage, synchronization,
+dynamic states, and many other types of valid usage. It is the main module responsible for validation requiring
+substantial background state.
 
-`VK_LAYER_LUNARG_core_validation` validates that:
+This module validates that:
 
 - the descriptor set state and pipeline state at each draw call are consistent
 - pipelines are created correctly, known when used and bound at draw time
@@ -25,11 +28,14 @@ The `VK_LAYER_LUNARG_core_validation` layer validates the status of descriptor s
 - memory is available
 - dynamic state is correctly set.
 
-The `VK_LAYER_LUNARG_core_validation` layer will print errors if validation checks are not correctly met.  `VK_LAYER_LUNARG_core_validation` will also display the values of the objects tracked.
+This validation object will print errors if validation checks are not correctly met, and provide context related to
+the failures.
 
 ## Memory/Resource related functionality
 
-This layer additionally attempts to ensure that memory objects are managed correctly by the application.  These memory objects may be bound to pipelines, objects, and command buffers, and then submitted to the GPU for work. Specifically the layer validates that:
+This validation additionally attempts to ensure that memory objects are managed correctly by the application.
+These memory objects may be bound to pipelines, objects, and command buffers, and then submitted to the GPU
+for work. Specifically the layer validates that:
 
 - the correct memory objects have been bound
 - memory objects are specified correctly upon command buffer submittal
@@ -38,11 +44,12 @@ This layer additionally attempts to ensure that memory objects are managed corre
 - the application has confirmed any memory objects to be reused or destroyed have been properly unbound
 - checks texture formats and render target formats.
 
-Errors will be printed if validation checks are not correctly met and warnings if improper (but not illegal) use of memory is detected.  This validation layer also dumps all memory references and bindings for each operation.
+Errors will be printed if validation checks are not correctly met and warnings if improper (but not illegal) use of
+memory is detected.  Validation also dumps all memory references and bindings for each operation.
 
 ## Shader validation functionality
 
-Checks performed by this layer apply to the VS->FS and FS->CB interfaces with the pipeline.  These checks include:
+Additional checks apply to the VS->FS and FS->CB interfaces with the pipeline.  These checks include:
 
 - validating that all variables which are part of a shader interface are  decorated with either `spv::DecLocation` or `spv::DecBuiltin` (that is, only the SSO rendezvous-by-location model is supported)
 - emitting a warning if a location is declared only in the producing stage (useless work is being done)

@@ -12,15 +12,15 @@
 [3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
 
-Best Practices Validation 
+Best Practices Validation
 
-Best Practices Validation is implemented in the `VK_LAYER_KHRONOS_validation layer`. When enabled, the Best Practices Object is 
-intended to highlight potential performance issues, questionable usage patterns, common mistakes, and items not specifically prohibited 
+Best Practices Validation is implemented in the `VK_LAYER_KHRONOS_validation layer`. When enabled, the Best Practices Object is
+intended to highlight potential performance issues, questionable usage patterns, common mistakes, and items not specifically prohibited
 by the Vulkan specification but that may lead to application problems.
 
 Best Practices will ideally be run periodically along with normal validation checks so that issues may be addressed in early stages of development.
 
-The specific areas covered by this layer are currently tracked in 
+The specific areas covered by this layer are currently tracked in
 [Github Issue #24: Best Practices/Assistant/Performance Layer.](https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/24)
 Requests for additional checks can be posted through the same issue, or by creating a new Github issue.
 

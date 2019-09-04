@@ -12,7 +12,7 @@
 [3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
 
-GPU-Assisted validation is implemented in the SPIR-V Tools optimizer and the `VK_LAYER_KHRONOS_validation` layer 
+GPU-Assisted validation is implemented in the SPIR-V Tools optimizer and the `VK_LAYER_KHRONOS_validation` layer.
 This document covers the design of the layer portion of the implementation.
 
 ## Basic Operation
