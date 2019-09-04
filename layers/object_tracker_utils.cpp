@@ -227,8 +227,8 @@ void ObjectLifetimes::CreateSwapchainImageObject(VkDevice dispatchable_object, V
     }
 }
 
-bool ObjectLifetimes::InstanceReportUndestroyedObjects(VkInstance instance, VulkanObjectType object_type,
-                                                       const std::string &error_code) {
+bool ObjectLifetimes::ReportLeakedInstanceObjects(VkInstance instance, VulkanObjectType object_type,
+                                                  const std::string &error_code) {
     bool skip = false;
 
     auto snapshot = object_map[object_type].snapshot();
@@ -241,7 +241,7 @@ bool ObjectLifetimes::InstanceReportUndestroyedObjects(VkInstance instance, Vulk
     return skip;
 }
 
-bool ObjectLifetimes::DeviceReportUndestroyedObjects(VkDevice device, VulkanObjectType object_type, const std::string &error_code) {
+bool ObjectLifetimes::ReportLeakedDeviceObjects(VkDevice device, VulkanObjectType object_type, const std::string &error_code) {
     bool skip = false;
 
     auto snapshot = object_map[object_type].snapshot();
@@ -276,7 +276,7 @@ bool ObjectLifetimes::PreCallValidateDestroyInstance(VkInstance instance, const 
 
         // Throw errors if any device objects belonging to this instance have not been destroyed
         skip |= ReportUndestroyedDeviceObjects(device, "VUID-vkDestroyDevice-device-00378");
-        DestroyUndestroyedDeviceObjects(device);
+        DestroyLeakedDeviceObjects(device);
 
         skip |= ValidateDestroyObject(instance, device, kVulkanObjectTypeDevice, pAllocator,
                                       "VUID-vkDestroyInstance-instance-00630", "VUID-vkDestroyInstance-instance-00631");
@@ -288,7 +288,7 @@ bool ObjectLifetimes::PreCallValidateDestroyInstance(VkInstance instance, const 
 
     // Report any remaining instance objects
     skip |= ReportUndestroyedInstanceObjects(instance, "VUID-vkDestroyInstance-instance-00629");
-    DestroyUndestroyedInstanceObjects(instance);
+    DestroyLeakedInstanceObjects(instance);
 
     return skip;
 }
@@ -324,7 +324,7 @@ void ObjectLifetimes::PreCallRecordDestroyInstance(VkInstance instance, const Vk
     for (const auto &iit : snapshot2) {
         auto pNode = iit.second;
         VkDevice device = reinterpret_cast<VkDevice>(pNode->handle);
-        DestroyUndestroyedInstanceObjects(instance);
+        DestroyLeakedInstanceObjects(instance);
 
         RecordDestroyObject(instance, device, kVulkanObjectTypeDevice);
     }
@@ -350,7 +350,7 @@ void ObjectLifetimes::PreCallRecordDestroyDevice(VkDevice device, const VkAlloca
     ValidationObject *validation_data = GetValidationObject(instance_data->object_dispatch, LayerObjectTypeObjectTracker);
     ObjectLifetimes *object_lifetimes = static_cast<ObjectLifetimes *>(validation_data);
     object_lifetimes->RecordDestroyObject(physical_device, device, kVulkanObjectTypeDevice);
-    DestroyUndestroyedDeviceObjects(device);
+    DestroyLeakedDeviceObjects(device);
 
     // Clean up Queue's MemRef Linked Lists
     DestroyQueueDataStructures(device);

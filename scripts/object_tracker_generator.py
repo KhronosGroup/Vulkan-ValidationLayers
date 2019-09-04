@@ -303,11 +303,11 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             output_func += 'bool ObjectLifetimes::ReportUndestroyed%sObjects(Vk%s %s, const std::string& error_code) {\n' % (upper_objtype, upper_objtype, objtype)
             output_func += '    bool skip = false;\n'
             if objtype == 'device':
-                output_func += '    skip |= %sReportUndestroyedObjects(%s, kVulkanObjectTypeCommandBuffer, error_code);\n' % (upper_objtype, objtype)
+                output_func += '    skip |= ReportLeaked%sObjects(%s, kVulkanObjectTypeCommandBuffer, error_code);\n' % (upper_objtype, objtype)
             for handle in self.object_types:
                 if self.handle_types.IsNonDispatchable(handle):
                     if (objtype == 'device' and self.handle_parents.IsParentDevice(handle)) or (objtype == 'instance' and not self.handle_parents.IsParentDevice(handle)):
-                        output_func += '    skip |= %sReportUndestroyedObjects(%s, %s, error_code);\n' % (upper_objtype, objtype, self.GetVulkanObjType(handle))
+                        output_func += '    skip |= ReportLeaked%sObjects(%s, %s, error_code);\n' % (upper_objtype, objtype, self.GetVulkanObjType(handle))
             output_func += '    return skip;\n'
             output_func += '}\n'
         return output_func
@@ -318,7 +318,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         output_func = ''
         for objtype in ['instance', 'device']:
             upper_objtype = objtype.capitalize();
-            output_func += 'void ObjectLifetimes::DestroyUndestroyed%sObjects(Vk%s %s) {\n' % (upper_objtype, upper_objtype, objtype)
+            output_func += 'void ObjectLifetimes::DestroyLeaked%sObjects(Vk%s %s) {\n' % (upper_objtype, upper_objtype, objtype)
             if objtype == 'device':
                 output_func += '    DestroyUndestroyedObjects(%s, kVulkanObjectTypeCommandBuffer);\n' % objtype
             for handle in self.object_types:
