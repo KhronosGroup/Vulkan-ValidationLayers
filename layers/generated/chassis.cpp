@@ -39,51 +39,17 @@ std::atomic<uint64_t> global_unique_id(1ULL);
 // internally synchronized.
 vl_concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
 
-// TODO: This variable controls handle wrapping -- in the future it should be hooked
-//       up to the new VALIDATION_FEATURES extension. Temporarily, control with a compile-time flag.
-#if defined(LAYER_CHASSIS_CAN_WRAP_HANDLES)
 bool wrap_handles = true;
-#else
-bool wrap_handles = false;
-#endif
 
-// Set layer name -- Khronos layer name overrides any other defined names
-#if BUILD_KHRONOS_VALIDATION
 #define OBJECT_LAYER_NAME "VK_LAYER_KHRONOS_validation"
 #define OBJECT_LAYER_DESCRIPTION "khronos_validation"
-#elif BUILD_OBJECT_TRACKER
-#define OBJECT_LAYER_NAME "VK_LAYER_LUNARG_object_tracker"
-#define OBJECT_LAYER_DESCRIPTION "lunarg_object_tracker"
-#elif BUILD_THREAD_SAFETY
-#define OBJECT_LAYER_NAME "VK_LAYER_GOOGLE_threading"
-#define OBJECT_LAYER_DESCRIPTION "google_thread_checker"
-#elif BUILD_PARAMETER_VALIDATION
-#define OBJECT_LAYER_NAME "VK_LAYER_LUNARG_parameter_validation"
-#define OBJECT_LAYER_DESCRIPTION "lunarg_parameter_validation"
-#elif BUILD_CORE_VALIDATION
-#define OBJECT_LAYER_NAME "VK_LAYER_LUNARG_core_validation"
-#define OBJECT_LAYER_DESCRIPTION "lunarg_core_validation"
-#else
-#define OBJECT_LAYER_NAME "VK_LAYER_GOOGLE_unique_objects"
-#define OBJECT_LAYER_DESCRIPTION "lunarg_unique_objects"
-#endif
 
 // Include layer validation object definitions
-#if BUILD_OBJECT_TRACKER
 #include "object_lifetime_validation.h"
-#endif
-#if BUILD_THREAD_SAFETY
 #include "thread_safety.h"
-#endif
-#if BUILD_PARAMETER_VALIDATION
 #include "stateless_validation.h"
-#endif
-#if BUILD_CORE_VALIDATION
 #include "core_validation.h"
-#endif
-#if BUILD_BEST_PRACTICES
 #include "best_practices.h"
-#endif
 
 namespace vulkan_layer_chassis {
 
@@ -424,7 +390,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     // Create temporary dispatch vector for pre-calls until instance is created
     std::vector<ValidationObject*> local_object_dispatch;
     // Add VOs to dispatch vector. Order here will be the validation dispatch order!
-#if BUILD_THREAD_SAFETY
     auto thread_checker = new ThreadSafety(nullptr);
     if (!local_disables.thread_safety) {
         local_object_dispatch.emplace_back(thread_checker);
@@ -432,8 +397,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     thread_checker->container_type = LayerObjectTypeThreading;
     thread_checker->api_version = api_version;
     thread_checker->report_data = report_data;
-#endif
-#if BUILD_PARAMETER_VALIDATION
     auto parameter_validation = new StatelessValidation;
     if (!local_disables.stateless_checks) {
         local_object_dispatch.emplace_back(parameter_validation);
@@ -441,8 +404,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     parameter_validation->container_type = LayerObjectTypeParameterValidation;
     parameter_validation->api_version = api_version;
     parameter_validation->report_data = report_data;
-#endif
-#if BUILD_OBJECT_TRACKER
     auto object_tracker = new ObjectLifetimes;
     if (!local_disables.object_tracking) {
         local_object_dispatch.emplace_back(object_tracker);
@@ -450,8 +411,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     object_tracker->container_type = LayerObjectTypeObjectTracker;
     object_tracker->api_version = api_version;
     object_tracker->report_data = report_data;
-#endif
-#if BUILD_CORE_VALIDATION
     auto core_checks = new CoreChecks;
     if (!local_disables.core_checks) {
         local_object_dispatch.emplace_back(core_checks);
@@ -459,8 +418,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     core_checks->container_type = LayerObjectTypeCoreValidation;
     core_checks->api_version = api_version;
     core_checks->report_data = report_data;
-#endif
-#if BUILD_BEST_PRACTICES
     auto best_practices = new BestPractices;
     if (local_enables.best_practices) {
         local_object_dispatch.emplace_back(best_practices);
@@ -468,7 +425,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     best_practices->container_type = LayerObjectTypeBestPractices;
     best_practices->api_version = api_version;
     best_practices->report_data = report_data;
-#endif
 
     // If handle wrapping is disabled via the ValidationFeatures extension, override build flag
     if (local_disables.handle_wrapping) {
@@ -501,33 +457,23 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     layer_debug_messenger_actions(framework->report_data, pAllocator, OBJECT_LAYER_DESCRIPTION);
 
-#if BUILD_OBJECT_TRACKER
     object_tracker->instance_dispatch_table = framework->instance_dispatch_table;
     object_tracker->enabled = framework->enabled;
     object_tracker->disabled = framework->disabled;
-#endif
-#if BUILD_THREAD_SAFETY
     thread_checker->instance_dispatch_table = framework->instance_dispatch_table;
     thread_checker->enabled = framework->enabled;
     thread_checker->disabled = framework->disabled;
-#endif
-#if BUILD_PARAMETER_VALIDATION
     parameter_validation->instance_dispatch_table = framework->instance_dispatch_table;
     parameter_validation->enabled = framework->enabled;
     parameter_validation->disabled = framework->disabled;
-#endif
-#if BUILD_CORE_VALIDATION
     core_checks->instance_dispatch_table = framework->instance_dispatch_table;
     core_checks->instance = *pInstance;
     core_checks->enabled = framework->enabled;
     core_checks->disabled = framework->disabled;
     core_checks->instance_state = core_checks;
-#endif
-#if BUILD_BEST_PRACTICES
     best_practices->instance_dispatch_table = framework->instance_dispatch_table;
     best_practices->enabled = framework->enabled;
     best_practices->disabled = framework->disabled;
-#endif
 
     for (auto intercept : framework->object_dispatch) {
         intercept->PostCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance, result);
@@ -632,28 +578,21 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     device_interceptor->report_data = instance_interceptor->report_data;
 
     // Note that this defines the order in which the layer validation objects are called
-#if BUILD_THREAD_SAFETY
     auto thread_safety = new ThreadSafety(reinterpret_cast<ThreadSafety *>(instance_interceptor->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeThreading)));
     thread_safety->container_type = LayerObjectTypeThreading;
     if (!instance_interceptor->disabled.thread_safety) {
         device_interceptor->object_dispatch.emplace_back(thread_safety);
     }
-#endif
-#if BUILD_PARAMETER_VALIDATION
     auto stateless_validation = new StatelessValidation;
     stateless_validation->container_type = LayerObjectTypeParameterValidation;
     if (!instance_interceptor->disabled.stateless_checks) {
         device_interceptor->object_dispatch.emplace_back(stateless_validation);
     }
-#endif
-#if BUILD_OBJECT_TRACKER
     auto object_tracker = new ObjectLifetimes;
     object_tracker->container_type = LayerObjectTypeObjectTracker;
     if (!instance_interceptor->disabled.object_tracking) {
         device_interceptor->object_dispatch.emplace_back(object_tracker);
     }
-#endif
-#if BUILD_CORE_VALIDATION
     auto core_checks = new CoreChecks;
     core_checks->container_type = LayerObjectTypeCoreValidation;
     core_checks->instance_state = reinterpret_cast<CoreChecks *>(
@@ -661,8 +600,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     if (!instance_interceptor->disabled.core_checks) {
         device_interceptor->object_dispatch.emplace_back(core_checks);
     }
-#endif
-#if BUILD_BEST_PRACTICES
     auto best_practices = new BestPractices;
     best_practices->container_type = LayerObjectTypeBestPractices;
     best_practices->instance_state = reinterpret_cast<BestPractices *>(
@@ -670,7 +607,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     if (instance_interceptor->enabled.best_practices) {
         device_interceptor->object_dispatch.emplace_back(best_practices);
     }
-#endif
 
     // Set per-intercept common data items
     for (auto dev_intercept : device_interceptor->object_dispatch) {
@@ -735,13 +671,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
 
-#ifdef BUILD_CORE_VALIDATION
-        create_graphics_pipeline_api_state cgpl_state[LayerObjectTypeMaxEnum]{};
-#else
-        struct create_graphics_pipeline_api_state {
-            const VkGraphicsPipelineCreateInfo* pCreateInfos;
-        } cgpl_state[LayerObjectTypeMaxEnum];
-#endif
+    create_graphics_pipeline_api_state cgpl_state[LayerObjectTypeMaxEnum]{};
 
     for (auto intercept : layer_data->object_dispatch) {
         cgpl_state[intercept->container_type].pCreateInfos = pCreateInfos;
@@ -776,13 +706,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
 
-#ifdef BUILD_CORE_VALIDATION
     create_compute_pipeline_api_state ccpl_state[LayerObjectTypeMaxEnum]{};
-#else
-    struct create_compute_pipeline_api_state {
-        const VkComputePipelineCreateInfo* pCreateInfos;
-    } ccpl_state[LayerObjectTypeMaxEnum];
-#endif
 
     for (auto intercept : layer_data->object_dispatch) {
         ccpl_state[intercept->container_type].pCreateInfos = pCreateInfos;
@@ -816,13 +740,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
 
-#ifdef BUILD_CORE_VALIDATION
     create_ray_tracing_pipeline_api_state crtpl_state[LayerObjectTypeMaxEnum]{};
-#else
-    struct create_ray_tracing_pipeline_api_state {
-        const VkRayTracingPipelineCreateInfoNV* pCreateInfos;
-    } crtpl_state[LayerObjectTypeMaxEnum];
-#endif
 
     for (auto intercept : layer_data->object_dispatch) {
         crtpl_state[intercept->container_type].pCreateInfos = pCreateInfos;
@@ -856,11 +774,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
 
-#ifndef BUILD_CORE_VALIDATION
-    struct create_pipeline_layout_api_state {
-        VkPipelineLayoutCreateInfo modified_create_info;
-    };
-#endif
     create_pipeline_layout_api_state cpl_state{};
     cpl_state.modified_create_info = *pCreateInfo;
 
@@ -890,11 +803,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
 
-#ifndef BUILD_CORE_VALIDATION
-    struct create_shader_module_api_state {
-        VkShaderModuleCreateInfo instrumented_create_info;
-    };
-#endif
     create_shader_module_api_state csm_state{};
     csm_state.instrumented_create_info = *pCreateInfo;
 
@@ -922,11 +830,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
 
-#if defined BUILD_CORE_VALIDATION || defined BUILD_BEST_PRACTICES
     cvdescriptorset::AllocateDescriptorSetsData ads_state(pAllocateInfo->descriptorSetCount);
-#else
-    struct ads_state {} ads_state;
-#endif
 
     for (auto intercept : layer_data->object_dispatch) {
         auto lock = intercept->write_lock();
@@ -9616,18 +9520,10 @@ const std::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkCmdSetSampleLocationsEXT", {false, (void*)CmdSetSampleLocationsEXT}},
     {"vkGetPhysicalDeviceMultisamplePropertiesEXT", {true, (void*)GetPhysicalDeviceMultisamplePropertiesEXT}},
     {"vkGetImageDrmFormatModifierPropertiesEXT", {false, (void*)GetImageDrmFormatModifierPropertiesEXT}},
-#ifdef BUILD_CORE_VALIDATION
     {"vkCreateValidationCacheEXT", {false, (void*)CreateValidationCacheEXT}},
-#endif
-#ifdef BUILD_CORE_VALIDATION
     {"vkDestroyValidationCacheEXT", {false, (void*)DestroyValidationCacheEXT}},
-#endif
-#ifdef BUILD_CORE_VALIDATION
     {"vkMergeValidationCachesEXT", {false, (void*)MergeValidationCachesEXT}},
-#endif
-#ifdef BUILD_CORE_VALIDATION
     {"vkGetValidationCacheDataEXT", {false, (void*)GetValidationCacheDataEXT}},
-#endif
     {"vkCmdBindShadingRateImageNV", {false, (void*)CmdBindShadingRateImageNV}},
     {"vkCmdSetViewportShadingRatePaletteNV", {false, (void*)CmdSetViewportShadingRatePaletteNV}},
     {"vkCmdSetCoarseSampleOrderNV", {false, (void*)CmdSetCoarseSampleOrderNV}},
