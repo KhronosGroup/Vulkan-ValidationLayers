@@ -455,6 +455,24 @@ class ValidationStateTracker : public ValidationObject {
                                                                VkResult result);
     void PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                           VkSurfaceKHR surface, VkBool32* pSupported, VkResult result);
+    void PostCallRecordGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR* pGetFdInfo, int* pFd, VkResult result);
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    void PostCallRecordGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo,
+                                                  HANDLE* pHandle, VkResult result);
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+    void PostCallRecordImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo, VkResult result);
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    void PostCallRecordImportFenceWin32HandleKHR(VkDevice device,
+                                                 const VkImportFenceWin32HandleInfoKHR* pImportFenceWin32HandleInfo,
+                                                 VkResult result);
+#endif  // VK_USE_PLATFORM_WIN32_KHR
+    void PostCallRecordImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo,
+                                            VkResult result);
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    void PostCallRecordImportSemaphoreWin32HandleKHR(VkDevice device,
+                                                     const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo,
+                                                     VkResult result);
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 
     // Create/Destroy/Bind
     void PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
@@ -856,8 +874,12 @@ class ValidationStateTracker : public ValidationObject {
     void RecordGetDeviceQueueState(uint32_t queue_family_index, VkQueue queue);
     void RecordGetExternalFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type);
     void RecordGetImageMemoryRequiementsState(VkImage image, VkMemoryRequirements* pMemoryRequirements);
+    void RecordImportSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type,
+                                    VkSemaphoreImportFlagsKHR flags);
     void RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                             void* pProperties);
+    void RecordGetExternalSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type);
+    void RecordImportFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type, VkFenceImportFlagsKHR flags);
     void RecordUpdateDescriptorSetWithTemplateState(VkDescriptorSet descriptorSet,
                                                     VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate, const void* pData);
     void RecordCreateDescriptorUpdateTemplateState(const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo,
@@ -1045,8 +1067,7 @@ class CoreChecks : public ValidationStateTracker {
                              const CMD_BUFFER_STATE* pSubCB, const char* caller);
     bool ValidateDescriptorUpdateTemplate(const char* func_name, const VkDescriptorUpdateTemplateCreateInfoKHR* pCreateInfo);
     bool ValidateCreateSamplerYcbcrConversion(const char* func_name, const VkSamplerYcbcrConversionCreateInfo* create_info) const;
-    bool ValidateImportFence(VkFence fence, const char* caller_name);
-    void RecordImportFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type, VkFenceImportFlagsKHR flags);
+    bool ValidateImportFence(VkFence fence, const char* caller_name) const;
     bool ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore, VkFence fence,
                                   uint32_t* pImageIndex, const char* func_name) const;
     bool VerifyRenderAreaBounds(const VkRenderPassBeginInfo* pRenderPassBegin) const;
@@ -1071,10 +1092,7 @@ class CoreChecks : public ValidationStateTracker {
                        VkQueryResultFlags flags) const;
     QueryState GetQueryState(const QUEUE_STATE* queue_data, VkQueryPool queryPool, uint32_t queryIndex) const;
     bool VerifyQueryIsReset(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject query_obj) const;
-    bool ValidateImportSemaphore(VkSemaphore semaphore, const char* caller_name);
-    void RecordImportSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type,
-                                    VkSemaphoreImportFlagsKHR flags);
-    void RecordGetExternalSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type);
+    bool ValidateImportSemaphore(VkSemaphore semaphore, const char* caller_name) const;
     bool ValidateBeginQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, VkFlags flags, CMD_TYPE cmd,
                             const char* cmd_name, const char* vuid_queue_flags, const char* vuid_queue_feedback,
                             const char* vuid_queue_occlusion, const char* vuid_precise, const char* vuid_query_count) const;
@@ -1902,26 +1920,14 @@ class CoreChecks : public ValidationStateTracker {
     void PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence,
                                        VkResult result);
     bool PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo);
-    void PostCallRecordImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo,
-                                            VkResult result);
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    void PostCallRecordImportSemaphoreWin32HandleKHR(VkDevice device,
-                                                     const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo,
-                                                     VkResult result);
     bool PreCallValidateImportSemaphoreWin32HandleKHR(VkDevice device,
                                                       const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo);
     bool PreCallValidateImportFenceWin32HandleKHR(VkDevice device,
                                                   const VkImportFenceWin32HandleInfoKHR* pImportFenceWin32HandleInfo);
-    void PostCallRecordImportFenceWin32HandleKHR(VkDevice device,
-                                                 const VkImportFenceWin32HandleInfoKHR* pImportFenceWin32HandleInfo,
-                                                 VkResult result);
-    void PostCallRecordGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo,
-                                                  HANDLE* pHandle, VkResult result);
 #endif  // VK_USE_PLATFORM_WIN32_KHR
     bool PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo);
-    void PostCallRecordImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo, VkResult result);
 
-    void PostCallRecordGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR* pGetFdInfo, int* pFd, VkResult result);
     bool PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain);
     void PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator);

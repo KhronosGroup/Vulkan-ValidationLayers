@@ -12353,9 +12353,9 @@ void ValidationStateTracker::PostCallRecordCreateSemaphore(VkDevice device, cons
     semaphoreMap[*pSemaphore] = std::move(semaphore_state);
 }
 
-bool CoreChecks::ValidateImportSemaphore(VkSemaphore semaphore, const char *caller_name) {
+bool CoreChecks::ValidateImportSemaphore(VkSemaphore semaphore, const char *caller_name) const {
     bool skip = false;
-    SEMAPHORE_STATE *sema_node = GetSemaphoreState(semaphore);
+    const SEMAPHORE_STATE *sema_node = GetSemaphoreState(semaphore);
     if (sema_node) {
         const VulkanTypedHandle obj_struct(semaphore, kVulkanObjectTypeSemaphore);
         skip |= ValidateObjectNotInUse(sema_node, obj_struct, caller_name, kVUIDUndefined);
@@ -12363,8 +12363,8 @@ bool CoreChecks::ValidateImportSemaphore(VkSemaphore semaphore, const char *call
     return skip;
 }
 
-void CoreChecks::RecordImportSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type,
-                                            VkSemaphoreImportFlagsKHR flags) {
+void ValidationStateTracker::RecordImportSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type,
+                                                        VkSemaphoreImportFlagsKHR flags) {
     SEMAPHORE_STATE *sema_node = GetSemaphoreState(semaphore);
     if (sema_node && sema_node->scope != kSyncScopeExternalPermanent) {
         if ((handle_type == VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT_KHR || flags & VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR) &&
@@ -12382,7 +12382,7 @@ bool CoreChecks::PreCallValidateImportSemaphoreWin32HandleKHR(
     return ValidateImportSemaphore(pImportSemaphoreWin32HandleInfo->semaphore, "vkImportSemaphoreWin32HandleKHR");
 }
 
-void CoreChecks::PostCallRecordImportSemaphoreWin32HandleKHR(
+void ValidationStateTracker::PostCallRecordImportSemaphoreWin32HandleKHR(
     VkDevice device, const VkImportSemaphoreWin32HandleInfoKHR *pImportSemaphoreWin32HandleInfo, VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordImportSemaphoreState(pImportSemaphoreWin32HandleInfo->semaphore, pImportSemaphoreWin32HandleInfo->handleType,
@@ -12394,14 +12394,16 @@ bool CoreChecks::PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkIm
     return ValidateImportSemaphore(pImportSemaphoreFdInfo->semaphore, "vkImportSemaphoreFdKHR");
 }
 
-void CoreChecks::PostCallRecordImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR *pImportSemaphoreFdInfo,
-                                                    VkResult result) {
+void ValidationStateTracker::PostCallRecordImportSemaphoreFdKHR(VkDevice device,
+                                                                const VkImportSemaphoreFdInfoKHR *pImportSemaphoreFdInfo,
+                                                                VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordImportSemaphoreState(pImportSemaphoreFdInfo->semaphore, pImportSemaphoreFdInfo->handleType,
                                pImportSemaphoreFdInfo->flags);
 }
 
-void CoreChecks::RecordGetExternalSemaphoreState(VkSemaphore semaphore, VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type) {
+void ValidationStateTracker::RecordGetExternalSemaphoreState(VkSemaphore semaphore,
+                                                             VkExternalSemaphoreHandleTypeFlagBitsKHR handle_type) {
     SEMAPHORE_STATE *semaphore_state = GetSemaphoreState(semaphore);
     if (semaphore_state && handle_type != VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT_KHR) {
         // Cannot track semaphore state once it is exported, except for Sync FD handle types which have copy transference
@@ -12410,22 +12412,22 @@ void CoreChecks::RecordGetExternalSemaphoreState(VkSemaphore semaphore, VkExtern
 }
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-void CoreChecks::PostCallRecordGetSemaphoreWin32HandleKHR(VkDevice device,
-                                                          const VkSemaphoreGetWin32HandleInfoKHR *pGetWin32HandleInfo,
-                                                          HANDLE *pHandle, VkResult result) {
+void ValidationStateTracker::PostCallRecordGetSemaphoreWin32HandleKHR(VkDevice device,
+                                                                      const VkSemaphoreGetWin32HandleInfoKHR *pGetWin32HandleInfo,
+                                                                      HANDLE *pHandle, VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordGetExternalSemaphoreState(pGetWin32HandleInfo->semaphore, pGetWin32HandleInfo->handleType);
 }
 #endif
 
-void CoreChecks::PostCallRecordGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR *pGetFdInfo, int *pFd,
-                                                 VkResult result) {
+void ValidationStateTracker::PostCallRecordGetSemaphoreFdKHR(VkDevice device, const VkSemaphoreGetFdInfoKHR *pGetFdInfo, int *pFd,
+                                                             VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordGetExternalSemaphoreState(pGetFdInfo->semaphore, pGetFdInfo->handleType);
 }
 
-bool CoreChecks::ValidateImportFence(VkFence fence, const char *caller_name) {
-    FENCE_STATE *fence_node = GetFenceState(fence);
+bool CoreChecks::ValidateImportFence(VkFence fence, const char *caller_name) const {
+    const FENCE_STATE *fence_node = GetFenceState(fence);
     bool skip = false;
     if (fence_node && fence_node->scope == kSyncScopeInternal && fence_node->state == FENCE_INFLIGHT) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT, HandleToUint64(fence),
@@ -12435,8 +12437,8 @@ bool CoreChecks::ValidateImportFence(VkFence fence, const char *caller_name) {
     return skip;
 }
 
-void CoreChecks::RecordImportFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type,
-                                        VkFenceImportFlagsKHR flags) {
+void ValidationStateTracker::RecordImportFenceState(VkFence fence, VkExternalFenceHandleTypeFlagBitsKHR handle_type,
+                                                    VkFenceImportFlagsKHR flags) {
     FENCE_STATE *fence_node = GetFenceState(fence);
     if (fence_node && fence_node->scope != kSyncScopeExternalPermanent) {
         if ((handle_type == VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT_KHR || flags & VK_FENCE_IMPORT_TEMPORARY_BIT_KHR) &&
@@ -12453,9 +12455,8 @@ bool CoreChecks::PreCallValidateImportFenceWin32HandleKHR(VkDevice device,
                                                           const VkImportFenceWin32HandleInfoKHR *pImportFenceWin32HandleInfo) {
     return ValidateImportFence(pImportFenceWin32HandleInfo->fence, "vkImportFenceWin32HandleKHR");
 }
-void CoreChecks::PostCallRecordImportFenceWin32HandleKHR(VkDevice device,
-                                                         const VkImportFenceWin32HandleInfoKHR *pImportFenceWin32HandleInfo,
-                                                         VkResult result) {
+void ValidationStateTracker::PostCallRecordImportFenceWin32HandleKHR(
+    VkDevice device, const VkImportFenceWin32HandleInfoKHR *pImportFenceWin32HandleInfo, VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordImportFenceState(pImportFenceWin32HandleInfo->fence, pImportFenceWin32HandleInfo->handleType,
                            pImportFenceWin32HandleInfo->flags);
@@ -12465,8 +12466,8 @@ void CoreChecks::PostCallRecordImportFenceWin32HandleKHR(VkDevice device,
 bool CoreChecks::PreCallValidateImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR *pImportFenceFdInfo) {
     return ValidateImportFence(pImportFenceFdInfo->fence, "vkImportFenceFdKHR");
 }
-void CoreChecks::PostCallRecordImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR *pImportFenceFdInfo,
-                                                VkResult result) {
+void ValidationStateTracker::PostCallRecordImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR *pImportFenceFdInfo,
+                                                            VkResult result) {
     if (VK_SUCCESS != result) return;
     RecordImportFenceState(pImportFenceFdInfo->fence, pImportFenceFdInfo->handleType, pImportFenceFdInfo->flags);
 }
