@@ -74,13 +74,7 @@ if(BUILD_LAYER_SUPPORT_FILES)
 endif()
 
 set(TARGET_NAMES
-    VkLayer_khronos_validation
-    VkLayer_core_validation
-    VkLayer_object_lifetimes
-    VkLayer_unique_objects
-    VkLayer_stateless_validation
-    VkLayer_standard_validation
-    VkLayer_thread_safety)
+    VkLayer_khronos_validation)
 
 if(BUILD_LAYERS)
     # Install the layer json files
@@ -196,13 +190,6 @@ set(BEST_PRACTICES_LIBRARY_FILES
     best_practices.h)
 
 if(BUILD_LAYERS)
-    AddVkLayer(core_validation "BUILD_CORE_VALIDATION"
-        ${CHASSIS_LIBRARY_FILES}
-        ${CORE_VALIDATION_LIBRARY_FILES})
-    AddVkLayer(object_lifetimes "BUILD_OBJECT_TRACKER" ${CHASSIS_LIBRARY_FILES} ${OBJECT_LIFETIMES_LIBRARY_FILES})
-    AddVkLayer(thread_safety "BUILD_THREAD_SAFETY" ${CHASSIS_LIBRARY_FILES} ${THREAD_SAFETY_LIBRARY_FILES})
-    AddVkLayer(stateless_validation "BUILD_PARAMETER_VALIDATION" ${CHASSIS_LIBRARY_FILES} ${STATELESS_VALIDATION_LIBRARY_FILES})
-    AddVkLayer(unique_objects "LAYER_CHASSIS_CAN_WRAP_HANDLES" ${CHASSIS_LIBRARY_FILES})
     AddVkLayer(khronos_validation "BUILD_KHRONOS_VALIDATION;BUILD_CORE_VALIDATION;BUILD_OBJECT_TRACKER;BUILD_THREAD_SAFETY;BUILD_PARAMETER_VALIDATION;LAYER_CHASSIS_CAN_WRAP_HANDLES;BUILD_BEST_PRACTICES"
         ${CHASSIS_LIBRARY_FILES}
         ${CORE_VALIDATION_LIBRARY_FILES}
@@ -211,10 +198,7 @@ if(BUILD_LAYERS)
         ${STATELESS_VALIDATION_LIBRARY_FILES}
         ${BEST_PRACTICES_LIBRARY_FILES})
 
-    # Core validation and Khronos validation have additional dependencies
-    target_include_directories(VkLayer_core_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})
-    target_include_directories(VkLayer_core_validation PRIVATE ${SPIRV_TOOLS_INCLUDE_DIR})
-    target_link_libraries(VkLayer_core_validation PRIVATE ${SPIRV_TOOLS_LIBRARIES})
+    # Khronos validation additional dependencies
     target_include_directories(VkLayer_khronos_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})
     target_include_directories(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_INCLUDE_DIR})
     target_link_libraries(VkLayer_khronos_validation PRIVATE ${SPIRV_TOOLS_LIBRARIES})
