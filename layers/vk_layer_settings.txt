@@ -82,38 +82,24 @@
 #      specification, where their effects are described.  The most useful
 #      flags are briefly described here:
 #      VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT - enables intrusive GPU-assisted
-#      shader validation in core/khronos validation layers
+#      shader validation in khronos validation layers
+#      VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT - enables best practices warning
+#      validation
 #
 
 # VK_LAYER_KHRONOS_validation Settings
+
 khronos_validation.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG
 khronos_validation.report_flags = error,warn,perf
 khronos_validation.log_filename = stdout
+
 # Example entry showing how to disable threading checks and validation at DestroyPipeline time
 #khronos_validation.disables = VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT,VALIDATION_CHECK_DISABLE_DESTROY_PIPELINE
 
-# VK_LAYER_LUNARG_core_validation Settings
-lunarg_core_validation.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG
-lunarg_core_validation.report_flags = error,warn,perf
-lunarg_core_validation.log_filename = stdout
+# Example entry showing how to Enable GPU-Assisted Validation
+#khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT
 
-# VK_LAYER_LUNARG_object_tracker Settings
-lunarg_object_tracker.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG
-lunarg_object_tracker.report_flags = error,warn,perf
-lunarg_object_tracker.log_filename = stdout
+# Example entry showing how to Enable Best Practices Validation
+#khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT
 
-# VK_LAYER_LUNARG_parameter_validation Settings
-lunarg_parameter_validation.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG
-lunarg_parameter_validation.report_flags = error,warn,perf
-lunarg_parameter_validation.log_filename = stdout
-
-# VK_LAYER_GOOGLE_threading Settings
-google_threading.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG
-google_threading.report_flags = error,warn,perf
-google_threading.log_filename = stdout
-
-# VK_LAYER_GOOGLE_unique_objects Settings
-google_unique_objects.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG
-google_unique_objects.report_flags = error,warn,perf
-google_unique_objects.log_filename = stdout
 ################################################################################
