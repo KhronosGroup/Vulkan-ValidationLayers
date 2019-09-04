@@ -12,14 +12,15 @@
 
 [3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
-The `VK_LAYER_KHRONOS_validation` layer encompasses the complete functionality that had previously been provided in the following layers:
+The `VK_LAYER_KHRONOS_validation` layer supports the following validation areas:
 
-- VK_LAYER_GOOGLE_threading
-- VK_LAYER_LUNARG_parameter_validation
-- VK_LAYER_LUNARG_object_tracker
-- VK_LAYER_LUNARG_core_validation
-- VK_LAYER_GOOGLE_unique_objects
+- Thread safety validation
+- Stateless parameter validation
+- Object lifetime validation
+- Core validation checks
+- GPU-Assisted validation
+- Best practices validation
+- Handle wrapping functionality
 
-
-Details for the functionality contained in each of these areas can be viewed in their respective layer detail documents, located in this directory.
+Details for the functionality contained in each of these areas can be viewed in their respective validation detail documents, located in this directory.
 
