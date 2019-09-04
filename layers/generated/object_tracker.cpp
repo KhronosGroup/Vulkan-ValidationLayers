@@ -35,48 +35,48 @@
 // ObjectTracker undestroyed objects validation function
 bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance, const std::string& error_code) {
     bool skip = false;
-    skip |= InstanceReportUndestroyedObjects(instance, kVulkanObjectTypeSurfaceKHR, error_code);
-    skip |= InstanceReportUndestroyedObjects(instance, kVulkanObjectTypeSwapchainKHR, error_code);
-    skip |= InstanceReportUndestroyedObjects(instance, kVulkanObjectTypeDisplayKHR, error_code);
-    skip |= InstanceReportUndestroyedObjects(instance, kVulkanObjectTypeDisplayModeKHR, error_code);
-    skip |= InstanceReportUndestroyedObjects(instance, kVulkanObjectTypeDebugReportCallbackEXT, error_code);
-    skip |= InstanceReportUndestroyedObjects(instance, kVulkanObjectTypeDebugUtilsMessengerEXT, error_code);
+    skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeSurfaceKHR, error_code);
+    skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeSwapchainKHR, error_code);
+    skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeDisplayKHR, error_code);
+    skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeDisplayModeKHR, error_code);
+    skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeDebugReportCallbackEXT, error_code);
+    skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeDebugUtilsMessengerEXT, error_code);
     return skip;
 }
 bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const std::string& error_code) {
     bool skip = false;
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeCommandBuffer, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeSemaphore, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeFence, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeDeviceMemory, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeBuffer, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeImage, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeEvent, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeQueryPool, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeBufferView, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeImageView, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeShaderModule, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypePipelineCache, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypePipelineLayout, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeRenderPass, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypePipeline, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeDescriptorSetLayout, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeSampler, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeDescriptorPool, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeDescriptorSet, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeFramebuffer, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeCommandPool, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeSamplerYcbcrConversion, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeDescriptorUpdateTemplate, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeObjectTableNVX, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeIndirectCommandsLayoutNVX, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeValidationCacheEXT, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypeAccelerationStructureNV, error_code);
-    skip |= DeviceReportUndestroyedObjects(device, kVulkanObjectTypePerformanceConfigurationINTEL, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeCommandBuffer, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeSemaphore, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeFence, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeDeviceMemory, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeBuffer, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeImage, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeEvent, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeQueryPool, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeBufferView, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeImageView, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeShaderModule, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypePipelineCache, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypePipelineLayout, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeRenderPass, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypePipeline, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeDescriptorSetLayout, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeSampler, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeDescriptorPool, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeDescriptorSet, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeFramebuffer, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeCommandPool, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeSamplerYcbcrConversion, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeDescriptorUpdateTemplate, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeObjectTableNVX, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeIndirectCommandsLayoutNVX, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeValidationCacheEXT, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeAccelerationStructureNV, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypePerformanceConfigurationINTEL, error_code);
     return skip;
 }
 
-void ObjectLifetimes::DestroyUndestroyedInstanceObjects(VkInstance instance) {
+void ObjectLifetimes::DestroyLeakedInstanceObjects(VkInstance instance) {
     DestroyUndestroyedObjects(instance, kVulkanObjectTypeSurfaceKHR);
     DestroyUndestroyedObjects(instance, kVulkanObjectTypeSwapchainKHR);
     DestroyUndestroyedObjects(instance, kVulkanObjectTypeDisplayKHR);
@@ -84,7 +84,7 @@ void ObjectLifetimes::DestroyUndestroyedInstanceObjects(VkInstance instance) {
     DestroyUndestroyedObjects(instance, kVulkanObjectTypeDebugReportCallbackEXT);
     DestroyUndestroyedObjects(instance, kVulkanObjectTypeDebugUtilsMessengerEXT);
 }
-void ObjectLifetimes::DestroyUndestroyedDeviceObjects(VkDevice device) {
+void ObjectLifetimes::DestroyLeakedDeviceObjects(VkDevice device) {
     DestroyUndestroyedObjects(device, kVulkanObjectTypeCommandBuffer);
     DestroyUndestroyedObjects(device, kVulkanObjectTypeSemaphore);
     DestroyUndestroyedObjects(device, kVulkanObjectTypeFence);

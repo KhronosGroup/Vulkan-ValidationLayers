@@ -110,8 +110,8 @@ class ObjectLifetimes : public ValidationObject {
     bool ReportUndestroyedInstanceObjects(VkInstance instance, const std::string &error_code);
     bool ReportUndestroyedDeviceObjects(VkDevice device, const std::string &error_code);
 
-    bool DeviceReportUndestroyedObjects(VkDevice device, VulkanObjectType object_type, const std::string &error_code);
-    bool InstanceReportUndestroyedObjects(VkInstance instance, VulkanObjectType object_type, const std::string &error_code);
+    bool ReportLeakedDeviceObjects(VkDevice device, VulkanObjectType object_type, const std::string &error_code);
+    bool ReportLeakedInstanceObjects(VkInstance instance, VulkanObjectType object_type, const std::string &error_code);
 
     template <typename ObjType>
     void DestroyUndestroyedObjects(ObjType dispatchable_object, VulkanObjectType object_type) {
@@ -126,8 +126,8 @@ class ObjectLifetimes : public ValidationObject {
                                VkCommandBufferLevel level);
     void AllocateDescriptorSet(VkDevice device, VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
     void CreateSwapchainImageObject(VkDevice dispatchable_object, VkImage swapchain_image, VkSwapchainKHR swapchain);
-    void DestroyUndestroyedInstanceObjects(VkInstance instance);
-    void DestroyUndestroyedDeviceObjects(VkDevice device);
+    void DestroyLeakedInstanceObjects(VkInstance instance);
+    void DestroyLeakedDeviceObjects(VkDevice device);
     bool ValidateDeviceObject(const VulkanTypedHandle &device_typed, const char *invalid_handle_code,
                               const char *wrong_device_code);
     void DestroyQueueDataStructures(VkDevice device);
