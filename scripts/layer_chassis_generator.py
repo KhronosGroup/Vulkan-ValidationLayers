@@ -1552,6 +1552,9 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         if not self.header:
             # Record intercepted procedures
             write('// Map of intercepted ApiName to its associated function data', file=self.outFile)
+            write('#ifdef _MSC_VER', file=self.outFile)
+            write('#pragma warning( suppress: 6262 ) // VS analysis: this uses more than 16 kiB, which is fine here at global scope', file=self.outFile)
+            write('#endif', file=self.outFile)
             write('const std::unordered_map<std::string, function_data> name_to_funcptr_map = {', file=self.outFile)
             write('\n'.join(self.intercepts), file=self.outFile)
             write('};\n', file=self.outFile)

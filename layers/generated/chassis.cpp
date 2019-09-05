@@ -9249,6 +9249,9 @@ VKAPI_ATTR void VKAPI_CALL ResetQueryPoolEXT(
 
 
 // Map of intercepted ApiName to its associated function data
+#ifdef _MSC_VER
+#pragma warning( suppress: 6262 ) // VS analysis: this uses more than 16 kiB, which is fine here at global scope
+#endif
 const std::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkCreateInstance", {true, (void*)CreateInstance}},
     {"vkDestroyInstance", {true, (void*)DestroyInstance}},
