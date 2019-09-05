@@ -24,42 +24,46 @@
  **************************************************************************/
 #include "vk_layer_config.h"
 
-#include "vulkan/vk_sdk_platform.h"
+#include <string.h>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <sstream>
-#include <string.h>
 #include <string>
 #include <sys/stat.h>
+
 #include <vulkan/vk_layer.h>
+#include <vulkan/vk_sdk_platform.h>
+#include "vk_layer_utils.h"
 
 #if defined(_WIN32)
 #include <windows.h>
 #endif
+
+using std::string;
 
 #define MAX_CHARS_PER_LINE 4096
 
 class ConfigFile {
   public:
     ConfigFile();
-    ~ConfigFile();
+    ~ConfigFile(){};
 
-    const char *getOption(const std::string &_option);
-    void setOption(const std::string &_option, const std::string &_val);
-    std::string vk_layer_disables_env_var{};
+    const char *GetOption(const string &option);
+    void SetOption(const string &option, const string &value);
+    string vk_layer_disables_env_var;
 
   private:
-    bool m_fileIsParsed;
-    std::map<std::string, std::string> m_valueMap;
+    bool file_is_parsed_;
+    std::map<string, string> value_map_;
 
-    std::string FindSettings();
-    void parseFile(const char *filename);
+    string FindSettings();
+    void ParseFile(const char *filename);
 };
 
-static ConfigFile g_configFileObj;
+static ConfigFile layer_config;
 
-std::string getEnvironment(const char *variable) {
+string GetEnvironment(const char *variable) {
 #if !defined(__ANDROID__) && !defined(_WIN32)
     const char *output = getenv(variable);
     return output == NULL ? "" : output;
@@ -70,7 +74,7 @@ std::string getEnvironment(const char *variable) {
     }
     char *buffer = new char[size];
     GetEnvironmentVariable(variable, buffer, size);
-    std::string output = buffer;
+    string output = buffer;
     delete[] buffer;
     return output;
 #else
@@ -78,24 +82,24 @@ std::string getEnvironment(const char *variable) {
 #endif
 }
 
-VK_LAYER_EXPORT const char *getLayerOption(const char *_option) { return g_configFileObj.getOption(_option); }
-VK_LAYER_EXPORT const char *GetLayerEnvVar(const char *_option) {
-    g_configFileObj.vk_layer_disables_env_var = getEnvironment(_option);
-    return g_configFileObj.vk_layer_disables_env_var.c_str();
+VK_LAYER_EXPORT const char *getLayerOption(const char *option) { return layer_config.GetOption(option); }
+VK_LAYER_EXPORT const char *GetLayerEnvVar(const char *option) {
+    layer_config.vk_layer_disables_env_var = GetEnvironment(option);
+    return layer_config.vk_layer_disables_env_var.c_str();
 }
 
 // If option is NULL or stdout, return stdout, otherwise try to open option
 // as a filename. If successful, return file handle, otherwise stdout
-VK_LAYER_EXPORT FILE *getLayerLogOutput(const char *_option, const char *layerName) {
+VK_LAYER_EXPORT FILE *getLayerLogOutput(const char *option, const char *layer_name) {
     FILE *log_output = NULL;
-    if (!_option || !strcmp("stdout", _option))
+    if (!option || !strcmp("stdout", option))
         log_output = stdout;
     else {
-        log_output = fopen(_option, "w");
+        log_output = fopen(option, "w");
         if (log_output == NULL) {
-            if (_option)
+            if (option)
                 std::cout << std::endl
-                          << layerName << " ERROR: Bad output filename specified: " << _option << ". Writing to STDOUT instead"
+                          << layer_name << " ERROR: Bad output filename specified: " << option << ". Writing to STDOUT instead"
                           << std::endl
                           << std::endl;
             log_output = stdout;
@@ -105,10 +109,10 @@ VK_LAYER_EXPORT FILE *getLayerLogOutput(const char *_option, const char *layerNa
 }
 
 // Map option strings to flag enum values
-VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(std::string _option, std::unordered_map<std::string, VkFlags> const &enum_data,
+VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(string option, std::unordered_map<string, VkFlags> const &enum_data,
                                             uint32_t option_default) {
     VkDebugReportFlagsEXT flags = option_default;
-    std::string option_list = g_configFileObj.getOption(_option.c_str());
+    string option_list = layer_config.GetOption(option.c_str());
 
     while (option_list.length() != 0) {
         // Find length of option string
@@ -117,10 +121,10 @@ VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(std::string _option, std::unordered_
             option_length = option_list.size();
         }
 
-        // Get first option in list
-        const std::string option = option_list.substr(0, option_length);
+        // Get first option item in list
+        const string option_item = option_list.substr(0, option_length);
 
-        auto enum_value = enum_data.find(option);
+        auto enum_value = enum_data.find(option_item);
         if (enum_value != enum_data.end()) {
             flags |= enum_value->second;
         }
@@ -141,48 +145,46 @@ VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(std::string _option, std::unordered_
     return flags;
 }
 
-VK_LAYER_EXPORT void setLayerOption(const char *_option, const char *_val) { g_configFileObj.setOption(_option, _val); }
+VK_LAYER_EXPORT void setLayerOption(const char *option, const char *value) { layer_config.SetOption(option, value); }
 
 // Constructor for ConfigFile. Initialize layers to log error messages to stdout by default. If a vk_layer_settings file is present,
 // its settings will override the defaults.
-ConfigFile::ConfigFile() : m_fileIsParsed(false) {
-    m_valueMap["khronos_validation.report_flags"] = "error";
+ConfigFile::ConfigFile() : file_is_parsed_(false) {
+    value_map_["khronos_validation.report_flags"] = "error";
 
 #ifdef WIN32
     // For Windows, enable message logging AND OutputDebugString
-    m_valueMap["khronos_validation.debug_action"] =
+    value_map_["khronos_validation.debug_action"] =
         "VK_DBG_LAYER_ACTION_DEFAULT,VK_DBG_LAYER_ACTION_LOG_MSG,VK_DBG_LAYER_ACTION_DEBUG_OUTPUT";
 #else   // WIN32
-    m_valueMap["khronos_validation.debug_action"] = "VK_DBG_LAYER_ACTION_DEFAULT,VK_DBG_LAYER_ACTION_LOG_MSG";
+    value_map_["khronos_validation.debug_action"] = "VK_DBG_LAYER_ACTION_DEFAULT,VK_DBG_LAYER_ACTION_LOG_MSG";
 #endif  // WIN32
-    m_valueMap["khronos_validation.log_filename"] = "stdout";
+    value_map_["khronos_validation.log_filename"] = "stdout";
 }
 
-ConfigFile::~ConfigFile() {}
-
-const char *ConfigFile::getOption(const std::string &_option) {
-    std::map<std::string, std::string>::const_iterator it;
-    if (!m_fileIsParsed) {
-        std::string settings_file = FindSettings();
-        parseFile(settings_file.c_str());
+const char *ConfigFile::GetOption(const string &option) {
+    std::map<string, string>::const_iterator it;
+    if (!file_is_parsed_) {
+        string settings_file = FindSettings();
+        ParseFile(settings_file.c_str());
     }
 
-    if ((it = m_valueMap.find(_option)) == m_valueMap.end())
+    if ((it = value_map_.find(option)) == value_map_.end())
         return "";
     else
         return it->second.c_str();
 }
 
-void ConfigFile::setOption(const std::string &_option, const std::string &_val) {
-    if (!m_fileIsParsed) {
-        std::string settings_file = FindSettings();
-        parseFile(settings_file.c_str());
+void ConfigFile::SetOption(const string &option, const string &val) {
+    if (!file_is_parsed_) {
+        string settings_file = FindSettings();
+        ParseFile(settings_file.c_str());
     }
 
-    m_valueMap[_option] = _val;
+    value_map_[option] = val;
 }
 
-std::string ConfigFile::FindSettings() {
+string ConfigFile::FindSettings() {
     struct stat info;
 
 #if defined(WIN32)
@@ -211,9 +213,9 @@ std::string ConfigFile::FindSettings() {
         RegCloseKey(hive);
     }
 #else
-    std::string search_path = getEnvironment("XDG_DATA_HOME");
+    string search_path = GetEnvironment("XDG_DATA_HOME");
     if (search_path == "") {
-        search_path = getEnvironment("HOME");
+        search_path = GetEnvironment("HOME");
         if (search_path != "") {
             search_path += "/.local/share";
         }
@@ -221,7 +223,7 @@ std::string ConfigFile::FindSettings() {
 
     // Use the vk_layer_settings.txt file from here, if it is present
     if (search_path != "") {
-        std::string home_file = search_path + "/vulkan/settings.d/vk_layer_settings.txt";
+        string home_file = search_path + "/vulkan/settings.d/vk_layer_settings.txt";
         if (stat(home_file.c_str(), &info) == 0) {
             if (info.st_mode & S_IFREG) {
                 return home_file;
@@ -231,7 +233,7 @@ std::string ConfigFile::FindSettings() {
 
 #endif
 
-    std::string env_path = getEnvironment("VK_LAYER_SETTINGS_PATH");
+    string env_path = GetEnvironment("VK_LAYER_SETTINGS_PATH");
 
     // If the path exists use it, else use vk_layer_settings
     if (stat(env_path.c_str(), &info) == 0) {
@@ -244,11 +246,11 @@ std::string ConfigFile::FindSettings() {
     return "vk_layer_settings.txt";
 }
 
-void ConfigFile::parseFile(const char *filename) {
+void ConfigFile::ParseFile(const char *filename) {
     std::ifstream file;
     char buf[MAX_CHARS_PER_LINE];
 
-    m_fileIsParsed = true;
+    file_is_parsed_ = true;
 
     file.open(filename);
     if (!file.good()) {
@@ -268,9 +270,9 @@ void ConfigFile::parseFile(const char *filename) {
         if (pComment) *pComment = '\0';
 
         if (sscanf(buf, " %511[^\n\t =] = %511[^\n \t]", option, value) == 2) {
-            std::string optStr(option);
-            std::string valStr(value);
-            m_valueMap[optStr] = valStr;
+            string optStr(option);
+            string valStr(value);
+            value_map_[optStr] = valStr;
         }
         file.getline(buf, MAX_CHARS_PER_LINE);
     }
