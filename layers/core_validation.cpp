@@ -631,7 +631,7 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHand
 //  Add reference from objectInfo to memoryInfo
 //  Add reference off of object's binding info
 // Return VK_TRUE if addition is successful, VK_FALSE otherwise
-bool CoreChecks::SetSparseMemBinding(MEM_BINDING binding, const VulkanTypedHandle &typed_handle) {
+bool ValidationStateTracker::SetSparseMemBinding(MEM_BINDING binding, const VulkanTypedHandle &typed_handle) {
     bool skip = VK_FALSE;
     // Handle NULL case separately, just clear previous binding & decrement reference
     if (binding.mem == VK_NULL_HANDLE) {
@@ -3120,14 +3120,6 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
         } else {
             // Retire work up until this fence early, we will not see the wait that corresponds to this signal
             early_retire_seq = pQueue->seq + pQueue->submissions.size();
-            if (!external_sync_warning) {
-                external_sync_warning = true;
-                log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT, HandleToUint64(fence),
-                        kVUID_Core_DrawState_QueueForwardProgress,
-                        "vkQueueSubmit(): Signaling external %s on %s will disable validation of preceding command "
-                        "buffer lifecycle states and the in-use status of associated objects.",
-                        report_data->FormatHandle(fence).c_str(), report_data->FormatHandle(queue).c_str());
-            }
         }
     }
 
@@ -3171,14 +3163,6 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
                 } else {
                     // Retire work up until this submit early, we will not see the wait that corresponds to this signal
                     early_retire_seq = std::max(early_retire_seq, pQueue->seq + pQueue->submissions.size() + 1);
-                    if (!external_sync_warning) {
-                        external_sync_warning = true;
-                        log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
-                                HandleToUint64(semaphore), kVUID_Core_DrawState_QueueForwardProgress,
-                                "vkQueueSubmit(): Signaling external %s on %s will disable validation of preceding "
-                                "command buffer lifecycle states and the in-use status of associated objects.",
-                                report_data->FormatHandle(semaphore).c_str(), report_data->FormatHandle(queue).c_str());
-                    }
                 }
             }
         }
@@ -4875,7 +4859,7 @@ void ValidationStateTracker::PostCallRecordResetCommandPool(VkDevice device, VkC
 bool CoreChecks::PreCallValidateResetFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences) {
     bool skip = false;
     for (uint32_t i = 0; i < fenceCount; ++i) {
-        auto pFence = GetFenceState(pFences[i]);
+        const auto pFence = GetFenceState(pFences[i]);
         if (pFence && pFence->scope == kSyncScopeInternal && pFence->state == FENCE_INFLIGHT) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT,
                             HandleToUint64(pFences[i]), "VUID-vkResetFences-pFences-01123", "%s is in use.",
@@ -4885,7 +4869,8 @@ bool CoreChecks::PreCallValidateResetFences(VkDevice device, uint32_t fenceCount
     return skip;
 }
 
-void CoreChecks::PostCallRecordResetFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences, VkResult result) {
+void ValidationStateTracker::PostCallRecordResetFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences,
+                                                       VkResult result) {
     for (uint32_t i = 0; i < fenceCount; ++i) {
         auto pFence = GetFenceState(pFences[i]);
         if (pFence) {
@@ -12165,14 +12150,14 @@ void ValidationStateTracker::PreCallRecordSetEvent(VkDevice device, VkEvent even
 
 bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
                                                 VkFence fence) {
-    auto queue_data = GetQueueState(queue);
-    auto pFence = GetFenceState(fence);
+    const auto queue_data = GetQueueState(queue);
+    const auto pFence = GetFenceState(fence);
     bool skip = ValidateFenceForSubmit(pFence);
     if (skip) {
         return true;
     }
 
-    auto queueFlags = GetPhysicalDeviceState()->queue_family_properties[queue_data->queueFamilyIndex].queueFlags;
+    const auto queueFlags = GetPhysicalDeviceState()->queue_family_properties[queue_data->queueFamilyIndex].queueFlags;
     if (!(queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) {
         skip |= log_msg(
             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT, HandleToUint64(queue),
@@ -12190,7 +12175,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
         std::vector<VkSemaphore> semaphore_signals;
         for (uint32_t i = 0; i < bindInfo.waitSemaphoreCount; ++i) {
             VkSemaphore semaphore = bindInfo.pWaitSemaphores[i];
-            auto pSemaphore = GetSemaphoreState(semaphore);
+            const auto pSemaphore = GetSemaphoreState(semaphore);
             if (pSemaphore && (pSemaphore->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
                 if (unsignaled_semaphores.count(semaphore) ||
                     (!(signaled_semaphores.count(semaphore)) && !(pSemaphore->signaled))) {
@@ -12209,7 +12194,7 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
         }
         for (uint32_t i = 0; i < bindInfo.signalSemaphoreCount; ++i) {
             VkSemaphore semaphore = bindInfo.pSignalSemaphores[i];
-            auto pSemaphore = GetSemaphoreState(semaphore);
+            const auto pSemaphore = GetSemaphoreState(semaphore);
             if (pSemaphore && pSemaphore->scope == kSyncScopeInternal) {
                 if (signaled_semaphores.count(semaphore) || (!(unsignaled_semaphores.count(semaphore)) && pSemaphore->signaled)) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
@@ -12228,8 +12213,8 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
 
     return skip;
 }
-void CoreChecks::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
-                                               VkFence fence, VkResult result) {
+void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
+                                                           VkFence fence, VkResult result) {
     if (result != VK_SUCCESS) return;
     uint64_t early_retire_seq = 0;
     auto pFence = GetFenceState(fence);
@@ -12246,14 +12231,6 @@ void CoreChecks::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoC
         } else {
             // Retire work up until this fence early, we will not see the wait that corresponds to this signal
             early_retire_seq = pQueue->seq + pQueue->submissions.size();
-            if (!external_sync_warning) {
-                external_sync_warning = true;
-                log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT, HandleToUint64(fence),
-                        kVUID_Core_DrawState_QueueForwardProgress,
-                        "vkQueueBindSparse(): Signaling external %s on %s will disable validation of preceding command "
-                        "buffer lifecycle states and the in-use status of associated objects.",
-                        report_data->FormatHandle(fence).c_str(), report_data->FormatHandle(queue).c_str());
-            }
         }
     }
 
@@ -12320,14 +12297,6 @@ void CoreChecks::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoC
                 } else {
                     // Retire work up until this submit early, we will not see the wait that corresponds to this signal
                     early_retire_seq = std::max(early_retire_seq, pQueue->seq + pQueue->submissions.size() + 1);
-                    if (!external_sync_warning) {
-                        external_sync_warning = true;
-                        log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
-                                HandleToUint64(semaphore), kVUID_Core_DrawState_QueueForwardProgress,
-                                "vkQueueBindSparse(): Signaling external %s on %s will disable validation of "
-                                "preceding command buffer lifecycle states and the in-use status of associated objects.",
-                                report_data->FormatHandle(semaphore).c_str(), report_data->FormatHandle(queue).c_str());
-                    }
                 }
             }
         }
@@ -13006,10 +12975,10 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
 
 bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) {
     bool skip = false;
-    auto queue_state = GetQueueState(queue);
+    const auto queue_state = GetQueueState(queue);
 
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
-        auto pSemaphore = GetSemaphoreState(pPresentInfo->pWaitSemaphores[i]);
+        const auto pSemaphore = GetSemaphoreState(pPresentInfo->pWaitSemaphores[i]);
         if (pSemaphore && !pSemaphore->signaled) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, 0,
                             kVUID_Core_DrawState_QueueForwardProgress, "%s is waiting on %s that has no way to be signaled.",
@@ -13019,7 +12988,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
     }
 
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
-        auto swapchain_data = GetSwapchainState(pPresentInfo->pSwapchains[i]);
+        const auto swapchain_data = GetSwapchainState(pPresentInfo->pSwapchains[i]);
         if (swapchain_data) {
             if (pPresentInfo->pImageIndices[i] >= swapchain_data->images.size()) {
                 skip |=
@@ -13029,7 +12998,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                             pPresentInfo->pImageIndices[i], (uint32_t)swapchain_data->images.size());
             } else {
                 auto image = swapchain_data->images[pPresentInfo->pImageIndices[i]];
-                auto image_state = GetImageState(image);
+                const auto image_state = GetImageState(image);
 
                 if (image_state->shared_presentable) {
                     image_state->layout_locked = true;
@@ -13060,7 +13029,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
             // All physical devices and queue families are required to be able to present to any native window on Android; require
             // the application to have established support on any other platform.
             if (!instance_extensions.vk_khr_android_surface) {
-                auto surface_state = GetSurfaceState(swapchain_data->createInfo.surface);
+                const auto surface_state = GetSurfaceState(swapchain_data->createInfo.surface);
                 auto support_it = surface_state->gpu_queue_support.find({physical_device, queue_state->queueFamilyIndex});
 
                 if (support_it == surface_state->gpu_queue_support.end()) {
@@ -13080,7 +13049,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
         const auto *present_regions = lvl_find_in_chain<VkPresentRegionsKHR>(pPresentInfo->pNext);
         if (present_regions) {
             for (uint32_t i = 0; i < present_regions->swapchainCount; ++i) {
-                auto swapchain_data = GetSwapchainState(pPresentInfo->pSwapchains[i]);
+                const auto swapchain_data = GetSwapchainState(pPresentInfo->pSwapchains[i]);
                 assert(swapchain_data);
                 VkPresentRegionKHR region = present_regions->pRegions[i];
                 for (uint32_t j = 0; j < region.rectangleCount; ++j) {
@@ -13130,7 +13099,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
     return skip;
 }
 
-void CoreChecks::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo, VkResult result) {
+void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo, VkResult result) {
     // Semaphore waits occur before error generation, if the call reached the ICD. (Confirm?)
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
         auto pSemaphore = GetSemaphoreState(pPresentInfo->pWaitSemaphores[i]);
