@@ -24,12 +24,12 @@
 #define VKTESTBINDING_H
 
 #include <algorithm>
-#include <assert.h>
+#include <cassert>
 #include <iterator>
 #include <memory>
 #include <vector>
 
-#include "vulkan/vulkan.h"
+#include "test_common.h"
 
 namespace vk_testing {
 

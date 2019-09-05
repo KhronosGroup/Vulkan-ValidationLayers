@@ -19,14 +19,16 @@
  * Author: Tony Barbour <tony@LunarG.com>
  */
 
-#include "test_common.h"    // NOEXCEPT macro (must precede vktestbinding.h)
-#include "vktestbinding.h"  // Left for clarity, no harm, already included via test_common.h
-#include "vk_typemap_helper.h"
-#include <algorithm>
-#include <assert.h>
-#include <iostream>
-#include <stdarg.h>
+#include "vktestbinding.h"
+
 #include <string.h>  // memset(), memcmp()
+#include <algorithm>
+#include <cassert>
+#include <iostream>
+#include <vector>
+
+#include "test_common.h"
+#include "vk_typemap_helper.h"
 
 namespace {
 
@@ -302,47 +304,44 @@ void Device::init(const VkDeviceCreateInfo &info) {
 
 void Device::init_queues() {
     uint32_t queue_node_count;
-
-    // Call with NULL data to get count
     vkGetPhysicalDeviceQueueFamilyProperties(phy_.handle(), &queue_node_count, NULL);
     EXPECT(queue_node_count >= 1);
 
-    VkQueueFamilyProperties *queue_props = new VkQueueFamilyProperties[queue_node_count];
-
-    vkGetPhysicalDeviceQueueFamilyProperties(phy_.handle(), &queue_node_count, queue_props);
+    std::vector<VkQueueFamilyProperties> queue_props(queue_node_count);
+    vkGetPhysicalDeviceQueueFamilyProperties(phy_.handle(), &queue_node_count, queue_props.data());
 
     queue_families_.resize(queue_node_count);
-    for (uint32_t i = 0; i < queue_node_count; i++) {
-        VkQueue queue;
+    for (uint32_t queue_family_i = 0; queue_family_i < queue_node_count; ++queue_family_i) {
+        const auto &queue_prop = queue_props[queue_family_i];
 
-        QueueFamilyQueues &queue_storage = queue_families_[i];
-        queue_storage.reserve(queue_props[i].queueCount);
-        for (uint32_t j = 0; j < queue_props[i].queueCount; j++) {
+        QueueFamilyQueues &queue_storage = queue_families_[queue_family_i];
+        queue_storage.reserve(queue_prop.queueCount);
+        for (uint32_t queue_i = 0; queue_i < queue_prop.queueCount; ++queue_i) {
             // TODO: Need to add support for separate MEMMGR and work queues,
             // including synchronization
-            vkGetDeviceQueue(handle(), i, j, &queue);
+            VkQueue queue;
+            vkGetDeviceQueue(handle(), queue_family_i, queue_i, &queue);
 
             // Store single copy of the queue object that will self destruct
-            queue_storage.emplace_back(new Queue(queue, i));
+            queue_storage.emplace_back(new Queue(queue, queue_family_i));
 
-            if (queue_props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            if (queue_prop.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
                 queues_[GRAPHICS].push_back(queue_storage.back().get());
             }
 
-            if (queue_props[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
+            if (queue_prop.queueFlags & VK_QUEUE_COMPUTE_BIT) {
                 queues_[COMPUTE].push_back(queue_storage.back().get());
             }
 
-            if (queue_props[i].queueFlags & VK_QUEUE_TRANSFER_BIT) {
+            if (queue_prop.queueFlags & VK_QUEUE_TRANSFER_BIT) {
                 queues_[DMA].push_back(queue_storage.back().get());
             }
         }
     }
 
-    delete[] queue_props;
-
     EXPECT(!queues_[GRAPHICS].empty() || !queues_[COMPUTE].empty());
 }
+
 const Device::QueueFamilyQueues &Device::queue_family_queues(uint32_t queue_family) const {
     assert(queue_family < queue_families_.size());
     return queue_families_[queue_family];
