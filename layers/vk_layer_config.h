@@ -18,12 +18,13 @@
  * Author: Mark Lobodzinski <mark@lunarg.com>
  **************************************************************************/
 #pragma once
-#include "vulkan/vulkan.h"
-#include "vulkan/vk_layer.h"
+
+#include <stdio.h>
 #include <string>
 #include <unordered_map>
-#include <stdbool.h>
-#include <stdio.h>
+
+#include "vulkan/vk_layer.h"
+#include "vulkan/vulkan.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,14 +58,14 @@ const std::unordered_map<std::string, VkFlags> report_flags_option_definitions =
     {std::string("error"), VK_DEBUG_REPORT_ERROR_BIT_EXT},
     {std::string("debug"), VK_DEBUG_REPORT_DEBUG_BIT_EXT}};
 
-VK_LAYER_EXPORT const char *getLayerOption(const char *_option);
-VK_LAYER_EXPORT const char *GetLayerEnvVar(const char *_option);
+VK_LAYER_EXPORT const char *getLayerOption(const char *option);
+VK_LAYER_EXPORT const char *GetLayerEnvVar(const char *option);
 
-VK_LAYER_EXPORT FILE *getLayerLogOutput(const char *_option, const char *layerName);
-VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(std::string _option, std::unordered_map<std::string, VkFlags> const &enum_data,
+VK_LAYER_EXPORT FILE *getLayerLogOutput(const char *option, const char *layer_name);
+VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(std::string option, std::unordered_map<std::string, VkFlags> const &enum_data,
                                             uint32_t option_default);
 
-VK_LAYER_EXPORT void setLayerOption(const char *_option, const char *_val);
+VK_LAYER_EXPORT void setLayerOption(const char *option, const char *val);
 VK_LAYER_EXPORT void PrintMessageFlags(VkFlags vk_flags, char *msg_flags);
 VK_LAYER_EXPORT void PrintMessageSeverity(VkFlags vk_flags, char *msg_flags);
 VK_LAYER_EXPORT void PrintMessageType(VkFlags vk_flags, char *msg_flags);
