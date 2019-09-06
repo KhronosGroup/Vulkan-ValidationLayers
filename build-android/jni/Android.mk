@@ -41,6 +41,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/descriptor_sets.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/buffer_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/shader_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/best_practices.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/convert_to_renderpass2.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/layer_chassis_dispatch.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/chassis.cpp
@@ -55,7 +56,7 @@ LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated
 LOCAL_STATIC_LIBRARIES += layer_utils glslang SPIRV-Tools SPIRV-Tools-opt
 LOCAL_CPPFLAGS += -std=c++11 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
-LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -DVK_PROTOTYPES -fvisibility=hidden -DBUILD_KHRONOS_VALIDATION -DBUILD_CORE_VALIDATION -DBUILD_PARAMETER_VALIDATION -DBUILD_OBJECT_TRACKER -DBUILD_THREAD_SAFETY -DLAYER_CHASSIS_CAN_WRAP_HANDLES
+LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -DVK_PROTOTYPES -fvisibility=hidden -DBUILD_KHRONOS_VALIDATION -DBUILD_CORE_VALIDATION -DBUILD_PARAMETER_VALIDATION -DBUILD_OBJECT_TRACKER -DBUILD_THREAD_SAFETY -DBUILD_BEST_PRACTICES -DLAYER_CHASSIS_CAN_WRAP_HANDLES
 LOCAL_LDLIBS    := -llog -landroid
 LOCAL_LDFLAGS   += -Wl,-Bsymbolic
 LOCAL_LDFLAGS   += -Wl,--exclude-libs,ALL
@@ -70,6 +71,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/descriptor_sets.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/buffer_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/shader_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_validation.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/best_practices.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/convert_to_renderpass2.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/layer_chassis_dispatch.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/chassis.cpp
@@ -79,7 +81,7 @@ LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated
 LOCAL_STATIC_LIBRARIES += layer_utils glslang SPIRV-Tools SPIRV-Tools-opt
 LOCAL_CPPFLAGS += -std=c++11 -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
-LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -DVK_PROTOTYPES -fvisibility=hidden -DBUILD_CORE_VALIDATION
+LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -DVK_PROTOTYPES -fvisibility=hidden -DBUILD_CORE_VALIDATION -DBUILD_BEST_PRACTICES
 LOCAL_LDLIBS    := -llog -landroid
 LOCAL_LDFLAGS   += -Wl,-Bsymbolic
 LOCAL_LDFLAGS   += -Wl,--exclude-libs,ALL
