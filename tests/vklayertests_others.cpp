@@ -3756,7 +3756,8 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     vkAllocateMemory(dev, &mai, NULL, &img_mem);
 
     // It shouldn't use vkGetImageMemoryRequirements for AndroidHardwareBuffer.
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "UNASSIGNED-CoreValidation-DrawState-InvalidImage");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "UNASSIGNED-CoreValidation-vkBindImageMemory-invalid-requirements");
     VkMemoryRequirements img_mem_reqs = {};
     vkGetImageMemoryRequirements(m_device->device(), img, &img_mem_reqs);
     vkBindImageMemory(dev, img, img_mem, 0);
