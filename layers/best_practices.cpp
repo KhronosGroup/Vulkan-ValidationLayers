@@ -367,7 +367,8 @@ bool BestPractices::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t
 
 bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                            const VkGraphicsPipelineCreateInfo* pCreateInfos,
-                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
+                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                           void* cgpl_state_data) {
     bool skip = false;
 
     if ((createInfoCount > 1) && (!pipelineCache)) {
@@ -383,7 +384,8 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
 
 bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                           const VkComputePipelineCreateInfo* pCreateInfos,
-                                                          const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
+                                                          const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                          void* ccpl_state_data) {
     bool skip = false;
 
     if ((createInfoCount > 1) && (!pipelineCache)) {
