@@ -8706,12 +8706,13 @@ bool CoreChecks::ValidateBarriers(const char *funcName, const CMD_BUFFER_STATE *
     return skip;
 }
 
-bool CoreChecks::ValidateEventStageMask(VkQueue queue, CMD_BUFFER_STATE *pCB, uint32_t eventCount, size_t firstEventIndex,
+bool CoreChecks::ValidateEventStageMask(VkQueue queue, CMD_BUFFER_STATE *pCB, size_t eventCount, size_t firstEventIndex,
                                         VkPipelineStageFlags sourceStageMask) {
     bool skip = false;
     VkPipelineStageFlags stageMask = 0;
-    for (uint32_t i = 0; i < eventCount; ++i) {
-        auto event = pCB->events[firstEventIndex + i];
+    const auto max_event = std::min((firstEventIndex + eventCount), pCB->events.size());
+    for (size_t event_index = firstEventIndex; event_index < max_event; ++event_index) {
+        auto event = pCB->events[event_index];
         auto queue_data = queueMap.find(queue);
         if (queue_data == queueMap.end()) return false;
         auto event_data = queue_data->second.eventToStageMap.find(event);
@@ -8906,13 +8907,16 @@ void CoreChecks::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint3
                                             uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
                                             uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                             uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    // The StateTracker added will add to the events vector.
+    auto first_event_index = cb_state->events.size();
     StateTracker::PreCallRecordCmdWaitEvents(commandBuffer, eventCount, pEvents, sourceStageMask, dstStageMask, memoryBarrierCount,
                                              pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                                              imageMemoryBarrierCount, pImageMemoryBarriers);
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    auto first_event_index = cb_state->events.size();
+    auto event_added_count = cb_state->events.size() - first_event_index;
+
     cb_state->eventUpdates.emplace_back(
-        [=](VkQueue q) { return ValidateEventStageMask(q, cb_state, eventCount, first_event_index, sourceStageMask); });
+        [=](VkQueue q) { return ValidateEventStageMask(q, cb_state, event_added_count, first_event_index, sourceStageMask); });
     TransitionImageLayouts(cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
     if (enabled.gpu_validation) {
         GpuPreCallValidateCmdWaitEvents(sourceStageMask);

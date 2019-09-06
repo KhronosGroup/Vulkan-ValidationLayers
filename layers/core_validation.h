@@ -1213,7 +1213,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCmdBufDrawState(const CMD_BUFFER_STATE* cb_node, CMD_TYPE cmd_type, const bool indexed,
                                  const VkPipelineBindPoint bind_point, const char* function, const char* pipe_err_code,
                                  const char* state_err_code) const;
-    bool ValidateEventStageMask(VkQueue queue, CMD_BUFFER_STATE* pCB, uint32_t eventCount, size_t firstEventIndex,
+    bool ValidateEventStageMask(VkQueue queue, CMD_BUFFER_STATE* pCB, size_t eventCount, size_t firstEventIndex,
                                 VkPipelineStageFlags sourceStageMask);
     bool ValidateQueueFamilyIndices(const CMD_BUFFER_STATE* pCB, VkQueue queue) const;
     VkResult CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,
