@@ -42,8 +42,6 @@
 
 using std::string;
 
-#define MAX_CHARS_PER_LINE 4096
-
 class ConfigFile {
   public:
     ConfigFile();
@@ -247,34 +245,20 @@ string ConfigFile::FindSettings() {
 }
 
 void ConfigFile::ParseFile(const char *filename) {
-    std::ifstream file;
-    char buf[MAX_CHARS_PER_LINE];
-
     file_is_parsed_ = true;
 
-    file.open(filename);
-    if (!file.good()) {
-        return;
-    }
+    // extract option = value pairs from a file
+    std::ifstream file(filename);
+    for (string line; std::getline(file, line);) {
+        // discard comments, which start with '#'
+        const auto comments_pos = line.find_first_of('#');
+        if (comments_pos != string::npos) line.erase(comments_pos);
 
-    // read tokens from the file and form option, value pairs
-    file.getline(buf, MAX_CHARS_PER_LINE);
-    while (!file.eof()) {
-        char option[512];
-        char value[512];
+        const auto value_pos = line.find_first_of('=');
 
-        char *pComment;
-
-        // discard any comments delimited by '#' in the line
-        pComment = strchr(buf, '#');
-        if (pComment) *pComment = '\0';
-
-        if (sscanf(buf, " %511[^\n\t =] = %511[^\n \t]", option, value) == 2) {
-            string optStr(option);
-            string valStr(value);
-            value_map_[optStr] = valStr;
-        }
-        file.getline(buf, MAX_CHARS_PER_LINE);
+        const string option = string_trim(line.substr(0, value_pos));
+        const string value = string_trim(line.substr(value_pos));
+        value_map_[option] = value;
     }
 }
 

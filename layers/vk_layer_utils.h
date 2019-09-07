@@ -91,6 +91,18 @@ static inline SepString string_join(const char *sep, const StringCollection &str
     return string_join<SepString, StringCollection>(SepString(sep), strings);
 }
 
+static inline std::string string_trim(const std::string &s) {
+    const char *whitespace = " \t\f\v\n\r";
+
+    const auto trimmed_beg = s.find_first_not_of(whitespace);
+    if (trimmed_beg == std::string::npos) return "";
+
+    const auto trimmed_end = s.find_last_not_of(whitespace);
+    assert(trimmed_end != std::string::npos && trimmed_beg <= trimmed_end);
+
+    return s.substr(trimmed_beg, trimmed_end - trimmed_beg + 1);
+}
+
 // Perl/Python style join operation for general types using stream semantics
 // Note: won't be as fast as string_join above, but simpler to use (and code)
 // Note: Modifiable reference doesn't match the google style but does match std style for stream handling and algorithms
