@@ -391,20 +391,20 @@ class HelperFileOutputGenerator(OutputGenerator):
         if (bitsIndex != -1):
             outstring += '\n'
             flagsName = groupName[0:bitsIndex] + "s" +  groupName[bitsIndex+4:]
-            outstring += 'static inline std::string string_%s(%s input_value)\n' % (flagsName, flagsName)
+            outstring += 'static inline const char* string_%s(%s input_value)\n' % (flagsName, flagsName)
             outstring += '{\n'
-            outstring += '    std::string ret;\n'
+            outstring += '    char ret[1024]="";\n'
             outstring += '    int index = 0;\n'
             outstring += '    while(input_value) {\n'
             outstring += '        if (input_value & 1) {\n'
-            outstring += '            if( !ret.empty()) ret.append("|");\n'
-            outstring += '            ret.append(string_%s(static_cast<%s>(1 << index)));\n' % (groupName, groupName)
+            outstring += '            if( !strlen(ret)) strcat(ret, "|");\n'
+            outstring += '            strcat(ret, string_%s(static_cast<%s>(1 << index)));\n' % (groupName, groupName)
             outstring += '        }\n'
             outstring += '        ++index;\n'
             outstring += '        input_value >>= 1;\n'
             outstring += '    }\n'
-            outstring += '    if( ret.empty()) ret.append(string_%s(static_cast<%s>(0)));\n' % (groupName, groupName)
-            outstring += '    return ret;\n'
+            outstring += '    if( !strlen(ret)) strcat(ret, string_%s(static_cast<%s>(0)));\n' % (groupName, groupName)
+            outstring += '    return strdup(ret);\n'
             outstring += '}\n'
 
         if self.featureExtraProtect is not None:
@@ -433,10 +433,10 @@ class HelperFileOutputGenerator(OutputGenerator):
             enum_string_helper_header = '\n'
             enum_string_helper_header += '#pragma once\n'
             enum_string_helper_header += '#ifdef _WIN32\n'
-            enum_string_helper_header += '#pragma warning( disable : 4065 )\n'
+            enum_string_helper_header += '#pragma warning( disable : 4065 4996 )\n'
             enum_string_helper_header += '#endif\n'
             enum_string_helper_header += '\n'
-            enum_string_helper_header += '#include <string>\n'
+            enum_string_helper_header += '#include <string.h>\n'
             enum_string_helper_header += '#include <vulkan/vulkan.h>\n'
             enum_string_helper_header += '\n'
             enum_string_helper_header += self.enum_output
