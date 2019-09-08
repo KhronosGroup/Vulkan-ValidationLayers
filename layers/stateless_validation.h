@@ -876,7 +876,7 @@ class StatelessValidation : public ValidationObject {
                         "Dependency pDependencies[%" PRIu32
                         "] specifies a %sStageMask that contains stages (%s) that are not part "
                         "of the Graphics pipeline, as specified by the %sSubpass (= %" PRIu32 ") in pipelineBindPoint.",
-                        dependency_index, target, string_VkPipelineStageFlags(stages & ~kGraphicsStages).c_str(), target, subpass);
+                        dependency_index, target, string_VkPipelineStageFlags(stages & ~kGraphicsStages), target, subpass);
         }
 
         return skip;
