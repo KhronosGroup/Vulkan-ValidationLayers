@@ -94,22 +94,10 @@ that to be accepted into the repository, the pull request must [pass all tests](
 -- the automatic Github Travis and AppVeyor continuous integration features will assist in enforcing this requirement.
 
 #### **Testing Your Changes**
-* Run the existing tests in the repository before and after each of your commits to check for any regressions.
-  There are some tests that appear in all repositories.
-  These tests can be found in the following folders inside of your target build directory:
+* Run the included layer validation tests (vk_layer_validation_tests) in the repository before and after each of your commits to check for any regressions.
 
-  (These instructions are for Linux)
+* Write additional layer validation tests that explicitly exercise your changes.
 
-* In the `tests` directory, run:
-
->        run_all_tests.sh
-
-* On Windows, a quick sanity check can be run from inside Visual Studio -- just run the `vk_layer_validation_tests` project,
-or you can run `run_all_tests.ps1` from a PowerShell window
-
-* Note that some tests may fail with known issues or driver-specific problems.
-  The idea here is that your changes should not change the test results, unless that was the intent of your changes.
-* Run tests that explicitly exercise your changes.
 * Feel free to subject your code changes to other tests as well!
 
 #### **GitHub Cloud CI Testing**

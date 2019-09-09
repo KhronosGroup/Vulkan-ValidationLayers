@@ -63,21 +63,6 @@ set(LIBGLM_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/libs)
 set(COMMON_CPP vklayertests_pipeline_shader.cpp vklayertests_buffer_image_memory_sampler.cpp vklayertests_others.cpp vklayertests_descriptor_renderpass_framebuffer.cpp
 				vklayertests_command.cpp vklayertests_imageless_framebuffer.cpp vkpositivelayertests.cpp vkrenderframework.cpp vktestbinding.cpp vktestframework.cpp test_environment.cpp)
 
-if(NOT WIN32)
-    # extra setup for out-of-tree builds
-    if(NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
-        add_custom_target(VulkanVL_binary_dir_symlinks ALL COMMAND ln -sf ${CMAKE_CURRENT_SOURCE_DIR}/run_all_tests.sh VERBATIM)
-    endif()
-else()
-    if(NOT (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR))
-        file(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/_run_all_tests.ps1 RUN_ALL)
-        add_custom_target(VulkanVL_binary_dir_symlinks ALL
-                          COMMAND ${CMAKE_COMMAND} -E copy_if_different ${RUN_ALL} run_all_tests.ps1
-                          VERBATIM)
-        set_target_properties(VulkanVL_binary_dir_symlinks PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
-    endif()
-endif()
-
 # ~~~
 # The vulkan loader search is:
 #     Existing vulkan target already present in the build

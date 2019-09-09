@@ -377,26 +377,10 @@ location of the loader's install directory:
 ### Windows Tests and Demos
 
 After making any changes to the repository, you should perform some quick
-sanity tests, including the run_all_tests Powershell script. In addition,
-running sample applications such as the
+sanity tests, especially the included layer validation tests (vk_layer_validation_tests).
+In addition, running sample applications such as the
 [vkcube demo](https://www.github.com/KhronosGroup/Vulkan-Tools.git)
 with validation enabled is advised.
-
-To run the validation test script, open a Powershell Console, change to the
-build/tests directory, and run:
-
-For Release builds:
-
-    .\run_all_tests.ps1
-
-For Debug builds:
-
-    .\run_all_tests.ps1 -Debug
-
-This script will run the following tests:
-
-- `vk_layer_validation_tests`:
-  Test Vulkan validation layers
 
 ### Windows Notes
 
@@ -569,13 +553,7 @@ To uninstall the files from the system directories, you can execute:
 
 #### Linux Tests
 
-To run the **validation test script**, in a terminal change to the build/tests directory and run:
-
-    VK_LAYER_PATH=../layers ./run_all_tests.sh
-
-This script will run the following tests:
-
-- `vk_layer_validation_tests`: Test Vulkan validation layers
+Build and run the `vk_layer_validation_tests`, in the tests subdirectory.
 
 #### Linux 32-bit support
 
@@ -820,8 +798,8 @@ see which driver, loader and layers are being used.
 
 ### MacOS Tests
 
-After making any changes to the repository, you should perform the included sanity tests by running
-the run_all_tests shell script.
+After making any changes to the repository, you should build and run the included
+vk_layer_validation_tests located in the tests subdirectory.
 
 These test require a manual path to an ICD to run properly on MacOS.
 
@@ -848,13 +826,7 @@ You will have to direct the loader from Vulkan-Loader to the Mock ICD:
 
 #### Running the Tests
 
-To run the **validation test script**, in a terminal change to the build/tests directory and run:
-
-    VK_LAYER_PATH=../layers ./run_all_tests.sh
-
-This script will run the following tests:
-
-- `vk_layer_validation_tests`: Test Vulkan validation layers
+In a terminal, change to the build/tests directory and run the vk_layer_validation_tests.
 
 Further testing and sanity checking can be achieved by running the vkcube and
 vulkaninfo applications in the
