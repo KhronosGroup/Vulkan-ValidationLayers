@@ -3975,46 +3975,42 @@ TEST_F(VkLayerTest, SetDynViewportParamMultiviewportTests) {
         return;
     }
 
-    const auto max_viewports = m_device->props.limits.maxViewports;
-    const uint32_t too_many_viewports = 65536 + 1;  // let's say this is too much to allocate pViewports for
-
     m_commandBuffer->begin();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewport-viewportCount-arraylength");
     vkCmdSetViewport(m_commandBuffer->handle(), 0, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
+    const auto max_viewports = m_device->props.limits.maxViewports;
+
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewport-pViewports-parameter");
     vkCmdSetViewport(m_commandBuffer->handle(), 0, max_viewports, nullptr);
     m_errorMonitor->VerifyFound();
 
-    if (max_viewports >= too_many_viewports) {
-        printf(
-            "%s VkPhysicalDeviceLimits::maxViewports is too large to practically test against -- skipping "
-            "part of "
-            "test.\n",
-            kSkipPrefix);
-        return;
+    const uint32_t too_big_max_viewports = 65536 + 1;  // let's say this is too much to allocate
+    if (max_viewports >= too_big_max_viewports) {
+        printf("%s VkPhysicalDeviceLimits::maxViewports is too large to practically test against -- skipping part of test.\n",
+               kSkipPrefix);
+    } else {
+        const VkViewport vp = {0.0, 0.0, 64.0, 64.0, 0.0, 1.0};
+        const std::vector<VkViewport> viewports(max_viewports + 1, vp);
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewport-firstViewport-01223");
+        vkCmdSetViewport(m_commandBuffer->handle(), 0, max_viewports + 1, viewports.data());
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewport-firstViewport-01223");
+        vkCmdSetViewport(m_commandBuffer->handle(), max_viewports, 1, viewports.data());
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewport-firstViewport-01223");
+        vkCmdSetViewport(m_commandBuffer->handle(), 1, max_viewports, viewports.data());
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewport-viewportCount-arraylength");
+        vkCmdSetViewport(m_commandBuffer->handle(), 1, 0, viewports.data());
+        m_errorMonitor->VerifyFound();
     }
-
-    const VkViewport vp = {0.0, 0.0, 64.0, 64.0, 0.0, 1.0};
-    const std::vector<VkViewport> viewports(max_viewports + 1, vp);
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewport-firstViewport-01223");
-    vkCmdSetViewport(m_commandBuffer->handle(), 0, max_viewports + 1, viewports.data());
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewport-firstViewport-01223");
-    vkCmdSetViewport(m_commandBuffer->handle(), max_viewports, 1, viewports.data());
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewport-firstViewport-01223");
-    vkCmdSetViewport(m_commandBuffer->handle(), 1, max_viewports, viewports.data());
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewport-viewportCount-arraylength");
-    vkCmdSetViewport(m_commandBuffer->handle(), 1, 0, viewports.data());
-    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, BadRenderPassScopeSecondaryCmdBuffer) {
@@ -4311,46 +4307,42 @@ TEST_F(VkLayerTest, SetDynScissorParamMultiviewportTests) {
         return;
     }
 
-    const auto max_scissors = m_device->props.limits.maxViewports;
-    const uint32_t too_many_scissors = 65536 + 1;  // let's say this is too much to allocate pScissors for
-
     m_commandBuffer->begin();
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetScissor-scissorCount-arraylength");
     vkCmdSetScissor(m_commandBuffer->handle(), 0, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
+    const auto max_scissors = m_device->props.limits.maxViewports;
+
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetScissor-pScissors-parameter");
     vkCmdSetScissor(m_commandBuffer->handle(), 0, max_scissors, nullptr);
     m_errorMonitor->VerifyFound();
 
-    if (max_scissors >= too_many_scissors) {
-        printf(
-            "%s VkPhysicalDeviceLimits::maxViewports is too large to practically test against -- skipping "
-            "part of "
-            "test.\n",
-            kSkipPrefix);
-        return;
+    const uint32_t too_big_max_scissors = 65536 + 1;  // let's say this is too much to allocate
+    if (max_scissors >= too_big_max_scissors) {
+        printf("%s VkPhysicalDeviceLimits::maxViewports is too large to practically test against -- skipping part of test.\n",
+               kSkipPrefix);
+    } else {
+        const VkRect2D scissor = {{0, 0}, {16, 16}};
+        const std::vector<VkRect2D> scissors(max_scissors + 1, scissor);
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetScissor-firstScissor-00592");
+        vkCmdSetScissor(m_commandBuffer->handle(), 0, max_scissors + 1, scissors.data());
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetScissor-firstScissor-00592");
+        vkCmdSetScissor(m_commandBuffer->handle(), max_scissors, 1, scissors.data());
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetScissor-firstScissor-00592");
+        vkCmdSetScissor(m_commandBuffer->handle(), 1, max_scissors, scissors.data());
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetScissor-scissorCount-arraylength");
+        vkCmdSetScissor(m_commandBuffer->handle(), 1, 0, scissors.data());
+        m_errorMonitor->VerifyFound();
     }
-
-    const VkRect2D scissor = {{0, 0}, {16, 16}};
-    const std::vector<VkRect2D> scissors(max_scissors + 1, scissor);
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetScissor-firstScissor-00592");
-    vkCmdSetScissor(m_commandBuffer->handle(), 0, max_scissors + 1, scissors.data());
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetScissor-firstScissor-00592");
-    vkCmdSetScissor(m_commandBuffer->handle(), max_scissors, 1, scissors.data());
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetScissor-firstScissor-00592");
-    vkCmdSetScissor(m_commandBuffer->handle(), 1, max_scissors, scissors.data());
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetScissor-scissorCount-arraylength");
-    vkCmdSetScissor(m_commandBuffer->handle(), 1, 0, scissors.data());
-    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, DrawIndirect) {

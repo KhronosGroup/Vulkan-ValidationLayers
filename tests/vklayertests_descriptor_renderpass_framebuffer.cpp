@@ -1969,19 +1969,24 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
                                    nullptr};
 
     // Test too many color attachments
-    {
-        std::vector<VkAttachmentReference> too_many_colors(m_device->props.limits.maxColorAttachments + 1, color[0]);
-        subpass.colorAttachmentCount = (uint32_t)too_many_colors.size();
-        subpass.pColorAttachments = too_many_colors.data();
-        subpass.pResolveAttachments = NULL;
+    const uint32_t max_color_attachments = m_device->props.limits.maxColorAttachments;
+    const uint32_t too_big_max_attachments = 65536 + 1;  // let's say this is too much to allocate
+    if (max_color_attachments >= too_big_max_attachments) {
+        printf(
+            "%s VkPhysicalDeviceLimits::maxColorAttachments is too large to practically test against -- skipping part of test.\n",
+            kSkipPrefix);
+    } else {
+        std::vector<VkAttachmentReference> too_many_colors(max_color_attachments + 1, color[0]);
+        VkSubpassDescription test_subpass = subpass;
+        test_subpass.colorAttachmentCount = (uint32_t)too_many_colors.size();
+        test_subpass.pColorAttachments = too_many_colors.data();
+        test_subpass.pResolveAttachments = NULL;
+        VkRenderPassCreateInfo test_rpci = rpci;
+        test_rpci.pSubpasses = &test_subpass;
 
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &test_rpci, rp2Supported,
                              "VUID-VkSubpassDescription-colorAttachmentCount-00845",
                              "VUID-VkSubpassDescription2KHR-colorAttachmentCount-03063");
-
-        subpass.colorAttachmentCount = (uint32_t)color.size();
-        subpass.pColorAttachments = color.data();
-        subpass.pResolveAttachments = resolve.data();
     }
 
     // Test sample count mismatch between color buffers
