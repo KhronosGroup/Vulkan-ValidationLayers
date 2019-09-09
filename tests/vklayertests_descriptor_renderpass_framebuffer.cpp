@@ -7418,3 +7418,63 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
     vk::DestroyDescriptorPool(m_device->handle(), ds_pool, nullptr);
     vk::DestroyDescriptorSetLayout(m_device->device(), ds_layout, nullptr);
 }
+
+TEST_F(VkLayerTest, WrongdstArrayElement) {
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                     {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    VkImageView view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+
+    VkDescriptorImageInfo image_info = {};
+    image_info.imageView = view;
+    image_info.sampler = VK_NULL_HANDLE;
+    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    descriptor_set.image_infos.emplace_back(image_info);
+
+    VkWriteDescriptorSet descriptor_write;
+    memset(&descriptor_write, 0, sizeof(descriptor_write));
+    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_write.dstSet = descriptor_set.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    descriptor_write.pImageInfo = descriptor_set.image_infos.data();
+    descriptor_write.pBufferInfo = nullptr;
+    descriptor_write.pTexelBufferView = nullptr;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-dstArrayElement-00321");
+    descriptor_write.dstArrayElement = 1;
+    descriptor_set.descriptor_writes.emplace_back(descriptor_write);
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+
+    OneOffDescriptorSet descriptor_set2(m_device, {
+                                                      {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                      {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  });
+
+    descriptor_set2.image_infos.emplace_back(image_info);
+    descriptor_set2.image_infos.emplace_back(image_info);
+
+    descriptor_write.dstSet = descriptor_set2.set_;
+    descriptor_write.descriptorCount = 2;
+    descriptor_write.pImageInfo = descriptor_set2.image_infos.data();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-dstArrayElement-00321");
+    descriptor_write.dstArrayElement = 1;
+    descriptor_set2.descriptor_writes.emplace_back(descriptor_write);
+    descriptor_set2.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-dstArrayElement-00321");
+    descriptor_write.dstArrayElement = 3;
+    descriptor_set2.descriptor_writes.clear();
+    descriptor_set2.descriptor_writes.emplace_back(descriptor_write);
+    descriptor_set2.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+}
