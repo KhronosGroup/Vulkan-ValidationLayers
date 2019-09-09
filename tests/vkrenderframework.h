@@ -95,7 +95,7 @@ class ErrorMonitor {
   public:
     ErrorMonitor();
 
-    ~ErrorMonitor();
+    ~ErrorMonitor() NOEXCEPT;
 
     // Set monitor to pristine state
     void Reset();
@@ -319,7 +319,7 @@ class VkConstantBufferObj : public VkBufferObj {
 class VkRenderpassObj {
   public:
     VkRenderpassObj(VkDeviceObj *device);
-    ~VkRenderpassObj();
+    ~VkRenderpassObj() NOEXCEPT;
     VkRenderPass handle() { return m_renderpass; }
 
   protected:
@@ -444,8 +444,8 @@ class VkDescriptorSetLayoutObj : public vk_testing::DescriptorSetLayout {
                              VkDescriptorSetLayoutCreateFlags flags = 0, void *pNext = NULL);
 
     // Move constructor and move assignment operator for Visual Studio 2013
-    VkDescriptorSetLayoutObj(VkDescriptorSetLayoutObj &&src) : DescriptorSetLayout(std::move(src)){};
-    VkDescriptorSetLayoutObj &operator=(VkDescriptorSetLayoutObj &&src) {
+    VkDescriptorSetLayoutObj(VkDescriptorSetLayoutObj &&src) NOEXCEPT : DescriptorSetLayout(std::move(src)){};
+    VkDescriptorSetLayoutObj &operator=(VkDescriptorSetLayoutObj &&src) NOEXCEPT {
         DescriptorSetLayout::operator=(std::move(src));
         return *this;
     }
@@ -454,7 +454,7 @@ class VkDescriptorSetLayoutObj : public vk_testing::DescriptorSetLayout {
 class VkDescriptorSetObj : public vk_testing::DescriptorPool {
   public:
     VkDescriptorSetObj(VkDeviceObj *device);
-    ~VkDescriptorSetObj();
+    ~VkDescriptorSetObj() NOEXCEPT;
 
     int AppendDummy();
     int AppendBuffer(VkDescriptorType type, VkConstantBufferObj &constantBuffer);
@@ -498,8 +498,8 @@ class VkPipelineLayoutObj : public vk_testing::PipelineLayout {
                         const std::vector<VkPushConstantRange> &push_constant_ranges = {});
 
     // Move constructor and move assignment operator for Visual Studio 2013
-    VkPipelineLayoutObj(VkPipelineLayoutObj &&src) : PipelineLayout(std::move(src)) {}
-    VkPipelineLayoutObj &operator=(VkPipelineLayoutObj &&src) {
+    VkPipelineLayoutObj(VkPipelineLayoutObj &&src) NOEXCEPT : PipelineLayout(std::move(src)) {}
+    VkPipelineLayoutObj &operator=(VkPipelineLayoutObj &&src) NOEXCEPT {
         PipelineLayout::operator=(std::move(src));
         return *this;
     }

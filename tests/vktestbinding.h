@@ -85,14 +85,14 @@ namespace internal {
 template <typename T>
 class Handle {
   public:
-    const T &handle() const { return handle_; }
-    bool initialized() const { return (handle_ != T{}); }
+    const T &handle() const NOEXCEPT { return handle_; }
+    bool initialized() const NOEXCEPT { return (handle_ != T{}); }
 
   protected:
     typedef T handle_type;
 
-    explicit Handle() : handle_{} {}
-    explicit Handle(T handle) : handle_(handle) {}
+    explicit Handle() NOEXCEPT : handle_{} {}
+    explicit Handle(T handle) NOEXCEPT : handle_(handle) {}
 
     // handles are non-copyable
     Handle(const Handle &) = delete;
@@ -106,7 +106,7 @@ class Handle {
         return *this;
     }
 
-    void init(T handle) {
+    void init(T handle) NOEXCEPT {
         assert(!initialized());
         handle_ = handle;
     }
@@ -118,23 +118,23 @@ class Handle {
 template <typename T>
 class NonDispHandle : public Handle<T> {
   protected:
-    explicit NonDispHandle() : Handle<T>(), dev_handle_(VK_NULL_HANDLE) {}
-    explicit NonDispHandle(VkDevice dev, T handle) : Handle<T>(handle), dev_handle_(dev) {}
+    explicit NonDispHandle() NOEXCEPT : Handle<T>(), dev_handle_(VK_NULL_HANDLE) {}
+    explicit NonDispHandle(VkDevice dev, T handle) NOEXCEPT : Handle<T>(handle), dev_handle_(dev) {}
 
-    NonDispHandle(NonDispHandle &&src) : Handle<T>(std::move(src)) {
+    NonDispHandle(NonDispHandle &&src) NOEXCEPT : Handle<T>(std::move(src)) {
         dev_handle_ = src.dev_handle_;
         src.dev_handle_ = VK_NULL_HANDLE;
     }
-    NonDispHandle &operator=(NonDispHandle &&src) {
+    NonDispHandle &operator=(NonDispHandle &&src) NOEXCEPT {
         Handle<T>::operator=(std::move(src));
         dev_handle_ = src.dev_handle_;
         src.dev_handle_ = VK_NULL_HANDLE;
         return *this;
     }
 
-    const VkDevice &device() const { return dev_handle_; }
+    const VkDevice &device() const NOEXCEPT { return dev_handle_; }
 
-    void init(VkDevice dev, T handle) {
+    void init(VkDevice dev, T handle) NOEXCEPT {
         assert(!Handle<T>::initialized() && dev_handle_ == VK_NULL_HANDLE);
         Handle<T>::init(handle);
         dev_handle_ = dev;
@@ -191,7 +191,7 @@ class QueueCreateInfoArray {
 class Device : public internal::Handle<VkDevice> {
   public:
     explicit Device(VkPhysicalDevice phy) : phy_(phy) {}
-    ~Device();
+    ~Device() NOEXCEPT;
 
     // vkCreateDevice()
     void init(const VkDeviceCreateInfo &info);
@@ -302,7 +302,7 @@ class Queue : public internal::Handle<VkQueue> {
 
 class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
   public:
-    ~DeviceMemory();
+    ~DeviceMemory() NOEXCEPT;
 
     // vkAllocateMemory()
     void init(const Device &dev, const VkMemoryAllocateInfo &info);
@@ -323,7 +323,7 @@ class DeviceMemory : public internal::NonDispHandle<VkDeviceMemory> {
 
 class Fence : public internal::NonDispHandle<VkFence> {
   public:
-    ~Fence();
+    ~Fence() NOEXCEPT;
 
     // vkCreateFence()
     void init(const Device &dev, const VkFenceCreateInfo &info);
@@ -338,7 +338,7 @@ class Fence : public internal::NonDispHandle<VkFence> {
 
 class Semaphore : public internal::NonDispHandle<VkSemaphore> {
   public:
-    ~Semaphore();
+    ~Semaphore() NOEXCEPT;
 
     // vkCreateSemaphore()
     void init(const Device &dev, const VkSemaphoreCreateInfo &info);
@@ -348,7 +348,7 @@ class Semaphore : public internal::NonDispHandle<VkSemaphore> {
 
 class Event : public internal::NonDispHandle<VkEvent> {
   public:
-    ~Event();
+    ~Event() NOEXCEPT;
 
     // vkCreateEvent()
     void init(const Device &dev, const VkEventCreateInfo &info);
@@ -365,7 +365,7 @@ class Event : public internal::NonDispHandle<VkEvent> {
 
 class QueryPool : public internal::NonDispHandle<VkQueryPool> {
   public:
-    ~QueryPool();
+    ~QueryPool() NOEXCEPT;
 
     // vkCreateQueryPool()
     void init(const Device &dev, const VkQueryPoolCreateInfo &info);
@@ -382,7 +382,7 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
     explicit Buffer(const Device &dev, const VkBufferCreateInfo &info) { init(dev, info); }
     explicit Buffer(const Device &dev, VkDeviceSize size) { init(dev, size); }
 
-    ~Buffer();
+    ~Buffer() NOEXCEPT;
 
     // vkCreateBuffer()
     void init(const Device &dev, const VkBufferCreateInfo &info, VkMemoryPropertyFlags mem_props);
@@ -447,7 +447,7 @@ class Buffer : public internal::NonDispHandle<VkBuffer> {
 
 class BufferView : public internal::NonDispHandle<VkBufferView> {
   public:
-    ~BufferView();
+    ~BufferView() NOEXCEPT;
 
     // vkCreateBufferView()
     void init(const Device &dev, const VkBufferViewCreateInfo &info);
@@ -472,7 +472,7 @@ class Image : public internal::NonDispHandle<VkImage> {
     explicit Image() : NonDispHandle(), format_features_(0) {}
     explicit Image(const Device &dev, const VkImageCreateInfo &info) : format_features_(0) { init(dev, info); }
 
-    ~Image();
+    ~Image() NOEXCEPT;
 
     // vkCreateImage()
     void init(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props);
@@ -549,7 +549,7 @@ class Image : public internal::NonDispHandle<VkImage> {
 
 class ImageView : public internal::NonDispHandle<VkImageView> {
   public:
-    ~ImageView();
+    ~ImageView() NOEXCEPT;
 
     // vkCreateImageView()
     void init(const Device &dev, const VkImageViewCreateInfo &info);
@@ -585,7 +585,7 @@ class AccelerationStructure : public internal::NonDispHandle<VkAccelerationStruc
 
 class ShaderModule : public internal::NonDispHandle<VkShaderModule> {
   public:
-    ~ShaderModule();
+    ~ShaderModule() NOEXCEPT;
 
     // vkCreateShaderModule()
     void init(const Device &dev, const VkShaderModuleCreateInfo &info);
@@ -596,7 +596,7 @@ class ShaderModule : public internal::NonDispHandle<VkShaderModule> {
 
 class Pipeline : public internal::NonDispHandle<VkPipeline> {
   public:
-    ~Pipeline();
+    ~Pipeline() NOEXCEPT;
 
     // vkCreateGraphicsPipeline()
     void init(const Device &dev, const VkGraphicsPipelineCreateInfo &info);
@@ -618,13 +618,13 @@ class Pipeline : public internal::NonDispHandle<VkPipeline> {
 
 class PipelineLayout : public internal::NonDispHandle<VkPipelineLayout> {
   public:
-    PipelineLayout() NOEXCEPT : NonDispHandle(){};
-    ~PipelineLayout();
+    PipelineLayout() NOEXCEPT : NonDispHandle() {}
+    ~PipelineLayout() NOEXCEPT;
 
     // Move constructor for Visual Studio 2013
-    PipelineLayout(PipelineLayout &&src) : NonDispHandle(std::move(src)){};
+    PipelineLayout(PipelineLayout &&src) NOEXCEPT : NonDispHandle(std::move(src)){};
 
-    PipelineLayout &operator=(PipelineLayout &&src) {
+    PipelineLayout &operator=(PipelineLayout &&src) NOEXCEPT {
         this->~PipelineLayout();
         this->NonDispHandle::operator=(std::move(src));
         return *this;
@@ -636,7 +636,7 @@ class PipelineLayout : public internal::NonDispHandle<VkPipelineLayout> {
 
 class Sampler : public internal::NonDispHandle<VkSampler> {
   public:
-    ~Sampler();
+    ~Sampler() NOEXCEPT;
 
     // vkCreateSampler()
     void init(const Device &dev, const VkSamplerCreateInfo &info);
@@ -645,10 +645,10 @@ class Sampler : public internal::NonDispHandle<VkSampler> {
 class DescriptorSetLayout : public internal::NonDispHandle<VkDescriptorSetLayout> {
   public:
     DescriptorSetLayout() NOEXCEPT : NonDispHandle(){};
-    ~DescriptorSetLayout();
+    ~DescriptorSetLayout() NOEXCEPT;
 
     // Move constructor for Visual Studio 2013
-    DescriptorSetLayout(DescriptorSetLayout &&src) : NonDispHandle(std::move(src)){};
+    DescriptorSetLayout(DescriptorSetLayout &&src) NOEXCEPT : NonDispHandle(std::move(src)){};
 
     DescriptorSetLayout &operator=(DescriptorSetLayout &&src) NOEXCEPT {
         this->~DescriptorSetLayout();
@@ -662,7 +662,7 @@ class DescriptorSetLayout : public internal::NonDispHandle<VkDescriptorSetLayout
 
 class DescriptorPool : public internal::NonDispHandle<VkDescriptorPool> {
   public:
-    ~DescriptorPool();
+    ~DescriptorPool() NOEXCEPT;
 
     // Descriptor sets allocated from this pool will need access to the original
     // object
@@ -709,7 +709,7 @@ inline VkDescriptorPoolCreateInfo DescriptorPool::create_info(VkDescriptorPoolCr
 
 class DescriptorSet : public internal::NonDispHandle<VkDescriptorSet> {
   public:
-    ~DescriptorSet();
+    ~DescriptorSet() NOEXCEPT;
 
     explicit DescriptorSet() : NonDispHandle() {}
     explicit DescriptorSet(const Device &dev, DescriptorPool *pool, VkDescriptorSet set) : NonDispHandle(dev.handle(), set) {
@@ -722,7 +722,7 @@ class DescriptorSet : public internal::NonDispHandle<VkDescriptorSet> {
 
 class CommandPool : public internal::NonDispHandle<VkCommandPool> {
   public:
-    ~CommandPool();
+    ~CommandPool() NOEXCEPT;
 
     explicit CommandPool() : NonDispHandle() {}
     explicit CommandPool(const Device &dev, const VkCommandPoolCreateInfo &info) { init(dev, info); }
@@ -742,7 +742,7 @@ inline VkCommandPoolCreateInfo CommandPool::create_info(uint32_t queue_family_in
 
 class CommandBuffer : public internal::Handle<VkCommandBuffer> {
   public:
-    ~CommandBuffer();
+    ~CommandBuffer() NOEXCEPT;
 
     explicit CommandBuffer() : Handle() {}
     explicit CommandBuffer(const Device &dev, const VkCommandBufferAllocateInfo &info) { init(dev, info); }
