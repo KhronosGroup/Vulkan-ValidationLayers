@@ -2803,7 +2803,7 @@ TEST_F(VkLayerTest, CreatePipelineVertexOutputNotConsumed) {
                                       "not consumed by fragment shader");
 }
 
-TEST_F(VkLayerTest, CreatePipelineCheckShaderBadSpecialization) {
+TEST_F(VkLayerTest, CreatePipelineCheckShaderBadSpecializationSizeOutOfBounds) {
     TEST_DESCRIPTION("Challenge core_validation with shader validation issues related to vkCreateGraphicsPipelines.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
@@ -2818,14 +2818,10 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderBadSpecialization) {
         "}\n";
     VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
-    // This structure maps constant ids to data locations.
-    const VkSpecializationMapEntry entry =
-        // id,  offset,                size
-        {0, 4, sizeof(uint32_t)};  // Challenge core validation by using a bogus offset.
+    // Entry size is greater than dataSize minus offset.
+    const VkSpecializationMapEntry entry = {0, 3, sizeof(uint32_t)};
 
     uint32_t data = 1;
-
-    // Set up the info describing spec map and data
     const VkSpecializationInfo specialization_info = {
         1,
         &entry,
@@ -2837,9 +2833,8 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderBadSpecialization) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         helper.shader_stages_[1].pSpecializationInfo = &specialization_info;
     };
-    CreatePipelineHelper::OneshotTest(
-        *this, set_info, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-        "Specialization entry 0 (for constant id 0) references memory outside provided specialization data ");
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      "VUID-VkSpecializationInfo-pMapEntries-00774");
 }
 
 TEST_F(VkLayerTest, CreatePipelineCheckShaderDescriptorTypeMismatch) {
