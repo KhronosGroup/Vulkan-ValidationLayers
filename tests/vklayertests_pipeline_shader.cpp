@@ -2564,12 +2564,6 @@ TEST_F(VkLayerTest, CmdClearAttachmentTests) {
     color_attachment.colorAttachment = 0;
     VkClearRect clear_rect = {{{0, 0}, {(uint32_t)m_width, (uint32_t)m_height}}, 0, 1};
 
-    // Call for full-sized FB Color attachment prior to issuing a Draw
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                         "UNASSIGNED-CoreValidation-DrawState-ClearCmdBeforeDraw");
-    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
-    m_errorMonitor->VerifyFound();
-
     clear_rect.rect.extent.width = renderPassBeginInfo().renderArea.extent.width + 4;
     clear_rect.rect.extent.height = clear_rect.rect.extent.height / 2;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdClearAttachments-pRects-00016");

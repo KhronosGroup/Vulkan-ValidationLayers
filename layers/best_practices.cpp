@@ -812,12 +812,13 @@ void BestPractices::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindIn
 }
 
 bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
-                                        const VkClearAttachment* pAttachments, uint32_t rectCount, const VkClearRect* pRects) {
+                                                       const VkClearAttachment* pAttachments, uint32_t rectCount,
+                                                       const VkClearRect* pRects) const {
     bool skip = false;
     const CMD_BUFFER_STATE* cb_node = GetCBState(commandBuffer);
     if (!cb_node) return skip;
 
-        // Warn if this is issued prior to Draw Cmd and clearing the entire attachment
+    // Warn if this is issued prior to Draw Cmd and clearing the entire attachment
     if (!cb_node->hasDrawCmd && (cb_node->activeRenderPassBeginInfo.renderArea.extent.width == pRects[0].rect.extent.width) &&
         (cb_node->activeRenderPassBeginInfo.renderArea.extent.height == pRects[0].rect.extent.height)) {
         // There are times where app needs to use ClearAttachments (generally when reusing a buffer inside of a render pass)
@@ -830,5 +831,5 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
                         report_data->FormatHandle(commandBuffer).c_str());
     }
 
-        return skip;
+    return skip;
 }
