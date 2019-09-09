@@ -1338,7 +1338,16 @@ static bool ValidateSpecializationOffsets(debug_report_data const *report_data, 
 
     if (spec) {
         for (auto i = 0u; i < spec->mapEntryCount; i++) {
-            // TODO: This is a good place for "VUID-VkSpecializationInfo-offset-00773".
+            if (spec->pMapEntries[i].offset >= spec->dataSize) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, 0,
+                                "VUID-VkSpecializationInfo-offset-00773",
+                                "Specialization entry %u (for constant id %u) references memory outside provided specialization "
+                                "data (bytes %u.." PRINTF_SIZE_T_SPECIFIER "; " PRINTF_SIZE_T_SPECIFIER " bytes provided)..",
+                                i, spec->pMapEntries[i].constantID, spec->pMapEntries[i].offset,
+                                spec->pMapEntries[i].offset + spec->dataSize - 1, spec->dataSize);
+
+                continue;
+            }
             if (spec->pMapEntries[i].offset + spec->pMapEntries[i].size > spec->dataSize) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, 0,
                                 "VUID-VkSpecializationInfo-pMapEntries-00774",
