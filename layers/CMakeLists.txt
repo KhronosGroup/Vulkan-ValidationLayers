@@ -168,6 +168,7 @@ set(CHASSIS_LIBRARY_FILES
     generated/layer_chassis_dispatch.cpp)
 
 set(CORE_VALIDATION_LIBRARY_FILES
+    state_tracker.cpp
     core_validation.cpp
     drawdispatch.cpp
     convert_to_renderpass2.cpp
