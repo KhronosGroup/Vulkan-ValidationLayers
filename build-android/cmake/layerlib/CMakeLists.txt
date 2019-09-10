@@ -60,6 +60,7 @@ set_target_properties(SPIRV-Tools-prebuilt PROPERTIES IMPORTED_LOCATION
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_ANDROID_KHR \
                      -fvisibility=hidden")
 add_library(VkLayer_khronos_validation SHARED
+        ${SRC_DIR}/layers/state_tracker.cpp
         ${SRC_DIR}/layers/core_validation.cpp
         ${SRC_DIR}/layers/drawdispatch.cpp
         ${SRC_DIR}/layers/convert_to_renderpass2.cpp
@@ -97,6 +98,7 @@ if (NOT BUILD_IN_NDK)
 endif()
 
 add_library(VkLayer_core_validation SHARED
+        ${SRC_DIR}/layers/state_tracker.cpp
         ${SRC_DIR}/layers/core_validation.cpp
         ${SRC_DIR}/layers/drawdispatch.cpp
         ${SRC_DIR}/layers/convert_to_renderpass2.cpp
