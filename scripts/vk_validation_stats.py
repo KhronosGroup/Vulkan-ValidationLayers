@@ -51,6 +51,7 @@ ignore_unassigned = True # These are not found in layer code unless they appear 
 
 layer_source_files = [common_codegen.repo_relative(path) for path in [
     'layers/buffer_validation.cpp',
+    'layers/state_tracker.cpp'
     'layers/core_validation.cpp',
     'layers/descriptor_sets.cpp',
     'layers/drawdispatch.cpp',
