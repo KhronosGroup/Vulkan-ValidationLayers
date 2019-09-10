@@ -24,6 +24,7 @@
 
 #include "chassis.h"
 #include "core_validation_error_enums.h"
+#include "state_tracker.h"
 #include "core_validation.h"
 #include "descriptor_sets.h"
 #include "hash_vk_types.h"
@@ -1848,14 +1849,6 @@ bool CoreChecks::ValidateUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet des
                                         0, NULL, "vkUpdateDescriptorSetWithTemplate()");
 }
 
-void ValidationStateTracker::PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet,
-                                                                        const TEMPLATE_STATE *template_state, const void *pData) {
-    // Translate the templated update into a normal update for validation...
-    cvdescriptorset::DecodedTemplateUpdate decoded_update(this, descriptorSet, template_state, pData);
-    cvdescriptorset::PerformUpdateDescriptorSets(this, static_cast<uint32_t>(decoded_update.desc_writes.size()),
-                                                 decoded_update.desc_writes.data(), 0, NULL);
-}
-
 std::string cvdescriptorset::DescriptorSet::StringifySetAndLayout() const {
     std::string out;
     auto layout_handle = p_layout_->GetDescriptorSetLayout();
@@ -2152,23 +2145,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, con
     // All checks passed so update contents are good
     return true;
 }
-// Update the common AllocateDescriptorSetsData
-void ValidationStateTracker::UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo *p_alloc_info,
-                                                              cvdescriptorset::AllocateDescriptorSetsData *ds_data) {
-    for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
-        auto layout = GetDescriptorSetLayout(this, p_alloc_info->pSetLayouts[i]);
-        if (layout) {
-            ds_data->layout_nodes[i] = layout;
-            // Count total descriptors required per type
-            for (uint32_t j = 0; j < layout->GetBindingCount(); ++j) {
-                const auto &binding_layout = layout->GetDescriptorSetLayoutBindingPtrFromIndex(j);
-                uint32_t typeIndex = static_cast<uint32_t>(binding_layout->descriptorType);
-                ds_data->required_descriptors_by_type[typeIndex] += binding_layout->descriptorCount;
-            }
-        }
-        // Any unknown layouts will be flagged as errors during ValidateAllocateDescriptorSets() call
-    }
-}
+
 // Verify that the state at allocate time is correct, but don't actually allocate the sets yet
 bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInfo *p_alloc_info,
                                                 const cvdescriptorset::AllocateDescriptorSetsData *ds_data) {
@@ -2244,31 +2221,6 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
     }
 
     return skip;
-}
-// Decrement allocated sets from the pool and insert new sets into set_map
-void ValidationStateTracker::PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo *p_alloc_info,
-                                                           const VkDescriptorSet *descriptor_sets,
-                                                           const cvdescriptorset::AllocateDescriptorSetsData *ds_data) {
-    auto pool_state = descriptorPoolMap[p_alloc_info->descriptorPool].get();
-    // Account for sets and individual descriptors allocated from pool
-    pool_state->availableSets -= p_alloc_info->descriptorSetCount;
-    for (auto it = ds_data->required_descriptors_by_type.begin(); it != ds_data->required_descriptors_by_type.end(); ++it) {
-        pool_state->availableDescriptorTypeCount[it->first] -= ds_data->required_descriptors_by_type.at(it->first);
-    }
-
-    const auto *variable_count_info = lvl_find_in_chain<VkDescriptorSetVariableDescriptorCountAllocateInfoEXT>(p_alloc_info->pNext);
-    bool variable_count_valid = variable_count_info && variable_count_info->descriptorSetCount == p_alloc_info->descriptorSetCount;
-
-    // Create tracking object for each descriptor set; insert into global map and the pool's set.
-    for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
-        uint32_t variable_count = variable_count_valid ? variable_count_info->pDescriptorCounts[i] : 0;
-
-        std::unique_ptr<cvdescriptorset::DescriptorSet> new_ds(new cvdescriptorset::DescriptorSet(
-            descriptor_sets[i], p_alloc_info->descriptorPool, ds_data->layout_nodes[i], variable_count, this));
-        pool_state->sets.insert(new_ds.get());
-        new_ds->in_use.store(0);
-        setMap[descriptor_sets[i]] = std::move(new_ds);
-    }
 }
 
 const BindingReqMap &cvdescriptorset::PrefilterBindRequestMap::FilteredMap(const CMD_BUFFER_STATE &cb_state,

@@ -86,12 +86,6 @@ void decoration_set::add(uint32_t decoration, uint32_t value) {
     }
 }
 
-enum FORMAT_TYPE {
-    FORMAT_TYPE_FLOAT = 1,  // UNORM, SNORM, FLOAT, USCALED, SSCALED, SRGB -- anything we consider float in the shader
-    FORMAT_TYPE_SINT = 2,
-    FORMAT_TYPE_UINT = 4,
-};
-
 typedef std::pair<unsigned, unsigned> location_t;
 
 struct shader_stage_attributes {
@@ -230,16 +224,6 @@ unsigned ExecutionModelToShaderStageFlagBits(unsigned mode) {
         default:
             return 0;
     }
-}
-
-static spirv_inst_iter FindEntrypoint(SHADER_MODULE_STATE const *src, char const *name, VkShaderStageFlagBits stageBits) {
-    auto range = src->entry_points.equal_range(name);
-    for (auto it = range.first; it != range.second; ++it) {
-        if (it->second.stage == stageBits) {
-            return src->at(it->second.offset);
-        }
-    }
-    return src->end();
 }
 
 static char const *StorageClassName(unsigned sc) {
@@ -561,31 +545,6 @@ static unsigned GetFormatType(VkFormat fmt) {
     return FORMAT_TYPE_FLOAT;
 }
 
-// characterizes a SPIR-V type appearing in an interface to a FF stage, for comparison to a VkFormat's characterization above.
-// also used for input attachments, as we statically know their format.
-static unsigned GetFundamentalType(SHADER_MODULE_STATE const *src, unsigned type) {
-    auto insn = src->get_def(type);
-    assert(insn != src->end());
-
-    switch (insn.opcode()) {
-        case spv::OpTypeInt:
-            return insn.word(3) ? FORMAT_TYPE_SINT : FORMAT_TYPE_UINT;
-        case spv::OpTypeFloat:
-            return FORMAT_TYPE_FLOAT;
-        case spv::OpTypeVector:
-        case spv::OpTypeMatrix:
-        case spv::OpTypeArray:
-        case spv::OpTypeRuntimeArray:
-        case spv::OpTypeImage:
-            return GetFundamentalType(src, insn.word(2));
-        case spv::OpTypePointer:
-            return GetFundamentalType(src, insn.word(3));
-
-        default:
-            return 0;
-    }
-}
-
 static uint32_t GetShaderStageId(VkShaderStageFlagBits stage) {
     uint32_t bit_pos = uint32_t(u_ffs(stage));
     return bit_pos - 1;
@@ -847,75 +806,6 @@ static std::vector<std::pair<uint32_t, interface_var>> CollectInterfaceByInputAt
     return out;
 }
 
-static bool IsWritableDescriptorType(SHADER_MODULE_STATE const *module, uint32_t type_id, bool is_storage_buffer) {
-    auto type = module->get_def(type_id);
-
-    // Strip off any array or ptrs. Where we remove array levels, adjust the  descriptor count for each dimension.
-    while (type.opcode() == spv::OpTypeArray || type.opcode() == spv::OpTypePointer || type.opcode() == spv::OpTypeRuntimeArray) {
-        if (type.opcode() == spv::OpTypeArray || type.opcode() == spv::OpTypeRuntimeArray) {
-            type = module->get_def(type.word(2));  // Element type
-        } else {
-            type = module->get_def(type.word(3));  // Pointee type
-        }
-    }
-
-    switch (type.opcode()) {
-        case spv::OpTypeImage: {
-            auto dim = type.word(3);
-            auto sampled = type.word(7);
-            return sampled == 2 && dim != spv::DimSubpassData;
-        }
-
-        case spv::OpTypeStruct: {
-            std::unordered_set<unsigned> nonwritable_members;
-            if (module->get_decorations(type.word(1)).flags & decoration_set::buffer_block_bit) is_storage_buffer = true;
-            for (auto insn : *module) {
-                if (insn.opcode() == spv::OpMemberDecorate && insn.word(1) == type.word(1) &&
-                    insn.word(3) == spv::DecorationNonWritable) {
-                    nonwritable_members.insert(insn.word(2));
-                }
-            }
-
-            // A buffer is writable if it's either flavor of storage buffer, and has any member not decorated
-            // as nonwritable.
-            return is_storage_buffer && nonwritable_members.size() != type.len() - 2;
-        }
-    }
-
-    return false;
-}
-
-static std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescriptorSlot(
-    debug_report_data const *report_data, SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> const &accessible_ids,
-    bool *has_writable_descriptor) {
-    std::vector<std::pair<descriptor_slot_t, interface_var>> out;
-
-    for (auto id : accessible_ids) {
-        auto insn = src->get_def(id);
-        assert(insn != src->end());
-
-        if (insn.opcode() == spv::OpVariable &&
-            (insn.word(3) == spv::StorageClassUniform || insn.word(3) == spv::StorageClassUniformConstant ||
-             insn.word(3) == spv::StorageClassStorageBuffer)) {
-            auto d = src->get_decorations(insn.word(2));
-            unsigned set = d.descriptor_set;
-            unsigned binding = d.binding;
-
-            interface_var v = {};
-            v.id = insn.word(2);
-            v.type_id = insn.word(1);
-            out.emplace_back(std::make_pair(set, binding), v);
-
-            if (!(d.flags & decoration_set::nonwritable_bit) &&
-                IsWritableDescriptorType(src, insn.word(1), insn.word(3) == spv::StorageClassStorageBuffer)) {
-                *has_writable_descriptor = true;
-            }
-        }
-    }
-
-    return out;
-}
-
 static bool ValidateViConsistency(debug_report_data const *report_data, VkPipelineVertexInputStateCreateInfo const *vi) {
     // Walk the binding descriptions, which describe the step rate and stride of each vertex buffer.  Each binding should
     // be specified only once.
@@ -1147,124 +1037,6 @@ static bool IsPointSizeWritten(SHADER_MODULE_STATE const *src, spirv_inst_iter b
         }
     }
     return found_write;
-}
-
-// For some analyses, we need to know about all ids referenced by the static call tree of a particular entrypoint. This is
-// important for identifying the set of shader resources actually used by an entrypoint, for example.
-// Note: we only explore parts of the image which might actually contain ids we care about for the above analyses.
-//  - NOT the shader input/output interfaces.
-//
-// TODO: The set of interesting opcodes here was determined by eyeballing the SPIRV spec. It might be worth
-// converting parts of this to be generated from the machine-readable spec instead.
-static std::unordered_set<uint32_t> MarkAccessibleIds(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint) {
-    std::unordered_set<uint32_t> ids;
-    std::unordered_set<uint32_t> worklist;
-    worklist.insert(entrypoint.word(2));
-
-    while (!worklist.empty()) {
-        auto id_iter = worklist.begin();
-        auto id = *id_iter;
-        worklist.erase(id_iter);
-
-        auto insn = src->get_def(id);
-        if (insn == src->end()) {
-            // ID is something we didn't collect in BuildDefIndex. that's OK -- we'll stumble across all kinds of things here
-            // that we may not care about.
-            continue;
-        }
-
-        // Try to add to the output set
-        if (!ids.insert(id).second) {
-            continue;  // If we already saw this id, we don't want to walk it again.
-        }
-
-        switch (insn.opcode()) {
-            case spv::OpFunction:
-                // Scan whole body of the function, enlisting anything interesting
-                while (++insn, insn.opcode() != spv::OpFunctionEnd) {
-                    switch (insn.opcode()) {
-                        case spv::OpLoad:
-                        case spv::OpAtomicLoad:
-                        case spv::OpAtomicExchange:
-                        case spv::OpAtomicCompareExchange:
-                        case spv::OpAtomicCompareExchangeWeak:
-                        case spv::OpAtomicIIncrement:
-                        case spv::OpAtomicIDecrement:
-                        case spv::OpAtomicIAdd:
-                        case spv::OpAtomicISub:
-                        case spv::OpAtomicSMin:
-                        case spv::OpAtomicUMin:
-                        case spv::OpAtomicSMax:
-                        case spv::OpAtomicUMax:
-                        case spv::OpAtomicAnd:
-                        case spv::OpAtomicOr:
-                        case spv::OpAtomicXor:
-                            worklist.insert(insn.word(3));  // ptr
-                            break;
-                        case spv::OpStore:
-                        case spv::OpAtomicStore:
-                            worklist.insert(insn.word(1));  // ptr
-                            break;
-                        case spv::OpAccessChain:
-                        case spv::OpInBoundsAccessChain:
-                            worklist.insert(insn.word(3));  // base ptr
-                            break;
-                        case spv::OpSampledImage:
-                        case spv::OpImageSampleImplicitLod:
-                        case spv::OpImageSampleExplicitLod:
-                        case spv::OpImageSampleDrefImplicitLod:
-                        case spv::OpImageSampleDrefExplicitLod:
-                        case spv::OpImageSampleProjImplicitLod:
-                        case spv::OpImageSampleProjExplicitLod:
-                        case spv::OpImageSampleProjDrefImplicitLod:
-                        case spv::OpImageSampleProjDrefExplicitLod:
-                        case spv::OpImageFetch:
-                        case spv::OpImageGather:
-                        case spv::OpImageDrefGather:
-                        case spv::OpImageRead:
-                        case spv::OpImage:
-                        case spv::OpImageQueryFormat:
-                        case spv::OpImageQueryOrder:
-                        case spv::OpImageQuerySizeLod:
-                        case spv::OpImageQuerySize:
-                        case spv::OpImageQueryLod:
-                        case spv::OpImageQueryLevels:
-                        case spv::OpImageQuerySamples:
-                        case spv::OpImageSparseSampleImplicitLod:
-                        case spv::OpImageSparseSampleExplicitLod:
-                        case spv::OpImageSparseSampleDrefImplicitLod:
-                        case spv::OpImageSparseSampleDrefExplicitLod:
-                        case spv::OpImageSparseSampleProjImplicitLod:
-                        case spv::OpImageSparseSampleProjExplicitLod:
-                        case spv::OpImageSparseSampleProjDrefImplicitLod:
-                        case spv::OpImageSparseSampleProjDrefExplicitLod:
-                        case spv::OpImageSparseFetch:
-                        case spv::OpImageSparseGather:
-                        case spv::OpImageSparseDrefGather:
-                        case spv::OpImageTexelPointer:
-                            worklist.insert(insn.word(3));  // Image or sampled image
-                            break;
-                        case spv::OpImageWrite:
-                            worklist.insert(insn.word(1));  // Image -- different operand order to above
-                            break;
-                        case spv::OpFunctionCall:
-                            for (uint32_t i = 3; i < insn.len(); i++) {
-                                worklist.insert(insn.word(i));  // fn itself, and all args
-                            }
-                            break;
-
-                        case spv::OpExtInst:
-                            for (uint32_t i = 5; i < insn.len(); i++) {
-                                worklist.insert(insn.word(i));  // Operands to ext inst
-                            }
-                            break;
-                    }
-                }
-                break;
-        }
-    }
-
-    return ids;
 }
 
 static bool ValidatePushConstantBlockAgainstPipeline(debug_report_data const *report_data,
@@ -2548,66 +2320,6 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_in
     return skip;
 }
 
-static uint32_t DescriptorTypeToReqs(SHADER_MODULE_STATE const *module, uint32_t type_id) {
-    auto type = module->get_def(type_id);
-
-    while (true) {
-        switch (type.opcode()) {
-            case spv::OpTypeArray:
-            case spv::OpTypeRuntimeArray:
-            case spv::OpTypeSampledImage:
-                type = module->get_def(type.word(2));
-                break;
-            case spv::OpTypePointer:
-                type = module->get_def(type.word(3));
-                break;
-            case spv::OpTypeImage: {
-                auto dim = type.word(3);
-                auto arrayed = type.word(5);
-                auto msaa = type.word(6);
-
-                uint32_t bits = 0;
-                switch (GetFundamentalType(module, type.word(2))) {
-                    case FORMAT_TYPE_FLOAT:
-                        bits = DESCRIPTOR_REQ_COMPONENT_TYPE_FLOAT;
-                        break;
-                    case FORMAT_TYPE_UINT:
-                        bits = DESCRIPTOR_REQ_COMPONENT_TYPE_UINT;
-                        break;
-                    case FORMAT_TYPE_SINT:
-                        bits = DESCRIPTOR_REQ_COMPONENT_TYPE_SINT;
-                        break;
-                    default:
-                        break;
-                }
-
-                switch (dim) {
-                    case spv::Dim1D:
-                        bits |= arrayed ? DESCRIPTOR_REQ_VIEW_TYPE_1D_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_1D;
-                        return bits;
-                    case spv::Dim2D:
-                        bits |= msaa ? DESCRIPTOR_REQ_MULTI_SAMPLE : DESCRIPTOR_REQ_SINGLE_SAMPLE;
-                        bits |= arrayed ? DESCRIPTOR_REQ_VIEW_TYPE_2D_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_2D;
-                        return bits;
-                    case spv::Dim3D:
-                        bits |= DESCRIPTOR_REQ_VIEW_TYPE_3D;
-                        return bits;
-                    case spv::DimCube:
-                        bits |= arrayed ? DESCRIPTOR_REQ_VIEW_TYPE_CUBE_ARRAY : DESCRIPTOR_REQ_VIEW_TYPE_CUBE;
-                        return bits;
-                    case spv::DimSubpassData:
-                        bits |= msaa ? DESCRIPTOR_REQ_MULTI_SAMPLE : DESCRIPTOR_REQ_SINGLE_SAMPLE;
-                        return bits;
-                    default:  // buffer, etc.
-                        return bits;
-                }
-            }
-            default:
-                return 0;
-        }
-    }
-}
-
 // For given pipelineLayout verify that the set_layout_node at slot.first
 //  has the requested binding at slot.second and return ptr to that binding
 static VkDescriptorSetLayoutBinding const *GetDescriptorBinding(PIPELINE_LAYOUT_STATE const *pipelineLayout,
@@ -2639,39 +2351,6 @@ static bool FindLocalSize(SHADER_MODULE_STATE const *src, uint32_t &local_size_x
         }
     }
     return false;
-}
-
-static void ProcessExecutionModes(SHADER_MODULE_STATE const *src, const spirv_inst_iter &entrypoint, PIPELINE_STATE *pipeline) {
-    auto entrypoint_id = entrypoint.word(2);
-    bool is_point_mode = false;
-
-    for (auto insn : *src) {
-        if (insn.opcode() == spv::OpExecutionMode && insn.word(1) == entrypoint_id) {
-            switch (insn.word(2)) {
-                case spv::ExecutionModePointMode:
-                    // In tessellation shaders, PointMode is separate and trumps the tessellation topology.
-                    is_point_mode = true;
-                    break;
-
-                case spv::ExecutionModeOutputPoints:
-                    pipeline->topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-                    break;
-
-                case spv::ExecutionModeIsolines:
-                case spv::ExecutionModeOutputLineStrip:
-                    pipeline->topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-                    break;
-
-                case spv::ExecutionModeTriangles:
-                case spv::ExecutionModeQuads:
-                case spv::ExecutionModeOutputTriangleStrip:
-                    pipeline->topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-                    break;
-            }
-        }
-    }
-
-    if (is_point_mode) pipeline->topology_at_rasterizer = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 }
 
 // If PointList topology is specified in the pipeline, verify that a shader geometry stage writes PointSize
@@ -2727,29 +2406,6 @@ bool CoreChecks::ValidatePointListShaderState(const PIPELINE_STATE *pipeline, SH
                     string_VkShaderStageFlagBits(stage));
     }
     return skip;
-}
-void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCreateInfo const *pStage, PIPELINE_STATE *pipeline,
-                                                       PIPELINE_STATE::StageState *stage_state) {
-    // Validation shouldn't rely on anything in stage state being valid if the spirv isn't
-    auto module = GetShaderModuleState(pStage->module);
-    if (!module->has_valid_spirv) return;
-
-    // Validation shouldn't rely on anything in stage state being valid if the entrypoint isn't present
-    auto entrypoint = FindEntrypoint(module, pStage->pName, pStage->stage);
-    if (entrypoint == module->end()) return;
-
-    // Mark accessible ids
-    stage_state->accessible_ids = MarkAccessibleIds(module, entrypoint);
-    ProcessExecutionModes(module, entrypoint, pipeline);
-
-    stage_state->descriptor_uses =
-        CollectInterfaceByDescriptorSlot(report_data, module, stage_state->accessible_ids, &stage_state->has_writable_descriptor);
-    // Capture descriptor uses for the pipeline
-    for (auto use : stage_state->descriptor_uses) {
-        // While validating shaders capture which slots are used by the pipeline
-        auto &reqs = pipeline->active_slots[use.first.first][use.first.second];
-        reqs = descriptor_req(reqs | DescriptorTypeToReqs(module, use.second.type_id));
-    }
 }
 
 bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo const *pStage, const PIPELINE_STATE *pipeline,
@@ -3145,21 +2801,6 @@ void CoreChecks::PreCallRecordCreateShaderModule(VkDevice device, const VkShader
         GpuPreCallCreateShaderModule(pCreateInfo, pAllocator, pShaderModule, &csm_state->unique_shader_id,
                                      &csm_state->instrumented_create_info, &csm_state->instrumented_pgm);
     }
-}
-
-void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                                              const VkAllocationCallbacks *pAllocator,
-                                                              VkShaderModule *pShaderModule, VkResult result,
-                                                              void *csm_state_data) {
-    if (VK_SUCCESS != result) return;
-    create_shader_module_api_state *csm_state = reinterpret_cast<create_shader_module_api_state *>(csm_state_data);
-
-    spv_target_env spirv_environment = ((api_version >= VK_API_VERSION_1_1) ? SPV_ENV_VULKAN_1_1 : SPV_ENV_VULKAN_1_0);
-    bool is_spirv = (pCreateInfo->pCode[0] == spv::MagicNumber);
-    std::unique_ptr<SHADER_MODULE_STATE> new_shader_module(
-        is_spirv ? new SHADER_MODULE_STATE(pCreateInfo, *pShaderModule, spirv_environment, csm_state->unique_shader_id)
-                 : new SHADER_MODULE_STATE());
-    shaderModuleMap[*pShaderModule] = std::move(new_shader_module);
 }
 
 bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader) const {
