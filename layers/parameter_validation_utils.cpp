@@ -21,7 +21,7 @@
 
 #define NOMINMAX
 
-#include <math.h>
+#include <cmath>
 
 #include "chassis.h"
 #include "stateless_validation.h"

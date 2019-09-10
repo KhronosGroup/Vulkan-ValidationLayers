@@ -44,7 +44,6 @@
 #include <cmath>
 #include <iostream>
 #include <list>
-#include <math.h>
 #include <map>
 #include <memory>
 #include <mutex>
