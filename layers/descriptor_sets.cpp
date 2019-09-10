@@ -950,20 +950,37 @@ void cvdescriptorset::DescriptorSet::PerformPushDescriptorsUpdate(uint32_t write
 void cvdescriptorset::DescriptorSet::PerformWriteUpdate(const VkWriteDescriptorSet *update) {
     // Perform update on a per-binding basis as consecutive updates roll over to next binding
     auto descriptors_remaining = update->descriptorCount;
-    auto binding_being_updated = update->dstBinding;
     auto offset = update->dstArrayElement;
+    auto orig_binding = DescriptorSetLayout::ConstBindingIterator(p_layout_.get(), update->dstBinding);
+    auto current_binding = orig_binding;
+
     uint32_t update_index = 0;
-    while (descriptors_remaining) {
-        uint32_t update_count = std::min(descriptors_remaining, GetDescriptorCountFromBinding(binding_being_updated));
-        auto global_idx = p_layout_->GetGlobalIndexRangeFromBinding(binding_being_updated).start + offset;
+    // Verify next consecutive binding matches type, stage flags & immutable sampler use and if AtEnd
+    while (descriptors_remaining && orig_binding.IsConsistent(current_binding)) {
+        const auto &index_range = current_binding.GetGlobalIndexRange();
+        auto global_idx = index_range.start + offset;
+        // global_idx is which descriptor is needed to update. If global_idx > index_range.end, it means the descriptor isn't in
+        // this binding, maybe in next binding.
+        if (global_idx >= index_range.end) {
+            offset -= current_binding.GetDescriptorCount();
+            ++current_binding;
+            continue;
+        }
+
         // Loop over the updates for a single binding at a time
+        uint32_t update_count = std::min(descriptors_remaining, current_binding.GetDescriptorCount() - offset);
         for (uint32_t di = 0; di < update_count; ++di, ++update_index) {
             descriptors_[global_idx + di]->WriteUpdate(update, update_index);
         }
         // Roll over to next binding in case of consecutive update
         descriptors_remaining -= update_count;
-        offset = 0;
-        binding_being_updated++;
+        if (descriptors_remaining) {
+            // Starting offset is beyond the current binding. Check consistency, update counters and advance to the next binding,
+            // looking for the start point. All bindings (even those skipped) must be consistent with the update and with the
+            // original binding.
+            offset = 0;
+            ++current_binding;
+        }
     }
     if (update->descriptorCount) {
         some_update_ = true;
@@ -2274,43 +2291,56 @@ const BindingReqMap &cvdescriptorset::PrefilterBindRequestMap::FilteredMap(const
 bool cvdescriptorset::VerifyUpdateConsistency(DescriptorSetLayout::ConstBindingIterator current_binding, uint32_t offset,
                                               uint32_t update_count, const char *type, const VkDescriptorSet set,
                                               std::string *error_msg) {
+    bool pass = true;
     // Verify consecutive bindings match (if needed)
     auto orig_binding = current_binding;
-    // Track count of descriptors in the current_bindings that are remaining to be updated
-    auto binding_remaining = current_binding.GetDescriptorCount();
-    // First, it's legal to offset beyond your own binding so handle that case
-    //  Really this is just searching for the binding in which the update begins and adjusting offset accordingly
-    while (offset >= binding_remaining && !current_binding.AtEnd()) {
-        // Advance to next binding, decrement offset by binding size
-        offset -= binding_remaining;
-        ++current_binding;
-        binding_remaining = current_binding.GetDescriptorCount();  // Accessors are safe if AtEnd
-    }
-    assert(!current_binding.AtEnd());  // As written assumes range check has been made before calling
-    binding_remaining -= offset;
-    while (update_count > binding_remaining) {  // While our updates overstep current binding
-        // Verify next consecutive binding matches type, stage flags & immutable sampler use
-        auto next_binding = current_binding.Next();
-        if (!current_binding.IsConsistent(next_binding)) {
-            std::stringstream error_str;
-            error_str << "Attempting " << type;
-            if (current_binding.Layout()->IsPushDescriptor()) {
-                error_str << " push descriptors";
-            } else {
-                error_str << " descriptor set " << set;
+
+    while (pass && update_count) {
+        // First, it's legal to offset beyond your own binding so handle that case
+        if (offset > 0) {
+            const auto &index_range = current_binding.GetGlobalIndexRange();
+            // index_range.start + offset is which descriptor is needed to update. If it > index_range.end, it means the descriptor
+            // isn't in this binding, maybe in next binding.
+            if ((index_range.start + offset) >= index_range.end) {
+                // Advance to next binding, decrement offset by binding size
+                offset -= current_binding.GetDescriptorCount();
+                ++current_binding;
+                // Verify next consecutive binding matches type, stage flags & immutable sampler use and if AtEnd
+                if (!orig_binding.IsConsistent(current_binding)) {
+                    pass = false;
+                }
+                continue;
             }
-            error_str << " binding #" << orig_binding.Binding() << " with #" << update_count
-                      << " descriptors being updated but this update oversteps the bounds of this binding and the next binding is "
-                         "not consistent with current binding so this update is invalid.";
-            *error_msg = error_str.str();
-            return false;
         }
-        current_binding = next_binding;
-        // For sake of this check consider the bindings updated and grab count for next binding
-        update_count -= binding_remaining;
-        binding_remaining = current_binding.GetDescriptorCount();
+
+        update_count -= std::min(update_count, current_binding.GetDescriptorCount() - offset);
+        if (update_count) {
+            // Starting offset is beyond the current binding. Check consistency, update counters and advance to the next binding,
+            // looking for the start point. All bindings (even those skipped) must be consistent with the update and with the
+            // original binding.
+            offset = 0;
+            ++current_binding;
+            // Verify next consecutive binding matches type, stage flags & immutable sampler use and if AtEnd
+            if (!orig_binding.IsConsistent(current_binding)) {
+                pass = false;
+            }
+        }
     }
-    return true;
+
+    if (!pass) {
+        std::stringstream error_str;
+        error_str << "Attempting " << type;
+        if (current_binding.Layout()->IsPushDescriptor()) {
+            error_str << " push descriptors";
+        } else {
+            error_str << " descriptor set " << set;
+        }
+        error_str << " binding #" << orig_binding.Binding() << " with #" << update_count
+                  << " descriptors being updated but this update oversteps the bounds of this binding and the next binding is "
+                     "not consistent with current binding so this update is invalid.";
+        *error_msg = error_str.str();
+    }
+    return pass;
 }
 
 // Validate the state for a given write update but don't actually perform the update
@@ -2366,18 +2396,6 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
         error_str << "Attempting write update to " << dest_set->StringifySetAndLayout() << " binding #" << update->dstBinding
                   << " with type " << string_VkDescriptorType(type) << " but update type is "
                   << string_VkDescriptorType(update->descriptorType);
-        *error_msg = error_str.str();
-        return false;
-    }
-    auto total_descriptors = dest_layout->GetTotalDescriptorCount();
-    if (update->descriptorCount > (total_descriptors - start_idx)) {
-        *error_code = "VUID-VkWriteDescriptorSet-dstArrayElement-00321";
-        std::stringstream error_str;
-        error_str << "Attempting write update to " << dest_set->StringifySetAndLayout() << " binding #" << update->dstBinding
-                  << " with " << total_descriptors - start_idx
-                  << " descriptors in that binding and all successive bindings of the set, but update of "
-                  << update->descriptorCount << " descriptors combined with update array element offset of "
-                  << update->dstArrayElement << " oversteps the available number of consecutive descriptors";
         *error_msg = error_str.str();
         return false;
     }
