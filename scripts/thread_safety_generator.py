@@ -416,7 +416,7 @@ class ThreadSafety : public ValidationObject {
 public:
 
 // shared_mutex support added in MSVC 2015 update 2
-#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
     typedef std::shared_mutex thread_safety_lock_t;
     typedef std::shared_lock<thread_safety_lock_t> read_lock_guard_t;
     typedef std::unique_lock<thread_safety_lock_t> write_lock_guard_t;
