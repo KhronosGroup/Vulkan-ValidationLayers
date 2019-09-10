@@ -38,7 +38,7 @@
 #pragma warning(pop)
 #endif
 #include <limits.h>
-#include <math.h>
+#include <cmath>
 
 #if defined(PATH_MAX) && !defined(MAX_PATH)
 #define MAX_PATH PATH_MAX
