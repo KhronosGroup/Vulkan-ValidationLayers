@@ -140,7 +140,7 @@ scripts and before building and testing your changes. More details can be found 
   * Variable and keyword names are upper-case.
 * The format is defined by
   [cmake-format](https://github.com/cheshirekow/cmake_format)
-  using the `.cmake-format.py` file in the repository to define the settings.
+  using the `cmake-format.py` file in the repository to define the settings.
   See the cmake-format page for information about its simple markup for comments.
 * Disable reformatting of a block of comment lines by inserting
   a `# ~~~` comment line before and after that block.
