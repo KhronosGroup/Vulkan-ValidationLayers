@@ -86,6 +86,8 @@ core_validation_sources = [
   # "layers/generated/vk_safe_struct.cpp",
   "layers/buffer_validation.cpp",
   "layers/buffer_validation.h",
+  "layers/state_tracker.cpp",
+  "layers/state_tracker.h",
   "layers/core_validation.cpp",
   "layers/core_validation.h",
   "layers/convert_to_renderpass2.cpp",
@@ -120,6 +122,7 @@ thread_safety_sources = [
 unique_objects_sources = []
 
 chassis_sources = [
+  "layers/state_tracker.h",
   "layers/core_validation.h",
   "layers/generated/vk_safe_struct.h",
   "layers/generated/thread_safety.h",
