@@ -3858,10 +3858,10 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxVertexOutputComponents) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         };
         if (overflow) {
-            CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_WARNING_BIT_EXT,
-                                              "Vertex shader exceeds VkPhysicalDeviceLimits::maxVertexOutputComponents");
+            CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                              "Vertex shader exceeds VkPhysicalDeviceLimits::maxVertexOutputComponents", false);
         } else {
-            CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_WARNING_BIT_EXT, "", true);
+            CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "", true);
         }
     }
 }
