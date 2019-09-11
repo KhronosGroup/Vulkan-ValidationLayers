@@ -115,21 +115,19 @@ class ObjectLifetimes : public ValidationObject {
 
     void DestroyUndestroyedObjects(VulkanObjectType object_type);
 
-    void CreateQueue(VkDevice device, VkQueue vkObj);
-    void AllocateCommandBuffer(VkDevice device, const VkCommandPool command_pool, const VkCommandBuffer command_buffer,
-                               VkCommandBufferLevel level);
-    void AllocateDescriptorSet(VkDevice device, VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
-    void CreateSwapchainImageObject(VkDevice dispatchable_object, VkImage swapchain_image, VkSwapchainKHR swapchain);
+    void CreateQueue(VkQueue vkObj);
+    void AllocateCommandBuffer(const VkCommandPool command_pool, const VkCommandBuffer command_buffer, VkCommandBufferLevel level);
+    void AllocateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
+    void CreateSwapchainImageObject(VkImage swapchain_image, VkSwapchainKHR swapchain);
     void DestroyLeakedInstanceObjects(VkInstance instance);
     void DestroyLeakedDeviceObjects(VkDevice device);
     bool ValidateDeviceObject(const VulkanTypedHandle &device_typed, const char *invalid_handle_code,
                               const char *wrong_device_code);
-    void DestroyQueueDataStructures(VkDevice device);
-    bool ValidateCommandBuffer(VkDevice device, VkCommandPool command_pool, VkCommandBuffer command_buffer);
-    bool ValidateDescriptorSet(VkDevice device, VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
-    bool ValidateSamplerObjects(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo);
-    template <typename DispObj>
-    bool ValidateDescriptorWrite(DispObj disp, VkWriteDescriptorSet const *desc, bool isPush);
+    void DestroyQueueDataStructures();
+    bool ValidateCommandBuffer(VkCommandPool command_pool, VkCommandBuffer command_buffer);
+    bool ValidateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
+    bool ValidateSamplerObjects(const VkDescriptorSetLayoutCreateInfo *pCreateInfo);
+    bool ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPush);
 
     ObjectLifetimes *GetObjectLifetimeData(std::vector<ValidationObject *> &object_dispatch) {
         for (auto layer_object : object_dispatch) {
