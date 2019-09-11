@@ -4251,24 +4251,6 @@ void ObjectLifetimes::PostCallRecordCreateMacOSSurfaceMVK(
 }
 #endif // VK_USE_PLATFORM_MACOS_MVK
 
-bool ObjectLifetimes::PreCallValidateSetDebugUtilsObjectNameEXT(
-    VkDevice                                    device,
-    const VkDebugUtilsObjectNameInfoEXT*        pNameInfo) {
-    bool skip = false;
-    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkSetDebugUtilsObjectNameEXT-device-parameter", kVUIDUndefined);
-
-    return skip;
-}
-
-bool ObjectLifetimes::PreCallValidateSetDebugUtilsObjectTagEXT(
-    VkDevice                                    device,
-    const VkDebugUtilsObjectTagInfoEXT*         pTagInfo) {
-    bool skip = false;
-    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkSetDebugUtilsObjectTagEXT-device-parameter", kVUIDUndefined);
-
-    return skip;
-}
-
 bool ObjectLifetimes::PreCallValidateQueueBeginDebugUtilsLabelEXT(
     VkQueue                                     queue,
     const VkDebugUtilsLabelEXT*                 pLabelInfo) {
