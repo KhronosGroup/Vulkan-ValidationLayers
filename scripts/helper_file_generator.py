@@ -775,6 +775,19 @@ class HelperFileOutputGenerator(OutputGenerator):
             object_type_info[object_type]['VkoType'] = kenum_type
         object_types_header += '};\n'
 
+        # Output a function converting from core object type definitions to the Vulkan object type enums
+        object_types_header += '\n'
+        object_types_header += '// Helper function to get internal layers object ids from the official Vulkan VkObjectType enum\n'
+        object_types_header += 'static inline VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType vulkan_object_type) {\n'
+        object_types_header += '    switch (vulkan_object_type) {\n'
+
+        for object_type in type_list:
+            kenum_type = vko_dict[kenum_to_key(object_type)]
+            object_types_header += '        case %s: return %s;\n' % (kenum_type, object_type)
+        object_types_header += '        default: return kVulkanObjectTypeUnknown;\n'
+        object_types_header += '    }\n'
+        object_types_header += '};\n'
+
         # Create a functions to convert between VkDebugReportObjectTypeEXT and VkObjectType
         object_types_header +=     '\n'
         object_types_header +=     'static inline VkObjectType convertDebugReportObjectToCoreObject(VkDebugReportObjectTypeEXT debug_report_obj) {\n'
