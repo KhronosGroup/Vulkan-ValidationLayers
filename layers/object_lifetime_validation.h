@@ -113,14 +113,8 @@ class ObjectLifetimes : public ValidationObject {
     bool ReportLeakedDeviceObjects(VkDevice device, VulkanObjectType object_type, const std::string &error_code);
     bool ReportLeakedInstanceObjects(VkInstance instance, VulkanObjectType object_type, const std::string &error_code);
 
-    template <typename ObjType>
-    void DestroyUndestroyedObjects(ObjType dispatchable_object, VulkanObjectType object_type) {
-        auto snapshot = object_map[object_type].snapshot();
-        for (const auto &item : snapshot) {
-            auto object_info = item.second;
-            DestroyObjectSilently(object_info->handle, object_type);
-        }
-    }
+    void DestroyUndestroyedObjects(VulkanObjectType object_type);
+
     void CreateQueue(VkDevice device, VkQueue vkObj);
     void AllocateCommandBuffer(VkDevice device, const VkCommandPool command_pool, const VkCommandBuffer command_buffer,
                                VkCommandBufferLevel level);

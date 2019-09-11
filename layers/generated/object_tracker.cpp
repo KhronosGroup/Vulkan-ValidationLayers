@@ -77,42 +77,42 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const std:
 }
 
 void ObjectLifetimes::DestroyLeakedInstanceObjects(VkInstance instance) {
-    DestroyUndestroyedObjects(instance, kVulkanObjectTypeSurfaceKHR);
-    DestroyUndestroyedObjects(instance, kVulkanObjectTypeSwapchainKHR);
-    DestroyUndestroyedObjects(instance, kVulkanObjectTypeDisplayKHR);
-    DestroyUndestroyedObjects(instance, kVulkanObjectTypeDisplayModeKHR);
-    DestroyUndestroyedObjects(instance, kVulkanObjectTypeDebugReportCallbackEXT);
-    DestroyUndestroyedObjects(instance, kVulkanObjectTypeDebugUtilsMessengerEXT);
+    DestroyUndestroyedObjects(kVulkanObjectTypeSurfaceKHR);
+    DestroyUndestroyedObjects(kVulkanObjectTypeSwapchainKHR);
+    DestroyUndestroyedObjects(kVulkanObjectTypeDisplayKHR);
+    DestroyUndestroyedObjects(kVulkanObjectTypeDisplayModeKHR);
+    DestroyUndestroyedObjects(kVulkanObjectTypeDebugReportCallbackEXT);
+    DestroyUndestroyedObjects(kVulkanObjectTypeDebugUtilsMessengerEXT);
 }
 void ObjectLifetimes::DestroyLeakedDeviceObjects(VkDevice device) {
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeCommandBuffer);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeSemaphore);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeFence);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeDeviceMemory);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeBuffer);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeImage);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeEvent);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeQueryPool);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeBufferView);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeImageView);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeShaderModule);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypePipelineCache);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypePipelineLayout);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeRenderPass);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypePipeline);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeDescriptorSetLayout);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeSampler);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeDescriptorPool);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeDescriptorSet);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeFramebuffer);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeCommandPool);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeSamplerYcbcrConversion);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeDescriptorUpdateTemplate);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeObjectTableNVX);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeIndirectCommandsLayoutNVX);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeValidationCacheEXT);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypeAccelerationStructureNV);
-    DestroyUndestroyedObjects(device, kVulkanObjectTypePerformanceConfigurationINTEL);
+    DestroyUndestroyedObjects(kVulkanObjectTypeCommandBuffer);
+    DestroyUndestroyedObjects(kVulkanObjectTypeSemaphore);
+    DestroyUndestroyedObjects(kVulkanObjectTypeFence);
+    DestroyUndestroyedObjects(kVulkanObjectTypeDeviceMemory);
+    DestroyUndestroyedObjects(kVulkanObjectTypeBuffer);
+    DestroyUndestroyedObjects(kVulkanObjectTypeImage);
+    DestroyUndestroyedObjects(kVulkanObjectTypeEvent);
+    DestroyUndestroyedObjects(kVulkanObjectTypeQueryPool);
+    DestroyUndestroyedObjects(kVulkanObjectTypeBufferView);
+    DestroyUndestroyedObjects(kVulkanObjectTypeImageView);
+    DestroyUndestroyedObjects(kVulkanObjectTypeShaderModule);
+    DestroyUndestroyedObjects(kVulkanObjectTypePipelineCache);
+    DestroyUndestroyedObjects(kVulkanObjectTypePipelineLayout);
+    DestroyUndestroyedObjects(kVulkanObjectTypeRenderPass);
+    DestroyUndestroyedObjects(kVulkanObjectTypePipeline);
+    DestroyUndestroyedObjects(kVulkanObjectTypeDescriptorSetLayout);
+    DestroyUndestroyedObjects(kVulkanObjectTypeSampler);
+    DestroyUndestroyedObjects(kVulkanObjectTypeDescriptorPool);
+    DestroyUndestroyedObjects(kVulkanObjectTypeDescriptorSet);
+    DestroyUndestroyedObjects(kVulkanObjectTypeFramebuffer);
+    DestroyUndestroyedObjects(kVulkanObjectTypeCommandPool);
+    DestroyUndestroyedObjects(kVulkanObjectTypeSamplerYcbcrConversion);
+    DestroyUndestroyedObjects(kVulkanObjectTypeDescriptorUpdateTemplate);
+    DestroyUndestroyedObjects(kVulkanObjectTypeObjectTableNVX);
+    DestroyUndestroyedObjects(kVulkanObjectTypeIndirectCommandsLayoutNVX);
+    DestroyUndestroyedObjects(kVulkanObjectTypeValidationCacheEXT);
+    DestroyUndestroyedObjects(kVulkanObjectTypeAccelerationStructureNV);
+    DestroyUndestroyedObjects(kVulkanObjectTypePerformanceConfigurationINTEL);
 }
 
 
