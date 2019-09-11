@@ -309,7 +309,7 @@ public:
                         kVUID_Threading_MultipleThreads,
                         "THREADING ERROR : object of type %s is simultaneously used in "
                         "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
-                        typeName, (uint64_t)use_data->thread, (uint64_t)tid);
+                        typeName, (uint64_t)use_data->thread.load(std::memory_order_relaxed), (uint64_t)tid);
                     if (skip) {
                         // Wait for thread-safe access to object instead of skipping call.
                         use_data->WaitForObjectIdle(true);
@@ -330,7 +330,7 @@ public:
                         kVUID_Threading_MultipleThreads,
                         "THREADING ERROR : object of type %s is simultaneously used in "
                         "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
-                        typeName, (uint64_t)use_data->thread, (uint64_t)tid);
+                        typeName, (uint64_t)use_data->thread.load(std::memory_order_relaxed), (uint64_t)tid);
                     if (skip) {
                         // Wait for thread-safe access to object instead of skipping call.
                         use_data->WaitForObjectIdle(true);
@@ -382,7 +382,7 @@ public:
                 kVUID_Threading_MultipleThreads,
                 "THREADING ERROR : object of type %s is simultaneously used in "
                 "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
-                typeName, (uint64_t)use_data->thread, (uint64_t)tid);
+                typeName, (uint64_t)use_data->thread.load(std::memory_order_relaxed), (uint64_t)tid);
             if (skip) {
                 // Wait for thread-safe access to object instead of skipping call.
                 use_data->WaitForObjectIdle(false);
