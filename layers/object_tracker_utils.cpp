@@ -48,6 +48,14 @@ void ObjectLifetimes::DestroyQueueDataStructures(VkDevice device) {
     }
 }
 
+void ObjectLifetimes::DestroyUndestroyedObjects(VulkanObjectType object_type) {
+    auto snapshot = object_map[object_type].snapshot();
+    for (const auto &item : snapshot) {
+        auto object_info = item.second;
+        DestroyObjectSilently(object_info->handle, object_type);
+    }
+}
+
 // Look for this device object in any of the instance child devices lists.
 // NOTE: This is of dubious value. In most circumstances Vulkan will die a flaming death if a dispatchable object is invalid.
 // However, if this layer is loaded first and GetProcAddress is used to make API calls, it will detect bad DOs.

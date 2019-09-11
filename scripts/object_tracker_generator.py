@@ -320,11 +320,11 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             upper_objtype = objtype.capitalize();
             output_func += 'void ObjectLifetimes::DestroyLeaked%sObjects(Vk%s %s) {\n' % (upper_objtype, upper_objtype, objtype)
             if objtype == 'device':
-                output_func += '    DestroyUndestroyedObjects(%s, kVulkanObjectTypeCommandBuffer);\n' % objtype
+                output_func += '    DestroyUndestroyedObjects(kVulkanObjectTypeCommandBuffer);\n'
             for handle in self.object_types:
                 if self.handle_types.IsNonDispatchable(handle):
                     if (objtype == 'device' and self.handle_parents.IsParentDevice(handle)) or (objtype == 'instance' and not self.handle_parents.IsParentDevice(handle)):
-                        output_func += '    DestroyUndestroyedObjects(%s, %s);\n' % (objtype, self.GetVulkanObjType(handle))
+                        output_func += '    DestroyUndestroyedObjects(%s);\n' % self.GetVulkanObjType(handle)
             output_func += '}\n'
 
         return output_func
