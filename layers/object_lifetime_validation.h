@@ -247,10 +247,9 @@ class ObjectLifetimes : public ValidationObject {
         }
     }
 
-    template <typename T1, typename T2>
-    bool ValidateDestroyObject(T1 dispatchable_object, T2 object, VulkanObjectType object_type,
-                               const VkAllocationCallbacks *pAllocator, const char *expected_custom_allocator_code,
-                               const char *expected_default_allocator_code) {
+    template <typename T1>
+    bool ValidateDestroyObject(T1 object, VulkanObjectType object_type, const VkAllocationCallbacks *pAllocator,
+                               const char *expected_custom_allocator_code, const char *expected_default_allocator_code) {
         auto object_handle = HandleToUint64(object);
         bool custom_allocator = pAllocator != nullptr;
         VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[object_type];
