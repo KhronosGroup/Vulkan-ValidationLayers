@@ -387,9 +387,23 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
     VkDebugUtilsObjectNameInfoEXT name_info = {};
     name_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
     name_info.pNext = nullptr;
-    name_info.objectHandle = (uint64_t)memory_2;
     name_info.objectType = VK_OBJECT_TYPE_DEVICE_MEMORY;
     name_info.pObjectName = memory_name.c_str();
+
+    // Pass in bad handle make sure ObjectTracker catches it
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02590");
+    name_info.objectHandle = (uint64_t)0xcadecade;
+    fpvkSetDebugUtilsObjectNameEXT(device(), &name_info);
+    m_errorMonitor->VerifyFound();
+
+    // Pass in 'unknown' object type and see if parameter validation catches it
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02589");
+    name_info.objectHandle = (uint64_t)memory_2;
+    name_info.objectType = VK_OBJECT_TYPE_UNKNOWN;
+    fpvkSetDebugUtilsObjectNameEXT(device(), &name_info);
+    m_errorMonitor->VerifyFound();
+
+    name_info.objectType = VK_OBJECT_TYPE_DEVICE_MEMORY;
     fpvkSetDebugUtilsObjectNameEXT(device(), &name_info);
 
     vkBindBufferMemory(device(), buffer, memory_1, 0);
