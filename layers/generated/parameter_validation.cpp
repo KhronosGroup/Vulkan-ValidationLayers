@@ -8846,6 +8846,7 @@ bool StatelessValidation::PreCallValidateSetDebugUtilsObjectNameEXT(
 
         skip |= validate_ranged_enum("vkSetDebugUtilsObjectNameEXT", "pNameInfo->objectType", "VkObjectType", AllVkObjectTypeEnums, pNameInfo->objectType, "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateSetDebugUtilsObjectNameEXT(device, pNameInfo);
     return skip;
 }
 
@@ -8863,6 +8864,7 @@ bool StatelessValidation::PreCallValidateSetDebugUtilsObjectTagEXT(
 
         skip |= validate_array("vkSetDebugUtilsObjectTagEXT", "pTagInfo->tagSize", "pTagInfo->pTag", pTagInfo->tagSize, &pTagInfo->pTag, true, true, "VUID-VkDebugUtilsObjectTagInfoEXT-tagSize-arraylength", "VUID-VkDebugUtilsObjectTagInfoEXT-pTag-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateSetDebugUtilsObjectTagEXT(device, pTagInfo);
     return skip;
 }
 
