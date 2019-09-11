@@ -204,7 +204,7 @@ void ObjectLifetimes::PostCallRecordCreateDevice(
     VkDevice*                                   pDevice,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(physicalDevice, *pDevice, kVulkanObjectTypeDevice, pAllocator);
+    CreateObject(*pDevice, kVulkanObjectTypeDevice, pAllocator);
 
 }
 
@@ -294,7 +294,7 @@ void ObjectLifetimes::PostCallRecordAllocateMemory(
     VkDeviceMemory*                             pMemory,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pMemory, kVulkanObjectTypeDeviceMemory, pAllocator);
+    CreateObject(*pMemory, kVulkanObjectTypeDeviceMemory, pAllocator);
 
 }
 
@@ -532,7 +532,7 @@ void ObjectLifetimes::PostCallRecordCreateFence(
     VkFence*                                    pFence,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pFence, kVulkanObjectTypeFence, pAllocator);
+    CreateObject(*pFence, kVulkanObjectTypeFence, pAllocator);
 
 }
 
@@ -616,7 +616,7 @@ void ObjectLifetimes::PostCallRecordCreateSemaphore(
     VkSemaphore*                                pSemaphore,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pSemaphore, kVulkanObjectTypeSemaphore, pAllocator);
+    CreateObject(*pSemaphore, kVulkanObjectTypeSemaphore, pAllocator);
 
 }
 
@@ -658,7 +658,7 @@ void ObjectLifetimes::PostCallRecordCreateEvent(
     VkEvent*                                    pEvent,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pEvent, kVulkanObjectTypeEvent, pAllocator);
+    CreateObject(*pEvent, kVulkanObjectTypeEvent, pAllocator);
 
 }
 
@@ -730,7 +730,7 @@ void ObjectLifetimes::PostCallRecordCreateQueryPool(
     VkQueryPool*                                pQueryPool,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pQueryPool, kVulkanObjectTypeQueryPool, pAllocator);
+    CreateObject(*pQueryPool, kVulkanObjectTypeQueryPool, pAllocator);
 
 }
 
@@ -788,7 +788,7 @@ void ObjectLifetimes::PostCallRecordCreateBuffer(
     VkBuffer*                                   pBuffer,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pBuffer, kVulkanObjectTypeBuffer, pAllocator);
+    CreateObject(*pBuffer, kVulkanObjectTypeBuffer, pAllocator);
 
 }
 
@@ -833,7 +833,7 @@ void ObjectLifetimes::PostCallRecordCreateBufferView(
     VkBufferView*                               pView,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pView, kVulkanObjectTypeBufferView, pAllocator);
+    CreateObject(*pView, kVulkanObjectTypeBufferView, pAllocator);
 
 }
 
@@ -875,7 +875,7 @@ void ObjectLifetimes::PostCallRecordCreateImage(
     VkImage*                                    pImage,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pImage, kVulkanObjectTypeImage, pAllocator);
+    CreateObject(*pImage, kVulkanObjectTypeImage, pAllocator);
 
 }
 
@@ -932,7 +932,7 @@ void ObjectLifetimes::PostCallRecordCreateImageView(
     VkImageView*                                pView,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pView, kVulkanObjectTypeImageView, pAllocator);
+    CreateObject(*pView, kVulkanObjectTypeImageView, pAllocator);
 
 }
 
@@ -974,7 +974,7 @@ void ObjectLifetimes::PostCallRecordCreateShaderModule(
     VkShaderModule*                             pShaderModule,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pShaderModule, kVulkanObjectTypeShaderModule, pAllocator);
+    CreateObject(*pShaderModule, kVulkanObjectTypeShaderModule, pAllocator);
 
 }
 
@@ -1016,7 +1016,7 @@ void ObjectLifetimes::PostCallRecordCreatePipelineCache(
     VkPipelineCache*                            pPipelineCache,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pPipelineCache, kVulkanObjectTypePipelineCache, pAllocator);
+    CreateObject(*pPipelineCache, kVulkanObjectTypePipelineCache, pAllocator);
 
 }
 
@@ -1107,7 +1107,7 @@ void ObjectLifetimes::PostCallRecordCreateGraphicsPipelines(
     if (pPipelines) {
         for (uint32_t index = 0; index < createInfoCount; index++) {
             if (!pPipelines[index]) continue;
-            CreateObject(device, pPipelines[index], kVulkanObjectTypePipeline, pAllocator);
+            CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator);
         }
     }
 
@@ -1146,7 +1146,7 @@ void ObjectLifetimes::PostCallRecordCreateComputePipelines(
     if (pPipelines) {
         for (uint32_t index = 0; index < createInfoCount; index++) {
             if (!pPipelines[index]) continue;
-            CreateObject(device, pPipelines[index], kVulkanObjectTypePipeline, pAllocator);
+            CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator);
         }
     }
 
@@ -1197,7 +1197,7 @@ void ObjectLifetimes::PostCallRecordCreatePipelineLayout(
     VkPipelineLayout*                           pPipelineLayout,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pPipelineLayout, kVulkanObjectTypePipelineLayout, pAllocator);
+    CreateObject(*pPipelineLayout, kVulkanObjectTypePipelineLayout, pAllocator);
 
 }
 
@@ -1239,7 +1239,7 @@ void ObjectLifetimes::PostCallRecordCreateSampler(
     VkSampler*                                  pSampler,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pSampler, kVulkanObjectTypeSampler, pAllocator);
+    CreateObject(*pSampler, kVulkanObjectTypeSampler, pAllocator);
 
 }
 
@@ -1301,7 +1301,7 @@ void ObjectLifetimes::PostCallRecordCreateDescriptorPool(
     VkDescriptorPool*                           pDescriptorPool,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pDescriptorPool, kVulkanObjectTypeDescriptorPool, pAllocator);
+    CreateObject(*pDescriptorPool, kVulkanObjectTypeDescriptorPool, pAllocator);
 
 }
 
@@ -1343,7 +1343,7 @@ void ObjectLifetimes::PostCallRecordCreateRenderPass(
     VkRenderPass*                               pRenderPass,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pRenderPass, kVulkanObjectTypeRenderPass, pAllocator);
+    CreateObject(*pRenderPass, kVulkanObjectTypeRenderPass, pAllocator);
 
 }
 
@@ -1396,7 +1396,7 @@ void ObjectLifetimes::PostCallRecordCreateCommandPool(
     VkCommandPool*                              pCommandPool,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pCommandPool, kVulkanObjectTypeCommandPool, pAllocator);
+    CreateObject(*pCommandPool, kVulkanObjectTypeCommandPool, pAllocator);
 
 }
 
@@ -2222,7 +2222,7 @@ void ObjectLifetimes::PostCallRecordCreateSamplerYcbcrConversion(
     VkSamplerYcbcrConversion*                   pYcbcrConversion,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pYcbcrConversion, kVulkanObjectTypeSamplerYcbcrConversion, pAllocator);
+    CreateObject(*pYcbcrConversion, kVulkanObjectTypeSamplerYcbcrConversion, pAllocator);
 
 }
 
@@ -2268,7 +2268,7 @@ void ObjectLifetimes::PostCallRecordCreateDescriptorUpdateTemplate(
     VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pDescriptorUpdateTemplate, kVulkanObjectTypeDescriptorUpdateTemplate, pAllocator);
+    CreateObject(*pDescriptorUpdateTemplate, kVulkanObjectTypeDescriptorUpdateTemplate, pAllocator);
 
 }
 
@@ -2424,7 +2424,7 @@ void ObjectLifetimes::PostCallRecordCreateSwapchainKHR(
     VkSwapchainKHR*                             pSwapchain,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pSwapchain, kVulkanObjectTypeSwapchainKHR, pAllocator);
+    CreateObject(*pSwapchain, kVulkanObjectTypeSwapchainKHR, pAllocator);
 
 }
 
@@ -2542,7 +2542,7 @@ void ObjectLifetimes::PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(
     if (result != VK_SUCCESS) return;
     if (pDisplays) {
         for (uint32_t index = 0; index < *pDisplayCount; index++) {
-            CreateObject(physicalDevice, pDisplays[index], kVulkanObjectTypeDisplayKHR, nullptr);
+            CreateObject(pDisplays[index], kVulkanObjectTypeDisplayKHR, nullptr);
         }
     }
 
@@ -2569,7 +2569,7 @@ void ObjectLifetimes::PostCallRecordCreateDisplayModeKHR(
     VkDisplayModeKHR*                           pMode,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(physicalDevice, *pMode, kVulkanObjectTypeDisplayModeKHR, pAllocator);
+    CreateObject(*pMode, kVulkanObjectTypeDisplayModeKHR, pAllocator);
 
 }
 
@@ -2606,7 +2606,7 @@ void ObjectLifetimes::PostCallRecordCreateDisplayPlaneSurfaceKHR(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(instance, *pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
+    CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
 
 }
 
@@ -2638,7 +2638,7 @@ void ObjectLifetimes::PostCallRecordCreateSharedSwapchainsKHR(
     if (result != VK_SUCCESS) return;
     if (pSwapchains) {
         for (uint32_t index = 0; index < swapchainCount; index++) {
-            CreateObject(device, pSwapchains[index], kVulkanObjectTypeSwapchainKHR, pAllocator);
+            CreateObject(pSwapchains[index], kVulkanObjectTypeSwapchainKHR, pAllocator);
         }
     }
 
@@ -2664,7 +2664,7 @@ void ObjectLifetimes::PostCallRecordCreateXlibSurfaceKHR(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(instance, *pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
+    CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
 
 }
 #endif // VK_USE_PLATFORM_XLIB_KHR
@@ -2703,7 +2703,7 @@ void ObjectLifetimes::PostCallRecordCreateXcbSurfaceKHR(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(instance, *pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
+    CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
 
 }
 #endif // VK_USE_PLATFORM_XCB_KHR
@@ -2742,7 +2742,7 @@ void ObjectLifetimes::PostCallRecordCreateWaylandSurfaceKHR(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(instance, *pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
+    CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
 
 }
 #endif // VK_USE_PLATFORM_WAYLAND_KHR
@@ -2780,7 +2780,7 @@ void ObjectLifetimes::PostCallRecordCreateAndroidSurfaceKHR(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(instance, *pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
+    CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
 
 }
 #endif // VK_USE_PLATFORM_ANDROID_KHR
@@ -2805,7 +2805,7 @@ void ObjectLifetimes::PostCallRecordCreateWin32SurfaceKHR(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(instance, *pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
+    CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
 
 }
 #endif // VK_USE_PLATFORM_WIN32_KHR
@@ -3102,7 +3102,7 @@ void ObjectLifetimes::PostCallRecordCreateDescriptorUpdateTemplateKHR(
     VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pDescriptorUpdateTemplate, kVulkanObjectTypeDescriptorUpdateTemplate, pAllocator);
+    CreateObject(*pDescriptorUpdateTemplate, kVulkanObjectTypeDescriptorUpdateTemplate, pAllocator);
 
 }
 
@@ -3157,7 +3157,7 @@ void ObjectLifetimes::PostCallRecordCreateRenderPass2KHR(
     VkRenderPass*                               pRenderPass,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pRenderPass, kVulkanObjectTypeRenderPass, pAllocator);
+    CreateObject(*pRenderPass, kVulkanObjectTypeRenderPass, pAllocator);
 
 }
 
@@ -3378,7 +3378,7 @@ void ObjectLifetimes::PostCallRecordCreateSamplerYcbcrConversionKHR(
     VkSamplerYcbcrConversion*                   pYcbcrConversion,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pYcbcrConversion, kVulkanObjectTypeSamplerYcbcrConversion, pAllocator);
+    CreateObject(*pYcbcrConversion, kVulkanObjectTypeSamplerYcbcrConversion, pAllocator);
 
 }
 
@@ -3526,7 +3526,7 @@ void ObjectLifetimes::PostCallRecordCreateDebugReportCallbackEXT(
     VkDebugReportCallbackEXT*                   pCallback,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(instance, *pCallback, kVulkanObjectTypeDebugReportCallbackEXT, pAllocator);
+    CreateObject(*pCallback, kVulkanObjectTypeDebugReportCallbackEXT, pAllocator);
 
 }
 
@@ -3776,7 +3776,7 @@ void ObjectLifetimes::PostCallRecordCreateStreamDescriptorSurfaceGGP(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(instance, *pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
+    CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
 
 }
 #endif // VK_USE_PLATFORM_GGP
@@ -3831,7 +3831,7 @@ void ObjectLifetimes::PostCallRecordCreateViSurfaceNN(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(instance, *pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
+    CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
 
 }
 #endif // VK_USE_PLATFORM_VI_NN
@@ -3908,7 +3908,7 @@ void ObjectLifetimes::PostCallRecordCreateIndirectCommandsLayoutNVX(
     VkIndirectCommandsLayoutNVX*                pIndirectCommandsLayout,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pIndirectCommandsLayout, kVulkanObjectTypeIndirectCommandsLayoutNVX, pAllocator);
+    CreateObject(*pIndirectCommandsLayout, kVulkanObjectTypeIndirectCommandsLayoutNVX, pAllocator);
 
 }
 
@@ -3950,7 +3950,7 @@ void ObjectLifetimes::PostCallRecordCreateObjectTableNVX(
     VkObjectTableNVX*                           pObjectTable,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pObjectTable, kVulkanObjectTypeObjectTableNVX, pAllocator);
+    CreateObject(*pObjectTable, kVulkanObjectTypeObjectTableNVX, pAllocator);
 
 }
 
@@ -4065,7 +4065,7 @@ void ObjectLifetimes::PostCallRecordGetRandROutputDisplayEXT(
     VkDisplayKHR*                               pDisplay,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(physicalDevice, *pDisplay, kVulkanObjectTypeDisplayKHR, nullptr);
+    CreateObject(*pDisplay, kVulkanObjectTypeDisplayKHR, nullptr);
 
 }
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
@@ -4110,7 +4110,7 @@ void ObjectLifetimes::PostCallRecordRegisterDeviceEventEXT(
     VkFence*                                    pFence,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pFence, kVulkanObjectTypeFence, pAllocator);
+    CreateObject(*pFence, kVulkanObjectTypeFence, pAllocator);
 
 }
 
@@ -4135,7 +4135,7 @@ void ObjectLifetimes::PostCallRecordRegisterDisplayEventEXT(
     VkFence*                                    pFence,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pFence, kVulkanObjectTypeFence, pAllocator);
+    CreateObject(*pFence, kVulkanObjectTypeFence, pAllocator);
 
 }
 
@@ -4221,7 +4221,7 @@ void ObjectLifetimes::PostCallRecordCreateIOSSurfaceMVK(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(instance, *pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
+    CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
 
 }
 #endif // VK_USE_PLATFORM_IOS_MVK
@@ -4246,7 +4246,7 @@ void ObjectLifetimes::PostCallRecordCreateMacOSSurfaceMVK(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(instance, *pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
+    CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
 
 }
 #endif // VK_USE_PLATFORM_MACOS_MVK
@@ -4339,7 +4339,7 @@ void ObjectLifetimes::PostCallRecordCreateDebugUtilsMessengerEXT(
     VkDebugUtilsMessengerEXT*                   pMessenger,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(instance, *pMessenger, kVulkanObjectTypeDebugUtilsMessengerEXT, pAllocator);
+    CreateObject(*pMessenger, kVulkanObjectTypeDebugUtilsMessengerEXT, pAllocator);
 
 }
 
@@ -4451,7 +4451,7 @@ void ObjectLifetimes::PostCallRecordCreateValidationCacheEXT(
     VkValidationCacheEXT*                       pValidationCache,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pValidationCache, kVulkanObjectTypeValidationCacheEXT, pAllocator);
+    CreateObject(*pValidationCache, kVulkanObjectTypeValidationCacheEXT, pAllocator);
 
 }
 
@@ -4565,7 +4565,7 @@ void ObjectLifetimes::PostCallRecordCreateAccelerationStructureNV(
     VkAccelerationStructureNV*                  pAccelerationStructure,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pAccelerationStructure, kVulkanObjectTypeAccelerationStructureNV, pAllocator);
+    CreateObject(*pAccelerationStructure, kVulkanObjectTypeAccelerationStructureNV, pAllocator);
 
 }
 
@@ -4724,7 +4724,7 @@ void ObjectLifetimes::PostCallRecordCreateRayTracingPipelinesNV(
     if (pPipelines) {
         for (uint32_t index = 0; index < createInfoCount; index++) {
             if (!pPipelines[index]) continue;
-            CreateObject(device, pPipelines[index], kVulkanObjectTypePipeline, pAllocator);
+            CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator);
         }
     }
 
@@ -4986,7 +4986,7 @@ void ObjectLifetimes::PostCallRecordCreateImagePipeSurfaceFUCHSIA(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(instance, *pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
+    CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
 
 }
 #endif // VK_USE_PLATFORM_FUCHSIA
@@ -5011,7 +5011,7 @@ void ObjectLifetimes::PostCallRecordCreateMetalSurfaceEXT(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(instance, *pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
+    CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
 
 }
 #endif // VK_USE_PLATFORM_METAL_EXT
@@ -5122,7 +5122,7 @@ void ObjectLifetimes::PostCallRecordCreateHeadlessSurfaceEXT(
     VkSurfaceKHR*                               pSurface,
     VkResult                                    result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(instance, *pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
+    CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator);
 
 }
 

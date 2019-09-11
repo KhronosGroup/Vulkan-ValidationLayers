@@ -304,7 +304,7 @@ void ObjectLifetimes::PostCallRecordEnumeratePhysicalDevices(VkInstance instance
     if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
     if (pPhysicalDevices) {
         for (uint32_t i = 0; i < *pPhysicalDeviceCount; i++) {
-            CreateObject(instance, pPhysicalDevices[i], kVulkanObjectTypePhysicalDevice, nullptr);
+            CreateObject(pPhysicalDevices[i], kVulkanObjectTypePhysicalDevice, nullptr);
         }
     }
 }
@@ -512,7 +512,7 @@ void ObjectLifetimes::PostCallRecordCreateDescriptorSetLayout(VkDevice device, c
                                                               const VkAllocationCallbacks *pAllocator,
                                                               VkDescriptorSetLayout *pSetLayout, VkResult result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pSetLayout, kVulkanObjectTypeDescriptorSetLayout, pAllocator);
+    CreateObject(*pSetLayout, kVulkanObjectTypeDescriptorSetLayout, pAllocator);
 }
 
 bool ObjectLifetimes::ValidateSamplerObjects(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo) {
@@ -565,7 +565,7 @@ void ObjectLifetimes::PostCallRecordGetPhysicalDeviceQueueFamilyProperties(VkPhy
 void ObjectLifetimes::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                                    VkInstance *pInstance, VkResult result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(*pInstance, *pInstance, kVulkanObjectTypeInstance, pAllocator);
+    CreateObject(*pInstance, kVulkanObjectTypeInstance, pAllocator);
 }
 
 bool ObjectLifetimes::PreCallValidateAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pAllocateInfo,
@@ -784,7 +784,7 @@ void ObjectLifetimes::PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(VkPhys
     if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
     if (pProperties) {
         for (uint32_t i = 0; i < *pPropertyCount; ++i) {
-            CreateObject(physicalDevice, pProperties[i].display, kVulkanObjectTypeDisplayKHR, nullptr);
+            CreateObject(pProperties[i].display, kVulkanObjectTypeDisplayKHR, nullptr);
         }
     }
 }
@@ -807,7 +807,7 @@ void ObjectLifetimes::PostCallRecordGetDisplayModePropertiesKHR(VkPhysicalDevice
     if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
     if (pProperties) {
         for (uint32_t i = 0; i < *pPropertyCount; ++i) {
-            CreateObject(physicalDevice, pProperties[i].displayMode, kVulkanObjectTypeDisplayModeKHR, nullptr);
+            CreateObject(pProperties[i].displayMode, kVulkanObjectTypeDisplayModeKHR, nullptr);
         }
     }
 }
@@ -824,7 +824,7 @@ void ObjectLifetimes::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(VkPhy
                                                                            VkDisplayProperties2KHR *pProperties, VkResult result) {
     if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
     for (uint32_t index = 0; index < *pPropertyCount; ++index) {
-        CreateObject(physicalDevice, pProperties[index].displayProperties.display, kVulkanObjectTypeDisplayKHR, nullptr);
+        CreateObject(pProperties[index].displayProperties.display, kVulkanObjectTypeDisplayKHR, nullptr);
     }
 }
 
@@ -845,8 +845,7 @@ void ObjectLifetimes::PostCallRecordGetDisplayModeProperties2KHR(VkPhysicalDevic
                                                                  VkResult result) {
     if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
     for (uint32_t index = 0; index < *pPropertyCount; ++index) {
-        CreateObject(physicalDevice, pProperties[index].displayModeProperties.displayMode, kVulkanObjectTypeDisplayModeKHR,
-                     nullptr);
+        CreateObject(pProperties[index].displayModeProperties.displayMode, kVulkanObjectTypeDisplayModeKHR, nullptr);
     }
 }
 
@@ -900,5 +899,5 @@ void ObjectLifetimes::PostCallRecordCreateFramebuffer(VkDevice device, const VkF
                                                       const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer,
                                                       VkResult result) {
     if (result != VK_SUCCESS) return;
-    CreateObject(device, *pFramebuffer, kVulkanObjectTypeFramebuffer, pAllocator);
+    CreateObject(*pFramebuffer, kVulkanObjectTypeFramebuffer, pAllocator);
 }
