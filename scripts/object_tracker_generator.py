@@ -753,13 +753,13 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             indent = self.incIndent(indent)
             pre_call_code += '%sfor (uint32_t %s = 0; %s < %s; ++%s) {\n' % (indent, index, index, obj_count, index)
             indent = self.incIndent(indent)
-            pre_call_code += '%sskip |= ValidateObject(%s, %s%s[%s], %s, %s, %s, %s);\n' % (indent, disp_name, prefix, obj_name, index, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
+            pre_call_code += '%sskip |= ValidateObject(%s%s[%s], %s, %s, %s, %s);\n' % (indent, prefix, obj_name, index, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
             indent = self.decIndent(indent)
             pre_call_code += '%s}\n' % indent
             indent = self.decIndent(indent)
             pre_call_code += '%s}\n' % indent
         else:
-            pre_call_code += '%sskip |= ValidateObject(%s, %s%s, %s, %s, %s, %s);\n' % (indent, disp_name, prefix, obj_name, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
+            pre_call_code += '%sskip |= ValidateObject(%s%s, %s, %s, %s, %s);\n' % (indent, prefix, obj_name, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
         return pre_call_code
     #
     # first_level_param indicates if elements are passed directly into the function else they're below a ptr/struct

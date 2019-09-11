@@ -146,9 +146,9 @@ class ObjectLifetimes : public ValidationObject {
         return nullptr;
     };
 
-    template <typename T1, typename T2>
-    bool ValidateObject(T1 dispatchable_object, T2 object, VulkanObjectType object_type, bool null_allowed,
-                        const char *invalid_handle_code, const char *wrong_device_code) {
+    template <typename T1>
+    bool ValidateObject(T1 object, VulkanObjectType object_type, bool null_allowed, const char *invalid_handle_code,
+                        const char *wrong_device_code) {
         if (null_allowed && (object == VK_NULL_HANDLE)) {
             return false;
         }
