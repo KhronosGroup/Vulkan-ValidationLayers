@@ -182,6 +182,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdBuildAccelerationStructureNV',
             'vkCreateFramebuffer',
             'vkCmdSetLineStippleEXT',
+            'vkSetDebugUtilsObjectNameEXT',
+            'vkSetDebugUtilsObjectTagEXT',
             ]
 
         # Commands to ignore

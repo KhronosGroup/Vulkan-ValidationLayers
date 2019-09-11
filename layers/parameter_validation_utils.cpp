@@ -3582,3 +3582,25 @@ bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuff
 
     return skip;
 }
+
+bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device,
+                                                                           const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
+    bool skip = false;
+    if (pNameInfo->objectType == VK_OBJECT_TYPE_UNKNOWN) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02589",
+                        "vkSetDebugUtilsObjectNameEXT() pNameInfo->objectType cannot be VK_OBJECT_TYPE_UNKNOWN.");
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device,
+                                                                          const VkDebugUtilsObjectTagInfoEXT *pTagInfo) {
+    bool skip = false;
+    if (pTagInfo->objectType == VK_OBJECT_TYPE_UNKNOWN) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        "VUID-VkDebugUtilsObjectTagInfoEXT-objectType-01908",
+                        "vkSetDebugUtilsObjectTagEXT() pTagInfo->objectType cannot be VK_OBJECT_TYPE_UNKNOWN.");
+    }
+    return skip;
+}
