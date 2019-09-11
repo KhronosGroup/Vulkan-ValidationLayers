@@ -76,7 +76,7 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const std:
     return skip;
 }
 
-void ObjectLifetimes::DestroyLeakedInstanceObjects(VkInstance instance) {
+void ObjectLifetimes::DestroyLeakedInstanceObjects() {
     DestroyUndestroyedObjects(kVulkanObjectTypeSurfaceKHR);
     DestroyUndestroyedObjects(kVulkanObjectTypeSwapchainKHR);
     DestroyUndestroyedObjects(kVulkanObjectTypeDisplayKHR);
@@ -84,7 +84,7 @@ void ObjectLifetimes::DestroyLeakedInstanceObjects(VkInstance instance) {
     DestroyUndestroyedObjects(kVulkanObjectTypeDebugReportCallbackEXT);
     DestroyUndestroyedObjects(kVulkanObjectTypeDebugUtilsMessengerEXT);
 }
-void ObjectLifetimes::DestroyLeakedDeviceObjects(VkDevice device) {
+void ObjectLifetimes::DestroyLeakedDeviceObjects() {
     DestroyUndestroyedObjects(kVulkanObjectTypeCommandBuffer);
     DestroyUndestroyedObjects(kVulkanObjectTypeSemaphore);
     DestroyUndestroyedObjects(kVulkanObjectTypeFence);

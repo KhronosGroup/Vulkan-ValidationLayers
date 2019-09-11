@@ -318,7 +318,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         output_func = ''
         for objtype in ['instance', 'device']:
             upper_objtype = objtype.capitalize();
-            output_func += 'void ObjectLifetimes::DestroyLeaked%sObjects(Vk%s %s) {\n' % (upper_objtype, upper_objtype, objtype)
+            output_func += 'void ObjectLifetimes::DestroyLeaked%sObjects() {\n' % upper_objtype
             if objtype == 'device':
                 output_func += '    DestroyUndestroyedObjects(kVulkanObjectTypeCommandBuffer);\n'
             for handle in self.object_types:

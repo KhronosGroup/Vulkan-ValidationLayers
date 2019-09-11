@@ -119,8 +119,8 @@ class ObjectLifetimes : public ValidationObject {
     void AllocateCommandBuffer(const VkCommandPool command_pool, const VkCommandBuffer command_buffer, VkCommandBufferLevel level);
     void AllocateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
     void CreateSwapchainImageObject(VkImage swapchain_image, VkSwapchainKHR swapchain);
-    void DestroyLeakedInstanceObjects(VkInstance instance);
-    void DestroyLeakedDeviceObjects(VkDevice device);
+    void DestroyLeakedInstanceObjects();
+    void DestroyLeakedDeviceObjects();
     bool ValidateDeviceObject(const VulkanTypedHandle &device_typed, const char *invalid_handle_code,
                               const char *wrong_device_code);
     void DestroyQueueDataStructures();
