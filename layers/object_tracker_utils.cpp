@@ -920,3 +920,23 @@ void ObjectLifetimes::PostCallRecordCreateFramebuffer(VkDevice device, const VkF
     if (result != VK_SUCCESS) return;
     CreateObject(*pFramebuffer, kVulkanObjectTypeFramebuffer, pAllocator);
 }
+
+bool ObjectLifetimes::PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkSetDebugUtilsObjectNameEXT-device-parameter",
+                           kVUIDUndefined);
+    skip |= ValidateAnonymousObject(pNameInfo->objectHandle, pNameInfo->objectType, false,
+                                    "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-02590", kVUIDUndefined);
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT *pTagInfo) {
+    bool skip = false;
+    skip |=
+        ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkSetDebugUtilsObjectTagEXT-device-parameter", kVUIDUndefined);
+    skip |= ValidateAnonymousObject(pTagInfo->objectHandle, pTagInfo->objectType, false,
+                                    "VUID-VkDebugUtilsObjectTagInfoEXT-objectHandle-01910", kVUIDUndefined);
+
+    return skip;
+}
