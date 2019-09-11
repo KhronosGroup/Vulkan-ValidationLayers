@@ -131,30 +131,27 @@ chassis_sources = [
   "$vulkan_headers_dir/include/vulkan/vulkan.h",
 ]
 
-layers = [
-  [
-    "khronos_validation",
-    core_validation_sources + object_lifetimes_sources +
-        stateless_validation_sources + thread_safety_sources +
-        unique_objects_sources + chassis_sources,
-    [ ":vulkan_core_validation_glslang" ],
-    [
-    ],
-  ],
-]
+layers = [ [
+      "khronos_validation",
+      core_validation_sources + object_lifetimes_sources +
+          stateless_validation_sources + thread_safety_sources +
+          unique_objects_sources + chassis_sources,
+      [ ":vulkan_core_validation_glslang" ],
+      [],
+    ] ]
 
 if (!is_android) {
   action("vulkan_gen_json_files") {
     script = "build-gn/generate_vulkan_layers_json.py"
-    public_deps = [
+
+    # Make sure that the cleanup of old layer JSON files happens before the new ones are generated.
+    deps = [
       ":vulkan_clean_old_validation_layer_objects",
     ]
-    json_names = [
-      "VkLayer_khronos_validation.json",
-    ]
+    json_names = [ "VkLayer_khronos_validation.json" ]
     sources = [
-      "$vulkan_headers_dir/include/vulkan/vulkan_core.h",
       "$vulkan_headers_dir/include/vulkan/vk_layer.h",
+      "$vulkan_headers_dir/include/vulkan/vulkan_core.h",
     ]
     outputs = []
     foreach(json_name, json_names) {
@@ -177,6 +174,9 @@ source_set("vulkan_layer_utils") {
     "layers/generated",
   ]
   sources = [
+    "$vulkan_headers_dir/include/vulkan/vk_layer.h",
+    "$vulkan_headers_dir/include/vulkan/vk_sdk_platform.h",
+    "$vulkan_headers_dir/include/vulkan/vulkan.h",
     "layers/vk_format_utils.cpp",
     "layers/vk_format_utils.h",
     "layers/vk_layer_config.cpp",
@@ -185,9 +185,6 @@ source_set("vulkan_layer_utils") {
     "layers/vk_layer_extension_utils.h",
     "layers/vk_layer_utils.cpp",
     "layers/vk_layer_utils.h",
-    "$vulkan_headers_dir/include/vulkan/vk_layer.h",
-    "$vulkan_headers_dir/include/vulkan/vulkan.h",
-    "$vulkan_headers_dir/include/vulkan/vk_sdk_platform.h",
   ]
   public_configs = [
     "$vulkan_headers_dir:vulkan_headers_config",
@@ -229,6 +226,8 @@ foreach(layer_info, layers) {
     configs -= vulkan_undefine_configs
     public_configs = [ ":vulkan_layer_config" ]
     deps = [
+      # Make sure the cleanup of old layers happen before the new ones are compiled.
+      ":vulkan_clean_old_validation_layer_objects",
       ":vulkan_layer_utils",
     ]
     if (layer_info[2] != "") {
