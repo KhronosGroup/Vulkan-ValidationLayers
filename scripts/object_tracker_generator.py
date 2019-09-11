@@ -699,7 +699,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             dispobj = params[0].find('type').text
             if is_create_pipelines:
                 create_obj_code += '%sif (!pPipelines[index]) continue;\n' % indent
-            create_obj_code += '%sCreateObject(%s, %s, %s, %s);\n' % (indent, params[0].find('name').text, object_dest, self.GetVulkanObjType(cmd_info[-1].type), allocator)
+            create_obj_code += '%sCreateObject(%s, %s, %s);\n' % (indent, object_dest, self.GetVulkanObjType(cmd_info[-1].type), allocator)
             if object_array == True:
                 indent = self.decIndent(indent)
                 create_obj_code += '%s}\n' % indent

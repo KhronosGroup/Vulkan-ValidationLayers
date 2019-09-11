@@ -198,8 +198,8 @@ class ObjectLifetimes : public ValidationObject {
         return false;
     }
 
-    template <typename T1, typename T2>
-    void CreateObject(T1 dispatchable_object, T2 object, VulkanObjectType object_type, const VkAllocationCallbacks *pAllocator) {
+    template <typename T1>
+    void CreateObject(T1 object, VulkanObjectType object_type, const VkAllocationCallbacks *pAllocator) {
         uint64_t object_handle = HandleToUint64(object);
         bool custom_allocator = (pAllocator != nullptr);
         if (!object_map[object_type].contains(object_handle)) {
