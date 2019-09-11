@@ -121,6 +121,8 @@ add_dependencies(vk_layer_validation_tests
 
 # Specify target_link_libraries
 if(WIN32)
+    set_target_properties(gtest PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
+    set_target_properties(gtest_main PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
     target_link_libraries(vk_layer_validation_tests
                           PRIVATE Vulkan::Vulkan
                                   gtest

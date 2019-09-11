@@ -106,6 +106,7 @@ target_include_directories(${TEST_LAYER_NAME}
                                    ${VulkanHeaders_INCLUDE_DIR})
 
 if(WIN32)
+    set_target_properties(${TEST_LAYER_NAME} PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
     # For Windows, copy necessary device_profile_api layer files for the layer_tests
     file(TO_NATIVE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/windows/${TEST_LAYER_NAME}.json SRC_JSON)
     file(TO_NATIVE_PATH ${PROJECT_BINARY_DIR}/layers/$<CONFIG>/${TEST_LAYER_NAME}.json DST_JSON)
