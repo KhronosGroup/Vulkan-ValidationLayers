@@ -70,6 +70,18 @@ bool ObjectLifetimes::ValidateDeviceObject(const VulkanTypedHandle &device_typed
                    invalid_handle_code, "Invalid %s.", report_data->FormatHandle(device_typed).c_str());
 }
 
+bool ObjectLifetimes::ValidateAnonymousObject(uint64_t object_handle, VkObjectType core_object_type, bool null_allowed,
+                                              const char *invalid_handle_code, const char *wrong_device_code) {
+    if (null_allowed && (object_handle == VK_NULL_HANDLE)) return false;
+    auto object_type = ConvertCoreObjectToVulkanObject(core_object_type);
+
+    if (object_type == kVulkanObjectTypeDevice) {
+        return ValidateDeviceObject(VulkanTypedHandle(reinterpret_cast<VkDevice>(object_handle), object_type), invalid_handle_code,
+                                    wrong_device_code);
+    }
+    return CheckObjectValidity(object_handle, object_type, null_allowed, invalid_handle_code, wrong_device_code);
+}
+
 void ObjectLifetimes::AllocateCommandBuffer(const VkCommandPool command_pool, const VkCommandBuffer command_buffer,
                                             VkCommandBufferLevel level) {
     auto pNewObjNode = std::make_shared<ObjTrackState>();

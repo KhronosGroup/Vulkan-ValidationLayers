@@ -128,6 +128,8 @@ class ObjectLifetimes : public ValidationObject {
     bool ValidateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
     bool ValidateSamplerObjects(const VkDescriptorSetLayoutCreateInfo *pCreateInfo);
     bool ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPush);
+    bool ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, bool null_allowed, const char *invalid_handle_code,
+                                 const char *wrong_device_code);
 
     ObjectLifetimes *GetObjectLifetimeData(std::vector<ValidationObject *> &object_dispatch) {
         for (auto layer_object : object_dispatch) {
@@ -138,18 +140,8 @@ class ObjectLifetimes : public ValidationObject {
         return nullptr;
     };
 
-    template <typename T1>
-    bool ValidateObject(T1 object, VulkanObjectType object_type, bool null_allowed, const char *invalid_handle_code,
-                        const char *wrong_device_code) {
-        if (null_allowed && (object == VK_NULL_HANDLE)) {
-            return false;
-        }
-        auto object_handle = HandleToUint64(object);
-
-        if (object_type == kVulkanObjectTypeDevice) {
-            return ValidateDeviceObject(VulkanTypedHandle(object, object_type), invalid_handle_code, wrong_device_code);
-        }
-
+    bool CheckObjectValidity(uint64_t object_handle, VulkanObjectType object_type, bool null_allowed,
+                             const char *invalid_handle_code, const char *wrong_device_code) {
         VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[object_type];
 
         // Look for object in object map
@@ -188,6 +180,21 @@ class ObjectLifetimes : public ValidationObject {
             }
         }
         return false;
+    }
+
+    template <typename T1>
+    bool ValidateObject(T1 object, VulkanObjectType object_type, bool null_allowed, const char *invalid_handle_code,
+                        const char *wrong_device_code) {
+        if (null_allowed && (object == VK_NULL_HANDLE)) {
+            return false;
+        }
+        auto object_handle = HandleToUint64(object);
+
+        if (object_type == kVulkanObjectTypeDevice) {
+            return ValidateDeviceObject(VulkanTypedHandle(object, object_type), invalid_handle_code, wrong_device_code);
+        }
+
+        return CheckObjectValidity(object_handle, object_type, null_allowed, invalid_handle_code, wrong_device_code);
     }
 
     template <typename T1>
