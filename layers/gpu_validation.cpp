@@ -1418,8 +1418,8 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
         uint32_t binding_count = 0;     // Number of bindings based on the max binding number used
         for (auto s : state.per_set) {
             auto desc = s.bound_descriptor_set;
-            auto bindings = desc->GetLayout()->GetSortedBindingSet();
-            if (bindings.size() > 0) {
+            if (desc && (desc->GetBindingCount() > 0)) {
+                auto bindings = desc->GetLayout()->GetSortedBindingSet();
                 binding_count += desc->GetLayout()->GetMaxBinding() + 1;
                 for (auto binding : bindings) {
                     // Shader instrumentation is tracking inline uniform blocks as scalers. Don't try to validate inline uniform
@@ -1477,9 +1477,9 @@ void CoreChecks::GpuAllocateValidationResources(const VkCommandBuffer cmd_buffer
 
         for (auto s : state.per_set) {
             auto desc = s.bound_descriptor_set;
-            auto layout = desc->GetLayout();
-            auto bindings = layout->GetSortedBindingSet();
-            if (bindings.size() > 0) {
+            if (desc && (desc->GetBindingCount() > 0)) {
+                auto layout = desc->GetLayout();
+                auto bindings = layout->GetSortedBindingSet();
                 // For each set, fill in index of its bindings sizes in the sizes array
                 *sets_to_sizes++ = bindCounter;
                 // For each set, fill in the index of its bindings in the bindings_to_written array
