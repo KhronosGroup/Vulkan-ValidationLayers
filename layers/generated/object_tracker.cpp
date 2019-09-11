@@ -314,7 +314,7 @@ void ObjectLifetimes::PreCallRecordFreeMemory(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, memory, kVulkanObjectTypeDeviceMemory);
+    RecordDestroyObject(memory, kVulkanObjectTypeDeviceMemory);
 
 }
 
@@ -552,7 +552,7 @@ void ObjectLifetimes::PreCallRecordDestroyFence(
     VkDevice                                    device,
     VkFence                                     fence,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, fence, kVulkanObjectTypeFence);
+    RecordDestroyObject(fence, kVulkanObjectTypeFence);
 
 }
 
@@ -636,7 +636,7 @@ void ObjectLifetimes::PreCallRecordDestroySemaphore(
     VkDevice                                    device,
     VkSemaphore                                 semaphore,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, semaphore, kVulkanObjectTypeSemaphore);
+    RecordDestroyObject(semaphore, kVulkanObjectTypeSemaphore);
 
 }
 
@@ -678,7 +678,7 @@ void ObjectLifetimes::PreCallRecordDestroyEvent(
     VkDevice                                    device,
     VkEvent                                     event,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, event, kVulkanObjectTypeEvent);
+    RecordDestroyObject(event, kVulkanObjectTypeEvent);
 
 }
 
@@ -750,7 +750,7 @@ void ObjectLifetimes::PreCallRecordDestroyQueryPool(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, queryPool, kVulkanObjectTypeQueryPool);
+    RecordDestroyObject(queryPool, kVulkanObjectTypeQueryPool);
 
 }
 
@@ -808,7 +808,7 @@ void ObjectLifetimes::PreCallRecordDestroyBuffer(
     VkDevice                                    device,
     VkBuffer                                    buffer,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, buffer, kVulkanObjectTypeBuffer);
+    RecordDestroyObject(buffer, kVulkanObjectTypeBuffer);
 
 }
 
@@ -853,7 +853,7 @@ void ObjectLifetimes::PreCallRecordDestroyBufferView(
     VkDevice                                    device,
     VkBufferView                                bufferView,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, bufferView, kVulkanObjectTypeBufferView);
+    RecordDestroyObject(bufferView, kVulkanObjectTypeBufferView);
 
 }
 
@@ -895,7 +895,7 @@ void ObjectLifetimes::PreCallRecordDestroyImage(
     VkDevice                                    device,
     VkImage                                     image,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, image, kVulkanObjectTypeImage);
+    RecordDestroyObject(image, kVulkanObjectTypeImage);
 
 }
 
@@ -952,7 +952,7 @@ void ObjectLifetimes::PreCallRecordDestroyImageView(
     VkDevice                                    device,
     VkImageView                                 imageView,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, imageView, kVulkanObjectTypeImageView);
+    RecordDestroyObject(imageView, kVulkanObjectTypeImageView);
 
 }
 
@@ -994,7 +994,7 @@ void ObjectLifetimes::PreCallRecordDestroyShaderModule(
     VkDevice                                    device,
     VkShaderModule                              shaderModule,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, shaderModule, kVulkanObjectTypeShaderModule);
+    RecordDestroyObject(shaderModule, kVulkanObjectTypeShaderModule);
 
 }
 
@@ -1036,7 +1036,7 @@ void ObjectLifetimes::PreCallRecordDestroyPipelineCache(
     VkDevice                                    device,
     VkPipelineCache                             pipelineCache,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, pipelineCache, kVulkanObjectTypePipelineCache);
+    RecordDestroyObject(pipelineCache, kVulkanObjectTypePipelineCache);
 
 }
 
@@ -1168,7 +1168,7 @@ void ObjectLifetimes::PreCallRecordDestroyPipeline(
     VkDevice                                    device,
     VkPipeline                                  pipeline,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, pipeline, kVulkanObjectTypePipeline);
+    RecordDestroyObject(pipeline, kVulkanObjectTypePipeline);
 
 }
 
@@ -1217,7 +1217,7 @@ void ObjectLifetimes::PreCallRecordDestroyPipelineLayout(
     VkDevice                                    device,
     VkPipelineLayout                            pipelineLayout,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, pipelineLayout, kVulkanObjectTypePipelineLayout);
+    RecordDestroyObject(pipelineLayout, kVulkanObjectTypePipelineLayout);
 
 }
 
@@ -1259,7 +1259,7 @@ void ObjectLifetimes::PreCallRecordDestroySampler(
     VkDevice                                    device,
     VkSampler                                   sampler,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, sampler, kVulkanObjectTypeSampler);
+    RecordDestroyObject(sampler, kVulkanObjectTypeSampler);
 
 }
 
@@ -1279,7 +1279,7 @@ void ObjectLifetimes::PreCallRecordDestroyDescriptorSetLayout(
     VkDevice                                    device,
     VkDescriptorSetLayout                       descriptorSetLayout,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, descriptorSetLayout, kVulkanObjectTypeDescriptorSetLayout);
+    RecordDestroyObject(descriptorSetLayout, kVulkanObjectTypeDescriptorSetLayout);
 
 }
 
@@ -1321,7 +1321,7 @@ void ObjectLifetimes::PreCallRecordDestroyFramebuffer(
     VkDevice                                    device,
     VkFramebuffer                               framebuffer,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, framebuffer, kVulkanObjectTypeFramebuffer);
+    RecordDestroyObject(framebuffer, kVulkanObjectTypeFramebuffer);
 
 }
 
@@ -1363,7 +1363,7 @@ void ObjectLifetimes::PreCallRecordDestroyRenderPass(
     VkDevice                                    device,
     VkRenderPass                                renderPass,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, renderPass, kVulkanObjectTypeRenderPass);
+    RecordDestroyObject(renderPass, kVulkanObjectTypeRenderPass);
 
 }
 
@@ -2242,7 +2242,7 @@ void ObjectLifetimes::PreCallRecordDestroySamplerYcbcrConversion(
     VkDevice                                    device,
     VkSamplerYcbcrConversion                    ycbcrConversion,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, ycbcrConversion, kVulkanObjectTypeSamplerYcbcrConversion);
+    RecordDestroyObject(ycbcrConversion, kVulkanObjectTypeSamplerYcbcrConversion);
 
 }
 
@@ -2288,7 +2288,7 @@ void ObjectLifetimes::PreCallRecordDestroyDescriptorUpdateTemplate(
     VkDevice                                    device,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, descriptorUpdateTemplate, kVulkanObjectTypeDescriptorUpdateTemplate);
+    RecordDestroyObject(descriptorUpdateTemplate, kVulkanObjectTypeDescriptorUpdateTemplate);
 
 }
 
@@ -2351,7 +2351,7 @@ void ObjectLifetimes::PreCallRecordDestroySurfaceKHR(
     VkInstance                                  instance,
     VkSurfaceKHR                                surface,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(instance, surface, kVulkanObjectTypeSurfaceKHR);
+    RecordDestroyObject(surface, kVulkanObjectTypeSurfaceKHR);
 
 }
 
@@ -3122,7 +3122,7 @@ void ObjectLifetimes::PreCallRecordDestroyDescriptorUpdateTemplateKHR(
     VkDevice                                    device,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, descriptorUpdateTemplate, kVulkanObjectTypeDescriptorUpdateTemplate);
+    RecordDestroyObject(descriptorUpdateTemplate, kVulkanObjectTypeDescriptorUpdateTemplate);
 
 }
 
@@ -3398,7 +3398,7 @@ void ObjectLifetimes::PreCallRecordDestroySamplerYcbcrConversionKHR(
     VkDevice                                    device,
     VkSamplerYcbcrConversion                    ycbcrConversion,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, ycbcrConversion, kVulkanObjectTypeSamplerYcbcrConversion);
+    RecordDestroyObject(ycbcrConversion, kVulkanObjectTypeSamplerYcbcrConversion);
 
 }
 
@@ -3546,7 +3546,7 @@ void ObjectLifetimes::PreCallRecordDestroyDebugReportCallbackEXT(
     VkInstance                                  instance,
     VkDebugReportCallbackEXT                    callback,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(instance, callback, kVulkanObjectTypeDebugReportCallbackEXT);
+    RecordDestroyObject(callback, kVulkanObjectTypeDebugReportCallbackEXT);
 
 }
 
@@ -3928,7 +3928,7 @@ void ObjectLifetimes::PreCallRecordDestroyIndirectCommandsLayoutNVX(
     VkDevice                                    device,
     VkIndirectCommandsLayoutNVX                 indirectCommandsLayout,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, indirectCommandsLayout, kVulkanObjectTypeIndirectCommandsLayoutNVX);
+    RecordDestroyObject(indirectCommandsLayout, kVulkanObjectTypeIndirectCommandsLayoutNVX);
 
 }
 
@@ -3970,7 +3970,7 @@ void ObjectLifetimes::PreCallRecordDestroyObjectTableNVX(
     VkDevice                                    device,
     VkObjectTableNVX                            objectTable,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, objectTable, kVulkanObjectTypeObjectTableNVX);
+    RecordDestroyObject(objectTable, kVulkanObjectTypeObjectTableNVX);
 
 }
 
@@ -4359,7 +4359,7 @@ void ObjectLifetimes::PreCallRecordDestroyDebugUtilsMessengerEXT(
     VkInstance                                  instance,
     VkDebugUtilsMessengerEXT                    messenger,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(instance, messenger, kVulkanObjectTypeDebugUtilsMessengerEXT);
+    RecordDestroyObject(messenger, kVulkanObjectTypeDebugUtilsMessengerEXT);
 
 }
 
@@ -4471,7 +4471,7 @@ void ObjectLifetimes::PreCallRecordDestroyValidationCacheEXT(
     VkDevice                                    device,
     VkValidationCacheEXT                        validationCache,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, validationCache, kVulkanObjectTypeValidationCacheEXT);
+    RecordDestroyObject(validationCache, kVulkanObjectTypeValidationCacheEXT);
 
 }
 
@@ -4585,7 +4585,7 @@ void ObjectLifetimes::PreCallRecordDestroyAccelerationStructureNV(
     VkDevice                                    device,
     VkAccelerationStructureNV                   accelerationStructure,
     const VkAllocationCallbacks*                pAllocator) {
-    RecordDestroyObject(device, accelerationStructure, kVulkanObjectTypeAccelerationStructureNV);
+    RecordDestroyObject(accelerationStructure, kVulkanObjectTypeAccelerationStructureNV);
 
 }
 

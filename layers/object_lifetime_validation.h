@@ -243,8 +243,8 @@ class ObjectLifetimes : public ValidationObject {
         num_objects[item->second->object_type]--;
     }
 
-    template <typename T1, typename T2>
-    void RecordDestroyObject(T1 dispatchable_object, T2 object, VulkanObjectType object_type) {
+    template <typename T1>
+    void RecordDestroyObject(T1 object, VulkanObjectType object_type) {
         auto object_handle = HandleToUint64(object);
         if (object_handle != VK_NULL_HANDLE) {
             if (object_map[object_type].contains(object_handle)) {

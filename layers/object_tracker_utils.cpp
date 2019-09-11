@@ -315,7 +315,7 @@ void ObjectLifetimes::PreCallRecordDestroyInstance(VkInstance instance, const Vk
     for (const auto &iit : snapshot) {
         auto pNode = iit.second;
         VkPhysicalDevice physical_device = reinterpret_cast<VkPhysicalDevice>(pNode->handle);
-        RecordDestroyObject(instance, physical_device, kVulkanObjectTypePhysicalDevice);
+        RecordDestroyObject(physical_device, kVulkanObjectTypePhysicalDevice);
     }
 
     // Destroy child devices
@@ -325,12 +325,12 @@ void ObjectLifetimes::PreCallRecordDestroyInstance(VkInstance instance, const Vk
         VkDevice device = reinterpret_cast<VkDevice>(pNode->handle);
         DestroyLeakedInstanceObjects(instance);
 
-        RecordDestroyObject(instance, device, kVulkanObjectTypeDevice);
+        RecordDestroyObject(device, kVulkanObjectTypeDevice);
     }
 }
 
 void ObjectLifetimes::PostCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) {
-    RecordDestroyObject(instance, instance, kVulkanObjectTypeInstance);
+    RecordDestroyObject(instance, kVulkanObjectTypeInstance);
 }
 
 bool ObjectLifetimes::PreCallValidateDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
@@ -348,7 +348,7 @@ void ObjectLifetimes::PreCallRecordDestroyDevice(VkDevice device, const VkAlloca
     auto instance_data = GetLayerDataPtr(get_dispatch_key(physical_device), layer_data_map);
     ValidationObject *validation_data = GetValidationObject(instance_data->object_dispatch, LayerObjectTypeObjectTracker);
     ObjectLifetimes *object_lifetimes = static_cast<ObjectLifetimes *>(validation_data);
-    object_lifetimes->RecordDestroyObject(physical_device, device, kVulkanObjectTypeDevice);
+    object_lifetimes->RecordDestroyObject(device, kVulkanObjectTypeDevice);
     DestroyLeakedDeviceObjects(device);
 
     // Clean up Queue's MemRef Linked Lists
@@ -433,7 +433,7 @@ void ObjectLifetimes::PreCallRecordResetDescriptorPool(VkDevice device, VkDescri
     if (itr != object_map[kVulkanObjectTypeDescriptorPool].end()) {
         auto pPoolNode = itr->second;
         for (auto set : *pPoolNode->child_objects) {
-            RecordDestroyObject(device, (VkDescriptorSet)set, kVulkanObjectTypeDescriptorSet);
+            RecordDestroyObject((VkDescriptorSet)set, kVulkanObjectTypeDescriptorSet);
         }
         pPoolNode->child_objects->clear();
     }
@@ -631,7 +631,7 @@ bool ObjectLifetimes::PreCallValidateFreeCommandBuffers(VkDevice device, VkComma
 void ObjectLifetimes::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
                                                       const VkCommandBuffer *pCommandBuffers) {
     for (uint32_t i = 0; i < commandBufferCount; i++) {
-        RecordDestroyObject(device, pCommandBuffers[i], kVulkanObjectTypeCommandBuffer);
+        RecordDestroyObject(pCommandBuffers[i], kVulkanObjectTypeCommandBuffer);
     }
 }
 
@@ -643,7 +643,7 @@ bool ObjectLifetimes::PreCallValidateDestroySwapchainKHR(VkDevice device, VkSwap
 
 void ObjectLifetimes::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain,
                                                        const VkAllocationCallbacks *pAllocator) {
-    RecordDestroyObject(device, swapchain, kVulkanObjectTypeSwapchainKHR);
+    RecordDestroyObject(swapchain, kVulkanObjectTypeSwapchainKHR);
 
     auto snapshot = swapchainImageMap.snapshot(
         [swapchain](std::shared_ptr<ObjTrackState> pNode) { return pNode->parent_object == HandleToUint64(swapchain); });
@@ -677,7 +677,7 @@ void ObjectLifetimes::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescrip
         pPoolNode = itr->second;
     }
     for (uint32_t i = 0; i < descriptorSetCount; i++) {
-        RecordDestroyObject(device, pDescriptorSets[i], kVulkanObjectTypeDescriptorSet);
+        RecordDestroyObject(pDescriptorSets[i], kVulkanObjectTypeDescriptorSet);
         if (pPoolNode) {
             pPoolNode->child_objects->erase(HandleToUint64(pDescriptorSets[i]));
         }
@@ -713,11 +713,11 @@ void ObjectLifetimes::PreCallRecordDestroyDescriptorPool(VkDevice device, VkDesc
     if (itr != object_map[kVulkanObjectTypeDescriptorPool].end()) {
         auto pPoolNode = itr->second;
         for (auto set : *pPoolNode->child_objects) {
-            RecordDestroyObject(device, (VkDescriptorSet)set, kVulkanObjectTypeDescriptorSet);
+            RecordDestroyObject((VkDescriptorSet)set, kVulkanObjectTypeDescriptorSet);
         }
         pPoolNode->child_objects->clear();
     }
-    RecordDestroyObject(device, descriptorPool, kVulkanObjectTypeDescriptorPool);
+    RecordDestroyObject(descriptorPool, kVulkanObjectTypeDescriptorPool);
 }
 
 bool ObjectLifetimes::PreCallValidateDestroyCommandPool(VkDevice device, VkCommandPool commandPool,
@@ -746,9 +746,9 @@ void ObjectLifetimes::PreCallRecordDestroyCommandPool(VkDevice device, VkCommand
         [commandPool](std::shared_ptr<ObjTrackState> pNode) { return pNode->parent_object == HandleToUint64(commandPool); });
     // A CommandPool's cmd buffers are implicitly deleted when pool is deleted. Remove this pool's cmdBuffers from cmd buffer map.
     for (const auto &itr : snapshot) {
-        RecordDestroyObject(device, reinterpret_cast<VkCommandBuffer>(itr.first), kVulkanObjectTypeCommandBuffer);
+        RecordDestroyObject(reinterpret_cast<VkCommandBuffer>(itr.first), kVulkanObjectTypeCommandBuffer);
     }
-    RecordDestroyObject(device, commandPool, kVulkanObjectTypeCommandPool);
+    RecordDestroyObject(commandPool, kVulkanObjectTypeCommandPool);
 }
 
 bool ObjectLifetimes::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
