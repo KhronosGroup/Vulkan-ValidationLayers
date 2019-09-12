@@ -1080,7 +1080,13 @@ void ThreadSafety::PostCallRecordGetDeviceQueue2(
                     else:
                         paramtype = 'None'
                     if paramtype in self.handle_types:
-                        paramdecl += 'if (result == VK_SUCCESS) {\n'
+                        indent = ''
+                        create_pipelines_call = True
+                        # The CreateXxxPipelines APIs can return a list of partly created pipelines upon failure
+                        if not ('Create' in name and 'Pipelines' in name):
+                            paramdecl += 'if (result == VK_SUCCESS) {\n'
+                            create_pipelines_call = False
+                            indent = '    '
                         if self.paramIsArray(param):
                             # Add pointer dereference for array counts that are pointer values
                             dereference = ''
@@ -1089,14 +1095,17 @@ void ThreadSafety::PostCallRecordGetDeviceQueue2(
                                     if self.paramIsPointer(candidate):
                                         dereference = '*'
                             param_len = str(param.attrib.get('len')).replace("::", "->")
-                            paramdecl += '    if (' + paramname.text + ') {\n'
-                            paramdecl += '        for (uint32_t index = 0; index < ' + dereference + param_len + '; index++) {\n'
-                            paramdecl += '            CreateObject' + self.paramSuffix(param.find('type')) + '(' + paramname.text + '[index]);\n'
-                            paramdecl += '        }\n'
-                            paramdecl += '    }\n'
+                            paramdecl += indent + 'if (' + paramname.text + ') {\n'
+                            paramdecl += indent + '    for (uint32_t index = 0; index < ' + dereference + param_len + '; index++) {\n'
+                            if create_pipelines_call:
+                                paramdecl += indent + '        if (!pPipelines[index]) continue;\n'
+                            paramdecl += indent + '        CreateObject' + self.paramSuffix(param.find('type')) + '(' + paramname.text + '[index]);\n'
+                            paramdecl += indent + '    }\n'
+                            paramdecl += indent + '}\n'
                         else:
                             paramdecl += '    CreateObject' + self.paramSuffix(param.find('type')) + '(*' + paramname.text + ');\n'
-                        paramdecl += '}\n'
+                        if not create_pipelines_call:
+                            paramdecl += '}\n'
                 else:
                     paramtype = param.find('type')
                     if paramtype is not None:
