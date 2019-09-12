@@ -1428,11 +1428,10 @@ void ThreadSafety::PostCallRecordCreateGraphicsPipelines(
     VkResult                                    result) {
     FinishReadObjectParentInstance(device);
     FinishReadObject(pipelineCache);
-    if (result == VK_SUCCESS) {
-        if (pPipelines) {
-            for (uint32_t index = 0; index < createInfoCount; index++) {
-                CreateObject(pPipelines[index]);
-            }
+    if (pPipelines) {
+        for (uint32_t index = 0; index < createInfoCount; index++) {
+            if (!pPipelines[index]) continue;
+            CreateObject(pPipelines[index]);
         }
     }
 }
@@ -1458,11 +1457,10 @@ void ThreadSafety::PostCallRecordCreateComputePipelines(
     VkResult                                    result) {
     FinishReadObjectParentInstance(device);
     FinishReadObject(pipelineCache);
-    if (result == VK_SUCCESS) {
-        if (pPipelines) {
-            for (uint32_t index = 0; index < createInfoCount; index++) {
-                CreateObject(pPipelines[index]);
-            }
+    if (pPipelines) {
+        for (uint32_t index = 0; index < createInfoCount; index++) {
+            if (!pPipelines[index]) continue;
+            CreateObject(pPipelines[index]);
         }
     }
 }
@@ -5585,11 +5583,10 @@ void ThreadSafety::PostCallRecordCreateRayTracingPipelinesNV(
     VkResult                                    result) {
     FinishReadObjectParentInstance(device);
     FinishReadObject(pipelineCache);
-    if (result == VK_SUCCESS) {
-        if (pPipelines) {
-            for (uint32_t index = 0; index < createInfoCount; index++) {
-                CreateObject(pPipelines[index]);
-            }
+    if (pPipelines) {
+        for (uint32_t index = 0; index < createInfoCount; index++) {
+            if (!pPipelines[index]) continue;
+            CreateObject(pPipelines[index]);
         }
     }
 }
