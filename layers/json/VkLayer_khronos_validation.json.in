@@ -6,7 +6,7 @@
         "library_path": "@RELATIVE_LAYER_BINARY@",
         "api_version": "@VK_VERSION@",
         "implementation_version": "1",
-        "description": "LunarG Validation Layer",
+        "description": "Khronos Validation Layer",
         "instance_extensions": [
              {
                  "name": "VK_EXT_debug_report",
