@@ -415,9 +415,45 @@ public:
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
               {};
 
-#define WRAPPER(type)                                                    void StartWriteObject(type object) {                                     c_##type.StartWrite(object);                                     }                                                                    void FinishWriteObject(type object) {                                    c_##type.FinishWrite(object);                                    }                                                                    void StartReadObject(type object) {                                      c_##type.StartRead(object);                                      }                                                                    void FinishReadObject(type object) {                                     c_##type.FinishRead(object);                                     }                                                                    void CreateObject(type object) {                                         c_##type.CreateObject(object);                                   }                                                                    void DestroyObject(type object) {                                        c_##type.DestroyObject(object);                                  }
+#define WRAPPER(type)                                                \
+    void StartWriteObject(type object) {                             \
+        c_##type.StartWrite(object);                                 \
+    }                                                                \
+    void FinishWriteObject(type object) {                            \
+        c_##type.FinishWrite(object);                                \
+    }                                                                \
+    void StartReadObject(type object) {                              \
+        c_##type.StartRead(object);                                  \
+    }                                                                \
+    void FinishReadObject(type object) {                             \
+        c_##type.FinishRead(object);                                 \
+    }                                                                \
+    void CreateObject(type object) {                                 \
+        c_##type.CreateObject(object);                               \
+    }                                                                \
+    void DestroyObject(type object) {                                \
+        c_##type.DestroyObject(object);                              \
+    }
 
-#define WRAPPER_PARENT_INSTANCE(type)                                    void StartWriteObjectParentInstance(type object) {                                     (parent_instance ? parent_instance : this)->c_##type.StartWrite(object);                                     }                                                                    void FinishWriteObjectParentInstance(type object) {                                    (parent_instance ? parent_instance : this)->c_##type.FinishWrite(object);                                    }                                                                    void StartReadObjectParentInstance(type object) {                                      (parent_instance ? parent_instance : this)->c_##type.StartRead(object);                                      }                                                                    void FinishReadObjectParentInstance(type object) {                                     (parent_instance ? parent_instance : this)->c_##type.FinishRead(object);                                     }                                                                    void CreateObjectParentInstance(type object) {                                         (parent_instance ? parent_instance : this)->c_##type.CreateObject(object);                                   }                                                                    void DestroyObjectParentInstance(type object) {                                        (parent_instance ? parent_instance : this)->c_##type.DestroyObject(object);                                  }
+#define WRAPPER_PARENT_INSTANCE(type)                                                   \
+    void StartWriteObjectParentInstance(type object) {                                  \
+        (parent_instance ? parent_instance : this)->c_##type.StartWrite(object);        \
+    }                                                                                   \
+    void FinishWriteObjectParentInstance(type object) {                                 \
+        (parent_instance ? parent_instance : this)->c_##type.FinishWrite(object);       \
+    }                                                                                   \
+    void StartReadObjectParentInstance(type object) {                                   \
+        (parent_instance ? parent_instance : this)->c_##type.StartRead(object);         \
+    }                                                                                   \
+    void FinishReadObjectParentInstance(type object) {                                  \
+        (parent_instance ? parent_instance : this)->c_##type.FinishRead(object);        \
+    }                                                                                   \
+    void CreateObjectParentInstance(type object) {                                      \
+        (parent_instance ? parent_instance : this)->c_##type.CreateObject(object);      \
+    }                                                                                   \
+    void DestroyObjectParentInstance(type object) {                                     \
+        (parent_instance ? parent_instance : this)->c_##type.DestroyObject(object);     \
+    }
 
 WRAPPER_PARENT_INSTANCE(VkDevice)
 WRAPPER_PARENT_INSTANCE(VkInstance)
