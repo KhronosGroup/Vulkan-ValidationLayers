@@ -3,14 +3,14 @@ Upstream-Name: Vulkan-ValidationLayers
 Source: https://github.com/KhronosGroup/Vulkan-ValidationLayers
 
 Files: *
-Copyright: 2014-2018 Valve Corporation
-	   2015-2018 Google, Inc
-	   2015-2018 The Khronos Group Inc
-	   2015-2018 LunarG, Inc
+Copyright: 2014-2019 Valve Corporation
+	   2015-2019 Google, Inc
+	   2015-2019 The Khronos Group Inc
+	   2015-2019 LunarG, Inc
 License: Apache-2.0
 
 Files: layers/xxhash.*
-Copyright: 2012-2016 Yann Collet
+Copyright: 2012-2019 Yann Collet
 License: BSD-2-clause
 
 Files: debian/*
