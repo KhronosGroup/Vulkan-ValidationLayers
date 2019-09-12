@@ -12,12 +12,12 @@
 [3]: https://i.creativecommons.org/l/by-nd/4.0/88x31.png "Creative Commons License"
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
 
-GPU-Assisted validation is implemented in the SPIR-V Tools optimizer and the `VK_LAYER_KHRONOS_validation` layer.
+GPU-Assisted Validation is implemented in the SPIR-V Tools optimizer and the `VK_LAYER_KHRONOS_validation` layer.
 This document covers the design of the layer portion of the implementation.
 
 ## Basic Operation
 
-The basic operation of GPU-Assisted validation is comprised of instrumenting shader code to perform run-time checking in shaders and
+The basic operation of GPU-Assisted Validation is comprised of instrumenting shader code to perform run-time checking of shaders and
 reporting any error conditions to the layer.
 The layer then reports the errors to the user via the same reporting mechanisms used by the rest of the validation system.
 
@@ -98,7 +98,7 @@ Note that currently, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT validation is n
 
 ### Buffer device address checking
 The vkGetBufferDeviceAddressEXT routine can be used to get a GPU address that a shader can use to directly address a particular buffer.
-GPU-AV code keeps track of all such addresses, along with the size of the associated buffer, and creates an input buffer listing all such address/size pairs
+GPU-Assisted Validation code keeps track of all such addresses, along with the size of the associated buffer, and creates an input buffer listing all such address/size pairs
 Shader code is instrumented to validate buffer_reference addresses and report any reads or writes that do no fall within the listed address/size regions._
 
 ## GPU-Assisted Validation Options
@@ -337,7 +337,7 @@ inside of the validation layer.
 These calls are not routed up through the top of the loader/layer/driver call stack via the loader.
 Instead, they are simply dispatched via the containing layer's dispatch table.
 
-These calls therefore don't pass through any validation checks that occur before the gpu validation checks are run.
+These calls therefore don't pass through any validation checks that occur before the GPU validation checks are run.
 This doesn't present any particular problem, but it does raise some issues:
 
 * The additional API calls are not fully validated
@@ -346,7 +346,7 @@ This doesn't present any particular problem, but it does raise some issues:
   To address this, the code can "just" be written carefully so that it is "valid" Vulkan,
   which is hard to do.
 
-  Or, this code can be checked by loading a khronos validation layer with
+  Or, this code can be checked by loading a Khronos validation layer with
   GPU validation enabled on top of "normal" standard validation in the
   layer stack, which effectively validates the API usage of this code.
   This sort of checking is performed by layer developers to check that the additional
@@ -354,13 +354,12 @@ This doesn't present any particular problem, but it does raise some issues:
 
   This validation can be accomplished by:
 
-  * Building the validation layer with a hack to force GPU-Assisted Validation to be enabled.
-  Can't use the exposed mechanisms because we probably don't want it on twice.
+  * Building the validation layer with a hack to force GPU-Assisted Validation to be enabled (don't use the exposed mechanisms because you probably don't want it enabled twice).
   * Rename this layer binary to something else like "khronos_validation2" to keep it apart from the
-  "normal" khronos validation.
+  "normal" Khronos validation.
   * Create a new JSON file with the new layer name.
-  * Set up the layer stack so that the "khronos_validation2" layer is on top of or before the actual khronos
-    validation layer
+  * Set up the layer stack so that the "khronos_validation2" layer is on top of or before the actual Khronos
+    validation layer.
   * Then run tests and check for validation errors pointing to API usage in the "khronos_validation2" layer.
 
   This should only need to be done after making any major changes to the implementation.
@@ -394,11 +393,11 @@ if (GetEnables(dev_data)->gpu_validation) {
 }
 ```
 
-The GPU-Assisted Validation code is linked into the shared library for the khronos and core validation layers.
+The GPU-Assisted Validation code is linked into the shared library for the Khronos and core validation layers.
 
 #### Review of Khronos Validation Code Structure
 
-Each function for a Vulkan API command intercepted in the khronos validation layer is usually split up
+Each function for a Vulkan API command intercepted in the Khronos validation layer is usually split up
 into several decomposed functions in order to organize the implementation.
 These functions take the form of:
 
@@ -420,9 +419,9 @@ The design of each hooked function follows:
 
 #### GpuPostCallRecordCreateDevice
 
-* Determine and record (save in device state) the desired descriptor set binding index.
+* Determine and record (save in device state) the desired descriptor set binding index
 * Initialize Vulkan Memory Allocator
-  * Determine error record block size based on the maximum size of the error record and alignment limits of the device.
+  * Determine error record block size based on the maximum size of the error record and alignment limits of the device
 * Initialize descriptor set manager
 * Make a descriptor set layout to describe our descriptor set
 * Make a descriptor set layout to describe a "dummy" descriptor set that contains no descriptors
@@ -446,7 +445,7 @@ The design of each hooked function follows:
   * Update (write) the descriptor set with the memory info
   * Check to see if the layout for the pipeline just bound is using our selected bind index
   * If no conflict, add an additional command to the command buffer to bind our descriptor set at our selected index
-* Record the above objects in the per-CB state
+* Record the above objects in the per-CB state;
 Note that the Draw and Dispatch calls include vkCmdDraw, vkCmdDrawIndexed, vkCmdDrawIndirect, vkCmdDrawIndexedIndirect, vkCmdDispatch, vkCmdDispatchIndirect, and vkCmdTraceRaysNV.
 
 #### GpuPreCallRecordFreeCommandBuffers
@@ -639,7 +638,7 @@ The shader queries the length of the `Data` array to make sure that it does not 
 The shader only writes complete records.
 The layer uses the length of `Data` to control the number of records written by the shaders.
 
-The `DataWrittenLength` is atomically updated by the shaders so that shaders do not overwrite each others data.
+The `DataWrittenLength` is atomically updated by the shaders so that shaders do not overwrite each others' data.
 The shader takes the value it gets from the atomic update.
 If the value plus the record length is greater than the length of `Data`, it does not write the record.
 
@@ -832,17 +831,17 @@ in the OpSource source, then line 45 in the OpSource contains the correct source
 
 ### Shader Instrumentation Input Record Format for Descriptor Indexing
 
-Although the DI input buffer is a linear array of unsigned integers, conceptually there are arrays within the linear array
+Although the DI input buffer is a linear array of unsigned integers, conceptually there are arrays within the linear array.
 
-Word 1 starts an array (denoted by sets_to_sizes) that is number_of_sets long, with an index that indicates the start of that set's entries in the sizes array
+Word 1 starts an array (denoted by sets_to_sizes) that is number_of_sets long, with an index that indicates the start of that set's entries in the sizes array.
 
-After the sets_to_sizes array is the sizes array, that contains the array size (or 1 if descriptor is not an array) of each descriptor in the set.  Bindings with no descriptor are filled in with zeros
+After the sets_to_sizes array is the sizes array, that contains the array size (or 1 if descriptor is not an array) of each descriptor in the set.  Bindings with no descriptor are filled in with zeros.
 
-After the sizes array is the sets_to_bindings array that for each descriptor set, indexes into the bindings_to_written array.  Word 0 contains the index that is the start of the sets_to_bindings array
+After the sizes array is the sets_to_bindings array that for each descriptor set, indexes into the bindings_to_written array.  Word 0 contains the index that is the start of the sets_to_bindings array.
 
-After the sets_to_bindings array, is the bindings_to_written array that for each binding in the set, indexes to the start of that binding's entries in the written array
+After the sets_to_bindings array, is the bindings_to_written array that for each binding in the set, indexes to the start of that binding's entries in the written array.
 
-Lastly comes the written array, which indicates whether a given binding / array element has been written
+Lastly comes the written array, which indicates whether a given binding / array element has been written.
 
 Example:
 ```
