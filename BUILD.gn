@@ -119,6 +119,12 @@ thread_safety_sources = [
 
 unique_objects_sources = []
 
+best_practices_sources = [
+  "layers/best_practices.cpp",
+  "layers/best_practices.h",
+  "layers/best_practices_error_enums.h",
+]
+
 chassis_sources = [
   "layers/core_validation.h",
   "layers/generated/vk_safe_struct.h",
@@ -135,7 +141,7 @@ layers = [ [
       "khronos_validation",
       core_validation_sources + object_lifetimes_sources +
           stateless_validation_sources + thread_safety_sources +
-          unique_objects_sources + chassis_sources,
+          unique_objects_sources + best_practices_sources + chassis_sources,
       [ ":vulkan_core_validation_glslang" ],
       [],
     ] ]
@@ -148,9 +154,11 @@ if (!is_android) {
     deps = [
       ":vulkan_clean_old_validation_layer_objects",
     ]
-    json_names = [ "VkLayer_khronos_validation.json" ]
+    json_names = [
+      "VkLayer_standard_validation.json",
+      "VkLayer_khronos_validation.json",
+    ]
     sources = [
-      "$vulkan_headers_dir/include/vulkan/vk_layer.h",
       "$vulkan_headers_dir/include/vulkan/vulkan_core.h",
     ]
     outputs = []
