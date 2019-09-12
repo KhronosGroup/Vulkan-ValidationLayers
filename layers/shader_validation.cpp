@@ -2764,64 +2764,6 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
                         report_data->FormatHandle(module->vk_shader_module).c_str(), string_VkShaderStageFlagBits(pStage->stage));
     }
 
-    // If specialization-constant values are given and specialization-constant instructions are present in the shader, the
-    // specializations should be applied and validated.
-    if (pStage->pSpecializationInfo != nullptr && pStage->pSpecializationInfo->mapEntryCount > 0 &&
-        pStage->pSpecializationInfo->pMapEntries != nullptr && module->has_specialization_constants) {
-        // Gather the specialization-constant values.
-        auto const &specialization_info = pStage->pSpecializationInfo;
-        std::unordered_map<uint32_t, std::vector<uint32_t>> id_value_map;
-        id_value_map.reserve(specialization_info->mapEntryCount);
-        for (auto i = 0u; i < specialization_info->mapEntryCount; ++i) {
-            auto const &map_entry = specialization_info->pMapEntries[i];
-            assert(map_entry.size % 4 == 0);
-
-            auto const begin = reinterpret_cast<uint32_t const *>(specialization_info->pData) + map_entry.offset / 4;
-            auto const end = begin + map_entry.size / 4;
-            id_value_map.emplace(map_entry.constantID, std::vector<uint32_t>(begin, end));
-        }
-
-        // Apply the specialization-constant values and revalidate the shader module.
-        spv_target_env const spirv_environment = ((api_version >= VK_API_VERSION_1_1) ? SPV_ENV_VULKAN_1_1 : SPV_ENV_VULKAN_1_0);
-        spvtools::Optimizer optimizer(spirv_environment);
-        optimizer.RegisterPass(spvtools::CreateSetSpecConstantDefaultValuePass(id_value_map));
-        optimizer.RegisterPass(spvtools::CreateFreezeSpecConstantValuePass());
-        std::vector<uint32_t> specialized_spirv;
-        auto const optimized =
-            optimizer.Run(module->words.data(), module->words.size(), &specialized_spirv, spvtools::ValidatorOptions(), true);
-        assert(optimized == true);
-
-        if (optimized) {
-            spv_context ctx = spvContextCreate(spirv_environment);
-            spv_const_binary_t binary{specialized_spirv.data(), specialized_spirv.size()};
-            spv_diagnostic diag = nullptr;
-            spv_validator_options options = spvValidatorOptionsCreate();
-            if (device_extensions.vk_khr_relaxed_block_layout) {
-                spvValidatorOptionsSetRelaxBlockLayout(options, true);
-            }
-            if (device_extensions.vk_khr_uniform_buffer_standard_layout &&
-                enabled_features.uniform_buffer_standard_layout.uniformBufferStandardLayout == VK_TRUE) {
-                spvValidatorOptionsSetUniformBufferStandardLayout(options, true);
-            }
-            if (device_extensions.vk_ext_scalar_block_layout &&
-                enabled_features.scalar_block_layout_features.scalarBlockLayout == VK_TRUE) {
-                spvValidatorOptionsSetScalarBlockLayout(options, true);
-            }
-            auto const spv_valid = spvValidateWithOptions(ctx, options, &binary, &diag);
-            if (spv_valid != SPV_SUCCESS) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                "VUID-VkPipelineShaderStageCreateInfo-module-parameter",
-                                "After specialization was applied, %s does not contain valid spirv for stage %s.",
-                                report_data->FormatHandle(module->vk_shader_module).c_str(),
-                                string_VkShaderStageFlagBits(pStage->stage));
-            }
-
-            spvValidatorOptionsDestroy(options);
-            spvDiagnosticDestroy(diag);
-            spvContextDestroy(ctx);
-        }
-    }
-
     // Check the entrypoint
     if (entrypoint == module->end()) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -3051,6 +2993,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
         shaders[stage_id] = GetShaderModuleState(pStage->module);
         entrypoints[stage_id] = FindEntrypoint(shaders[stage_id], pStage->pName, pStage->stage);
         skip |= ValidatePipelineShaderStage(pStage, pipeline, pipeline->stage_state[i], shaders[stage_id], entrypoints[stage_id],
+
                                             (pointlist_stage_mask == pStage->stage));
     }
 
@@ -3152,9 +3095,11 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
             if (cache->Contains(hash)) return false;
         }
 
-        // Use SPIRV-Tools validator to try and catch any issues with the module itself. If specialization constants are present,
-        // the default values will be used during validation.
-        spv_target_env const spirv_environment = ((api_version >= VK_API_VERSION_1_1) ? SPV_ENV_VULKAN_1_1 : SPV_ENV_VULKAN_1_0);
+        // Use SPIRV-Tools validator to try and catch any issues with the module itself
+        spv_target_env spirv_environment = SPV_ENV_VULKAN_1_0;
+        if (api_version >= VK_API_VERSION_1_1) {
+            spirv_environment = SPV_ENV_VULKAN_1_1;
+        }
         spv_context ctx = spvContextCreate(spirv_environment);
         spv_const_binary_t binary{pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)};
         spv_diagnostic diag = nullptr;
@@ -3209,7 +3154,7 @@ void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, c
     if (VK_SUCCESS != result) return;
     create_shader_module_api_state *csm_state = reinterpret_cast<create_shader_module_api_state *>(csm_state_data);
 
-    spv_target_env const spirv_environment = ((api_version >= VK_API_VERSION_1_1) ? SPV_ENV_VULKAN_1_1 : SPV_ENV_VULKAN_1_0);
+    spv_target_env spirv_environment = ((api_version >= VK_API_VERSION_1_1) ? SPV_ENV_VULKAN_1_1 : SPV_ENV_VULKAN_1_0);
     bool is_spirv = (pCreateInfo->pCode[0] == spv::MagicNumber);
     std::unique_ptr<SHADER_MODULE_STATE> new_shader_module(
         is_spirv ? new SHADER_MODULE_STATE(pCreateInfo, *pShaderModule, spirv_environment, csm_state->unique_shader_id)
