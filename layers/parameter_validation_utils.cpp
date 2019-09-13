@@ -1962,6 +1962,14 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                         "pCreateInfos->flags contains the VK_PIPELINE_CREATE_DERIVATIVE_BIT flag and "
                                         "pCreateInfos->basePipelineHandle is not VK_NULL_HANDLE.");
                     }
+                } else {
+                    if (static_cast<const uint32_t>(pCreateInfos[i].basePipelineIndex) >= createInfoCount) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                        "VUID-VkGraphicsPipelineCreateInfo-flags-00723",
+                                        "vkCreateGraphicsPipelines parameter pCreateInfos->basePipelineIndex (%d) must be a valid"
+                                        "index into the pCreateInfos array, of size %d.",
+                                        pCreateInfos[i].basePipelineIndex, createInfoCount);
+                    }
                 }
             }
 
