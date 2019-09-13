@@ -1207,13 +1207,13 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
 
 // For given cvdescriptorset::DescriptorSet, verify that its Set is compatible w/ the setLayout corresponding to
 // pipelineLayout[layoutIndex]
-static bool VerifySetLayoutCompatibility(const cvdescriptorset::DescriptorSet *descriptor_set,
+static bool VerifySetLayoutCompatibility(const debug_report_data *report_data, const cvdescriptorset::DescriptorSet *descriptor_set,
                                          PIPELINE_LAYOUT_STATE const *pipeline_layout, const uint32_t layoutIndex,
                                          string &errorMsg) {
     auto num_sets = pipeline_layout->set_layouts.size();
     if (layoutIndex >= num_sets) {
         stringstream errorStr;
-        errorStr << "VkPipelineLayout (" << pipeline_layout->layout << ") only contains " << num_sets
+        errorStr << report_data->FormatHandle(pipeline_layout->layout) << ") only contains " << num_sets
                  << " setLayouts corresponding to sets 0-" << num_sets - 1 << ", but you're attempting to bind set to index "
                  << layoutIndex;
         errorMsg = errorStr.str();
@@ -1221,7 +1221,8 @@ static bool VerifySetLayoutCompatibility(const cvdescriptorset::DescriptorSet *d
     }
     if (descriptor_set->IsPushDescriptor()) return true;
     auto layout_node = pipeline_layout->set_layouts[layoutIndex];
-    return cvdescriptorset::VerifySetLayoutCompatibility(layout_node.get(), descriptor_set->GetLayout().get(), &errorMsg);
+    return cvdescriptorset::VerifySetLayoutCompatibility(report_data, layout_node.get(), descriptor_set->GetLayout().get(),
+                                                         &errorMsg);
 }
 
 // Validate overall state at the time of a draw call
@@ -1259,8 +1260,8 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(cb_node->commandBuffer), kVUID_Core_DrawState_DescriptorSetNotBound,
                         "%s uses set #%u but that set is not bound.", report_data->FormatHandle(pPipe->pipeline).c_str(), setIndex);
-        } else if (!VerifySetLayoutCompatibility(state.per_set[setIndex].bound_descriptor_set, &pipeline_layout, setIndex,
-                                                 errorString)) {
+        } else if (!VerifySetLayoutCompatibility(report_data, state.per_set[setIndex].bound_descriptor_set, &pipeline_layout,
+                                                 setIndex, errorString)) {
             // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
             VkDescriptorSet setHandle = state.per_set[setIndex].bound_descriptor_set->GetSet();
             result |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
@@ -7615,7 +7616,7 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
         const cvdescriptorset::DescriptorSet *descriptor_set = GetSetNode(pDescriptorSets[set_idx]);
         if (descriptor_set) {
             // Verify that set being bound is compatible with overlapping setLayout of pipelineLayout
-            if (!VerifySetLayoutCompatibility(descriptor_set, pipeline_layout, set_idx + firstSet, error_string)) {
+            if (!VerifySetLayoutCompatibility(report_data, descriptor_set, pipeline_layout, set_idx + firstSet, error_string)) {
                 skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
                             HandleToUint64(pDescriptorSets[set_idx]), "VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358",
