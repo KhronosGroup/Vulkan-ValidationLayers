@@ -206,6 +206,9 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             "surface-nullalloc": "\"VUID-vkDestroySurfaceKHR-surface-01268\"",
             "framebuffer-compatalloc": "\"VUID-vkDestroyFramebuffer-framebuffer-00893\"",
             "framebuffer-nullalloc": "\"VUID-vkDestroyFramebuffer-framebuffer-00894\"",
+            "VkGraphicsPipelineCreateInfo-basePipelineHandle": "\"VUID-VkGraphicsPipelineCreateInfo-flags-00722\"",
+            "VkComputePipelineCreateInfo-basePipelineHandle": "\"VUID-VkComputePipelineCreateInfo-flags-00697\"",
+            "VkRayTracingPipelineCreateInfoNV-basePipelineHandle": "\"VUID-VkRayTracingPipelineCreateInfoNV-flags-02404\"",
            }
 
         # Commands shadowed by interface functions and are not implemented
@@ -759,7 +762,14 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             indent = self.decIndent(indent)
             pre_call_code += '%s}\n' % indent
         else:
-            pre_call_code += '%sskip |= ValidateObject(%s, %s%s, %s, %s, %s, %s);\n' % (indent, disp_name, prefix, obj_name, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
+            bonus_indent = ''
+            if 'basePipelineHandle' in obj_name:
+                pre_call_code += '%sif ((%sflags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) && (%sbasePipelineIndex == -1))\n' % (indent, prefix, prefix)
+                bonus_indent = '    '
+                null_allowed = 'false'
+                manual_vuid_index = parent_name + '-' + obj_name
+                param_vuid = self.manual_vuids.get(manual_vuid_index, "kVUIDUndefined")
+            pre_call_code += '%s%sskip |= ValidateObject(%s, %s%s, %s, %s, %s, %s);\n' % (bonus_indent, indent, disp_name, prefix, obj_name, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
         return pre_call_code
     #
     # first_level_param indicates if elements are passed directly into the function else they're below a ptr/struct
