@@ -45,7 +45,7 @@
  * the IndexVector, but that's fine given how it is used in parameter validation.
  */
 class ParameterName {
-   public:
+  public:
     /// Container for index values to be used with parameter name string formatting.
     typedef std::initializer_list<size_t> IndexVector;
 
@@ -53,7 +53,7 @@ class ParameterName {
     /// one format specifier for each index value specified.
     const char *const IndexFormatSpecifier = "%i";
 
-   public:
+  public:
     /**
      * Construct a ParameterName object from a string literal, without formatting.
      *
@@ -61,7 +61,7 @@ class ParameterName {
      *
      * @pre The source string must not contain the %i format specifier.
      */
-    ParameterName(const char *source) : source_(source), num_indices_(0) { assert(IsValid()); }
+    ParameterName(const char *source) : source_(source), args_(nullptr), num_indices_(0) { assert(IsValid()); }
 
     /**
      * Construct a ParameterName object from a string literal, with formatting.
@@ -80,7 +80,7 @@ class ParameterName {
     /// Retrive the formatted name string.
     std::string get_name() const { return (num_indices_ == 0) ? std::string(source_) : Format(); }
 
-   private:
+  private:
     /// Replace the %i format specifiers in the source string with the values from the index vector.
     std::string Format() const {
         std::string::size_type current = 0;
@@ -121,7 +121,7 @@ class ParameterName {
         return (count == num_indices_);
     }
 
-   private:
+  private:
     const char *source_;  ///< Format string.
     const size_t *args_;  ///< Array index values for formatting.
     size_t num_indices_;  ///< Number of array index values.

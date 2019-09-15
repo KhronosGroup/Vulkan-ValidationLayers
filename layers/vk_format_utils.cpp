@@ -1213,6 +1213,14 @@ VK_LAYER_EXPORT VkDeviceSize SafeModulo(VkDeviceSize dividend, VkDeviceSize divi
     return result;
 }
 
+VK_LAYER_EXPORT VkDeviceSize SafeDivision(VkDeviceSize dividend, VkDeviceSize divisor) {
+    VkDeviceSize result = 0;
+    if (divisor != 0) {
+        result = dividend / divisor;
+    }
+    return result;
+}
+
 struct VULKAN_PER_PLANE_COMPATIBILITY {
     uint32_t width_divisor;
     uint32_t height_divisor;
@@ -1290,6 +1298,7 @@ const std::map<VkFormat, VULKAN_MULTIPLANE_COMPATIBILITY> vk_multiplane_compatib
 // clang-format on
 
 uint32_t GetPlaneIndex(VkImageAspectFlags aspect) {
+    // Returns an out of bounds index on error
     switch (aspect) {
         case VK_IMAGE_ASPECT_PLANE_0_BIT:
             return 0;
@@ -1301,7 +1310,8 @@ uint32_t GetPlaneIndex(VkImageAspectFlags aspect) {
             return 2;
             break;
         default:
-            return 0;
+            // If more than one plane bit is set, return error condition
+            return VK_MULTIPLANE_FORMAT_MAX_PLANES;
             break;
     }
 }

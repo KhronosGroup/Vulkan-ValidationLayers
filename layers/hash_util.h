@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2016 The Khronos Group Inc.
- * Copyright (c) 2015-2016 Valve Corporation
- * Copyright (c) 2015-2016 LunarG, Inc.
- * Copyright (C) 2015-2016 Google Inc.
+/* Copyright (c) 2015-2019 The Khronos Group Inc.
+ * Copyright (c) 2015-2019 Valve Corporation
+ * Copyright (c) 2015-2019 LunarG, Inc.
+ * Copyright (C) 2015-2019 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ size_t HashWithUnderlying(Value value, typename std::enable_if<std::is_enum<Valu
 }
 
 class HashCombiner {
-   public:
+  public:
     using Key = size_t;
 
     template <typename Value>
@@ -96,7 +96,7 @@ class HashCombiner {
     Key Value() const { return combined_; }
     void Reset(Key combined = 0) { combined_ = combined; }
 
-   private:
+  private:
     Key combined_;
 };
 
@@ -128,7 +128,7 @@ struct IsOrderedContainer {
 // function object
 template <typename T, typename Hasher = std::hash<T>, typename KeyEqual = std::equal_to<T>>
 class Dictionary {
-   public:
+  public:
     using Def = T;
     using Id = std::shared_ptr<const Def>;
 
@@ -146,7 +146,7 @@ class Dictionary {
         return *dict.insert(from_input).first;
     }
 
-   private:
+  private:
     struct HashKeyValue {
         size_t operator()(const Id &value) const { return Hasher()(*value); }
     };

@@ -1,9 +1,9 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2017 The Khronos Group Inc.
-# Copyright (c) 2015-2017 Valve Corporation
-# Copyright (c) 2015-2017 LunarG, Inc.
-# Copyright (c) 2015-2017 Google Inc.
+# Copyright (c) 2015-2019 The Khronos Group Inc.
+# Copyright (c) 2015-2019 Valve Corporation
+# Copyright (c) 2015-2019 LunarG, Inc.
+# Copyright (c) 2015-2019 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ from common_codegen import *
 # DispatchTableHelperOutputGeneratorOptions - subclass of GeneratorOptions.
 class DispatchTableHelperOutputGeneratorOptions(GeneratorOptions):
     def __init__(self,
+                 conventions = None,
                  filename = None,
                  directory = '.',
                  apiname = None,
@@ -47,7 +48,7 @@ class DispatchTableHelperOutputGeneratorOptions(GeneratorOptions):
                  apientryp = '',
                  alignFuncParam = 0,
                  expandEnumerants = True):
-        GeneratorOptions.__init__(self, filename, directory, apiname, profile,
+        GeneratorOptions.__init__(self, conventions, filename, directory, apiname, profile,
                                   versions, emitversions, defaultExtensions,
                                   addExtensions, removeExtensions, emitExtensions, sortProcedure)
         self.prefixText      = prefixText
@@ -78,6 +79,10 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
     # Called once at the beginning of each run
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
+        
+        # Initialize members that require the tree
+        self.handle_types = GetHandleTypes(self.registry.tree)
+
         write("#pragma once", file=self.outFile)
         # User-supplied prefix text, if any (list of strings)
         if (genOpts.prefixText):
@@ -89,9 +94,9 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         write(file_comment, file=self.outFile)
         # Copyright Notice
         copyright =  '/*\n'
-        copyright += ' * Copyright (c) 2015-2017 The Khronos Group Inc.\n'
-        copyright += ' * Copyright (c) 2015-2017 Valve Corporation\n'
-        copyright += ' * Copyright (c) 2015-2017 LunarG, Inc.\n'
+        copyright += ' * Copyright (c) 2015-2019 The Khronos Group Inc.\n'
+        copyright += ' * Copyright (c) 2015-2019 Valve Corporation\n'
+        copyright += ' * Copyright (c) 2015-2019 LunarG, Inc.\n'
         copyright += ' *\n'
         copyright += ' * Licensed under the Apache License, Version 2.0 (the "License");\n'
         copyright += ' * you may not use this file except in compliance with the License.\n'
@@ -118,6 +123,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         preamble += '#include <unordered_set>\n'
         preamble += '#include <unordered_map>\n'
         preamble += '#include "vk_layer_dispatch_table.h"\n'
+        preamble += '#include "vk_extension_helper.h"\n'
 
         write(copyright, file=self.outFile)
         write(preamble, file=self.outFile)
@@ -167,17 +173,16 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
     #
     # Determine if this API should be ignored or added to the instance or device dispatch table
     def AddCommandToDispatchList(self, name, handle_type, protect, cmdinfo):
-        handle = self.registry.tree.find("types/type/[name='" + handle_type + "'][@category='handle']")
-        if handle is None:
+        if handle_type not in self.handle_types:
             return
         if handle_type != 'VkInstance' and handle_type != 'VkPhysicalDevice' and name != 'vkGetInstanceProcAddr':
             self.device_dispatch_list.append((name, self.featureExtraProtect))
             extension = "VK_VERSION" not in self.featureName
             promoted = not extension and "VK_VERSION_1_0" != self.featureName
             if promoted or extension:
+                # We want feature written for all promoted entrypoints, in addition to extensions
                 self.device_stub_list.append([name, self.featureName])
-                if extension:
-                    self.device_extension_list.append([name, self.featureName])
+                self.device_extension_list.append([name, self.featureName])
                 # Build up stub function
                 return_type = ''
                 decl = self.makeCDecls(cmdinfo.elem)[1]
@@ -227,12 +232,13 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         ext_fcn += '//   o  Determine if the API has an associated extension\n'
         ext_fcn += '//   o  If it does, determine if that extension name is present in the passed-in set of enabled_ext_names \n'
         ext_fcn += '//   If the APIname has no parent extension, OR its parent extension name is IN the set, return TRUE, else FALSE\n'
-        ext_fcn += 'static inline bool ApiParentExtensionEnabled(const std::string api_name, const std::unordered_set<std::string> &enabled_ext_names) {\n'
+        ext_fcn += 'static inline bool ApiParentExtensionEnabled(const std::string api_name, const DeviceExtensions *device_extension_info) {\n'
         ext_fcn += '    auto has_ext = api_extension_map.find(api_name);\n'
-        ext_fcn += '    // Is this API part of an extension?\n'
+        ext_fcn += '    // Is this API part of an extension or feature group?\n'
         ext_fcn += '    if (has_ext != api_extension_map.end()) {\n'
         ext_fcn += '        // Was the extension for this API enabled in the CreateDevice call?\n'
-        ext_fcn += '        if (enabled_ext_names.find(has_ext->second) == enabled_ext_names.end()) {\n'
+        ext_fcn += '        auto info = device_extension_info->get_info(has_ext->second.c_str());\n'
+        ext_fcn += '        if ((!info.state) || (device_extension_info->*(info.state) != true)) {\n'
         ext_fcn += '            return false;\n'
         ext_fcn += '        }\n'
         ext_fcn += '    }\n'

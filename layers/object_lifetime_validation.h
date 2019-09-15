@@ -20,6 +20,18 @@
  * Author: Tobin Ehlis <tobine@google.com>
  */
 
+// shared_mutex support added in MSVC 2015 update 2
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
+#include <shared_mutex>
+typedef std::shared_mutex object_lifetime_mutex_t;
+typedef std::shared_lock<object_lifetime_mutex_t> read_object_lifetime_mutex_t;
+typedef std::unique_lock<object_lifetime_mutex_t> write_object_lifetime_mutex_t;
+#else
+typedef std::mutex object_lifetime_mutex_t;
+typedef std::unique_lock<object_lifetime_mutex_t> read_object_lifetime_mutex_t;
+typedef std::unique_lock<object_lifetime_mutex_t> write_object_lifetime_mutex_t;
+#endif
+
 // Suppress unused warning on Linux
 #if defined(__GNUC__)
 #define DECORATE_UNUSED __attribute__((unused))
@@ -42,14 +54,8 @@ extern uint64_t object_track_index;
 typedef VkFlags ObjectStatusFlags;
 enum ObjectStatusFlagBits {
     OBJSTATUS_NONE = 0x00000000,                      // No status is set
-    OBJSTATUS_FENCE_IS_SUBMITTED = 0x00000001,        // Fence has been submitted
-    OBJSTATUS_VIEWPORT_BOUND = 0x00000002,            // Viewport state object has been bound
-    OBJSTATUS_RASTER_BOUND = 0x00000004,              // Viewport state object has been bound
-    OBJSTATUS_COLOR_BLEND_BOUND = 0x00000008,         // Viewport state object has been bound
-    OBJSTATUS_DEPTH_STENCIL_BOUND = 0x00000010,       // Viewport state object has been bound
-    OBJSTATUS_GPU_MEM_MAPPED = 0x00000020,            // Memory object is currently mapped
-    OBJSTATUS_COMMAND_BUFFER_SECONDARY = 0x00000040,  // Command Buffer is of type SECONDARY
-    OBJSTATUS_CUSTOM_ALLOCATOR = 0x00000080,          // Allocated with custom allocator
+    OBJSTATUS_COMMAND_BUFFER_SECONDARY = 0x00000001,  // Command Buffer is of type SECONDARY
+    OBJSTATUS_CUSTOM_ALLOCATOR = 0x00000002,          // Allocated with custom allocator
 };
 
 // Object and state information structure
@@ -61,42 +67,69 @@ struct ObjTrackState {
     std::unique_ptr<std::unordered_set<uint64_t> > child_objects;  // Child objects (used for VkDescriptorPool only)
 };
 
-// Track Queue information
-struct ObjTrackQueueInfo {
-    uint32_t queue_node_index;
-    VkQueue queue;
-};
-
-typedef std::unordered_map<uint64_t, ObjTrackState *> object_map_type;
+typedef vl_concurrent_unordered_map<uint64_t, std::shared_ptr<ObjTrackState>, 6> object_map_type;
 
 class ObjectLifetimes : public ValidationObject {
-   public:
-    uint64_t num_objects[kVulkanObjectTypeMax + 1];
-    uint64_t num_total_objects;
-    // Vector of unordered_maps per object type to hold ObjTrackState info
-    std::vector<object_map_type> object_map;
-    // Special-case map for swapchain images
-    std::unordered_map<uint64_t, ObjTrackState *> swapchainImageMap;
-    // Map of queue information structures, one per queue
-    std::unordered_map<VkQueue, ObjTrackQueueInfo *> queue_info_map;
+  public:
+    // Override chassis read/write locks for this validation object
+    // This override takes a deferred lock. i.e. it is not acquired.
+    // This class does its own locking with a shared mutex.
+    virtual std::unique_lock<std::mutex> write_lock() {
+        return std::unique_lock<std::mutex>(validation_object_mutex, std::defer_lock);
+    }
 
-    std::vector<VkQueueFamilyProperties> queue_family_properties;
+    object_lifetime_mutex_t object_lifetime_mutex;
+    write_object_lifetime_mutex_t write_shared_lock() { return write_object_lifetime_mutex_t(object_lifetime_mutex); }
+    read_object_lifetime_mutex_t read_shared_lock() { return read_object_lifetime_mutex_t(object_lifetime_mutex); }
+
+    std::atomic<uint64_t> num_objects[kVulkanObjectTypeMax + 1];
+    std::atomic<uint64_t> num_total_objects;
+    // Vector of unordered_maps per object type to hold ObjTrackState info
+    object_map_type object_map[kVulkanObjectTypeMax + 1];
+    // Special-case map for swapchain images
+    object_map_type swapchainImageMap;
 
     // Constructor for object lifetime tracking
-    ObjectLifetimes() : num_objects{}, num_total_objects(0), object_map{} { object_map.resize(kVulkanObjectTypeMax + 1); }
+    ObjectLifetimes() : num_objects{}, num_total_objects(0) {}
 
-    bool DeviceReportUndestroyedObjects(VkDevice device, VulkanObjectType object_type, const std::string &error_code);
-    void DeviceDestroyUndestroyedObjects(VkDevice device, VulkanObjectType object_type);
+    void InsertObject(object_map_type &map, uint64_t object_handle, VulkanObjectType object_type,
+                      std::shared_ptr<ObjTrackState> pNode) {
+        bool inserted = map.insert(object_handle, pNode);
+        if (!inserted) {
+            // The object should not already exist. If we couldn't add it to the map, there was probably
+            // a race condition in the app. Report an error and move on.
+            VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[object_type];
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, object_handle, kVUID_ObjectTracker_Info,
+                    "Couldn't insert %s Object 0x%" PRIxLEAST64
+                    ", already existed. This should not happen and may indicate a "
+                    "race condition in the application.",
+                    object_string[object_type], object_handle);
+        }
+    }
+
+    bool ReportUndestroyedInstanceObjects(VkInstance instance, const std::string &error_code);
+    bool ReportUndestroyedDeviceObjects(VkDevice device, const std::string &error_code);
+
+    bool ReportLeakedDeviceObjects(VkDevice device, VulkanObjectType object_type, const std::string &error_code);
+    bool ReportLeakedInstanceObjects(VkInstance instance, VulkanObjectType object_type, const std::string &error_code);
+
+    template <typename ObjType>
+    void DestroyUndestroyedObjects(ObjType dispatchable_object, VulkanObjectType object_type) {
+        auto snapshot = object_map[object_type].snapshot();
+        for (const auto &item : snapshot) {
+            auto object_info = item.second;
+            DestroyObjectSilently(object_info->handle, object_type);
+        }
+    }
     void CreateQueue(VkDevice device, VkQueue vkObj);
-    void AddQueueInfo(VkDevice device, uint32_t queue_node_index, VkQueue queue);
-    void ValidateQueueFlags(VkQueue queue, const char *function);
     void AllocateCommandBuffer(VkDevice device, const VkCommandPool command_pool, const VkCommandBuffer command_buffer,
                                VkCommandBufferLevel level);
     void AllocateDescriptorSet(VkDevice device, VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
     void CreateSwapchainImageObject(VkDevice dispatchable_object, VkImage swapchain_image, VkSwapchainKHR swapchain);
-    bool ReportUndestroyedObjects(VkDevice device, const std::string &error_code);
-    void DestroyUndestroyedObjects(VkDevice device);
-    bool ValidateDeviceObject(uint64_t device_handle, const char *invalid_handle_code, const char *wrong_device_code);
+    void DestroyLeakedInstanceObjects(VkInstance instance);
+    void DestroyLeakedDeviceObjects(VkDevice device);
+    bool ValidateDeviceObject(const VulkanTypedHandle &device_typed, const char *invalid_handle_code,
+                              const char *wrong_device_code);
     void DestroyQueueDataStructures(VkDevice device);
     bool ValidateCommandBuffer(VkDevice device, VkCommandPool command_pool, VkCommandBuffer command_buffer);
     bool ValidateDescriptorSet(VkDevice device, VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
@@ -122,13 +155,13 @@ class ObjectLifetimes : public ValidationObject {
         auto object_handle = HandleToUint64(object);
 
         if (object_type == kVulkanObjectTypeDevice) {
-            return ValidateDeviceObject(object_handle, invalid_handle_code, wrong_device_code);
+            return ValidateDeviceObject(VulkanTypedHandle(object, object_type), invalid_handle_code, wrong_device_code);
         }
 
         VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[object_type];
 
         // Look for object in object map
-        if (object_map[object_type].find(object_handle) == object_map[object_type].end()) {
+        if (!object_map[object_type].contains(object_handle)) {
             // If object is an image, also look for it in the swapchain image map
             if ((object_type != kVulkanObjectTypeImage) || (swapchainImageMap.find(object_handle) == swapchainImageMap.end())) {
                 // Object not found, look for it in other device object maps
@@ -169,18 +202,13 @@ class ObjectLifetimes : public ValidationObject {
     void CreateObject(T1 dispatchable_object, T2 object, VulkanObjectType object_type, const VkAllocationCallbacks *pAllocator) {
         uint64_t object_handle = HandleToUint64(object);
         bool custom_allocator = (pAllocator != nullptr);
-        if (!object_map[object_type].count(object_handle)) {
-            VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[object_type];
-            log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, debug_object_type, object_handle, kVUID_ObjectTracker_Info,
-                    "OBJ[0x%" PRIxLEAST64 "] : CREATE %s object 0x%" PRIxLEAST64, object_track_index++, object_string[object_type],
-                    object_handle);
-
-            ObjTrackState *pNewObjNode = new ObjTrackState;
+        if (!object_map[object_type].contains(object_handle)) {
+            auto pNewObjNode = std::make_shared<ObjTrackState>();
             pNewObjNode->object_type = object_type;
             pNewObjNode->status = custom_allocator ? OBJSTATUS_CUSTOM_ALLOCATOR : OBJSTATUS_NONE;
             pNewObjNode->handle = object_handle;
 
-            object_map[object_type][object_handle] = pNewObjNode;
+            InsertObject(object_map[object_type], object_handle, object_type, pNewObjNode);
             num_objects[object_type]++;
             num_total_objects++;
 
@@ -195,27 +223,31 @@ class ObjectLifetimes : public ValidationObject {
         auto object_handle = HandleToUint64(object);
         assert(object_handle != VK_NULL_HANDLE);
 
-        auto item = object_map[object_type].find(object_handle);
-        assert(item != object_map[object_type].end());
-
-        ObjTrackState *pNode = item->second;
+        auto item = object_map[object_type].pop(object_handle);
+        if (item == object_map[object_type].end()) {
+            // We've already checked that the object exists. If we couldn't find and atomically remove it
+            // from the map, there must have been a race condition in the app. Report an error and move on.
+            VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[object_type];
+            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, object_handle, kVUID_ObjectTracker_Info,
+                    "Couldn't destroy %s Object 0x%" PRIxLEAST64
+                    ", not found. This should not happen and may indicate a "
+                    "race condition in the application.",
+                    object_string[object_type], object_handle);
+            return;
+        }
         assert(num_total_objects > 0);
 
         num_total_objects--;
-        assert(num_objects[pNode->object_type] > 0);
+        assert(num_objects[item->second->object_type] > 0);
 
-        num_objects[pNode->object_type]--;
-
-        delete pNode;
-        object_map[object_type].erase(item);
+        num_objects[item->second->object_type]--;
     }
 
     template <typename T1, typename T2>
     void RecordDestroyObject(T1 dispatchable_object, T2 object, VulkanObjectType object_type) {
         auto object_handle = HandleToUint64(object);
         if (object_handle != VK_NULL_HANDLE) {
-            auto item = object_map[object_type].find(object_handle);
-            if (item != object_map[object_type].end()) {
+            if (object_map[object_type].contains(object_handle)) {
                 DestroyObjectSilently(object, object_type);
             }
         }
@@ -230,17 +262,11 @@ class ObjectLifetimes : public ValidationObject {
         VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[object_type];
         bool skip = false;
 
-        if (object_handle != VK_NULL_HANDLE) {
+        if ((expected_custom_allocator_code != kVUIDUndefined || expected_default_allocator_code != kVUIDUndefined) &&
+            object_handle != VK_NULL_HANDLE) {
             auto item = object_map[object_type].find(object_handle);
             if (item != object_map[object_type].end()) {
-                ObjTrackState *pNode = item->second;
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, debug_object_type, object_handle,
-                                kVUID_ObjectTracker_Info,
-                                "OBJ_STAT Destroy %s obj 0x%" PRIxLEAST64 " (%" PRIu64 " total objs remain & %" PRIu64 " %s objs).",
-                                object_string[object_type], HandleToUint64(object), num_total_objects - 1,
-                                num_objects[pNode->object_type] - 1, object_string[object_type]);
-
-                auto allocated_with_custom = (pNode->status & OBJSTATUS_CUSTOM_ALLOCATOR) ? true : false;
+                auto allocated_with_custom = (item->second->status & OBJSTATUS_CUSTOM_ALLOCATOR) ? true : false;
                 if (allocated_with_custom && !custom_allocator && expected_custom_allocator_code != kVUIDUndefined) {
                     // This check only verifies that custom allocation callbacks were provided to both Create and Destroy calls,
                     // it cannot verify that these allocation callbacks are compatible with each other.

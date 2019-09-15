@@ -173,6 +173,8 @@ VK_LAYER_EXPORT uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags a
 VK_LAYER_EXPORT double FormatTexelSize(VkFormat format);
 VK_LAYER_EXPORT VkFormatCompatibilityClass FormatCompatibilityClass(VkFormat format);
 VK_LAYER_EXPORT VkDeviceSize SafeModulo(VkDeviceSize dividend, VkDeviceSize divisor);
+VK_LAYER_EXPORT VkDeviceSize SafeDivision(VkDeviceSize dividend, VkDeviceSize divisor);
+VK_LAYER_EXPORT uint32_t GetPlaneIndex(VkImageAspectFlags aspect);
 VK_LAYER_EXPORT VkFormat FindMultiplaneCompatibleFormat(VkFormat fmt, VkImageAspectFlags plane_aspect);
 VK_LAYER_EXPORT VkExtent2D FindMultiplaneExtentDivisors(VkFormat mp_fmt, VkImageAspectFlags plane_aspect);
 

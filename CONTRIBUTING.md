@@ -56,7 +56,9 @@ to work on an issue that is assigned, simply coordinate with the current assigne
 #### **Coding Conventions and Formatting**
 * Use the **[Google style guide](https://google.github.io/styleguide/cppguide.html)** for source code with the following exceptions:
     * The column limit is 132 (as opposed to the default value 80). The clang-format tool will handle this. See below.
-    * The indent is 4 spaces instead of the default 2 spaces. Again, the clang-format tool will handle this.
+    * The indent is 4 spaces instead of the default 2 spaces. Access modifier (e.g. `public:`) is indented 2 spaces instead of the
+      default 1 space. Again, the clang-format tool will handle this.
+    * The C++ file extension is `*.cpp` instead of the default `*.cc`.
     * If you can justify a reason for violating a rule in the guidelines, then you are free to do so. Be prepared to defend your
 decision during code review. This should be used responsibly. An example of a bad reason is "I don't like that rule." An example of
 a good reason is "This violates the style guide, but it improves type safety."
@@ -77,7 +79,7 @@ a good reason is "This violates the style guide, but it improves type safety."
 >        $ git commit
 
 * **Commit Messages**
-    * Limit the subject line to 50 characters -- this allows the information to display correctly in git/Github logs
+    * Limit the subject line to 64 characters -- this allows the information to display correctly in git/GitHub logs
     * Begin subject line with a one-word component description followed by a colon (e.g. build, docs, layers, tests, etc.)
     * Separate subject from body with a blank line
     * Wrap the body at 72 characters
@@ -92,22 +94,10 @@ that to be accepted into the repository, the pull request must [pass all tests](
 -- the automatic Github Travis and AppVeyor continuous integration features will assist in enforcing this requirement.
 
 #### **Testing Your Changes**
-* Run the existing tests in the repository before and after each if your commits to check for any regressions.
-  There are some tests that appear in all repositories.
-  These tests can be found in the following folders inside of your target build directory:
+* Run the included layer validation tests (vk_layer_validation_tests) in the repository before and after each of your commits to check for any regressions.
 
-  (These instructions are for Linux)
+* Write additional layer validation tests that explicitly exercise your changes.
 
-* In the `tests` directory, run:
-
->        run_all_tests.sh
-
-* On Windows, a quick sanity check can be run from inside Visual Studio -- just run the `vk_layer_validation_tests` project,
-or you can run `run_all_tests.ps1` from a PowerShell window
-
-* Note that some tests may fail with known issues or driver-specific problems.
-  The idea here is that your changes should not change the test results, unless that was the intent of your changes.
-* Run tests that explicitly exercise your changes.
 * Feel free to subject your code changes to other tests as well!
 
 #### **GitHub Cloud CI Testing**
@@ -134,6 +124,12 @@ fix the problem, they should do so to better assist the user.
 * **Validation Statistics:** The `vk_validation_stats.py` script (in the scripts directory) inspects the layer and test source files
 and reports a variety of statistics on validation completeness and correctness. Before submitting a change you should run this
 script with the consistency check (`-c`) argument to ensure that your changes have not introduced any inconsistencies in the code.
+* **Generated Source Code:** The `layers/generated` directory contains source code that is created by several
+generator scripts in the `scripts` directory. All changes to these scripts _must_ be submitted with the
+corresponding generated output to keep the repository self-consistent. This requirement is enforced by both
+Travis CI and AppVeyor test configurations. Regenerate source files after modifying any of the generator
+scripts and before building and testing your changes. More details can be found in
+[BUILD.md](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/BUILD.md#generated-source-code).
 
 #### Coding Conventions for [CMake](http://cmake.org) files
 
@@ -144,7 +140,7 @@ script with the consistency check (`-c`) argument to ensure that your changes ha
   * Variable and keyword names are upper-case.
 * The format is defined by
   [cmake-format](https://github.com/cheshirekow/cmake_format)
-  using the `.cmake-format.py` file in the repository to define the settings.
+  using the `cmake-format.py` file in the repository to define the settings.
   See the cmake-format page for information about its simple markup for comments.
 * Disable reformatting of a block of comment lines by inserting
   a `# ~~~` comment line before and after that block.
