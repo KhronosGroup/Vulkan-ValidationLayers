@@ -36,10 +36,6 @@ Note that some layers are code-generated and will therefore exist in the directo
 
 `include/vkLayer.h` - header file for layer code.
 
-### Standard Validation
-NOTE: This meta-layer is being deprecated -- users should load the Khronos validation layer (name = `VK_LAYER_KHRONOS_validation`) in its place.
-This is a meta-layer managed by the loader. (name = `VK_LAYER_LUNARG_standard_validation`) - specifying this layer name will cause the loader to load the standard validation layer:  `VK_LAYER_KHRONOS_validation`. Other layers can be specified and the loader will remove duplicates.
-
 ### The Khronos Validation Layer
 
 This layer emcompasses all of the functionality that used to be contained in the following layers: VK_LAYER_GOOGLE_threading, VK_LAYER_LUNARG_parameter_validation, VK_LAYER_LUNARG_object_tracker, VK_LAYER_LUNARG_core_validation, and VK_LAYER_GOOGLE_unique_objects. Each of these functional areas can still disabled individually, and are described below.

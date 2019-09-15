@@ -23,19 +23,13 @@
 #include "spirv-tools/libspirv.h"
 #include "test_common.h"
 
-#if defined(NDEBUG)
-#define U_ASSERT_ONLY __attribute__((unused))
-#else
-#define U_ASSERT_ONLY
-#endif
-
 // Can be used by tests to record additional details / description of test
 #define TEST_DESCRIPTION(desc) RecordProperty("description", desc)
 
 #define ICD_SPV_MAGIC 0x07230203
 
 class VkTestFramework : public ::testing::Test {
-   public:
+  public:
     VkTestFramework();
     ~VkTestFramework();
 
@@ -47,12 +41,11 @@ class VkTestFramework : public ::testing::Test {
                    bool debug = false);
     bool ASMtoSPV(const spv_target_env target_env, const uint32_t options, const char *pasm, std::vector<unsigned int> &spv);
     static bool m_devsim_layer;
-    static bool m_khronos_layer_disable;
     static ANativeWindow *window;
 };
 
 class TestEnvironment : public ::testing::Environment {
-   public:
+  public:
     void SetUp();
 
     void TearDown();

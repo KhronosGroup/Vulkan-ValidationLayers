@@ -6,11 +6,19 @@
         "library_path": "@RELATIVE_LAYER_BINARY@",
         "api_version": "@VK_VERSION@",
         "implementation_version": "1",
-        "description": "LunarG Validation Layer",
+        "description": "Khronos Validation Layer",
         "instance_extensions": [
              {
                  "name": "VK_EXT_debug_report",
-                 "spec_version": "6"
+                 "spec_version": "9"
+             },
+             {
+                 "name": "VK_EXT_debug_utils",
+                 "spec_version": "1"
+             },
+             {
+                 "name": "VK_EXT_validation_features",
+                 "spec_version": "2"
              }
          ],
         "device_extensions": [

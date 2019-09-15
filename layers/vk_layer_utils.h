@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include "cast_utils.h"
 #include "vk_format_utils.h"
 #include "vk_layer_logging.h"
 
@@ -120,45 +121,6 @@ VK_LAYER_EXPORT VkLayerDeviceCreateInfo *get_chain_info(const VkDeviceCreateInfo
 
 static inline bool IsPowerOfTwo(unsigned x) { return x && !(x & (x - 1)); }
 
-// Casts to allow various types of less than 64 bits to be cast to and from uint64_t safely and portably
-template <typename HandleType, typename Uint>
-static inline HandleType CastFromUint(Uint untyped_handle) {
-    static_assert(sizeof(HandleType) == sizeof(Uint), "HandleType must be the same size as untyped handle");
-    return *reinterpret_cast<HandleType *>(&untyped_handle);
-}
-template <typename HandleType, typename Uint>
-static inline Uint CastToUint(HandleType handle) {
-    static_assert(sizeof(HandleType) == sizeof(Uint), "HandleType must be the same size as untyped handle");
-    return *reinterpret_cast<Uint *>(&handle);
-}
-
-// Ensure that the size changing casts are *static* to ensure portability
-template <typename HandleType>
-static inline HandleType CastFromUint64(uint64_t untyped_handle) {
-    static_assert(sizeof(HandleType) <= sizeof(uint64_t), "HandleType must be not larger than the untyped handle size");
-    // Since size mismatched reinterpret casts are strongly non-portable we use std::condtional to find the appropriate
-    // unsigned integer type for the reinterpret cast we are using.  C++11 doesn't have anything like a switch, for the type
-    // conditionals, so the various cases are nested in the "false" type of std::conditional.
-    // The formatting makes it clear, but each indent is else if.
-    typedef
-        typename std::conditional<sizeof(HandleType) == sizeof(uint8_t), uint8_t,
-                                  typename std::conditional<sizeof(HandleType) == sizeof(uint16_t), uint16_t,
-                                                            typename std::conditional<sizeof(HandleType) == sizeof(uint32_t),
-                                                                                      uint32_t, uint64_t>::type>::type>::type Uint;
-    return CastFromUint<HandleType, Uint>(static_cast<Uint>(untyped_handle));
-}
-
-template <typename HandleType>
-static uint64_t CastToUint64(HandleType handle) {
-    static_assert(sizeof(HandleType) <= sizeof(uint64_t), "HandleType must be not larger than the untyped handle size");
-    typedef
-        typename std::conditional<sizeof(HandleType) == sizeof(uint8_t), uint8_t,
-                                  typename std::conditional<sizeof(HandleType) == sizeof(uint16_t), uint16_t,
-                                                            typename std::conditional<sizeof(HandleType) == sizeof(uint32_t),
-                                                                                      uint32_t, uint64_t>::type>::type>::type Uint;
-    return static_cast<uint64_t>(CastToUint<HandleType, Uint>(handle));
-}
-
 extern "C" {
 #endif
 
@@ -171,13 +133,11 @@ typedef enum VkStringErrorFlagBits {
 } VkStringErrorFlagBits;
 typedef VkFlags VkStringErrorFlags;
 
-VK_LAYER_EXPORT void layer_debug_report_actions(debug_report_data *report_data,
-                                                std::vector<VkDebugReportCallbackEXT> &logging_callback,
-                                                const VkAllocationCallbacks *pAllocator, const char *layer_identifier);
+VK_LAYER_EXPORT void layer_debug_report_actions(debug_report_data *report_data, const VkAllocationCallbacks *pAllocator,
+                                                const char *layer_identifier);
 
-VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_data,
-                                                   std::vector<VkDebugUtilsMessengerEXT> &logging_messenger,
-                                                   const VkAllocationCallbacks *pAllocator, const char *layer_identifier);
+VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_data, const VkAllocationCallbacks *pAllocator,
+                                                   const char *layer_identifier);
 
 VK_LAYER_EXPORT VkStringErrorFlags vk_string_validate(const int max_length, const char *char_array);
 VK_LAYER_EXPORT bool white_list(const char *item, const std::set<std::string> &whitelist);
@@ -197,3 +157,161 @@ static inline int u_ffs(int val) {
 #ifdef __cplusplus
 }
 #endif
+
+// shared_mutex support added in MSVC 2015 update 2
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
+#include <shared_mutex>
+#endif
+
+// Limited concurrent_unordered_map that supports internally-synchronized
+// insert/erase/access. Splits locking across N buckets and uses shared_mutex
+// for read/write locking. Iterators are not supported. The following
+// operations are supported:
+//
+// insert_or_assign: Insert a new element or update an existing element.
+// insert: Insert a new element and return whether it was inserted.
+// erase: Remove an element.
+// contains: Returns true if the key is in the map.
+// find: Returns != end() if found, value is in ret->second.
+// pop: Erases and returns the erased value if found.
+//
+// find/end: find returns a vaguely iterator-like type that can be compared to
+// end and can use iter->second to retrieve the reference. This is to ease porting
+// for existing code that combines the existence check and lookup in a single
+// operation (and thus a single lock). i.e.:
+//
+//      auto iter = map.find(key);
+//      if (iter != map.end()) {
+//          T t = iter->second;
+//          ...
+//
+// snapshot: Return an array of elements (key, value pairs) that satisfy an optional
+// predicate. This can be used as a substitute for iterators in exceptional cases.
+template <typename Key, typename T, int BUCKETSLOG2 = 2, typename Hash = std::hash<Key>>
+class vl_concurrent_unordered_map {
+  public:
+    void insert_or_assign(const Key &key, const T &value) {
+        uint32_t h = ConcurrentMapHashObject(key);
+        write_lock_guard_t lock(locks[h].lock);
+        maps[h][key] = value;
+    }
+
+    bool insert(const Key &key, const T &value) {
+        uint32_t h = ConcurrentMapHashObject(key);
+        write_lock_guard_t lock(locks[h].lock);
+        auto ret = maps[h].insert(typename std::unordered_map<Key, T>::value_type(key, value));
+        return ret.second;
+    }
+
+    // returns size_type
+    size_t erase(const Key &key) {
+        uint32_t h = ConcurrentMapHashObject(key);
+        write_lock_guard_t lock(locks[h].lock);
+        return maps[h].erase(key);
+    }
+
+    bool contains(const Key &key) {
+        uint32_t h = ConcurrentMapHashObject(key);
+        read_lock_guard_t lock(locks[h].lock);
+        return maps[h].count(key) != 0;
+    }
+
+    // type returned by find() and end().
+    class FindResult {
+      public:
+        FindResult(bool a, T b) : result(a, std::move(b)) {}
+
+        // == and != only support comparing against end()
+        bool operator==(const FindResult &other) const {
+            if (result.first == false && other.result.first == false) {
+                return true;
+            }
+            return false;
+        }
+        bool operator!=(const FindResult &other) const { return !(*this == other); }
+
+        // Make -> act kind of like an iterator.
+        std::pair<bool, T> *operator->() { return &result; }
+        const std::pair<bool, T> *operator->() const { return &result; }
+
+      private:
+        // (found, reference to element)
+        std::pair<bool, T> result;
+    };
+
+    // find()/end() return a FindResult containing a copy of the value. For end(),
+    // return a default value.
+    FindResult end() { return FindResult(false, T()); }
+
+    FindResult find(const Key &key) {
+        uint32_t h = ConcurrentMapHashObject(key);
+        read_lock_guard_t lock(locks[h].lock);
+
+        auto itr = maps[h].find(key);
+        bool found = itr != maps[h].end();
+
+        if (found) {
+            return FindResult(true, itr->second);
+        } else {
+            return end();
+        }
+    }
+
+    FindResult pop(const Key &key) {
+        uint32_t h = ConcurrentMapHashObject(key);
+        write_lock_guard_t lock(locks[h].lock);
+
+        auto itr = maps[h].find(key);
+        bool found = itr != maps[h].end();
+
+        if (found) {
+            auto ret = std::move(FindResult(true, itr->second));
+            maps[h].erase(itr);
+            return ret;
+        } else {
+            return end();
+        }
+    }
+
+    std::vector<std::pair<const Key, T>> snapshot(std::function<bool(T)> f = nullptr) {
+        std::vector<std::pair<const Key, T>> ret;
+        for (int h = 0; h < BUCKETS; ++h) {
+            read_lock_guard_t lock(locks[h].lock);
+            for (auto j : maps[h]) {
+                if (!f || f(j.second)) {
+                    ret.push_back(j);
+                }
+            }
+        }
+        return ret;
+    }
+
+  private:
+    static const int BUCKETS = (1 << BUCKETSLOG2);
+// shared_mutex support added in MSVC 2015 update 2
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
+#include <shared_mutex>
+    typedef std::shared_mutex lock_t;
+    typedef std::shared_lock<lock_t> read_lock_guard_t;
+    typedef std::unique_lock<lock_t> write_lock_guard_t;
+#else
+    typedef std::mutex lock_t;
+    typedef std::unique_lock<lock_t> read_lock_guard_t;
+    typedef std::unique_lock<lock_t> write_lock_guard_t;
+#endif
+
+    std::unordered_map<Key, T, Hash> maps[BUCKETS];
+    struct {
+        lock_t lock;
+        // Put each lock on its own cache line to avoid false cache line sharing.
+        char padding[(-int(sizeof(lock_t))) & 63];
+    } locks[BUCKETS];
+
+    uint32_t ConcurrentMapHashObject(const Key &object) const {
+        uint64_t u64 = (uint64_t)(uintptr_t)object;
+        uint32_t hash = (uint32_t)(u64 >> 32) + (uint32_t)u64;
+        hash ^= (hash >> BUCKETSLOG2) ^ (hash >> (2 * BUCKETSLOG2));
+        hash &= (BUCKETS - 1);
+        return hash;
+    }
+};

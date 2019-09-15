@@ -29,11 +29,19 @@ class VkImageObj;
 #include "vktestframework.h"
 #endif
 
+#if defined(ANDROID)
+#include <android/log.h>
+#if defined(VALIDATION_APK)
+#include <android_native_app_glue.h>
+#endif
+#endif
+
 #include <algorithm>
 #include <array>
 #include <map>
 #include <memory>
 #include <vector>
+#include <unordered_set>
 
 using namespace std;
 
@@ -49,7 +57,7 @@ std::vector<Dst *> MakeTestbindingHandles(const std::vector<Src *> &v) {
 
 typedef vk_testing::Queue VkQueueObj;
 class VkDeviceObj : public vk_testing::Device {
-   public:
+  public:
     VkDeviceObj(uint32_t id, VkPhysicalDevice obj);
     VkDeviceObj(uint32_t id, VkPhysicalDevice obj, std::vector<const char *> &extension_names,
                 VkPhysicalDeviceFeatures *features = nullptr, void *create_device_pnext = nullptr);
@@ -63,6 +71,7 @@ class VkDeviceObj : public vk_testing::Device {
     VkDevice device() { return handle(); }
     void SetDeviceQueue();
     VkQueueObj *GetDefaultQueue();
+    VkQueueObj *GetDefaultComputeQueue();
 
     uint32_t id;
     VkPhysicalDeviceProperties props;
@@ -71,15 +80,81 @@ class VkDeviceObj : public vk_testing::Device {
     VkQueue m_queue;
 };
 
+// ErrorMonitor Usage:
+//
+// Call SetDesiredFailureMsg with a string to be compared against all
+// encountered log messages, or a validation error enum identifying
+// desired error message. Passing NULL or VALIDATION_ERROR_MAX_ENUM
+// will match all log messages. logMsg will return true for skipCall
+// only if msg is matched or NULL.
+//
+// Call VerifyFound to determine if all desired failure messages
+// were encountered. Call VerifyNotFound to determine if any unexpected
+// failure was encountered.
+class ErrorMonitor {
+  public:
+    ErrorMonitor();
+
+    ~ErrorMonitor() NOEXCEPT;
+
+    // Set monitor to pristine state
+    void Reset();
+
+    // ErrorMonitor will look for an error message containing the specified string(s)
+    void SetDesiredFailureMsg(const VkFlags msgFlags, const std::string msg);
+    void SetDesiredFailureMsg(const VkFlags msgFlags, const char *const msgString);
+
+    // ErrorMonitor will look for an error message containing the specified string(s)
+    template <typename Iter>
+    void SetDesiredFailureMsg(const VkFlags msgFlags, Iter iter, const Iter end) {
+        for (; iter != end; ++iter) {
+            SetDesiredFailureMsg(msgFlags, *iter);
+        }
+    }
+
+    // Set an error that the error monitor will ignore. Do not use this function if you are creating a new test.
+    // TODO: This is stopgap to block new unexpected errors from being introduced. The long-term goal is to remove the use of this
+    // function and its definition.
+    void SetUnexpectedError(const char *const msg);
+
+    VkBool32 CheckForDesiredMsg(const char *const msgString);
+    vector<string> GetOtherFailureMsgs() const;
+    VkDebugReportFlagsEXT GetMessageFlags() const;
+    bool AnyDesiredMsgFound() const;
+    bool AllDesiredMsgsFound() const;
+    void SetError(const char *const errorString);
+    void SetBailout(bool *bailout);
+    void DumpFailureMsgs() const;
+
+    // Helpers
+
+    // ExpectSuccess now takes an optional argument allowing a custom combination of debug flags
+    void ExpectSuccess(VkDebugReportFlagsEXT const message_flag_mask = VK_DEBUG_REPORT_ERROR_BIT_EXT);
+
+    void VerifyFound();
+    void VerifyNotFound();
+
+  private:
+    // TODO: This is stopgap to block new unexpected errors from being introduced. The long-term goal is to remove the use of this
+    // function and its definition.
+    bool IgnoreMessage(std::string const &msg) const;
+
+    VkFlags message_flags_;
+    std::unordered_multiset<std::string> desired_message_strings_;
+    std::unordered_multiset<std::string> failure_message_strings_;
+    std::vector<std::string> ignore_message_strings_;
+    vector<string> other_messages_;
+    test_platform_thread_mutex mutex_;
+    bool *bailout_;
+    bool message_found_;
+};
+
 class VkCommandPoolObj;
 class VkCommandBufferObj;
 class VkDepthStencilObj;
 
 class VkRenderFramework : public VkTestFramework {
-   public:
-    VkRenderFramework();
-    ~VkRenderFramework();
-
+  public:
     VkInstance instance() { return inst; }
     VkDevice device() { return m_device->device(); }
     VkDeviceObj *DeviceObj() const { return m_device; }
@@ -87,10 +162,16 @@ class VkRenderFramework : public VkTestFramework {
     VkRenderPass renderPass() { return m_renderPass; }
     const VkRenderPassCreateInfo &RenderPassInfo() const { return renderPass_info_; };
     VkFramebuffer framebuffer() { return m_framebuffer; }
+    ErrorMonitor *Monitor();
+
     void InitViewport(float width, float height);
     void InitViewport();
-    void InitSwapchain(float width, float height);
-    void InitSwapchain();
+    bool InitSurface();
+    bool InitSurface(float width, float height);
+    bool InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                       VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
+    bool InitSwapchain(VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                       VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
     void DestroySwapchain();
     void InitRenderTarget();
     void InitRenderTarget(uint32_t targets);
@@ -115,9 +196,11 @@ class VkRenderFramework : public VkTestFramework {
     bool DeviceExtensionEnabled(const char *name);
     bool DeviceIsMockICD();
     bool DeviceSimulation();
-    bool DeviceCanDraw();
 
-   protected:
+  protected:
+    VkRenderFramework();
+    virtual ~VkRenderFramework() = 0;
+
     VkApplicationInfo app_info;
     VkInstance inst;
     VkPhysicalDevice objs[16];
@@ -130,6 +213,7 @@ class VkRenderFramework : public VkTestFramework {
     VkFramebuffer m_framebuffer;
     VkSurfaceKHR m_surface;
     VkSwapchainKHR m_swapchain;
+    ErrorMonitor *m_errorMonitor = {};
     std::vector<VkViewport> m_viewports;
     std::vector<VkRect2D> m_scissors;
     float m_lineWidth;
@@ -163,24 +247,6 @@ class VkRenderFramework : public VkTestFramework {
     std::vector<const char *> m_instance_layer_names;
     std::vector<const char *> m_instance_extension_names;
     std::vector<const char *> m_device_extension_names;
-
-    /*
-     * SetUp and TearDown are called by the Google Test framework
-     * to initialize a test framework based on this class.
-     */
-    virtual void SetUp() {
-        this->app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        this->app_info.pNext = NULL;
-        this->app_info.pApplicationName = "base";
-        this->app_info.applicationVersion = 1;
-        this->app_info.pEngineName = "unittest";
-        this->app_info.engineVersion = 1;
-        this->app_info.apiVersion = VK_API_VERSION_1_0;
-
-        InitFramework();
-    }
-
-    virtual void TearDown() { ShutdownFramework(); }
 };
 
 class VkDescriptorSetObj;
@@ -189,14 +255,15 @@ class VkPipelineObj;
 class VkDescriptorSetObj;
 typedef vk_testing::Fence VkFenceObj;
 typedef vk_testing::Buffer VkBufferObj;
+typedef vk_testing::AccelerationStructure VkAccelerationStructureObj;
 
 class VkCommandPoolObj : public vk_testing::CommandPool {
-   public:
+  public:
     VkCommandPoolObj(VkDeviceObj *device, uint32_t queue_family_index, VkCommandPoolCreateFlags flags = 0);
 };
 
 class VkCommandBufferObj : public vk_testing::CommandBuffer {
-   public:
+  public:
     VkCommandBufferObj(VkDeviceObj *device, VkCommandPoolObj *pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
                        VkQueueObj *queue = nullptr);
     void PipelineBarrier(VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages, VkDependencyFlags dependencyFlags,
@@ -228,14 +295,16 @@ class VkCommandBufferObj : public vk_testing::CommandBuffer {
                          const VkImageSubresourceRange *pRanges);
     void ClearDepthStencilImage(VkImage image, VkImageLayout imageLayout, const VkClearDepthStencilValue *pColor,
                                 uint32_t rangeCount, const VkImageSubresourceRange *pRanges);
+    void BuildAccelerationStructure(VkAccelerationStructureObj *as, VkBuffer scratchBuffer);
+    void BuildAccelerationStructure(VkAccelerationStructureObj *as, VkBuffer scratchBuffer, VkBuffer instanceData);
 
-   protected:
+  protected:
     VkDeviceObj *m_device;
     VkQueueObj *m_queue;
 };
 
 class VkConstantBufferObj : public VkBufferObj {
-   public:
+  public:
     VkConstantBufferObj(VkDeviceObj *device,
                         VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     VkConstantBufferObj(VkDeviceObj *device, VkDeviceSize size, const void *data,
@@ -243,36 +312,35 @@ class VkConstantBufferObj : public VkBufferObj {
 
     VkDescriptorBufferInfo m_descriptorBufferInfo;
 
-   protected:
+  protected:
     VkDeviceObj *m_device;
 };
 
 class VkRenderpassObj {
-   public:
+  public:
     VkRenderpassObj(VkDeviceObj *device);
-    ~VkRenderpassObj();
+    ~VkRenderpassObj() NOEXCEPT;
     VkRenderPass handle() { return m_renderpass; }
 
-   protected:
+  protected:
     VkRenderPass m_renderpass;
     VkDevice device;
 };
 
 class VkImageObj : public vk_testing::Image {
-   public:
+  public:
     VkImageObj(VkDeviceObj *dev);
     bool IsCompatible(VkImageUsageFlags usages, VkFormatFeatureFlags features);
 
-   public:
+  public:
     void Init(uint32_t const width, uint32_t const height, uint32_t const mipLevels, VkFormat const format, VkFlags const usage,
               VkImageTiling const tiling = VK_IMAGE_TILING_LINEAR, VkMemoryPropertyFlags const reqs = 0,
-              const std::vector<uint32_t> *queue_families = nullptr);
-
+              const std::vector<uint32_t> *queue_families = nullptr, bool memory = true);
     void init(const VkImageCreateInfo *create_info);
 
     void InitNoLayout(uint32_t const width, uint32_t const height, uint32_t const mipLevels, VkFormat const format,
                       VkFlags const usage, VkImageTiling tiling = VK_IMAGE_TILING_LINEAR, VkMemoryPropertyFlags reqs = 0,
-                      const std::vector<uint32_t> *queue_families = nullptr);
+                      const std::vector<uint32_t> *queue_families = nullptr, bool memory = true);
 
     //    void clear( CommandBuffer*, uint32_t[4] );
 
@@ -285,7 +353,10 @@ class VkImageObj : public vk_testing::Image {
     void UnmapMemory() { Image::memory().unmap(); }
 
     void ImageMemoryBarrier(VkCommandBufferObj *cmd, VkImageAspectFlags aspect, VkFlags output_mask, VkFlags input_mask,
-                            VkImageLayout image_layout);
+                            VkImageLayout image_layout, VkPipelineStageFlags src_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                            VkPipelineStageFlags dest_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                            uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                            uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED);
 
     VkResult CopyImage(VkImageObj &src_image);
 
@@ -295,7 +366,7 @@ class VkImageObj : public vk_testing::Image {
 
     VkImage image() const { return handle(); }
 
-    VkImageView targetView(VkFormat format) {
+    VkImageView targetView(VkFormat format, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT) {
         if (!m_targetView.initialized()) {
             VkImageViewCreateInfo createView = {};
             createView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -306,7 +377,7 @@ class VkImageObj : public vk_testing::Image {
             createView.components.g = VK_COMPONENT_SWIZZLE_G;
             createView.components.b = VK_COMPONENT_SWIZZLE_B;
             createView.components.a = VK_COMPONENT_SWIZZLE_A;
-            createView.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+            createView.subresourceRange = {aspect, 0, 1, 0, 1};
             createView.flags = 0;
             m_targetView.init(*m_device, createView);
         }
@@ -321,7 +392,7 @@ class VkImageObj : public vk_testing::Image {
     uint32_t height() const { return extent().height; }
     VkDeviceObj *device() const { return m_device; }
 
-   protected:
+  protected:
     VkDeviceObj *m_device;
 
     vk_testing::ImageView m_targetView;
@@ -329,18 +400,18 @@ class VkImageObj : public vk_testing::Image {
 };
 
 class VkTextureObj : public VkImageObj {
-   public:
+  public:
     VkTextureObj(VkDeviceObj *device, uint32_t *colors = NULL);
 
     const VkDescriptorImageInfo &DescriptorImageInfo() const { return m_descriptorImageInfo; }
 
-   protected:
+  protected:
     VkDeviceObj *m_device;
     vk_testing::ImageView m_textureView;
 };
 
 class VkDepthStencilObj : public VkImageObj {
-   public:
+  public:
     VkDepthStencilObj(VkDeviceObj *device);
     void Init(VkDeviceObj *device, int32_t width, int32_t height, VkFormat format,
               VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
@@ -349,7 +420,7 @@ class VkDepthStencilObj : public VkImageObj {
 
     VkFormat Format() const;
 
-   protected:
+  protected:
     VkDeviceObj *m_device;
     bool m_initialized;
     vk_testing::ImageView m_imageView;
@@ -358,32 +429,32 @@ class VkDepthStencilObj : public VkImageObj {
 };
 
 class VkSamplerObj : public vk_testing::Sampler {
-   public:
+  public:
     VkSamplerObj(VkDeviceObj *device);
 
-   protected:
+  protected:
     VkDeviceObj *m_device;
 };
 
 class VkDescriptorSetLayoutObj : public vk_testing::DescriptorSetLayout {
-   public:
+  public:
     VkDescriptorSetLayoutObj() = default;
     VkDescriptorSetLayoutObj(const VkDeviceObj *device,
                              const std::vector<VkDescriptorSetLayoutBinding> &descriptor_set_bindings = {},
-                             VkDescriptorSetLayoutCreateFlags flags = 0);
+                             VkDescriptorSetLayoutCreateFlags flags = 0, void *pNext = NULL);
 
     // Move constructor and move assignment operator for Visual Studio 2013
-    VkDescriptorSetLayoutObj(VkDescriptorSetLayoutObj &&src) : DescriptorSetLayout(std::move(src)){};
-    VkDescriptorSetLayoutObj &operator=(VkDescriptorSetLayoutObj &&src) {
+    VkDescriptorSetLayoutObj(VkDescriptorSetLayoutObj &&src) NOEXCEPT : DescriptorSetLayout(std::move(src)){};
+    VkDescriptorSetLayoutObj &operator=(VkDescriptorSetLayoutObj &&src) NOEXCEPT {
         DescriptorSetLayout::operator=(std::move(src));
         return *this;
     }
 };
 
 class VkDescriptorSetObj : public vk_testing::DescriptorPool {
-   public:
+  public:
     VkDescriptorSetObj(VkDeviceObj *device);
-    ~VkDescriptorSetObj();
+    ~VkDescriptorSetObj() NOEXCEPT;
 
     int AppendDummy();
     int AppendBuffer(VkDescriptorType type, VkConstantBufferObj &constantBuffer);
@@ -393,7 +464,7 @@ class VkDescriptorSetObj : public vk_testing::DescriptorPool {
     VkDescriptorSet GetDescriptorSetHandle() const;
     VkPipelineLayout GetPipelineLayout() const;
 
-   protected:
+  protected:
     VkDeviceObj *m_device;
     std::vector<VkDescriptorSetLayoutBinding> m_layout_bindings;
     std::map<VkDescriptorType, int> m_type_counts;
@@ -408,27 +479,27 @@ class VkDescriptorSetObj : public vk_testing::DescriptorPool {
 };
 
 class VkShaderObj : public vk_testing::ShaderModule {
-   public:
+  public:
     VkShaderObj(VkDeviceObj *device, const char *shaderText, VkShaderStageFlagBits stage, VkRenderFramework *framework,
-                char const *name = "main", bool debug = false);
+                char const *name = "main", bool debug = false, VkSpecializationInfo *specInfo = nullptr);
     VkShaderObj(VkDeviceObj *device, const std::string spv_source, VkShaderStageFlagBits stage, VkRenderFramework *framework,
-                char const *name = "main");
+                char const *name = "main", VkSpecializationInfo *specInfo = nullptr);
     VkPipelineShaderStageCreateInfo const &GetStageCreateInfo() const;
 
-   protected:
+  protected:
     VkPipelineShaderStageCreateInfo m_stage_info;
     VkDeviceObj *m_device;
 };
 
 class VkPipelineLayoutObj : public vk_testing::PipelineLayout {
-   public:
+  public:
     VkPipelineLayoutObj() = default;
     VkPipelineLayoutObj(VkDeviceObj *device, const std::vector<const VkDescriptorSetLayoutObj *> &descriptor_layouts = {},
                         const std::vector<VkPushConstantRange> &push_constant_ranges = {});
 
     // Move constructor and move assignment operator for Visual Studio 2013
-    VkPipelineLayoutObj(VkPipelineLayoutObj &&src) : PipelineLayout(std::move(src)) {}
-    VkPipelineLayoutObj &operator=(VkPipelineLayoutObj &&src) {
+    VkPipelineLayoutObj(VkPipelineLayoutObj &&src) NOEXCEPT : PipelineLayout(std::move(src)) {}
+    VkPipelineLayoutObj &operator=(VkPipelineLayoutObj &&src) NOEXCEPT {
         PipelineLayout::operator=(std::move(src));
         return *this;
     }
@@ -437,7 +508,7 @@ class VkPipelineLayoutObj : public vk_testing::PipelineLayout {
 };
 
 class VkPipelineObj : public vk_testing::Pipeline {
-   public:
+  public:
     VkPipelineObj(VkDeviceObj *device);
     void AddShader(VkShaderObj *shaderObj);
     void AddShader(VkPipelineShaderStageCreateInfo const &createInfo);
@@ -460,12 +531,13 @@ class VkPipelineObj : public vk_testing::Pipeline {
     void SetTessellation(const VkPipelineTessellationStateCreateInfo *te_state);
     void SetViewport(const vector<VkViewport> viewports);
     void SetScissor(const vector<VkRect2D> scissors);
+    void SetLineState(const VkPipelineRasterizationLineStateCreateInfoEXT *line_state);
 
     void InitGraphicsPipelineCreateInfo(VkGraphicsPipelineCreateInfo *gp_ci);
 
     VkResult CreateVKPipeline(VkPipelineLayout layout, VkRenderPass render_pass, VkGraphicsPipelineCreateInfo *gp_ci = nullptr);
 
-   protected:
+  protected:
     VkPipelineVertexInputStateCreateInfo m_vi_state;
     VkPipelineInputAssemblyStateCreateInfo m_ia_state;
     VkPipelineRasterizationStateCreateInfo m_rs_state;
@@ -475,6 +547,7 @@ class VkPipelineObj : public vk_testing::Pipeline {
     VkPipelineMultisampleStateCreateInfo m_ms_state;
     VkPipelineTessellationStateCreateInfo const *m_te_state;
     VkPipelineDynamicStateCreateInfo m_pd_state;
+    VkPipelineRasterizationLineStateCreateInfoEXT m_line_state;
     vector<VkDynamicState> m_dynamic_state_enables;
     vector<VkViewport> m_viewports;
     vector<VkRect2D> m_scissors;

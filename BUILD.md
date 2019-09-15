@@ -134,21 +134,40 @@ directories and place them in any location.
 
 ### Building Dependent Repositories with Known-Good Revisions
 
-There is a Python utility script, `scripts/update_deps.py`, that you can use
-to gather and build the dependent repositories mentioned above. This program
-also uses information stored in the `scripts/known-good.json` file to checkout
-dependent repository revisions that are known to be compatible with the
-revision of this repository that you currently have checked out.
+There is a Python utility script, `scripts/update_deps.py`, that you can use to
+gather and build the dependent repositories mentioned above. This script uses
+information stored in the `scripts/known_good.json` file to check out dependent
+repository revisions that are known to be compatible with the revision of this
+repository that you currently have checked out. As such, this script is useful
+as a quick-start tool for common use cases and default configurations.
 
-Here is a usage example for this repository:
+For all platforms, start with:
 
     git clone git@github.com:KhronosGroup/Vulkan-ValidationLayers.git
     cd Vulkan-ValidationLayers
     mkdir build
     cd build
+
+For 64-bit Linux and MacOS, continue with:
+
     ../scripts/update_deps.py
     cmake -C helper.cmake ..
     cmake --build .
+
+For 64-bit Windows, continue with:
+
+    ..\scripts\update_deps.py --arch x64
+    cmake -A x64 -C helper.cmake ..
+    cmake --build .
+
+For 32-bit Windows, continue with:
+
+    ..\scripts\update_deps.py --arch Win32
+    cmake -A Win32 -C helper.cmake ..
+    cmake --build .
+
+Please see the more detailed build information later in this file if you have
+specific requirements for configuring and building these components.
 
 #### Notes
 
@@ -177,6 +196,20 @@ Here is a usage example for this repository:
   execution.
 - Please use `update_deps.py --help` to list additional options and read the
   internal documentation in `update_deps.py` for further information.
+
+### Generated source code
+
+This repository contains generated source code in the `layers/generated`
+directory which is not intended to be modified directly. Instead, changes should be
+made to the corresponding generator in the `scripts` directory. The source files can
+then be regenerated using `scripts/generate_source.py`:
+
+    python3 scripts/generate_source.py PATH_TO_VULKAN_HEADERS_REGISTRY_DIR
+
+A helper CMake target `VulkanVL_generated_source` is also provided to simplify
+the invocation of `scripts/generate_source.py` from the build directory:
+
+    cmake --build . --target VulkanVL_generated_source
 
 ### Build Options
 
@@ -213,12 +246,11 @@ generate the native platform files.
   - Any Personal Computer version supported by Microsoft
 - Microsoft [Visual Studio](https://www.visualstudio.com/)
   - Versions
-    - [2013 (update 4)](https://www.visualstudio.com/vs/older-downloads/)
     - [2015](https://www.visualstudio.com/vs/older-downloads/)
     - [2017](https://www.visualstudio.com/vs/downloads/)
   - The Community Edition of each of the above versions is sufficient, as
     well as any more capable edition.
-- CMake: Continuous integration tools use [CMake 3.12.2](https://github.com/Kitware/CMake/releases/tag/v3.12.2) for Windows
+- [CMake 3.10.2](https://cmake.org/files/v3.10/cmake-3.10.2-win64-x64.zip) is recommended.
   - Use the installer option to add CMake to the system PATH
 - Git Client Support
   - [Git for Windows](http://git-scm.com/download/win) is a popular solution
@@ -345,26 +377,10 @@ location of the loader's install directory:
 ### Windows Tests and Demos
 
 After making any changes to the repository, you should perform some quick
-sanity tests, including the run_all_tests Powershell script. In addition,
-running sample applications such as the
+sanity tests, especially the included layer validation tests (vk_layer_validation_tests).
+In addition, running sample applications such as the
 [vkcube demo](https://www.github.com/KhronosGroup/Vulkan-Tools.git)
 with validation enabled is advised.
-
-To run the validation test script, open a Powershell Console, change to the
-build/tests directory, and run:
-
-For Release builds:
-
-    .\run_all_tests.ps1
-
-For Debug builds:
-
-    .\run_all_tests.ps1 -Debug
-
-This script will run the following tests:
-
-- `vk_layer_validation_tests`:
-  Test Vulkan validation layers
 
 ### Windows Notes
 
@@ -376,7 +392,6 @@ include:
 
 | Build Platform               | 64-bit Generator              | 32-bit Generator        |
 |------------------------------|-------------------------------|-------------------------|
-| Microsoft Visual Studio 2013 | "Visual Studio 12 2013 Win64" | "Visual Studio 12 2013" |
 | Microsoft Visual Studio 2015 | "Visual Studio 14 2015 Win64" | "Visual Studio 14 2015" |
 | Microsoft Visual Studio 2017 | "Visual Studio 15 2017 Win64" | "Visual Studio 15 2017" |
 
@@ -397,16 +412,16 @@ layer validation tests use the "googletest" testing framework.)
 ### Linux Build Requirements
 
 This repository has been built and tested on the two most recent Ubuntu LTS
-versions. Currently, the oldest supported version is Ubuntu 14.04, meaning
-that the minimum supported compiler versions are GCC 4.8.2 and Clang 3.4,
+versions. Currently, the oldest supported version is Ubuntu 16.04, meaning
+that the minimum officially supported C++11 compiler version is GCC 5.4.0,
 although earlier versions may work. It should be straightforward to adapt this
 repository to other Linux distributions.
 
-The continuous integration tools use [CMake 3.12.4](https://github.com/Kitware/CMake/releases/tag/v3.12.4) for Linux
+[CMake 3.10.2](https://cmake.org/files/v3.10/cmake-3.10.2-Linux-x86_64.tar.gz) is recommended.
 
 #### Required Package List
 
-    sudo apt-get install git cmake build-essential libx11-xcb-dev \
+    sudo apt-get install git build-essential libx11-xcb-dev \
         libxkbcommon-dev libwayland-dev libxrandr-dev \
         libegl1-mesa-dev
 
@@ -538,13 +553,7 @@ To uninstall the files from the system directories, you can execute:
 
 #### Linux Tests
 
-To run the **validation test script**, in a terminal change to the build/tests directory and run:
-
-    VK_LAYER_PATH=../layers ./run_all_tests.sh
-
-This script will run the following tests:
-
-- `vk_layer_validation_tests`: Test Vulkan validation layers
+Build and run the `vk_layer_validation_tests`, in the tests subdirectory.
 
 #### Linux 32-bit support
 
@@ -587,11 +596,14 @@ following.
 
 ### Android Build Requirements
 
+Note that the minimum supported Android SDK API Level is 26, revision
+level 3.
+
 - Install [Android Studio 2.3](https://developer.android.com/studio/index.html)
   or later.
 - From the "Welcome to Android Studio" splash screen, add the following
   components using Configure > SDK Manager:
-  - SDK Platforms > Android 6.0 and newer
+  - SDK Platforms > Android 8.0.0 and newer
   - SDK Tools > Android SDK Build-Tools
   - SDK Tools > Android SDK Platform-Tools
   - SDK Tools > Android SDK Tools
@@ -608,7 +620,7 @@ On Linux:
     export ANDROID_NDK_HOME=$HOME/Android/sdk/ndk-bundle
     export PATH=$ANDROID_SDK_HOME:$PATH
     export PATH=$ANDROID_NDK_HOME:$PATH
-    export PATH=$ANDROID_SDK_HOME/build-tools/23.0.3:$PATH
+    export PATH=$ANDROID_SDK_HOME/build-tools/26.0.3:$PATH
 
 On Windows:
 
@@ -621,7 +633,7 @@ On OSX:
     export ANDROID_SDK_HOME=$HOME/Library/Android/sdk
     export ANDROID_NDK_HOME=$HOME/Library/Android/sdk/ndk-bundle
     export PATH=$ANDROID_NDK_PATH:$PATH
-    export PATH=$ANDROID_SDK_HOME/build-tools/23.0.3:$PATH
+    export PATH=$ANDROID_SDK_HOME/build-tools/26.0.3:$PATH
 
 Note: If `jarsigner` is missing from your platform, you can find it in the
 Android Studio install or in your Java installation. If you do not have Java,
@@ -645,7 +657,7 @@ Setup Homebrew and components
 
 - Add packages with the following:
 
-      brew install cmake python
+      brew install python
 
 ### Android Build
 
@@ -676,17 +688,15 @@ Follow the setup steps for Linux or OSX above, then from your terminal:
 
     cd build-android
     ./update_external_sources_android.sh --no-build
-    ./android-generate.sh
     ndk-build -j4
 
 #### Windows
 
 Follow the setup steps for Windows above, then from Developer Command Prompt
-for VS2013:
+for VS2015:
 
     cd build-android
     update_external_sources_android.bat
-    android-generate.bat
     ndk-build
 
 ### Android Tests and Demos
@@ -716,7 +726,7 @@ validation tests:
 
 Tested on OSX version 10.12.6
 
-The continuous integration tools use [CMake 3.11.3](https://github.com/Kitware/CMake/releases/tag/v3.11.3) for MacOS
+[CMake 3.10.2](https://cmake.org/files/v3.10/cmake-3.10.2-Darwin-x86_64.tar.gz) is recommended.
 
 Setup Homebrew and components
 
@@ -730,7 +740,7 @@ Setup Homebrew and components
 
 - Add packages with the following (may need refinement)
 
-      brew install cmake python python3 git
+      brew install python python3 git
 
 ### Clone the Repository
 
@@ -788,8 +798,8 @@ see which driver, loader and layers are being used.
 
 ### MacOS Tests
 
-After making any changes to the repository, you should perform the included sanity tests by running
-the run_all_tests shell script.
+After making any changes to the repository, you should build and run the included
+vk_layer_validation_tests located in the tests subdirectory.
 
 These test require a manual path to an ICD to run properly on MacOS.
 
@@ -816,13 +826,7 @@ You will have to direct the loader from Vulkan-Loader to the Mock ICD:
 
 #### Running the Tests
 
-To run the **validation test script**, in a terminal change to the build/tests directory and run:
-
-    VK_LAYER_PATH=../layers ./run_all_tests.sh
-
-This script will run the following tests:
-
-- `vk_layer_validation_tests`: Test Vulkan validation layers
+In a terminal, change to the build/tests directory and run the vk_layer_validation_tests.
 
 Further testing and sanity checking can be achieved by running the vkcube and
 vulkaninfo applications in the

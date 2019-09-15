@@ -27,6 +27,10 @@
 //
 // Change Log:
 //    3/27/19 - Make changes to suppress warnings from GCC
+//    4/18/19 - Make changes to suppress warnings from clang
+//    6/05/19 - Make changes to suppress warnings from clang 3.8.0
+//    6/05/19 - Make changes to suppress more warnings from GCC
+//    8/09/19 - Make changes to suppress dead code warnings (from upstream master branch)
 //
 
 #ifndef AMD_VULKAN_MEMORY_ALLOCATOR_H
@@ -3133,7 +3137,7 @@ the containers.
 
 #ifndef VMA_USE_STL_SHARED_MUTEX
     // Minimum Visual Studio 2015 Update 2
-    #if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918
+    #if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
         #define VMA_USE_STL_SHARED_MUTEX 1
     #endif
 #endif
@@ -3177,6 +3181,15 @@ void *aligned_alloc(size_t alignment, size_t size)
     return memalign(alignment, size);
 }
 #elif defined(__APPLE__) || defined(__ANDROID__)
+#  define ALIGNED_ALLOC_WITH_POSIX_MEMALIGN
+#elif defined(__GNU_LIBRARY__)
+#  if !defined(__GLIBC_PREREQ) || !__GLIBC_PREREQ(2, 16)
+// aligned_alloc() is defined in glibc only for version >= 2.16
+#    define ALIGNED_ALLOC_WITH_POSIX_MEMALIGN
+#  endif
+#endif
+
+#ifdef ALIGNED_ALLOC_WITH_POSIX_MEMALIGN
 #include <cstdlib>
 void *aligned_alloc(size_t alignment, size_t size)
 {
@@ -3436,9 +3449,17 @@ END OF CONFIGURATION
 */
 
 #if defined(__GNUC__)
+#define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wtype-limits"
 #pragma GCC diagnostic ignored "-Wunused-variable"
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wtautological-compare"
+#endif
+#if GCC_VERSION >= 80000
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
+#endif
 #if defined(ANDROID)
 #pragma GCC diagnostic ignored "-Wunused-private-field"
 #endif
@@ -3676,16 +3697,21 @@ static inline bool VmaIsBufferImageGranularityConflict(
 
 static void VmaWriteMagicValue(void* pData, VkDeviceSize offset)
 {
+#if VMA_DEBUG_MARGIN > 0 && VMA_DEBUG_DETECT_CORRUPTION
     uint32_t* pDst = (uint32_t*)((char*)pData + offset);
     const size_t numberCount = VMA_DEBUG_MARGIN / sizeof(uint32_t);
     for(size_t i = 0; i < numberCount; ++i, ++pDst)
     {
         *pDst = VMA_CORRUPTION_DETECTION_MAGIC_VALUE;
     }
+#else
+    // no-op
+#endif
 }
 
 static bool VmaValidateMagicValue(const void* pData, VkDeviceSize offset)
 {
+#if VMA_DEBUG_MARGIN > 0 && VMA_DEBUG_DETECT_CORRUPTION
     const uint32_t* pSrc = (const uint32_t*)((const char*)pData + offset);
     const size_t numberCount = VMA_DEBUG_MARGIN / sizeof(uint32_t);
     for(size_t i = 0; i < numberCount; ++i, ++pSrc)
@@ -3695,6 +3721,7 @@ static bool VmaValidateMagicValue(const void* pData, VkDeviceSize offset)
             return false;
         }
     }
+#endif
     return true;
 }
 
@@ -6335,7 +6362,7 @@ private:
     // Redundant, for convenience not to fetch from m_hCustomPool->m_BlockVector or m_hAllocator->m_pBlockVectors.
     VmaBlockVector* const m_pBlockVector;
     const uint32_t m_CurrFrameIndex;
-    const uint32_t m_AlgorithmFlags;
+    //const uint32_t m_AlgorithmFlags;
     // Owner of this object.
     VmaDefragmentationAlgorithm* m_pAlgorithm;
 
@@ -13123,7 +13150,7 @@ VmaBlockVectorDefragmentationContext::VmaBlockVectorDefragmentationContext(
     m_hCustomPool(hCustomPool),
     m_pBlockVector(pBlockVector),
     m_CurrFrameIndex(currFrameIndex),
-    m_AlgorithmFlags(algorithmFlags),
+    //m_AlgorithmFlags(algorithmFlags),
     m_pAlgorithm(VMA_NULL),
     m_Allocations(VmaStlAllocator<AllocInfo>(hAllocator->GetAllocationCallbacks())),
     m_AllAllocations(false)
@@ -16778,6 +16805,9 @@ void vmaDestroyImage(
 }
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 #endif
 #endif // #ifdef VMA_IMPLEMENTATION
 // clang-format on

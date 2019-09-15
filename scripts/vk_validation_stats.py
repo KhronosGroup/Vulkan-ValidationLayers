@@ -21,14 +21,16 @@
 # Author: Shannon McPherson <shannon@lunarg.com>
 
 import argparse
-import os
-import sys
-import operator
-import platform
-import json
-import re
+import common_codegen
 import csv
+import glob
 import html
+import json
+import operator
+import os
+import platform
+import re
+import sys
 import time
 from collections import defaultdict
 
@@ -39,8 +41,7 @@ html_db = False
 txt_filename = "validation_error_database.txt"
 csv_filename = "validation_error_database.csv"
 html_filename = "validation_error_database.html"
-header_filename = "../layers/vk_validation_error_messages.h"
-test_file = '../tests/layer_validation_tests.cpp'
+header_filename = "vk_validation_error_messages.h"
 vuid_prefixes = ['VUID-', 'UNASSIGNED-']
 
 # Hard-coded flags that could be command line args, if we decide that's useful
@@ -48,25 +49,20 @@ vuid_prefixes = ['VUID-', 'UNASSIGNED-']
 dealias_khr = True
 ignore_unassigned = True # These are not found in layer code unless they appear explicitly (most don't), so produce false positives
 
-generated_layer_source_directories = [
-'build',
-'dbuild',
-'release',
-'../build/Vulkan-ValidationLayers/'
-]
-generated_layer_source_files = [
-'parameter_validation.cpp',
-'object_tracker.cpp',
-]
-layer_source_files = [
-'../layers/buffer_validation.cpp',
-'../layers/core_validation.cpp',
-'../layers/descriptor_sets.cpp',
-'../layers/parameter_validation_utils.cpp',
-'../layers/object_tracker_utils.cpp',
-'../layers/shader_validation.cpp',
-'../layers/stateless_validation.h'
-]
+layer_source_files = [common_codegen.repo_relative(path) for path in [
+    'layers/buffer_validation.cpp',
+    'layers/core_validation.cpp',
+    'layers/descriptor_sets.cpp',
+    'layers/drawdispatch.cpp',
+    'layers/parameter_validation_utils.cpp',
+    'layers/object_tracker_utils.cpp',
+    'layers/shader_validation.cpp',
+    'layers/stateless_validation.h',
+    'layers/generated/parameter_validation.cpp',
+    'layers/generated/object_tracker.cpp',
+]]
+
+test_source_files = glob.glob(os.path.join(common_codegen.repo_relative('tests'), '*.cpp'))
 
 # This needs to be updated as new extensions roll in
 khr_aliases = {
@@ -148,6 +144,7 @@ def printHelp():
     print ("                                [ -csv  [ <csv_out_filename>]  ]")
     print ("                                [ -html [ <html_out_filename>] ]")
     print ("                                [ -export_header ]")
+    print ("                                [ -summary ]")
     print ("                                [ -verbose ]")
     print ("                                [ -help ]")
     print ("\n  The vk_validation_stats script parses validation layer source files to")
@@ -166,6 +163,7 @@ def printHelp():
     print (" -html [filename]  output the error database in html to <html_database_filename>,")
     print ("                   defaults to 'validation_error_database.html'")
     print (" -export_header    export a new VUID error text header file to <%s>" % header_filename)
+    print (" -summary          output summary of VUID coverage")
     print (" -verbose          show your work (to stdout)")
 
 class ValidationJSON:
@@ -236,32 +234,14 @@ class ValidationJSON:
 
 
 class ValidationSource:
-    def __init__(self, source_file_list, generated_source_file_list, generated_source_directories):
+    def __init__(self, source_file_list):
         self.source_files = source_file_list
-        self.generated_source_files = generated_source_file_list
-        self.generated_source_dirs = generated_source_directories
         self.vuid_count_dict = {} # dict of vuid values to the count of how much they're used, and location of where they're used
         self.duplicated_checks = 0
         self.explicit_vuids = set()
         self.implicit_vuids = set()
         self.unassigned_vuids = set()
         self.all_vuids = set()
-
-        if len(self.generated_source_files) > 0:
-            qualified_paths = []
-            for source in self.generated_source_files:
-                for build_dir in self.generated_source_dirs:
-                    filepath = '../%s/layers/%s' % (build_dir, source)
-                    if os.path.isfile(filepath):
-                        qualified_paths.append(filepath)
-                        break
-            if len(self.generated_source_files) != len(qualified_paths):
-                print("Error: Unable to locate one or more of the following source files in the %s directories" % (", ".join(generated_source_directories)))
-                print(self.generated_source_files)
-                print("Failed to locate one or more codegen files in layer source code - cannot proceed.")
-                exit(1)
-            else:
-                self.source_files.extend(qualified_paths)
 
     def parse(self):
         prepend = None
@@ -277,6 +257,8 @@ class ValidationSource:
                         line = prepend[:-2] + line.lstrip().lstrip('"') # join lines skipping CR, whitespace and trailing/leading quote char
                         prepend = None
                     if any(prefix in line for prefix in vuid_prefixes):
+                        # Replace the '(' of lines containing validation helper functions with ' ' to make them easier to parse
+                        line = line.replace("(", " ")
                         line_list = line.split()
 
                         # A VUID string that has been broken by clang will start with a vuid prefix and end with -, and will be last in the list
@@ -475,7 +457,6 @@ class OutputDatabase:
         self.vt = val_tests
         self.header_version = "/* THIS FILE IS GENERATED - DO NOT EDIT (scripts/vk_validation_stats.py) */"
         self.header_version += "\n/* Vulkan specification version: %s */" % val_json.apiversion
-        self.header_version += "\n/* Header generated: %s */\n" % time.strftime('%Y-%m-%d %H:%M:%S')
         self.header_preamble = """
 /*
  * Vulkan
@@ -592,20 +573,54 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
             hfile.write('</table>\n</body>\n</html>\n')
 
     def export_header(self):
-        print("\n Exporting header file to: %s" % header_filename)
+        if verbose_mode:
+            print("\n Exporting header file to: %s" % header_filename)
         with open (header_filename, 'w') as hfile:
             hfile.write(self.header_version)
             hfile.write(self.header_preamble)
             vuid_list = list(self.vj.all_vuids)
             vuid_list.sort()
+            cmd_dict = {}
             for vuid in vuid_list:
                 db_entry = self.vj.vuid_db[vuid][0]
-                hfile.write('    {"%s", "%s (%s#%s)"},\n' % (vuid, db_entry['text'].strip(' '), self.spec_url, vuid))
+                db_text = db_entry['text'].strip(' ')
+                hfile.write('    {"%s", "%s (%s#%s)"},\n' % (vuid, db_text, self.spec_url, vuid))
                 # For multiply-defined VUIDs, include versions with extension appended
                 if len(self.vj.vuid_db[vuid]) > 1:
                     for db_entry in self.vj.vuid_db[vuid]:
-                        hfile.write('    {"%s[%s]", "%s (%s#%s)"},\n' % (vuid, db_entry['ext'].strip(' '), db_entry['text'].strip(' '), self.spec_url, vuid))
+                        hfile.write('    {"%s[%s]", "%s (%s#%s)"},\n' % (vuid, db_entry['ext'].strip(' '), db_text, self.spec_url, vuid))
+                if 'commandBuffer must be in the recording state' in db_text:
+                    cmd_dict[vuid] = db_text 
             hfile.write(self.header_postamble)
+
+            # Generate the information for validating recording state VUID's 
+            cmd_prefix = 'prefix##'
+            cmd_regex = re.compile(r'VUID-vk(Cmd|End)(\w+)')
+            cmd_vuid_vector = ['    "VUID_Undefined"']
+            cmd_name_vector = [ '    "Command_Undefined"' ]
+            cmd_enum = ['    ' + cmd_prefix + 'NONE = 0']
+
+            cmd_ordinal = 1
+            for vuid, db_text in sorted(cmd_dict.items()):
+                cmd_match = cmd_regex.match(vuid)
+                if cmd_match.group(1) == "End":
+                    end = "END"
+                else:
+                    end = ""
+                cmd_name_vector.append('    "vk'+ cmd_match.group(1) + cmd_match.group(2) + '"')
+                cmd_name = cmd_prefix + end + cmd_match.group(2).upper()
+                cmd_enum.append('    {} = {}'.format(cmd_name, cmd_ordinal))
+                cmd_ordinal += 1
+                cmd_vuid_vector.append('    "{}"'.format(vuid))
+
+            hfile.write('\n// Defines to allow creating "must be recording" meta data\n')
+            cmd_enum.append('    {}RANGE_SIZE = {}'.format(cmd_prefix, cmd_ordinal))
+            cmd_enum_string = '#define VUID_CMD_ENUM_LIST(prefix)\\\n' + ',\\\n'.join(cmd_enum) + '\n\n'
+            hfile.write(cmd_enum_string)
+            cmd_name_list_string = '#define VUID_CMD_NAME_LIST\\\n' + ',\\\n'.join(cmd_name_vector) + '\n\n'
+            hfile.write(cmd_name_list_string)
+            vuid_vector_string = '#define VUID_MUST_BE_RECORDING_LIST\\\n' + ',\\\n'.join(cmd_vuid_vector) + '\n'
+            hfile.write(vuid_vector_string)
 
 def main(argv):
     global verbose_mode
@@ -620,6 +635,7 @@ def main(argv):
     csv_out = False
     html_out = False
     header_out = False
+    show_summary = False
 
     if (1 > len(argv)):
         printHelp()
@@ -660,6 +676,8 @@ def main(argv):
             header_out = True
         elif (arg in ['-verbose']):
             verbose_mode = True
+        elif (arg in ['-summary']):
+            show_summary = True
         elif (arg in ['-help', '-h']):
             printHelp()
             sys.exit()
@@ -688,7 +706,7 @@ def main(argv):
                     print("    with extension: %s" % ext['ext'])
 
     # Parse layer source files
-    val_source = ValidationSource(layer_source_files, generated_layer_source_files, generated_layer_source_directories)
+    val_source = ValidationSource(layer_source_files)
     val_source.parse()
     exp_checks = len(val_source.explicit_vuids)
     imp_checks = len(val_source.implicit_vuids)
@@ -701,32 +719,33 @@ def main(argv):
         print("  %d checks are implemented more that once" % val_source.duplicated_checks)
 
     # Parse test files
-    val_tests = ValidationTests([test_file, ])
+    val_tests = ValidationTests(test_source_files)
     val_tests.parse()
     exp_tests = len(val_tests.explicit_vuids)
     imp_tests = len(val_tests.implicit_vuids)
     all_tests = len(val_tests.all_vuids)
     if verbose_mode:
-        print("Found %d unique error vuids in test file %s." % (all_tests, test_file))
+        print("Found %d unique error vuids in test source code." % all_tests)
         print("  %d explicit" % exp_tests)
         print("  %d implicit" % imp_tests)
         print("  %d unassigned" % len(val_tests.unassigned_vuids))
 
     # Process stats
-    print("\nValidation Statistics (using validusage.json version %s)" % val_json.apiversion)
-    print("  VUIDs defined in JSON file:  %04d explicit, %04d implicit, %04d total." % (exp_json, imp_json, all_json))
-    print("  VUIDs checked in layer code: %04d explicit, %04d implicit, %04d total." % (exp_checks, imp_checks, all_checks))
-    print("  VUIDs tested in layer tests: %04d explicit, %04d implicit, %04d total." % (exp_tests, imp_tests, all_tests))
+    if show_summary:
+        print("\nValidation Statistics (using validusage.json version %s)" % val_json.apiversion)
+        print("  VUIDs defined in JSON file:  %04d explicit, %04d implicit, %04d total." % (exp_json, imp_json, all_json))
+        print("  VUIDs checked in layer code: %04d explicit, %04d implicit, %04d total." % (exp_checks, imp_checks, all_checks))
+        print("  VUIDs tested in layer tests: %04d explicit, %04d implicit, %04d total." % (exp_tests, imp_tests, all_tests))
 
-    print("\nVUID check coverage")
-    print("  Explicit VUIDs checked: %.1f%% (%d checked vs %d defined)" % ((100.0 * exp_checks / exp_json), exp_checks, exp_json))
-    print("  Implicit VUIDs checked: %.1f%% (%d checked vs %d defined)" % ((100.0 * imp_checks / imp_json), imp_checks, imp_json))
-    print("  Overall VUIDs checked:  %.1f%% (%d checked vs %d defined)" % ((100.0 * all_checks / all_json), all_checks, all_json))
+        print("\nVUID check coverage")
+        print("  Explicit VUIDs checked: %.1f%% (%d checked vs %d defined)" % ((100.0 * exp_checks / exp_json), exp_checks, exp_json))
+        print("  Implicit VUIDs checked: %.1f%% (%d checked vs %d defined)" % ((100.0 * imp_checks / imp_json), imp_checks, imp_json))
+        print("  Overall VUIDs checked:  %.1f%% (%d checked vs %d defined)" % ((100.0 * all_checks / all_json), all_checks, all_json))
 
-    print("\nVUID test coverage")
-    print("  Explicit VUIDs tested: %.1f%% (%d tested vs %d checks)" % ((100.0 * exp_tests / exp_checks), exp_tests, exp_checks))
-    print("  Implicit VUIDs tested: %.1f%% (%d tested vs %d checks)" % ((100.0 * imp_tests / imp_checks), imp_tests, imp_checks))
-    print("  Overall VUIDs tested:  %.1f%% (%d tested vs %d checks)" % ((100.0 * all_tests / all_checks), all_tests, all_checks))
+        print("\nVUID test coverage")
+        print("  Explicit VUIDs tested: %.1f%% (%d tested vs %d checks)" % ((100.0 * exp_tests / exp_checks), exp_tests, exp_checks))
+        print("  Implicit VUIDs tested: %.1f%% (%d tested vs %d checks)" % ((100.0 * imp_tests / imp_checks), imp_tests, imp_checks))
+        print("  Overall VUIDs tested:  %.1f%% (%d tested vs %d checks)" % ((100.0 * all_tests / all_checks), all_tests, all_checks))
 
     # Report status of a single VUID
     if len(get_vuid_status) > 1:

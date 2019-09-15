@@ -25,28 +25,44 @@
 struct GpuDeviceMemoryBlock {
     VkBuffer buffer;
     VmaAllocation allocation;
+    std::unordered_map<uint32_t, const cvdescriptorset::Descriptor *> update_at_submit;
 };
 
 struct GpuBufferInfo {
-    GpuDeviceMemoryBlock mem_block;
+    GpuDeviceMemoryBlock output_mem_block;
+    GpuDeviceMemoryBlock di_input_mem_block;   // Descriptor Indexing input
+    GpuDeviceMemoryBlock bda_input_mem_block;  // Buffer Device Address input
     VkDescriptorSet desc_set;
     VkDescriptorPool desc_pool;
-    GpuBufferInfo(GpuDeviceMemoryBlock mem_block, VkDescriptorSet desc_set, VkDescriptorPool desc_pool)
-        : mem_block(mem_block), desc_set(desc_set), desc_pool(desc_pool){};
+    VkPipelineBindPoint pipeline_bind_point;
+    GpuBufferInfo(GpuDeviceMemoryBlock output_mem_block, GpuDeviceMemoryBlock di_input_mem_block,
+                  GpuDeviceMemoryBlock bda_input_mem_block, VkDescriptorSet desc_set, VkDescriptorPool desc_pool,
+                  VkPipelineBindPoint pipeline_bind_point)
+        : output_mem_block(output_mem_block),
+          di_input_mem_block(di_input_mem_block),
+          bda_input_mem_block(bda_input_mem_block),
+          desc_set(desc_set),
+          desc_pool(desc_pool),
+          pipeline_bind_point(pipeline_bind_point){};
+};
+
+struct GpuQueueBarrierCommandInfo {
+    VkCommandPool barrier_command_pool = VK_NULL_HANDLE;
+    VkCommandBuffer barrier_command_buffer = VK_NULL_HANDLE;
 };
 
 // Class to encapsulate Descriptor Set allocation.  This manager creates and destroys Descriptor Pools
 // as needed to satisfy requests for descriptor sets.
 class GpuDescriptorSetManager {
-   public:
+  public:
     GpuDescriptorSetManager(CoreChecks *dev_data);
     ~GpuDescriptorSetManager();
 
+    VkResult GetDescriptorSet(VkDescriptorPool *desc_pool, VkDescriptorSet *desc_sets);
     VkResult GetDescriptorSets(uint32_t count, VkDescriptorPool *pool, std::vector<VkDescriptorSet> *desc_sets);
     void PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set);
-    void DestroyDescriptorPools();
 
-   private:
+  private:
     static const uint32_t kItemsPerChunk = 512;
     struct PoolTracker {
         uint32_t size;
@@ -57,9 +73,37 @@ class GpuDescriptorSetManager {
     std::unordered_map<VkDescriptorPool, struct PoolTracker> desc_pool_map_;
 };
 
+struct GpuAccelerationStructureBuildValidationBufferInfo {
+    // The acceleration structure that is being built.
+    VkAccelerationStructureNV acceleration_structure = VK_NULL_HANDLE;
+
+    // The descriptor pool and descriptor set being used to validate a given build.
+    VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
+    VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
+
+    // The storage buffer used by the validating compute shader whichcontains info about
+    // the valid handles and which is written to communicate found invalid handles.
+    VkBuffer validation_buffer = VK_NULL_HANDLE;
+    VmaAllocation validation_buffer_allocation = VK_NULL_HANDLE;
+};
+
+struct GpuAccelerationStructureBuildValidationState {
+    bool initialized = false;
+
+    VkPipeline pipeline = VK_NULL_HANDLE;
+    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+
+    VkAccelerationStructureNV replacement_as = VK_NULL_HANDLE;
+    VmaAllocation replacement_as_allocation = VK_NULL_HANDLE;
+    uint64_t replacement_as_handle = 0;
+
+    std::unordered_map<VkCommandBuffer, std::vector<GpuAccelerationStructureBuildValidationBufferInfo>> validation_buffers;
+};
+
 struct GpuValidationState {
     bool aborted;
     bool reserve_binding_slot;
+    VkBool32 shaderInt64;
     VkDescriptorSetLayout debug_desc_layout;
     VkDescriptorSetLayout dummy_desc_layout;
     uint32_t adjusted_max_desc_sets;
@@ -67,11 +111,19 @@ struct GpuValidationState {
     uint32_t unique_shader_module_id;
     std::unordered_map<uint32_t, ShaderTracker> shader_map;
     std::unique_ptr<GpuDescriptorSetManager> desc_set_manager;
-    VkCommandPool barrier_command_pool;
-    VkCommandBuffer barrier_command_buffer;
+    std::map<VkQueue, GpuQueueBarrierCommandInfo> queue_barrier_command_infos;
     std::unordered_map<VkCommandBuffer, std::vector<GpuBufferInfo>> command_buffer_map;  // gpu_buffer_list;
     uint32_t output_buffer_size;
     VmaAllocator vmaAllocator;
+    PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
+    std::map<VkDeviceAddress, VkDeviceSize> buffer_map;
+    GpuAccelerationStructureBuildValidationState acceleration_struction_validation_state;
+    GpuValidationState(bool aborted = false, bool reserve_binding_slot = false, uint32_t unique_shader_module_id = 0,
+                       VmaAllocator vmaAllocator = {})
+        : aborted(aborted),
+          reserve_binding_slot(reserve_binding_slot),
+          unique_shader_module_id(unique_shader_module_id),
+          vmaAllocator(vmaAllocator){};
 
     std::vector<GpuBufferInfo> &GetGpuBufferInfo(const VkCommandBuffer command_buffer) {
         auto buffer_list = command_buffer_map.find(command_buffer);
