@@ -1419,6 +1419,87 @@ TEST_F(VkLayerTest, InvalidPipelineSamplePNext) {
                                       "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext");
 }
 
+TEST_F(VkLayerTest, CreateGraphicsPipelineWithBadBasePointer) {
+    TEST_DESCRIPTION("Create Graphics Pipeline with pointers that must be ignored by layers");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    m_depth_stencil_fmt = FindSupportedDepthStencilFormat(gpu());
+    ASSERT_TRUE(m_depth_stencil_fmt != 0);
+
+    m_depthStencil->Init(m_device, static_cast<int32_t>(m_width), static_cast<int32_t>(m_height), m_depth_stencil_fmt);
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget(m_depthStencil->BindInfo()));
+
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+
+    const VkPipelineVertexInputStateCreateInfo pipeline_vertex_input_state_create_info{
+        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, 0, 0, nullptr, 0, nullptr};
+
+    const VkPipelineInputAssemblyStateCreateInfo pipeline_input_assembly_state_create_info{
+        VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FALSE};
+
+    const VkPipelineRasterizationStateCreateInfo pipeline_rasterization_state_create_info_template{
+        VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+        nullptr,
+        0,
+        VK_FALSE,
+        VK_FALSE,
+        VK_POLYGON_MODE_FILL,
+        VK_CULL_MODE_NONE,
+        VK_FRONT_FACE_COUNTER_CLOCKWISE,
+        VK_FALSE,
+        0.0f,
+        0.0f,
+        0.0f,
+        1.0f};
+
+    VkPipelineLayout pipeline_layout;
+    auto pipeline_layout_create_info = lvl_init_struct<VkPipelineLayoutCreateInfo>();
+    VkResult err = vkCreatePipelineLayout(m_device->device(), &pipeline_layout_create_info, nullptr, &pipeline_layout);
+    ASSERT_VK_SUCCESS(err);
+
+    VkPipelineRasterizationStateCreateInfo pipeline_rasterization_state_create_info =
+        pipeline_rasterization_state_create_info_template;
+    pipeline_rasterization_state_create_info.rasterizerDiscardEnable = VK_TRUE;
+
+    uint64_t fake_pipeline_id = 0xCADECADE;
+    VkPipeline fake_pipeline_handle = reinterpret_cast<VkPipeline &>(fake_pipeline_id);
+
+    VkGraphicsPipelineCreateInfo graphics_pipeline_create_info{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+                                                               nullptr,
+                                                               VK_PIPELINE_CREATE_DERIVATIVE_BIT,
+                                                               1,
+                                                               &vs.GetStageCreateInfo(),
+                                                               &pipeline_vertex_input_state_create_info,
+                                                               &pipeline_input_assembly_state_create_info,
+                                                               nullptr,
+                                                               nullptr,
+                                                               &pipeline_rasterization_state_create_info,
+                                                               nullptr,
+                                                               nullptr,
+                                                               nullptr,
+                                                               nullptr,
+                                                               pipeline_layout,
+                                                               m_renderPass,
+                                                               0,
+                                                               fake_pipeline_handle,
+                                                               -1};
+
+    VkPipeline pipeline;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkGraphicsPipelineCreateInfo-flags-00722");
+    vkCreateGraphicsPipelines(m_device->handle(), VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &pipeline);
+    m_errorMonitor->VerifyFound();
+
+    graphics_pipeline_create_info.basePipelineHandle = VK_NULL_HANDLE;
+    graphics_pipeline_create_info.basePipelineIndex = 6;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkGraphicsPipelineCreateInfo-flags-00723");
+    vkCreateGraphicsPipelines(m_device->handle(), VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &pipeline);
+    m_errorMonitor->VerifyFound();
+
+    vkDestroyPipelineLayout(m_device->handle(), pipeline_layout, nullptr);
+}
+
 TEST_F(VkLayerTest, VertexAttributeDivisorExtension) {
     TEST_DESCRIPTION("Test VUIDs added with VK_EXT_vertex_attribute_divisor extension.");
 
