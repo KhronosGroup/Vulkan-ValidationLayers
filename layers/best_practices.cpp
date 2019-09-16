@@ -682,7 +682,7 @@ bool BestPractices::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysical
                         "positive value has been seen for pSurfaceFormats.");
     } else {
         auto prev_format_count = (uint32_t)physical_device_state->surface_formats.size();
-        if (prev_format_count != *pSurfaceFormatCount) {
+        if (*pSurfaceFormatCount > prev_format_count) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
                             HandleToUint64(physicalDevice), kVUID_Core_DevLimit_CountMismatch,
                             "vkGetPhysicalDeviceSurfaceFormatsKHR() called with non-NULL pSurfaceFormatCount, and with "
