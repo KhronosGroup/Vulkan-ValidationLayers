@@ -6646,6 +6646,103 @@ TEST_F(VkLayerTest, DedicatedAllocation) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkLayerTest, DedicatedAllocationImageAliasing) {
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME) &&
+        DeviceExtensionSupported(gpu(), nullptr, VK_NV_DEDICATED_ALLOCATION_IMAGE_ALIASING_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_NV_DEDICATED_ALLOCATION_IMAGE_ALIASING_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    } else {
+        printf("%s Dedicated allocation extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vkGetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto aliasing_features = lvl_init_struct<VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&aliasing_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    aliasing_features.dedicatedAllocationImageAliasing = VK_TRUE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    VkMemoryPropertyFlags mem_flags = 0;
+    const VkDeviceSize resource_size = 1024;
+
+    VkImageObj image(m_device);
+    VkImageObj identical_image(m_device);
+    auto image_info = VkImageObj::create_info();
+    image_info.extent.width = resource_size;
+    image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image.init_no_mem(*m_device, image_info);
+    identical_image.init_no_mem(*m_device, image_info);
+
+    auto image_dedicated_info = lvl_init_struct<VkMemoryDedicatedAllocateInfoKHR>();
+    image_dedicated_info.image = image.handle();
+    auto image_alloc_info = vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(), mem_flags);
+    image_alloc_info.pNext = &image_dedicated_info;
+    vk_testing::DeviceMemory dedicated_image_memory;
+    dedicated_image_memory.init(*m_device, image_alloc_info);
+
+    // Bind with different but identical image
+    m_errorMonitor->ExpectSuccess();
+    vkBindImageMemory(m_device->handle(), identical_image.handle(), dedicated_image_memory.handle(), 0);
+    m_errorMonitor->VerifyNotFound();
+
+    VkImageObj smaller_image(m_device);
+    image_info = VkImageObj::create_info();
+    image_info.extent.width = resource_size - 1;
+    image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    smaller_image.init_no_mem(*m_device, image_info);
+
+    // Bind with a smaller image
+    m_errorMonitor->ExpectSuccess();
+    vkBindImageMemory(m_device->handle(), smaller_image.handle(), dedicated_image_memory.handle(), 0);
+    m_errorMonitor->VerifyNotFound();
+
+    VkImageObj larger_image(m_device);
+    image_info = VkImageObj::create_info();
+    image_info.extent.width = resource_size + 1;
+    image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    larger_image.init_no_mem(*m_device, image_info);
+
+    // Bind with a larger image (not supported, and not enough memory)
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkBindImageMemory-memory-02629");
+    if (larger_image.memory_requirements().size > image.memory_requirements().size) {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkBindImageMemory-size-01049");
+    }
+    vkBindImageMemory(m_device->handle(), larger_image.handle(), dedicated_image_memory.handle(), 0);
+    m_errorMonitor->VerifyFound();
+
+    // Bind with non-zero offset
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkBindImageMemory-memory-02629");  // offset must be zero
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkBindImageMemory-size-01049");  // offset pushes us past size
+    auto image_offset = image.memory_requirements().alignment;
+    vkBindImageMemory(m_device->handle(), image.handle(), dedicated_image_memory.handle(), image_offset);
+    m_errorMonitor->VerifyFound();
+
+    // Bind correctly (depends on the "skip" above)
+    m_errorMonitor->ExpectSuccess();
+    vkBindImageMemory(m_device->handle(), image.handle(), dedicated_image_memory.handle(), 0);
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkLayerTest, CornerSampledImageNV) {
     TEST_DESCRIPTION("Test VK_NV_corner_sampled_image.");
 
