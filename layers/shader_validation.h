@@ -31,6 +31,7 @@
 #include <SPIRV/spirv.hpp>
 #include <generated/spirv_tools_commit_id.h>
 #include "spirv-tools/optimizer.hpp"
+#include "core_validation_types.h"
 
 // A forward iterator over spirv instructions. Provides easy access to len, opcode, and content words
 // without the caller needing to care too much about the physical SPIRV module layout.
@@ -298,5 +299,24 @@ class ValidationCache {
         }
     }
 };
+
+spirv_inst_iter FindEntrypoint(SHADER_MODULE_STATE const *src, char const *name, VkShaderStageFlagBits stageBits);
+
+// For some analyses, we need to know about all ids referenced by the static call tree of a particular entrypoint. This is
+// important for identifying the set of shader resources actually used by an entrypoint, for example.
+// Note: we only explore parts of the image which might actually contain ids we care about for the above analyses.
+//  - NOT the shader input/output interfaces.
+//
+// TODO: The set of interesting opcodes here was determined by eyeballing the SPIRV spec. It might be worth
+// converting parts of this to be generated from the machine-readable spec instead.
+std::unordered_set<uint32_t> MarkAccessibleIds(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint);
+
+void ProcessExecutionModes(SHADER_MODULE_STATE const *src, const spirv_inst_iter &entrypoint, PIPELINE_STATE *pipeline);
+
+std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescriptorSlot(
+    debug_report_data const *report_data, SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> const &accessible_ids,
+    bool *has_writable_descriptor);
+
+uint32_t DescriptorTypeToReqs(SHADER_MODULE_STATE const *module, uint32_t type_id);
 
 #endif  // VULKAN_SHADER_VALIDATION_H
