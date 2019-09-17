@@ -1612,6 +1612,15 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO_K
     typedef VkImageFormatListCreateInfoKHR Type;
 };
 
+// Map type VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES_KHR
+template <> struct LvlTypeMap<VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES_KHR> {
+    typedef VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR Type;
+};
+
 // Map type VkPhysicalDevice8BitStorageFeaturesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES_KHR
 template <> struct LvlTypeMap<VkPhysicalDevice8BitStorageFeaturesKHR> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES_KHR;

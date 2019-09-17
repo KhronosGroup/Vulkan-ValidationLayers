@@ -14468,6 +14468,58 @@ void safe_VkImageFormatListCreateInfoKHR::initialize(const safe_VkImageFormatLis
     }
 }
 
+safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR::safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR(const VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR* in_struct) :
+    sType(in_struct->sType),
+    shaderSubgroupExtendedTypes(in_struct->shaderSubgroupExtendedTypes)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR::safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR() :
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR::safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR(const safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR& src)
+{
+    sType = src.sType;
+    shaderSubgroupExtendedTypes = src.shaderSubgroupExtendedTypes;
+    pNext = SafePnextCopy(src.pNext);
+}
+
+safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR& safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR::operator=(const safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR& src)
+{
+    if (&src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = src.sType;
+    shaderSubgroupExtendedTypes = src.shaderSubgroupExtendedTypes;
+    pNext = SafePnextCopy(src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR::~safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR::initialize(const VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR* in_struct)
+{
+    sType = in_struct->sType;
+    shaderSubgroupExtendedTypes = in_struct->shaderSubgroupExtendedTypes;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR::initialize(const safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR* src)
+{
+    sType = src->sType;
+    shaderSubgroupExtendedTypes = src->shaderSubgroupExtendedTypes;
+    pNext = SafePnextCopy(src->pNext);
+}
+
 safe_VkPhysicalDevice8BitStorageFeaturesKHR::safe_VkPhysicalDevice8BitStorageFeaturesKHR(const VkPhysicalDevice8BitStorageFeaturesKHR* in_struct) :
     sType(in_struct->sType),
     storageBuffer8BitAccess(in_struct->storageBuffer8BitAccess),
@@ -28599,6 +28651,9 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO_KHR:
             safe_pNext = new safe_VkImageFormatListCreateInfoKHR(reinterpret_cast<const VkImageFormatListCreateInfoKHR *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES_KHR:
+            safe_pNext = new safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR(reinterpret_cast<const VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES_KHR:
             safe_pNext = new safe_VkPhysicalDevice8BitStorageFeaturesKHR(reinterpret_cast<const VkPhysicalDevice8BitStorageFeaturesKHR *>(pNext));
             break;
@@ -29228,6 +29283,9 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO_KHR:
             delete reinterpret_cast<const safe_VkImageFormatListCreateInfoKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_SUBGROUP_EXTENDED_TYPES_FEATURES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES_KHR:
             delete reinterpret_cast<const safe_VkPhysicalDevice8BitStorageFeaturesKHR *>(header);

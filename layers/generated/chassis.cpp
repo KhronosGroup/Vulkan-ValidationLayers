@@ -6384,6 +6384,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountKHR(
 
 
 
+
 VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
     const VkPipelineInfoKHR*                    pPipelineInfo,
@@ -9154,6 +9155,7 @@ VKAPI_ATTR void VKAPI_CALL ResetQueryPoolEXT(
         intercept->PostCallRecordResetQueryPoolEXT(device, queryPool, firstQuery, queryCount);
     }
 }
+
 
 
 

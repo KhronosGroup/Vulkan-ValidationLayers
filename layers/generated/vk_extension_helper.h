@@ -347,6 +347,7 @@ struct DeviceExtensions : public InstanceExtensions {
     bool vk_google_decorate_string{false};
     bool vk_google_display_timing{false};
     bool vk_google_hlsl_functionality1{false};
+    bool vk_google_user_type{false};
     bool vk_img_filter_cubic{false};
     bool vk_img_format_pvrtc{false};
     bool vk_intel_performance_query{false};
@@ -388,6 +389,7 @@ struct DeviceExtensions : public InstanceExtensions {
     bool vk_khr_shader_draw_parameters{false};
     bool vk_khr_shader_float16_int8{false};
     bool vk_khr_shader_float_controls{false};
+    bool vk_khr_shader_subgroup_extended_types{false};
     bool vk_khr_shared_presentable_image{false};
     bool vk_khr_storage_buffer_storage_class{false};
     bool vk_khr_swapchain{false};
@@ -574,6 +576,7 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_google_display_timing, {{
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME}}})),
             std::make_pair(VK_GOOGLE_HLSL_FUNCTIONALITY1_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_google_hlsl_functionality1, {})),
+            std::make_pair(VK_GOOGLE_USER_TYPE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_google_user_type, {})),
             std::make_pair(VK_IMG_FILTER_CUBIC_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_img_filter_cubic, {})),
             std::make_pair(VK_IMG_FORMAT_PVRTC_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_img_format_pvrtc, {})),
             std::make_pair(VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_intel_performance_query, {})),
@@ -656,6 +659,7 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_float_controls, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
+            std::make_pair(VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_subgroup_extended_types, {})),
             std::make_pair(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shared_presentable_image, {{
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
@@ -871,6 +875,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_GOOGLE_DECORATE_STRING_EXTENSION_NAME,
     VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME,
     VK_GOOGLE_HLSL_FUNCTIONALITY1_EXTENSION_NAME,
+    VK_GOOGLE_USER_TYPE_EXTENSION_NAME,
     VK_IMG_FILTER_CUBIC_EXTENSION_NAME,
     VK_IMG_FORMAT_PVRTC_EXTENSION_NAME,
     VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME,
@@ -918,6 +923,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
     VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME,
     VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
+    VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME,
     VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME,
     VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME,
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,

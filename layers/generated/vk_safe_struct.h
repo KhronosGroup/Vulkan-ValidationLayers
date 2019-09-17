@@ -3207,6 +3207,21 @@ struct safe_VkImageFormatListCreateInfoKHR {
     VkImageFormatListCreateInfoKHR const *ptr() const { return reinterpret_cast<VkImageFormatListCreateInfoKHR const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 shaderSubgroupExtendedTypes;
+    safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR(const VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR* in_struct);
+    safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR(const safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR& src);
+    safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR& operator=(const safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR& src);
+    safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR();
+    ~safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR();
+    void initialize(const VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR* src);
+    VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR *>(this); }
+    VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR const *>(this); }
+};
+
 struct safe_VkPhysicalDevice8BitStorageFeaturesKHR {
     VkStructureType sType;
     void* pNext;

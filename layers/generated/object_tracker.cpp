@@ -2256,7 +2256,7 @@ bool ObjectLifetimes::PreCallValidateCreateDescriptorUpdateTemplate(
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateDescriptorUpdateTemplate-device-parameter", kVUIDUndefined);
     if (pCreateInfo) {
-        skip |= ValidateObject(pCreateInfo->descriptorSetLayout, kVulkanObjectTypeDescriptorSetLayout, true, "VUID-VkDescriptorUpdateTemplateCreateInfo-descriptorSetLayout-parameter", "VUID-VkDescriptorUpdateTemplateCreateInfo-commonparent");
+        skip |= ValidateObject(pCreateInfo->descriptorSetLayout, kVulkanObjectTypeDescriptorSetLayout, true, kVUIDUndefined, "VUID-VkDescriptorUpdateTemplateCreateInfo-commonparent");
         skip |= ValidateObject(pCreateInfo->pipelineLayout, kVulkanObjectTypePipelineLayout, true, kVUIDUndefined, "VUID-VkDescriptorUpdateTemplateCreateInfo-commonparent");
     }
 
@@ -3090,7 +3090,7 @@ bool ObjectLifetimes::PreCallValidateCreateDescriptorUpdateTemplateKHR(
     bool skip = false;
     skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateDescriptorUpdateTemplate-device-parameter", kVUIDUndefined);
     if (pCreateInfo) {
-        skip |= ValidateObject(pCreateInfo->descriptorSetLayout, kVulkanObjectTypeDescriptorSetLayout, true, "VUID-VkDescriptorUpdateTemplateCreateInfo-descriptorSetLayout-parameter", "VUID-VkDescriptorUpdateTemplateCreateInfo-commonparent");
+        skip |= ValidateObject(pCreateInfo->descriptorSetLayout, kVulkanObjectTypeDescriptorSetLayout, true, kVUIDUndefined, "VUID-VkDescriptorUpdateTemplateCreateInfo-commonparent");
         skip |= ValidateObject(pCreateInfo->pipelineLayout, kVulkanObjectTypePipelineLayout, true, kVUIDUndefined, "VUID-VkDescriptorUpdateTemplateCreateInfo-commonparent");
     }
 
