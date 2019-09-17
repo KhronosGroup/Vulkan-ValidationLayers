@@ -9205,19 +9205,46 @@ bool CoreChecks::ValidateBindImageMemory(const VkBindImageMemoryInfo &bindInfo, 
             }
 
             // Validate dedicated allocation
-            if (mem_info->is_dedicated && ((mem_info->dedicated_image != bindInfo.image) || (bindInfo.memoryOffset != 0))) {
-                // TODO: Add vkBindImageMemory2KHR error message when added to spec.
-                auto validation_error = kVUIDUndefined;
-                if (strcmp(api_name, "vkBindImageMemory()") == 0) {
-                    validation_error = "VUID-vkBindImageMemory-memory-01509";
+            if (mem_info->is_dedicated) {
+                if (enabled_features.dedicated_allocation_image_aliasing_features.dedicatedAllocationImageAliasing) {
+                    const auto orig_image_state = GetImageState(mem_info->dedicated_image);
+                    const auto current_image_state = GetImageState(bindInfo.image);
+                    if ((bindInfo.memoryOffset != 0) || !orig_image_state || !current_image_state ||
+                        !current_image_state->IsCreateInfoDedicatedAllocationImageAliasingCompatible(
+                            orig_image_state->createInfo)) {
+                        const char *validation_error;
+                        if (strcmp(api_name, "vkBindImageMemory()") == 0) {
+                            validation_error = "VUID-vkBindImageMemory-memory-02629";
+                        } else {
+                            validation_error = "VUID-VkBindImageMemoryInfo-memory-02631";
+                        }
+                        skip |=
+                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
+                                    validation_error,
+                                    "%s: for dedicated memory allocation %s, VkMemoryDedicatedAllocateInfoKHR:: %s must compatible "
+                                    "with %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
+                                    api_name, report_data->FormatHandle(bindInfo.memory).c_str(),
+                                    report_data->FormatHandle(mem_info->dedicated_image).c_str(),
+                                    report_data->FormatHandle(bindInfo.image).c_str(), bindInfo.memoryOffset);
+                    }
+                } else {
+                    if ((bindInfo.memoryOffset != 0) || (mem_info->dedicated_image != bindInfo.image)) {
+                        const char *validation_error;
+                        if (strcmp(api_name, "vkBindImageMemory()") == 0) {
+                            validation_error = "VUID-vkBindImageMemory-memory-01509";
+                        } else {
+                            validation_error = "VUID-VkBindImageMemoryInfo-memory-01903";
+                        }
+                        skip |=
+                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
+                                    validation_error,
+                                    "%s: for dedicated memory allocation %s, VkMemoryDedicatedAllocateInfoKHR:: %s must be equal "
+                                    "to %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
+                                    api_name, report_data->FormatHandle(bindInfo.memory).c_str(),
+                                    report_data->FormatHandle(mem_info->dedicated_image).c_str(),
+                                    report_data->FormatHandle(bindInfo.image).c_str(), bindInfo.memoryOffset);
+                    }
                 }
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
-                                validation_error,
-                                "%s: for dedicated memory allocation %s, VkMemoryDedicatedAllocateInfoKHR:: %s must be equal "
-                                "to %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
-                                api_name, report_data->FormatHandle(bindInfo.memory).c_str(),
-                                report_data->FormatHandle(mem_info->dedicated_image).c_str(),
-                                report_data->FormatHandle(bindInfo.image).c_str(), bindInfo.memoryOffset);
             }
         }
 
@@ -10134,7 +10161,6 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(VkPh
                                     "vkGetPhysicalDeviceXlibPresentationSupportKHR", "queueFamilyIndex");
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
-
 
 bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                                    VkSurfaceKHR surface, VkBool32 *pSupported) {

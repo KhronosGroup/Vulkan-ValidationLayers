@@ -1119,6 +1119,13 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.pipeline_exe_props_features = *pipeline_exe_props_features;
     }
 
+    const auto *dedicated_allocation_image_aliasing_features =
+        lvl_find_in_chain<VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV>(pCreateInfo->pNext);
+    if (dedicated_allocation_image_aliasing_features) {
+        state_tracker->enabled_features.dedicated_allocation_image_aliasing_features =
+            *dedicated_allocation_image_aliasing_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);
