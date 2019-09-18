@@ -232,7 +232,7 @@ unsigned ExecutionModelToShaderStageFlagBits(unsigned mode) {
     }
 }
 
-static spirv_inst_iter FindEntrypoint(SHADER_MODULE_STATE const *src, char const *name, VkShaderStageFlagBits stageBits) {
+spirv_inst_iter FindEntrypoint(SHADER_MODULE_STATE const *src, char const *name, VkShaderStageFlagBits stageBits) {
     auto range = src->entry_points.equal_range(name);
     for (auto it = range.first; it != range.second; ++it) {
         if (it->second.stage == stageBits) {
@@ -885,7 +885,7 @@ static bool IsWritableDescriptorType(SHADER_MODULE_STATE const *module, uint32_t
     return false;
 }
 
-static std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescriptorSlot(
+std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescriptorSlot(
     debug_report_data const *report_data, SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> const &accessible_ids,
     bool *has_writable_descriptor) {
     std::vector<std::pair<descriptor_slot_t, interface_var>> out;
@@ -1156,7 +1156,7 @@ static bool IsPointSizeWritten(SHADER_MODULE_STATE const *src, spirv_inst_iter b
 //
 // TODO: The set of interesting opcodes here was determined by eyeballing the SPIRV spec. It might be worth
 // converting parts of this to be generated from the machine-readable spec instead.
-static std::unordered_set<uint32_t> MarkAccessibleIds(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint) {
+std::unordered_set<uint32_t> MarkAccessibleIds(SHADER_MODULE_STATE const *src, spirv_inst_iter entrypoint) {
     std::unordered_set<uint32_t> ids;
     std::unordered_set<uint32_t> worklist;
     worklist.insert(entrypoint.word(2));
@@ -2548,7 +2548,7 @@ bool CoreChecks::ValidateExecutionModes(SHADER_MODULE_STATE const *src, spirv_in
     return skip;
 }
 
-static uint32_t DescriptorTypeToReqs(SHADER_MODULE_STATE const *module, uint32_t type_id) {
+uint32_t DescriptorTypeToReqs(SHADER_MODULE_STATE const *module, uint32_t type_id) {
     auto type = module->get_def(type_id);
 
     while (true) {
@@ -2641,7 +2641,7 @@ static bool FindLocalSize(SHADER_MODULE_STATE const *src, uint32_t &local_size_x
     return false;
 }
 
-static void ProcessExecutionModes(SHADER_MODULE_STATE const *src, const spirv_inst_iter &entrypoint, PIPELINE_STATE *pipeline) {
+void ProcessExecutionModes(SHADER_MODULE_STATE const *src, const spirv_inst_iter &entrypoint, PIPELINE_STATE *pipeline) {
     auto entrypoint_id = entrypoint.word(2);
     bool is_point_mode = false;
 
@@ -2727,29 +2727,6 @@ bool CoreChecks::ValidatePointListShaderState(const PIPELINE_STATE *pipeline, SH
                     string_VkShaderStageFlagBits(stage));
     }
     return skip;
-}
-void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCreateInfo const *pStage, PIPELINE_STATE *pipeline,
-                                                       PIPELINE_STATE::StageState *stage_state) {
-    // Validation shouldn't rely on anything in stage state being valid if the spirv isn't
-    auto module = GetShaderModuleState(pStage->module);
-    if (!module->has_valid_spirv) return;
-
-    // Validation shouldn't rely on anything in stage state being valid if the entrypoint isn't present
-    auto entrypoint = FindEntrypoint(module, pStage->pName, pStage->stage);
-    if (entrypoint == module->end()) return;
-
-    // Mark accessible ids
-    stage_state->accessible_ids = MarkAccessibleIds(module, entrypoint);
-    ProcessExecutionModes(module, entrypoint, pipeline);
-
-    stage_state->descriptor_uses =
-        CollectInterfaceByDescriptorSlot(report_data, module, stage_state->accessible_ids, &stage_state->has_writable_descriptor);
-    // Capture descriptor uses for the pipeline
-    for (auto use : stage_state->descriptor_uses) {
-        // While validating shaders capture which slots are used by the pipeline
-        auto &reqs = pipeline->active_slots[use.first.first][use.first.second];
-        reqs = descriptor_req(reqs | DescriptorTypeToReqs(module, use.second.type_id));
-    }
 }
 
 bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo const *pStage, const PIPELINE_STATE *pipeline,
@@ -3145,21 +3122,6 @@ void CoreChecks::PreCallRecordCreateShaderModule(VkDevice device, const VkShader
         GpuPreCallCreateShaderModule(pCreateInfo, pAllocator, pShaderModule, &csm_state->unique_shader_id,
                                      &csm_state->instrumented_create_info, &csm_state->instrumented_pgm);
     }
-}
-
-void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                                              const VkAllocationCallbacks *pAllocator,
-                                                              VkShaderModule *pShaderModule, VkResult result,
-                                                              void *csm_state_data) {
-    if (VK_SUCCESS != result) return;
-    create_shader_module_api_state *csm_state = reinterpret_cast<create_shader_module_api_state *>(csm_state_data);
-
-    spv_target_env spirv_environment = ((api_version >= VK_API_VERSION_1_1) ? SPV_ENV_VULKAN_1_1 : SPV_ENV_VULKAN_1_0);
-    bool is_spirv = (pCreateInfo->pCode[0] == spv::MagicNumber);
-    std::unique_ptr<SHADER_MODULE_STATE> new_shader_module(
-        is_spirv ? new SHADER_MODULE_STATE(pCreateInfo, *pShaderModule, spirv_environment, csm_state->unique_shader_id)
-                 : new SHADER_MODULE_STATE());
-    shaderModuleMap[*pShaderModule] = std::move(new_shader_module);
 }
 
 bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader) const {

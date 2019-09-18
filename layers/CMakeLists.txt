@@ -159,7 +159,8 @@ endif()
 
 set(CHASSIS_LIBRARY_FILES
     generated/chassis.cpp
-    generated/layer_chassis_dispatch.cpp)
+    generated/layer_chassis_dispatch.cpp
+    state_tracker.cpp)
 
 set(CORE_VALIDATION_LIBRARY_FILES
     core_validation.cpp

@@ -41,7 +41,7 @@ ErrorMonitor::ErrorMonitor() {
 ErrorMonitor::~ErrorMonitor() { test_platform_thread_delete_mutex(&mutex_); }
 
 void ErrorMonitor::Reset() {
-    message_flags_ = VK_DEBUG_REPORT_ERROR_BIT_EXT;
+    message_flags_ = 0;
     bailout_ = NULL;
     message_found_ = VK_FALSE;
     failure_message_strings_.clear();

@@ -5279,7 +5279,7 @@ TEST_F(VkLayerTest, DescriptorSetCompatibility) {
 
     // 3. Pipeline setLayout[0] has 2 descriptors, but set being bound has 5
     // descriptors
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, " has 2 descriptors, but DescriptorSetLayout ");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, " has 2 total descriptors, but ");
     vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_layout_one_desc.handle(), 0, 1,
                             &descriptorSet[0], 0, NULL);
     m_errorMonitor->VerifyFound();
@@ -5292,7 +5292,7 @@ TEST_F(VkLayerTest, DescriptorSetCompatibility) {
 
     // 5. same # of descriptors but mismatch in stageFlags
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         " has stageFlags 16 but binding 0 for DescriptorSetLayout ");
+                                         " has stageFlags VK_SHADER_STAGE_FRAGMENT_BIT but binding 0 for ");
     vkCmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_layout_fs_only.handle(), 0, 1,
                             &descriptorSet[0], 0, NULL);
     m_errorMonitor->VerifyFound();

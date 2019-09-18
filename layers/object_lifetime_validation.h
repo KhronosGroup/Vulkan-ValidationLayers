@@ -113,29 +113,23 @@ class ObjectLifetimes : public ValidationObject {
     bool ReportLeakedDeviceObjects(VkDevice device, VulkanObjectType object_type, const std::string &error_code);
     bool ReportLeakedInstanceObjects(VkInstance instance, VulkanObjectType object_type, const std::string &error_code);
 
-    template <typename ObjType>
-    void DestroyUndestroyedObjects(ObjType dispatchable_object, VulkanObjectType object_type) {
-        auto snapshot = object_map[object_type].snapshot();
-        for (const auto &item : snapshot) {
-            auto object_info = item.second;
-            DestroyObjectSilently(object_info->handle, object_type);
-        }
-    }
-    void CreateQueue(VkDevice device, VkQueue vkObj);
-    void AllocateCommandBuffer(VkDevice device, const VkCommandPool command_pool, const VkCommandBuffer command_buffer,
-                               VkCommandBufferLevel level);
-    void AllocateDescriptorSet(VkDevice device, VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
-    void CreateSwapchainImageObject(VkDevice dispatchable_object, VkImage swapchain_image, VkSwapchainKHR swapchain);
-    void DestroyLeakedInstanceObjects(VkInstance instance);
-    void DestroyLeakedDeviceObjects(VkDevice device);
+    void DestroyUndestroyedObjects(VulkanObjectType object_type);
+
+    void CreateQueue(VkQueue vkObj);
+    void AllocateCommandBuffer(const VkCommandPool command_pool, const VkCommandBuffer command_buffer, VkCommandBufferLevel level);
+    void AllocateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
+    void CreateSwapchainImageObject(VkImage swapchain_image, VkSwapchainKHR swapchain);
+    void DestroyLeakedInstanceObjects();
+    void DestroyLeakedDeviceObjects();
     bool ValidateDeviceObject(const VulkanTypedHandle &device_typed, const char *invalid_handle_code,
                               const char *wrong_device_code);
-    void DestroyQueueDataStructures(VkDevice device);
-    bool ValidateCommandBuffer(VkDevice device, VkCommandPool command_pool, VkCommandBuffer command_buffer);
-    bool ValidateDescriptorSet(VkDevice device, VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
-    bool ValidateSamplerObjects(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo);
-    template <typename DispObj>
-    bool ValidateDescriptorWrite(DispObj disp, VkWriteDescriptorSet const *desc, bool isPush);
+    void DestroyQueueDataStructures();
+    bool ValidateCommandBuffer(VkCommandPool command_pool, VkCommandBuffer command_buffer);
+    bool ValidateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
+    bool ValidateSamplerObjects(const VkDescriptorSetLayoutCreateInfo *pCreateInfo);
+    bool ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPush);
+    bool ValidateAnonymousObject(uint64_t object, VkObjectType core_object_type, bool null_allowed, const char *invalid_handle_code,
+                                 const char *wrong_device_code);
 
     ObjectLifetimes *GetObjectLifetimeData(std::vector<ValidationObject *> &object_dispatch) {
         for (auto layer_object : object_dispatch) {
@@ -146,18 +140,8 @@ class ObjectLifetimes : public ValidationObject {
         return nullptr;
     };
 
-    template <typename T1, typename T2>
-    bool ValidateObject(T1 dispatchable_object, T2 object, VulkanObjectType object_type, bool null_allowed,
-                        const char *invalid_handle_code, const char *wrong_device_code) {
-        if (null_allowed && (object == VK_NULL_HANDLE)) {
-            return false;
-        }
-        auto object_handle = HandleToUint64(object);
-
-        if (object_type == kVulkanObjectTypeDevice) {
-            return ValidateDeviceObject(VulkanTypedHandle(object, object_type), invalid_handle_code, wrong_device_code);
-        }
-
+    bool CheckObjectValidity(uint64_t object_handle, VulkanObjectType object_type, bool null_allowed,
+                             const char *invalid_handle_code, const char *wrong_device_code) {
         VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[object_type];
 
         // Look for object in object map
@@ -198,8 +182,23 @@ class ObjectLifetimes : public ValidationObject {
         return false;
     }
 
-    template <typename T1, typename T2>
-    void CreateObject(T1 dispatchable_object, T2 object, VulkanObjectType object_type, const VkAllocationCallbacks *pAllocator) {
+    template <typename T1>
+    bool ValidateObject(T1 object, VulkanObjectType object_type, bool null_allowed, const char *invalid_handle_code,
+                        const char *wrong_device_code) {
+        if (null_allowed && (object == VK_NULL_HANDLE)) {
+            return false;
+        }
+        auto object_handle = HandleToUint64(object);
+
+        if (object_type == kVulkanObjectTypeDevice) {
+            return ValidateDeviceObject(VulkanTypedHandle(object, object_type), invalid_handle_code, wrong_device_code);
+        }
+
+        return CheckObjectValidity(object_handle, object_type, null_allowed, invalid_handle_code, wrong_device_code);
+    }
+
+    template <typename T1>
+    void CreateObject(T1 object, VulkanObjectType object_type, const VkAllocationCallbacks *pAllocator) {
         uint64_t object_handle = HandleToUint64(object);
         bool custom_allocator = (pAllocator != nullptr);
         if (!object_map[object_type].contains(object_handle)) {
@@ -243,8 +242,8 @@ class ObjectLifetimes : public ValidationObject {
         num_objects[item->second->object_type]--;
     }
 
-    template <typename T1, typename T2>
-    void RecordDestroyObject(T1 dispatchable_object, T2 object, VulkanObjectType object_type) {
+    template <typename T1>
+    void RecordDestroyObject(T1 object, VulkanObjectType object_type) {
         auto object_handle = HandleToUint64(object);
         if (object_handle != VK_NULL_HANDLE) {
             if (object_map[object_type].contains(object_handle)) {
@@ -253,10 +252,9 @@ class ObjectLifetimes : public ValidationObject {
         }
     }
 
-    template <typename T1, typename T2>
-    bool ValidateDestroyObject(T1 dispatchable_object, T2 object, VulkanObjectType object_type,
-                               const VkAllocationCallbacks *pAllocator, const char *expected_custom_allocator_code,
-                               const char *expected_default_allocator_code) {
+    template <typename T1>
+    bool ValidateDestroyObject(T1 object, VulkanObjectType object_type, const VkAllocationCallbacks *pAllocator,
+                               const char *expected_custom_allocator_code, const char *expected_default_allocator_code) {
         auto object_handle = HandleToUint64(object);
         bool custom_allocator = pAllocator != nullptr;
         VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[object_type];

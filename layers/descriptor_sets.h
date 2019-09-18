@@ -111,6 +111,10 @@ class DescriptorSetLayoutDef {
         return GetDescriptorSetLayoutBindingPtrFromIndex(GetIndexFromBinding(binding));
     }
     const std::vector<safe_VkDescriptorSetLayoutBinding> &GetBindings() const { return bindings_; }
+    const VkDescriptorSetLayoutBinding *GetBindingInfoFromIndex(const uint32_t index) const { return bindings_[index].ptr(); }
+    const VkDescriptorSetLayoutBinding *GetBindingInfoFromBinding(const uint32_t binding) const {
+        return GetBindingInfoFromIndex(GetIndexFromBinding(binding));
+    }
     const std::vector<VkDescriptorBindingFlagsEXT> &GetBindingFlags() const { return binding_flags_; }
     uint32_t GetDescriptorCountFromIndex(const uint32_t) const;
     uint32_t GetDescriptorCountFromBinding(const uint32_t binding) const {
@@ -372,8 +376,8 @@ class Descriptor {
 
 // Return true if this layout is compatible with passed in layout from a pipelineLayout,
 //   else return false and update error_msg with description of incompatibility
-bool VerifySetLayoutCompatibility(DescriptorSetLayout const *lh_ds_layout, DescriptorSetLayout const *rh_ds_layout,
-                                  std::string *error_msg);
+bool VerifySetLayoutCompatibility(const debug_report_data *report_data, DescriptorSetLayout const *lh_ds_layout,
+                                  DescriptorSetLayout const *rh_ds_layout, std::string *error_msg);
 bool ValidateDescriptorSetLayoutCreateInfo(const debug_report_data *report_data, const VkDescriptorSetLayoutCreateInfo *create_info,
                                            const bool push_descriptor_ext, const uint32_t max_push_descriptors,
                                            const bool descriptor_indexing_ext,

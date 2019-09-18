@@ -165,6 +165,8 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             'vkReleasePerformanceConfigurationINTEL',
             'vkQueueSetPerformanceConfigurationINTEL',
             'vkCreateFramebuffer',
+            'vkSetDebugUtilsObjectNameEXT',
+            'vkSetDebugUtilsObjectTagEXT',
             ]
         # These VUIDS are not implicit, but are best handled in this layer. Codegen for vkDestroy calls will generate a key
         # which is translated here into a good VU.  Saves ~40 checks.
@@ -206,6 +208,9 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             "surface-nullalloc": "\"VUID-vkDestroySurfaceKHR-surface-01268\"",
             "framebuffer-compatalloc": "\"VUID-vkDestroyFramebuffer-framebuffer-00893\"",
             "framebuffer-nullalloc": "\"VUID-vkDestroyFramebuffer-framebuffer-00894\"",
+            "VkGraphicsPipelineCreateInfo-basePipelineHandle": "\"VUID-VkGraphicsPipelineCreateInfo-flags-00722\"",
+            "VkComputePipelineCreateInfo-basePipelineHandle": "\"VUID-VkComputePipelineCreateInfo-flags-00697\"",
+            "VkRayTracingPipelineCreateInfoNV-basePipelineHandle": "\"VUID-VkRayTracingPipelineCreateInfoNV-flags-02404\"",
            }
 
         # Commands shadowed by interface functions and are not implemented
@@ -318,13 +323,13 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         output_func = ''
         for objtype in ['instance', 'device']:
             upper_objtype = objtype.capitalize();
-            output_func += 'void ObjectLifetimes::DestroyLeaked%sObjects(Vk%s %s) {\n' % (upper_objtype, upper_objtype, objtype)
+            output_func += 'void ObjectLifetimes::DestroyLeaked%sObjects() {\n' % upper_objtype
             if objtype == 'device':
-                output_func += '    DestroyUndestroyedObjects(%s, kVulkanObjectTypeCommandBuffer);\n' % objtype
+                output_func += '    DestroyUndestroyedObjects(kVulkanObjectTypeCommandBuffer);\n'
             for handle in self.object_types:
                 if self.handle_types.IsNonDispatchable(handle):
                     if (objtype == 'device' and self.handle_parents.IsParentDevice(handle)) or (objtype == 'instance' and not self.handle_parents.IsParentDevice(handle)):
-                        output_func += '    DestroyUndestroyedObjects(%s, %s);\n' % (objtype, self.GetVulkanObjType(handle))
+                        output_func += '    DestroyUndestroyedObjects(%s);\n' % self.GetVulkanObjType(handle)
             output_func += '}\n'
 
         return output_func
@@ -699,7 +704,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             dispobj = params[0].find('type').text
             if is_create_pipelines:
                 create_obj_code += '%sif (!pPipelines[index]) continue;\n' % indent
-            create_obj_code += '%sCreateObject(%s, %s, %s, %s);\n' % (indent, params[0].find('name').text, object_dest, self.GetVulkanObjType(cmd_info[-1].type), allocator)
+            create_obj_code += '%sCreateObject(%s, %s, %s);\n' % (indent, object_dest, self.GetVulkanObjType(cmd_info[-1].type), allocator)
             if object_array == True:
                 indent = self.decIndent(indent)
                 create_obj_code += '%s}\n' % indent
@@ -732,8 +737,8 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
                 else:
                     dispobj = cmd_info[0].type
                     # Call Destroy a single time
-                    validate_code += '%sskip |= ValidateDestroyObject(%s, %s, %s, pAllocator, %s, %s);\n' % (indent, cmd_info[0].name, cmd_info[param].name, self.GetVulkanObjType(cmd_info[param].type), compatalloc_vuid, nullalloc_vuid)
-                    record_code += '%sRecordDestroyObject(%s, %s, %s);\n' % (indent, cmd_info[0].name, cmd_info[param].name, self.GetVulkanObjType(cmd_info[param].type))
+                    validate_code += '%sskip |= ValidateDestroyObject(%s, %s, pAllocator, %s, %s);\n' % (indent, cmd_info[param].name, self.GetVulkanObjType(cmd_info[param].type), compatalloc_vuid, nullalloc_vuid)
+                    record_code += '%sRecordDestroyObject(%s, %s);\n' % (indent, cmd_info[param].name, self.GetVulkanObjType(cmd_info[param].type))
         return object_array, validate_code, record_code
     #
     # Output validation for a single object (obj_count is NULL) or a counted list of objects
@@ -753,13 +758,20 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             indent = self.incIndent(indent)
             pre_call_code += '%sfor (uint32_t %s = 0; %s < %s; ++%s) {\n' % (indent, index, index, obj_count, index)
             indent = self.incIndent(indent)
-            pre_call_code += '%sskip |= ValidateObject(%s, %s%s[%s], %s, %s, %s, %s);\n' % (indent, disp_name, prefix, obj_name, index, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
+            pre_call_code += '%sskip |= ValidateObject(%s%s[%s], %s, %s, %s, %s);\n' % (indent, prefix, obj_name, index, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
             indent = self.decIndent(indent)
             pre_call_code += '%s}\n' % indent
             indent = self.decIndent(indent)
             pre_call_code += '%s}\n' % indent
         else:
-            pre_call_code += '%sskip |= ValidateObject(%s, %s%s, %s, %s, %s, %s);\n' % (indent, disp_name, prefix, obj_name, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
+            bonus_indent = ''
+            if 'basePipelineHandle' in obj_name:
+                pre_call_code += '%sif ((%sflags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) && (%sbasePipelineIndex == -1))\n' % (indent, prefix, prefix)
+                bonus_indent = '    '
+                null_allowed = 'false'
+                manual_vuid_index = parent_name + '-' + obj_name
+                param_vuid = self.manual_vuids.get(manual_vuid_index, "kVUIDUndefined")
+            pre_call_code += '%s%sskip |= ValidateObject(%s%s, %s, %s, %s, %s);\n' % (bonus_indent, indent, prefix, obj_name, self.GetVulkanObjType(obj_type), null_allowed, param_vuid, parent_vuid)
         return pre_call_code
     #
     # first_level_param indicates if elements are passed directly into the function else they're below a ptr/struct

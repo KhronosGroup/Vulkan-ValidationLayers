@@ -1310,18 +1310,6 @@ bool CoreChecks::ValidateCreateImageANDROID(const debug_report_data *report_data
     return skip;
 }
 
-void ValidationStateTracker::RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE *is_node) {
-    const VkExternalMemoryImageCreateInfo *emici = lvl_find_in_chain<VkExternalMemoryImageCreateInfo>(create_info->pNext);
-    if (emici && (emici->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
-        is_node->imported_ahb = true;
-    }
-    const VkExternalFormatANDROID *ext_fmt_android = lvl_find_in_chain<VkExternalFormatANDROID>(create_info->pNext);
-    if (ext_fmt_android && (0 != ext_fmt_android->externalFormat)) {
-        is_node->has_ahb_format = true;
-        is_node->ahb_format = ext_fmt_android->externalFormat;
-    }
-}
-
 bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *create_info) {
     bool skip = false;
     IMAGE_STATE *image_state = GetImageState(create_info->image);
@@ -1387,8 +1375,6 @@ bool CoreChecks::ValidateGetImageSubresourceLayoutANDROID(const VkImage image) c
 bool CoreChecks::ValidateCreateImageANDROID(const debug_report_data *report_data, const VkImageCreateInfo *create_info) {
     return false;
 }
-
-void ValidationStateTracker::RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE *is_node) {}
 
 bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *create_info) { return false; }
 
@@ -1579,32 +1565,6 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     return skip;
 }
 
-void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
-                                                       const VkAllocationCallbacks *pAllocator, VkImage *pImage, VkResult result) {
-    if (VK_SUCCESS != result) return;
-    std::unique_ptr<IMAGE_STATE> is_node(new IMAGE_STATE(*pImage, pCreateInfo));
-    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
-        RecordCreateImageANDROID(pCreateInfo, is_node.get());
-    }
-    const auto swapchain_info = lvl_find_in_chain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
-    if (swapchain_info) {
-        is_node->create_from_swapchain = swapchain_info->swapchain;
-    }
-
-    bool pre_fetch_memory_reqs = true;
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-    if (is_node->external_format_android) {
-        // Do not fetch requirements for external memory images
-        pre_fetch_memory_reqs = false;
-    }
-#endif
-    // Record the memory requirements in case they won't be queried
-    if (pre_fetch_memory_reqs) {
-        DispatchGetImageMemoryRequirements(device, *pImage, &is_node->requirements);
-    }
-    imageMap.insert(std::make_pair(*pImage, std::move(is_node)));
-}
-
 void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkImage *pImage, VkResult result) {
     if (VK_SUCCESS != result) return;
@@ -1627,30 +1587,6 @@ bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, con
         skip |= ValidateObjectNotInUse(image_state, obj_struct, "vkDestroyImage", "VUID-vkDestroyImage-image-01000");
     }
     return skip;
-}
-
-void ValidationStateTracker::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
-    if (!image) return;
-    IMAGE_STATE *image_state = GetImageState(image);
-    const VulkanTypedHandle obj_struct(image, kVulkanObjectTypeImage);
-    InvalidateCommandBuffers(image_state->cb_bindings, obj_struct);
-    // Clean up memory mapping, bindings and range references for image
-    for (auto mem_binding : image_state->GetBoundMemory()) {
-        auto mem_info = GetDevMemState(mem_binding);
-        if (mem_info) {
-            RemoveImageMemoryRange(image, mem_info);
-        }
-    }
-    if (image_state->bind_swapchain) {
-        auto swapchain = GetSwapchainState(image_state->bind_swapchain);
-        if (swapchain) {
-            swapchain->bound_images.erase(image_state->image);
-        }
-    }
-    RemoveAliasingImage(image_state);
-    ClearMemoryObjectBindings(obj_struct);
-    // Remove image from imageMap
-    imageMap.erase(image);
 }
 
 void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
@@ -1816,16 +1752,6 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
     return skip;
 }
 
-void ValidationStateTracker::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image,
-                                                             VkImageLayout imageLayout, const VkClearColorValue *pColor,
-                                                             uint32_t rangeCount, const VkImageSubresourceRange *pRanges) {
-    auto cb_node = GetCBState(commandBuffer);
-    auto image_state = GetImageState(image);
-    if (cb_node && image_state) {
-        AddCommandBufferBindingImage(cb_node, image_state);
-    }
-}
-
 void CoreChecks::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                  const VkClearColorValue *pColor, uint32_t rangeCount,
                                                  const VkImageSubresourceRange *pRanges) {
@@ -1888,17 +1814,6 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
         }
     }
     return skip;
-}
-
-void ValidationStateTracker::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image,
-                                                                    VkImageLayout imageLayout,
-                                                                    const VkClearDepthStencilValue *pDepthStencil,
-                                                                    uint32_t rangeCount, const VkImageSubresourceRange *pRanges) {
-    auto cb_node = GetCBState(commandBuffer);
-    auto image_state = GetImageState(image);
-    if (cb_node && image_state) {
-        AddCommandBufferBindingImage(cb_node, image_state);
-    }
 }
 
 void CoreChecks::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
@@ -2833,18 +2748,6 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
     return skip;
 }
 
-void ValidationStateTracker::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage,
-                                                       VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout,
-                                                       uint32_t regionCount, const VkImageCopy *pRegions) {
-    auto cb_node = GetCBState(commandBuffer);
-    auto src_image_state = GetImageState(srcImage);
-    auto dst_image_state = GetImageState(dstImage);
-
-    // Update bindings between images and cmd buffer
-    AddCommandBufferBindingImage(cb_node, src_image_state);
-    AddCommandBufferBindingImage(cb_node, dst_image_state);
-}
-
 void CoreChecks::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                            VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                            const VkImageCopy *pRegions) {
@@ -3143,19 +3046,6 @@ bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, V
         assert(0);
     }
     return skip;
-}
-
-void ValidationStateTracker::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage,
-                                                          VkImageLayout srcImageLayout, VkImage dstImage,
-                                                          VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                          const VkImageResolve *pRegions) {
-    auto cb_node = GetCBState(commandBuffer);
-    auto src_image_state = GetImageState(srcImage);
-    auto dst_image_state = GetImageState(dstImage);
-
-    // Update bindings between images and cmd buffer
-    AddCommandBufferBindingImage(cb_node, src_image_state);
-    AddCommandBufferBindingImage(cb_node, dst_image_state);
 }
 
 bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
@@ -3472,18 +3362,6 @@ bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkIm
         assert(0);
     }
     return skip;
-}
-
-void ValidationStateTracker::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage,
-                                                       VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout,
-                                                       uint32_t regionCount, const VkImageBlit *pRegions, VkFilter filter) {
-    auto cb_node = GetCBState(commandBuffer);
-    auto src_image_state = GetImageState(srcImage);
-    auto dst_image_state = GetImageState(dstImage);
-
-    // Update bindings between images and cmd buffer
-    AddCommandBufferBindingImage(cb_node, src_image_state);
-    AddCommandBufferBindingImage(cb_node, dst_image_state);
 }
 
 void CoreChecks::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
@@ -4062,19 +3940,6 @@ void CoreChecks::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreate
     }
 }
 
-void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
-                                                        const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
-                                                        VkResult result) {
-    if (result != VK_SUCCESS) return;
-    // TODO : This doesn't create deep copy of pQueueFamilyIndices so need to fix that if/when we want that data to be valid
-    std::unique_ptr<BUFFER_STATE> buffer_state(new BUFFER_STATE(*pBuffer, pCreateInfo));
-
-    // Get a set of requirements in the case the app does not
-    DispatchGetBufferMemoryRequirements(device, *pBuffer, &buffer_state->requirements);
-
-    bufferMap.insert(std::make_pair(*pBuffer, std::move(buffer_state)));
-}
-
 bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkBufferView *pView) {
     bool skip = false;
@@ -4167,13 +4032,6 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
         skip |= ValidateBufferViewBuffer(buffer_state, pCreateInfo);
     }
     return skip;
-}
-
-void ValidationStateTracker::PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
-                                                            const VkAllocationCallbacks *pAllocator, VkBufferView *pView,
-                                                            VkResult result) {
-    if (result != VK_SUCCESS) return;
-    bufferViewMap[*pView] = std::unique_ptr<BUFFER_VIEW_STATE>(new BUFFER_VIEW_STATE(*pView, pCreateInfo));
 }
 
 // For the given format verify that the aspect masks make sense
@@ -4577,14 +4435,6 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
     return skip;
 }
 
-void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
-                                                           const VkAllocationCallbacks *pAllocator, VkImageView *pView,
-                                                           VkResult result) {
-    if (result != VK_SUCCESS) return;
-    auto image_state = GetImageState(pCreateInfo->image);
-    imageViewMap[*pView] = std::unique_ptr<IMAGE_VIEW_STATE>(new IMAGE_VIEW_STATE(image_state, *pView, pCreateInfo));
-}
-
 static inline bool ValidateCmdCopyBufferBounds(const debug_report_data *report_data, const BUFFER_STATE *src_buffer_state,
                                                const BUFFER_STATE *dst_buffer_state, uint32_t regionCount,
                                                const VkBufferCopy *pRegions) {
@@ -4679,17 +4529,6 @@ bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkB
     return skip;
 }
 
-void ValidationStateTracker::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
-                                                        uint32_t regionCount, const VkBufferCopy *pRegions) {
-    auto cb_node = GetCBState(commandBuffer);
-    auto src_buffer_state = GetBufferState(srcBuffer);
-    auto dst_buffer_state = GetBufferState(dstBuffer);
-
-    // Update bindings between buffers and cmd buffer
-    AddCommandBufferBindingBuffer(cb_node, src_buffer_state);
-    AddCommandBufferBindingBuffer(cb_node, dst_buffer_state);
-}
-
 bool CoreChecks::ValidateIdleBuffer(VkBuffer buffer) {
     bool skip = false;
     auto buffer_state = GetBufferState(buffer);
@@ -4719,17 +4558,6 @@ bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView im
     return skip;
 }
 
-void ValidationStateTracker::PreCallRecordDestroyImageView(VkDevice device, VkImageView imageView,
-                                                           const VkAllocationCallbacks *pAllocator) {
-    IMAGE_VIEW_STATE *image_view_state = GetImageViewState(imageView);
-    if (!image_view_state) return;
-    const VulkanTypedHandle obj_struct(imageView, kVulkanObjectTypeImageView);
-
-    // Any bound cmd buffers are now invalid
-    InvalidateCommandBuffers(image_view_state->cb_bindings, obj_struct);
-    imageViewMap.erase(imageView);
-}
-
 bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
     auto buffer_state = GetBufferState(buffer);
 
@@ -4738,22 +4566,6 @@ bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, 
         skip |= ValidateIdleBuffer(buffer);
     }
     return skip;
-}
-
-void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
-    if (!buffer) return;
-    auto buffer_state = GetBufferState(buffer);
-    const VulkanTypedHandle obj_struct(buffer, kVulkanObjectTypeBuffer);
-
-    InvalidateCommandBuffers(buffer_state->cb_bindings, obj_struct);
-    for (auto mem_binding : buffer_state->GetBoundMemory()) {
-        auto mem_info = GetDevMemState(mem_binding);
-        if (mem_info) {
-            RemoveBufferMemoryRange(buffer, mem_info);
-        }
-    }
-    ClearMemoryObjectBindings(obj_struct);
-    bufferMap.erase(buffer_state->buffer);
 }
 
 void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
@@ -4781,17 +4593,6 @@ bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView 
     return skip;
 }
 
-void ValidationStateTracker::PreCallRecordDestroyBufferView(VkDevice device, VkBufferView bufferView,
-                                                            const VkAllocationCallbacks *pAllocator) {
-    if (!bufferView) return;
-    auto buffer_view_state = GetBufferViewState(bufferView);
-    const VulkanTypedHandle obj_struct(bufferView, kVulkanObjectTypeBufferView);
-
-    // Any bound cmd buffers are now invalid
-    InvalidateCommandBuffers(buffer_view_state->cb_bindings, obj_struct);
-    bufferViewMap.erase(bufferView);
-}
-
 bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                               VkDeviceSize size, uint32_t data) {
     auto cb_node = GetCBState(commandBuffer);
@@ -4807,14 +4608,6 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
                                      "vkCmdFillBuffer()", "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
     skip |= InsideRenderPass(cb_node, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-renderpass");
     return skip;
-}
-
-void ValidationStateTracker::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                                        VkDeviceSize size, uint32_t data) {
-    auto cb_node = GetCBState(commandBuffer);
-    auto buffer_state = GetBufferState(dstBuffer);
-    // Update bindings between buffer and cmd buffer
-    AddCommandBufferBindingBuffer(cb_node, buffer_state);
 }
 
 bool CoreChecks::ValidateBufferImageCopyData(uint32_t regionCount, const VkBufferImageCopy *pRegions, IMAGE_STATE *image_state,
@@ -5184,17 +4977,6 @@ bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuff
     return skip;
 }
 
-void ValidationStateTracker::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage,
-                                                               VkImageLayout srcImageLayout, VkBuffer dstBuffer,
-                                                               uint32_t regionCount, const VkBufferImageCopy *pRegions) {
-    auto cb_node = GetCBState(commandBuffer);
-    auto src_image_state = GetImageState(srcImage);
-    auto dst_buffer_state = GetBufferState(dstBuffer);
-
-    // Update bindings between buffer/image and cmd buffer
-    AddCommandBufferBindingImage(cb_node, src_image_state);
-    AddCommandBufferBindingBuffer(cb_node, dst_buffer_state);
-}
 void CoreChecks::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                    VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
     StateTracker::PreCallRecordCmdCopyImageToBuffer(commandBuffer, srcImage, srcImageLayout, dstBuffer, regionCount, pRegions);
@@ -5269,17 +5051,6 @@ bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuff
                                              "imageSubresource", "VUID-vkCmdCopyBufferToImage-imageSubresource-01702");
     }
     return skip;
-}
-
-void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                                               VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                               const VkBufferImageCopy *pRegions) {
-    auto cb_node = GetCBState(commandBuffer);
-    auto src_buffer_state = GetBufferState(srcBuffer);
-    auto dst_image_state = GetImageState(dstImage);
-
-    AddCommandBufferBindingBuffer(cb_node, src_buffer_state);
-    AddCommandBufferBindingImage(cb_node, dst_image_state);
 }
 
 void CoreChecks::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
