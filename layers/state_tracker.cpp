@@ -2080,6 +2080,9 @@ void ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(VkDevice devi
     create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
     // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
+        if (static_cast<size_t>(i) >= cgpl_state->pipe_state.size()) {
+           break;
+        }
         if (pPipelines[i] != VK_NULL_HANDLE) {
             (cgpl_state->pipe_state)[i]->pipeline = pPipelines[i];
             pipelineMap[pPipelines[i]] = std::move((cgpl_state->pipe_state)[i]);
