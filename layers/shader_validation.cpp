@@ -1817,15 +1817,12 @@ bool CoreChecks::ValidateShaderStageWritableDescriptor(VkShaderStageFlagBits sta
     return skip;
 }
 
-bool CoreChecks::ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const *module, VkShaderStageFlagBits stage,
-                                                    std::unordered_set<uint32_t> const &accessible_ids) const {
+bool CoreChecks::ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const *module, VkShaderStageFlagBits stage) const {
     bool skip = false;
 
     auto const subgroup_props = phys_dev_ext_props.subgroup_props;
 
-    for (uint32_t id : accessible_ids) {
-        auto inst = module->get_def(id);
-
+    for (auto inst : *module) {
         // Check the quad operations.
         switch (inst.opcode()) {
             default:
@@ -1837,6 +1834,60 @@ bool CoreChecks::ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const *m
                                            "VkPhysicalDeviceSubgroupProperties::quadOperationsInAllStages");
                 }
                 break;
+        }
+
+        if (!enabled_features.subgroup_extended_types_features.shaderSubgroupExtendedTypes) {
+            switch (inst.opcode()) {
+                default:
+                    break;
+                case spv::OpGroupNonUniformAllEqual:
+                case spv::OpGroupNonUniformBroadcast:
+                case spv::OpGroupNonUniformBroadcastFirst:
+                case spv::OpGroupNonUniformShuffle:
+                case spv::OpGroupNonUniformShuffleXor:
+                case spv::OpGroupNonUniformShuffleUp:
+                case spv::OpGroupNonUniformShuffleDown:
+                case spv::OpGroupNonUniformIAdd:
+                case spv::OpGroupNonUniformFAdd:
+                case spv::OpGroupNonUniformIMul:
+                case spv::OpGroupNonUniformFMul:
+                case spv::OpGroupNonUniformSMin:
+                case spv::OpGroupNonUniformUMin:
+                case spv::OpGroupNonUniformFMin:
+                case spv::OpGroupNonUniformSMax:
+                case spv::OpGroupNonUniformUMax:
+                case spv::OpGroupNonUniformFMax:
+                case spv::OpGroupNonUniformBitwiseAnd:
+                case spv::OpGroupNonUniformBitwiseOr:
+                case spv::OpGroupNonUniformBitwiseXor:
+                case spv::OpGroupNonUniformLogicalAnd:
+                case spv::OpGroupNonUniformLogicalOr:
+                case spv::OpGroupNonUniformLogicalXor:
+                case spv::OpGroupNonUniformQuadBroadcast:
+                case spv::OpGroupNonUniformQuadSwap: {
+                    auto type = module->get_def(inst.word(1));
+
+                    if (type.opcode() == spv::OpTypeVector) {
+                        // Get the element type
+                        type = module->get_def(type.word(2));
+                    }
+
+                    if (type.opcode() == spv::OpTypeBool) {
+                        break;
+                    }
+
+                    // Both OpTypeInt and OpTypeFloat the width is in the 2nd word.
+                    const uint32_t width = type.word(2);
+
+                    if ((type.opcode() == spv::OpTypeFloat && width == 16) ||
+                        (type.opcode() == spv::OpTypeInt && (width == 8 || width == 16 || width == 64))) {
+                        skip |= RequireFeature(
+                            report_data, enabled_features.subgroup_extended_types_features.shaderSubgroupExtendedTypes,
+                            "VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR::shaderSubgroupExtendedTypes");
+                    }
+                    break;
+                }
+            }
         }
     }
 
@@ -2760,7 +2811,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     skip |= ValidateShaderCapabilities(module, pStage->stage);
     skip |= ValidateShaderStageWritableDescriptor(pStage->stage, has_writable_descriptor);
     skip |= ValidateShaderStageInputOutputLimits(module, pStage, pipeline, entrypoint);
-    skip |= ValidateShaderStageGroupNonUniform(module, pStage->stage, accessible_ids);
+    skip |= ValidateShaderStageGroupNonUniform(module, pStage->stage);
     skip |= ValidateExecutionModes(module, entrypoint);
     skip |= ValidateSpecializationOffsets(report_data, pStage);
     skip |= ValidatePushConstantUsage(report_data, pipeline->pipeline_layout.push_constant_ranges.get(), module, accessible_ids,
