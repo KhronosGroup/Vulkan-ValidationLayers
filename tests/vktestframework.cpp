@@ -755,7 +755,7 @@ EShLanguage VkTestFramework::FindLanguage(const VkShaderStageFlagBits shader_typ
 // Return value of false means an error was encountered.
 //
 bool VkTestFramework::GLSLtoSPV(const VkShaderStageFlagBits shader_type, const char *pshader, std::vector<unsigned int> &spirv,
-                                bool debug) {
+                                bool debug, uint32_t spirv_minor_version) {
     glslang::TProgram program;
     const char *shaderStrings[1];
 
@@ -774,6 +774,27 @@ bool VkTestFramework::GLSLtoSPV(const VkShaderStageFlagBits shader_type, const c
 
     EShLanguage stage = FindLanguage(shader_type);
     glslang::TShader *shader = new glslang::TShader(stage);
+    switch (spirv_minor_version) {
+        default:
+        case 0:
+            shader->setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_0);
+            break;
+        case 1:
+            shader->setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_1);
+            break;
+        case 2:
+            shader->setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_2);
+            break;
+        case 3:
+            shader->setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_3);
+            break;
+        case 4:
+            shader->setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_4);
+            break;
+        case 5:
+            shader->setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_5);
+            break;
+    }
 
     shaderStrings[0] = pshader;
     shader->setStrings(shaderStrings, 1);
