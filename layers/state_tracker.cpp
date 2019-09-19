@@ -2084,7 +2084,7 @@ void ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(VkDevice devi
             break;
         }
         if (pPipelines[i] != VK_NULL_HANDLE) {
-            (cgpl_state->pipe_state)[i]->pipeline = pPipelines[i];
+            cgpl_state->pipe_state[i]->pipeline = pPipelines[i];
             pipelineMap[pPipelines[i]] = std::move((cgpl_state->pipe_state)[i]);
         }
     }
