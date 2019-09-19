@@ -5006,3 +5006,142 @@ TEST_F(VkLayerTest, MeshShaderDisabledNV) {
     vkDestroyEvent(m_device->device(), event, nullptr);
     vkDestroySemaphore(m_device->device(), semaphore, nullptr);
 }
+
+TEST_F(VkLayerTest, ViewportWScalingNV) {
+    TEST_DESCRIPTION("Verify VK_NV_clip_space_w_scaling");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    VkPhysicalDeviceFeatures device_features = {};
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
+
+    if (!device_features.multiViewport) {
+        printf("%s VkPhysicalDeviceFeatures::multiViewport is not supported, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    auto vkCmdSetViewportWScalingNV =
+        reinterpret_cast<PFN_vkCmdSetViewportWScalingNV>(vkGetDeviceProcAddr(m_device->device(), "vkCmdSetViewportWScalingNV"));
+
+    const char vs_src[] = R"(
+        #version 450
+        const vec2 positions[] = { vec2(-1.0f,  1.0f),
+                                   vec2( 1.0f,  1.0f),
+                                   vec2(-1.0f, -1.0f),
+                                   vec2( 1.0f, -1.0f) };
+        out gl_PerVertex {
+            vec4 gl_Position;
+        };
+
+        void main() {
+            gl_Position = vec4(positions[gl_VertexIndex % 4], 0.0f, 1.0f);
+        })";
+
+    const char fs_src[] = R"(
+        #version 450
+        layout(location = 0) out vec4 outColor;
+
+        void main() {
+            outColor = vec4(0.0f, 1.0f, 0.0f, 1.0f);
+        })";
+
+    const std::vector<VkViewport> vp = {
+        {0.0f, 0.0f, 64.0f, 64.0f}, {0.0f, 0.0f, 64.0f, 64.0f}, {0.0f, 0.0f, 64.0f, 64.0f}, {0.0f, 0.0f, 64.0f, 64.0f}};
+    const std::vector<VkRect2D> sc = {{{0, 0}, {32, 32}}, {{32, 0}, {32, 32}}, {{0, 32}, {32, 32}}, {{32, 32}, {32, 32}}};
+    const std::vector<VkViewportWScalingNV> scale = {{-0.2f, -0.2f}, {0.2f, -0.2f}, {-0.2f, 0.2f}, {0.2f, 0.2f}};
+
+    const uint32_t vp_count = static_cast<uint32_t>(vp.size());
+
+    VkPipelineViewportWScalingStateCreateInfoNV vpsi = {VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_W_SCALING_STATE_CREATE_INFO_NV};
+    vpsi.viewportWScalingEnable = VK_TRUE;
+    vpsi.viewportCount = vp_count;
+    vpsi.pViewportWScalings = scale.data();
+
+    VkPipelineViewportStateCreateInfo vpci = {VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
+    vpci.viewportCount = vp_count;
+    vpci.pViewports = vp.data();
+    vpci.scissorCount = vp_count;
+    vpci.pScissors = sc.data();
+    vpci.pNext = &vpsi;
+
+    const auto set_vpci = [&vpci](CreatePipelineHelper &helper) { helper.vp_state_ci_ = vpci; };
+
+    // Make sure no errors show up when creating the pipeline with w-scaling enabled
+    CreatePipelineHelper::OneshotTest(*this, set_vpci, VK_DEBUG_REPORT_ERROR_BIT_EXT, vector<std::string>(), true);
+
+    // Create pipeline with w-scaling enabled but without a valid scaling array
+    vpsi.pViewportWScalings = nullptr;
+    CreatePipelineHelper::OneshotTest(*this, set_vpci, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      vector<std::string>({"VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01715"}));
+
+    vpsi.pViewportWScalings = scale.data();
+
+    // Create pipeline with w-scaling enabled but without matching viewport counts
+    vpsi.viewportCount = 1;
+    CreatePipelineHelper::OneshotTest(*this, set_vpci, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                      vector<std::string>({"VUID-VkPipelineViewportStateCreateInfo-viewportWScalingEnable-01726"}));
+
+    const VkPipelineLayoutObj pl(m_device);
+
+    VkShaderObj vs(m_device, vs_src, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPipelineObj pipe(m_device);
+    pipe.AddDefaultColorAttachment();
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.SetViewport(vp);
+    pipe.SetScissor(sc);
+    pipe.CreateVKPipeline(pl.handle(), renderPass());
+
+    VkPipelineObj pipeDynWScale(m_device);
+    pipeDynWScale.AddDefaultColorAttachment();
+    pipeDynWScale.AddShader(&vs);
+    pipeDynWScale.AddShader(&fs);
+    pipeDynWScale.SetViewport(vp);
+    pipeDynWScale.SetScissor(sc);
+    pipeDynWScale.MakeDynamic(VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV);
+    pipeDynWScale.CreateVKPipeline(pl.handle(), renderPass());
+
+    m_commandBuffer->begin();
+
+    // Bind pipeline without dynamic w scaling enabled
+    m_errorMonitor->ExpectSuccess();
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewportWScalingNV-None-01322");
+    vkCmdSetViewportWScalingNV(m_commandBuffer->handle(), 0, vp_count, scale.data());
+    m_errorMonitor->VerifyFound();
+
+    // Bind pipeline that has dynamic w-scaling enabled
+    m_errorMonitor->ExpectSuccess();
+    vkCmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeDynWScale.handle());
+    m_errorMonitor->VerifyNotFound();
+
+    const auto max_vps = m_device->props.limits.maxViewports;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewportWScalingNV-firstViewport-01323");
+    vkCmdSetViewportWScalingNV(m_commandBuffer->handle(), max_vps, vp_count, scale.data());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewportWScalingNV-firstViewport-01324");
+    vkCmdSetViewportWScalingNV(m_commandBuffer->handle(), 1, max_vps, scale.data());
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->ExpectSuccess();
+    vkCmdSetViewportWScalingNV(m_commandBuffer->handle(), 0, vp_count, scale.data());
+    m_errorMonitor->VerifyNotFound();
+
+    m_commandBuffer->end();
+}
