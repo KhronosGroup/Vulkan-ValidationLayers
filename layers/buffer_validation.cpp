@@ -1940,12 +1940,14 @@ static inline bool IsExtentEqual(const VkExtent3D *extent, const VkExtent3D *oth
 // Destination image texel extents must be adjusted by block size for the dest validation checks
 VkExtent3D GetAdjustedDestImageExtent(VkFormat src_format, VkFormat dst_format, VkExtent3D extent) {
     VkExtent3D adjusted_extent = extent;
-    if ((FormatIsCompressed(src_format) && (!FormatIsCompressed(dst_format)))) {
+    if ((FormatIsCompressed(src_format) || FormatIsSinglePlane_422(src_format)) &&
+        !(FormatIsCompressed(dst_format) || FormatIsSinglePlane_422(dst_format))) {
         VkExtent3D block_size = FormatTexelBlockExtent(src_format);
         adjusted_extent.width /= block_size.width;
         adjusted_extent.height /= block_size.height;
         adjusted_extent.depth /= block_size.depth;
-    } else if ((!FormatIsCompressed(src_format) && (FormatIsCompressed(dst_format)))) {
+    } else if (!(FormatIsCompressed(src_format) || FormatIsSinglePlane_422(src_format)) &&
+               (FormatIsCompressed(dst_format) || FormatIsSinglePlane_422(dst_format))) {
         VkExtent3D block_size = FormatTexelBlockExtent(dst_format);
         adjusted_extent.width *= block_size.width;
         adjusted_extent.height *= block_size.height;
@@ -2008,7 +2010,7 @@ VkExtent3D CoreChecks::GetScaledItg(const CMD_BUFFER_STATE *cb_node, const IMAGE
     auto pPool = GetCommandPoolState(cb_node->createInfo.commandPool);
     if (pPool) {
         granularity = GetPhysicalDeviceState()->queue_family_properties[pPool->queueFamilyIndex].minImageTransferGranularity;
-        if (FormatIsCompressed(img->createInfo.format)) {
+        if (FormatIsCompressed(img->createInfo.format) || FormatIsSinglePlane_422(img->createInfo.format)) {
             auto block_size = FormatTexelBlockExtent(img->createInfo.format);
             granularity.width *= block_size.width;
             granularity.height *= block_size.height;
@@ -4849,7 +4851,7 @@ static bool ValidateImageBounds(const debug_report_data *report_data, const IMAG
         VkExtent3D image_extent = GetImageSubresourceExtent(image_state, &(pRegions[i].imageSubresource));
 
         // If we're using a compressed format, valid extent is rounded up to multiple of block size (per 18.1)
-        if (FormatIsCompressed(image_info->format)) {
+        if (FormatIsCompressed(image_info->format) || FormatIsSinglePlane_422(image_state->createInfo.format)) {
             auto block_extent = FormatTexelBlockExtent(image_info->format);
             if (image_extent.width % block_extent.width) {
                 image_extent.width += (block_extent.width - (image_extent.width % block_extent.width));
