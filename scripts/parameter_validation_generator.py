@@ -184,6 +184,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdSetLineStippleEXT',
             'vkSetDebugUtilsObjectNameEXT',
             'vkSetDebugUtilsObjectTagEXT',
+            'vkCmdSetViewportWScalingNV',
             ]
 
         # Commands to ignore

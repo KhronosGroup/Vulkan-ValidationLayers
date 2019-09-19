@@ -112,6 +112,22 @@ bool IMAGE_STATE::IsCreateInfoEqual(const VkImageCreateInfo &other_createInfo) c
     return is_equal && IsQueueFamilyIndicesEqual(other_createInfo);
 }
 
+// Check image compatibility rules for VK_NV_dedicated_allocation_image_aliasing
+bool IMAGE_STATE::IsCreateInfoDedicatedAllocationImageAliasingCompatible(const VkImageCreateInfo &other_createInfo) const {
+    bool is_compatible = (createInfo.sType == other_createInfo.sType) && (createInfo.flags == other_createInfo.flags);
+    is_compatible = is_compatible && IsImageTypeEqual(other_createInfo) && IsFormatEqual(other_createInfo);
+    is_compatible = is_compatible && IsMipLevelsEqual(other_createInfo);
+    is_compatible = is_compatible && IsUsageEqual(other_createInfo) && IsInitialLayoutEqual(other_createInfo);
+    is_compatible = is_compatible && IsSamplesEqual(other_createInfo) && IsSharingModeEqual(other_createInfo);
+    is_compatible = is_compatible && IsQueueFamilyIndicesEqual(other_createInfo) && IsTilingEqual(other_createInfo);
+
+    is_compatible = is_compatible && createInfo.extent.width <= other_createInfo.extent.width &&
+                    createInfo.extent.height <= other_createInfo.extent.height &&
+                    createInfo.extent.depth <= other_createInfo.extent.depth &&
+                    createInfo.arrayLayers <= other_createInfo.arrayLayers;
+    return is_compatible;
+}
+
 bool IMAGE_STATE::IsCompatibleAliasing(IMAGE_STATE *other_image_state) {
     if (!(createInfo.flags & other_image_state->createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT)) return false;
     if ((create_from_swapchain == VK_NULL_HANDLE) && (binding.mem == other_image_state->binding.mem) &&

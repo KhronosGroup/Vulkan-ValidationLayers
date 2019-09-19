@@ -672,8 +672,12 @@ void ThreadSafety::PreCallRecordDestroyDescriptorPool(
     StartWriteObject(descriptorPool);
     // Host access to descriptorPool must be externally synchronized
     auto lock = read_lock_guard_t(thread_safety_lock);
-    for(auto descriptor_set : pool_descriptor_sets_map[descriptorPool]) {
-        StartWriteObject(descriptor_set);
+    auto iterator = pool_descriptor_sets_map.find(descriptorPool);
+    // Possible to have no descriptor sets allocated from pool
+    if (iterator != pool_descriptor_sets_map.end()) {
+        for(auto descriptor_set : pool_descriptor_sets_map[descriptorPool]) {
+            StartWriteObject(descriptor_set);
+        }
     }
 }
 
@@ -686,7 +690,7 @@ void ThreadSafety::PostCallRecordDestroyDescriptorPool(
     DestroyObject(descriptorPool);
     // Host access to descriptorPool must be externally synchronized
     {
-        auto lock = read_lock_guard_t(thread_safety_lock);
+        auto lock = write_lock_guard_t(thread_safety_lock);
         // remove references to implicitly freed descriptor sets
         for(auto descriptor_set : pool_descriptor_sets_map[descriptorPool]) {
             FinishWriteObject(descriptor_set);
@@ -706,8 +710,12 @@ void ThreadSafety::PreCallRecordResetDescriptorPool(
     // Host access to descriptorPool must be externally synchronized
     // any sname:VkDescriptorSet objects allocated from pname:descriptorPool must be externally synchronized between host accesses
     auto lock = read_lock_guard_t(thread_safety_lock);
-    for(auto descriptor_set : pool_descriptor_sets_map[descriptorPool]) {
-        StartWriteObject(descriptor_set);
+    auto iterator = pool_descriptor_sets_map.find(descriptorPool);
+    // Possible to have no descriptor sets allocated from pool
+    if (iterator != pool_descriptor_sets_map.end()) {
+        for(auto descriptor_set : pool_descriptor_sets_map[descriptorPool]) {
+            StartWriteObject(descriptor_set);
+        }
     }
 }
 

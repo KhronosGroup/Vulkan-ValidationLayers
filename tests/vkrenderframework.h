@@ -481,7 +481,8 @@ class VkDescriptorSetObj : public vk_testing::DescriptorPool {
 class VkShaderObj : public vk_testing::ShaderModule {
   public:
     VkShaderObj(VkDeviceObj *device, const char *shaderText, VkShaderStageFlagBits stage, VkRenderFramework *framework,
-                char const *name = "main", bool debug = false, VkSpecializationInfo *specInfo = nullptr);
+                char const *name = "main", bool debug = false, VkSpecializationInfo *specInfo = nullptr,
+                uint32_t spirv_minor_version = 0);
     VkShaderObj(VkDeviceObj *device, const std::string spv_source, VkShaderStageFlagBits stage, VkRenderFramework *framework,
                 char const *name = "main", VkSpecializationInfo *specInfo = nullptr);
     VkPipelineShaderStageCreateInfo const &GetStageCreateInfo() const;

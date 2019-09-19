@@ -1119,6 +1119,19 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.pipeline_exe_props_features = *pipeline_exe_props_features;
     }
 
+    const auto *dedicated_allocation_image_aliasing_features =
+        lvl_find_in_chain<VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV>(pCreateInfo->pNext);
+    if (dedicated_allocation_image_aliasing_features) {
+        state_tracker->enabled_features.dedicated_allocation_image_aliasing_features =
+            *dedicated_allocation_image_aliasing_features;
+    }
+
+    const auto *subgroup_extended_types_features =
+        lvl_find_in_chain<VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR>(pCreateInfo->pNext);
+    if (subgroup_extended_types_features) {
+        state_tracker->enabled_features.subgroup_extended_types_features = *subgroup_extended_types_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);
@@ -2460,6 +2473,9 @@ CBStatusFlags MakeStaticStateMask(VkPipelineDynamicStateCreateInfo const *ds) {
                 case VK_DYNAMIC_STATE_LINE_STIPPLE_EXT:
                     flags &= ~CBSTATUS_LINE_STIPPLE_SET;
                     break;
+                case VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV:
+                    flags &= ~CBSTATUS_VIEWPORT_W_SCALING_SET;
+                    break;
                 default:
                     break;
             }
@@ -2674,6 +2690,13 @@ void ValidationStateTracker::PreCallRecordDestroyAccelerationStructureNV(VkDevic
         ClearMemoryObjectBindings(obj_struct);
         accelerationStructureMap.erase(accelerationStructure);
     }
+}
+
+void ValidationStateTracker::PreCallRecordCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
+                                                                   uint32_t viewportCount,
+                                                                   const VkViewportWScalingNV *pViewportWScalings) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->status |= CBSTATUS_VIEWPORT_W_SCALING_SET;
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {

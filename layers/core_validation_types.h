@@ -324,6 +324,7 @@ class IMAGE_STATE : public BINDABLE {
     bool IsCompatibleAliasing(IMAGE_STATE *other_image_state);
 
     bool IsCreateInfoEqual(const VkImageCreateInfo &other_createInfo) const;
+    bool IsCreateInfoDedicatedAllocationImageAliasingCompatible(const VkImageCreateInfo &other_createInfo) const;
 
     inline bool IsImageTypeEqual(const VkImageCreateInfo &other_createInfo) const {
         return createInfo.imageType == other_createInfo.imageType;
@@ -1022,7 +1023,8 @@ enum CBStatusFlagBits {
     CBSTATUS_EXCLUSIVE_SCISSOR_SET  = 0x00000400,
     CBSTATUS_SHADING_RATE_PALETTE_SET = 0x00000800,
     CBSTATUS_LINE_STIPPLE_SET       = 0x00001000,
-    CBSTATUS_ALL_STATE_SET          = 0x00001DFF,   // All state set (intentionally exclude index buffer)
+    CBSTATUS_VIEWPORT_W_SCALING_SET = 0x00002000,
+    CBSTATUS_ALL_STATE_SET          = 0x00003DFF,   // All state set (intentionally exclude index buffer)
     // clang-format on
 };
 
@@ -1616,6 +1618,8 @@ struct DeviceFeatures {
     VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT texel_buffer_alignment_features;
     VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_framebuffer_features;
     VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR pipeline_exe_props_features;
+    VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV dedicated_allocation_image_aliasing_features;
+    VkPhysicalDeviceShaderSubgroupExtendedTypesFeaturesKHR subgroup_extended_types_features;
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };

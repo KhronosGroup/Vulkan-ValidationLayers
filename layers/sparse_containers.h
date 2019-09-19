@@ -61,7 +61,7 @@ namespace sparse_container {
 // the valid range indexed by the incoming index value minus range_min_.
 // The same upate semantic applies bases on kSetReplaces.
 //
-// Note that when kSparseThreshold
+// Note that when kSparseThreshold is zero, the map is always in "Dense access" mode.
 //
 // Access:
 //
