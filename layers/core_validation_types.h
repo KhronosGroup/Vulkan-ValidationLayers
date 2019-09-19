@@ -1022,7 +1022,8 @@ enum CBStatusFlagBits {
     CBSTATUS_EXCLUSIVE_SCISSOR_SET  = 0x00000400,
     CBSTATUS_SHADING_RATE_PALETTE_SET = 0x00000800,
     CBSTATUS_LINE_STIPPLE_SET       = 0x00001000,
-    CBSTATUS_ALL_STATE_SET          = 0x00001DFF,   // All state set (intentionally exclude index buffer)
+    CBSTATUS_VIEWPORT_W_SCALING_SET = 0x00002000,
+    CBSTATUS_ALL_STATE_SET          = 0x00003DFF,   // All state set (intentionally exclude index buffer)
     // clang-format on
 };
 

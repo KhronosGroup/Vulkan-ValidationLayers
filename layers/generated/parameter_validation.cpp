@@ -8465,6 +8465,7 @@ bool StatelessValidation::PreCallValidateCmdSetViewportWScalingNV(
             // No xml-driven validation
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdSetViewportWScalingNV(commandBuffer, firstViewport, viewportCount, pViewportWScalings);
     return skip;
 }
 
