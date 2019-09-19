@@ -1278,6 +1278,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         pCreateInfos[i].pViewportState->pNext);
                     const auto vp_swizzle_struct =
                         lvl_find_in_chain<VkPipelineViewportSwizzleStateCreateInfoNV>(pCreateInfos[i].pViewportState->pNext);
+                    const auto vp_w_scaling_struct =
+                        lvl_find_in_chain<VkPipelineViewportWScalingStateCreateInfoNV>(pCreateInfos[i].pViewportState->pNext);
 
                     if (!physical_device_features.multiViewport) {
                         if (viewport_state.viewportCount != 1) {
@@ -1523,6 +1525,28 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     if (coarse_sample_order_struct) {
                         for (uint32_t order_i = 0; order_i < coarse_sample_order_struct->customSampleOrderCount; ++order_i) {
                             skip |= ValidateCoarseSampleOrderCustomNV(&coarse_sample_order_struct->pCustomSampleOrders[order_i]);
+                        }
+                    }
+
+                    if (vp_w_scaling_struct && (vp_w_scaling_struct->viewportWScalingEnable == VK_TRUE)) {
+                        if (vp_w_scaling_struct->viewportCount != viewport_state.viewportCount) {
+                            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                            VK_NULL_HANDLE, "VUID-VkPipelineViewportStateCreateInfo-viewportWScalingEnable-01726",
+                                            "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
+                                            "] "
+                                            "VkPipelineViewportWScalingStateCreateInfoNV.viewportCount (=%" PRIu32
+                                            ") "
+                                            "is not equal to VkPipelineViewportStateCreateInfo.viewportCount (=%" PRIu32 ").",
+                                            i, vp_w_scaling_struct->viewportCount, viewport_state.viewportCount);
+                        }
+                        if (!has_dynamic_viewport_w_scaling_nv && !vp_w_scaling_struct->pViewportWScalings) {
+                            skip |= log_msg(
+                                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                VK_NULL_HANDLE, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01715",
+                                "vkCreateGraphicsPipelines: pCreateInfos[%" PRIu32
+                                "] "
+                                "VkPipelineViewportWScalingStateCreateInfoNV.pViewportWScalings (=NULL) is not a valid array.",
+                                i);
                         }
                     }
                 }
@@ -3078,6 +3102,29 @@ bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorNV(VkComma
                                 ") of pScissors[%" PRIu32 "] will overflow int32_t.",
                                 scissor.offset.y, scissor.extent.height, y_sum, scissor_i);
             }
+        }
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
+                                                                         uint32_t viewportCount,
+                                                                         const VkViewportWScalingNV *pViewportWScalings) {
+    bool skip = false;
+    if (firstViewport >= device_limits.maxViewports) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetViewportWScalingNV-firstViewport-01323",
+                        "vkCmdSetViewportWScalingNV: firstViewport (=%" PRIu32 ") must be less than maxViewports (=%" PRIu32 ").",
+                        firstViewport, device_limits.maxViewports);
+    } else {
+        const uint64_t sum = static_cast<uint64_t>(firstViewport) + static_cast<uint64_t>(viewportCount);
+        if ((sum < 1) || (sum > device_limits.maxViewports)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(commandBuffer), "VUID-vkCmdSetViewportWScalingNV-firstViewport-01324",
+                            "vkCmdSetViewportWScalingNV: firstViewport + viewportCount (=%" PRIu32 " + %" PRIu32 " = %" PRIu64
+                            ") must be between 1 and VkPhysicalDeviceLimits::maxViewports (=%" PRIu32 "), inculsive.",
+                            firstViewport, viewportCount, sum, device_limits.maxViewports);
         }
     }
 
