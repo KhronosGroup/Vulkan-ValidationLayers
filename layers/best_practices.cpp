@@ -88,7 +88,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
     }
 
     auto pd_state = GetPhysicalDeviceState(physicalDevice);
-    if ((pd_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState == UNCALLED) && (pCreateInfo->pEnabledFeatures != NULL)) {
+    if ((pd_state->vkGetPhysicalDeviceFeaturesState == UNCALLED) && (pCreateInfo->pEnabledFeatures != NULL)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         kVUID_BestPractices_CreateDevice_PDFeaturesNotCalled,
                         "vkCreateDevice() called before getting physical device features from vkGetPhysicalDeviceFeatures().");
