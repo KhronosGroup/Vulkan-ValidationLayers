@@ -369,7 +369,8 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                                                            const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                            void* cgpl_state_data) {
-    bool skip = false;
+    bool skip = StateTracker::PreCallValidateCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos,
+                                                                     pAllocator, pPipelines, cgpl_state_data);
 
     if ((createInfoCount > 1) && (!pipelineCache)) {
         skip |=
@@ -386,7 +387,8 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
                                                           const VkComputePipelineCreateInfo* pCreateInfos,
                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                           void* ccpl_state_data) {
-    bool skip = false;
+    bool skip = StateTracker::PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos,
+                                                                    pAllocator, pPipelines, ccpl_state_data);
 
     if ((createInfoCount > 1) && (!pipelineCache)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
