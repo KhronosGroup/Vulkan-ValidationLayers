@@ -769,6 +769,8 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
                                                           VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                           VkPipelineLayout layout, uint32_t set, const void* pData);
+    void PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
+                                        uint32_t offset, uint32_t size, const void* pValues);
     void PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
     void PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                          uint32_t queryCount);

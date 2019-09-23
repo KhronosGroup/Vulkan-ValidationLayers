@@ -2891,6 +2891,19 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffe
     RecordCmdPushDescriptorSetState(cb_state, pipelineBindPoint, layout, set, descriptorWriteCount, pDescriptorWrites);
 }
 
+void ValidationStateTracker::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
+                                                            VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
+                                                            const void *pValues) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    if (cb_state != nullptr) {
+        ResetCommandBufferPushConstantDataIfIncompatible(cb_state, layout);
+
+        auto &push_constant_data = cb_state->push_constant_data;
+        assert((offset + size) <= static_cast<uint32_t>(push_constant_data.size()));
+        std::memcpy(push_constant_data.data() + offset, pValues, static_cast<std::size_t>(size));
+    }
+}
+
 void ValidationStateTracker::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                              VkIndexType indexType) {
     auto buffer_state = GetBufferState(buffer);

@@ -6816,19 +6816,6 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
     return skip;
 }
 
-void CoreChecks::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
-                                                VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
-                                                const void *pValues) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    if (cb_state != nullptr) {
-        ResetCommandBufferPushConstantDataIfIncompatible(cb_state, layout);
-
-        auto &push_constant_data = cb_state->push_constant_data;
-        assert((offset + size) <= static_cast<uint32_t>(push_constant_data.size()));
-        std::memcpy(push_constant_data.data() + offset, pValues, static_cast<std::size_t>(size));
-    }
-}
-
 bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                   VkQueryPool queryPool, uint32_t slot) {
     if (disabled.query_validation) return false;
