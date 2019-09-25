@@ -1624,12 +1624,6 @@ struct DeviceFeatures {
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
 
-struct ShaderTracker {
-    VkPipeline pipeline;
-    VkShaderModule shader_module;
-    std::vector<unsigned int> pgm;
-};
-
 enum BarrierOperationsType {
     kAllAcquire,  // All Barrier operations are "ownership acquire" operations
     kAllRelease,  // All Barrier operations are "ownership release" operations

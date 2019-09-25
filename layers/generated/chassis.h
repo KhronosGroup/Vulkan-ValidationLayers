@@ -2379,7 +2379,7 @@ enum LayerObjectTypeId {
     LayerObjectTypeObjectTracker,               // Instance or device object tracker layer object
     LayerObjectTypeCoreValidation,              // Instance or device core validation layer object
     LayerObjectTypeBestPractices,               // Instance or device best practices layer object
-    LayerObjectTypeGpuAV,                       // Instance or device gpu assisted validation layer object
+    LayerObjectTypeGpuAssisted,                 // Instance or device gpu assisted validation layer object
     LayerObjectTypeMaxEnum,                     // Max enum count
 };
 
@@ -2431,7 +2431,6 @@ struct CHECK_ENABLED {
     bool gpu_validation;
     bool gpu_validation_reserve_binding_slot;
     bool best_practices;
-    bool gpu_av;
 
     void SetAll(bool value) { std::fill(&gpu_validation, &gpu_validation_reserve_binding_slot + 1, value); }
 };

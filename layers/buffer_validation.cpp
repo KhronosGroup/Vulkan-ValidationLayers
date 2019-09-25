@@ -3948,14 +3948,6 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
     return skip;
 }
 
-void CoreChecks::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
-                                           const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer, void *cb_state_data) {
-    create_buffer_api_state *cb_state = reinterpret_cast<create_buffer_api_state *>(cb_state_data);
-    if (enabled.gpu_validation) {
-        GpuPreCallRecordCreateBuffer(device, pCreateInfo, pAllocator, pBuffer, &cb_state->modified_create_info);
-    }
-}
-
 bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkBufferView *pView) {
     bool skip = false;
@@ -4584,19 +4576,6 @@ bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, 
     return skip;
 }
 
-void CoreChecks::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
-    if (!buffer) return;
-
-    // Clean up validation specific data
-    EraseQFOReleaseBarriers<VkBufferMemoryBarrier>(buffer);
-
-    if (enabled.gpu_validation) {
-        GpuPreCallRecordDestroyBuffer(buffer);
-    }
-
-    // Clean up generic buffer state
-    StateTracker::PreCallRecordDestroyBuffer(device, buffer, pAllocator);
-}
 bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView,
                                                   const VkAllocationCallbacks *pAllocator) {
     auto buffer_view_state = GetBufferViewState(bufferView);

@@ -3165,16 +3165,6 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
     return skip;
 }
 
-void CoreChecks::PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                                 const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
-                                                 void *csm_state_data) {
-    create_shader_module_api_state *csm_state = reinterpret_cast<create_shader_module_api_state *>(csm_state_data);
-    if (enabled.gpu_validation) {
-        GpuPreCallCreateShaderModule(pCreateInfo, pAllocator, pShaderModule, &csm_state->unique_shader_id,
-                                     &csm_state->instrumented_create_info, &csm_state->instrumented_pgm);
-    }
-}
-
 bool CoreChecks::ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE *shader) const {
     bool skip = false;
     uint32_t local_size_x = 0;
