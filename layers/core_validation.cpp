@@ -1663,35 +1663,6 @@ bool CoreChecks::OutsideRenderPass(const CMD_BUFFER_STATE *pCB, const char *apiN
     return outside;
 }
 
-void CoreChecks::InitGpuValidation() {
-    // Process the layer settings file.
-    enum CoreValidationGpuFlagBits {
-        CORE_VALIDATION_GPU_VALIDATION_ALL_BIT = 0x00000001,
-        CORE_VALIDATION_GPU_VALIDATION_RESERVE_BINDING_SLOT_BIT = 0x00000002,
-    };
-    typedef VkFlags CoreGPUFlags;
-    static const std::unordered_map<std::string, VkFlags> gpu_flags_option_definitions = {
-        {std::string("all"), CORE_VALIDATION_GPU_VALIDATION_ALL_BIT},
-        {std::string("reserve_binding_slot"), CORE_VALIDATION_GPU_VALIDATION_RESERVE_BINDING_SLOT_BIT},
-    };
-    std::string gpu_flags_key = "lunarg_core_validation.gpu_validation";
-    CoreGPUFlags gpu_flags = GetLayerOptionFlags(gpu_flags_key, gpu_flags_option_definitions, 0);
-    gpu_flags_key = "khronos_validation.gpu_validation";
-    gpu_flags |= GetLayerOptionFlags(gpu_flags_key, gpu_flags_option_definitions, 0);
-    if (gpu_flags & CORE_VALIDATION_GPU_VALIDATION_ALL_BIT) {
-        instance_state->enabled.gpu_validation = true;
-    }
-    if (gpu_flags & CORE_VALIDATION_GPU_VALIDATION_RESERVE_BINDING_SLOT_BIT) {
-        instance_state->enabled.gpu_validation_reserve_binding_slot = true;
-    }
-}
-
-void CoreChecks::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                              VkInstance *pInstance, VkResult result) {
-    if (VK_SUCCESS != result) return;
-    InitGpuValidation();
-}
-
 bool CoreChecks::ValidateQueueFamilyIndex(const PHYSICAL_DEVICE_STATE *pd_state, uint32_t requested_queue_family,
                                           const char *err_code, const char *cmd_name, const char *queue_family_var_name) {
     bool skip = false;
@@ -1784,17 +1755,6 @@ bool CoreChecks::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDevic
     return skip;
 }
 
-void CoreChecks::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
-                                           const VkAllocationCallbacks *pAllocator, VkDevice *pDevice,
-                                           safe_VkDeviceCreateInfo *modified_create_info) {
-    // GPU Validation can possibly turn on device features, so give it a chance to change the create info.
-    if (enabled.gpu_validation) {
-        VkPhysicalDeviceFeatures supported_features;
-        DispatchGetPhysicalDeviceFeatures(gpu, &supported_features);
-        GpuPreCallRecordCreateDevice(gpu, modified_create_info, &supported_features);
-    }
-}
-
 void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,
                                             const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, VkResult result) {
     // The state tracker sets up the device state
@@ -1806,14 +1766,6 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
     ValidationObject *device_object = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
     ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, LayerObjectTypeCoreValidation);
     CoreChecks *core_checks = static_cast<CoreChecks *>(validation_data);
-
-    if (enabled.gpu_validation) {
-        // The only CoreCheck specific init is for gpu_validation
-        auto *device_state = static_cast<StateTracker *>(validation_data);
-        core_checks->GpuPostCallRecordCreateDevice(&enabled, pCreateInfo, &device_state->enabled_features.core);
-        core_checks->SetCommandBufferResetCallback(
-            [core_checks](VkCommandBuffer command_buffer) -> void { core_checks->GpuResetCommandBuffer(command_buffer); });
-    }
     core_checks->SetSetImageViewInitialLayoutCallback(
         [core_checks](CMD_BUFFER_STATE *cb_node, const IMAGE_VIEW_STATE &iv_state, VkImageLayout layout) -> void {
             core_checks->SetImageViewInitialLayout(cb_node, iv_state, layout);
@@ -1822,9 +1774,6 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
 
 void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     if (!device) return;
-    if (enabled.gpu_validation) {
-        GpuPreCallRecordDestroyDevice();
-    }
     imageSubresourceMap.clear();
     imageLayoutMap.clear();
 
@@ -2113,10 +2062,6 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
             }
         }
     }
-
-    if (enabled.gpu_validation) {
-        GpuPostCallQueueSubmit(queue, submitCount, pSubmits, fence);
-    }
 }
 bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *submit,
                                              unordered_set<VkSemaphore> *unsignaled_sema_arg,
@@ -2238,11 +2183,6 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
         }
     }
     return skip;
-}
-void CoreChecks::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence) {
-    if (enabled.gpu_validation && device_extensions.vk_ext_descriptor_indexing) {
-        GpuPreCallRecordQueueSubmit(queue, submitCount, pSubmits, fence);
-    }
 }
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
@@ -3178,14 +3118,6 @@ bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipe
     return skip;
 }
 
-void CoreChecks::PreCallRecordDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator) {
-    if (pipeline && enabled.gpu_validation) {
-        GpuPreCallRecordDestroyPipeline(pipeline);
-    }
-
-    StateTracker::PreCallRecordDestroyPipeline(device, pipeline, pAllocator);
-}
-
 bool CoreChecks::PreCallValidateDestroySampler(VkDevice device, VkSampler sampler, const VkAllocationCallbacks *pAllocator) {
     const SAMPLER_STATE *sampler_state = GetSamplerState(sampler);
     const VulkanTypedHandle obj_struct(sampler, kVulkanObjectTypeSampler);
@@ -3429,34 +3361,6 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
     return skip;
 }
 
-// GPU validation may replace pCreateInfos for the down-chain call
-void CoreChecks::PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                      const VkGraphicsPipelineCreateInfo *pCreateInfos,
-                                                      const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                      void *cgpl_state_data) {
-    // GPU Validation may replace instrumented shaders with non-instrumented ones, so allow it to modify the createinfos.
-    if (enabled.gpu_validation) {
-        create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
-        cgpl_state->gpu_create_infos = GpuPreCallRecordCreateGraphicsPipelines(pipelineCache, count, pCreateInfos, pAllocator,
-                                                                               pPipelines, cgpl_state->pipe_state);
-        cgpl_state->pCreateInfos = reinterpret_cast<VkGraphicsPipelineCreateInfo *>(cgpl_state->gpu_create_infos.data());
-    }
-}
-
-void CoreChecks::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                       const VkGraphicsPipelineCreateInfo *pCreateInfos,
-                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                       VkResult result, void *cgpl_state_data) {
-    StateTracker::PostCallRecordCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, result,
-                                                        cgpl_state_data);
-    // GPU val needs clean up regardless of result
-    if (enabled.gpu_validation) {
-        create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
-        GpuPostCallRecordCreateGraphicsPipelines(count, pCreateInfos, pAllocator, pPipelines);
-        cgpl_state->gpu_create_infos.clear();
-    }
-}
-
 bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                        const VkComputePipelineCreateInfo *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -3472,34 +3376,6 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
     return skip;
 }
 
-void CoreChecks::PreCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                     const VkComputePipelineCreateInfo *pCreateInfos,
-                                                     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                     void *ccpl_state_data) {
-    // GPU Validation may replace instrumented shaders with non-instrumented ones, so allow it to modify the createinfos.
-    if (enabled.gpu_validation) {
-        auto *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
-        ccpl_state->gpu_create_infos = GpuPreCallRecordCreateComputePipelines(pipelineCache, count, pCreateInfos, pAllocator,
-                                                                              pPipelines, ccpl_state->pipe_state);
-        ccpl_state->pCreateInfos = reinterpret_cast<VkComputePipelineCreateInfo *>(ccpl_state->gpu_create_infos.data());
-    }
-}
-
-void CoreChecks::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                      const VkComputePipelineCreateInfo *pCreateInfos,
-                                                      const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                      VkResult result, void *ccpl_state_data) {
-    StateTracker::PostCallRecordCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, result,
-                                                       ccpl_state_data);
-
-    // GPU val needs clean up regardless of result
-    if (enabled.gpu_validation) {
-        create_compute_pipeline_api_state *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
-        GpuPostCallRecordCreateComputePipelines(count, pCreateInfos, pAllocator, pPipelines);
-        ccpl_state->gpu_create_infos.clear();
-    }
-}
-
 bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                             const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -3512,33 +3388,6 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
         skip |= ValidateRayTracingPipelineNV(crtpl_state->pipe_state[i].get());
     }
     return skip;
-}
-
-void CoreChecks::PreCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                          const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
-                                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                          void *crtpl_state_data) {
-    // GPU Validation may replace instrumented shaders with non-instrumented ones, so allow it to modify the createinfos.
-    if (enabled.gpu_validation) {
-        auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_api_state *>(crtpl_state_data);
-        crtpl_state->gpu_create_infos = GpuPreCallRecordCreateRayTracingPipelinesNV(pipelineCache, count, pCreateInfos, pAllocator,
-                                                                                    pPipelines, crtpl_state->pipe_state);
-        crtpl_state->pCreateInfos = reinterpret_cast<VkRayTracingPipelineCreateInfoNV *>(crtpl_state->gpu_create_infos.data());
-    }
-}
-
-void CoreChecks::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                           const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
-                                                           const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                           VkResult result, void *crtpl_state_data) {
-    StateTracker::PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines,
-                                                            result, crtpl_state_data);
-    // GPU val needs clean up regardless of result
-    if (enabled.gpu_validation) {
-        auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_api_state *>(crtpl_state_data);
-        GpuPostCallRecordCreateRayTracingPipelinesNV(count, pCreateInfos, pAllocator, pPipelines);
-        crtpl_state->gpu_create_infos.clear();
-    }
 }
 
 bool CoreChecks::PreCallValidateGetPipelineExecutablePropertiesKHR(VkDevice device, const VkPipelineInfoKHR *pPipelineInfo,
@@ -4249,27 +4098,6 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     return skip;
 }
 
-void CoreChecks::PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
-                                                   const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
-                                                   void *cpl_state_data) {
-    create_pipeline_layout_api_state *cpl_state = reinterpret_cast<create_pipeline_layout_api_state *>(cpl_state_data);
-    if (enabled.gpu_validation) {
-        GpuPreCallCreatePipelineLayout(pCreateInfo, pAllocator, pPipelineLayout, &cpl_state->new_layouts,
-                                       &cpl_state->modified_create_info);
-    }
-}
-
-void CoreChecks::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
-                                                    const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
-                                                    VkResult result) {
-    StateTracker::PostCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, result);
-
-    // Clean up GPU validation
-    if (enabled.gpu_validation) {
-        GpuPostCallCreatePipelineLayout(result);
-    }
-}
-
 bool CoreChecks::PreCallValidateResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                     VkDescriptorPoolResetFlags flags) {
     // Make sure sets being destroyed are not currently in-use
@@ -4976,17 +4804,6 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
         }
     }
     return skip;
-}
-
-void CoreChecks::PreCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer,
-                                                              const VkAccelerationStructureInfoNV *pInfo, VkBuffer instanceData,
-                                                              VkDeviceSize instanceOffset, VkBool32 update,
-                                                              VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
-                                                              VkBuffer scratch, VkDeviceSize scratchOffset) {
-    if (enabled.gpu_validation) {
-        GpuPreCallRecordCmdBuildAccelerationStructureNV(commandBuffer, pInfo, instanceData, instanceOffset, update, dst, src,
-                                                        scratch, scratchOffset);
-    }
 }
 
 bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAccelerationStructureNV dst,
@@ -6458,9 +6275,6 @@ void CoreChecks::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint3
     cb_state->eventUpdates.emplace_back(
         [=](VkQueue q) { return ValidateEventStageMask(q, cb_state, event_added_count, first_event_index, sourceStageMask); });
     TransitionImageLayouts(cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
-    if (enabled.gpu_validation) {
-        GpuPreCallValidateCmdWaitEvents(sourceStageMask);
-    }
 }
 
 void CoreChecks::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
@@ -10523,14 +10337,6 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const
 
     return skip;
 }
-void CoreChecks::PostCallRecordGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT *pInfo,
-                                                         VkDeviceAddress address) {
-    const auto buffer_state = GetBufferState(pInfo->buffer);
-    buffer_state->deviceAddress = address;
-    if (enabled.gpu_validation) {
-        GpuPostCallRecordGetBufferDeviceAddressEXT(pInfo, address);
-    }
-}
 
 bool CoreChecks::ValidateQueryRange(VkDevice device, VkQueryPool queryPool, uint32_t totalCount, uint32_t firstQuery,
                                     uint32_t queryCount, const char *vuid_badfirst, const char *vuid_badrange) const {
@@ -10569,21 +10375,6 @@ bool CoreChecks::PreCallValidateResetQueryPoolEXT(VkDevice device, VkQueryPool q
     }
 
     return skip;
-}
-
-void CoreChecks::PreCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
-                                                          VkPhysicalDeviceProperties *pPhysicalDeviceProperties) {
-    // There is an implicit layer that can cause this call to return 0 for maxBoundDescriptorSets - Ignore such calls
-    if (enabled.gpu_validation && enabled.gpu_validation_reserve_binding_slot &&
-        pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 0) {
-        if (pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 1) {
-            pPhysicalDeviceProperties->limits.maxBoundDescriptorSets -= 1;
-        } else {
-            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
-                    HandleToUint64(physicalDevice), "UNASSIGNED-GPU-Assisted Validation Setup Error.",
-                    "Unable to reserve descriptor binding slot on a device with only one slot.");
-        }
-    }
 }
 
 VkResult CoreChecks::CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT *pCreateInfo,

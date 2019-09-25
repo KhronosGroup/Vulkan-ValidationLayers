@@ -190,9 +190,9 @@ set(BEST_PRACTICES_LIBRARY_FILES
     best_practices.cpp
     best_practices.h)
 
-set(GPUAV_LIBRARY_FILES
-    gpuav_validation.cpp
-    gpuav_validation.h)
+set(GPU_ASSISTED_LIBRARY_FILES
+    gpu_validation.cpp
+    gpu_validation.h)
 
 if(BUILD_LAYERS)
     AddVkLayer(khronos_validation ""
@@ -202,7 +202,7 @@ if(BUILD_LAYERS)
         ${THREAD_SAFETY_LIBRARY_FILES}
         ${STATELESS_VALIDATION_LIBRARY_FILES}
         ${BEST_PRACTICES_LIBRARY_FILES}
-        ${GPUAV_LIBRARY_FILES})
+        ${GPU_ASSISTED_LIBRARY_FILES})
 
     # Khronos validation additional dependencies
     target_include_directories(VkLayer_khronos_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})

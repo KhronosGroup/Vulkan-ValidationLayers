@@ -45,12 +45,12 @@ bool wrap_handles = true;
 #define OBJECT_LAYER_DESCRIPTION "khronos_validation"
 
 // Include layer validation object definitions
-#include "object_lifetime_validation.h"
-#include "thread_safety.h"
-#include "stateless_validation.h"
-#include "core_validation.h"
 #include "best_practices.h"
-#include "gpuav_validation.h"
+#include "core_validation.h"
+#include "gpu_validation.h"
+#include "object_lifetime_validation.h"
+#include "stateless_validation.h"
+#include "thread_safety.h"
 
 namespace vulkan_layer_chassis {
 
@@ -192,7 +192,7 @@ void SetValidationFeatureDisable(CHECK_DISABLED* disable_data, const VkValidatio
 void SetValidationFeatureEnable(CHECK_ENABLED *enable_data, const VkValidationFeatureEnableEXT feature_enable) {
     switch (feature_enable) {
         case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT:
-            enable_data->gpu_av = true;
+            enable_data->gpu_validation = true;
             break;
         case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT:
             enable_data->gpu_validation_reserve_binding_slot = true;
@@ -426,14 +426,11 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     best_practices->container_type = LayerObjectTypeBestPractices;
     best_practices->api_version = api_version;
     best_practices->report_data = report_data;
-    auto gpu_av = new GpuAV;
-    if (local_enables.gpu_av) {
-        local_object_dispatch.emplace_back(gpu_av);
+    auto gpu_assisted = new GpuAssisted;
+    if (local_enables.gpu_validation) {
+        local_object_dispatch.emplace_back(gpu_assisted);
     }
-    gpu_av->container_type = LayerObjectTypeGpuAV;
-    gpu_av->api_version = api_version;
-    gpu_av->report_data = report_data;
-
+    gpu_assisted->container_type = LayerObjectTypeGpuAssisted;
 
     // If handle wrapping is disabled via the ValidationFeatures extension, override build flag
     if (local_disables.handle_wrapping) {
@@ -483,9 +480,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     best_practices->instance_dispatch_table = framework->instance_dispatch_table;
     best_practices->enabled = framework->enabled;
     best_practices->disabled = framework->disabled;
-    gpu_av->instance_dispatch_table = framework->instance_dispatch_table;
-    gpu_av->enabled = framework->enabled;
-    gpu_av->disabled = framework->disabled;
+    gpu_assisted->instance_dispatch_table = framework->instance_dispatch_table;
+    gpu_assisted->enabled = framework->enabled;
+    gpu_assisted->disabled = framework->disabled;
 
     for (auto intercept : framework->object_dispatch) {
         intercept->PostCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance, result);
@@ -619,12 +616,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     if (instance_interceptor->enabled.best_practices) {
         device_interceptor->object_dispatch.emplace_back(best_practices);
     }
-    auto gpu_av = new GpuAV;
-    gpu_av->container_type = LayerObjectTypeGpuAV;
-    gpu_av->instance_state = reinterpret_cast<GpuAV *>(
-        gpu_av->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeGpuAV));
-    if (instance_interceptor->enabled.gpu_av) {
-        device_interceptor->object_dispatch.emplace_back(gpu_av);
+    auto gpu_assisted = new GpuAssisted;
+    gpu_assisted->container_type = LayerObjectTypeGpuAssisted;
+    gpu_assisted->instance_state = reinterpret_cast<GpuAssisted *>(
+        gpu_assisted->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeGpuAssisted));
+    if (instance_interceptor->enabled.gpu_validation) {
+        device_interceptor->object_dispatch.emplace_back(gpu_assisted);
     }
 
     // Set per-intercept common data items
@@ -703,9 +700,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(
         intercept->PreCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &(cgpl_state[intercept->container_type]));
     }
 
-    auto usepCreateInfos = (!cgpl_state[LayerObjectTypeCoreValidation].pCreateInfos) ? pCreateInfos : cgpl_state[LayerObjectTypeCoreValidation].pCreateInfos; 
-    // Temporary code for gpu-av object transition
-    if (cgpl_state[LayerObjectTypeGpuAV].pCreateInfos) usepCreateInfos = cgpl_state[LayerObjectTypeGpuAV].pCreateInfos;
+    auto usepCreateInfos = (!cgpl_state[LayerObjectTypeGpuAssisted].pCreateInfos) ? pCreateInfos : cgpl_state[LayerObjectTypeGpuAssisted].pCreateInfos; 
 
     VkResult result = DispatchCreateGraphicsPipelines(device, pipelineCache, createInfoCount, usepCreateInfos, pAllocator, pPipelines);
 
@@ -740,9 +735,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(
         intercept->PreCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, &(ccpl_state[intercept->container_type]));
     }
 
-    auto usepCreateInfos = (!ccpl_state[LayerObjectTypeCoreValidation].pCreateInfos) ? pCreateInfos : ccpl_state[LayerObjectTypeCoreValidation].pCreateInfos;
-    // Temporary code for gpu-av object transition
-    if (ccpl_state[LayerObjectTypeGpuAV].pCreateInfos) usepCreateInfos = ccpl_state[LayerObjectTypeGpuAV].pCreateInfos;
+    auto usepCreateInfos = (!ccpl_state[LayerObjectTypeGpuAssisted].pCreateInfos) ? pCreateInfos : ccpl_state[LayerObjectTypeGpuAssisted].pCreateInfos;
 
     VkResult result = DispatchCreateComputePipelines(device, pipelineCache, createInfoCount, usepCreateInfos, pAllocator, pPipelines);
 
