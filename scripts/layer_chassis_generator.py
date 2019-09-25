@@ -609,7 +609,7 @@ void SetValidationFeatureDisable(CHECK_DISABLED* disable_data, const VkValidatio
 void SetValidationFeatureEnable(CHECK_ENABLED *enable_data, const VkValidationFeatureEnableEXT feature_enable) {
     switch (feature_enable) {
         case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT:
-            enable_data->gpu_validation = true;
+            enable_data->gpu_av = true;
             break;
         case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT:
             enable_data->gpu_validation_reserve_binding_slot = true;
