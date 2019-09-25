@@ -3117,7 +3117,11 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
         // Use SPIRV-Tools validator to try and catch any issues with the module itself
         spv_target_env spirv_environment = SPV_ENV_VULKAN_1_0;
         if (api_version >= VK_API_VERSION_1_1) {
-            spirv_environment = SPV_ENV_VULKAN_1_1;
+            if (device_extensions.vk_khr_spirv_1_4) {
+                spirv_environment = SPV_ENV_VULKAN_1_1_SPIRV_1_4;
+            } else {
+                spirv_environment = SPV_ENV_VULKAN_1_1;
+            }
         }
         spv_context ctx = spvContextCreate(spirv_environment);
         spv_const_binary_t binary{pCreateInfo->pCode, pCreateInfo->codeSize / sizeof(uint32_t)};
