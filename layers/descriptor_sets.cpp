@@ -685,12 +685,6 @@ unsigned DescriptorRequirementsBitsFromFormat(VkFormat fmt) {
 bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const std::map<uint32_t, descriptor_req> &bindings,
                                    const std::vector<uint32_t> &dynamic_offsets, const CMD_BUFFER_STATE *cb_node,
                                    const char *caller, std::string *error) const {
-    using DescriptorClass = cvdescriptorset::DescriptorClass;
-    using BufferDescriptor = cvdescriptorset::BufferDescriptor;
-    using ImageDescriptor = cvdescriptorset::ImageDescriptor;
-    using ImageSamplerDescriptor = cvdescriptorset::ImageSamplerDescriptor;
-    using SamplerDescriptor = cvdescriptorset::SamplerDescriptor;
-    using TexelDescriptor = cvdescriptorset::TexelDescriptor;
     for (auto binding_pair : bindings) {
         auto binding = binding_pair.first;
         DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(), binding);
@@ -708,7 +702,24 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const st
             // or the view could have been destroyed
             continue;
         }
+        if (!ValidateDescriptorSetBindingData(cb_node, descriptor_set, dynamic_offsets, binding, binding_pair.second, caller,
+                                              error))
+            return false;
+    }
+    return true;
+}
 
+bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_node, const DescriptorSet *descriptor_set,
+                                                  const std::vector<uint32_t> &dynamic_offsets, uint32_t binding,
+                                                  descriptor_req reqs, const char *caller, std::string *error) const {
+    using DescriptorClass = cvdescriptorset::DescriptorClass;
+    using BufferDescriptor = cvdescriptorset::BufferDescriptor;
+    using ImageDescriptor = cvdescriptorset::ImageDescriptor;
+    using ImageSamplerDescriptor = cvdescriptorset::ImageSamplerDescriptor;
+    using SamplerDescriptor = cvdescriptorset::SamplerDescriptor;
+    using TexelDescriptor = cvdescriptorset::TexelDescriptor;
+    DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(), binding);
+    {
         // Copy the range, the end range is subject to update based on variable length descriptor arrays.
         cvdescriptorset::IndexRange index_range = binding_it.GetGlobalIndexRange();
         auto array_idx = 0;  // Track array idx if we're dealing with array descriptors
@@ -795,7 +806,6 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const st
                         image_view_state = static_cast<const ImageDescriptor *>(descriptor)->GetImageViewState();
                         image_layout = static_cast<const ImageDescriptor *>(descriptor)->GetImageLayout();
                     }
-                    auto reqs = binding_pair.second;
 
                     if (!image_view_state || image_view_state->destroyed) {
                         // Image view must have been destroyed since initial update. Could potentially flag the descriptor
@@ -886,7 +896,6 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const st
                         *error = error_str.str();
                         return false;
                     }
-                    auto reqs = binding_pair.second;
                     auto format_bits = DescriptorRequirementsBitsFromFormat(buffer_view_state->create_info.format);
 
                     if (!(reqs & format_bits)) {
