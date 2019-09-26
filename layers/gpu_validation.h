@@ -109,26 +109,21 @@ struct GpuAssistedAccelerationStructureBuildValidationState {
     std::unordered_map<VkCommandBuffer, std::vector<GpuAssistedAccelerationStructureBuildValidationBufferInfo>> validation_buffers;
 };
 
-struct GpuAssistedValidationState {
-    bool aborted;
+class GpuAssisted : public ValidationStateTracker {
+    bool aborted = false;
     VkBool32 shaderInt64;
-    VkDescriptorSetLayout debug_desc_layout;
-    VkDescriptorSetLayout dummy_desc_layout;
     uint32_t adjusted_max_desc_sets;
     uint32_t desc_set_bind_index;
-    uint32_t unique_shader_module_id;
+    uint32_t unique_shader_module_id = 0;
     std::unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
     std::unique_ptr<GpuAssistedDescriptorSetManager> desc_set_manager;
     std::map<VkQueue, GpuAssistedQueueBarrierCommandInfo> queue_barrier_command_infos;
     std::unordered_map<VkCommandBuffer, std::vector<GpuAssistedBufferInfo>> command_buffer_map;  // gpu_buffer_list;
     uint32_t output_buffer_size;
-    VmaAllocator vmaAllocator;
+    VmaAllocator vmaAllocator = {};
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
     std::map<VkDeviceAddress, VkDeviceSize> buffer_map;
     GpuAssistedAccelerationStructureBuildValidationState acceleration_structure_validation_state;
-    GpuAssistedValidationState(bool aborted = false, uint32_t unique_shader_module_id = 0, VmaAllocator vmaAllocator = {})
-        : aborted(aborted), unique_shader_module_id(unique_shader_module_id), vmaAllocator(vmaAllocator){};
-
     std::vector<GpuAssistedBufferInfo>& GetGpuAssistedBufferInfo(const VkCommandBuffer command_buffer) {
         auto buffer_list = command_buffer_map.find(command_buffer);
         if (buffer_list == command_buffer_map.end()) {
@@ -138,13 +133,11 @@ struct GpuAssistedValidationState {
         }
         return buffer_list->second;
     }
-};
-
-class GpuAssisted : public ValidationStateTracker {
-  public:
-    using StateTracker = ValidationStateTracker;
-    std::unique_ptr<GpuAssistedValidationState> gpu_validation_state;
     void ReportSetupProblem(VkDebugReportObjectTypeEXT object_type, uint64_t object_handle, const char* const specific_message);
+
+  public:
+    VkDescriptorSetLayout debug_desc_layout;
+    VkDescriptorSetLayout dummy_desc_layout;
     void PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
                                    safe_VkDeviceCreateInfo* modified_create_info);
