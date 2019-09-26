@@ -177,6 +177,9 @@ class HelperFileOutputGenerator(OutputGenerator):
             required_extensions = requires.split(',')
         else:
             required_extensions = list()
+        requiresCore = interface.get('requiresCore')
+        if requiresCore is not None:
+            required_extensions.append('VK_VERSION_%s' % ('_'.join(requiresCore.split('.'))))
         info = { 'define': name_define, 'ifdef':self.featureExtraProtect, 'reqs':required_extensions }
         if interface.get('type') == 'instance':
             self.instance_extension_info[name] = info
@@ -547,6 +550,8 @@ class HelperFileOutputGenerator(OutputGenerator):
             '#include <vector>',
             '',
             '#include <vulkan/vulkan.h>',
+            '',
+            '#define VK_VERSION_1_1_NAME "VK_VERSION_1_1"',
             '']
 
         def guarded(ifdef, value):
@@ -570,6 +575,10 @@ class HelperFileOutputGenerator(OutputGenerator):
             extension_items = sorted(extension_dict.items())
 
             field_name = { ext_name: re.sub('_extension_name', '', info['define'].lower()) for ext_name, info in extension_items }
+
+            # Add in pseudo-extensions for core API versions so real extensions can depend on them
+            extension_dict['VK_VERSION_1_1'] = {'define':"VK_VERSION_1_1_NAME", 'ifdef':None, 'reqs':[]}
+            field_name['VK_VERSION_1_1'] = "vk_feature_version_1_1"
 
             if type == 'Instance':
                 instance_field_name = field_name

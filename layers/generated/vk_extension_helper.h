@@ -41,6 +41,8 @@
 
 #include <vulkan/vulkan.h>
 
+#define VK_VERSION_1_1_NAME "VK_VERSION_1_1"
+
 struct InstanceExtensions {
     bool vk_feature_version_1_1{false};
     bool vk_ext_acquire_xlib_display{false};
@@ -138,7 +140,8 @@ struct InstanceExtensions {
                            {&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_SURFACE_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_khr_surface, {})),
             std::make_pair(VK_KHR_SURFACE_PROTECTED_CAPABILITIES_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_khr_surface_protected_capabilities, {{
-                           {&InstanceExtensions::vk_khr_get_surface_capabilities_2, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME}}})),
+                           {&InstanceExtensions::vk_khr_get_surface_capabilities_2, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME},
+                           {&InstanceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})),
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
             std::make_pair(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_khr_wayland_surface, {{
                            {&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})),
@@ -558,7 +561,8 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_subgroup_ballot, {})),
             std::make_pair(VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_subgroup_vote, {})),
             std::make_pair(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_shader_viewport_index_layer, {})),
-            std::make_pair(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_subgroup_size_control, {})),
+            std::make_pair(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_subgroup_size_control, {{
+                           {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})),
             std::make_pair(VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_texel_buffer_alignment, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_texture_compression_astc_hdr, {{
@@ -664,13 +668,15 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_float_controls, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
-            std::make_pair(VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_subgroup_extended_types, {})),
+            std::make_pair(VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_subgroup_extended_types, {{
+                           {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})),
             std::make_pair(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shared_presentable_image, {{
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_get_surface_capabilities_2, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_SPIRV_1_4_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_spirv_1_4, {{
-                           {&DeviceExtensions::vk_khr_shader_float_controls, VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME}}})),
+                           {&DeviceExtensions::vk_khr_shader_float_controls, VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})),
             std::make_pair(VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_storage_buffer_storage_class, {})),
             std::make_pair(VK_KHR_SWAPCHAIN_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_swapchain, {{
                            {&DeviceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})),
@@ -732,8 +738,10 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_NV_SHADER_IMAGE_FOOTPRINT_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_shader_image_footprint, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
-            std::make_pair(VK_NV_SHADER_SM_BUILTINS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_shader_sm_builtins, {})),
-            std::make_pair(VK_NV_SHADER_SUBGROUP_PARTITIONED_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_shader_subgroup_partitioned, {})),
+            std::make_pair(VK_NV_SHADER_SM_BUILTINS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_shader_sm_builtins, {{
+                           {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})),
+            std::make_pair(VK_NV_SHADER_SUBGROUP_PARTITIONED_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_shader_subgroup_partitioned, {{
+                           {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})),
             std::make_pair(VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_shading_rate_image, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_viewport_array2, {})),
