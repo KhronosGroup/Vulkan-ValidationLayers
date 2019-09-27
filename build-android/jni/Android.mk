@@ -77,6 +77,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vkrenderframework.cpp \
                    $(SRC_DIR)/layers/convert_to_renderpass2.cpp \
                    $(SRC_DIR)/layers/generated/vk_safe_struct.cpp \
+                   $(SRC_DIR)/layers/generated/lvt_function_pointers.cpp \
                    $(THIRD_PARTY)/Vulkan-Tools/common/vulkan_wrapper.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
@@ -87,7 +88,7 @@ LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
 LOCAL_STATIC_LIBRARIES := googletest_main layer_utils shaderc
 LOCAL_CPPFLAGS += -std=c++11 -DVK_PROTOTYPES -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
 LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -DNV_EXTENSIONS -DAMD_EXTENSIONS -fvisibility=hidden --include=$(THIRD_PARTY)/Vulkan-Tools/common/vulkan_wrapper.h
-LOCAL_LDLIBS := -llog -landroid
+LOCAL_LDLIBS := -llog -landroid -ldl
 LOCAL_LDFLAGS   += -Wl,-Bsymbolic
 LOCAL_LDFLAGS   += -Wl,--exclude-libs,ALL
 include $(BUILD_EXECUTABLE)
@@ -107,6 +108,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/tests/layer_validation_tests.cpp \
                    $(SRC_DIR)/tests/vkrenderframework.cpp \
                    $(SRC_DIR)/layers/convert_to_renderpass2.cpp \
                    $(SRC_DIR)/layers/generated/vk_safe_struct.cpp \
+                   $(SRC_DIR)/layers/generated/lvt_function_pointers.cpp \
                    $(THIRD_PARTY)/Vulkan-Tools/common/vulkan_wrapper.cpp
 LOCAL_C_INCLUDES += $(VULKAN_INCLUDE) \
                     $(LOCAL_PATH)/$(SRC_DIR)/layers/generated \
@@ -118,7 +120,7 @@ LOCAL_STATIC_LIBRARIES := googletest_main layer_utils shaderc
 LOCAL_CPPFLAGS += -std=c++11 -DVK_PROTOTYPES -Wall -Werror -Wno-unused-function -Wno-unused-const-variable
 LOCAL_CPPFLAGS += -DVK_USE_PLATFORM_ANDROID_KHR -DNV_EXTENSIONS -DAMD_EXTENSIONS -fvisibility=hidden -DVALIDATION_APK --include=$(THIRD_PARTY)/Vulkan-Tools/common/vulkan_wrapper.h
 LOCAL_WHOLE_STATIC_LIBRARIES += android_native_app_glue
-LOCAL_LDLIBS := -llog -landroid
+LOCAL_LDLIBS := -llog -landroid -ldl
 LOCAL_LDFLAGS := -u ANativeActivity_onCreate
 include $(BUILD_SHARED_LIBRARY)
 

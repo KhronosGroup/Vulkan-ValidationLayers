@@ -62,8 +62,18 @@ endif()
 
 set(LIBGLM_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/libs)
 
-set(COMMON_CPP vklayertests_pipeline_shader.cpp vklayertests_buffer_image_memory_sampler.cpp vklayertests_others.cpp vklayertests_descriptor_renderpass_framebuffer.cpp
-				vklayertests_command.cpp vklayertests_imageless_framebuffer.cpp vkpositivelayertests.cpp vkrenderframework.cpp vktestbinding.cpp vktestframework.cpp test_environment.cpp)
+set(COMMON_CPP
+    vklayertests_pipeline_shader.cpp
+    vklayertests_buffer_image_memory_sampler.cpp
+    vklayertests_others.cpp
+    vklayertests_descriptor_renderpass_framebuffer.cpp
+    vklayertests_command.cpp
+    vklayertests_imageless_framebuffer.cpp
+    vkpositivelayertests.cpp
+    vkrenderframework.cpp
+    vktestbinding.cpp
+    vktestframework.cpp
+    test_environment.cpp)
 
 # ~~~
 # The vulkan loader search is:
@@ -101,6 +111,7 @@ add_executable(vk_layer_validation_tests
                ../layers/vk_format_utils.cpp
                ../layers/convert_to_renderpass2.cpp
                ../layers/generated/vk_safe_struct.cpp
+               ../layers/generated/lvt_function_pointers.cpp
                ${COMMON_CPP})
 add_test(NAME vk_layer_validation_tests COMMAND vk_layer_validation_tests)
 add_dependencies(vk_layer_validation_tests Vulkan::Vulkan VkLayer_khronos_validation VkLayer_khronos_validation-json)
@@ -139,12 +150,14 @@ else()
                                       ${X11_LIBRARIES}
                                       gtest
                                       gtest_main
+                                      dl
                                       ${GLSLANG_LIBRARIES})
     else()
         target_link_libraries(vk_layer_validation_tests
                               PRIVATE Vulkan::Vulkan
                                       gtest
                                       gtest_main
+                                      dl
                                       ${GLSLANG_LIBRARIES})
     endif()
 endif()

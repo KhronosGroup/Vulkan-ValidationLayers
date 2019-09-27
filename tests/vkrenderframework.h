@@ -22,6 +22,8 @@
 #ifndef VKRENDERFRAMEWORK_H
 #define VKRENDERFRAMEWORK_H
 
+#include "lvt_function_pointers.h"
+
 #ifdef ANDROID
 #include "vktestframeworkandroid.h"
 class VkImageObj;
