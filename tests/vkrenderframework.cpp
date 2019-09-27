@@ -25,11 +25,6 @@
 #include "vk_format_utils.h"
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
-#define GET_DEVICE_PROC_ADDR(dev, entrypoint)                                            \
-    {                                                                                    \
-        fp##entrypoint = (PFN_vk##entrypoint)vkGetDeviceProcAddr(dev, "vk" #entrypoint); \
-        assert(fp##entrypoint != NULL);                                                  \
-    }
 
 ErrorMonitor::ErrorMonitor() {
     test_platform_thread_create_mutex(&mutex_);
