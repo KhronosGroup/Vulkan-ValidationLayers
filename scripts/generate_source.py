@@ -59,6 +59,8 @@ def main(argv):
                                               "vk_object_types.h",
                                               "vk_safe_struct.cpp",
                                               "vk_safe_struct.h",
+                                              "lvt_function_pointers.cpp",
+                                              "lvt_function_pointers.h",
                                               "vk_typemap_helper.h"]],
                 [common_codegen.repo_relative('scripts/vk_validation_stats.py'),
                  os.path.abspath(os.path.join(args.registry, 'validusage.json')),
