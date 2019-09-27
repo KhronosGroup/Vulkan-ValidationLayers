@@ -3297,7 +3297,7 @@ TEST_F(VkLayerTest, InvalidBufferViewCreateInfoEntries) {
 
     // Twice the element size of format multiplied by VkPhysicalDeviceLimits::maxTexelBufferElements guarantees range divided by the
     // element size is greater than maxTexelBufferElements, causing failure
-    buff_view_ci.range = 2 * format_size * dev_limits.maxTexelBufferElements;
+    buff_view_ci.range = 2 * static_cast<VkDeviceSize>(format_size) * static_cast<VkDeviceSize>(dev_limits.maxTexelBufferElements);
     CreateBufferViewTest(*this, &buff_view_ci,
                          {"VUID-VkBufferViewCreateInfo-range-00930", "VUID-VkBufferViewCreateInfo-offset-00931"});
 
