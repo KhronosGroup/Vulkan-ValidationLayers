@@ -30,7 +30,7 @@ VkFormat FindSupportedDepthStencilFormat(VkPhysicalDevice phy) {
     const VkFormat ds_formats[] = {VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT};
     for (uint32_t i = 0; i < size(ds_formats); ++i) {
         VkFormatProperties format_props;
-        vkGetPhysicalDeviceFormatProperties(phy, ds_formats[i], &format_props);
+        vk::GetPhysicalDeviceFormatProperties(phy, ds_formats[i], &format_props);
 
         if (format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
             return ds_formats[i];
@@ -41,7 +41,7 @@ VkFormat FindSupportedDepthStencilFormat(VkPhysicalDevice phy) {
 
 bool ImageFormatIsSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features) {
     VkFormatProperties format_props;
-    vkGetPhysicalDeviceFormatProperties(phy, format, &format_props);
+    vk::GetPhysicalDeviceFormatProperties(phy, format, &format_props);
     VkFormatFeatureFlags phy_features =
         (VK_IMAGE_TILING_OPTIMAL == tiling ? format_props.optimalTilingFeatures : format_props.linearTilingFeatures);
     return (0 != (phy_features & features));
@@ -49,7 +49,7 @@ bool ImageFormatIsSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling
 
 bool ImageFormatAndFeaturesSupported(VkPhysicalDevice phy, VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features) {
     VkFormatProperties format_props;
-    vkGetPhysicalDeviceFormatProperties(phy, format, &format_props);
+    vk::GetPhysicalDeviceFormatProperties(phy, format, &format_props);
     VkFormatFeatureFlags phy_features =
         (VK_IMAGE_TILING_OPTIMAL == tiling ? format_props.optimalTilingFeatures : format_props.linearTilingFeatures);
     return (features == (phy_features & features));
@@ -65,7 +65,7 @@ bool ImageFormatAndFeaturesSupported(const VkInstance inst, const VkPhysicalDevi
     // Verify that PhysDevImageFormatProp() also claims support for the specific usage
     VkImageFormatProperties props;
     VkResult err =
-        vkGetPhysicalDeviceImageFormatProperties(phy, info.format, info.imageType, info.tiling, info.usage, info.flags, &props);
+        vk::GetPhysicalDeviceImageFormatProperties(phy, info.format, info.imageType, info.tiling, info.usage, info.flags, &props);
     if (VK_SUCCESS != err) {
         return false;
     }
@@ -76,7 +76,7 @@ bool ImageFormatAndFeaturesSupported(const VkInstance inst, const VkPhysicalDevi
     // Verify again using version 2, if supported, which *can* return more property data than the original...
     // (It's not clear that this is any more definitive than using the original version - but no harm)
     PFN_vkGetPhysicalDeviceImageFormatProperties2KHR p_GetPDIFP2KHR =
-        (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)vkGetInstanceProcAddr(inst,
+        (PFN_vkGetPhysicalDeviceImageFormatProperties2KHR)vk::GetInstanceProcAddr(inst,
                                                                                 "vkGetPhysicalDeviceImageFormatProperties2KHR");
     if (NULL != p_GetPDIFP2KHR) {
         VkPhysicalDeviceImageFormatInfo2KHR fmt_info{};
@@ -112,7 +112,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL myDbgFunc(VkFlags msgFlags, VkDebugReportObjectTy
 VkPhysicalDevicePushDescriptorPropertiesKHR GetPushDescriptorProperties(VkInstance instance, VkPhysicalDevice gpu) {
     // Find address of extension call and make the call -- assumes needed extensions are enabled.
     PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
-        (PFN_vkGetPhysicalDeviceProperties2KHR)vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2KHR");
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2KHR");
     assert(vkGetPhysicalDeviceProperties2KHR != nullptr);
 
     // Get the push descriptor limits
@@ -126,7 +126,7 @@ VkPhysicalDeviceSubgroupProperties GetSubgroupProperties(VkInstance instance, Vk
     auto subgroup_prop = lvl_init_struct<VkPhysicalDeviceSubgroupProperties>();
 
     auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&subgroup_prop);
-    vkGetPhysicalDeviceProperties2(gpu, &prop2);
+    vk::GetPhysicalDeviceProperties2(gpu, &prop2);
     return subgroup_prop;
 }
 
@@ -156,7 +156,7 @@ extern "C" void *AddToCommandBuffer(void *arg) {
     struct thread_data_struct *data = (struct thread_data_struct *)arg;
 
     for (int i = 0; i < 80000; i++) {
-        vkCmdSetEvent(data->commandBuffer, data->event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        vk::CmdSetEvent(data->commandBuffer, data->event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
         if (data->bailout) {
             break;
         }
@@ -169,7 +169,7 @@ extern "C" void *ReleaseNullFence(void *arg) {
     struct thread_data_struct *data = (struct thread_data_struct *)arg;
 
     for (int i = 0; i < 40000; i++) {
-        vkDestroyFence(data->device, VK_NULL_HANDLE, NULL);
+        vk::DestroyFence(data->device, VK_NULL_HANDLE, NULL);
         if (data->bailout) {
             break;
         }
@@ -184,20 +184,20 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, co
 
     if (rp1_vuid) {
         error_monitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, rp1_vuid);
-        err = vkCreateRenderPass(device, create_info, nullptr, &render_pass);
-        if (err == VK_SUCCESS) vkDestroyRenderPass(device, render_pass, nullptr);
+        err = vk::CreateRenderPass(device, create_info, nullptr, &render_pass);
+        if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
         error_monitor->VerifyFound();
     }
 
     if (rp2_supported && rp2_vuid) {
         PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
-            (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
+            (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
         safe_VkRenderPassCreateInfo2KHR create_info2;
         ConvertVkRenderPassCreateInfoToV2KHR(*create_info, &create_info2);
 
         error_monitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, rp2_vuid);
         err = vkCreateRenderPass2KHR(device, create_info2.ptr(), nullptr, &render_pass);
-        if (err == VK_SUCCESS) vkDestroyRenderPass(device, render_pass, nullptr);
+        if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
         error_monitor->VerifyFound();
     }
 }
@@ -208,19 +208,19 @@ void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice de
     VkResult err;
 
     error_monitor->ExpectSuccess();
-    err = vkCreateRenderPass(device, create_info, nullptr, &render_pass);
-    if (err == VK_SUCCESS) vkDestroyRenderPass(device, render_pass, nullptr);
+    err = vk::CreateRenderPass(device, create_info, nullptr, &render_pass);
+    if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
     error_monitor->VerifyNotFound();
 
     if (rp2_supported) {
         PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
-            (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
+            (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
         safe_VkRenderPassCreateInfo2KHR create_info2;
         ConvertVkRenderPassCreateInfoToV2KHR(*create_info, &create_info2);
 
         error_monitor->ExpectSuccess();
         err = vkCreateRenderPass2KHR(device, create_info2.ptr(), nullptr, &render_pass);
-        if (err == VK_SUCCESS) vkDestroyRenderPass(device, render_pass, nullptr);
+        if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
         error_monitor->VerifyNotFound();
     }
 }
@@ -230,11 +230,11 @@ void TestRenderPass2KHRCreate(ErrorMonitor *error_monitor, const VkDevice device
     VkRenderPass render_pass = VK_NULL_HANDLE;
     VkResult err;
     PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
-        (PFN_vkCreateRenderPass2KHR)vkGetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
+        (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
 
     error_monitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, rp2_vuid);
     err = vkCreateRenderPass2KHR(device, create_info, nullptr, &render_pass);
-    if (err == VK_SUCCESS) vkDestroyRenderPass(device, render_pass, nullptr);
+    if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
     error_monitor->VerifyFound();
 }
 
@@ -244,21 +244,21 @@ void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, con
                                                VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
 
     if (rp1_vuid) {
-        vkBeginCommandBuffer(command_buffer, &cmd_begin_info);
+        vk::BeginCommandBuffer(command_buffer, &cmd_begin_info);
         error_monitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, rp1_vuid);
-        vkCmdBeginRenderPass(command_buffer, begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        vk::CmdBeginRenderPass(command_buffer, begin_info, VK_SUBPASS_CONTENTS_INLINE);
         error_monitor->VerifyFound();
-        vkResetCommandBuffer(command_buffer, 0);
+        vk::ResetCommandBuffer(command_buffer, 0);
     }
     if (rp2Supported && rp2_vuid) {
         PFN_vkCmdBeginRenderPass2KHR vkCmdBeginRenderPass2KHR =
-            (PFN_vkCmdBeginRenderPass2KHR)vkGetDeviceProcAddr(device, "vkCmdBeginRenderPass2KHR");
+            (PFN_vkCmdBeginRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCmdBeginRenderPass2KHR");
         VkSubpassBeginInfoKHR subpass_begin_info = {VK_STRUCTURE_TYPE_SUBPASS_BEGIN_INFO_KHR, nullptr, VK_SUBPASS_CONTENTS_INLINE};
-        vkBeginCommandBuffer(command_buffer, &cmd_begin_info);
+        vk::BeginCommandBuffer(command_buffer, &cmd_begin_info);
         error_monitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, rp2_vuid);
         vkCmdBeginRenderPass2KHR(command_buffer, begin_info, &subpass_begin_info);
         error_monitor->VerifyFound();
-        vkResetCommandBuffer(command_buffer, 0);
+        vk::ResetCommandBuffer(command_buffer, 0);
     }
 }
 
@@ -285,7 +285,7 @@ void ValidOwnershipTransfer(ErrorMonitor *monitor, VkCommandBufferObj *cb_from, 
 VkResult GPDIFPHelper(VkPhysicalDevice dev, const VkImageCreateInfo *ci, VkImageFormatProperties *limits) {
     VkImageFormatProperties tmp_limits;
     limits = limits ? limits : &tmp_limits;
-    return vkGetPhysicalDeviceImageFormatProperties(dev, ci->format, ci->imageType, ci->tiling, ci->usage, ci->flags, limits);
+    return vk::GetPhysicalDeviceImageFormatProperties(dev, ci->format, ci->imageType, ci->tiling, ci->usage, ci->flags, limits);
 }
 
 VkFormat FindFormatLinearWithoutMips(VkPhysicalDevice gpu, VkImageCreateInfo image_ci) {
@@ -299,7 +299,7 @@ VkFormat FindFormatLinearWithoutMips(VkPhysicalDevice gpu, VkImageCreateInfo ima
 
         // WORKAROUND for dev_sim and mock_icd not containing valid format limits yet
         VkFormatProperties format_props;
-        vkGetPhysicalDeviceFormatProperties(gpu, format, &format_props);
+        vk::GetPhysicalDeviceFormatProperties(gpu, format, &format_props);
         const VkFormatFeatureFlags core_filter = 0x1FFF;
         const auto features = (image_ci.tiling == VK_IMAGE_TILING_LINEAR) ? format_props.linearTilingFeatures & core_filter
                                                                           : format_props.optimalTilingFeatures & core_filter;
@@ -321,7 +321,7 @@ bool FindFormatWithoutSamples(VkPhysicalDevice gpu, VkImageCreateInfo &image_ci)
 
         // WORKAROUND for dev_sim and mock_icd not containing valid format limits yet
         VkFormatProperties format_props;
-        vkGetPhysicalDeviceFormatProperties(gpu, format, &format_props);
+        vk::GetPhysicalDeviceFormatProperties(gpu, format, &format_props);
         const VkFormatFeatureFlags core_filter = 0x1FFF;
         const auto features = (image_ci.tiling == VK_IMAGE_TILING_LINEAR) ? format_props.linearTilingFeatures & core_filter
                                                                           : format_props.optimalTilingFeatures & core_filter;
@@ -350,7 +350,7 @@ bool FindUnsupportedImage(VkPhysicalDevice gpu, VkImageCreateInfo &image_ci) {
             image_ci.format = format;
 
             VkFormatProperties format_props;
-            vkGetPhysicalDeviceFormatProperties(gpu, format, &format_props);
+            vk::GetPhysicalDeviceFormatProperties(gpu, format, &format_props);
 
             const VkFormatFeatureFlags core_filter = 0x1FFF;
             const auto features = (tiling == VK_IMAGE_TILING_LINEAR) ? format_props.linearTilingFeatures & core_filter
@@ -381,7 +381,7 @@ VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling, V
 
     for (VkFormat format = first_vk_format; format <= last_vk_format; format = static_cast<VkFormat>(format + 1)) {
         VkFormatProperties format_props;
-        vkGetPhysicalDeviceFormatProperties(gpu, format, &format_props);
+        vk::GetPhysicalDeviceFormatProperties(gpu, format, &format_props);
 
         const VkFormatFeatureFlags core_filter = 0x1FFF;
         const auto features = (tiling == VK_IMAGE_TILING_LINEAR) ? format_props.linearTilingFeatures & core_filter
@@ -434,7 +434,7 @@ void NegHeightViewportTests(VkDeviceObj *m_device, VkCommandBufferObj *m_command
             else
                 m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, vuid);
         }
-        vkCmdSetViewport(m_commandBuffer->handle(), 0, 1, &test_case.vp);
+        vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &test_case.vp);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -447,14 +447,14 @@ void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *pCreateInfo
     else
         test.Monitor()->ExpectSuccess();
 
-    err = vkCreateSampler(test.device(), pCreateInfo, NULL, &sampler);
+    err = vk::CreateSampler(test.device(), pCreateInfo, NULL, &sampler);
     if (code.length())
         test.Monitor()->VerifyFound();
     else
         test.Monitor()->VerifyNotFound();
 
     if (VK_SUCCESS == err) {
-        vkDestroySampler(test.device(), sampler, NULL);
+        vk::DestroySampler(test.device(), sampler, NULL);
     }
 }
 
@@ -466,14 +466,14 @@ void CreateBufferTest(VkLayerTest &test, const VkBufferCreateInfo *pCreateInfo, 
     else
         test.Monitor()->ExpectSuccess();
 
-    err = vkCreateBuffer(test.device(), pCreateInfo, NULL, &buffer);
+    err = vk::CreateBuffer(test.device(), pCreateInfo, NULL, &buffer);
     if (code.length())
         test.Monitor()->VerifyFound();
     else
         test.Monitor()->VerifyNotFound();
 
     if (VK_SUCCESS == err) {
-        vkDestroyBuffer(test.device(), buffer, NULL);
+        vk::DestroyBuffer(test.device(), buffer, NULL);
     }
 }
 
@@ -485,14 +485,14 @@ void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *pCreateInfo, st
     else
         test.Monitor()->ExpectSuccess();
 
-    err = vkCreateImage(test.device(), pCreateInfo, NULL, &image);
+    err = vk::CreateImage(test.device(), pCreateInfo, NULL, &image);
     if (code.length())
         test.Monitor()->VerifyFound();
     else
         test.Monitor()->VerifyNotFound();
 
     if (VK_SUCCESS == err) {
-        vkDestroyImage(test.device(), image, NULL);
+        vk::DestroyImage(test.device(), image, NULL);
     }
 }
 
@@ -505,14 +505,14 @@ void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *pCrea
     else
         test.Monitor()->ExpectSuccess();
 
-    err = vkCreateBufferView(test.device(), pCreateInfo, NULL, &view);
+    err = vk::CreateBufferView(test.device(), pCreateInfo, NULL, &view);
     if (codes.size())
         test.Monitor()->VerifyFound();
     else
         test.Monitor()->VerifyNotFound();
 
     if (VK_SUCCESS == err) {
-        vkDestroyBufferView(test.device(), view, NULL);
+        vk::DestroyBufferView(test.device(), view, NULL);
     }
 }
 
@@ -524,14 +524,14 @@ void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *pCreate
     else
         test.Monitor()->ExpectSuccess();
 
-    err = vkCreateImageView(test.device(), pCreateInfo, NULL, &view);
+    err = vk::CreateImageView(test.device(), pCreateInfo, NULL, &view);
     if (code.length())
         test.Monitor()->VerifyFound();
     else
         test.Monitor()->VerifyNotFound();
 
     if (VK_SUCCESS == err) {
-        vkDestroyImageView(test.device(), view, NULL);
+        vk::DestroyImageView(test.device(), view, NULL);
     }
 }
 
@@ -769,7 +769,7 @@ void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
         color_attachment.colorAttachment = 2000000000;  // Someone who knew what they were doing would use 0 for the index;
         VkClearRect clear_rect = {{{0, 0}, {static_cast<uint32_t>(m_width), static_cast<uint32_t>(m_height)}}, 0, 1};
 
-        vkCmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
+        vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     }
 
     // finalize recording of the command buffer
@@ -816,7 +816,7 @@ void VkLayerTest::GenericDrawPreparation(VkCommandBufferObj *commandBuffer, VkPi
     descriptorSet.CreateVKDescriptorSet(commandBuffer);
     VkResult err = pipelineobj.CreateVKPipeline(descriptorSet.GetPipelineLayout(), renderPass());
     ASSERT_VK_SUCCESS(err);
-    vkCmdBindPipeline(commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineobj.handle());
+    vk::CmdBindPipeline(commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineobj.handle());
     commandBuffer->BindDescriptorSet(descriptorSet);
 }
 
@@ -858,7 +858,7 @@ VkLayerTest::VkLayerTest() {
     this->app_info.apiVersion = VK_API_VERSION_1_0;
 
     // Find out what version the instance supports and record the default target instance
-    auto enumerateInstanceVersion = (PFN_vkEnumerateInstanceVersion)vkGetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion");
+    auto enumerateInstanceVersion = (PFN_vkEnumerateInstanceVersion)vk::GetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion");
     if (enumerateInstanceVersion) {
         enumerateInstanceVersion(&m_instance_api_version);
     } else {
@@ -950,8 +950,8 @@ bool VkLayerTest::LoadDeviceProfileLayer(
     PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT &fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT) {
     // Load required functions
     fpvkSetPhysicalDeviceFormatPropertiesEXT =
-        (PFN_vkSetPhysicalDeviceFormatPropertiesEXT)vkGetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFormatPropertiesEXT");
-    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = (PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT)vkGetInstanceProcAddr(
+        (PFN_vkSetPhysicalDeviceFormatPropertiesEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFormatPropertiesEXT");
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = (PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT)vk::GetInstanceProcAddr(
         instance(), "vkGetOriginalPhysicalDeviceFormatPropertiesEXT");
 
     if (!(fpvkSetPhysicalDeviceFormatPropertiesEXT) || !(fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
@@ -974,11 +974,11 @@ bool VkBufferTest::GetTestConditionValid(VkDeviceObj *aVulkanDevice, eTestEnFlag
         buffer_create_info.size = 32;
         buffer_create_info.usage = aBufferUsage;
 
-        vkCreateBuffer(aVulkanDevice->device(), &buffer_create_info, nullptr, &vulkanBuffer);
+        vk::CreateBuffer(aVulkanDevice->device(), &buffer_create_info, nullptr, &vulkanBuffer);
         VkMemoryRequirements memory_reqs = {};
 
-        vkGetBufferMemoryRequirements(aVulkanDevice->device(), vulkanBuffer, &memory_reqs);
-        vkDestroyBuffer(aVulkanDevice->device(), vulkanBuffer, nullptr);
+        vk::GetBufferMemoryRequirements(aVulkanDevice->device(), vulkanBuffer, &memory_reqs);
+        vk::DestroyBuffer(aVulkanDevice->device(), vulkanBuffer, nullptr);
         offset_limit = memory_reqs.alignment;
     } else if ((VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT) & aBufferUsage) {
         offset_limit = aVulkanDevice->props.limits.minTexelBufferOffsetAlignment;
@@ -1001,23 +1001,23 @@ VkBufferTest::VkBufferTest(VkDeviceObj *aVulkanDevice, VkBufferUsageFlags aBuffe
         memory_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         memory_allocate_info.allocationSize = 1;   // fake size -- shouldn't matter for the test
         memory_allocate_info.memoryTypeIndex = 0;  // fake type -- shouldn't matter for the test
-        vkAllocateMemory(VulkanDevice, &memory_allocate_info, nullptr, &VulkanMemory);
+        vk::AllocateMemory(VulkanDevice, &memory_allocate_info, nullptr, &VulkanMemory);
 
         VulkanBuffer = (aTestFlag == eBindNullBuffer) ? VK_NULL_HANDLE : (VkBuffer)0xCDCDCDCDCDCDCDCD;
 
-        vkBindBufferMemory(VulkanDevice, VulkanBuffer, VulkanMemory, 0);
+        vk::BindBufferMemory(VulkanDevice, VulkanBuffer, VulkanMemory, 0);
     } else {
         VkBufferCreateInfo buffer_create_info = {};
         buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         buffer_create_info.size = 32;
         buffer_create_info.usage = aBufferUsage;
 
-        vkCreateBuffer(VulkanDevice, &buffer_create_info, nullptr, &VulkanBuffer);
+        vk::CreateBuffer(VulkanDevice, &buffer_create_info, nullptr, &VulkanBuffer);
 
         CreateCurrent = true;
 
         VkMemoryRequirements memory_requirements;
-        vkGetBufferMemoryRequirements(VulkanDevice, VulkanBuffer, &memory_requirements);
+        vk::GetBufferMemoryRequirements(VulkanDevice, VulkanBuffer, &memory_requirements);
 
         VkMemoryAllocateInfo memory_allocate_info = {};
         memory_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -1026,14 +1026,14 @@ VkBufferTest::VkBufferTest(VkDeviceObj *aVulkanDevice, VkBufferUsageFlags aBuffe
                                                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         if (!pass) {
             CreateCurrent = false;
-            vkDestroyBuffer(VulkanDevice, VulkanBuffer, nullptr);
+            vk::DestroyBuffer(VulkanDevice, VulkanBuffer, nullptr);
             return;
         }
 
-        vkAllocateMemory(VulkanDevice, &memory_allocate_info, NULL, &VulkanMemory);
+        vk::AllocateMemory(VulkanDevice, &memory_allocate_info, NULL, &VulkanMemory);
         // NB: 1 is intentionally an invalid offset value
         const bool offset_en = eInvalidDeviceOffset == aTestFlag || eInvalidMemoryOffset == aTestFlag;
-        vkBindBufferMemory(VulkanDevice, VulkanBuffer, VulkanMemory, offset_en ? eOffsetAlignment : 0);
+        vk::BindBufferMemory(VulkanDevice, VulkanBuffer, VulkanMemory, offset_en ? eOffsetAlignment : 0);
         BoundCurrent = true;
 
         InvalidDeleteEn = (eFreeInvalidHandle == aTestFlag);
@@ -1042,14 +1042,14 @@ VkBufferTest::VkBufferTest(VkDeviceObj *aVulkanDevice, VkBufferUsageFlags aBuffe
 
 VkBufferTest::~VkBufferTest() {
     if (CreateCurrent) {
-        vkDestroyBuffer(VulkanDevice, VulkanBuffer, nullptr);
+        vk::DestroyBuffer(VulkanDevice, VulkanBuffer, nullptr);
     }
     if (AllocateCurrent) {
         if (InvalidDeleteEn) {
             auto bad_memory = CastFromUint64<VkDeviceMemory>(CastToUint64(VulkanMemory) + 1);
-            vkFreeMemory(VulkanDevice, bad_memory, nullptr);
+            vk::FreeMemory(VulkanDevice, bad_memory, nullptr);
         }
-        vkFreeMemory(VulkanDevice, VulkanMemory, nullptr);
+        vk::FreeMemory(VulkanDevice, VulkanMemory, nullptr);
     }
 }
 
@@ -1060,7 +1060,7 @@ const VkBuffer &VkBufferTest::GetBuffer() { return VulkanBuffer; }
 void VkBufferTest::TestDoubleDestroy() {
     // Destroy the buffer but leave the flag set, which will cause
     // the buffer to be destroyed again in the destructor.
-    vkDestroyBuffer(VulkanDevice, VulkanBuffer, nullptr);
+    vk::DestroyBuffer(VulkanDevice, VulkanBuffer, nullptr);
 }
 
 uint32_t VkVerticesObj::BindIdGenerator;
@@ -1138,7 +1138,7 @@ void VkVerticesObj::BindVertexBuffers(VkCommandBuffer aCommandBuffer, unsigned a
         offsetCount = 1;
     }
 
-    vkCmdBindVertexBuffers(aCommandBuffer, BindId, offsetCount, &VulkanMemoryBuffer.handle(), offsetList);
+    vk::CmdBindVertexBuffers(aCommandBuffer, BindId, offsetCount, &VulkanMemoryBuffer.handle(), offsetList);
     BoundCurrent = true;
 
     if (!aOffsetCount) {
@@ -1157,19 +1157,19 @@ OneOffDescriptorSet::OneOffDescriptorSet(VkDeviceObj *device, const Bindings &bi
 
     VkDescriptorPoolCreateInfo dspci = {
         VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, nullptr, poolFlags, 1, uint32_t(sizes.size()), sizes.data()};
-    err = vkCreateDescriptorPool(device_->handle(), &dspci, nullptr, &pool_);
+    err = vk::CreateDescriptorPool(device_->handle(), &dspci, nullptr, &pool_);
     if (err != VK_SUCCESS) return;
 
     if ((layout_flags & VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR) == 0) {
         VkDescriptorSetAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, allocate_pnext, pool_, 1,
                                                   &layout_.handle()};
-        err = vkAllocateDescriptorSets(device_->handle(), &alloc_info, &set_);
+        err = vk::AllocateDescriptorSets(device_->handle(), &alloc_info, &set_);
     }
 }
 
 OneOffDescriptorSet::~OneOffDescriptorSet() {
     // No need to destroy set-- it's going away with the pool.
-    vkDestroyDescriptorPool(device_->handle(), pool_, nullptr);
+    vk::DestroyDescriptorPool(device_->handle(), pool_, nullptr);
 }
 
 bool OneOffDescriptorSet::Initialized() { return pool_ != VK_NULL_HANDLE && layout_.initialized() && set_ != VK_NULL_HANDLE; }
@@ -1236,15 +1236,15 @@ void OneOffDescriptorSet::WriteDescriptorImageInfo(int blinding, VkImageView ima
 }
 
 void OneOffDescriptorSet::UpdateDescriptorSets() {
-    vkUpdateDescriptorSets(device_->handle(), descriptor_writes.size(), descriptor_writes.data(), 0, NULL);
+    vk::UpdateDescriptorSets(device_->handle(), descriptor_writes.size(), descriptor_writes.data(), 0, NULL);
 }
 
 CreatePipelineHelper::CreatePipelineHelper(VkLayerTest &test) : layer_test_(test) {}
 
 CreatePipelineHelper::~CreatePipelineHelper() {
     VkDevice device = layer_test_.device();
-    vkDestroyPipelineCache(device, pipeline_cache_, nullptr);
-    vkDestroyPipeline(device, pipeline_, nullptr);
+    vk::DestroyPipelineCache(device, pipeline_cache_, nullptr);
+    vk::DestroyPipeline(device, pipeline_, nullptr);
 }
 
 void CreatePipelineHelper::InitDescriptorSetInfo() {
@@ -1395,7 +1395,7 @@ void CreatePipelineHelper::InitState() {
         pipeline_layout_ci_.pPushConstantRanges + pipeline_layout_ci_.pushConstantRangeCount);
     pipeline_layout_ = VkPipelineLayoutObj(layer_test_.DeviceObj(), {&descriptor_set_->layout_}, push_ranges);
 
-    err = vkCreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
+    err = vk::CreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
     ASSERT_VK_SUCCESS(err);
 }
 
@@ -1418,10 +1418,10 @@ VkResult CreatePipelineHelper::CreateGraphicsPipeline(bool implicit_destroy, boo
         LateBindPipelineInfo();
     }
     if (implicit_destroy && (pipeline_ != VK_NULL_HANDLE)) {
-        vkDestroyPipeline(layer_test_.device(), pipeline_, nullptr);
+        vk::DestroyPipeline(layer_test_.device(), pipeline_, nullptr);
         pipeline_ = VK_NULL_HANDLE;
     }
-    err = vkCreateGraphicsPipelines(layer_test_.device(), pipeline_cache_, 1, &gp_ci_, NULL, &pipeline_);
+    err = vk::CreateGraphicsPipelines(layer_test_.device(), pipeline_cache_, 1, &gp_ci_, NULL, &pipeline_);
     return err;
 }
 
@@ -1429,8 +1429,8 @@ CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest &test) : la
 
 CreateComputePipelineHelper::~CreateComputePipelineHelper() {
     VkDevice device = layer_test_.device();
-    vkDestroyPipelineCache(device, pipeline_cache_, nullptr);
-    vkDestroyPipeline(device, pipeline_, nullptr);
+    vk::DestroyPipelineCache(device, pipeline_cache_, nullptr);
+    vk::DestroyPipeline(device, pipeline_, nullptr);
 }
 
 void CreateComputePipelineHelper::InitDescriptorSetInfo() {
@@ -1480,7 +1480,7 @@ void CreateComputePipelineHelper::InitState() {
         pipeline_layout_ci_.pPushConstantRanges + pipeline_layout_ci_.pushConstantRangeCount);
     pipeline_layout_ = VkPipelineLayoutObj(layer_test_.DeviceObj(), {&descriptor_set_->layout_}, push_ranges);
 
-    err = vkCreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
+    err = vk::CreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
     ASSERT_VK_SUCCESS(err);
 }
 
@@ -1496,18 +1496,18 @@ VkResult CreateComputePipelineHelper::CreateComputePipeline(bool implicit_destro
         LateBindPipelineInfo();
     }
     if (implicit_destroy && (pipeline_ != VK_NULL_HANDLE)) {
-        vkDestroyPipeline(layer_test_.device(), pipeline_, nullptr);
+        vk::DestroyPipeline(layer_test_.device(), pipeline_, nullptr);
         pipeline_ = VK_NULL_HANDLE;
     }
-    err = vkCreateComputePipelines(layer_test_.device(), pipeline_cache_, 1, &cp_ci_, NULL, &pipeline_);
+    err = vk::CreateComputePipelines(layer_test_.device(), pipeline_cache_, 1, &cp_ci_, NULL, &pipeline_);
     return err;
 }
 
 CreateNVRayTracingPipelineHelper::CreateNVRayTracingPipelineHelper(VkLayerTest &test) : layer_test_(test) {}
 CreateNVRayTracingPipelineHelper::~CreateNVRayTracingPipelineHelper() {
     VkDevice device = layer_test_.device();
-    vkDestroyPipelineCache(device, pipeline_cache_, nullptr);
-    vkDestroyPipeline(device, pipeline_, nullptr);
+    vk::DestroyPipelineCache(device, pipeline_cache_, nullptr);
+    vk::DestroyPipeline(device, pipeline_, nullptr);
 }
 
 bool CreateNVRayTracingPipelineHelper::InitInstanceExtensions(VkLayerTest &test,
@@ -1666,7 +1666,7 @@ void CreateNVRayTracingPipelineHelper::InitState() {
 
     pipeline_layout_ = VkPipelineLayoutObj(layer_test_.DeviceObj(), {&descriptor_set_->layout_});
 
-    err = vkCreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
+    err = vk::CreatePipelineCache(layer_test_.device(), &pc_ci_, NULL, &pipeline_cache_);
     ASSERT_VK_SUCCESS(err);
 }
 
@@ -1683,12 +1683,12 @@ VkResult CreateNVRayTracingPipelineHelper::CreateNVRayTracingPipeline(bool impli
         LateBindPipelineInfo();
     }
     if (implicit_destroy && (pipeline_ != VK_NULL_HANDLE)) {
-        vkDestroyPipeline(layer_test_.device(), pipeline_, nullptr);
+        vk::DestroyPipeline(layer_test_.device(), pipeline_, nullptr);
         pipeline_ = VK_NULL_HANDLE;
     }
 
     PFN_vkCreateRayTracingPipelinesNV vkCreateRayTracingPipelinesNV =
-        (PFN_vkCreateRayTracingPipelinesNV)vkGetInstanceProcAddr(layer_test_.instance(), "vkCreateRayTracingPipelinesNV");
+        (PFN_vkCreateRayTracingPipelinesNV)vk::GetInstanceProcAddr(layer_test_.instance(), "vkCreateRayTracingPipelinesNV");
     err = vkCreateRayTracingPipelinesNV(layer_test_.device(), pipeline_cache_, 1, &rp_ci_, nullptr, &pipeline_);
     return err;
 }
@@ -1732,7 +1732,7 @@ BarrierQueueFamilyTestHelper::Context::Context(VkLayerTest *test, const std::vec
 void BarrierQueueFamilyTestHelper::Context::Reset() {
     layer_test->DeviceObj()->wait();
     for (auto &qf : queue_families) {
-        vkResetCommandPool(layer_test->device(), qf.second.command_pool->handle(), 0);
+        vk::ResetCommandPool(layer_test->device(), qf.second.command_pool->handle(), 0);
     }
 }
 
@@ -1785,8 +1785,8 @@ void BarrierQueueFamilyTestHelper::operator()(std::string img_err, std::string b
     for (int cb_repeat = 0; cb_repeat < (mod == Modifier::DOUBLE_COMMAND_BUFFER ? 2 : 1); cb_repeat++) {
         command_buffer->begin();
         for (int repeat = 0; repeat < (mod == Modifier::DOUBLE_RECORD ? 2 : 1); repeat++) {
-            vkCmdPipelineBarrier(command_buffer->handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                 VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 1, &buffer_barrier_, 1, &image_barrier_);
+            vk::CmdPipelineBarrier(command_buffer->handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                   VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 1, &buffer_barrier_, 1, &image_barrier_);
         }
         command_buffer->end();
         command_buffer = qf->command_buffer2;  // Second pass (if any) goes to the secondary command_buffer.
