@@ -29,6 +29,7 @@
 #include <memory>
 #include <vector>
 
+#include "lvt_function_pointers.h"
 #include "test_common.h"
 
 namespace vk_testing {
@@ -208,7 +209,7 @@ class Device : public internal::Handle<VkDevice> {
     bool IsEnabledExtension(const char *extension);
 
     // vkGetDeviceProcAddr()
-    PFN_vkVoidFunction get_proc(const char *name) const { return vkGetDeviceProcAddr(handle(), name); }
+    PFN_vkVoidFunction get_proc(const char *name) const { return vk::GetDeviceProcAddr(handle(), name); }
 
     // vkGetDeviceQueue()
     const std::vector<Queue *> &graphics_queues() const { return queues_[GRAPHICS]; }
@@ -329,7 +330,7 @@ class Fence : public internal::NonDispHandle<VkFence> {
     void init(const Device &dev, const VkFenceCreateInfo &info);
 
     // vkGetFenceStatus()
-    VkResult status() const { return vkGetFenceStatus(device(), handle()); }
+    VkResult status() const { return vk::GetFenceStatus(device(), handle()); }
     VkResult wait(VkBool32 wait_all, uint64_t timeout) const;
 
     static VkFenceCreateInfo create_info(VkFenceCreateFlags flags);
@@ -356,7 +357,7 @@ class Event : public internal::NonDispHandle<VkEvent> {
     // vkGetEventStatus()
     // vkSetEvent()
     // vkResetEvent()
-    VkResult status() const { return vkGetEventStatus(device(), handle()); }
+    VkResult status() const { return vk::GetEventStatus(device(), handle()); }
     void set();
     void reset();
 
