@@ -47,7 +47,11 @@ VkFormat VkTestFramework::GetFormat(VkInstance instance, vk_testing::Device *dev
 void VkTestFramework::InitArgs(int *argc, char *argv[]) {}
 void VkTestFramework::Finish() {}
 
-void TestEnvironment::SetUp() { vk_testing::set_error_callback(test_error_callback); }
+void TestEnvironment::SetUp() {
+    vk_testing::set_error_callback(test_error_callback);
+
+    vk::InitDispatchTable();
+}
 
 void TestEnvironment::TearDown() {}
 

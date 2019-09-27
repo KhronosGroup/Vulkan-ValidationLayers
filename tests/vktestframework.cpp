@@ -131,6 +131,8 @@ void TestEnvironment::SetUp() {
     glslang::InitializeProcess();
 
     vk_testing::set_error_callback(test_error_callback);
+
+    vk::InitDispatchTable();
 }
 
 void TestEnvironment::TearDown() { glslang::FinalizeProcess(); }
