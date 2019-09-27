@@ -5543,13 +5543,16 @@ TEST_F(VkPositiveLayerTest, CreateDescriptorSetBindingWithIgnoredSamplers) {
         m_errorMonitor->VerifyNotFound();
     }
 }
-TEST_F(VkPositiveLayerTest, GpuValidationInlineUniformBlock) {
-    TEST_DESCRIPTION("GPU validation: Make sure inline uniform blocks don't generate false validation errors");
+TEST_F(VkPositiveLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
+    TEST_DESCRIPTION(
+        "GPU validation: Make sure inline uniform blocks don't generate false validation errors, verify reserved descriptor slot "
+        "and verify pipeline recovery");
     m_errorMonitor->ExpectSuccess();
-    VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
+    VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
+                                              VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT};
     VkValidationFeaturesEXT features = {};
     features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-    features.enabledValidationFeatureCount = 1;
+    features.enabledValidationFeatureCount = 2;
     features.pEnabledValidationFeatures = enables;
     bool descriptor_indexing = CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names,
                                                                               m_device_extension_names, &features, m_errorMonitor);
@@ -5698,10 +5701,72 @@ TEST_F(VkPositiveLayerTest, GpuValidationInlineUniformBlock) {
     vk::QueueWaitIdle(m_device->m_queue);
     m_errorMonitor->VerifyNotFound();
     vk::DestroyPipeline(m_device->handle(), c_pipeline, NULL);
-    vk::DestroyShaderModule(m_device->handle(), shader_module->handle(), NULL);
 
     uint32_t *data = (uint32_t *)buffer0.memory().map();
     ASSERT_TRUE(*data = test_data);
+    *data = 0;
+    buffer0.memory().unmap();
+
+    // Also verify that binding slot reservation is working
+    VkInstanceCreateInfo inst_info = {};
+    VkInstance test_inst;
+    inst_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    vk::CreateInstance(&inst_info, NULL, &test_inst);
+    uint32_t gpu_count;
+    VkPhysicalDevice objs[4];
+    vk::EnumeratePhysicalDevices(test_inst, &gpu_count, NULL);
+    if (gpu_count > 4) gpu_count = 4;
+    vk::EnumeratePhysicalDevices(test_inst, &gpu_count, objs);
+    VkPhysicalDeviceProperties properties;
+    vk::GetPhysicalDeviceProperties(objs[0], &properties);
+    if (m_device->props.limits.maxBoundDescriptorSets != properties.limits.maxBoundDescriptorSets - 1)
+        m_errorMonitor->SetError("VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT not functioning as expected");
+    vk::DestroyInstance(test_inst, NULL);
+
+    // Now be sure that recovery from an unavailable descriptor set works and that uninstrumented shaders are used
+    VkDescriptorSetLayoutBinding dsl_binding[2] = {};
+    dsl_binding[0].binding = 0;
+    dsl_binding[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    dsl_binding[0].descriptorCount = 1;
+    dsl_binding[0].stageFlags = VK_SHADER_STAGE_ALL;
+    dsl_binding[1].binding = 1;
+    dsl_binding[1].descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
+    dsl_binding[1].descriptorCount = 20;
+    dsl_binding[1].stageFlags = VK_SHADER_STAGE_ALL;
+    VkDescriptorSetLayout layouts[32];
+    VkDescriptorSetLayoutCreateInfo dsl_create_info = {};
+    dsl_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    dsl_create_info.pNext = layout_createinfo_binding_flags;
+    dsl_create_info.pBindings = dsl_binding;
+    dsl_create_info.bindingCount = 2;
+    for (int i = 0; i < 32; i++) {
+        vk::CreateDescriptorSetLayout(m_device->handle(), &dsl_create_info, NULL, &layouts[i]);
+    }
+    VkPipelineLayoutCreateInfo pl_create_info = {};
+    VkPipelineLayout pl_layout;
+    pl_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pl_create_info.setLayoutCount = 32;
+    pl_create_info.pSetLayouts = layouts;
+    vk::CreatePipelineLayout(m_device->handle(), &pl_create_info, NULL, &pl_layout);
+    pipeline_info.layout = pl_layout;
+    vk::CreateComputePipelines(device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &c_pipeline);
+    m_commandBuffer->begin();
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, c_pipeline);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pl_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_commandBuffer->end();
+    vk::QueueSubmit(c_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+    vk::DestroyShaderModule(m_device->handle(), shader_module->handle(), NULL);
+    vk::DestroyPipelineLayout(m_device->handle(), pl_layout, NULL);
+    vk::DestroyPipeline(m_device->handle(), c_pipeline, NULL);
+    for (int i = 0; i < 32; i++) {
+        vk::DestroyDescriptorSetLayout(m_device->handle(), layouts[i], NULL);
+    }
+    m_errorMonitor->VerifyNotFound();
+    data = (uint32_t *)buffer0.memory().map();
+    if (*data != test_data) m_errorMonitor->SetError("Pipeline recovery when resources unavailable not functioning as expected");
     buffer0.memory().unmap();
 }
 
