@@ -60,22 +60,6 @@
     } while (0)
 #endif  // _WIN32
 
-#define GET_INSTANCE_PROC_ADDR(inst, entrypoint)                                                              \
-    {                                                                                                         \
-        m_fp##entrypoint = (PFN_vk##entrypoint)vkGetInstanceProcAddr(inst, "vk" #entrypoint);                 \
-        if (m_fp##entrypoint == NULL) {                                                                       \
-            ERR_EXIT("vkGetInstanceProcAddr failed to find vk" #entrypoint, "vkGetInstanceProcAddr Failure"); \
-        }                                                                                                     \
-    }
-
-#define GET_DEVICE_PROC_ADDR(dev, entrypoint)                                                             \
-    {                                                                                                     \
-        m_fp##entrypoint = (PFN_vk##entrypoint)vkGetDeviceProcAddr(dev, "vk" #entrypoint);                \
-        if (m_fp##entrypoint == NULL) {                                                                   \
-            ERR_EXIT("vkGetDeviceProcAddr failed to find vk" #entrypoint, "vkGetDeviceProcAddr Failure"); \
-        }                                                                                                 \
-    }
-
 // Command-line options
 enum TOptions {
     EOptionNone = 0x000,
