@@ -289,6 +289,25 @@ bool cvdescriptorset::VerifySetLayoutCompatibility(const debug_report_data *repo
             return false;
         }
     }
+
+    const auto &ds_layout_flags = layout_ds_layout_def->GetBindingFlags();
+    const auto &bound_layout_flags = bound_ds_layout_def->GetBindingFlags();
+    if (bound_layout_flags != ds_layout_flags) {
+        std::stringstream error_str;
+        assert(ds_layout_flags.size() == bound_layout_flags.size());
+        size_t i;
+        for (i = 0; i < ds_layout_flags.size(); i++) {
+            if (ds_layout_flags[i] != bound_layout_flags[i]) break;
+        }
+        error_str << report_data->FormatHandle(layout_dsl_handle)
+                  << " from pipeline layout does not have the same binding flags at binding " << i << " ( "
+                  << string_VkDescriptorBindingFlagsEXT(ds_layout_flags[i]) << " ) as "
+                  << report_data->FormatHandle(bound_dsl_handle) << " ( "
+                  << string_VkDescriptorBindingFlagsEXT(bound_layout_flags[i]) << " ), which is bound";
+        *error_msg = error_str.str();
+        return false;
+    }
+
     // No detailed check should succeed if the trivial check failed -- or the dictionary has failed somehow.
     bool compatible = true;
     assert(!compatible);
