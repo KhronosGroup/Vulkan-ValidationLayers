@@ -51,6 +51,7 @@ bool wrap_handles = true;
 #include "object_lifetime_validation.h"
 #include "debug_printf.h"
 #include "stateless_validation.h"
+#include "synchronization_validation.h"
 #include "thread_safety.h"
 
 // Global list of sType,size identifiers
@@ -130,7 +131,11 @@ static const std::unordered_map<std::string, VkValidationFeatureEnableEXT> VkVal
     {"VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT", VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT},
     {"VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT", VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT},
     {"VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT", VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT},
-    {"VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT", VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT}, 
+    {"VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT", VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT},
+};
+
+static const std::unordered_map<std::string, VkValidationFeatureEnable> VkValFeatureEnableLookup2 = {
+    {"VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION", VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION}, 
 };
 
 static const std::unordered_map<std::string, ValidationCheckDisables> ValidationDisableLookup = {
@@ -165,11 +170,12 @@ static const std::vector<std::string> DisableFlagNameHelper = {
 
 // This should mirror the 'EnableFlags' enumerated type
 static const std::vector<std::string> EnableFlagNameHelper = {
-    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT",        // gpu_validation,
-    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT", // gpu_validation_reserve_binding_slot,
-    "VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT",      // best_practices,
-    "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM",          // vendor_specific_arm,
-    "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT"         // debug_printf,
+    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT",                       // gpu_validation,
+    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT",  // gpu_validation_reserve_binding_slot,
+    "VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT",                     // best_practices,
+    "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM",                         // vendor_specific_arm,
+    "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT",                       // debug_printf,
+    "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION"              // sync_validation,
 };
 
 // Set the local disable flag for the appropriate VALIDATION_CHECK_DISABLE enum
@@ -261,6 +267,16 @@ void SetValidationFeatureEnable(CHECK_ENABLED &enable_data, const VkValidationFe
     }
 }
 
+void SetValidationFeatureEnable2(CHECK_ENABLED &enable_data, const VkValidationFeatureEnable feature_enable) {
+    switch (feature_enable) {
+        case VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION:
+            enable_data[sync_validation] = true;
+            break;
+        default:
+            break;
+    }
+}
+
 // Set the local disable flag for settings specified through the VK_EXT_validation_flags extension
 void SetValidationFlags(CHECK_DISABLED &disables, const VkValidationFlagsEXT* val_flags_struct) {
     for (uint32_t i = 0; i < val_flags_struct->disabledValidationCheckCount; ++i) {
@@ -303,7 +319,7 @@ std::string GetNextToken(std::string *token_list, const std::string &delimiter, 
 }
 
 // Given a string representation of a list of enable enum values, call the appropriate setter function
-void SetLocalEnableSetting(std::string list_of_enables, std::string delimiter, CHECK_ENABLED &enables) {
+void SetLocalEnableSetting(std::string list_of_enables, std::string delimiter, CHECK_ENABLED& enables) {
     size_t pos = 0;
     std::string token;
     while (list_of_enables.length() != 0) {
@@ -312,7 +328,12 @@ void SetLocalEnableSetting(std::string list_of_enables, std::string delimiter, C
             auto result = VkValFeatureEnableLookup.find(token);
             if (result != VkValFeatureEnableLookup.end()) {
                 SetValidationFeatureEnable(enables, result->second);
-            } 
+            } else {
+                auto result2 = VkValFeatureEnableLookup2.find(token);
+                if (result2 != VkValFeatureEnableLookup2.end()) {
+                    SetValidationFeatureEnable2(enables, result2->second);
+                }
+            }
         } else if (token.find("VALIDATION_CHECK_ENABLE_") != std::string::npos) {
             auto result = ValidationEnableLookup.find(token);
             if (result != ValidationEnableLookup.end()) {
@@ -708,6 +729,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     auto debug_printf_obj = new DebugPrintf;
     debug_printf_obj->RegisterValidationObject(local_enables[debug_printf], api_version, report_data, local_object_dispatch);
 
+    auto sync_validation_obj = new SyncValidator;
+    sync_validation_obj->RegisterValidationObject(local_enables[sync_validation], api_version, report_data, local_object_dispatch);
+
     // If handle wrapping is disabled via the ValidationFeatures extension, override build flag
     if (local_disables[handle_wrapping]) {
         wrap_handles = false;
@@ -752,6 +776,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     best_practices_obj->FinalizeInstanceValidationObject(framework);
     gpu_assisted_obj->FinalizeInstanceValidationObject(framework);
     debug_printf_obj->FinalizeInstanceValidationObject(framework);
+    sync_validation_obj->FinalizeInstanceValidationObject(framework);
 
     for (auto intercept : framework->object_dispatch) {
         auto lock = intercept->write_lock();
@@ -893,6 +918,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     auto debug_printf_obj = new DebugPrintf;
     debug_printf_obj->InitDeviceValidationObject(enables[debug_printf], instance_interceptor, device_interceptor);
+
+    auto sync_validation_obj = new SyncValidator;
+    sync_validation_obj->InitDeviceValidationObject(enables[sync_validation], instance_interceptor, device_interceptor);
 
     // Delete unused validation objects to avoid memory leak.
     std::vector<ValidationObject *> local_objs = {
