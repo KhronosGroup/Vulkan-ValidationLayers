@@ -1239,6 +1239,7 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(ValidationStateTracker *d
 // Prereq: This should be called for a set that has been confirmed to be active for the given cb_node, meaning it's going
 //   to be used in a draw by the given cb_node
 void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *device_data, CMD_BUFFER_STATE *cb_node,
+                                                     const PIPELINE_STATE *pipe,
                                                      const std::map<uint32_t, descriptor_req> &binding_req_map) {
     if (!device_data->disabled.command_buffer_state) {
         // bind cb to this descriptor set
@@ -1261,12 +1262,17 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
     // resources
     for (auto binding_req_pair : binding_req_map) {
         auto binding = binding_req_pair.first;
+        auto index = p_layout_->GetIndexFromBinding(binding_req_pair.first);
+
         // We aren't validating descriptors created with PARTIALLY_BOUND or UPDATE_AFTER_BIND, so don't record state
-        if (p_layout_->GetDescriptorBindingFlagsFromBinding(binding) &
-            (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)) {
+        auto flags = p_layout_->GetDescriptorBindingFlagsFromIndex(index);
+        if (flags & (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)) {
+            if (flags & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT) {
+                cb_node->validate_descriptorsets_in_queuesubmit[set_][pipe->pipeline][binding] = binding_req_pair.second;
+            }
             continue;
         }
-        auto range = p_layout_->GetGlobalIndexRangeFromBinding(binding);
+        auto range = p_layout_->GetGlobalIndexRangeFromIndex(index);
         for (uint32_t i = range.start; i < range.end; ++i) {
             descriptors_[i]->UpdateDrawState(device_data, cb_node);
         }

@@ -703,9 +703,9 @@ void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, const V
                                             state.per_set[setIndex].validated_set_binding_req_map.begin(),
                                             state.per_set[setIndex].validated_set_binding_req_map.end(),
                                             std::inserter(delta_reqs, delta_reqs.begin()));
-                        descriptor_set->UpdateDrawState(this, cb_state, delta_reqs);
+                        descriptor_set->UpdateDrawState(this, cb_state, pPipe, delta_reqs);
                     } else {
-                        descriptor_set->UpdateDrawState(this, cb_state, binding_req_map);
+                        descriptor_set->UpdateDrawState(this, cb_state, pPipe, binding_req_map);
                     }
 
                     state.per_set[setIndex].validated_set = descriptor_set;
@@ -937,6 +937,7 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
         // Clean up the label data
         ResetCmdDebugUtilsLabel(report_data, pCB->commandBuffer);
         pCB->debug_label.Reset();
+        pCB->validate_descriptorsets_in_queuesubmit.clear();
     }
     if (command_buffer_reset_callback) {
         (*command_buffer_reset_callback)(cb);

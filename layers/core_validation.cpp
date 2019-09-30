@@ -2174,6 +2174,27 @@ bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitIn
                 &qfo_image_scoreboards, &qfo_buffer_scoreboards);
             skip |= ValidateQueueFamilyIndices(cb_node, queue);
 
+            for (auto descriptorSet : cb_node->validate_descriptorsets_in_queuesubmit) {
+                const cvdescriptorset::DescriptorSet *set_node = GetSetNode(descriptorSet.first);
+                if (set_node) {
+                    for (auto pipe : descriptorSet.second) {
+                        for (auto binding : pipe.second) {
+                            std::string error;
+                            std::vector<uint32_t> dynamicOffsets;
+                            // dynamic data isn't allowed in UPDATE_AFTER_BIND, so dynamicOffsets is always empty.
+                            if (!ValidateDescriptorSetBindingData(cb_node, set_node, dynamicOffsets, binding.first, binding.second,
+                                                                  "vkQueueSubmit()", &error)) {
+                                skip |= log_msg(
+                                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
+                                    HandleToUint64(descriptorSet.first), kVUID_Core_DrawState_DescriptorSetNotUpdated,
+                                    "%s bound the following validation error at %s time: %s",
+                                    report_data->FormatHandle(descriptorSet.first).c_str(), "vkQueueSubmit()", error.c_str());
+                            }
+                        }
+                    }
+                }
+            }
+
             // Potential early exit here as bad object state may crash in delayed function calls
             if (skip) {
                 return true;
