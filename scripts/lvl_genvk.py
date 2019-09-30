@@ -695,6 +695,32 @@ def makeGenOpts(args):
 
 # Create an API generator and corresponding generator options based on
 # the requested target and command line options.
+    # Helper file generator options for synchronization_validation_types.h
+    genOpts['synchronization_validation_types.h'] = [
+          HelperFileOutputGenerator,
+          HelperFileOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'synchronization_validation_types.h',
+            directory         = directory,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            protectFeature    = False,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants  = False,
+            helper_file_type  = 'synchronization_helper_header')
+        ]
+
+# Generate a target based on the options in the matching genOpts{} object.
 # This is encapsulated in a function so it can be profiled and/or timed.
 # The args parameter is an parsed argument object containing the following
 # fields that are used:

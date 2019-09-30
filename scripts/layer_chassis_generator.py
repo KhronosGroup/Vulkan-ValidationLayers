@@ -264,6 +264,7 @@ enum LayerObjectTypeId {
     LayerObjectTypeGpuAssisted,                 // Instance or device gpu assisted validation layer object
     LayerObjectTypeDebugPrintf,                 // Instance or device shader debug printf layer object
     LayerObjectTypeCommandCounter,              // Command Counter validation object, child of corechecks
+    LayerObjectTypeSyncValidation,              // Instance or device synchronization validation layer object
     LayerObjectTypeMaxEnum,                     // Max enum count
 };
 
@@ -327,6 +328,7 @@ struct CHECK_ENABLED {
     bool best_practices;
     bool vendor_specific_arm;                       // Vendor-specific validation for Arm platforms
     bool debug_printf;
+    bool sync_validation;
 
     void SetAllVendorSpecific(bool value) { std::fill(&vendor_specific_arm, &vendor_specific_arm + 1, value); }
 };
@@ -667,6 +669,7 @@ bool wrap_handles = true;
 #include "object_lifetime_validation.h"
 #include "debug_printf.h"
 #include "stateless_validation.h"
+#include "synchronization_validation.h"
 #include "thread_safety.h"
 
 namespace vulkan_layer_chassis {
@@ -1058,6 +1061,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     }
     ProcessConfigAndEnvSettings(OBJECT_LAYER_DESCRIPTION, &local_enables, &local_disables);
 
+    // ZZZ WIP Force sync_val on:
+    local_enables.sync_validation = true;
+
     // Create temporary dispatch vector for pre-calls until instance is created
     std::vector<ValidationObject*> local_object_dispatch;
 
@@ -1082,6 +1088,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     auto debug_printf = new DebugPrintf;
     debug_printf->RegisterValidationObject(local_enables.debug_printf, api_version, report_data, local_object_dispatch);
+
+    auto sync_validation = new SyncValidator;
+    sync_validation->RegisterValidationObject(local_enables.sync_validation, api_version, report_data, local_object_dispatch);
 
     // If handle wrapping is disabled via the ValidationFeatures extension, override build flag
     if (local_disables.handle_wrapping) {
@@ -1127,6 +1136,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     best_practices->FinalizeInstanceValidationObject(framework);
     gpu_assisted->FinalizeInstanceValidationObject(framework);
     debug_printf->FinalizeInstanceValidationObject(framework);
+    sync_validation->FinalizeInstanceValidationObject(framework);
 
     for (auto intercept : framework->object_dispatch) {
         auto lock = intercept->write_lock();
@@ -1257,6 +1267,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 
     auto debug_printf = new DebugPrintf;
     debug_printf->InitDeviceValidationObject(enables.debug_printf, instance_interceptor, device_interceptor);
+
+    auto sync_validation = new SyncValidator;
+    sync_validation->InitDeviceValidationObject(enables.sync_validation, instance_interceptor, device_interceptor);
 
     for (auto intercept : instance_interceptor->object_dispatch) {
         auto lock = intercept->write_lock();
