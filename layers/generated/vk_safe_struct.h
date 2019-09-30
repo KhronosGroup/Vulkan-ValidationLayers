@@ -7535,58 +7535,6 @@ struct safe_VkDeviceDiagnosticsConfigCreateInfoNV {
     VkDeviceDiagnosticsConfigCreateInfoNV const *ptr() const { return reinterpret_cast<VkDeviceDiagnosticsConfigCreateInfoNV const *>(this); }
 };
 
-struct safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT {
-    VkStructureType sType;
-    void* pNext;
-    VkBool32 fragmentDensityMapDeferred;
-    safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT(const VkPhysicalDeviceFragmentDensityMap2FeaturesEXT* in_struct);
-    safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT(const safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT& copy_src);
-    safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT& operator=(const safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT& copy_src);
-    safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT();
-    ~safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT();
-    void initialize(const VkPhysicalDeviceFragmentDensityMap2FeaturesEXT* in_struct);
-    void initialize(const safe_VkPhysicalDeviceFragmentDensityMap2FeaturesEXT* copy_src);
-    VkPhysicalDeviceFragmentDensityMap2FeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceFragmentDensityMap2FeaturesEXT *>(this); }
-    VkPhysicalDeviceFragmentDensityMap2FeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceFragmentDensityMap2FeaturesEXT const *>(this); }
-};
-
-struct safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT {
-    VkStructureType sType;
-    void* pNext;
-    VkBool32 subsampledLoads;
-    VkBool32 subsampledCoarseReconstructionEarlyAccess;
-    uint32_t maxSubsampledArrayLayers;
-    uint32_t maxDescriptorSetSubsampledSamplers;
-    safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT(const VkPhysicalDeviceFragmentDensityMap2PropertiesEXT* in_struct);
-    safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT(const safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT& copy_src);
-    safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT& operator=(const safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT& copy_src);
-    safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT();
-    ~safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT();
-    void initialize(const VkPhysicalDeviceFragmentDensityMap2PropertiesEXT* in_struct);
-    void initialize(const safe_VkPhysicalDeviceFragmentDensityMap2PropertiesEXT* copy_src);
-    VkPhysicalDeviceFragmentDensityMap2PropertiesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceFragmentDensityMap2PropertiesEXT *>(this); }
-    VkPhysicalDeviceFragmentDensityMap2PropertiesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceFragmentDensityMap2PropertiesEXT const *>(this); }
-};
-
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
-struct safe_VkDirectFBSurfaceCreateInfoEXT {
-    VkStructureType sType;
-    const void* pNext;
-    VkDirectFBSurfaceCreateFlagsEXT flags;
-    IDirectFB* dfb;
-    IDirectFBSurface* surface;
-    safe_VkDirectFBSurfaceCreateInfoEXT(const VkDirectFBSurfaceCreateInfoEXT* in_struct);
-    safe_VkDirectFBSurfaceCreateInfoEXT(const safe_VkDirectFBSurfaceCreateInfoEXT& copy_src);
-    safe_VkDirectFBSurfaceCreateInfoEXT& operator=(const safe_VkDirectFBSurfaceCreateInfoEXT& copy_src);
-    safe_VkDirectFBSurfaceCreateInfoEXT();
-    ~safe_VkDirectFBSurfaceCreateInfoEXT();
-    void initialize(const VkDirectFBSurfaceCreateInfoEXT* in_struct);
-    void initialize(const safe_VkDirectFBSurfaceCreateInfoEXT* copy_src);
-    VkDirectFBSurfaceCreateInfoEXT *ptr() { return reinterpret_cast<VkDirectFBSurfaceCreateInfoEXT *>(this); }
-    VkDirectFBSurfaceCreateInfoEXT const *ptr() const { return reinterpret_cast<VkDirectFBSurfaceCreateInfoEXT const *>(this); }
-};
-#endif // VK_USE_PLATFORM_DIRECTFB_EXT
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 union safe_VkDeviceOrHostAddressKHR {
     VkDeviceAddress deviceAddress;

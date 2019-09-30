@@ -1993,19 +1993,6 @@ void DispatchGetPrivateDataEXT(
     uint64_t                                    objectHandle,
     VkPrivateDataSlotEXT                        privateDataSlot,
     uint64_t*                                   pData);
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
-VkResult DispatchCreateDirectFBSurfaceEXT(
-    VkInstance                                  instance,
-    const VkDirectFBSurfaceCreateInfoEXT*       pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface);
-#endif // VK_USE_PLATFORM_DIRECTFB_EXT
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
-VkBool32 DispatchGetPhysicalDeviceDirectFBPresentationSupportEXT(
-    VkPhysicalDevice                            physicalDevice,
-    uint32_t                                    queueFamilyIndex,
-    IDirectFB*                                  dfb);
-#endif // VK_USE_PLATFORM_DIRECTFB_EXT
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 VkResult DispatchCreateAccelerationStructureKHR(
     VkDevice                                    device,

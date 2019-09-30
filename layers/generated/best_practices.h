@@ -1107,46 +1107,10 @@ void PostCallRecordAcquireXlibDisplayEXT(
 
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
-#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
-
-void PostCallRecordGetRandROutputDisplayEXT(
-    VkPhysicalDevice                            physicalDevice,
-    Display*                                    dpy,
-    RROutput                                    rrOutput,
-    VkDisplayKHR*                               pDisplay,
-    VkResult                                    result);
-
-
-#endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
-
 void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     VkSurfaceCapabilities2EXT*                  pSurfaceCapabilities,
-    VkResult                                    result);
-
-
-void PostCallRecordDisplayPowerControlEXT(
-    VkDevice                                    device,
-    VkDisplayKHR                                display,
-    const VkDisplayPowerInfoEXT*                pDisplayPowerInfo,
-    VkResult                                    result);
-
-
-void PostCallRecordRegisterDeviceEventEXT(
-    VkDevice                                    device,
-    const VkDeviceEventInfoEXT*                 pDeviceEventInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkFence*                                    pFence,
-    VkResult                                    result);
-
-
-void PostCallRecordRegisterDisplayEventEXT(
-    VkDevice                                    device,
-    VkDisplayKHR                                display,
-    const VkDisplayEventInfoEXT*                pDisplayEventInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkFence*                                    pFence,
     VkResult                                    result);
 
 
@@ -1501,18 +1465,6 @@ void PostCallRecordSetPrivateDataEXT(
     uint64_t                                    data,
     VkResult                                    result);
 
-
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
-
-void PostCallRecordCreateDirectFBSurfaceEXT(
-    VkInstance                                  instance,
-    const VkDirectFBSurfaceCreateInfoEXT*       pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface,
-    VkResult                                    result);
-
-
-#endif // VK_USE_PLATFORM_DIRECTFB_EXT
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 

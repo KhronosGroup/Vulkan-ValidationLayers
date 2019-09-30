@@ -2527,27 +2527,6 @@ bool PreCallValidateGetPrivateDataEXT(
     VkPrivateDataSlotEXT                        privateDataSlot,
     uint64_t*                                   pData) const;
 
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
-bool PreCallValidateCreateDirectFBSurfaceEXT(
-    VkInstance                                  instance,
-    const VkDirectFBSurfaceCreateInfoEXT*       pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const;
-void PostCallRecordCreateDirectFBSurfaceEXT(
-    VkInstance                                  instance,
-    const VkDirectFBSurfaceCreateInfoEXT*       pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface,
-    VkResult                                    result);
-#endif // VK_USE_PLATFORM_DIRECTFB_EXT
-
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
-bool PreCallValidateGetPhysicalDeviceDirectFBPresentationSupportEXT(
-    VkPhysicalDevice                            physicalDevice,
-    uint32_t                                    queueFamilyIndex,
-    IDirectFB*                                  dfb) const;
-#endif // VK_USE_PLATFORM_DIRECTFB_EXT
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateCreateAccelerationStructureKHR(
     VkDevice                                    device,

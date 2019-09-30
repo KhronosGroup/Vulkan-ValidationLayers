@@ -3128,6 +3128,19 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     }
 }
 
+void VkSyncValTest::InitSyncValFramework() {
+    // Enable synchronization validation
+    VkLayerSettingValueDataEXT sy_setting_string_value{};
+    sy_setting_string_value.arrayString.pCharArray = "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION";
+    sy_setting_string_value.arrayString.count = sizeof(sy_setting_string_value.arrayString.pCharArray);
+    VkLayerSettingValueEXT sy_vendor_all_setting_val = {"enables", VK_LAYER_SETTING_VALUE_TYPE_STRING_ARRAY_EXT,
+                                                        sy_setting_string_value};
+    VkLayerSettingsEXT sy_settings{static_cast<VkStructureType>(VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT), nullptr, 1,
+                                   &sy_vendor_all_setting_val};
+    features_.pNext = &sy_settings;
+    InitFramework(m_errorMonitor, &features_);
+}
+
 void print_android(const char *c) {
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     __android_log_print(ANDROID_LOG_INFO, "VulkanLayerValidationTests", "%s", c);

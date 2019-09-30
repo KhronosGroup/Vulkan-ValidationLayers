@@ -7088,29 +7088,6 @@ void ThreadSafety::PostCallRecordGetPrivateDataEXT(
     FinishReadObject(privateDataSlot, "vkGetPrivateDataEXT");
 }
 
-#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
-
-void ThreadSafety::PreCallRecordCreateDirectFBSurfaceEXT(
-    VkInstance                                  instance,
-    const VkDirectFBSurfaceCreateInfoEXT*       pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) {
-    StartReadObjectParentInstance(instance, "vkCreateDirectFBSurfaceEXT");
-}
-
-void ThreadSafety::PostCallRecordCreateDirectFBSurfaceEXT(
-    VkInstance                                  instance,
-    const VkDirectFBSurfaceCreateInfoEXT*       pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface,
-    VkResult                                    result) {
-    FinishReadObjectParentInstance(instance, "vkCreateDirectFBSurfaceEXT");
-    if (result == VK_SUCCESS) {
-        CreateObjectParentInstance(*pSurface);
-    }
-}
-#endif // VK_USE_PLATFORM_DIRECTFB_EXT
-
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void ThreadSafety::PreCallRecordCreateAccelerationStructureKHR(

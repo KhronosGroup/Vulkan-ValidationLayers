@@ -301,6 +301,17 @@ class VkDebugPrintfTest : public VkLayerTest {
   protected:
 };
 
+class VkSyncValTest : public VkLayerTest {
+  public:
+    void InitSyncValFramework();
+
+  protected:
+    VkValidationFeatureDisableEXT disables_[4] = {
+        VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
+        VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
+    VkValidationFeaturesEXT features_ = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr, 0, nullptr, 4, disables_};
+};
+
 class VkBufferTest {
   public:
     enum eTestEnFlags {
