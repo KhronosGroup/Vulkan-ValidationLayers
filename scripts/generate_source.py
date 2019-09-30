@@ -50,6 +50,7 @@ def main(argv):
                                               "object_tracker.h",
                                               "parameter_validation.cpp",
                                               "parameter_validation.h",
+                                              "synchronization_validation_types.h",
                                               "thread_safety.cpp",
                                               "thread_safety.h",
                                               "vk_dispatch_table_helper.h",

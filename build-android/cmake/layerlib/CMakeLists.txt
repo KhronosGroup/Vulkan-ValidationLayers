@@ -68,6 +68,7 @@ add_library(VkLayer_khronos_validation SHARED
         ${SRC_DIR}/layers/shader_validation.cpp
         ${SRC_DIR}/layers/gpu_validation.cpp
         ${SRC_DIR}/layers/best_practices.cpp
+        ${SRC_DIR}/layers/synchronization_validation.cpp
         ${COMMON_DIR}/include/layer_chassis_dispatch.cpp
         ${COMMON_DIR}/include/chassis.cpp
         ${COMMON_DIR}/include/parameter_validation.cpp

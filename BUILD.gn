@@ -98,6 +98,8 @@ core_validation_sources = [
   "layers/gpu_validation.h",
   "layers/shader_validation.cpp",
   "layers/shader_validation.h",
+  "layers/synchronization_validation.cpp",
+  "layers/synchronization_validation.h",
   "layers/xxhash.c",
   "layers/xxhash.h",
   "layers/image_layout_map.cpp",

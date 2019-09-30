@@ -594,7 +594,8 @@ static inline bool LogMsgLocked(const debug_report_data *debug_data, VkFlags msg
     std::string str_plus_spec_text(err_msg ? err_msg : "Allocation failure");
 
     // Append the spec error text to the error message, unless it's an UNASSIGNED or UNDEFINED vuid
-    if ((vuid_text.find("UNASSIGNED-") == std::string::npos) && (vuid_text.find(kVUIDUndefined) == std::string::npos)) {
+    if ((vuid_text.find("UNASSIGNED-") == std::string::npos) && (vuid_text.find(kVUIDUndefined) == std::string::npos) &&
+        (vuid_text.rfind("SYNC-", 0) == std::string::npos)) {
         // Linear search makes no assumptions about the layout of the string table. This is not fast, but it does not need to be at
         // this point in the error reporting path
         uint32_t num_vuids = sizeof(vuid_spec_text) / sizeof(vuid_spec_text_pair);

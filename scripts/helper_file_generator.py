@@ -26,6 +26,7 @@ import xml.etree.ElementTree as etree
 from generator import *
 from collections import namedtuple
 from common_codegen import *
+import sync_val_gen
 
 #
 # HelperFileOutputGeneratorOptions - subclass of GeneratorOptions.
@@ -86,6 +87,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         self.object_type_aliases = []                     # Aliases to handles types (for handles that were extensions)
         self.debug_report_object_types = []               # Handy copy of debug_report_object_type enum data
         self.core_object_types = []                       # Handy copy of core_object_type enum data
+        self.sync_enum = dict()                           # Handy copy of synchronization enum data
         self.device_extension_info = dict()               # Dict of device extension name defines and ifdef values
         self.instance_extension_info = dict()             # Dict of instance extension name defines and ifdef values
         self.structextends_list = []                      # List of structs which extend another struct via pNext
@@ -218,6 +220,12 @@ class HelperFileOutputGenerator(OutputGenerator):
                         if elem.get('alias') is None: # TODO: Strangely the "alias" fn parameter does not work
                             item_name = elem.get('name')
                             self.core_object_types.append(item_name)
+        elif self.helper_file_type == 'synchronization_helper_header':
+            if groupName in sync_val_gen.sync_enum_types:
+                self.sync_enum[groupName] = []
+                for elem in groupElem.findall('enum'):
+                    if elem.get('supported') != 'disabled':
+                        self.sync_enum[groupName].append(elem)
 
     #
     # Called for each type -- if the type is a struct/union, grab the metadata
@@ -1571,6 +1579,11 @@ class HelperFileOutputGenerator(OutputGenerator):
         return "\n".join(code)
 
     #
+    # Generate the type map
+    def GenerateSyncHelperHeader(self):
+        return sync_val_gen.GenSyncTypeHelper(self)
+
+    #
     # Create a helper file and return it as a string
     def OutputDestFile(self):
         if self.helper_file_type == 'enum_string_header':
@@ -1585,5 +1598,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             return self.GenerateExtensionHelperHeader()
         elif self.helper_file_type == 'typemap_helper_header':
             return self.GenerateTypeMapHelperHeader()
+        elif self.helper_file_type == 'synchronization_helper_header':
+            return self.GenerateSyncHelperHeader()
         else:
             return 'Bad Helper File Generator Option %s' % self.helper_file_type
