@@ -46,6 +46,7 @@ LOCAL_SRC_FILES += $(SRC_DIR)/layers/gpu_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/debug_printf.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/best_practices_utils.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/best_practices.cpp
+LOCAL_SRC_FILES += $(SRC_DIR)/layers/synchronization_validation.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/convert_to_renderpass2.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/layer_chassis_dispatch.cpp
 LOCAL_SRC_FILES += $(SRC_DIR)/layers/generated/chassis.cpp

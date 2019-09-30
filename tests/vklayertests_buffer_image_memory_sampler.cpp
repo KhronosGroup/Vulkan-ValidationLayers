@@ -10739,3 +10739,55 @@ TEST_F(VkLayerTest, CustomBorderColorFormatUndefined) {
 
     vk::DestroySampler(m_device->device(), sampler, nullptr);
 }
+
+TEST_F(VkLayerTest, SyncBufferCopyHazards) {
+    // TODO: Add code to enable sync validation
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkBufferObj buffer_a;
+    VkBufferObj buffer_b;
+    VkBufferObj buffer_c;
+    VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    buffer_a.init_as_src_and_dst(*m_device, 256, mem_prop);
+    buffer_b.init_as_src_and_dst(*m_device, 256, mem_prop);
+    buffer_c.init_as_src_and_dst(*m_device, 256, mem_prop);
+
+    VkBufferCopy region = {0, 0, 256};
+
+    auto cb = m_commandBuffer->handle();
+    m_commandBuffer->begin();
+
+    vk::CmdCopyBuffer(cb, buffer_a.handle(), buffer_b.handle(), 1, &region);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
+    vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_a.handle(), 1, &region);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
+    vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_b.handle(), 1, &region);
+    m_errorMonitor->VerifyFound();
+
+    // NOTE: Since the previous command skips in validation, the state update is never done, and the validation layer thus doesn't
+    //       record the write operation to b.  So we'll need to repeat it successfully to set up for the *next* test.
+
+    // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
+    auto mem_barrier = lvl_init_struct<VkMemoryBarrier>();
+    mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
+                           nullptr);
+    m_errorMonitor->ExpectSuccess();
+
+    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_c.handle(), buffer_b.handle(), 1, &region);
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ_AFTER_WRITE");
+    mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;  // Protect C but not B
+    mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0, nullptr, 0,
+                           nullptr);
+    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_b.handle(), buffer_c.handle(), 1, &region);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
