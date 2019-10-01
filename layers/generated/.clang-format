@@ -1,4 +1,6 @@
 ---
 # Disable clang-format for generated code
 DisableFormat: true
+# C-F has a bug in which it insists on sorting includes even if disabled
+SortIncludes: false
 ...
