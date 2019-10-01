@@ -1958,6 +1958,8 @@ TEST_F(VkLayerTest, QueryPoolPartialTimestamp) {
     query_pool_ci.queryCount = 1;
     vk::CreateQueryPool(m_device->device(), &query_pool_ci, nullptr, &query_pool);
 
+    // Use setup as a positive test...
+    m_errorMonitor->ExpectSuccess();
     m_commandBuffer->begin();
     vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
     vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 0);
@@ -1970,6 +1972,7 @@ TEST_F(VkLayerTest, QueryPoolPartialTimestamp) {
     submit_info.pCommandBuffers = &m_commandBuffer->handle();
     vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
     vk::QueueWaitIdle(m_device->m_queue);
+    m_errorMonitor->VerifyNotFound();
 
     // Attempt to obtain partial results.
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetQueryPoolResults-queryType-00818");
