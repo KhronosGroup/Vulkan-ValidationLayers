@@ -6438,38 +6438,38 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
 }
 
 bool CoreChecks::VerifyQueryIsReset(const ValidationStateTracker *state_data, VkCommandBuffer commandBuffer, QueryObject query_obj,
-                                    QueryMap *localQueryToStateMap) {
+                                    const char *func_name, QueryMap *localQueryToStateMap) {
     bool skip = false;
 
     QueryState state = state_data->GetQueryState(localQueryToStateMap, query_obj.pool, query_obj.query);
     if (state != QUERYSTATE_RESET) {
         skip |= log_msg(state_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), kVUID_Core_DrawState_QueryNotReset,
-                        "vkCmdBeginQuery(): %s and query %" PRIu32
+                        "%s: %s and query %" PRIu32
                         ": query not reset. "
                         "After query pool creation, each query must be reset before it is used. "
                         "Queries must also be reset between uses.",
-                        state_data->report_data->FormatHandle(query_obj.pool).c_str(), query_obj.query);
+                        func_name, state_data->report_data->FormatHandle(query_obj.pool).c_str(), query_obj.query);
     }
 
     return skip;
 }
 
-void CoreChecks::EnqueueVerifyBeginQuery(VkCommandBuffer command_buffer, const QueryObject &query_obj) {
+void CoreChecks::EnqueueVerifyBeginQuery(VkCommandBuffer command_buffer, const QueryObject &query_obj, const char *func_name) {
     CMD_BUFFER_STATE *cb_state = GetCBState(command_buffer);
 
     // Enqueue the submit time validation here, ahead of the submit time state update in the StateTracker's PostCallRecord
-    cb_state->queryUpdates.emplace_back(
-        [command_buffer, query_obj](const ValidationStateTracker *device_data, bool do_validate, QueryMap *localQueryToStateMap) {
-            if (!do_validate) return false;
-            return VerifyQueryIsReset(device_data, command_buffer, query_obj, localQueryToStateMap);
-        });
+    cb_state->queryUpdates.emplace_back([command_buffer, query_obj, func_name](const ValidationStateTracker *device_data,
+                                                                               bool do_validate, QueryMap *localQueryToStateMap) {
+        if (!do_validate) return false;
+        return VerifyQueryIsReset(device_data, command_buffer, query_obj, func_name, localQueryToStateMap);
+    });
 }
 
 void CoreChecks::PreCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) {
     if (disabled.query_validation) return;
     QueryObject query_obj = {queryPool, slot};
-    EnqueueVerifyBeginQuery(commandBuffer, query_obj);
+    EnqueueVerifyBeginQuery(commandBuffer, query_obj, "vkCmdBeginQuery()");
 }
 
 bool CoreChecks::ValidateCmdEndQuery(const CMD_BUFFER_STATE *cb_state, const QueryObject &query_obj, CMD_TYPE cmd,
@@ -6534,8 +6534,9 @@ static QueryResultType GetQueryResultType(QueryState state, VkQueryResultFlags f
     return QUERYRESULT_UNKNOWN;
 }
 
-bool CoreChecks::ValidateQuery(const ValidationStateTracker *state_data, VkCommandBuffer commandBuffer, VkQueryPool queryPool,
-                               uint32_t firstQuery, uint32_t queryCount, VkQueryResultFlags flags, QueryMap *localQueryToStateMap) {
+bool CoreChecks::ValidateCopyQueryPoolResults(const ValidationStateTracker *state_data, VkCommandBuffer commandBuffer,
+                                              VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+                                              VkQueryResultFlags flags, QueryMap *localQueryToStateMap) {
     bool skip = false;
     for (uint32_t i = 0; i < queryCount; i++) {
         QueryState state = state_data->GetQueryState(localQueryToStateMap, queryPool, firstQuery + i);
@@ -6543,7 +6544,7 @@ bool CoreChecks::ValidateQuery(const ValidationStateTracker *state_data, VkComma
         if (result_type != QUERYRESULT_SOME_DATA) {
             skip |= log_msg(state_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(commandBuffer), kVUID_Core_DrawState_InvalidQuery,
-                            "Requesting a copy from query to buffer on %s query %" PRIu32 ": %s",
+                            "vkCmdCopyQueryPoolResults(): Requesting a copy from query to buffer on %s query %" PRIu32 ": %s",
                             state_data->report_data->FormatHandle(queryPool).c_str(), firstQuery + i,
                             string_QueryResultType(result_type));
         }
@@ -6583,7 +6584,8 @@ void CoreChecks::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuf
         [commandBuffer, queryPool, firstQuery, queryCount, flags](const ValidationStateTracker *device_data, bool do_validate,
                                                                   QueryMap *localQueryToStateMap) {
             if (!do_validate) return false;
-            return ValidateQuery(device_data, commandBuffer, queryPool, firstQuery, queryCount, flags, localQueryToStateMap);
+            return ValidateCopyQueryPoolResults(device_data, commandBuffer, queryPool, firstQuery, queryCount, flags,
+                                                localQueryToStateMap);
         });
 }
 
@@ -6658,11 +6660,12 @@ void CoreChecks::PreCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, V
     // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     QueryObject query = {queryPool, slot};
-    cb_state->queryUpdates.emplace_back(
-        [commandBuffer, query](const ValidationStateTracker *device_data, bool do_validate, QueryMap *localQueryToStateMap) {
-            if (!do_validate) return false;
-            return VerifyQueryIsReset(device_data, commandBuffer, query, localQueryToStateMap);
-        });
+    const char *func_name = "vkCmdWriteTimestamp()";
+    cb_state->queryUpdates.emplace_back([commandBuffer, query, func_name](const ValidationStateTracker *device_data,
+                                                                          bool do_validate, QueryMap *localQueryToStateMap) {
+        if (!do_validate) return false;
+        return VerifyQueryIsReset(device_data, commandBuffer, query, func_name, localQueryToStateMap);
+    });
 }
 
 bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2KHR *attachments, const VkFramebufferCreateInfo *fbci,
@@ -10265,7 +10268,7 @@ void CoreChecks::PreCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuf
                                                       VkQueryControlFlags flags, uint32_t index) {
     if (disabled.query_validation) return;
     QueryObject query_obj = {queryPool, query, index};
-    EnqueueVerifyBeginQuery(commandBuffer, query_obj);
+    EnqueueVerifyBeginQuery(commandBuffer, query_obj, "vkCmdBeginQueryIndexedEXT()");
 }
 
 bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
