@@ -4396,8 +4396,10 @@ void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCrea
     // Capture descriptor uses for the pipeline
     for (auto use : stage_state->descriptor_uses) {
         // While validating shaders capture which slots are used by the pipeline
-        auto &reqs = pipeline->active_slots[use.first.first][use.first.second];
+        const uint32_t slot = use.first.first;
+        auto &reqs = pipeline->active_slots[slot][use.first.second];
         reqs = descriptor_req(reqs | DescriptorTypeToReqs(module, use.second.type_id));
+        pipeline->max_active_slot = std::max(pipeline->max_active_slot, slot);
     }
 }
 

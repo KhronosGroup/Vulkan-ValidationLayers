@@ -65,6 +65,9 @@
 #include "shader_validation.h"
 #include "vk_layer_utils.h"
 
+// Array of command names indexed by CMD_TYPE enum
+static const std::array<const char *, CMD_RANGE_SIZE> command_name_list = {{VUID_CMD_NAME_LIST}};
+
 // These functions are defined *outside* the core_validation namespace as their type
 // is also defined outside that namespace
 size_t PipelineLayoutCompatDef::hash() const {
@@ -807,6 +810,32 @@ static bool VerifySetLayoutCompatibility(const debug_report_data *report_data, c
                                                          &errorMsg);
 }
 
+static const char *string_VuidNotCompatibleForSet(CMD_TYPE cmd_type) {
+    const static std::map<CMD_TYPE, const char *> incompatible_for_set_vuid = {
+        {CMD_DISPATCH, "VUID-vkCmdDispatch-None-02697"},
+        {CMD_DISPATCHINDIRECT, "VUID-vkCmdDispatchIndirect-None-02697"},
+        {CMD_DRAW, "VUID-vkCmdDraw-None-02697"},
+        {CMD_DRAWINDEXED, "VUID-vkCmdDrawIndexed-None-02697"},
+        {CMD_DRAWINDEXEDINDIRECT, "VUID-vkCmdDrawIndexedIndirect-None-02697"},
+        {CMD_DRAWINDEXEDINDIRECTCOUNTKHR, "VUID-vkCmdDrawIndexedIndirectCountKHR-None-02697"},
+        {CMD_DRAWINDIRECT, "VUID-vkCmdDrawIndirect-None-02697"},
+        {CMD_DRAWINDIRECTCOUNTKHR, "VUID-vkCmdDrawIndirectCountKHR-None-02697"},
+        {CMD_DRAWMESHTASKSINDIRECTCOUNTNV, "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02697"},
+        {CMD_DRAWMESHTASKSINDIRECTNV, "VUID-vkCmdDrawMeshTasksIndirectNV-None-02697"},
+        {CMD_DRAWMESHTASKSNV, "VUID-vkCmdDrawMeshTasksNV-None-02697"},
+
+        // Not implemented on this path...
+        // { CMD_DRAWDISPATCHBASE, "VUID-vkCmdDispatchBase-None-02697" },
+        // { CMD_DRAWINDIRECTBYTECOUNTEXT, "VUID-vkCmdDrawIndirectByteCountEXT-None-02697"},
+        // { CMD_TRACERAYSNV, "VUID-vkCmdTraceRaysNV-None-02697"},
+    };
+    auto find_it = incompatible_for_set_vuid.find(cmd_type);
+    if (find_it == incompatible_for_set_vuid.cend()) {
+        assert(find_it != incompatible_for_set_vuid.cend());
+        return "BAD VUID -- Unknown Command Type";
+    }
+    return find_it->second;
+}
 // Validate overall state at the time of a draw call
 bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TYPE cmd_type, const bool indexed,
                                          const VkPipelineBindPoint bind_point, const char *function, const char *pipe_err_code,
@@ -833,6 +862,17 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     // Now complete other state checks
     string errorString;
     auto const &pipeline_layout = pPipe->pipeline_layout.get();
+
+    // Check if the current pipeline is compatible for the maximum used set with the bound sets.
+    if (pPipe->active_slots.size() > 0 && !CompatForSet(pPipe->max_active_slot, state, pipeline_layout->compat_for_set)) {
+        result |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                          HandleToUint64(pPipe->pipeline), string_VuidNotCompatibleForSet(cmd_type),
+                          "%s(): %s defined with %s is not compatible for maximum set statically used %" PRIu32
+                          " with bound descriptor sets, last bound with %s",
+                          command_name_list[cmd_type], report_data->FormatHandle(pPipe->pipeline).c_str(),
+                          report_data->FormatHandle(pipeline_layout->layout).c_str(), pPipe->max_active_slot,
+                          report_data->FormatHandle(state.pipeline_layout).c_str());
+    }
 
     for (const auto &set_binding_pair : pPipe->active_slots) {
         uint32_t setIndex = set_binding_pair.first;

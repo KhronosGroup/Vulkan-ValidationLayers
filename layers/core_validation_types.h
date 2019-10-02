@@ -1209,6 +1209,7 @@ class PIPELINE_STATE : public BASE_NODE {
     uint32_t duplicate_shaders;
     // Capture which slots (set#->bindings) are actually used by the shaders of this pipeline
     std::unordered_map<uint32_t, BindingReqMap> active_slots;
+    uint32_t max_active_slot;  // the highest set number in active_slots for pipeline layout compatibility checks
     // Additional metadata needed by pipeline_state initialization and validation
     std::vector<StageState> stage_state;
     // Vtx input info (if any)
@@ -1231,6 +1232,7 @@ class PIPELINE_STATE : public BASE_NODE {
           active_shaders(0),
           duplicate_shaders(0),
           active_slots(),
+          max_active_slot(0),
           vertex_binding_descriptions_(),
           vertex_attribute_descriptions_(),
           vertex_binding_to_index_map_(),
