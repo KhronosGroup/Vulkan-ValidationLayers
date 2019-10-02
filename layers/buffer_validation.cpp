@@ -1477,7 +1477,10 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     }
 
     VkImageFormatProperties format_limits = {};
-    VkResult res = GetPDImageFormatProperties(pCreateInfo, &format_limits);
+    VkResult res =
+        DispatchGetPhysicalDeviceImageFormatProperties(physical_device, pCreateInfo->format, pCreateInfo->imageType,
+                                                       pCreateInfo->tiling, pCreateInfo->usage, pCreateInfo->flags, &format_limits);
+
     if (res == VK_ERROR_FORMAT_NOT_SUPPORTED) {
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
         if (!lvl_find_in_chain<VkExternalFormatANDROID>(pCreateInfo->pNext))
