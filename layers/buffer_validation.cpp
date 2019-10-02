@@ -1477,11 +1477,23 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     }
 
     VkImageFormatProperties format_limits = {};
-    VkResult res =
-        DispatchGetPhysicalDeviceImageFormatProperties(physical_device, pCreateInfo->format, pCreateInfo->imageType,
-                                                       pCreateInfo->tiling, pCreateInfo->usage, pCreateInfo->flags, &format_limits);
+    VkResult result = VK_SUCCESS;
+    if (pCreateInfo->tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+        result = DispatchGetPhysicalDeviceImageFormatProperties(physical_device, pCreateInfo->format, pCreateInfo->imageType,
+                                                                pCreateInfo->tiling, pCreateInfo->usage, pCreateInfo->flags,
+                                                                &format_limits);
+    } else {
+        auto image_format_info = lvl_init_struct<VkPhysicalDeviceImageFormatInfo2>();
+        auto image_format_properties = lvl_init_struct<VkImageFormatProperties2>();
+        image_format_info.type = pCreateInfo->imageType;
+        image_format_info.tiling = pCreateInfo->tiling;
+        image_format_info.usage = pCreateInfo->usage;
+        image_format_info.flags = pCreateInfo->flags;
+        result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &image_format_info, &image_format_properties);
+        format_limits = image_format_properties.imageFormatProperties;
+    }
 
-    if (res == VK_ERROR_FORMAT_NOT_SUPPORTED) {
+    if (result == VK_ERROR_FORMAT_NOT_SUPPORTED) {
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
         if (!lvl_find_in_chain<VkExternalFormatANDROID>(pCreateInfo->pNext))
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
