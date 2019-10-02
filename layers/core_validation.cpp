@@ -3256,18 +3256,6 @@ VkFormatProperties CoreChecks::GetPDFormatProperties(const VkFormat format) cons
     return format_properties;
 }
 
-VkResult CoreChecks::GetPDImageFormatProperties(const VkImageCreateInfo *image_ci,
-                                                VkImageFormatProperties *pImageFormatProperties) {
-    return DispatchGetPhysicalDeviceImageFormatProperties(physical_device, image_ci->format, image_ci->imageType, image_ci->tiling,
-                                                          image_ci->usage, image_ci->flags, pImageFormatProperties);
-}
-
-VkResult CoreChecks::GetPDImageFormatProperties2(const VkPhysicalDeviceImageFormatInfo2 *phys_dev_image_fmt_info,
-                                                 VkImageFormatProperties2 *pImageFormatProperties) const {
-    if (!instance_extensions.vk_khr_get_physical_device_properties_2) return VK_ERROR_EXTENSION_NOT_PRESENT;
-    return DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, phys_dev_image_fmt_info, pImageFormatProperties);
-}
-
 bool CoreChecks::ValidatePipelineVertexDivisors(std::vector<std::unique_ptr<PIPELINE_STATE>> const &pipe_state_vec,
                                                 const uint32_t count, const VkGraphicsPipelineCreateInfo *pipe_cis) const {
     bool skip = false;
