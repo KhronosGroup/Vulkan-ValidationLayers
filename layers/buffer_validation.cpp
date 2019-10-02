@@ -5118,33 +5118,40 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
 
     // subresource's aspect must be compatible with image's format.
     const VkFormat img_format = image_entry->createInfo.format;
-    if (FormatIsMultiplane(img_format)) {
-        VkImageAspectFlags allowed_flags = (VK_IMAGE_ASPECT_PLANE_0_BIT_KHR | VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
-        const char *vuid = "VUID-vkGetImageSubresourceLayout-format-01581";  // 2-plane version
-        if (FormatPlaneCount(img_format) > 2u) {
-            allowed_flags |= VK_IMAGE_ASPECT_PLANE_2_BIT_KHR;
-            vuid = "VUID-vkGetImageSubresourceLayout-format-01582";  // 3-plane version
+    if (image_entry->createInfo.tiling == VK_IMAGE_TILING_LINEAR) {
+        if (FormatIsMultiplane(img_format)) {
+            VkImageAspectFlags allowed_flags = (VK_IMAGE_ASPECT_PLANE_0_BIT_KHR | VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
+            const char *vuid = "VUID-vkGetImageSubresourceLayout-format-01581";  // 2-plane version
+            if (FormatPlaneCount(img_format) > 2u) {
+                allowed_flags |= VK_IMAGE_ASPECT_PLANE_2_BIT_KHR;
+                vuid = "VUID-vkGetImageSubresourceLayout-format-01582";  // 3-plane version
+            }
+            if (sub_aspect != (sub_aspect & allowed_flags)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                                HandleToUint64(image), vuid,
+                                "vkGetImageSubresourceLayout(): For multi-planar images, VkImageSubresource.aspectMask (0x%" PRIx32
+                                ") must be a single-plane specifier flag.",
+                                sub_aspect);
+            }
+        } else if (FormatIsColor(img_format)) {
+            if (sub_aspect != VK_IMAGE_ASPECT_COLOR_BIT) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                                HandleToUint64(image), kVUID_Core_DrawState_InvalidImageAspect,
+                                "vkGetImageSubresourceLayout(): For color formats, VkImageSubresource.aspectMask must be "
+                                "VK_IMAGE_ASPECT_COLOR.");
+            }
+        } else if (FormatIsDepthOrStencil(img_format)) {
+            if ((sub_aspect != VK_IMAGE_ASPECT_DEPTH_BIT) && (sub_aspect != VK_IMAGE_ASPECT_STENCIL_BIT)) {
+            }
         }
-        if (sub_aspect != (sub_aspect & allowed_flags)) {
+    } else if (image_entry->createInfo.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+        if ((sub_aspect != VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT) && (sub_aspect != VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT) &&
+            (sub_aspect != VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT) && (sub_aspect != VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT)) {
+            // TODO: This VU also needs to ensure that the DRM index is in range and valid.
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                            HandleToUint64(image), vuid,
-                            "vkGetImageSubresourceLayout(): For multi-planar images, VkImageSubresource.aspectMask (0x%" PRIx32
-                            ") must be a single-plane specifier flag.",
-                            sub_aspect);
-        }
-    } else if (FormatIsColor(img_format)) {
-        if (sub_aspect != VK_IMAGE_ASPECT_COLOR_BIT) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image),
-                kVUID_Core_DrawState_InvalidImageAspect,
-                "vkGetImageSubresourceLayout(): For color formats, VkImageSubresource.aspectMask must be VK_IMAGE_ASPECT_COLOR.");
-        }
-    } else if (FormatIsDepthOrStencil(img_format)) {
-        if ((sub_aspect != VK_IMAGE_ASPECT_DEPTH_BIT) && (sub_aspect != VK_IMAGE_ASPECT_STENCIL_BIT)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                            HandleToUint64(image), kVUID_Core_DrawState_InvalidImageAspect,
-                            "vkGetImageSubresourceLayout(): For depth/stencil formats, VkImageSubresource.aspectMask must be "
-                            "either VK_IMAGE_ASPECT_DEPTH_BIT or VK_IMAGE_ASPECT_STENCIL_BIT.");
+                            HandleToUint64(image), "VUID-vkGetImageSubresourceLayout-tiling-02271",
+                            "vkGetImageSubresourceLayout(): VkImageSubresource.aspectMask must be "
+                            "VK_IMAGE_ASPECT_MEMORY_PLANE_i_BIT_EXT.");
         }
     }
 
