@@ -3885,7 +3885,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     // Not having DEPTH or STENCIL set is an error
     conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageSubresource-aspectMask-parameter");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
     conc_test("VUID-VkImageMemoryBarrier-image-01207");
 
     // Having only one of depth or stencil set for DS image is an error
@@ -3895,7 +3895,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     // Having anything other than DEPTH and STENCIL is an error
     conc_test.image_barrier_.subresourceRange.aspectMask =
         VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_COLOR_BIT;
-    conc_test("VUID-VkImageSubresource-aspectMask-parameter");
+    conc_test("UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
 
     // Now test depth-only
     VkFormatProperties format_props;
@@ -5453,7 +5453,7 @@ TEST_F(VkLayerTest, InvalidImageViewAspect) {
     // Cause an error by setting an invalid image aspect
     image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
 
-    CreateImageViewTest(*this, &image_view_create_info, "VUID-VkImageSubresource-aspectMask-parameter");
+    CreateImageViewTest(*this, &image_view_create_info, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
     m_errorMonitor->VerifyFound();
 }
 
@@ -5492,7 +5492,8 @@ TEST_F(VkLayerTest, ExerciseGetImageSubresourceLayout) {
         subres.arrayLayer = 0;
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetImageSubresourceLayout-aspectMask-00997");
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageSubresource-aspectMask-parameter");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
         vk::GetImageSubresourceLayout(m_device->device(), img.image(), &subres, &subres_layout);
         m_errorMonitor->VerifyFound();
     }

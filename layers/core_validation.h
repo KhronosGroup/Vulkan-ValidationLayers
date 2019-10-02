@@ -549,7 +549,7 @@ class CoreChecks : public ValidationStateTracker {
                                          const VkAllocationCallbacks* pAllocator, VkBufferView* pView);
 
     bool ValidateImageAspectMask(VkImage image, VkFormat format, VkImageAspectFlags aspect_mask, const char* func_name,
-                                 const char* vuid = "VUID-VkImageSubresource-aspectMask-parameter") const;
+                                 const char* vuid = kVUID_Core_DrawState_InvalidImageAspect) const;
 
     bool ValidateCreateImageViewSubresourceRange(const IMAGE_STATE* image_state, bool is_imageview_2d_type,
                                                  const VkImageSubresourceRange& subresourceRange);

@@ -5083,11 +5083,21 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
         return skip;
     }
 
-    // image must have been created with tiling equal to VK_IMAGE_TILING_LINEAR
-    if (image_entry->createInfo.tiling != VK_IMAGE_TILING_LINEAR) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image),
-                        "VUID-vkGetImageSubresourceLayout-image-00996",
-                        "vkGetImageSubresourceLayout(): Image must have tiling of VK_IMAGE_TILING_LINEAR.");
+    // Image must have been created with tiling equal to VK_IMAGE_TILING_LINEAR
+    if (device_extensions.vk_ext_image_drm_format_modifier) {
+        if ((image_entry->createInfo.tiling != VK_IMAGE_TILING_LINEAR) &&
+            (image_entry->createInfo.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                            HandleToUint64(image), "VUID-vkGetImageSubresourceLayout-image-02270",
+                            "vkGetImageSubresourceLayout(): Image must have tiling of VK_IMAGE_TILING_LINEAR or "
+                            "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT.");
+        }
+    } else {
+        if (image_entry->createInfo.tiling != VK_IMAGE_TILING_LINEAR) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                            HandleToUint64(image), "VUID-vkGetImageSubresourceLayout-image-00996",
+                            "vkGetImageSubresourceLayout(): Image must have tiling of VK_IMAGE_TILING_LINEAR.");
+        }
     }
 
     // mipLevel must be less than the mipLevels specified in VkImageCreateInfo when the image was created
@@ -5126,13 +5136,13 @@ bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkIma
         if (sub_aspect != VK_IMAGE_ASPECT_COLOR_BIT) {
             skip |= log_msg(
                 report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image),
-                "VUID-VkImageSubresource-aspectMask-parameter",
+                kVUID_Core_DrawState_InvalidImageAspect,
                 "vkGetImageSubresourceLayout(): For color formats, VkImageSubresource.aspectMask must be VK_IMAGE_ASPECT_COLOR.");
         }
     } else if (FormatIsDepthOrStencil(img_format)) {
         if ((sub_aspect != VK_IMAGE_ASPECT_DEPTH_BIT) && (sub_aspect != VK_IMAGE_ASPECT_STENCIL_BIT)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                            HandleToUint64(image), "VUID-VkImageSubresource-aspectMask-parameter",
+                            HandleToUint64(image), kVUID_Core_DrawState_InvalidImageAspect,
                             "vkGetImageSubresourceLayout(): For depth/stencil formats, VkImageSubresource.aspectMask must be "
                             "either VK_IMAGE_ASPECT_DEPTH_BIT or VK_IMAGE_ASPECT_STENCIL_BIT.");
         }
