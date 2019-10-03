@@ -135,7 +135,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.functions_with_manual_checks = [
             'vkCreateInstance',
             'vkCreateDevice',
-            'vkCreateQueryPool'
+            'vkCreateQueryPool',
             'vkCreateRenderPass',
             'vkCreateRenderPass2KHR',
             'vkCreateBuffer',
