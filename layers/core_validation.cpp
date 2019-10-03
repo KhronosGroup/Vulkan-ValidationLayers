@@ -5412,20 +5412,24 @@ bool CoreChecks::ValidateImageBarrierAttachment(const char *funcName, CMD_BUFFER
         if (sub_desc.pDepthStencilAttachment && sub_desc.pDepthStencilAttachment->attachment == attach_index) {
             sub_image_layout = sub_desc.pDepthStencilAttachment->layout;
             sub_image_found = true;
-        } else if (device_extensions.vk_khr_depth_stencil_resolve) {
+        }
+        if (!sub_image_found && device_extensions.vk_khr_depth_stencil_resolve) {
             const auto *resolve = lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolveKHR>(sub_desc.pNext);
             if (resolve && resolve->pDepthStencilResolveAttachment &&
                 resolve->pDepthStencilResolveAttachment->attachment == attach_index) {
                 sub_image_layout = resolve->pDepthStencilResolveAttachment->layout;
                 sub_image_found = true;
             }
-        } else {
+        }
+        if (!sub_image_found) {
             for (uint32_t j = 0; j < sub_desc.colorAttachmentCount; ++j) {
                 if (sub_desc.pColorAttachments && sub_desc.pColorAttachments[j].attachment == attach_index) {
                     sub_image_layout = sub_desc.pColorAttachments[j].layout;
                     sub_image_found = true;
                     break;
-                } else if (sub_desc.pResolveAttachments && sub_desc.pResolveAttachments[j].attachment == attach_index) {
+                }
+                if (!sub_image_found && sub_desc.pResolveAttachments &&
+                    sub_desc.pResolveAttachments[j].attachment == attach_index) {
                     sub_image_layout = sub_desc.pResolveAttachments[j].layout;
                     sub_image_found = true;
                     break;
