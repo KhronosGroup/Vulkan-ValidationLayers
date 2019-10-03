@@ -73,10 +73,6 @@
           "repo_name" : "Vulkan-Headers"
         },
         {
-          "var_name" : "VULKAN_LOADER_INSTALL_DIR",
-          "repo_name" : "Vulkan-Loader"
-        },
-        {
           "var_name" : "GLSLANG_INSTALL_DIR",
           "repo_name" : "glslang"
         },
@@ -84,6 +80,11 @@
           "var_name" : "MOLTENVK_REPO_ROOT",
           "repo_name" : "MoltenVK"
         }
+      ],
+      "cmake_options" : [
+        "-DBUILD_CUBE=NO",
+        "-DBUILD_VULKANINFO=NO",
+        "-DINSTALL_ICD=ON"
       ],
       "ci_only" : [
         "TRAVIS"
