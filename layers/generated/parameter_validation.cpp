@@ -2542,6 +2542,7 @@ bool StatelessValidation::PreCallValidateCreateQueryPool(
         }
     }
     skip |= validate_required_pointer("vkCreateQueryPool", "pQueryPool", pQueryPool, "VUID-vkCreateQueryPool-pQueryPool-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateQueryPool(device, pCreateInfo, pAllocator, pQueryPool);
     return skip;
 }
 
