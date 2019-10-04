@@ -1014,9 +1014,9 @@ struct GPUAV_RESTORABLE_PIPELINE_STATE {
             if (last_bound.push_descriptor_set) {
                 push_descriptor_set_writes = last_bound.push_descriptor_set->GetWrites();
             }
-            if (last_bound.pipeline_state->pipeline_layout.push_constant_ranges == cb_state->push_constant_data_ranges) {
+            if (last_bound.pipeline_state->pipeline_layout->push_constant_ranges == cb_state->push_constant_data_ranges) {
                 push_constants_data = cb_state->push_constant_data;
-                push_constants_ranges = last_bound.pipeline_state->pipeline_layout.push_constant_ranges;
+                push_constants_ranges = last_bound.pipeline_state->pipeline_layout->push_constant_ranges;
             }
         }
     }
@@ -1467,7 +1467,7 @@ struct CreatePipelineTraits<VkRayTracingPipelineCreateInfoNV> {
 template <typename CreateInfo, typename SafeCreateInfo>
 void GpuAssisted::PreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreateInfos,
                                                  const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                 std::vector<std::unique_ptr<PIPELINE_STATE>> &pipe_state,
+                                                 std::vector<std::shared_ptr<PIPELINE_STATE>> &pipe_state,
                                                  std::vector<SafeCreateInfo> *new_pipeline_create_infos,
                                                  const VkPipelineBindPoint bind_point) {
     using Accessor = CreatePipelineTraits<CreateInfo>;
@@ -1488,7 +1488,7 @@ void GpuAssisted::PreCallRecordPipelineCreations(uint32_t count, const CreateInf
         }
         // If the app requests all available sets, the pipeline layout was not modified at pipeline layout creation and the already
         // instrumented shaders need to be replaced with uninstrumented shaders
-        if (pipe_state[pipeline]->pipeline_layout.set_layouts.size() >= adjusted_max_desc_sets) {
+        if (pipe_state[pipeline]->pipeline_layout->set_layouts.size() >= adjusted_max_desc_sets) {
             replace_shaders = true;
         }
 
@@ -2575,8 +2575,8 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     auto iter = cb_node->lastBound.find(bind_point);  // find() allows read-only access to cb_state
     if (iter != cb_node->lastBound.end()) {
         auto pipeline_state = iter->second.pipeline_state;
-        if (pipeline_state && (pipeline_state->pipeline_layout.set_layouts.size() <= desc_set_bind_index)) {
-            DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_state->pipeline_layout.layout, desc_set_bind_index, 1,
+        if (pipeline_state && (pipeline_state->pipeline_layout->set_layouts.size() <= desc_set_bind_index)) {
+            DispatchCmdBindDescriptorSets(cmd_buffer, bind_point, pipeline_state->pipeline_layout->layout, desc_set_bind_index, 1,
                                           desc_sets.data(), 0, nullptr);
         }
         // Record buffer and memory info in CB state tracking

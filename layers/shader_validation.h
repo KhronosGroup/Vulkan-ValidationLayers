@@ -113,7 +113,7 @@ struct decoration_set {
     void add(uint32_t decoration, uint32_t value);
 };
 
-struct SHADER_MODULE_STATE {
+struct SHADER_MODULE_STATE : public BASE_NODE {
     // The spirv image itself
     std::vector<uint32_t> words;
     // A mapping of <id> to the first word of its def. this is useful because walking type

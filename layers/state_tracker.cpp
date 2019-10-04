@@ -89,7 +89,7 @@ void ValidationStateTracker::RecordDestroySamplerYcbcrConversionANDROID(VkSample
 void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkImage *pImage, VkResult result) {
     if (VK_SUCCESS != result) return;
-    std::unique_ptr<IMAGE_STATE> is_node(new IMAGE_STATE(*pImage, pCreateInfo));
+    auto is_node = std::make_shared<IMAGE_STATE>(*pImage, pCreateInfo);
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
         RecordCreateImageANDROID(pCreateInfo, is_node.get());
     }
@@ -132,6 +132,7 @@ void ValidationStateTracker::PreCallRecordDestroyImage(VkDevice device, VkImage 
     }
     RemoveAliasingImage(image_state);
     ClearMemoryObjectBindings(obj_struct);
+    image_state->destroyed = true;
     // Remove image from imageMap
     imageMap.erase(image);
 }
@@ -199,7 +200,7 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
                                                         VkResult result) {
     if (result != VK_SUCCESS) return;
     // TODO : This doesn't create deep copy of pQueueFamilyIndices so need to fix that if/when we want that data to be valid
-    std::unique_ptr<BUFFER_STATE> buffer_state(new BUFFER_STATE(*pBuffer, pCreateInfo));
+    auto buffer_state = std::make_shared<BUFFER_STATE>(*pBuffer, pCreateInfo);
 
     // Get a set of requirements in the case the app does not
     DispatchGetBufferMemoryRequirements(device, *pBuffer, &buffer_state->requirements);
@@ -211,15 +212,16 @@ void ValidationStateTracker::PostCallRecordCreateBufferView(VkDevice device, con
                                                             const VkAllocationCallbacks *pAllocator, VkBufferView *pView,
                                                             VkResult result) {
     if (result != VK_SUCCESS) return;
-    bufferViewMap[*pView] = std::unique_ptr<BUFFER_VIEW_STATE>(new BUFFER_VIEW_STATE(*pView, pCreateInfo));
+    auto buffer_state = GetBufferShared(pCreateInfo->buffer);
+    bufferViewMap[*pView] = std::make_shared<BUFFER_VIEW_STATE>(buffer_state, *pView, pCreateInfo);
 }
 
 void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
                                                            const VkAllocationCallbacks *pAllocator, VkImageView *pView,
                                                            VkResult result) {
     if (result != VK_SUCCESS) return;
-    auto image_state = GetImageState(pCreateInfo->image);
-    imageViewMap[*pView] = std::unique_ptr<IMAGE_VIEW_STATE>(new IMAGE_VIEW_STATE(image_state, *pView, pCreateInfo));
+    auto image_state = GetImageShared(pCreateInfo->image);
+    imageViewMap[*pView] = std::make_shared<IMAGE_VIEW_STATE>(image_state, *pView, pCreateInfo);
 }
 
 void ValidationStateTracker::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
@@ -241,6 +243,7 @@ void ValidationStateTracker::PreCallRecordDestroyImageView(VkDevice device, VkIm
 
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(image_view_state->cb_bindings, obj_struct);
+    image_view_state->destroyed = true;
     imageViewMap.erase(imageView);
 }
 
@@ -257,6 +260,7 @@ void ValidationStateTracker::PreCallRecordDestroyBuffer(VkDevice device, VkBuffe
         }
     }
     ClearMemoryObjectBindings(obj_struct);
+    buffer_state->destroyed = true;
     bufferMap.erase(buffer_state->buffer);
 }
 
@@ -268,6 +272,7 @@ void ValidationStateTracker::PreCallRecordDestroyBufferView(VkDevice device, VkB
 
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(buffer_view_state->cb_bindings, obj_struct);
+    buffer_view_state->destroyed = true;
     bufferViewMap.erase(bufferView);
 }
 
@@ -441,8 +446,8 @@ BINDABLE *ValidationStateTracker::GetObjectMemBinding(const VulkanTypedHandle &t
 void ValidationStateTracker::AddMemObjInfo(void *object, const VkDeviceMemory mem, const VkMemoryAllocateInfo *pAllocateInfo) {
     assert(object != NULL);
 
-    auto *mem_info = new DEVICE_MEMORY_STATE(object, mem, pAllocateInfo);
-    memObjMap[mem] = unique_ptr<DEVICE_MEMORY_STATE>(mem_info);
+    memObjMap[mem] = std::make_shared<DEVICE_MEMORY_STATE>(object, mem, pAllocateInfo);
+    auto mem_info = memObjMap[mem].get();
 
     auto dedicated = lvl_find_in_chain<VkMemoryDedicatedAllocateInfoKHR>(pAllocateInfo->pNext);
     if (dedicated) {
@@ -766,6 +771,7 @@ void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, const V
 
 // Remove set from setMap and delete the set
 void ValidationStateTracker::FreeDescriptorSet(cvdescriptorset::DescriptorSet *descriptor_set) {
+    descriptor_set->destroyed = true;
     setMap.erase(descriptor_set->GetSet());
 }
 
@@ -1458,6 +1464,7 @@ void ValidationStateTracker::PreCallRecordFreeMemory(VkDevice device, VkDeviceMe
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(mem_info->cb_bindings, obj_struct);
     RemoveAliasingImages(mem_info->bound_images);
+    mem_info->destroyed = true;
     memObjMap.erase(mem);
 }
 
@@ -1562,7 +1569,7 @@ void ValidationStateTracker::PostCallRecordCreateSemaphore(VkDevice device, cons
                                                            const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,
                                                            VkResult result) {
     if (VK_SUCCESS != result) return;
-    std::unique_ptr<SEMAPHORE_STATE> semaphore_state(new SEMAPHORE_STATE{});
+    auto semaphore_state = std::make_shared<SEMAPHORE_STATE>();
     semaphore_state->signaler.first = VK_NULL_HANDLE;
     semaphore_state->signaler.second = 0;
     semaphore_state->signaled = false;
@@ -1661,12 +1668,16 @@ void ValidationStateTracker::PostCallRecordDeviceWaitIdle(VkDevice device, VkRes
 
 void ValidationStateTracker::PreCallRecordDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks *pAllocator) {
     if (!fence) return;
+    auto fence_state = GetFenceState(fence);
+    fence_state->destroyed = true;
     fenceMap.erase(fence);
 }
 
 void ValidationStateTracker::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore semaphore,
                                                            const VkAllocationCallbacks *pAllocator) {
     if (!semaphore) return;
+    auto semaphore_state = GetSemaphoreState(semaphore);
+    semaphore_state->destroyed = true;
     semaphoreMap.erase(semaphore);
 }
 
@@ -1684,6 +1695,7 @@ void ValidationStateTracker::PreCallRecordDestroyQueryPool(VkDevice device, VkQu
     QUERY_POOL_STATE *qp_state = GetQueryPoolState(queryPool);
     const VulkanTypedHandle obj_struct(queryPool, kVulkanObjectTypeQueryPool);
     InvalidateCommandBuffers(qp_state->cb_bindings, obj_struct);
+    qp_state->destroyed = true;
     queryPoolMap.erase(queryPool);
 }
 
@@ -1877,6 +1889,8 @@ void ValidationStateTracker::PostCallRecordGetImageSparseMemoryRequirements2KHR(
 void ValidationStateTracker::PreCallRecordDestroyShaderModule(VkDevice device, VkShaderModule shaderModule,
                                                               const VkAllocationCallbacks *pAllocator) {
     if (!shaderModule) return;
+    auto shader_module_state = GetShaderModuleState(shaderModule);
+    shader_module_state->destroyed = true;
     shaderModuleMap.erase(shaderModule);
 }
 
@@ -1887,12 +1901,15 @@ void ValidationStateTracker::PreCallRecordDestroyPipeline(VkDevice device, VkPip
     const VulkanTypedHandle obj_struct(pipeline, kVulkanObjectTypePipeline);
     // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(pipeline_state->cb_bindings, obj_struct);
+    pipeline_state->destroyed = true;
     pipelineMap.erase(pipeline);
 }
 
 void ValidationStateTracker::PreCallRecordDestroyPipelineLayout(VkDevice device, VkPipelineLayout pipelineLayout,
                                                                 const VkAllocationCallbacks *pAllocator) {
     if (!pipelineLayout) return;
+    auto pipeline_layout_state = GetPipelineLayout(pipelineLayout);
+    pipeline_layout_state->destroyed = true;
     pipelineLayoutMap.erase(pipelineLayout);
 }
 
@@ -1905,6 +1922,7 @@ void ValidationStateTracker::PreCallRecordDestroySampler(VkDevice device, VkSamp
     if (sampler_state) {
         InvalidateCommandBuffers(sampler_state->cb_bindings, obj_struct);
     }
+    sampler_state->destroyed = true;
     samplerMap.erase(sampler);
 }
 
@@ -1930,6 +1948,7 @@ void ValidationStateTracker::PreCallRecordDestroyDescriptorPool(VkDevice device,
         for (auto ds : desc_pool_state->sets) {
             FreeDescriptorSet(ds);
         }
+        desc_pool_state->destroyed = true;
         descriptorPoolMap.erase(descriptorPool);
     }
 }
@@ -1949,6 +1968,7 @@ void ValidationStateTracker::FreeCommandBufferStates(COMMAND_POOL_STATE *pool_st
             // Remove the cb debug labels
             EraseCmdDebugUtilsLabel(report_data, cb_state->commandBuffer);
             // Remove CBState from CB map
+            cb_state->destroyed = true;
             commandBufferMap.erase(cb_state->commandBuffer);
         }
     }
@@ -1964,7 +1984,7 @@ void ValidationStateTracker::PostCallRecordCreateCommandPool(VkDevice device, co
                                                              const VkAllocationCallbacks *pAllocator, VkCommandPool *pCommandPool,
                                                              VkResult result) {
     if (VK_SUCCESS != result) return;
-    std::unique_ptr<COMMAND_POOL_STATE> cmd_pool_state(new COMMAND_POOL_STATE{});
+    auto cmd_pool_state = std::make_shared<COMMAND_POOL_STATE>();
     cmd_pool_state->createFlags = pCreateInfo->flags;
     cmd_pool_state->queueFamilyIndex = pCreateInfo->queueFamilyIndex;
     commandPoolMap[*pCommandPool] = std::move(cmd_pool_state);
@@ -1974,7 +1994,7 @@ void ValidationStateTracker::PostCallRecordCreateQueryPool(VkDevice device, cons
                                                            const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool,
                                                            VkResult result) {
     if (VK_SUCCESS != result) return;
-    std::unique_ptr<QUERY_POOL_STATE> query_pool_state(new QUERY_POOL_STATE{});
+    auto query_pool_state = std::make_shared<QUERY_POOL_STATE>();
     query_pool_state->createInfo = *pCreateInfo;
     queryPoolMap[*pQueryPool] = std::move(query_pool_state);
 
@@ -1995,6 +2015,7 @@ void ValidationStateTracker::PreCallRecordDestroyCommandPool(VkDevice device, Vk
         // Create a vector, as FreeCommandBufferStates deletes from cp_state->commandBuffers during iteration.
         std::vector<VkCommandBuffer> cb_vec{cp_state->commandBuffers.begin(), cp_state->commandBuffers.end()};
         FreeCommandBufferStates(cp_state, static_cast<uint32_t>(cb_vec.size()), cb_vec.data());
+        cp_state->destroyed = true;
         commandPoolMap.erase(commandPool);
     }
 }
@@ -2047,6 +2068,7 @@ void ValidationStateTracker::PreCallRecordDestroyFramebuffer(VkDevice device, Vk
     FRAMEBUFFER_STATE *framebuffer_state = GetFramebufferState(framebuffer);
     const VulkanTypedHandle obj_struct(framebuffer, kVulkanObjectTypeFramebuffer);
     InvalidateCommandBuffers(framebuffer_state->cb_bindings, obj_struct);
+    framebuffer_state->destroyed = true;
     frameBufferMap.erase(framebuffer);
 }
 
@@ -2056,13 +2078,14 @@ void ValidationStateTracker::PreCallRecordDestroyRenderPass(VkDevice device, VkR
     RENDER_PASS_STATE *rp_state = GetRenderPassState(renderPass);
     const VulkanTypedHandle obj_struct(renderPass, kVulkanObjectTypeRenderPass);
     InvalidateCommandBuffers(rp_state->cb_bindings, obj_struct);
+    rp_state->destroyed = true;
     renderPassMap.erase(renderPass);
 }
 
 void ValidationStateTracker::PostCallRecordCreateFence(VkDevice device, const VkFenceCreateInfo *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkFence *pFence, VkResult result) {
     if (VK_SUCCESS != result) return;
-    std::unique_ptr<FENCE_STATE> fence_state(new FENCE_STATE{});
+    auto fence_state = std::make_shared<FENCE_STATE>();
     fence_state->fence = *pFence;
     fence_state->createInfo = *pCreateInfo;
     fence_state->state = (pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? FENCE_RETIRED : FENCE_UNSIGNALED;
@@ -2078,10 +2101,10 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
     cgpl_state->pCreateInfos = pCreateInfos;  // GPU validation can alter this, so we have to set a default value for the Chassis
     cgpl_state->pipe_state.reserve(count);
     for (uint32_t i = 0; i < count; i++) {
-        cgpl_state->pipe_state.push_back(std::unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
+        cgpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>());
         (cgpl_state->pipe_state)[i]->initGraphicsPipeline(this, &pCreateInfos[i],
                                                           GetRenderPassStateSharedPtr(pCreateInfos[i].renderPass));
-        (cgpl_state->pipe_state)[i]->pipeline_layout = *GetPipelineLayout(pCreateInfos[i].layout);
+        (cgpl_state->pipe_state)[i]->pipeline_layout = GetPipelineLayoutShared(pCreateInfos[i].layout);
     }
     return false;
 }
@@ -2110,9 +2133,9 @@ bool ValidationStateTracker::PreCallValidateCreateComputePipelines(VkDevice devi
     ccpl_state->pipe_state.reserve(count);
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
-        ccpl_state->pipe_state.push_back(unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
+        ccpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>());
         ccpl_state->pipe_state.back()->initComputePipeline(this, &pCreateInfos[i]);
-        ccpl_state->pipe_state.back()->pipeline_layout = *GetPipelineLayout(pCreateInfos[i].layout);
+        ccpl_state->pipe_state.back()->pipeline_layout = GetPipelineLayoutShared(pCreateInfos[i].layout);
     }
     return false;
 }
@@ -2142,9 +2165,9 @@ bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(VkDevice
     crtpl_state->pipe_state.reserve(count);
     for (uint32_t i = 0; i < count; i++) {
         // Create and initialize internal tracking data structure
-        crtpl_state->pipe_state.push_back(unique_ptr<PIPELINE_STATE>(new PIPELINE_STATE));
+        crtpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>());
         crtpl_state->pipe_state.back()->initRayTracingPipelineNV(this, &pCreateInfos[i]);
-        crtpl_state->pipe_state.back()->pipeline_layout = *GetPipelineLayout(pCreateInfos[i].layout);
+        crtpl_state->pipe_state.back()->pipeline_layout = GetPipelineLayoutShared(pCreateInfos[i].layout);
     }
     return false;
 }
@@ -2166,7 +2189,7 @@ void ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(
 void ValidationStateTracker::PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
                                                          const VkAllocationCallbacks *pAllocator, VkSampler *pSampler,
                                                          VkResult result) {
-    samplerMap[*pSampler] = unique_ptr<SAMPLER_STATE>(new SAMPLER_STATE(pSampler, pCreateInfo));
+    samplerMap[*pSampler] = std::make_shared<SAMPLER_STATE>(pSampler, pCreateInfo);
 }
 
 void ValidationStateTracker::PostCallRecordCreateDescriptorSetLayout(VkDevice device,
@@ -2229,7 +2252,7 @@ void ValidationStateTracker::PostCallRecordCreatePipelineLayout(VkDevice device,
                                                                 VkPipelineLayout *pPipelineLayout, VkResult result) {
     if (VK_SUCCESS != result) return;
 
-    std::unique_ptr<PIPELINE_LAYOUT_STATE> pipeline_layout_state(new PIPELINE_LAYOUT_STATE{});
+    auto pipeline_layout_state = std::make_shared<PIPELINE_LAYOUT_STATE>();
     pipeline_layout_state->layout = *pPipelineLayout;
     pipeline_layout_state->set_layouts.resize(pCreateInfo->setLayoutCount);
     PipelineLayoutSetLayoutsDef set_layouts(pCreateInfo->setLayoutCount);
@@ -2255,8 +2278,7 @@ void ValidationStateTracker::PostCallRecordCreateDescriptorPool(VkDevice device,
                                                                 const VkAllocationCallbacks *pAllocator,
                                                                 VkDescriptorPool *pDescriptorPool, VkResult result) {
     if (VK_SUCCESS != result) return;
-    descriptorPoolMap[*pDescriptorPool] =
-        std::unique_ptr<DESCRIPTOR_POOL_STATE>(new DESCRIPTOR_POOL_STATE(*pDescriptorPool, pCreateInfo));
+    descriptorPoolMap[*pDescriptorPool] = std::make_shared<DESCRIPTOR_POOL_STATE>(*pDescriptorPool, pCreateInfo);
 }
 
 void ValidationStateTracker::PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
@@ -2336,7 +2358,7 @@ void ValidationStateTracker::PostCallRecordAllocateCommandBuffers(VkDevice devic
         for (uint32_t i = 0; i < pCreateInfo->commandBufferCount; i++) {
             // Add command buffer to its commandPool map
             pPool->commandBuffers.insert(pCommandBuffer[i]);
-            std::unique_ptr<CMD_BUFFER_STATE> pCB(new CMD_BUFFER_STATE{});
+            auto pCB = std::make_shared<CMD_BUFFER_STATE>();
             pCB->createInfo = *pCreateInfo;
             pCB->device = device;
             // Add command buffer to map
@@ -2516,7 +2538,7 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
         cb_state->static_status = MakeStaticStateMask(pipe_state->graphicsPipelineCI.ptr()->pDynamicState);
         cb_state->status |= cb_state->static_status;
     }
-    ResetCommandBufferPushConstantDataIfIncompatible(cb_state, pipe_state->pipeline_layout.layout);
+    ResetCommandBufferPushConstantDataIfIncompatible(cb_state, pipe_state->pipeline_layout->layout);
     cb_state->lastBound[pipelineBindPoint].pipeline_state = pipe_state;
     SetPipelineState(pipe_state);
     AddCommandBufferBinding(&pipe_state->cb_bindings, VulkanTypedHandle(pipeline, kVulkanObjectTypePipeline), cb_state);
@@ -2563,7 +2585,7 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevic
                                                                          VkAccelerationStructureNV *pAccelerationStructure,
                                                                          VkResult result) {
     if (VK_SUCCESS != result) return;
-    std::unique_ptr<ACCELERATION_STRUCTURE_STATE> as_state(new ACCELERATION_STRUCTURE_STATE(*pAccelerationStructure, pCreateInfo));
+    auto as_state = std::make_shared<ACCELERATION_STRUCTURE_STATE>(*pAccelerationStructure, pCreateInfo);
 
     // Query the requirements in case the application doesn't (to avoid bind/validation time query)
     VkAccelerationStructureMemoryRequirementsInfoNV as_memory_requirements_info = {};
@@ -2685,6 +2707,7 @@ void ValidationStateTracker::PreCallRecordDestroyAccelerationStructureNV(VkDevic
             }
         }
         ClearMemoryObjectBindings(obj_struct);
+        as_state->destroyed = true;
         accelerationStructureMap.erase(accelerationStructure);
     }
 }
@@ -3108,8 +3131,8 @@ void ValidationStateTracker::PostCallRecordCreateFramebuffer(VkDevice device, co
                                                              VkResult result) {
     if (VK_SUCCESS != result) return;
     // Shadow create info and store in map
-    std::unique_ptr<FRAMEBUFFER_STATE> fb_state(
-        new FRAMEBUFFER_STATE(*pFramebuffer, pCreateInfo, GetRenderPassStateSharedPtr(pCreateInfo->renderPass)));
+    auto fb_state =
+        std::make_shared<FRAMEBUFFER_STATE>(*pFramebuffer, pCreateInfo, GetRenderPassStateSharedPtr(pCreateInfo->renderPass));
 
     if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) == 0) {
         for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
@@ -3508,7 +3531,7 @@ void ValidationStateTracker::RecordCreateSwapchainState(VkResult result, const V
                                                         VkSwapchainKHR *pSwapchain, SURFACE_STATE *surface_state,
                                                         SWAPCHAIN_NODE *old_swapchain_state) {
     if (VK_SUCCESS == result) {
-        auto swapchain_state = unique_ptr<SWAPCHAIN_NODE>(new SWAPCHAIN_NODE(pCreateInfo, *pSwapchain));
+        auto swapchain_state = std::make_shared<SWAPCHAIN_NODE>(pCreateInfo, *pSwapchain);
         if (VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR == pCreateInfo->presentMode ||
             VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR == pCreateInfo->presentMode) {
             swapchain_state->shared_presentable = true;
@@ -3548,6 +3571,7 @@ void ValidationStateTracker::PreCallRecordDestroySwapchainKHR(VkDevice device, V
             if (surface_state->swapchain == swapchain_data) surface_state->swapchain = nullptr;
         }
         RemoveAliasingImages(swapchain_data->bound_images);
+        swapchain_data->destroyed = true;
         swapchainMap.erase(swapchain);
     }
 }
@@ -3704,11 +3728,14 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceQueueFamilyPropertie
 }
 void ValidationStateTracker::PreCallRecordDestroySurfaceKHR(VkInstance instance, VkSurfaceKHR surface,
                                                             const VkAllocationCallbacks *pAllocator) {
+    if (!surface) return;
+    auto surface_state = GetSurfaceState(surface);
+    surface_state->destroyed = true;
     surface_map.erase(surface);
 }
 
 void ValidationStateTracker::RecordVulkanSurface(VkSurfaceKHR *pSurface) {
-    surface_map[*pSurface] = std::unique_ptr<SURFACE_STATE>(new SURFACE_STATE{*pSurface});
+    surface_map[*pSurface] = std::make_shared<SURFACE_STATE>(*pSurface);
 }
 
 void ValidationStateTracker::PostCallRecordCreateDisplayPlaneSurfaceKHR(VkInstance instance,
@@ -3976,6 +4003,8 @@ void ValidationStateTracker::PreCallRecordDestroyDescriptorUpdateTemplate(VkDevi
                                                                           VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                                           const VkAllocationCallbacks *pAllocator) {
     if (!descriptorUpdateTemplate) return;
+    auto template_state = GetDescriptorTemplateState(descriptorUpdateTemplate);
+    template_state->destroyed = true;
     desc_template_map.erase(descriptorUpdateTemplate);
 }
 
@@ -3983,13 +4012,15 @@ void ValidationStateTracker::PreCallRecordDestroyDescriptorUpdateTemplateKHR(VkD
                                                                              VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
                                                                              const VkAllocationCallbacks *pAllocator) {
     if (!descriptorUpdateTemplate) return;
+    auto template_state = GetDescriptorTemplateState(descriptorUpdateTemplate);
+    template_state->destroyed = true;
     desc_template_map.erase(descriptorUpdateTemplate);
 }
 
 void ValidationStateTracker::RecordCreateDescriptorUpdateTemplateState(const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo,
                                                                        VkDescriptorUpdateTemplateKHR *pDescriptorUpdateTemplate) {
     safe_VkDescriptorUpdateTemplateCreateInfo local_create_info(pCreateInfo);
-    std::unique_ptr<TEMPLATE_STATE> template_state(new TEMPLATE_STATE(*pDescriptorUpdateTemplate, &local_create_info));
+    auto template_state = std::make_shared<TEMPLATE_STATE>(*pDescriptorUpdateTemplate, &local_create_info);
     desc_template_map[*pDescriptorUpdateTemplate] = std::move(template_state);
 }
 
@@ -4206,8 +4237,8 @@ void ValidationStateTracker::PerformAllocateDescriptorSets(const VkDescriptorSet
     for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
         uint32_t variable_count = variable_count_valid ? variable_count_info->pDescriptorCounts[i] : 0;
 
-        std::unique_ptr<cvdescriptorset::DescriptorSet> new_ds(new cvdescriptorset::DescriptorSet(
-            descriptor_sets[i], p_alloc_info->descriptorPool, ds_data->layout_nodes[i], variable_count, this));
+        auto new_ds = std::make_shared<cvdescriptorset::DescriptorSet>(descriptor_sets[i], p_alloc_info->descriptorPool,
+                                                                       ds_data->layout_nodes[i], variable_count, this);
         pool_state->sets.insert(new_ds.get());
         new_ds->in_use.store(0);
         setMap[descriptor_sets[i]] = std::move(new_ds);
@@ -4338,9 +4369,9 @@ void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, c
 
     spv_target_env spirv_environment = ((api_version >= VK_API_VERSION_1_1) ? SPV_ENV_VULKAN_1_1 : SPV_ENV_VULKAN_1_0);
     bool is_spirv = (pCreateInfo->pCode[0] == spv::MagicNumber);
-    std::unique_ptr<SHADER_MODULE_STATE> new_shader_module(
-        is_spirv ? new SHADER_MODULE_STATE(pCreateInfo, *pShaderModule, spirv_environment, csm_state->unique_shader_id)
-                 : new SHADER_MODULE_STATE());
+    auto new_shader_module = is_spirv ? std::make_shared<SHADER_MODULE_STATE>(pCreateInfo, *pShaderModule, spirv_environment,
+                                                                              csm_state->unique_shader_id)
+                                      : std::make_shared<SHADER_MODULE_STATE>();
     shaderModuleMap[*pShaderModule] = std::move(new_shader_module);
 }
 

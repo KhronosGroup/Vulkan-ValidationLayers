@@ -48,7 +48,7 @@ enum SyncScope {
 
 enum FENCE_STATUS { FENCE_UNSIGNALED, FENCE_INFLIGHT, FENCE_RETIRED };
 
-class FENCE_STATE {
+class FENCE_STATE : public BASE_NODE {
   public:
     VkFence fence;
     VkFenceCreateInfo createInfo;
@@ -112,21 +112,21 @@ struct PHYSICAL_DEVICE_STATE {
 // This structure is used to save data across the CreateGraphicsPipelines down-chain API call
 struct create_graphics_pipeline_api_state {
     std::vector<safe_VkGraphicsPipelineCreateInfo> gpu_create_infos;
-    std::vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
+    std::vector<std::shared_ptr<PIPELINE_STATE>> pipe_state;
     const VkGraphicsPipelineCreateInfo* pCreateInfos;
 };
 
 // This structure is used to save data across the CreateComputePipelines down-chain API call
 struct create_compute_pipeline_api_state {
     std::vector<safe_VkComputePipelineCreateInfo> gpu_create_infos;
-    std::vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
+    std::vector<std::shared_ptr<PIPELINE_STATE>> pipe_state;
     const VkComputePipelineCreateInfo* pCreateInfos;
 };
 
 // This structure is used to save data across the CreateRayTracingPipelinesNV down-chain API call.
 struct create_ray_tracing_pipeline_api_state {
     std::vector<safe_VkRayTracingPipelineCreateInfoNV> gpu_create_infos;
-    std::vector<std::unique_ptr<PIPELINE_STATE>> pipe_state;
+    std::vector<std::shared_ptr<PIPELINE_STATE>> pipe_state;
     const VkRayTracingPipelineCreateInfoNV* pCreateInfos;
 };
 
@@ -170,7 +170,7 @@ struct hash<GpuQueue> {
 };
 }  // namespace std
 
-struct SURFACE_STATE {
+struct SURFACE_STATE : public BASE_NODE {
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     SWAPCHAIN_NODE* swapchain = nullptr;
     std::unordered_map<GpuQueue, bool> gpu_queue_support;
@@ -245,7 +245,8 @@ class ValidationStateTracker : public ValidationObject {
         using StateType = StateType_;
         using HandleType = typename AccessorStateHandle<StateType>::HandleType;
         using ReturnType = StateType*;
-        using MappedType = std::unique_ptr<StateType>;
+        using SharedType = std::shared_ptr<StateType>;
+        using MappedType = std::shared_ptr<StateType>;
         using MapType = unordered_map<HandleType, MappedType>;
     };
 
@@ -277,7 +278,7 @@ class ValidationStateTracker : public ValidationObject {
 
   public:
     template <typename State>
-    typename AccessorTraits<State>::ReturnType Get(typename AccessorTraits<State>::Handle handle) {
+    typename AccessorTraits<State>::ReturnType Get(typename AccessorTraits<State>::HandleType handle) {
         using Traits = AccessorTraits<State>;
         auto map_member = Traits::Map();
         const typename Traits::MapType& map =
@@ -304,17 +305,53 @@ class ValidationStateTracker : public ValidationObject {
         return found_it->second.get();
     };
 
+    template <typename State>
+    typename AccessorTraits<State>::SharedType GetShared(typename AccessorTraits<State>::HandleType handle) {
+        using Traits = AccessorTraits<State>;
+        auto map_member = Traits::Map();
+        const typename Traits::MapType& map =
+            (Traits::kInstanceScope && (this->*map_member).size() == 0) ? instance_state->*map_member : this->*map_member;
+
+        const auto found_it = map.find(handle);
+        if (found_it == map.end()) {
+            return nullptr;
+        }
+        return found_it->second;
+    };
+
+    template <typename State>
+    const typename AccessorTraits<State>::SharedType GetShared(typename AccessorTraits<State>::HandleType handle) const {
+        using Traits = AccessorTraits<State>;
+        auto map_member = Traits::Map();
+        const typename Traits::MapType& map =
+            (Traits::kInstanceScope && (this->*map_member).size() == 0) ? instance_state->*map_member : this->*map_member;
+
+        const auto found_it = map.find(handle);
+        if (found_it == map.cend()) {
+            return nullptr;
+        }
+        return found_it->second;
+    };
+
     // Accessors for the VALSTATE... maps
     const SAMPLER_STATE* GetSamplerState(VkSampler sampler) const { return Get<SAMPLER_STATE>(sampler); }
     SAMPLER_STATE* GetSamplerState(VkSampler sampler) { return Get<SAMPLER_STATE>(sampler); }
     const IMAGE_VIEW_STATE* GetImageViewState(VkImageView image_view) const { return Get<IMAGE_VIEW_STATE>(image_view); }
     IMAGE_VIEW_STATE* GetImageViewState(VkImageView image_view) { return Get<IMAGE_VIEW_STATE>(image_view); }
+
+    const std::shared_ptr<IMAGE_STATE> GetImageShared(VkImage image) const { return GetShared<IMAGE_STATE>(image); }
+    std::shared_ptr<IMAGE_STATE> GetImageShared(VkImage image) { return GetShared<IMAGE_STATE>(image); }
     const IMAGE_STATE* GetImageState(VkImage image) const { return Get<IMAGE_STATE>(image); }
     IMAGE_STATE* GetImageState(VkImage image) { return Get<IMAGE_STATE>(image); }
+
     const BUFFER_VIEW_STATE* GetBufferViewState(VkBufferView buffer_view) const { return Get<BUFFER_VIEW_STATE>(buffer_view); }
     BUFFER_VIEW_STATE* GetBufferViewState(VkBufferView buffer_view) { return Get<BUFFER_VIEW_STATE>(buffer_view); }
+
+    const std::shared_ptr<BUFFER_STATE> GetBufferShared(VkBuffer buffer) const { return GetShared<BUFFER_STATE>(buffer); }
+    std::shared_ptr<BUFFER_STATE> GetBufferShared(VkBuffer buffer) { return GetShared<BUFFER_STATE>(buffer); }
     const BUFFER_STATE* GetBufferState(VkBuffer buffer) const { return Get<BUFFER_STATE>(buffer); }
     BUFFER_STATE* GetBufferState(VkBuffer buffer) { return Get<BUFFER_STATE>(buffer); }
+
     const PIPELINE_STATE* GetPipelineState(VkPipeline pipeline) const { return Get<PIPELINE_STATE>(pipeline); }
     PIPELINE_STATE* GetPipelineState(VkPipeline pipeline) { return Get<PIPELINE_STATE>(pipeline); }
     const DEVICE_MEMORY_STATE* GetDevMemState(VkDeviceMemory mem) const { return Get<DEVICE_MEMORY_STATE>(mem); }
@@ -341,10 +378,18 @@ class ValidationStateTracker : public ValidationObject {
     CMD_BUFFER_STATE* GetCBState(const VkCommandBuffer cb) { return Get<CMD_BUFFER_STATE>(cb); }
     const COMMAND_POOL_STATE* GetCommandPoolState(VkCommandPool pool) const { return Get<COMMAND_POOL_STATE>(pool); }
     COMMAND_POOL_STATE* GetCommandPoolState(VkCommandPool pool) { return Get<COMMAND_POOL_STATE>(pool); }
+
+    const std::shared_ptr<PIPELINE_LAYOUT_STATE> GetPipelineLayoutShared(VkPipelineLayout pipeLayout) const {
+        return GetShared<PIPELINE_LAYOUT_STATE>(pipeLayout);
+    }
+    std::shared_ptr<PIPELINE_LAYOUT_STATE> GetPipelineLayoutShared(VkPipelineLayout pipeLayout) {
+        return GetShared<PIPELINE_LAYOUT_STATE>(pipeLayout);
+    }
     const PIPELINE_LAYOUT_STATE* GetPipelineLayout(VkPipelineLayout pipeLayout) const {
         return Get<PIPELINE_LAYOUT_STATE>(pipeLayout);
     }
     PIPELINE_LAYOUT_STATE* GetPipelineLayout(VkPipelineLayout pipeLayout) { return Get<PIPELINE_LAYOUT_STATE>(pipeLayout); }
+
     const FENCE_STATE* GetFenceState(VkFence fence) const { return Get<FENCE_STATE>(fence); }
     FENCE_STATE* GetFenceState(VkFence fence) { return Get<FENCE_STATE>(fence); }
     const QUERY_POOL_STATE* GetQueryPoolState(VkQueryPool query_pool) const { return Get<QUERY_POOL_STATE>(query_pool); }
