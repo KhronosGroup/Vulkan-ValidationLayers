@@ -4446,7 +4446,7 @@ TEST_F(VkLayerTest, InvalidCmdBufferDescriptorSetImageSamplerDestroyed) {
                               &descriptorSet, 0, NULL);
     vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
     vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, " that has been destroyed.");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, " that is invalid or has been destroyed.");
     m_commandBuffer->Draw(1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->EndRenderPass();

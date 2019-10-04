@@ -332,8 +332,15 @@ class ValidationStateTracker : public ValidationObject {
     };
 
     // Accessors for the VALSTATE... maps
+    const std::shared_ptr<SAMPLER_STATE> GetSamplerShared(VkSampler sampler) const { return GetShared<SAMPLER_STATE>(sampler); }
+    std::shared_ptr<SAMPLER_STATE> GetSamplerShared(VkSampler sampler) { return GetShared<SAMPLER_STATE>(sampler); }
     const SAMPLER_STATE* GetSamplerState(VkSampler sampler) const { return Get<SAMPLER_STATE>(sampler); }
     SAMPLER_STATE* GetSamplerState(VkSampler sampler) { return Get<SAMPLER_STATE>(sampler); }
+
+    const std::shared_ptr<IMAGE_VIEW_STATE> GetImageViewShared(VkImageView image_view) const {
+        return GetShared<IMAGE_VIEW_STATE>(image_view);
+    }
+    std::shared_ptr<IMAGE_VIEW_STATE> GetImageViewShared(VkImageView image_view) { return GetShared<IMAGE_VIEW_STATE>(image_view); }
     const IMAGE_VIEW_STATE* GetImageViewState(VkImageView image_view) const { return Get<IMAGE_VIEW_STATE>(image_view); }
     IMAGE_VIEW_STATE* GetImageViewState(VkImageView image_view) { return Get<IMAGE_VIEW_STATE>(image_view); }
 
@@ -342,6 +349,12 @@ class ValidationStateTracker : public ValidationObject {
     const IMAGE_STATE* GetImageState(VkImage image) const { return Get<IMAGE_STATE>(image); }
     IMAGE_STATE* GetImageState(VkImage image) { return Get<IMAGE_STATE>(image); }
 
+    const std::shared_ptr<BUFFER_VIEW_STATE> GetBufferViewShared(VkBufferView buffer_view) const {
+        return GetShared<BUFFER_VIEW_STATE>(buffer_view);
+    }
+    std::shared_ptr<BUFFER_VIEW_STATE> GetBufferViewShared(VkBufferView buffer_view) {
+        return GetShared<BUFFER_VIEW_STATE>(buffer_view);
+    }
     const BUFFER_VIEW_STATE* GetBufferViewState(VkBufferView buffer_view) const { return Get<BUFFER_VIEW_STATE>(buffer_view); }
     BUFFER_VIEW_STATE* GetBufferViewState(VkBufferView buffer_view) { return Get<BUFFER_VIEW_STATE>(buffer_view); }
 

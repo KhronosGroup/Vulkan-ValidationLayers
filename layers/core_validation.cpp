@@ -848,7 +848,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
 
     // Now complete other state checks
     string errorString;
-    auto const &pipeline_layout = pPipe->pipeline_layout;
+    auto const &pipeline_layout = pPipe->pipeline_layout.get();
 
     for (const auto &set_binding_pair : pPipe->active_slots) {
         uint32_t setIndex = set_binding_pair.first;
@@ -858,7 +858,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(cb_node->commandBuffer), kVUID_Core_DrawState_DescriptorSetNotBound,
                         "%s uses set #%u but that set is not bound.", report_data->FormatHandle(pPipe->pipeline).c_str(), setIndex);
-        } else if (!VerifySetLayoutCompatibility(report_data, state.per_set[setIndex].bound_descriptor_set, pipeline_layout.get(),
+        } else if (!VerifySetLayoutCompatibility(report_data, state.per_set[setIndex].bound_descriptor_set, pipeline_layout,
                                                  setIndex, errorString)) {
             // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
             VkDescriptorSet setHandle = state.per_set[setIndex].bound_descriptor_set->GetSet();

@@ -360,11 +360,9 @@ void CoreChecks::SetImageViewInitialLayout(CMD_BUFFER_STATE *cb_node, const IMAG
     if (disabled.image_layout_validation) {
         return;
     }
-    IMAGE_STATE *image_state = GetImageState(view_state.create_info.image);
-    if (image_state) {
-        auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, *image_state);
-        subresource_map->SetSubresourceRangeInitialLayout(*cb_node, view_state.normalized_subresource_range, layout, &view_state);
-    }
+    IMAGE_STATE *image_state = view_state.image_state.get();
+    auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, *image_state);
+    subresource_map->SetSubresourceRangeInitialLayout(*cb_node, view_state.normalized_subresource_range, layout, &view_state);
 }
 
 // Set the initial image layout for a passed non-normalized subresource range
@@ -389,8 +387,7 @@ void CoreChecks::SetImageInitialLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_ST
 
 // Set image layout for all slices of an image view
 void CoreChecks::SetImageViewLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_VIEW_STATE &view_state, VkImageLayout layout) {
-    IMAGE_STATE *image_state = GetImageState(view_state.create_info.image);
-    if (!image_state) return;  // TODO: track/report stale image references
+    IMAGE_STATE *image_state = view_state.image_state.get();
 
     VkImageSubresourceRange sub_range = view_state.normalized_subresource_range;
     // When changing the layout of a 3D image subresource via a 2D or 2D_ARRRAY image view, all depth slices of
