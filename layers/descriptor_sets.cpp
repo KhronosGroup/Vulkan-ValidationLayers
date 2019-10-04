@@ -934,7 +934,7 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const st
 
 // Set is being deleted or updates so invalidate all bound cmd buffers
 void cvdescriptorset::DescriptorSet::InvalidateBoundCmdBuffers() {
-    state_data_->InvalidateCommandBuffers(cb_bindings, VulkanTypedHandle(set_, kVulkanObjectTypeDescriptorSet));
+    state_data_->InvalidateCommandBuffers(cb_bindings, VulkanTypedHandle(set_, kVulkanObjectTypeDescriptorSet), /*unlink*/ false);
 }
 
 // Loop through the write updates to do for a push descriptor set, ignoring dstSet
@@ -1215,13 +1215,11 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
     if (!device_data->disabled.command_buffer_state) {
         // bind cb to this descriptor set
         // Add bindings for descriptor set, the set's pool, and individual objects in the set
-        auto inserted = cb_node->object_bindings.emplace(set_, kVulkanObjectTypeDescriptorSet);
-        if (inserted.second) {
-            cb_bindings.insert(cb_node);
-            auto inserted2 = cb_node->object_bindings.emplace(pool_state_->pool, kVulkanObjectTypeDescriptorPool);
-            if (inserted2.second) {
-                pool_state_->cb_bindings.insert(cb_node);
-            }
+        if (device_data->AddCommandBufferBinding(cb_bindings, VulkanTypedHandle(set_, kVulkanObjectTypeDescriptorSet, this),
+                                                 cb_node)) {
+            device_data->AddCommandBufferBinding(pool_state_->cb_bindings,
+                                                 VulkanTypedHandle(pool_state_->pool, kVulkanObjectTypeDescriptorPool, pool_state_),
+                                                 cb_node);
         }
     }
 

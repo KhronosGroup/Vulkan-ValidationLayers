@@ -29,7 +29,8 @@
 template <typename Key, typename T, int N = 1>
 class small_unordered_map {
     bool small_data_allocated[N];
-    std::pair<Key, T> small_data[N];
+    using value_type = std::pair<const Key, T>;
+    value_type small_data[N];
 
     std::unordered_map<Key, T> inner_map;
 
@@ -79,11 +80,17 @@ class small_unordered_map {
 
         bool operator!=(const iterator &other) const { return !(*this == other); }
 
-        std::pair<Key, T> operator*() const {
+        value_type &operator*() const {
             if (index < N) {
                 return parent->small_data[index];
             }
-            return std::make_pair(it->first, it->second);
+            return *it;
+        }
+        value_type *operator->() const {
+            if (index < N) {
+                return &parent->small_data[index];
+            }
+            return &*it;
         }
     };
 
@@ -110,7 +117,7 @@ class small_unordered_map {
 
     bool contains(const Key &key) const {
         for (int i = 0; i < N; ++i) {
-            if (small_data_allocated[i] && small_data[i].first == key) {
+            if (small_data[i].first == key && small_data_allocated[i]) {
                 return true;
             }
         }
@@ -123,7 +130,7 @@ class small_unordered_map {
 
     T &operator[](const Key &key) {
         for (int i = 0; i < N; ++i) {
-            if (small_data_allocated[i] && small_data[i].first == key) {
+            if (small_data[i].first == key && small_data_allocated[i]) {
                 return small_data[i].second;
             }
         }
@@ -134,7 +141,13 @@ class small_unordered_map {
             for (int i = 0; i < N; ++i) {
                 if (!small_data_allocated[i]) {
                     small_data_allocated[i] = true;
-                    small_data[i] = std::make_pair(key, T());
+
+                    // While the const_cast may be unsatisfactory, we are using small_data as
+                    // stand-in for placement new and a small-block allocator, so the const_cast
+                    // is minimal, contained, valid, and allows operators * and -> to avoid copies
+                    const_cast<Key &>(small_data[i].first) = key;
+                    small_data[i].second = T();
+
                     return small_data[i].second;
                 }
             }
@@ -142,14 +155,59 @@ class small_unordered_map {
         }
     }
 
+    std::pair<iterator, bool> insert(const value_type &value) {
+        for (int i = 0; i < N; ++i) {
+            if (small_data[i].first == value.first && small_data_allocated[i]) {
+                iterator it;
+                it.parent = this;
+                it.index = i;
+                return std::make_pair(it, false);
+            }
+        }
+        // check size() first to avoid hashing key unnecessarily.
+        auto iter = inner_map.size() > 0 ? inner_map.find(value.first) : inner_map.end();
+        if (iter != inner_map.end()) {
+            iterator it;
+            it.parent = this;
+            it.index = N;
+            it.it = iter;
+            return std::make_pair(it, false);
+        } else {
+            for (int i = 0; i < N; ++i) {
+                if (!small_data_allocated[i]) {
+                    small_data_allocated[i] = true;
+                    const_cast<Key &>(small_data[i].first) = value.first;
+                    small_data[i].second = value.second;
+                    iterator it;
+                    it.parent = this;
+                    it.index = i;
+                    return std::make_pair(it, true);
+                }
+            }
+            iter = inner_map.insert(value).first;
+            iterator it;
+            it.parent = this;
+            it.index = N;
+            it.it = iter;
+            return std::make_pair(it, true);
+        }
+    }
+
     typename std::unordered_map<Key, T>::size_type erase(const Key &key) {
         for (int i = 0; i < N; ++i) {
-            if (small_data_allocated[i] && small_data[i].first == key) {
+            if (small_data[i].first == key && small_data_allocated[i]) {
                 small_data_allocated[i] = false;
                 return 1;
             }
         }
         return inner_map.erase(key);
+    }
+
+    void clear() {
+        for (int i = 0; i < N; ++i) {
+            small_data_allocated[i] = false;
+        }
+        inner_map.clear();
     }
 };
 

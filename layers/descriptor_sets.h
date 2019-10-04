@@ -594,8 +594,6 @@ class DescriptorSet : public BASE_NODE {
     const std::shared_ptr<DescriptorSetLayout const> GetLayout() const { return p_layout_; };
     VkDescriptorSetLayout GetDescriptorSetLayout() const { return p_layout_->GetDescriptorSetLayout(); }
     VkDescriptorSet GetSet() const { return set_; };
-    // Return unordered_set of all command buffers that this set is bound to
-    std::unordered_set<CMD_BUFFER_STATE *> GetBoundCmdBuffers() const { return cb_bindings; }
     // Bind given cmd_buffer to this descriptor set and
     // update CB image layout map with image/imagesampler descriptor image layouts
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *, const std::map<uint32_t, descriptor_req> &);
@@ -613,11 +611,6 @@ class DescriptorSet : public BASE_NODE {
         cached_validation_[cb_state].dynamic_buffers.clear();
     }
     void ClearCachedValidation(CMD_BUFFER_STATE *cb_state) { cached_validation_.erase(cb_state); }
-    // If given cmd_buffer is in the cb_bindings set, remove it
-    void RemoveBoundCommandBuffer(CMD_BUFFER_STATE *cb_node) {
-        cb_bindings.erase(cb_node);
-        ClearCachedValidation(cb_node);
-    }
     VkSampler const *GetImmutableSamplerPtrFromBinding(const uint32_t index) const {
         return p_layout_->GetImmutableSamplerPtrFromBinding(index);
     };

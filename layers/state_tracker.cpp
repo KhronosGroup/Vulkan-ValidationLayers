@@ -467,11 +467,8 @@ void ValidationStateTracker::AddCommandBufferBindingSampler(CMD_BUFFER_STATE *cb
     if (disabled.command_buffer_state) {
         return;
     }
-    auto inserted = cb_node->object_bindings.emplace(sampler_state->sampler, kVulkanObjectTypeSampler);
-    if (inserted.second) {
-        // Only need to complete the cross-reference if this is a new item
-        sampler_state->cb_bindings.insert(cb_node);
-    }
+    AddCommandBufferBinding(sampler_state->cb_bindings,
+                            VulkanTypedHandle(sampler_state->sampler, kVulkanObjectTypeSampler, sampler_state), cb_node);
 }
 
 // Create binding link between given image node and command buffer node
@@ -482,20 +479,15 @@ void ValidationStateTracker::AddCommandBufferBindingImage(CMD_BUFFER_STATE *cb_n
     // Skip validation if this image was created through WSI
     if (image_state->create_from_swapchain == VK_NULL_HANDLE) {
         // First update cb binding for image
-        auto image_inserted = cb_node->object_bindings.emplace(image_state->image, kVulkanObjectTypeImage);
-        if (image_inserted.second) {
-            // Only need to continue if this is a new item (the rest of the work would have be done previous)
-            image_state->cb_bindings.insert(cb_node);
+        if (AddCommandBufferBinding(image_state->cb_bindings,
+                                    VulkanTypedHandle(image_state->image, kVulkanObjectTypeImage, image_state), cb_node)) {
             // Now update CB binding in MemObj mini CB list
             for (auto mem_binding : image_state->GetBoundMemory()) {
                 DEVICE_MEMORY_STATE *pMemInfo = GetDevMemState(mem_binding);
                 if (pMemInfo) {
                     // Now update CBInfo's Mem reference list
-                    auto mem_inserted = cb_node->memObjs.insert(mem_binding);
-                    if (mem_inserted.second) {
-                        // Only need to complete the cross-reference if this is a new item
-                        pMemInfo->cb_bindings.insert(cb_node);
-                    }
+                    AddCommandBufferBinding(pMemInfo->cb_bindings,
+                                            VulkanTypedHandle(mem_binding, kVulkanObjectTypeDeviceMemory, pMemInfo), cb_node);
                 }
             }
         }
@@ -508,11 +500,10 @@ void ValidationStateTracker::AddCommandBufferBindingImageView(CMD_BUFFER_STATE *
         return;
     }
     // First add bindings for imageView
-    auto inserted = cb_node->object_bindings.emplace(view_state->image_view, kVulkanObjectTypeImageView);
-    if (inserted.second) {
+    if (AddCommandBufferBinding(view_state->cb_bindings,
+                                VulkanTypedHandle(view_state->image_view, kVulkanObjectTypeImageView, view_state), cb_node)) {
         // Only need to continue if this is a new item
-        view_state->cb_bindings.insert(cb_node);
-        auto image_state = GetImageState(view_state->create_info.image);
+        auto image_state = view_state->image_state.get();
         // Add bindings for image within imageView
         if (image_state) {
             AddCommandBufferBindingImage(cb_node, image_state);
@@ -526,20 +517,15 @@ void ValidationStateTracker::AddCommandBufferBindingBuffer(CMD_BUFFER_STATE *cb_
         return;
     }
     // First update cb binding for buffer
-    auto buffer_inserted = cb_node->object_bindings.emplace(buffer_state->buffer, kVulkanObjectTypeBuffer);
-    if (buffer_inserted.second) {
-        // Only need to continue if this is a new item
-        buffer_state->cb_bindings.insert(cb_node);
+    if (AddCommandBufferBinding(buffer_state->cb_bindings,
+                                VulkanTypedHandle(buffer_state->buffer, kVulkanObjectTypeBuffer, buffer_state), cb_node)) {
         // Now update CB binding in MemObj mini CB list
         for (auto mem_binding : buffer_state->GetBoundMemory()) {
             DEVICE_MEMORY_STATE *pMemInfo = GetDevMemState(mem_binding);
             if (pMemInfo) {
                 // Now update CBInfo's Mem reference list
-                auto inserted = cb_node->memObjs.insert(mem_binding);
-                if (inserted.second) {
-                    // Only need to complete the cross-reference if this is a new item
-                    pMemInfo->cb_bindings.insert(cb_node);
-                }
+                AddCommandBufferBinding(pMemInfo->cb_bindings,
+                                        VulkanTypedHandle(mem_binding, kVulkanObjectTypeDeviceMemory, pMemInfo), cb_node);
             }
         }
     }
@@ -551,11 +537,9 @@ void ValidationStateTracker::AddCommandBufferBindingBufferView(CMD_BUFFER_STATE 
         return;
     }
     // First add bindings for bufferView
-    auto inserted = cb_node->object_bindings.emplace(view_state->buffer_view, kVulkanObjectTypeBufferView);
-    if (inserted.second) {
-        // Only need to complete the cross-reference if this is a new item
-        view_state->cb_bindings.insert(cb_node);
-        auto buffer_state = GetBufferState(view_state->create_info.buffer);
+    if (AddCommandBufferBinding(view_state->cb_bindings,
+                                VulkanTypedHandle(view_state->buffer_view, kVulkanObjectTypeBufferView, view_state), cb_node)) {
+        auto buffer_state = view_state->buffer_state.get();
         // Add bindings for buffer within bufferView
         if (buffer_state) {
             AddCommandBufferBindingBuffer(cb_node, buffer_state);
@@ -569,36 +553,17 @@ void ValidationStateTracker::AddCommandBufferBindingAccelerationStructure(CMD_BU
     if (disabled.command_buffer_state) {
         return;
     }
-    auto as_inserted = cb_node->object_bindings.emplace(as_state->acceleration_structure, kVulkanObjectTypeAccelerationStructureNV);
-    if (as_inserted.second) {
-        // Only need to complete the cross-reference if this is a new item
-        as_state->cb_bindings.insert(cb_node);
+    if (AddCommandBufferBinding(
+            as_state->cb_bindings,
+            VulkanTypedHandle(as_state->acceleration_structure, kVulkanObjectTypeAccelerationStructureNV, as_state), cb_node)) {
         // Now update CB binding in MemObj mini CB list
         for (auto mem_binding : as_state->GetBoundMemory()) {
             DEVICE_MEMORY_STATE *pMemInfo = GetDevMemState(mem_binding);
             if (pMemInfo) {
                 // Now update CBInfo's Mem reference list
-                auto mem_inserted = cb_node->memObjs.insert(mem_binding);
-                if (mem_inserted.second) {
-                    // Only need to complete the cross-reference if this is a new item
-                    pMemInfo->cb_bindings.insert(cb_node);
-                }
+                AddCommandBufferBinding(pMemInfo->cb_bindings,
+                                        VulkanTypedHandle(mem_binding, kVulkanObjectTypeDeviceMemory, pMemInfo), cb_node);
             }
-        }
-    }
-}
-
-// For every mem obj bound to particular CB, free bindings related to that CB
-void ValidationStateTracker::ClearCmdBufAndMemReferences(CMD_BUFFER_STATE *cb_node) {
-    if (cb_node) {
-        if (cb_node->memObjs.size() > 0) {
-            for (auto mem : cb_node->memObjs) {
-                DEVICE_MEMORY_STATE *pInfo = GetDevMemState(mem);
-                if (pInfo) {
-                    pInfo->cb_bindings.erase(cb_node);
-                }
-            }
-            cb_node->memObjs.clear();
         }
     }
 }
@@ -772,6 +737,8 @@ void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, const V
 // Remove set from setMap and delete the set
 void ValidationStateTracker::FreeDescriptorSet(cvdescriptorset::DescriptorSet *descriptor_set) {
     descriptor_set->destroyed = true;
+    const VulkanTypedHandle obj_struct(descriptor_set->GetSet(), kVulkanObjectTypeDescriptorSet);
+    InvalidateCommandBuffers(descriptor_set->cb_bindings, obj_struct);
     setMap.erase(descriptor_set->GetSet());
 }
 
@@ -790,6 +757,15 @@ void ValidationStateTracker::DeleteDescriptorSetPools() {
 
 // For given object struct return a ptr of BASE_NODE type for its wrapping struct
 BASE_NODE *ValidationStateTracker::GetStateStructPtrFromObject(const VulkanTypedHandle &object_struct) {
+    if (object_struct.node) {
+#ifdef _DEBUG
+        // assert that lookup would find the same object
+        VulkanTypedHandle other = object_struct;
+        other.node = nullptr;
+        assert(object_struct.node == GetStateStructPtrFromObject(other));
+#endif
+        return object_struct.node;
+    }
     BASE_NODE *base_ptr = nullptr;
     switch (object_struct.type) {
         case kVulkanObjectTypeDescriptorSet: {
@@ -852,6 +828,10 @@ BASE_NODE *ValidationStateTracker::GetStateStructPtrFromObject(const VulkanTyped
             base_ptr = GetAccelerationStructureState(object_struct.Cast<VkAccelerationStructureNV>());
             break;
         }
+        case kVulkanObjectTypeUnknown:
+            // This can happen if an element of the object_bindings vector has been
+            // zeroed out, after an object is destroyed.
+            break;
         default:
             // TODO : Any other objects to be handled here?
             assert(0);
@@ -863,13 +843,20 @@ BASE_NODE *ValidationStateTracker::GetStateStructPtrFromObject(const VulkanTyped
 // Tie the VulkanTypedHandle to the cmd buffer which includes:
 //  Add object_binding to cmd buffer
 //  Add cb_binding to object
-void ValidationStateTracker::AddCommandBufferBinding(std::unordered_set<CMD_BUFFER_STATE *> *cb_bindings,
+bool ValidationStateTracker::AddCommandBufferBinding(small_unordered_map<CMD_BUFFER_STATE *, int, 8> &cb_bindings,
                                                      const VulkanTypedHandle &obj, CMD_BUFFER_STATE *cb_node) {
     if (disabled.command_buffer_state) {
-        return;
+        return false;
     }
-    cb_bindings->insert(cb_node);
-    cb_node->object_bindings.insert(obj);
+    // Insert the cb_binding with a default 'index' of -1. Then push the obj into the object_bindings
+    // vector, and update cb_bindings[cb_node] with the index of that element of the vector.
+    auto inserted = cb_bindings.insert({cb_node, -1});
+    if (inserted.second) {
+        cb_node->object_bindings.push_back(obj);
+        inserted.first->second = (int)cb_node->object_bindings.size() - 1;
+        return true;
+    }
+    return false;
 }
 
 // For a given object, if cb_node is in that objects cb_bindings, remove cb_node
@@ -923,7 +910,7 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
         pCB->primaryCommandBuffer = VK_NULL_HANDLE;
         // If secondary, invalidate any primary command buffer that may call us.
         if (pCB->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
-            InvalidateCommandBuffers(pCB->linkedCommandBuffers, VulkanTypedHandle(cb, kVulkanObjectTypeCommandBuffer));
+            InvalidateLinkedCommandBuffers(pCB->linkedCommandBuffers, VulkanTypedHandle(cb, kVulkanObjectTypeCommandBuffer));
         }
 
         // Remove reverse command buffer links.
@@ -931,7 +918,6 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
             pSubCB->linkedCommandBuffers.erase(pCB);
         }
         pCB->linkedCommandBuffers.clear();
-        ClearCmdBufAndMemReferences(pCB);
         pCB->queue_submit_functions.clear();
         pCB->cmd_execute_commands_functions.clear();
         pCB->eventUpdates.clear();
@@ -1198,13 +1184,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
 void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     if (!device) return;
 
-    pipelineMap.clear();
-    renderPassMap.clear();
-
     // Reset all command buffers before destroying them, to unlink object_bindings.
     for (auto &commandBuffer : commandBufferMap) {
         ResetCommandBufferState(commandBuffer.first);
     }
+    pipelineMap.clear();
+    renderPassMap.clear();
     commandBufferMap.clear();
 
     // This will also delete all sets in the pool & remove them from setMap
@@ -2044,9 +2029,38 @@ void ValidationStateTracker::PostCallRecordResetFences(VkDevice device, uint32_t
     }
 }
 
-// For given cb_nodes, invalidate them and track object causing invalidation
-void ValidationStateTracker::InvalidateCommandBuffers(std::unordered_set<CMD_BUFFER_STATE *> const &cb_nodes,
-                                                      const VulkanTypedHandle &obj) {
+// For given cb_nodes, invalidate them and track object causing invalidation.
+// InvalidateCommandBuffers and InvalidateLinkedCommandBuffers are essentially
+// the same, except one takes a map and one takes a set, and InvalidateCommandBuffers
+// can also unlink objects from command buffers.
+void ValidationStateTracker::InvalidateCommandBuffers(small_unordered_map<CMD_BUFFER_STATE *, int, 8> &cb_nodes,
+                                                      const VulkanTypedHandle &obj, bool unlink) {
+    for (const auto &cb_node_pair : cb_nodes) {
+        auto &cb_node = cb_node_pair.first;
+        if (cb_node->state == CB_RECORDING) {
+            cb_node->state = CB_INVALID_INCOMPLETE;
+        } else if (cb_node->state == CB_RECORDED) {
+            cb_node->state = CB_INVALID_COMPLETE;
+        }
+        cb_node->broken_bindings.push_back(obj);
+
+        // if secondary, then propagate the invalidation to the primaries that will call us.
+        if (cb_node->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
+            InvalidateLinkedCommandBuffers(cb_node->linkedCommandBuffers, obj);
+        }
+        if (unlink) {
+            int index = cb_node_pair.second;
+            assert(cb_node->object_bindings[index] == obj);
+            cb_node->object_bindings[index] = VulkanTypedHandle();
+        }
+    }
+    if (unlink) {
+        cb_nodes.clear();
+    }
+}
+
+void ValidationStateTracker::InvalidateLinkedCommandBuffers(std::unordered_set<CMD_BUFFER_STATE *> &cb_nodes,
+                                                            const VulkanTypedHandle &obj) {
     for (auto cb_node : cb_nodes) {
         if (cb_node->state == CB_RECORDING) {
             cb_node->state = CB_INVALID_INCOMPLETE;
@@ -2057,7 +2071,7 @@ void ValidationStateTracker::InvalidateCommandBuffers(std::unordered_set<CMD_BUF
 
         // if secondary, then propagate the invalidation to the primaries that will call us.
         if (cb_node->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
-            InvalidateCommandBuffers(cb_node->linkedCommandBuffers, obj);
+            InvalidateLinkedCommandBuffers(cb_node->linkedCommandBuffers, obj);
         }
     }
 }
@@ -2370,7 +2384,7 @@ void ValidationStateTracker::PostCallRecordAllocateCommandBuffers(VkDevice devic
 
 // Add bindings between the given cmd buffer & framebuffer and the framebuffer's children
 void ValidationStateTracker::AddFramebufferBinding(CMD_BUFFER_STATE *cb_state, FRAMEBUFFER_STATE *fb_state) {
-    AddCommandBufferBinding(&fb_state->cb_bindings, VulkanTypedHandle(fb_state->framebuffer, kVulkanObjectTypeFramebuffer),
+    AddCommandBufferBinding(fb_state->cb_bindings, VulkanTypedHandle(fb_state->framebuffer, kVulkanObjectTypeFramebuffer, fb_state),
                             cb_state);
 
     const uint32_t attachmentCount = fb_state->createInfo.attachmentCount;
@@ -2386,8 +2400,6 @@ void ValidationStateTracker::PreCallRecordBeginCommandBuffer(VkCommandBuffer com
                                                              const VkCommandBufferBeginInfo *pBeginInfo) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     if (!cb_state) return;
-    // This implicitly resets the Cmd Buffer so make sure any fence is done and then clear memory references
-    ClearCmdBufAndMemReferences(cb_state);
     if (cb_state->createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
         // Secondary Command Buffer
         const VkCommandBufferInheritanceInfo *pInfo = pBeginInfo->pInheritanceInfo;
@@ -2541,7 +2553,7 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
     ResetCommandBufferPushConstantDataIfIncompatible(cb_state, pipe_state->pipeline_layout->layout);
     cb_state->lastBound[pipelineBindPoint].pipeline_state = pipe_state;
     SetPipelineState(pipe_state);
-    AddCommandBufferBinding(&pipe_state->cb_bindings, VulkanTypedHandle(pipeline, kVulkanObjectTypePipeline), cb_state);
+    AddCommandBufferBinding(pipe_state->cb_bindings, VulkanTypedHandle(pipeline, kVulkanObjectTypePipeline), cb_state);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport,
@@ -2987,8 +2999,7 @@ void ValidationStateTracker::PreCallRecordCmdSetEvent(VkCommandBuffer commandBuf
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     auto event_state = GetEventState(event);
     if (event_state) {
-        AddCommandBufferBinding(&event_state->cb_bindings, VulkanTypedHandle(event, kVulkanObjectTypeEvent), cb_state);
-        event_state->cb_bindings.insert(cb_state);
+        AddCommandBufferBinding(event_state->cb_bindings, VulkanTypedHandle(event, kVulkanObjectTypeEvent, event_state), cb_state);
     }
     cb_state->events.push_back(event);
     if (!cb_state->waitedEvents.count(event)) {
@@ -3002,8 +3013,7 @@ void ValidationStateTracker::PreCallRecordCmdResetEvent(VkCommandBuffer commandB
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     auto event_state = GetEventState(event);
     if (event_state) {
-        AddCommandBufferBinding(&event_state->cb_bindings, VulkanTypedHandle(event, kVulkanObjectTypeEvent), cb_state);
-        event_state->cb_bindings.insert(cb_state);
+        AddCommandBufferBinding(event_state->cb_bindings, VulkanTypedHandle(event, kVulkanObjectTypeEvent, event_state), cb_state);
     }
     cb_state->events.push_back(event);
     if (!cb_state->waitedEvents.count(event)) {
@@ -3025,8 +3035,8 @@ void ValidationStateTracker::PreCallRecordCmdWaitEvents(VkCommandBuffer commandB
     for (uint32_t i = 0; i < eventCount; ++i) {
         auto event_state = GetEventState(pEvents[i]);
         if (event_state) {
-            AddCommandBufferBinding(&event_state->cb_bindings, VulkanTypedHandle(pEvents[i], kVulkanObjectTypeEvent), cb_state);
-            event_state->cb_bindings.insert(cb_state);
+            AddCommandBufferBinding(event_state->cb_bindings, VulkanTypedHandle(pEvents[i], kVulkanObjectTypeEvent, event_state),
+                                    cb_state);
         }
         cb_state->waitedEvents.insert(pEvents[i]);
         cb_state->events.push_back(pEvents[i]);
@@ -3069,8 +3079,9 @@ void ValidationStateTracker::RecordCmdBeginQuery(CMD_BUFFER_STATE *cb_state, con
         SetQueryState(q, cb_state->commandBuffer, query_obj, QUERYSTATE_RUNNING);
         return false;
     });
-    AddCommandBufferBinding(&GetQueryPoolState(query_obj.pool)->cb_bindings,
-                            VulkanTypedHandle(query_obj.pool, kVulkanObjectTypeQueryPool), cb_state);
+    auto pool_state = GetQueryPoolState(query_obj.pool);
+    AddCommandBufferBinding(pool_state->cb_bindings, VulkanTypedHandle(query_obj.pool, kVulkanObjectTypeQueryPool, pool_state),
+                            cb_state);
 }
 
 void ValidationStateTracker::PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
@@ -3084,8 +3095,9 @@ void ValidationStateTracker::RecordCmdEndQuery(CMD_BUFFER_STATE *cb_state, const
     cb_state->activeQueries.erase(query_obj);
     cb_state->queryUpdates.emplace_back(
         [this, cb_state, query_obj](VkQueue q) { return SetQueryState(q, cb_state->commandBuffer, query_obj, QUERYSTATE_ENDED); });
-    AddCommandBufferBinding(&GetQueryPoolState(query_obj.pool)->cb_bindings,
-                            VulkanTypedHandle(query_obj.pool, kVulkanObjectTypeQueryPool), cb_state);
+    auto pool_state = GetQueryPoolState(query_obj.pool);
+    AddCommandBufferBinding(pool_state->cb_bindings, VulkanTypedHandle(query_obj.pool, kVulkanObjectTypeQueryPool, pool_state),
+                            cb_state);
 }
 
 void ValidationStateTracker::PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) {
@@ -3101,7 +3113,8 @@ void ValidationStateTracker::PostCallRecordCmdResetQueryPool(VkCommandBuffer com
     cb_state->queryUpdates.emplace_back([this, commandBuffer, queryPool, firstQuery, queryCount](VkQueue q) {
         return SetQueryStateMulti(q, commandBuffer, queryPool, firstQuery, queryCount, QUERYSTATE_RESET);
     });
-    AddCommandBufferBinding(&GetQueryPoolState(queryPool)->cb_bindings, VulkanTypedHandle(queryPool, kVulkanObjectTypeQueryPool),
+    auto pool_state = GetQueryPoolState(queryPool);
+    AddCommandBufferBinding(pool_state->cb_bindings, VulkanTypedHandle(queryPool, kVulkanObjectTypeQueryPool, pool_state),
                             cb_state);
 }
 
@@ -3112,14 +3125,16 @@ void ValidationStateTracker::PostCallRecordCmdCopyQueryPoolResults(VkCommandBuff
     auto cb_state = GetCBState(commandBuffer);
     auto dst_buff_state = GetBufferState(dstBuffer);
     AddCommandBufferBindingBuffer(cb_state, dst_buff_state);
-    AddCommandBufferBinding(&GetQueryPoolState(queryPool)->cb_bindings, VulkanTypedHandle(queryPool, kVulkanObjectTypeQueryPool),
+    auto pool_state = GetQueryPoolState(queryPool);
+    AddCommandBufferBinding(pool_state->cb_bindings, VulkanTypedHandle(queryPool, kVulkanObjectTypeQueryPool, pool_state),
                             cb_state);
 }
 
 void ValidationStateTracker::PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                              VkQueryPool queryPool, uint32_t slot) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    AddCommandBufferBinding(&GetQueryPoolState(queryPool)->cb_bindings, VulkanTypedHandle(queryPool, kVulkanObjectTypeQueryPool),
+    auto pool_state = GetQueryPoolState(queryPool);
+    AddCommandBufferBinding(pool_state->cb_bindings, VulkanTypedHandle(queryPool, kVulkanObjectTypeQueryPool, pool_state),
                             cb_state);
     QueryObject query = {queryPool, slot};
     cb_state->queryUpdates.emplace_back(
@@ -3244,8 +3259,9 @@ void ValidationStateTracker::RecordCmdBeginRenderPassState(VkCommandBuffer comma
         // Connect this framebuffer and its children to this cmdBuffer
         AddFramebufferBinding(cb_state, framebuffer);
         // Connect this RP to cmdBuffer
-        AddCommandBufferBinding(&render_pass_state->cb_bindings,
-                                VulkanTypedHandle(render_pass_state->renderPass, kVulkanObjectTypeRenderPass), cb_state);
+        AddCommandBufferBinding(render_pass_state->cb_bindings,
+                                VulkanTypedHandle(render_pass_state->renderPass, kVulkanObjectTypeRenderPass, render_pass_state),
+                                cb_state);
 
         auto chained_device_group_struct = lvl_find_in_chain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
         if (chained_device_group_struct) {

@@ -79,8 +79,10 @@ class BASE_NODE {
     // Track command buffers that this object is bound to
     //  binding initialized when cmd referencing object is bound to command buffer
     //  binding removed when command buffer is reset or destroyed
-    // When an object is destroyed, any bound cbs are set to INVALID
-    std::unordered_set<CMD_BUFFER_STATE *> cb_bindings;
+    // When an object is destroyed, any bound cbs are set to INVALID.
+    // "int" value is an index into object_bindings where the corresponding
+    // backpointer to this node is stored.
+    small_unordered_map<CMD_BUFFER_STATE *, int, 8> cb_bindings;
     // Set to true when the API-level object is destroyed, but this object may
     // hang around until its shared_ptr refcount goes to zero.
     bool destroyed;
@@ -121,6 +123,7 @@ static inline bool QueueFamilyIsSpecial(const uint32_t queue_family_index) {
 
 static inline bool QueueFamilyIsIgnored(uint32_t queue_family_index) { return queue_family_index == VK_QUEUE_FAMILY_IGNORED; }
 
+// Intentionally ignore VulkanTypedHandle::node, it is optional
 inline bool operator==(const VulkanTypedHandle &a, const VulkanTypedHandle &b) NOEXCEPT {
     return a.handle == b.handle && a.type == b.type;
 }
@@ -1500,7 +1503,7 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::unordered_set<VkFramebuffer> framebuffers;
     // Unified data structs to track objects bound to this command buffer as well as object
     //  dependencies that have been broken : either destroyed objects, or updated descriptor sets
-    std::unordered_set<VulkanTypedHandle> object_bindings;
+    std::vector<VulkanTypedHandle> object_bindings;
     std::vector<VulkanTypedHandle> broken_bindings;
 
     QFOTransferBarrierSets<VkBufferMemoryBarrier> qfo_transfer_buffer_barriers;
@@ -1526,7 +1529,6 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::vector<std::function<bool()>> queue_submit_functions;
     // Validation functions run when secondary CB is executed in primary
     std::vector<std::function<bool(const CMD_BUFFER_STATE *, VkFramebuffer)>> cmd_execute_commands_functions;
-    std::unordered_set<VkDeviceMemory> memObjs;
     std::vector<std::function<bool(VkQueue)>> eventUpdates;
     std::vector<std::function<bool(VkQueue)>> queryUpdates;
     std::unordered_set<cvdescriptorset::DescriptorSet *> validated_descriptor_sets;

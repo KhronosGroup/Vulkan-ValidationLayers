@@ -901,7 +901,9 @@ class ValidationStateTracker : public ValidationObject {
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
     // State Utilty functions
-    void AddCommandBufferBinding(std::unordered_set<CMD_BUFFER_STATE*>* cb_bindings, const VulkanTypedHandle& obj,
+    bool AddCommandBufferMem(small_unordered_map<CMD_BUFFER_STATE*, int, 8>& cb_bindings, VkDeviceMemory obj,
+                             CMD_BUFFER_STATE* cb_node);
+    bool AddCommandBufferBinding(small_unordered_map<CMD_BUFFER_STATE*, int, 8>& cb_bindings, const VulkanTypedHandle& obj,
                                  CMD_BUFFER_STATE* cb_node);
     void AddCommandBufferBindingAccelerationStructure(CMD_BUFFER_STATE*, ACCELERATION_STRUCTURE_STATE*);
     void AddCommandBufferBindingBuffer(CMD_BUFFER_STATE*, BUFFER_STATE*);
@@ -911,7 +913,6 @@ class ValidationStateTracker : public ValidationObject {
     void AddCommandBufferBindingSampler(CMD_BUFFER_STATE*, SAMPLER_STATE*);
     void AddMemObjInfo(void* object, const VkDeviceMemory mem, const VkMemoryAllocateInfo* pAllocateInfo);
     void AddFramebufferBinding(CMD_BUFFER_STATE* cb_state, FRAMEBUFFER_STATE* fb_state);
-    void ClearCmdBufAndMemReferences(CMD_BUFFER_STATE* cb_node);
     void ClearMemoryObjectBindings(const VulkanTypedHandle& typed_handle);
     void ClearMemoryObjectBinding(const VulkanTypedHandle& typed_handle, VkDeviceMemory mem);
     void DecrementBoundResources(CMD_BUFFER_STATE const* cb_node);
@@ -930,7 +931,9 @@ class ValidationStateTracker : public ValidationObject {
                                 VkMemoryRequirements mem_reqs, bool is_linear);
     void InsertMemoryRange(const VulkanTypedHandle& typed_handle, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize memoryOffset,
                            VkMemoryRequirements memRequirements, bool is_linear);
-    void InvalidateCommandBuffers(std::unordered_set<CMD_BUFFER_STATE*> const& cb_nodes, const VulkanTypedHandle& obj);
+    void InvalidateCommandBuffers(small_unordered_map<CMD_BUFFER_STATE*, int, 8>& cb_nodes, const VulkanTypedHandle& obj,
+                                  bool unlink = true);
+    void InvalidateLinkedCommandBuffers(std::unordered_set<CMD_BUFFER_STATE*>& cb_nodes, const VulkanTypedHandle& obj);
     void PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*, const VkDescriptorSet*,
                                        const cvdescriptorset::AllocateDescriptorSetsData*);
     void PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE* template_state,
