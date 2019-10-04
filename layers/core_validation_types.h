@@ -83,7 +83,7 @@ class BASE_NODE {
     std::unordered_set<CMD_BUFFER_STATE *> cb_bindings;
     // Set to true when the API-level object is destroyed, but this object may
     // hang around until its shared_ptr refcount goes to zero.
-    std::atomic<bool> destroyed;
+    bool destroyed;
 
     BASE_NODE() {
         in_use.store(0);
