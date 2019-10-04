@@ -141,8 +141,12 @@ bool IMAGE_STATE::IsCompatibleAliasing(IMAGE_STATE *other_image_state) {
     return false;
 }
 
-IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const IMAGE_STATE *image_state, VkImageView iv, const VkImageViewCreateInfo *ci)
-    : image_view(iv), create_info(*ci), normalized_subresource_range(ci->subresourceRange), samplerConversion(VK_NULL_HANDLE) {
+IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkImageView iv, const VkImageViewCreateInfo *ci)
+    : image_view(iv),
+      create_info(*ci),
+      normalized_subresource_range(ci->subresourceRange),
+      samplerConversion(VK_NULL_HANDLE),
+      image_state(im) {
     auto *conversionInfo = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(create_info.pNext);
     if (conversionInfo) samplerConversion = conversionInfo->conversion;
     if (image_state) {

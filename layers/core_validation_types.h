@@ -81,8 +81,14 @@ class BASE_NODE {
     //  binding removed when command buffer is reset or destroyed
     // When an object is destroyed, any bound cbs are set to INVALID
     std::unordered_set<CMD_BUFFER_STATE *> cb_bindings;
+    // Set to true when the API-level object is destroyed, but this object may
+    // hang around until its shared_ptr refcount goes to zero.
+    std::atomic<bool> destroyed;
 
-    BASE_NODE() { in_use.store(0); };
+    BASE_NODE() {
+        in_use.store(0);
+        destroyed = false;
+    };
 };
 
 // Track command pools and their command buffers
@@ -278,7 +284,9 @@ class BUFFER_VIEW_STATE : public BASE_NODE {
   public:
     VkBufferView buffer_view;
     VkBufferViewCreateInfo create_info;
-    BUFFER_VIEW_STATE(VkBufferView bv, const VkBufferViewCreateInfo *ci) : buffer_view(bv), create_info(*ci){};
+    std::shared_ptr<BUFFER_STATE> buffer_state;
+    BUFFER_VIEW_STATE(const std::shared_ptr<BUFFER_STATE> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci)
+        : buffer_view(bv), create_info(*ci), buffer_state(bf){};
     BUFFER_VIEW_STATE(const BUFFER_VIEW_STATE &rh_obj) = delete;
 };
 
@@ -379,7 +387,8 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
     VkSampleCountFlagBits samples;
     unsigned descriptor_format_bits;
     VkSamplerYcbcrConversion samplerConversion;  // Handle of the ycbcr sampler conversion the image was created with, if any
-    IMAGE_VIEW_STATE(const IMAGE_STATE *image_state, VkImageView iv, const VkImageViewCreateInfo *ci);
+    std::shared_ptr<IMAGE_STATE> image_state;
+    IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci);
     IMAGE_VIEW_STATE(const IMAGE_VIEW_STATE &rh_obj) = delete;
 };
 
@@ -450,7 +459,7 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
           p_driver_data(0){};
 };
 
-class SWAPCHAIN_NODE {
+class SWAPCHAIN_NODE : public BASE_NODE {
   public:
     safe_VkSwapchainCreateInfoKHR createInfo;
     VkSwapchainKHR swapchain;
@@ -1151,7 +1160,7 @@ using PipelineLayoutCompatDict = hash_util::Dictionary<PipelineLayoutCompatDef, 
 using PipelineLayoutCompatId = PipelineLayoutCompatDict::Id;
 
 // Store layouts and pushconstants for PipelineLayout
-struct PIPELINE_LAYOUT_STATE {
+struct PIPELINE_LAYOUT_STATE : public BASE_NODE {
     VkPipelineLayout layout;
     std::vector<std::shared_ptr<cvdescriptorset::DescriptorSetLayout const>> set_layouts;
     PushConstantRangesId push_constant_ranges;
@@ -1205,7 +1214,7 @@ class PIPELINE_STATE : public BASE_NODE {
     std::unordered_map<uint32_t, uint32_t> vertex_binding_to_index_map_;
     std::vector<VkPipelineColorBlendAttachmentState> attachments;
     bool blendConstantsEnabled;  // Blend constants enabled for any attachments
-    PIPELINE_LAYOUT_STATE pipeline_layout;
+    std::shared_ptr<PIPELINE_LAYOUT_STATE> pipeline_layout;
     VkPrimitiveTopology topology_at_rasterizer;
 
     // Default constructor

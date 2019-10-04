@@ -185,7 +185,7 @@ class GpuAssisted : public ValidationStateTracker {
                                                   void* crtpl_state_data);
     template <typename CreateInfo, typename SafeCreateInfo>
     void PreCallRecordPipelineCreations(uint32_t count, const CreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator,
-                                        VkPipeline* pPipelines, std::vector<std::unique_ptr<PIPELINE_STATE>>& pipe_state,
+                                        VkPipeline* pPipelines, std::vector<std::shared_ptr<PIPELINE_STATE>>& pipe_state,
                                         std::vector<SafeCreateInfo>* new_pipeline_create_infos,
                                         const VkPipelineBindPoint bind_point);
     template <typename CreateInfo>

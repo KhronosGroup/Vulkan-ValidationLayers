@@ -2804,7 +2804,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     skip |= ValidateShaderStageGroupNonUniform(module, pStage->stage);
     skip |= ValidateExecutionModes(module, entrypoint);
     skip |= ValidateSpecializationOffsets(report_data, pStage);
-    skip |= ValidatePushConstantUsage(report_data, pipeline->pipeline_layout.push_constant_ranges.get(), module, accessible_ids,
+    skip |= ValidatePushConstantUsage(report_data, pipeline->pipeline_layout->push_constant_ranges.get(), module, accessible_ids,
                                       pStage->stage);
     if (check_point_size && !pipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable) {
         skip |= ValidatePointListShaderState(pipeline, module, entrypoint, pStage->stage);
@@ -2814,7 +2814,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     // Validate descriptor use
     for (auto use : descriptor_uses) {
         // Verify given pipelineLayout has requested setLayout with requested binding
-        const auto &binding = GetDescriptorBinding(&pipeline->pipeline_layout, use.first);
+        const auto &binding = GetDescriptorBinding(pipeline->pipeline_layout.get(), use.first);
         unsigned required_descriptor_count;
         std::set<uint32_t> descriptor_types = TypeToDescriptorTypeSet(module, use.second.type_id, required_descriptor_count);
 

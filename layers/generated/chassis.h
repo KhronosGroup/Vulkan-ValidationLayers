@@ -2386,9 +2386,10 @@ enum LayerObjectTypeId {
 struct TEMPLATE_STATE {
     VkDescriptorUpdateTemplateKHR desc_update_template;
     safe_VkDescriptorUpdateTemplateCreateInfo create_info;
+    std::atomic<bool> destroyed;
 
     TEMPLATE_STATE(VkDescriptorUpdateTemplateKHR update_template, safe_VkDescriptorUpdateTemplateCreateInfo *pCreateInfo)
-        : desc_update_template(update_template), create_info(*pCreateInfo) {}
+        : desc_update_template(update_template), create_info(*pCreateInfo), destroyed(false) {}
 };
 
 class LAYER_PHYS_DEV_PROPERTIES {

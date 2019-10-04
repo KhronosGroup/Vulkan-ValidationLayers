@@ -858,7 +858,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(cb_node->commandBuffer), kVUID_Core_DrawState_DescriptorSetNotBound,
                         "%s uses set #%u but that set is not bound.", report_data->FormatHandle(pPipe->pipeline).c_str(), setIndex);
-        } else if (!VerifySetLayoutCompatibility(report_data, state.per_set[setIndex].bound_descriptor_set, &pipeline_layout,
+        } else if (!VerifySetLayoutCompatibility(report_data, state.per_set[setIndex].bound_descriptor_set, pipeline_layout.get(),
                                                  setIndex, errorString)) {
             // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
             VkDescriptorSet setHandle = state.per_set[setIndex].bound_descriptor_set->GetSet();
@@ -866,7 +866,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                               HandleToUint64(setHandle), kVUID_Core_DrawState_PipelineLayoutsIncompatible,
                               "%s bound as set #%u is not compatible with overlapping %s due to: %s",
                               report_data->FormatHandle(setHandle).c_str(), setIndex,
-                              report_data->FormatHandle(pipeline_layout.layout).c_str(), errorString.c_str());
+                              report_data->FormatHandle(pipeline_layout->layout).c_str(), errorString.c_str());
         } else {  // Valid set is bound and layout compatible, validate that it's updated
             // Pull the set node
             const cvdescriptorset::DescriptorSet *descriptor_set = state.per_set[setIndex].bound_descriptor_set;
@@ -921,7 +921,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     return result;
 }
 
-bool CoreChecks::ValidatePipelineLocked(std::vector<std::unique_ptr<PIPELINE_STATE>> const &pPipelines, int pipelineIndex) const {
+bool CoreChecks::ValidatePipelineLocked(std::vector<std::shared_ptr<PIPELINE_STATE>> const &pPipelines, int pipelineIndex) const {
     bool skip = false;
 
     const PIPELINE_STATE *pPipeline = pPipelines[pipelineIndex].get();
@@ -3260,7 +3260,7 @@ VkFormatProperties CoreChecks::GetPDFormatProperties(const VkFormat format) cons
     return format_properties;
 }
 
-bool CoreChecks::ValidatePipelineVertexDivisors(std::vector<std::unique_ptr<PIPELINE_STATE>> const &pipe_state_vec,
+bool CoreChecks::ValidatePipelineVertexDivisors(std::vector<std::shared_ptr<PIPELINE_STATE>> const &pipe_state_vec,
                                                 const uint32_t count, const VkGraphicsPipelineCreateInfo *pipe_cis) const {
     bool skip = false;
     const VkPhysicalDeviceLimits *device_limits = &phys_dev_props.limits;
@@ -9679,7 +9679,7 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
             if (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR)
                 image_ci.flags |= (VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT_KHR);
 
-            imageMap[pSwapchainImages[i]] = unique_ptr<IMAGE_STATE>(new IMAGE_STATE(pSwapchainImages[i], &image_ci));
+            imageMap[pSwapchainImages[i]] = std::make_shared<IMAGE_STATE>(pSwapchainImages[i], &image_ci);
             auto &image_state = imageMap[pSwapchainImages[i]];
             image_state->valid = false;
             image_state->create_from_swapchain = swapchain;
