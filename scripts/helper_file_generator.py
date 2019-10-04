@@ -858,10 +858,13 @@ class HelperFileOutputGenerator(OutputGenerator):
             struct VulkanTypedHandle {
                 uint64_t handle;
                 VulkanObjectType type;
+                // node is optional, and if non-NULL is used to avoid a hash table lookup
+                class BASE_NODE *node;
                 template <typename Handle>
-                VulkanTypedHandle(Handle handle_, VulkanObjectType type_) :
+                VulkanTypedHandle(Handle handle_, VulkanObjectType type_, class BASE_NODE *node_ = nullptr) :
                     handle(CastToUint64(handle_)),
-                    type(type_) {
+                    type(type_),
+                    node(node_) {
             #ifdef TYPESAFE_NONDISPATCHABLE_HANDLES
                     // For 32 bit it's not always safe to check for traits <-> type
                     // as all non-dispatchable handles have the same type-id and thus traits,
@@ -878,7 +881,8 @@ class HelperFileOutputGenerator(OutputGenerator):
                 }
                 VulkanTypedHandle() :
                     handle(VK_NULL_HANDLE),
-                    type(kVulkanObjectTypeUnknown) {}
+                    type(kVulkanObjectTypeUnknown),
+                    node(nullptr) {}
             }; ''')  +'\n'
 
         return object_types_header

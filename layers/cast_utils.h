@@ -52,7 +52,7 @@ static inline HandleType CastFromUint64(uint64_t untyped_handle) {
 }
 
 template <typename HandleType>
-static uint64_t CastToUint64(HandleType handle) {
+static inline uint64_t CastToUint64(HandleType handle) {
     static_assert(sizeof(HandleType) <= sizeof(uint64_t), "HandleType must be not larger than the untyped handle size");
     typedef
         typename std::conditional<sizeof(HandleType) == sizeof(uint8_t), uint8_t,

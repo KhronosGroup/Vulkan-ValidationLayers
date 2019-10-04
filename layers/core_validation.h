@@ -52,8 +52,8 @@ class CoreChecks : public ValidationStateTracker {
     void InitializeShadowMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
     bool ValidatePipelineLocked(std::vector<std::shared_ptr<PIPELINE_STATE>> const& pPipelines, int pipelineIndex) const;
     bool ValidatePipelineUnlocked(const PIPELINE_STATE* pPipeline, uint32_t pipelineIndex) const;
-    bool ValidImageBufferQueue(const CMD_BUFFER_STATE* cb_node, const VulkanTypedHandle& object, VkQueue queue, uint32_t count,
-                               const uint32_t* indices) const;
+    bool ValidImageBufferQueue(const CMD_BUFFER_STATE* cb_node, const VulkanTypedHandle& object, uint32_t queueFamilyIndex,
+                               uint32_t count, const uint32_t* indices) const;
     bool ValidateFenceForSubmit(const FENCE_STATE* pFence) const;
     bool ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo* submit,
                                      std::unordered_set<VkSemaphore>* unsignaled_sema_arg,

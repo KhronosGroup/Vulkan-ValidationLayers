@@ -1916,27 +1916,24 @@ bool CoreChecks::ValidateCommandBufferState(const CMD_BUFFER_STATE *cb_state, co
 }
 
 // Check that the queue family index of 'queue' matches one of the entries in pQueueFamilyIndices
-bool CoreChecks::ValidImageBufferQueue(const CMD_BUFFER_STATE *cb_node, const VulkanTypedHandle &object, VkQueue queue,
+bool CoreChecks::ValidImageBufferQueue(const CMD_BUFFER_STATE *cb_node, const VulkanTypedHandle &object, uint32_t queueFamilyIndex,
                                        uint32_t count, const uint32_t *indices) const {
     bool found = false;
     bool skip = false;
-    auto queue_state = GetQueueState(queue);
-    if (queue_state) {
-        for (uint32_t i = 0; i < count; i++) {
-            if (indices[i] == queue_state->queueFamilyIndex) {
-                found = true;
-                break;
-            }
+    for (uint32_t i = 0; i < count; i++) {
+        if (indices[i] == queueFamilyIndex) {
+            found = true;
+            break;
         }
+    }
 
-        if (!found) {
-            skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[object.type], object.handle,
-                           kVUID_Core_DrawState_InvalidQueueFamily,
-                           "vkQueueSubmit: %s contains %s which was not created allowing concurrent access to "
-                           "this queue family %d.",
-                           report_data->FormatHandle(cb_node->commandBuffer).c_str(), report_data->FormatHandle(object).c_str(),
-                           queue_state->queueFamilyIndex);
-        }
+    if (!found) {
+        skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, get_debug_report_enum[object.type], object.handle,
+                       kVUID_Core_DrawState_InvalidQueueFamily,
+                       "vkQueueSubmit: %s contains %s which was not created allowing concurrent access to "
+                       "this queue family %d.",
+                       report_data->FormatHandle(cb_node->commandBuffer).c_str(), report_data->FormatHandle(object).c_str(),
+                       queueFamilyIndex);
     }
     return skip;
 }
@@ -1961,15 +1958,17 @@ bool CoreChecks::ValidateQueueFamilyIndices(const CMD_BUFFER_STATE *pCB, VkQueue
         // Ensure that any bound images or buffers created with SHARING_MODE_CONCURRENT have access to the current queue family
         for (const auto &object : pCB->object_bindings) {
             if (object.type == kVulkanObjectTypeImage) {
-                auto image_state = GetImageState(object.Cast<VkImage>());
+                auto image_state = object.node ? (IMAGE_STATE *)object.node : GetImageState(object.Cast<VkImage>());
                 if (image_state && image_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) {
-                    skip |= ValidImageBufferQueue(pCB, object, queue, image_state->createInfo.queueFamilyIndexCount,
+                    skip |= ValidImageBufferQueue(pCB, object, queue_state->queueFamilyIndex,
+                                                  image_state->createInfo.queueFamilyIndexCount,
                                                   image_state->createInfo.pQueueFamilyIndices);
                 }
             } else if (object.type == kVulkanObjectTypeBuffer) {
-                auto buffer_state = GetBufferState(object.Cast<VkBuffer>());
+                auto buffer_state = object.node ? (BUFFER_STATE *)object.node : GetBufferState(object.Cast<VkBuffer>());
                 if (buffer_state && buffer_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) {
-                    skip |= ValidImageBufferQueue(pCB, object, queue, buffer_state->createInfo.queueFamilyIndexCount,
+                    skip |= ValidImageBufferQueue(pCB, object, queue_state->queueFamilyIndex,
+                                                  buffer_state->createInfo.queueFamilyIndexCount,
                                                   buffer_state->createInfo.pQueueFamilyIndices);
                 }
             }
