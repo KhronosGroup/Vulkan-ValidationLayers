@@ -886,7 +886,6 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
         pCB->activeQueries.clear();
         pCB->startedQueries.clear();
         pCB->image_layout_map.clear();
-        pCB->cb_vertex_buffer_binding_info.clear();
         pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings.clear();
         pCB->vertex_buffer_used = false;
         pCB->primaryCommandBuffer = VK_NULL_HANDLE;
@@ -4254,14 +4253,9 @@ void ValidationStateTracker::UpdateStateCmdDrawDispatchType(CMD_BUFFER_STATE *cb
     cb_state->hasDispatchCmd = true;
 }
 
-static inline void UpdateResourceTrackingOnDraw(CMD_BUFFER_STATE *pCB) {
-    pCB->cb_vertex_buffer_binding_info.push_back(pCB->current_vertex_buffer_binding_info);
-}
-
 // Generic function to handle state update for all CmdDraw* type functions
 void ValidationStateTracker::UpdateStateCmdDrawType(CMD_BUFFER_STATE *cb_state, VkPipelineBindPoint bind_point) {
     UpdateStateCmdDrawDispatchType(cb_state, bind_point);
-    UpdateResourceTrackingOnDraw(cb_state);
     cb_state->hasDrawCmd = true;
 }
 

@@ -619,7 +619,6 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             const auto &attribute_description = pPipeline->vertex_attribute_descriptions_[i];
             const auto vertex_binding = attribute_description.binding;
             const auto attribute_offset = attribute_description.offset;
-            const auto attribute_format = attribute_description.format;
 
             const auto &vertex_binding_map_it = pPipeline->vertex_binding_to_index_map_.find(vertex_binding);
             if ((vertex_binding_map_it != pPipeline->vertex_binding_to_index_map_.cend()) &&
@@ -627,17 +626,11 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 (current_vtx_bfr_binding_info[vertex_binding].buffer != VK_NULL_HANDLE)) {
                 const auto vertex_buffer_stride = pPipeline->vertex_binding_descriptions_[vertex_binding_map_it->second].stride;
                 const auto vertex_buffer_offset = current_vtx_bfr_binding_info[vertex_binding].offset;
-                const auto buffer_state = GetBufferState(current_vtx_bfr_binding_info[vertex_binding].buffer);
 
-                // Use only memory binding offset as base memory should be properly aligned by the driver
-                const auto buffer_binding_address = buffer_state->binding.offset + vertex_buffer_offset;
                 // Use 1 as vertex/instance index to use buffer stride as well
-                const auto attrib_address = buffer_binding_address + vertex_buffer_stride + attribute_offset;
+                const auto attrib_address = vertex_buffer_offset + vertex_buffer_stride + attribute_offset;
 
-                VkDeviceSize vtx_attrib_req_alignment = FormatElementSize(attribute_format);
-                if (FormatElementIsTexel(attribute_format)) {
-                    vtx_attrib_req_alignment = SafeDivision(vtx_attrib_req_alignment, FormatChannelCount(attribute_format));
-                }
+                VkDeviceSize vtx_attrib_req_alignment = pPipeline->vertex_attribute_alignments_[i];
 
                 if (SafeModulo(attrib_address, vtx_attrib_req_alignment) != 0) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
@@ -10519,6 +10512,14 @@ void PIPELINE_STATE::initGraphicsPipeline(ValidationStateTracker *state_data, co
         if (pVICI->vertexAttributeDescriptionCount) {
             this->vertex_attribute_descriptions_ = std::vector<VkVertexInputAttributeDescription>(
                 pVICI->pVertexAttributeDescriptions, pVICI->pVertexAttributeDescriptions + pVICI->vertexAttributeDescriptionCount);
+            for (uint32_t i = 0; i < pVICI->vertexAttributeDescriptionCount; ++i) {
+                const auto attribute_format = pVICI->pVertexAttributeDescriptions[i].format;
+                VkDeviceSize vtx_attrib_req_alignment = FormatElementSize(attribute_format);
+                if (FormatElementIsTexel(attribute_format)) {
+                    vtx_attrib_req_alignment = SafeDivision(vtx_attrib_req_alignment, FormatChannelCount(attribute_format));
+                }
+                this->vertex_attribute_alignments_.push_back(vtx_attrib_req_alignment);
+            }
         }
     }
     if (graphicsPipelineCI.pColorBlendState) {
