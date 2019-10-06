@@ -1479,6 +1479,7 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     VkCommandBufferBeginInfo beginInfo;
     VkCommandBufferInheritanceInfo inheritanceInfo;
     VkDevice device;  // device this CB belongs to
+    std::shared_ptr<const COMMAND_POOL_STATE> command_pool;
     bool hasDrawCmd;
     bool hasTraceRaysCmd;
     bool hasBuildAccelerationStructureCmd;
