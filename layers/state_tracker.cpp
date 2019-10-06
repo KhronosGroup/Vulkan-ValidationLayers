@@ -2354,7 +2354,7 @@ void ValidationStateTracker::PreCallRecordUpdateDescriptorSets(VkDevice device, 
 void ValidationStateTracker::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pCreateInfo,
                                                                   VkCommandBuffer *pCommandBuffer, VkResult result) {
     if (VK_SUCCESS != result) return;
-    auto pPool = GetCommandPoolState(pCreateInfo->commandPool);
+    auto pPool = GetCommandPoolShared(pCreateInfo->commandPool);
     if (pPool) {
         for (uint32_t i = 0; i < pCreateInfo->commandBufferCount; i++) {
             // Add command buffer to its commandPool map
@@ -2362,6 +2362,7 @@ void ValidationStateTracker::PostCallRecordAllocateCommandBuffers(VkDevice devic
             auto pCB = std::make_shared<CMD_BUFFER_STATE>();
             pCB->createInfo = *pCreateInfo;
             pCB->device = device;
+            pCB->command_pool = pPool;
             // Add command buffer to map
             commandBufferMap[pCommandBuffer[i]] = std::move(pCB);
             ResetCommandBufferState(pCommandBuffer[i]);
