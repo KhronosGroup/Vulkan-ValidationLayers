@@ -423,6 +423,8 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         uint32_t *data = (uint32_t *)buffer0.memory().map();
         data[0] = iter.index;
         buffer0.memory().unmap();
+
+        m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotUpdated");
         vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
         vk::QueueWaitIdle(m_device->m_queue);
         m_errorMonitor->VerifyFound();
@@ -488,6 +490,7 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         data[0] = 5;
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Stage = Compute");
+        m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotUpdated");
         vk::QueueSubmit(c_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
         vk::QueueWaitIdle(m_device->m_queue);
         m_errorMonitor->VerifyFound();
@@ -496,6 +499,7 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         data[0] = 25;
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Stage = Compute");
+        m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotUpdated");
         vk::QueueSubmit(c_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
         vk::QueueWaitIdle(m_device->m_queue);
         m_errorMonitor->VerifyFound();
@@ -1506,6 +1510,7 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBRayTracingShaders) {
         mapped_storage_buffer_data[11] = 0;
         storage_buffer.memory().unmap();
 
+        m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotUpdated");
         vk::QueueSubmit(ray_tracing_queue, 1, &submit_info, VK_NULL_HANDLE);
         vk::QueueWaitIdle(ray_tracing_queue);
         m_errorMonitor->VerifyFound();
@@ -6882,31 +6887,34 @@ TEST_F(VkLayerTest, DescriptorIndexingUpdateAfterBind) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkDescriptorBindingFlagsEXT flags[2] = {0, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT};
+    VkDescriptorBindingFlagsEXT flags[3] = {0, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT,
+                                            VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT};
     auto flags_create_info = lvl_init_struct<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>();
-    flags_create_info.bindingCount = 2;
+    flags_create_info.bindingCount = 3;
     flags_create_info.pBindingFlags = &flags[0];
 
     // Descriptor set has two bindings - only the second is update_after_bind
-    VkDescriptorSetLayoutBinding binding[2] = {
+    VkDescriptorSetLayoutBinding binding[3] = {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+        {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
     };
     auto ds_layout_ci = lvl_init_struct<VkDescriptorSetLayoutCreateInfo>(&flags_create_info);
     ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
-    ds_layout_ci.bindingCount = 2;
+    ds_layout_ci.bindingCount = 3;
     ds_layout_ci.pBindings = &binding[0];
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
 
     VkResult err = vk::CreateDescriptorSetLayout(m_device->handle(), &ds_layout_ci, nullptr, &ds_layout);
 
-    VkDescriptorPoolSize pool_sizes[2] = {
+    VkDescriptorPoolSize pool_sizes[3] = {
         {binding[0].descriptorType, binding[0].descriptorCount},
         {binding[1].descriptorType, binding[1].descriptorCount},
+        {binding[2].descriptorType, binding[2].descriptorCount},
     };
     auto dspci = lvl_init_struct<VkDescriptorPoolCreateInfo>();
     dspci.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
-    dspci.poolSizeCount = 2;
+    dspci.poolSizeCount = 3;
     dspci.pPoolSizes = &pool_sizes[0];
     dspci.maxSets = 1;
     VkDescriptorPool pool;
@@ -6976,8 +6984,9 @@ TEST_F(VkLayerTest, DescriptorIndexingUpdateAfterBind) {
         "layout(location=0) out vec4 color;\n"
         "layout(set=0, binding=0) uniform foo0 { float x0; } bar0;\n"
         "layout(set=0, binding=1) buffer  foo1 { float x1; } bar1;\n"
+        "layout(set=0, binding=2) buffer  foo2 { float x2; } bar2;\n"
         "void main(){\n"
-        "   color = vec4(bar0.x0 + bar1.x1);\n"
+        "   color = vec4(bar0.x0 + bar1.x1 + bar2.x2);\n"
         "}\n";
 
     VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
@@ -6994,6 +7003,11 @@ TEST_F(VkLayerTest, DescriptorIndexingUpdateAfterBind) {
     // Make both bindings valid before binding to the command buffer
     vk::UpdateDescriptorSets(m_device->device(), 2, &descriptor_write[0], 0, NULL);
     m_errorMonitor->VerifyNotFound();
+
+    VkSubmitInfo submit_info = {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
 
     // Two subtests. First only updates the update_after_bind binding and expects
     // no error. Second updates the other binding and expects an error when the
@@ -7017,6 +7031,11 @@ TEST_F(VkLayerTest, DescriptorIndexingUpdateAfterBind) {
             // expect no errors
             m_commandBuffer->end();
             m_errorMonitor->VerifyNotFound();
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                 "UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotUpdated");
+            vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+            m_errorMonitor->VerifyFound();
+            vk::QueueWaitIdle(m_device->m_queue);
         } else {
             // Invalid to update binding 0 after being bound. But the error is actually
             // generated during vk::EndCommandBuffer
