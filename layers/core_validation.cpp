@@ -869,7 +869,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                 // any dynamic descriptors, always revalidate rather than caching the values. We currently only
                 // apply this optimization if IsManyDescriptors is true, to avoid the overhead of copying the
                 // binding_req_map which could potentially be expensive.
-                bool need_validate =
+                bool descriptor_set_changed =
                     !reduced_map.IsManyDescriptors() ||
                     // Revalidate each time if the set has dynamic offsets
                     state.per_set[setIndex].dynamicOffsets.size() > 0 ||
@@ -877,15 +877,29 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                     state.per_set[setIndex].validated_set != descriptor_set ||
                     state.per_set[setIndex].validated_set_change_count != descriptor_set->GetChangeCount() ||
                     (!disabled.image_layout_validation &&
-                     state.per_set[setIndex].validated_set_image_layout_change_count != cb_node->image_layout_change_count) ||
-                    // Revalidate if previous bindingReqMap doesn't include new bindingRepMap
-                    !std::includes(state.per_set[setIndex].validated_set_binding_req_map.begin(),
-                                   state.per_set[setIndex].validated_set_binding_req_map.end(), set_binding_pair.second.begin(),
-                                   set_binding_pair.second.end());
+                     state.per_set[setIndex].validated_set_image_layout_change_count != cb_node->image_layout_change_count);
+                bool need_validate = descriptor_set_changed ||
+                                     // Revalidate if previous bindingReqMap doesn't include new bindingReqMap
+                                     !std::includes(state.per_set[setIndex].validated_set_binding_req_map.begin(),
+                                                    state.per_set[setIndex].validated_set_binding_req_map.end(),
+                                                    binding_req_map.begin(), binding_req_map.end());
 
                 if (need_validate) {
-                    if (!ValidateDrawState(descriptor_set, binding_req_map, state.per_set[setIndex].dynamicOffsets, cb_node,
-                                           function, &err_str)) {
+                    bool success;
+                    if (!descriptor_set_changed && reduced_map.IsManyDescriptors()) {
+                        // Only validate the bindings that haven't already been validated
+                        BindingReqMap delta_reqs;
+                        std::set_difference(binding_req_map.begin(), binding_req_map.end(),
+                                            state.per_set[setIndex].validated_set_binding_req_map.begin(),
+                                            state.per_set[setIndex].validated_set_binding_req_map.end(),
+                                            std::inserter(delta_reqs, delta_reqs.begin()));
+                        success = ValidateDrawState(descriptor_set, delta_reqs, state.per_set[setIndex].dynamicOffsets, cb_node,
+                                                    function, &err_str);
+                    } else {
+                        success = ValidateDrawState(descriptor_set, binding_req_map, state.per_set[setIndex].dynamicOffsets,
+                                                    cb_node, function, &err_str);
+                    }
+                    if (!success) {
                         auto set = descriptor_set->GetSet();
                         result |=
                             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,

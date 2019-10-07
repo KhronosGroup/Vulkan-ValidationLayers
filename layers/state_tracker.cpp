@@ -681,21 +681,32 @@ void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, const V
 
                 // We can skip updating the state if "nothing" has changed since the last validation.
                 // See CoreChecks::ValidateCmdBufDrawState for more details.
-                bool need_update =
+                bool descriptor_set_changed =
                     !reduced_map.IsManyDescriptors() ||
                     // Update if descriptor set (or contents) has changed
                     state.per_set[setIndex].validated_set != descriptor_set ||
                     state.per_set[setIndex].validated_set_change_count != descriptor_set->GetChangeCount() ||
                     (!disabled.image_layout_validation &&
-                     state.per_set[setIndex].validated_set_image_layout_change_count != cb_state->image_layout_change_count) ||
-                    // Update if previous bindingReqMap doesn't include new bindingRepMap
-                    !std::includes(state.per_set[setIndex].validated_set_binding_req_map.begin(),
-                                   state.per_set[setIndex].validated_set_binding_req_map.end(), set_binding_pair.second.begin(),
-                                   set_binding_pair.second.end());
+                     state.per_set[setIndex].validated_set_image_layout_change_count != cb_state->image_layout_change_count);
+                bool need_update = descriptor_set_changed ||
+                                   // Update if previous bindingReqMap doesn't include new bindingReqMap
+                                   !std::includes(state.per_set[setIndex].validated_set_binding_req_map.begin(),
+                                                  state.per_set[setIndex].validated_set_binding_req_map.end(),
+                                                  binding_req_map.begin(), binding_req_map.end());
 
                 if (need_update) {
                     // Bind this set and its active descriptor resources to the command buffer
-                    descriptor_set->UpdateDrawState(this, cb_state, binding_req_map);
+                    if (!descriptor_set_changed && reduced_map.IsManyDescriptors()) {
+                        // Only record the bindings that haven't already been recorded
+                        BindingReqMap delta_reqs;
+                        std::set_difference(binding_req_map.begin(), binding_req_map.end(),
+                                            state.per_set[setIndex].validated_set_binding_req_map.begin(),
+                                            state.per_set[setIndex].validated_set_binding_req_map.end(),
+                                            std::inserter(delta_reqs, delta_reqs.begin()));
+                        descriptor_set->UpdateDrawState(this, cb_state, delta_reqs);
+                    } else {
+                        descriptor_set->UpdateDrawState(this, cb_state, binding_req_map);
+                    }
 
                     state.per_set[setIndex].validated_set = descriptor_set;
                     state.per_set[setIndex].validated_set_change_count = descriptor_set->GetChangeCount();
