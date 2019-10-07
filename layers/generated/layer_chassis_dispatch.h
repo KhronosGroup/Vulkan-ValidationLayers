@@ -1212,6 +1212,17 @@ void DispatchCmdDrawIndexedIndirectCountKHR(
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
     uint32_t                                    stride);
+VkResult DispatchGetSemaphoreCounterValueKHR(
+    VkDevice                                    device,
+    VkSemaphore                                 semaphore,
+    uint64_t*                                   pValue);
+VkResult DispatchWaitSemaphoresKHR(
+    VkDevice                                    device,
+    const VkSemaphoreWaitInfoKHR*               pWaitInfo,
+    uint64_t                                    timeout);
+VkResult DispatchSignalSemaphoreKHR(
+    VkDevice                                    device,
+    const VkSemaphoreSignalInfoKHR*             pSignalInfo);
 VkResult DispatchGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
     const VkPipelineInfoKHR*                    pPipelineInfo,

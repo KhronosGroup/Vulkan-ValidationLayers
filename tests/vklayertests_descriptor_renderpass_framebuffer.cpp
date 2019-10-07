@@ -2436,8 +2436,17 @@ TEST_F(VkLayerTest, RenderPassCreate2SubpassInvalidInputAttachmentParameters) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    VkAttachmentReference2KHR reference = {VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2_KHR, nullptr, VK_ATTACHMENT_UNUSED,
-                                           VK_IMAGE_LAYOUT_UNDEFINED, 0};
+    VkAttachmentDescription2KHR attach_desc = {};
+    attach_desc.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2_KHR;
+    attach_desc.format = VK_FORMAT_UNDEFINED;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentReference2KHR reference = {};
+    reference.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2_KHR;
+    reference.layout = VK_IMAGE_LAYOUT_GENERAL;
+    reference.aspectMask = 0;
+
     VkSubpassDescription2KHR subpass = {VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2_KHR,
                                         nullptr,
                                         0,
@@ -2453,14 +2462,14 @@ TEST_F(VkLayerTest, RenderPassCreate2SubpassInvalidInputAttachmentParameters) {
                                         nullptr};
 
     VkRenderPassCreateInfo2KHR rpci2 = {
-        VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2_KHR, nullptr, 0, 0, nullptr, 1, &subpass, 0, nullptr, 0, nullptr};
+        VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2_KHR, nullptr, 0, 1, &attach_desc, 1, &subpass, 0, nullptr, 0, nullptr};
 
     // Test for aspect mask of 0
-    TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), &rpci2, "VUID-VkSubpassDescription2KHR-aspectMask-03176");
+    TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), &rpci2, "VUID-VkSubpassDescription2KHR-attachment-02800");
 
     // Test for invalid aspect mask bits
-    reference.aspectMask |= VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM;
-    TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), &rpci2, "VUID-VkSubpassDescription2KHR-aspectMask-03175");
+    reference.aspectMask = 0x40000000;  // invalid VkImageAspectFlagBits value
+    TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), &rpci2, "VUID-VkSubpassDescription2KHR-attachment-02799");
 }
 
 TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {

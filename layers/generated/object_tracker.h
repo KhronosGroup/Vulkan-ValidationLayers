@@ -1577,6 +1577,17 @@ bool PreCallValidateCmdDrawIndexedIndirectCountKHR(
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
     uint32_t                                    stride);
+bool PreCallValidateGetSemaphoreCounterValueKHR(
+    VkDevice                                    device,
+    VkSemaphore                                 semaphore,
+    uint64_t*                                   pValue);
+bool PreCallValidateWaitSemaphoresKHR(
+    VkDevice                                    device,
+    const VkSemaphoreWaitInfoKHR*               pWaitInfo,
+    uint64_t                                    timeout);
+bool PreCallValidateSignalSemaphoreKHR(
+    VkDevice                                    device,
+    const VkSemaphoreSignalInfoKHR*             pSignalInfo);
 bool PreCallValidateGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
     const VkPipelineInfoKHR*                    pPipelineInfo,

@@ -3255,6 +3255,22 @@ struct safe_VkPhysicalDeviceShaderAtomicInt64FeaturesKHR {
     VkPhysicalDeviceShaderAtomicInt64FeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceShaderAtomicInt64FeaturesKHR const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceShaderClockFeaturesKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 shaderSubgroupClock;
+    VkBool32 shaderDeviceClock;
+    safe_VkPhysicalDeviceShaderClockFeaturesKHR(const VkPhysicalDeviceShaderClockFeaturesKHR* in_struct);
+    safe_VkPhysicalDeviceShaderClockFeaturesKHR(const safe_VkPhysicalDeviceShaderClockFeaturesKHR& src);
+    safe_VkPhysicalDeviceShaderClockFeaturesKHR& operator=(const safe_VkPhysicalDeviceShaderClockFeaturesKHR& src);
+    safe_VkPhysicalDeviceShaderClockFeaturesKHR();
+    ~safe_VkPhysicalDeviceShaderClockFeaturesKHR();
+    void initialize(const VkPhysicalDeviceShaderClockFeaturesKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceShaderClockFeaturesKHR* src);
+    VkPhysicalDeviceShaderClockFeaturesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceShaderClockFeaturesKHR *>(this); }
+    VkPhysicalDeviceShaderClockFeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceShaderClockFeaturesKHR const *>(this); }
+};
+
 struct safe_VkPhysicalDeviceDriverPropertiesKHR {
     VkStructureType sType;
     void* pNext;
@@ -3337,6 +3353,104 @@ struct safe_VkPhysicalDeviceDepthStencilResolvePropertiesKHR {
     void initialize(const safe_VkPhysicalDeviceDepthStencilResolvePropertiesKHR* src);
     VkPhysicalDeviceDepthStencilResolvePropertiesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceDepthStencilResolvePropertiesKHR *>(this); }
     VkPhysicalDeviceDepthStencilResolvePropertiesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceDepthStencilResolvePropertiesKHR const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceTimelineSemaphoreFeaturesKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 timelineSemaphore;
+    safe_VkPhysicalDeviceTimelineSemaphoreFeaturesKHR(const VkPhysicalDeviceTimelineSemaphoreFeaturesKHR* in_struct);
+    safe_VkPhysicalDeviceTimelineSemaphoreFeaturesKHR(const safe_VkPhysicalDeviceTimelineSemaphoreFeaturesKHR& src);
+    safe_VkPhysicalDeviceTimelineSemaphoreFeaturesKHR& operator=(const safe_VkPhysicalDeviceTimelineSemaphoreFeaturesKHR& src);
+    safe_VkPhysicalDeviceTimelineSemaphoreFeaturesKHR();
+    ~safe_VkPhysicalDeviceTimelineSemaphoreFeaturesKHR();
+    void initialize(const VkPhysicalDeviceTimelineSemaphoreFeaturesKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceTimelineSemaphoreFeaturesKHR* src);
+    VkPhysicalDeviceTimelineSemaphoreFeaturesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceTimelineSemaphoreFeaturesKHR *>(this); }
+    VkPhysicalDeviceTimelineSemaphoreFeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceTimelineSemaphoreFeaturesKHR const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceTimelineSemaphorePropertiesKHR {
+    VkStructureType sType;
+    void* pNext;
+    uint64_t maxTimelineSemaphoreValueDifference;
+    safe_VkPhysicalDeviceTimelineSemaphorePropertiesKHR(const VkPhysicalDeviceTimelineSemaphorePropertiesKHR* in_struct);
+    safe_VkPhysicalDeviceTimelineSemaphorePropertiesKHR(const safe_VkPhysicalDeviceTimelineSemaphorePropertiesKHR& src);
+    safe_VkPhysicalDeviceTimelineSemaphorePropertiesKHR& operator=(const safe_VkPhysicalDeviceTimelineSemaphorePropertiesKHR& src);
+    safe_VkPhysicalDeviceTimelineSemaphorePropertiesKHR();
+    ~safe_VkPhysicalDeviceTimelineSemaphorePropertiesKHR();
+    void initialize(const VkPhysicalDeviceTimelineSemaphorePropertiesKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceTimelineSemaphorePropertiesKHR* src);
+    VkPhysicalDeviceTimelineSemaphorePropertiesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceTimelineSemaphorePropertiesKHR *>(this); }
+    VkPhysicalDeviceTimelineSemaphorePropertiesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceTimelineSemaphorePropertiesKHR const *>(this); }
+};
+
+struct safe_VkSemaphoreTypeCreateInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkSemaphoreTypeKHR semaphoreType;
+    uint64_t initialValue;
+    safe_VkSemaphoreTypeCreateInfoKHR(const VkSemaphoreTypeCreateInfoKHR* in_struct);
+    safe_VkSemaphoreTypeCreateInfoKHR(const safe_VkSemaphoreTypeCreateInfoKHR& src);
+    safe_VkSemaphoreTypeCreateInfoKHR& operator=(const safe_VkSemaphoreTypeCreateInfoKHR& src);
+    safe_VkSemaphoreTypeCreateInfoKHR();
+    ~safe_VkSemaphoreTypeCreateInfoKHR();
+    void initialize(const VkSemaphoreTypeCreateInfoKHR* in_struct);
+    void initialize(const safe_VkSemaphoreTypeCreateInfoKHR* src);
+    VkSemaphoreTypeCreateInfoKHR *ptr() { return reinterpret_cast<VkSemaphoreTypeCreateInfoKHR *>(this); }
+    VkSemaphoreTypeCreateInfoKHR const *ptr() const { return reinterpret_cast<VkSemaphoreTypeCreateInfoKHR const *>(this); }
+};
+
+struct safe_VkTimelineSemaphoreSubmitInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    uint32_t waitSemaphoreValueCount;
+    const uint64_t* pWaitSemaphoreValues;
+    uint32_t signalSemaphoreValueCount;
+    const uint64_t* pSignalSemaphoreValues;
+    safe_VkTimelineSemaphoreSubmitInfoKHR(const VkTimelineSemaphoreSubmitInfoKHR* in_struct);
+    safe_VkTimelineSemaphoreSubmitInfoKHR(const safe_VkTimelineSemaphoreSubmitInfoKHR& src);
+    safe_VkTimelineSemaphoreSubmitInfoKHR& operator=(const safe_VkTimelineSemaphoreSubmitInfoKHR& src);
+    safe_VkTimelineSemaphoreSubmitInfoKHR();
+    ~safe_VkTimelineSemaphoreSubmitInfoKHR();
+    void initialize(const VkTimelineSemaphoreSubmitInfoKHR* in_struct);
+    void initialize(const safe_VkTimelineSemaphoreSubmitInfoKHR* src);
+    VkTimelineSemaphoreSubmitInfoKHR *ptr() { return reinterpret_cast<VkTimelineSemaphoreSubmitInfoKHR *>(this); }
+    VkTimelineSemaphoreSubmitInfoKHR const *ptr() const { return reinterpret_cast<VkTimelineSemaphoreSubmitInfoKHR const *>(this); }
+};
+
+struct safe_VkSemaphoreWaitInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkSemaphoreWaitFlagsKHR flags;
+    uint32_t semaphoreCount;
+    VkSemaphore* pSemaphores;
+    const uint64_t* pValues;
+    safe_VkSemaphoreWaitInfoKHR(const VkSemaphoreWaitInfoKHR* in_struct);
+    safe_VkSemaphoreWaitInfoKHR(const safe_VkSemaphoreWaitInfoKHR& src);
+    safe_VkSemaphoreWaitInfoKHR& operator=(const safe_VkSemaphoreWaitInfoKHR& src);
+    safe_VkSemaphoreWaitInfoKHR();
+    ~safe_VkSemaphoreWaitInfoKHR();
+    void initialize(const VkSemaphoreWaitInfoKHR* in_struct);
+    void initialize(const safe_VkSemaphoreWaitInfoKHR* src);
+    VkSemaphoreWaitInfoKHR *ptr() { return reinterpret_cast<VkSemaphoreWaitInfoKHR *>(this); }
+    VkSemaphoreWaitInfoKHR const *ptr() const { return reinterpret_cast<VkSemaphoreWaitInfoKHR const *>(this); }
+};
+
+struct safe_VkSemaphoreSignalInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkSemaphore semaphore;
+    uint64_t value;
+    safe_VkSemaphoreSignalInfoKHR(const VkSemaphoreSignalInfoKHR* in_struct);
+    safe_VkSemaphoreSignalInfoKHR(const safe_VkSemaphoreSignalInfoKHR& src);
+    safe_VkSemaphoreSignalInfoKHR& operator=(const safe_VkSemaphoreSignalInfoKHR& src);
+    safe_VkSemaphoreSignalInfoKHR();
+    ~safe_VkSemaphoreSignalInfoKHR();
+    void initialize(const VkSemaphoreSignalInfoKHR* in_struct);
+    void initialize(const safe_VkSemaphoreSignalInfoKHR* src);
+    VkSemaphoreSignalInfoKHR *ptr() { return reinterpret_cast<VkSemaphoreSignalInfoKHR *>(this); }
+    VkSemaphoreSignalInfoKHR const *ptr() const { return reinterpret_cast<VkSemaphoreSignalInfoKHR const *>(this); }
 };
 
 struct safe_VkPhysicalDeviceVulkanMemoryModelFeaturesKHR {

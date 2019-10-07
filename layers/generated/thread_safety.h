@@ -3032,6 +3032,37 @@ void PostCallRecordCmdDrawIndexedIndirectCountKHR(
     uint32_t                                    maxDrawCount,
     uint32_t                                    stride);
 
+void PreCallRecordGetSemaphoreCounterValueKHR(
+    VkDevice                                    device,
+    VkSemaphore                                 semaphore,
+    uint64_t*                                   pValue);
+
+void PostCallRecordGetSemaphoreCounterValueKHR(
+    VkDevice                                    device,
+    VkSemaphore                                 semaphore,
+    uint64_t*                                   pValue,
+    VkResult                                    result);
+
+void PreCallRecordWaitSemaphoresKHR(
+    VkDevice                                    device,
+    const VkSemaphoreWaitInfoKHR*               pWaitInfo,
+    uint64_t                                    timeout);
+
+void PostCallRecordWaitSemaphoresKHR(
+    VkDevice                                    device,
+    const VkSemaphoreWaitInfoKHR*               pWaitInfo,
+    uint64_t                                    timeout,
+    VkResult                                    result);
+
+void PreCallRecordSignalSemaphoreKHR(
+    VkDevice                                    device,
+    const VkSemaphoreSignalInfoKHR*             pSignalInfo);
+
+void PostCallRecordSignalSemaphoreKHR(
+    VkDevice                                    device,
+    const VkSemaphoreSignalInfoKHR*             pSignalInfo,
+    VkResult                                    result);
+
 void PreCallRecordGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
     const VkPipelineInfoKHR*                    pPipelineInfo,

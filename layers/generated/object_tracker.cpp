@@ -3468,6 +3468,46 @@ bool ObjectLifetimes::PreCallValidateCmdDrawIndexedIndirectCountKHR(
     return skip;
 }
 
+bool ObjectLifetimes::PreCallValidateGetSemaphoreCounterValueKHR(
+    VkDevice                                    device,
+    VkSemaphore                                 semaphore,
+    uint64_t*                                   pValue) {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetSemaphoreCounterValueKHR-device-parameter", kVUIDUndefined);
+    skip |= ValidateObject(semaphore, kVulkanObjectTypeSemaphore, false, "VUID-vkGetSemaphoreCounterValueKHR-semaphore-parameter", "VUID-vkGetSemaphoreCounterValueKHR-semaphore-parent");
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateWaitSemaphoresKHR(
+    VkDevice                                    device,
+    const VkSemaphoreWaitInfoKHR*               pWaitInfo,
+    uint64_t                                    timeout) {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkWaitSemaphoresKHR-device-parameter", kVUIDUndefined);
+    if (pWaitInfo) {
+        if (pWaitInfo->pSemaphores) {
+            for (uint32_t index1 = 0; index1 < pWaitInfo->semaphoreCount; ++index1) {
+                skip |= ValidateObject(pWaitInfo->pSemaphores[index1], kVulkanObjectTypeSemaphore, false, "VUID-VkSemaphoreWaitInfoKHR-pSemaphores-parameter", kVUIDUndefined);
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateSignalSemaphoreKHR(
+    VkDevice                                    device,
+    const VkSemaphoreSignalInfoKHR*             pSignalInfo) {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkSignalSemaphoreKHR-device-parameter", kVUIDUndefined);
+    if (pSignalInfo) {
+        skip |= ValidateObject(pSignalInfo->semaphore, kVulkanObjectTypeSemaphore, false, "VUID-VkSemaphoreSignalInfoKHR-semaphore-parameter", kVUIDUndefined);
+    }
+
+    return skip;
+}
+
 bool ObjectLifetimes::PreCallValidateGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
     const VkPipelineInfoKHR*                    pPipelineInfo,

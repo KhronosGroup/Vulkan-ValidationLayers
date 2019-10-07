@@ -1639,6 +1639,15 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_I
     typedef VkPhysicalDeviceShaderAtomicInt64FeaturesKHR Type;
 };
 
+// Map type VkPhysicalDeviceShaderClockFeaturesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR
+template <> struct LvlTypeMap<VkPhysicalDeviceShaderClockFeaturesKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR> {
+    typedef VkPhysicalDeviceShaderClockFeaturesKHR Type;
+};
+
 // Map type VkPhysicalDeviceDriverPropertiesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES_KHR
 template <> struct LvlTypeMap<VkPhysicalDeviceDriverPropertiesKHR> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES_KHR;
@@ -1673,6 +1682,60 @@ template <> struct LvlTypeMap<VkPhysicalDeviceDepthStencilResolvePropertiesKHR> 
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES_KHR> {
     typedef VkPhysicalDeviceDepthStencilResolvePropertiesKHR Type;
+};
+
+// Map type VkPhysicalDeviceTimelineSemaphoreFeaturesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR
+template <> struct LvlTypeMap<VkPhysicalDeviceTimelineSemaphoreFeaturesKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR> {
+    typedef VkPhysicalDeviceTimelineSemaphoreFeaturesKHR Type;
+};
+
+// Map type VkPhysicalDeviceTimelineSemaphorePropertiesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES_KHR
+template <> struct LvlTypeMap<VkPhysicalDeviceTimelineSemaphorePropertiesKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES_KHR> {
+    typedef VkPhysicalDeviceTimelineSemaphorePropertiesKHR Type;
+};
+
+// Map type VkSemaphoreTypeCreateInfoKHR to id VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR
+template <> struct LvlTypeMap<VkSemaphoreTypeCreateInfoKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR> {
+    typedef VkSemaphoreTypeCreateInfoKHR Type;
+};
+
+// Map type VkTimelineSemaphoreSubmitInfoKHR to id VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO_KHR
+template <> struct LvlTypeMap<VkTimelineSemaphoreSubmitInfoKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO_KHR> {
+    typedef VkTimelineSemaphoreSubmitInfoKHR Type;
+};
+
+// Map type VkSemaphoreWaitInfoKHR to id VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO_KHR
+template <> struct LvlTypeMap<VkSemaphoreWaitInfoKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO_KHR> {
+    typedef VkSemaphoreWaitInfoKHR Type;
+};
+
+// Map type VkSemaphoreSignalInfoKHR to id VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO_KHR
+template <> struct LvlTypeMap<VkSemaphoreSignalInfoKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO_KHR> {
+    typedef VkSemaphoreSignalInfoKHR Type;
 };
 
 // Map type VkPhysicalDeviceVulkanMemoryModelFeaturesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_MEMORY_MODEL_FEATURES_KHR

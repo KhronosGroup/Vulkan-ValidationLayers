@@ -470,6 +470,11 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdDrawIndirectCountKHR CmdDrawIndirectCountKHR;
     PFN_vkCmdDrawIndexedIndirectCountKHR CmdDrawIndexedIndirectCountKHR;
 
+    // ---- VK_KHR_timeline_semaphore extension commands
+    PFN_vkGetSemaphoreCounterValueKHR GetSemaphoreCounterValueKHR;
+    PFN_vkWaitSemaphoresKHR WaitSemaphoresKHR;
+    PFN_vkSignalSemaphoreKHR SignalSemaphoreKHR;
+
     // ---- VK_KHR_pipeline_executable_properties extension commands
     PFN_vkGetPipelineExecutablePropertiesKHR GetPipelineExecutablePropertiesKHR;
     PFN_vkGetPipelineExecutableStatisticsKHR GetPipelineExecutableStatisticsKHR;

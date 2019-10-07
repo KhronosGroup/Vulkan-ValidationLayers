@@ -4189,6 +4189,51 @@ void ThreadSafety::PostCallRecordCmdDrawIndexedIndirectCountKHR(
     // Host access to commandBuffer must be externally synchronized
 }
 
+void ThreadSafety::PreCallRecordGetSemaphoreCounterValueKHR(
+    VkDevice                                    device,
+    VkSemaphore                                 semaphore,
+    uint64_t*                                   pValue) {
+    StartReadObjectParentInstance(device);
+    StartReadObject(semaphore);
+}
+
+void ThreadSafety::PostCallRecordGetSemaphoreCounterValueKHR(
+    VkDevice                                    device,
+    VkSemaphore                                 semaphore,
+    uint64_t*                                   pValue,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device);
+    FinishReadObject(semaphore);
+}
+
+void ThreadSafety::PreCallRecordWaitSemaphoresKHR(
+    VkDevice                                    device,
+    const VkSemaphoreWaitInfoKHR*               pWaitInfo,
+    uint64_t                                    timeout) {
+    StartReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PostCallRecordWaitSemaphoresKHR(
+    VkDevice                                    device,
+    const VkSemaphoreWaitInfoKHR*               pWaitInfo,
+    uint64_t                                    timeout,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PreCallRecordSignalSemaphoreKHR(
+    VkDevice                                    device,
+    const VkSemaphoreSignalInfoKHR*             pSignalInfo) {
+    StartReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PostCallRecordSignalSemaphoreKHR(
+    VkDevice                                    device,
+    const VkSemaphoreSignalInfoKHR*             pSignalInfo,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device);
+}
+
 void ThreadSafety::PreCallRecordGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
     const VkPipelineInfoKHR*                    pPipelineInfo,

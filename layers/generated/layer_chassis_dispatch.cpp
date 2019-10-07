@@ -1412,6 +1412,7 @@ VkResult DispatchQueueBindSparse(
             local_pBindInfo = new safe_VkBindSparseInfo[bindInfoCount];
             for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
                 local_pBindInfo[index0].initialize(&pBindInfo[index0]);
+                WrapPnextChainHandles(layer_data, local_pBindInfo[index0].pNext);
                 if (local_pBindInfo[index0].pWaitSemaphores) {
                     for (uint32_t index1 = 0; index1 < local_pBindInfo[index0].waitSemaphoreCount; ++index1) {
                         local_pBindInfo[index0].pWaitSemaphores[index1] = layer_data->Unwrap(local_pBindInfo[index0].pWaitSemaphores[index1]);
@@ -4888,6 +4889,68 @@ void DispatchCmdDrawIndexedIndirectCountKHR(
     }
     layer_data->device_dispatch_table.CmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
 
+}
+
+VkResult DispatchGetSemaphoreCounterValueKHR(
+    VkDevice                                    device,
+    VkSemaphore                                 semaphore,
+    uint64_t*                                   pValue)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetSemaphoreCounterValueKHR(device, semaphore, pValue);
+    {
+        semaphore = layer_data->Unwrap(semaphore);
+    }
+    VkResult result = layer_data->device_dispatch_table.GetSemaphoreCounterValueKHR(device, semaphore, pValue);
+
+    return result;
+}
+
+VkResult DispatchWaitSemaphoresKHR(
+    VkDevice                                    device,
+    const VkSemaphoreWaitInfoKHR*               pWaitInfo,
+    uint64_t                                    timeout)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.WaitSemaphoresKHR(device, pWaitInfo, timeout);
+    safe_VkSemaphoreWaitInfoKHR var_local_pWaitInfo;
+    safe_VkSemaphoreWaitInfoKHR *local_pWaitInfo = NULL;
+    {
+        if (pWaitInfo) {
+            local_pWaitInfo = &var_local_pWaitInfo;
+            local_pWaitInfo->initialize(pWaitInfo);
+            if (local_pWaitInfo->pSemaphores) {
+                for (uint32_t index1 = 0; index1 < local_pWaitInfo->semaphoreCount; ++index1) {
+                    local_pWaitInfo->pSemaphores[index1] = layer_data->Unwrap(local_pWaitInfo->pSemaphores[index1]);
+                }
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.WaitSemaphoresKHR(device, (const VkSemaphoreWaitInfoKHR*)local_pWaitInfo, timeout);
+
+    return result;
+}
+
+VkResult DispatchSignalSemaphoreKHR(
+    VkDevice                                    device,
+    const VkSemaphoreSignalInfoKHR*             pSignalInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.SignalSemaphoreKHR(device, pSignalInfo);
+    safe_VkSemaphoreSignalInfoKHR var_local_pSignalInfo;
+    safe_VkSemaphoreSignalInfoKHR *local_pSignalInfo = NULL;
+    {
+        if (pSignalInfo) {
+            local_pSignalInfo = &var_local_pSignalInfo;
+            local_pSignalInfo->initialize(pSignalInfo);
+            if (pSignalInfo->semaphore) {
+                local_pSignalInfo->semaphore = layer_data->Unwrap(pSignalInfo->semaphore);
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.SignalSemaphoreKHR(device, (const VkSemaphoreSignalInfoKHR*)local_pSignalInfo);
+
+    return result;
 }
 
 VkResult DispatchGetPipelineExecutablePropertiesKHR(

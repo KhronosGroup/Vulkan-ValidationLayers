@@ -613,6 +613,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SCALAR_BLOCK_LAYOUT_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES_KHR:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES_KHR";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_2_AMD:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_2_AMD";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_PROPERTIES_AMD:
@@ -653,6 +655,10 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_PROPERTIES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES_EXT:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES_EXT";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES_KHR:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES_KHR";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_PROPERTIES_EXT:
@@ -803,6 +809,12 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_SEMAPHORE_GET_FD_INFO_KHR";
         case VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR:
             return "VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR";
+        case VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO_KHR:
+            return "VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO_KHR";
+        case VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR:
+            return "VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR";
+        case VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO_KHR:
+            return "VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO_KHR";
         case VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO";
         case VK_STRUCTURE_TYPE_SHADER_MODULE_VALIDATION_CACHE_CREATE_INFO_EXT:
@@ -849,6 +861,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_SWAPCHAIN_DISPLAY_NATIVE_HDR_CREATE_INFO_AMD";
         case VK_STRUCTURE_TYPE_TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD:
             return "VK_STRUCTURE_TYPE_TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD";
+        case VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO_KHR:
+            return "VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO_KHR";
         case VK_STRUCTURE_TYPE_VALIDATION_CACHE_CREATE_INFO_EXT:
             return "VK_STRUCTURE_TYPE_VALIDATION_CACHE_CREATE_INFO_EXT";
         case VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT:
@@ -4785,6 +4799,46 @@ static inline std::string string_VkResolveModeFlagsKHR(VkResolveModeFlagsKHR inp
         input_value >>= 1;
     }
     if( ret.empty()) ret.append(string_VkResolveModeFlagBitsKHR(static_cast<VkResolveModeFlagBitsKHR>(0)));
+    return ret;
+}
+
+static inline const char* string_VkSemaphoreTypeKHR(VkSemaphoreTypeKHR input_value)
+{
+    switch ((VkSemaphoreTypeKHR)input_value)
+    {
+        case VK_SEMAPHORE_TYPE_BINARY_KHR:
+            return "VK_SEMAPHORE_TYPE_BINARY_KHR";
+        case VK_SEMAPHORE_TYPE_TIMELINE_KHR:
+            return "VK_SEMAPHORE_TYPE_TIMELINE_KHR";
+        default:
+            return "Unhandled VkSemaphoreTypeKHR";
+    }
+}
+
+static inline const char* string_VkSemaphoreWaitFlagBitsKHR(VkSemaphoreWaitFlagBitsKHR input_value)
+{
+    switch ((VkSemaphoreWaitFlagBitsKHR)input_value)
+    {
+        case VK_SEMAPHORE_WAIT_ANY_BIT_KHR:
+            return "VK_SEMAPHORE_WAIT_ANY_BIT_KHR";
+        default:
+            return "Unhandled VkSemaphoreWaitFlagBitsKHR";
+    }
+}
+
+static inline std::string string_VkSemaphoreWaitFlagsKHR(VkSemaphoreWaitFlagsKHR input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkSemaphoreWaitFlagBitsKHR(static_cast<VkSemaphoreWaitFlagBitsKHR>(1 << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkSemaphoreWaitFlagBitsKHR(static_cast<VkSemaphoreWaitFlagBitsKHR>(0)));
     return ret;
 }
 

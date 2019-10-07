@@ -7534,29 +7534,31 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                     skip |= ValidateImageAspectMask(VK_NULL_HANDLE, pCreateInfo->pAttachments[attachment_ref.attachment].format,
                                                     attachment_ref.aspectMask, function_name, vuid);
                 }
-            }
 
-            if (rp_version == RENDER_PASS_VERSION_2) {
-                // These are validated automatically as part of parameter validation for create renderpass 1
-                // as they are in a struct that only applies to input attachments - not so for v2.
+                if (rp_version == RENDER_PASS_VERSION_2) {
+                    // These are validated automatically as part of parameter validation for create renderpass 1
+                    // as they are in a struct that only applies to input attachments - not so for v2.
 
-                // Check for 0
-                if (attachment_ref.aspectMask == 0) {
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                    "VUID-VkSubpassDescription2KHR-aspectMask-03176",
-                                    "%s:  Input attachment (%d) aspect mask must not be 0.", function_name, j);
-                } else {
-                    const VkImageAspectFlags valid_bits =
-                        (VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT |
-                         VK_IMAGE_ASPECT_METADATA_BIT | VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT |
-                         VK_IMAGE_ASPECT_PLANE_2_BIT);
-
-                    // Check for valid aspect mask bits
-                    if (attachment_ref.aspectMask & ~valid_bits) {
+                    // Check for 0
+                    if (attachment_ref.aspectMask == 0) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        "VUID-VkSubpassDescription2KHR-aspectMask-03175",
-                                        "%s:  Input attachment (%d) aspect mask (0x%" PRIx32 ")is invalid.", function_name, j,
-                                        attachment_ref.aspectMask);
+                                        "VUID-VkSubpassDescription2KHR-attachment-02800",
+                                        "%s:  Input attachment (%d) aspect mask must not be 0.", function_name, j);
+                    } else {
+                        const VkImageAspectFlags valid_bits =
+                            (VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT |
+                             VK_IMAGE_ASPECT_METADATA_BIT | VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT |
+                             VK_IMAGE_ASPECT_PLANE_2_BIT | VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT |
+                             VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT | VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT |
+                             VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT);
+
+                        // Check for valid aspect mask bits
+                        if (attachment_ref.aspectMask & ~valid_bits) {
+                            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                            "VUID-VkSubpassDescription2KHR-attachment-02799",
+                                            "%s:  Input attachment (%d) aspect mask (0x%" PRIx32 ")is invalid.", function_name, j,
+                                            attachment_ref.aspectMask);
+                        }
                     }
                 }
             }

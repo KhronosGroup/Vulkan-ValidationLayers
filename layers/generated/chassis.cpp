@@ -6399,6 +6399,76 @@ VKAPI_ATTR void VKAPI_CALL CmdDrawIndexedIndirectCountKHR(
 
 
 
+VKAPI_ATTR VkResult VKAPI_CALL GetSemaphoreCounterValueKHR(
+    VkDevice                                    device,
+    VkSemaphore                                 semaphore,
+    uint64_t*                                   pValue) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        skip |= intercept->PreCallValidateGetSemaphoreCounterValueKHR(device, semaphore, pValue);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordGetSemaphoreCounterValueKHR(device, semaphore, pValue);
+    }
+    VkResult result = DispatchGetSemaphoreCounterValueKHR(device, semaphore, pValue);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordGetSemaphoreCounterValueKHR(device, semaphore, pValue, result);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL WaitSemaphoresKHR(
+    VkDevice                                    device,
+    const VkSemaphoreWaitInfoKHR*               pWaitInfo,
+    uint64_t                                    timeout) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        skip |= intercept->PreCallValidateWaitSemaphoresKHR(device, pWaitInfo, timeout);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordWaitSemaphoresKHR(device, pWaitInfo, timeout);
+    }
+    VkResult result = DispatchWaitSemaphoresKHR(device, pWaitInfo, timeout);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordWaitSemaphoresKHR(device, pWaitInfo, timeout, result);
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL SignalSemaphoreKHR(
+    VkDevice                                    device,
+    const VkSemaphoreSignalInfoKHR*             pSignalInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        skip |= intercept->PreCallValidateSignalSemaphoreKHR(device, pSignalInfo);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordSignalSemaphoreKHR(device, pSignalInfo);
+    }
+    VkResult result = DispatchSignalSemaphoreKHR(device, pSignalInfo);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordSignalSemaphoreKHR(device, pSignalInfo, result);
+    }
+    return result;
+}
+
+
+
 
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutablePropertiesKHR(
@@ -9456,6 +9526,9 @@ const std::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkGetDescriptorSetLayoutSupportKHR", {false, (void*)GetDescriptorSetLayoutSupportKHR}},
     {"vkCmdDrawIndirectCountKHR", {false, (void*)CmdDrawIndirectCountKHR}},
     {"vkCmdDrawIndexedIndirectCountKHR", {false, (void*)CmdDrawIndexedIndirectCountKHR}},
+    {"vkGetSemaphoreCounterValueKHR", {false, (void*)GetSemaphoreCounterValueKHR}},
+    {"vkWaitSemaphoresKHR", {false, (void*)WaitSemaphoresKHR}},
+    {"vkSignalSemaphoreKHR", {false, (void*)SignalSemaphoreKHR}},
     {"vkGetPipelineExecutablePropertiesKHR", {false, (void*)GetPipelineExecutablePropertiesKHR}},
     {"vkGetPipelineExecutableStatisticsKHR", {false, (void*)GetPipelineExecutableStatisticsKHR}},
     {"vkGetPipelineExecutableInternalRepresentationsKHR", {false, (void*)GetPipelineExecutableInternalRepresentationsKHR}},
