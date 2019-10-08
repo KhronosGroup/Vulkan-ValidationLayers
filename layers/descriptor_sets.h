@@ -588,7 +588,7 @@ class DescriptorSet : public BASE_NODE {
     // Perform a CopyUpdate whose contents were just validated using ValidateCopyUpdate
     void PerformCopyUpdate(const VkCopyDescriptorSet *, const DescriptorSet *);
 
-    const std::shared_ptr<DescriptorSetLayout const> GetLayout() const { return p_layout_; };
+    const std::shared_ptr<DescriptorSetLayout const> &GetLayout() const { return p_layout_; };
     VkDescriptorSetLayout GetDescriptorSetLayout() const { return p_layout_->GetDescriptorSetLayout(); }
     VkDescriptorSet GetSet() const { return set_; };
     // Bind given cmd_buffer to this descriptor set and
