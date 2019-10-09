@@ -1347,7 +1347,7 @@ bool GpuAssisted::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, ui
                                                uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
                                                uint32_t bufferMemoryBarrierCount,
                                                const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
-                                               const VkImageMemoryBarrier *pImageMemoryBarriers) {
+                                               const VkImageMemoryBarrier *pImageMemoryBarriers) const {
     if (srcStageMask & VK_PIPELINE_STAGE_HOST_BIT) {
         ReportSetupProblem(VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(commandBuffer),
                            "CmdWaitEvents recorded with VK_PIPELINE_STAGE_HOST_BIT set. "

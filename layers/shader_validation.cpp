@@ -3090,7 +3090,7 @@ static ValidationCache *GetValidationCacheInfo(VkShaderModuleCreateInfo const *p
 }
 
 bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
-                                                   const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule) {
+                                                   const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule) const {
     bool skip = false;
     spv_result_t spv_valid = SPV_SUCCESS;
 

@@ -1005,171 +1005,175 @@ class StatelessValidation : public ValidationObject {
     void PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo, VkResult result);
 
     bool manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
-                                               const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool);
+                                               const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool) const;
 
     bool manual_PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-                                              VkInstance *pInstance);
+                                              VkInstance *pInstance) const;
 
     bool manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                            const VkAllocationCallbacks *pAllocator, VkDevice *pDevice);
+                                            const VkAllocationCallbacks *pAllocator, VkDevice *pDevice) const;
 
     bool manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
-                                            const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer);
+                                            const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer) const;
 
     bool manual_PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
-                                           const VkAllocationCallbacks *pAllocator, VkImage *pImage);
+                                           const VkAllocationCallbacks *pAllocator, VkImage *pImage) const;
 
     bool manual_PreCallValidateViewport(const VkViewport &viewport, const char *fn_name, const ParameterName &parameter_name,
-                                        VkDebugReportObjectTypeEXT object_type, uint64_t object);
+                                        VkDebugReportObjectTypeEXT object_type, uint64_t object) const;
 
     bool manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                        const VkGraphicsPipelineCreateInfo *pCreateInfos,
-                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines);
+                                                       const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) const;
     bool manual_PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                       const VkComputePipelineCreateInfo *pCreateInfos,
-                                                      const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines);
+                                                      const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) const;
 
     bool manual_PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
-                                             const VkAllocationCallbacks *pAllocator, VkSampler *pSampler);
+                                             const VkAllocationCallbacks *pAllocator, VkSampler *pSampler) const;
     bool manual_PreCallValidateCreateDescriptorSetLayout(VkDevice device, const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                                          const VkAllocationCallbacks *pAllocator,
-                                                         VkDescriptorSetLayout *pSetLayout);
+                                                         VkDescriptorSetLayout *pSetLayout) const;
 
     bool manual_PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                                     const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
-                                                    const VkCopyDescriptorSet *pDescriptorCopies);
+                                                    const VkCopyDescriptorSet *pDescriptorCopies) const;
 
     bool manual_PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
-                                                  const VkDescriptorSet *pDescriptorSets);
+                                                  const VkDescriptorSet *pDescriptorSets) const;
 
     bool manual_PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
-                                                const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass);
+                                                const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const;
 
     bool manual_PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
-                                                    const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass);
+                                                    const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const;
 
     bool manual_PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
-                                                  const VkCommandBuffer *pCommandBuffers);
+                                                  const VkCommandBuffer *pCommandBuffers) const;
 
-    bool manual_PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo);
+    bool manual_PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo) const;
 
     bool manual_PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
-                                              const VkViewport *pViewports);
+                                              const VkViewport *pViewports) const;
 
     bool manual_PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_t scissorCount,
-                                             const VkRect2D *pScissors);
-    bool manual_PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth);
+                                             const VkRect2D *pScissors) const;
+    bool manual_PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) const;
 
     bool manual_PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
-                                       uint32_t firstVertex, uint32_t firstInstance);
+                                       uint32_t firstVertex, uint32_t firstInstance) const;
 
     bool manual_PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t count,
-                                               uint32_t stride);
+                                               uint32_t stride) const;
 
     bool manual_PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                      uint32_t count, uint32_t stride);
+                                                      uint32_t count, uint32_t stride) const;
 
     bool manual_PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                    const VkClearAttachment *pAttachments, uint32_t rectCount,
-                                                   const VkClearRect *pRects);
+                                                   const VkClearRect *pRects) const;
 
     bool manual_PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                             VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                            const VkImageCopy *pRegions);
+                                            const VkImageCopy *pRegions) const;
 
     bool manual_PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                             VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                            const VkImageBlit *pRegions, VkFilter filter);
+                                            const VkImageBlit *pRegions, VkFilter filter) const;
 
     bool manual_PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                                     VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                    const VkBufferImageCopy *pRegions);
+                                                    const VkBufferImageCopy *pRegions) const;
 
     bool manual_PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                    VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions);
+                                                    VkBuffer dstBuffer, uint32_t regionCount,
+                                                    const VkBufferImageCopy *pRegions) const;
 
     bool manual_PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                               VkDeviceSize dataSize, const void *pData);
+                                               VkDeviceSize dataSize, const void *pData) const;
 
     bool manual_PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                             VkDeviceSize size, uint32_t data);
+                                             VkDeviceSize size, uint32_t data) const;
 
     bool manual_PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
-                                                  const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain);
-    bool manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo);
+                                                  const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain) const;
+    bool manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) const;
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     bool manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance instance, const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
-                                                     const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface);
+                                                     const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface) const;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
     bool manual_PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
-                                                    const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool);
+                                                    const VkAllocationCallbacks *pAllocator,
+                                                    VkDescriptorPool *pDescriptorPool) const;
     bool manual_PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
-                                           uint32_t groupCountZ);
+                                           uint32_t groupCountZ) const;
 
-    bool manual_PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset);
+    bool manual_PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) const;
 
     bool manual_PreCallValidateCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
                                                   uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
-                                                  uint32_t groupCountZ);
+                                                  uint32_t groupCountZ) const;
     bool manual_PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
-                                                        uint32_t exclusiveScissorCount, const VkRect2D *pExclusiveScissors);
+                                                        uint32_t exclusiveScissorCount, const VkRect2D *pExclusiveScissors) const;
     bool manual_PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                                   uint32_t viewportCount,
-                                                                  const VkShadingRatePaletteNV *pShadingRatePalettes);
+                                                                  const VkShadingRatePaletteNV *pShadingRatePalettes) const;
 
     bool manual_PreCallValidateCmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuffer, VkCoarseSampleOrderTypeNV sampleOrderType,
                                                          uint32_t customSampleOrderCount,
-                                                         const VkCoarseSampleOrderCustomNV *pCustomSampleOrders);
+                                                         const VkCoarseSampleOrderCustomNV *pCustomSampleOrders) const;
 
-    bool manual_PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask);
+    bool manual_PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) const;
     bool manual_PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                          uint32_t drawCount, uint32_t stride);
+                                                          uint32_t drawCount, uint32_t stride) const;
 
     bool manual_PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                                VkBuffer countBuffer, VkDeviceSize countBufferOffset,
-                                                               uint32_t maxDrawCount, uint32_t stride);
+                                                               uint32_t maxDrawCount, uint32_t stride) const;
 
     bool manual_PreCallValidateEnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice, const char *pLayerName,
-                                                                  uint32_t *pPropertyCount, VkExtensionProperties *pProperties);
+                                                                  uint32_t *pPropertyCount,
+                                                                  VkExtensionProperties *pProperties) const;
     bool manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
-                                              const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory);
+                                              const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory) const;
 
     bool manual_PreCallValidateCreateAccelerationStructureNV(VkDevice device,
                                                              const VkAccelerationStructureCreateInfoNV *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator,
-                                                             VkAccelerationStructureNV *pAccelerationStructure);
+                                                             VkAccelerationStructureNV *pAccelerationStructure) const;
     bool manual_PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer,
                                                                const VkAccelerationStructureInfoNV *pInfo, VkBuffer instanceData,
                                                                VkDeviceSize instanceOffset, VkBool32 update,
                                                                VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
-                                                               VkBuffer scratch, VkDeviceSize scratchOffset);
+                                                               VkBuffer scratch, VkDeviceSize scratchOffset) const;
     bool manual_PreCallValidateGetAccelerationStructureHandleNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
-                                                                size_t dataSize, void *pData);
+                                                                size_t dataSize, void *pData) const;
     bool manual_PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                            const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
-                                                           const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines);
+                                                           const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) const;
     bool manual_PreCallValidateCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
-                                                        uint32_t viewportCount, const VkViewportWScalingNV *pViewportWScalings);
+                                                        uint32_t viewportCount,
+                                                        const VkViewportWScalingNV *pViewportWScalings) const;
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     bool PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device, const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                              VkDeviceGroupPresentModeFlagsKHR *pModes);
+                                                              VkDeviceGroupPresentModeFlagsKHR *pModes) const;
 #endif  // VK_USE_PLATFORM_WIN32_KHR
 
     bool manual_PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
-                                                 const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer);
+                                                 const VkAllocationCallbacks *pAllocator, VkFramebuffer *pFramebuffer) const;
 
     bool manual_PreCallValidateCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
-                                                    uint16_t lineStipplePattern);
+                                                    uint16_t lineStipplePattern) const;
 
     bool manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                  VkIndexType indexType);
+                                                  VkIndexType indexType) const;
 
-    bool manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo);
+    bool manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT *pNameInfo) const;
 
-    bool manual_PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT *pTagInfo);
+    bool manual_PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT *pTagInfo) const;
 
 #include "parameter_validation.h"
 };  // Class StatelessValidation

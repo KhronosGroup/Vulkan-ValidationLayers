@@ -1542,7 +1542,7 @@ bool StatelessValidation::OutputExtensionError(const std::string &api_name, cons
 bool StatelessValidation::PreCallValidateCreateInstance(
     const VkInstanceCreateInfo*                 pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkInstance*                                 pInstance) {
+    VkInstance*                                 pInstance) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreateInstance", "pCreateInfo", "VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, true, "VUID-vkCreateInstance-pCreateInfo-parameter", "VUID-VkInstanceCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -1591,7 +1591,7 @@ bool StatelessValidation::PreCallValidateCreateInstance(
 
 bool StatelessValidation::PreCallValidateDestroyInstance(
     VkInstance                                  instance,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -1619,7 +1619,7 @@ bool StatelessValidation::PreCallValidateDestroyInstance(
 bool StatelessValidation::PreCallValidateEnumeratePhysicalDevices(
     VkInstance                                  instance,
     uint32_t*                                   pPhysicalDeviceCount,
-    VkPhysicalDevice*                           pPhysicalDevices) {
+    VkPhysicalDevice*                           pPhysicalDevices) const {
     bool skip = false;
     skip |= validate_array("vkEnumeratePhysicalDevices", "pPhysicalDeviceCount", "pPhysicalDevices", pPhysicalDeviceCount, &pPhysicalDevices, true, false, false, kVUIDUndefined, "VUID-vkEnumeratePhysicalDevices-pPhysicalDevices-parameter");
     return skip;
@@ -1627,7 +1627,7 @@ bool StatelessValidation::PreCallValidateEnumeratePhysicalDevices(
 
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceFeatures(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceFeatures*                   pFeatures) {
+    VkPhysicalDeviceFeatures*                   pFeatures) const {
     bool skip = false;
     skip |= validate_required_pointer("vkGetPhysicalDeviceFeatures", "pFeatures", pFeatures, "VUID-vkGetPhysicalDeviceFeatures-pFeatures-parameter");
     return skip;
@@ -1636,7 +1636,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceFeatures(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceFormatProperties(
     VkPhysicalDevice                            physicalDevice,
     VkFormat                                    format,
-    VkFormatProperties*                         pFormatProperties) {
+    VkFormatProperties*                         pFormatProperties) const {
     bool skip = false;
     skip |= validate_ranged_enum("vkGetPhysicalDeviceFormatProperties", "format", "VkFormat", AllVkFormatEnums, format, "VUID-vkGetPhysicalDeviceFormatProperties-format-parameter");
     skip |= validate_required_pointer("vkGetPhysicalDeviceFormatProperties", "pFormatProperties", pFormatProperties, "VUID-vkGetPhysicalDeviceFormatProperties-pFormatProperties-parameter");
@@ -1654,7 +1654,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceImageFormatProperties(
     VkImageTiling                               tiling,
     VkImageUsageFlags                           usage,
     VkImageCreateFlags                          flags,
-    VkImageFormatProperties*                    pImageFormatProperties) {
+    VkImageFormatProperties*                    pImageFormatProperties) const {
     bool skip = false;
     skip |= validate_ranged_enum("vkGetPhysicalDeviceImageFormatProperties", "format", "VkFormat", AllVkFormatEnums, format, "VUID-vkGetPhysicalDeviceImageFormatProperties-format-parameter");
     skip |= validate_ranged_enum("vkGetPhysicalDeviceImageFormatProperties", "type", "VkImageType", AllVkImageTypeEnums, type, "VUID-vkGetPhysicalDeviceImageFormatProperties-type-parameter");
@@ -1671,7 +1671,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceImageFormatProperties(
 
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceProperties*                 pProperties) {
+    VkPhysicalDeviceProperties*                 pProperties) const {
     bool skip = false;
     skip |= validate_required_pointer("vkGetPhysicalDeviceProperties", "pProperties", pProperties, "VUID-vkGetPhysicalDeviceProperties-pProperties-parameter");
     if (pProperties != NULL)
@@ -1684,7 +1684,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pQueueFamilyPropertyCount,
-    VkQueueFamilyProperties*                    pQueueFamilyProperties) {
+    VkQueueFamilyProperties*                    pQueueFamilyProperties) const {
     bool skip = false;
     skip |= validate_array("vkGetPhysicalDeviceQueueFamilyProperties", "pQueueFamilyPropertyCount", "pQueueFamilyProperties", pQueueFamilyPropertyCount, &pQueueFamilyProperties, true, false, false, kVUIDUndefined, "VUID-vkGetPhysicalDeviceQueueFamilyProperties-pQueueFamilyProperties-parameter");
     if (pQueueFamilyProperties != NULL)
@@ -1699,7 +1699,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceQueueFamilyProperties(
 
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceMemoryProperties(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceMemoryProperties*           pMemoryProperties) {
+    VkPhysicalDeviceMemoryProperties*           pMemoryProperties) const {
     bool skip = false;
     skip |= validate_required_pointer("vkGetPhysicalDeviceMemoryProperties", "pMemoryProperties", pMemoryProperties, "VUID-vkGetPhysicalDeviceMemoryProperties-pMemoryProperties-parameter");
     if (pMemoryProperties != NULL)
@@ -1713,7 +1713,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(
     VkPhysicalDevice                            physicalDevice,
     const VkDeviceCreateInfo*                   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDevice*                                   pDevice) {
+    VkDevice*                                   pDevice) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreateDevice", "pCreateInfo", "VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, true, "VUID-vkCreateDevice-pCreateInfo-parameter", "VUID-VkDeviceCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -1884,7 +1884,7 @@ bool StatelessValidation::PreCallValidateCreateDevice(
 
 bool StatelessValidation::PreCallValidateDestroyDevice(
     VkDevice                                    device,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -1913,7 +1913,7 @@ bool StatelessValidation::PreCallValidateGetDeviceQueue(
     VkDevice                                    device,
     uint32_t                                    queueFamilyIndex,
     uint32_t                                    queueIndex,
-    VkQueue*                                    pQueue) {
+    VkQueue*                                    pQueue) const {
     bool skip = false;
     skip |= validate_required_pointer("vkGetDeviceQueue", "pQueue", pQueue, "VUID-vkGetDeviceQueue-pQueue-parameter");
     return skip;
@@ -1923,7 +1923,7 @@ bool StatelessValidation::PreCallValidateQueueSubmit(
     VkQueue                                     queue,
     uint32_t                                    submitCount,
     const VkSubmitInfo*                         pSubmits,
-    VkFence                                     fence) {
+    VkFence                                     fence) const {
     bool skip = false;
     skip |= validate_struct_type_array("vkQueueSubmit", "submitCount", "pSubmits", "VK_STRUCTURE_TYPE_SUBMIT_INFO", submitCount, pSubmits, VK_STRUCTURE_TYPE_SUBMIT_INFO, false, true, "VUID-VkSubmitInfo-sType-sType", "VUID-vkQueueSubmit-pSubmits-parameter", kVUIDUndefined);
     if (pSubmits != NULL)
@@ -1947,14 +1947,14 @@ bool StatelessValidation::PreCallValidateQueueSubmit(
 }
 
 bool StatelessValidation::PreCallValidateQueueWaitIdle(
-    VkQueue                                     queue) {
+    VkQueue                                     queue) const {
     bool skip = false;
     // No xml-driven validation
     return skip;
 }
 
 bool StatelessValidation::PreCallValidateDeviceWaitIdle(
-    VkDevice                                    device) {
+    VkDevice                                    device) const {
     bool skip = false;
     // No xml-driven validation
     return skip;
@@ -1964,7 +1964,7 @@ bool StatelessValidation::PreCallValidateAllocateMemory(
     VkDevice                                    device,
     const VkMemoryAllocateInfo*                 pAllocateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDeviceMemory*                             pMemory) {
+    VkDeviceMemory*                             pMemory) const {
     bool skip = false;
     skip |= validate_struct_type("vkAllocateMemory", "pAllocateInfo", "VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO", pAllocateInfo, VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, true, "VUID-vkAllocateMemory-pAllocateInfo-parameter", "VUID-VkMemoryAllocateInfo-sType-sType");
     if (pAllocateInfo != NULL)
@@ -2001,7 +2001,7 @@ bool StatelessValidation::PreCallValidateAllocateMemory(
 bool StatelessValidation::PreCallValidateFreeMemory(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -2032,7 +2032,7 @@ bool StatelessValidation::PreCallValidateMapMemory(
     VkDeviceSize                                offset,
     VkDeviceSize                                size,
     VkMemoryMapFlags                            flags,
-    void**                                      ppData) {
+    void**                                      ppData) const {
     bool skip = false;
     skip |= validate_required_handle("vkMapMemory", "memory", memory);
     skip |= validate_reserved_flags("vkMapMemory", "flags", flags, "VUID-vkMapMemory-flags-zerobitmask");
@@ -2041,7 +2041,7 @@ bool StatelessValidation::PreCallValidateMapMemory(
 
 bool StatelessValidation::PreCallValidateUnmapMemory(
     VkDevice                                    device,
-    VkDeviceMemory                              memory) {
+    VkDeviceMemory                              memory) const {
     bool skip = false;
     skip |= validate_required_handle("vkUnmapMemory", "memory", memory);
     return skip;
@@ -2050,7 +2050,7 @@ bool StatelessValidation::PreCallValidateUnmapMemory(
 bool StatelessValidation::PreCallValidateFlushMappedMemoryRanges(
     VkDevice                                    device,
     uint32_t                                    memoryRangeCount,
-    const VkMappedMemoryRange*                  pMemoryRanges) {
+    const VkMappedMemoryRange*                  pMemoryRanges) const {
     bool skip = false;
     skip |= validate_struct_type_array("vkFlushMappedMemoryRanges", "memoryRangeCount", "pMemoryRanges", "VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE", memoryRangeCount, pMemoryRanges, VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, true, true, "VUID-VkMappedMemoryRange-sType-sType", "VUID-vkFlushMappedMemoryRanges-pMemoryRanges-parameter", "VUID-vkFlushMappedMemoryRanges-memoryRangeCount-arraylength");
     if (pMemoryRanges != NULL)
@@ -2068,7 +2068,7 @@ bool StatelessValidation::PreCallValidateFlushMappedMemoryRanges(
 bool StatelessValidation::PreCallValidateInvalidateMappedMemoryRanges(
     VkDevice                                    device,
     uint32_t                                    memoryRangeCount,
-    const VkMappedMemoryRange*                  pMemoryRanges) {
+    const VkMappedMemoryRange*                  pMemoryRanges) const {
     bool skip = false;
     skip |= validate_struct_type_array("vkInvalidateMappedMemoryRanges", "memoryRangeCount", "pMemoryRanges", "VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE", memoryRangeCount, pMemoryRanges, VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, true, true, "VUID-VkMappedMemoryRange-sType-sType", "VUID-vkInvalidateMappedMemoryRanges-pMemoryRanges-parameter", "VUID-vkInvalidateMappedMemoryRanges-memoryRangeCount-arraylength");
     if (pMemoryRanges != NULL)
@@ -2086,7 +2086,7 @@ bool StatelessValidation::PreCallValidateInvalidateMappedMemoryRanges(
 bool StatelessValidation::PreCallValidateGetDeviceMemoryCommitment(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
-    VkDeviceSize*                               pCommittedMemoryInBytes) {
+    VkDeviceSize*                               pCommittedMemoryInBytes) const {
     bool skip = false;
     skip |= validate_required_handle("vkGetDeviceMemoryCommitment", "memory", memory);
     skip |= validate_required_pointer("vkGetDeviceMemoryCommitment", "pCommittedMemoryInBytes", pCommittedMemoryInBytes, "VUID-vkGetDeviceMemoryCommitment-pCommittedMemoryInBytes-parameter");
@@ -2097,7 +2097,7 @@ bool StatelessValidation::PreCallValidateBindBufferMemory(
     VkDevice                                    device,
     VkBuffer                                    buffer,
     VkDeviceMemory                              memory,
-    VkDeviceSize                                memoryOffset) {
+    VkDeviceSize                                memoryOffset) const {
     bool skip = false;
     skip |= validate_required_handle("vkBindBufferMemory", "buffer", buffer);
     skip |= validate_required_handle("vkBindBufferMemory", "memory", memory);
@@ -2108,7 +2108,7 @@ bool StatelessValidation::PreCallValidateBindImageMemory(
     VkDevice                                    device,
     VkImage                                     image,
     VkDeviceMemory                              memory,
-    VkDeviceSize                                memoryOffset) {
+    VkDeviceSize                                memoryOffset) const {
     bool skip = false;
     skip |= validate_required_handle("vkBindImageMemory", "image", image);
     skip |= validate_required_handle("vkBindImageMemory", "memory", memory);
@@ -2118,7 +2118,7 @@ bool StatelessValidation::PreCallValidateBindImageMemory(
 bool StatelessValidation::PreCallValidateGetBufferMemoryRequirements(
     VkDevice                                    device,
     VkBuffer                                    buffer,
-    VkMemoryRequirements*                       pMemoryRequirements) {
+    VkMemoryRequirements*                       pMemoryRequirements) const {
     bool skip = false;
     skip |= validate_required_handle("vkGetBufferMemoryRequirements", "buffer", buffer);
     skip |= validate_required_pointer("vkGetBufferMemoryRequirements", "pMemoryRequirements", pMemoryRequirements, "VUID-vkGetBufferMemoryRequirements-pMemoryRequirements-parameter");
@@ -2132,7 +2132,7 @@ bool StatelessValidation::PreCallValidateGetBufferMemoryRequirements(
 bool StatelessValidation::PreCallValidateGetImageMemoryRequirements(
     VkDevice                                    device,
     VkImage                                     image,
-    VkMemoryRequirements*                       pMemoryRequirements) {
+    VkMemoryRequirements*                       pMemoryRequirements) const {
     bool skip = false;
     skip |= validate_required_handle("vkGetImageMemoryRequirements", "image", image);
     skip |= validate_required_pointer("vkGetImageMemoryRequirements", "pMemoryRequirements", pMemoryRequirements, "VUID-vkGetImageMemoryRequirements-pMemoryRequirements-parameter");
@@ -2147,7 +2147,7 @@ bool StatelessValidation::PreCallValidateGetImageSparseMemoryRequirements(
     VkDevice                                    device,
     VkImage                                     image,
     uint32_t*                                   pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements*            pSparseMemoryRequirements) {
+    VkSparseImageMemoryRequirements*            pSparseMemoryRequirements) const {
     bool skip = false;
     skip |= validate_required_handle("vkGetImageSparseMemoryRequirements", "image", image);
     skip |= validate_array("vkGetImageSparseMemoryRequirements", "pSparseMemoryRequirementCount", "pSparseMemoryRequirements", pSparseMemoryRequirementCount, &pSparseMemoryRequirements, true, false, false, kVUIDUndefined, "VUID-vkGetImageSparseMemoryRequirements-pSparseMemoryRequirements-parameter");
@@ -2169,7 +2169,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSparseImageFormatPrope
     VkImageUsageFlags                           usage,
     VkImageTiling                               tiling,
     uint32_t*                                   pPropertyCount,
-    VkSparseImageFormatProperties*              pProperties) {
+    VkSparseImageFormatProperties*              pProperties) const {
     bool skip = false;
     skip |= validate_ranged_enum("vkGetPhysicalDeviceSparseImageFormatProperties", "format", "VkFormat", AllVkFormatEnums, format, "VUID-vkGetPhysicalDeviceSparseImageFormatProperties-format-parameter");
     skip |= validate_ranged_enum("vkGetPhysicalDeviceSparseImageFormatProperties", "type", "VkImageType", AllVkImageTypeEnums, type, "VUID-vkGetPhysicalDeviceSparseImageFormatProperties-type-parameter");
@@ -2191,7 +2191,7 @@ bool StatelessValidation::PreCallValidateQueueBindSparse(
     VkQueue                                     queue,
     uint32_t                                    bindInfoCount,
     const VkBindSparseInfo*                     pBindInfo,
-    VkFence                                     fence) {
+    VkFence                                     fence) const {
     bool skip = false;
     skip |= validate_struct_type_array("vkQueueBindSparse", "bindInfoCount", "pBindInfo", "VK_STRUCTURE_TYPE_BIND_SPARSE_INFO", bindInfoCount, pBindInfo, VK_STRUCTURE_TYPE_BIND_SPARSE_INFO, false, true, "VUID-VkBindSparseInfo-sType-sType", "VUID-vkQueueBindSparse-pBindInfo-parameter", kVUIDUndefined);
     if (pBindInfo != NULL)
@@ -2280,7 +2280,7 @@ bool StatelessValidation::PreCallValidateCreateFence(
     VkDevice                                    device,
     const VkFenceCreateInfo*                    pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkFence*                                    pFence) {
+    VkFence*                                    pFence) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreateFence", "pCreateInfo", "VK_STRUCTURE_TYPE_FENCE_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, true, "VUID-vkCreateFence-pCreateInfo-parameter", "VUID-VkFenceCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -2318,7 +2318,7 @@ bool StatelessValidation::PreCallValidateCreateFence(
 bool StatelessValidation::PreCallValidateDestroyFence(
     VkDevice                                    device,
     VkFence                                     fence,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -2346,7 +2346,7 @@ bool StatelessValidation::PreCallValidateDestroyFence(
 bool StatelessValidation::PreCallValidateResetFences(
     VkDevice                                    device,
     uint32_t                                    fenceCount,
-    const VkFence*                              pFences) {
+    const VkFence*                              pFences) const {
     bool skip = false;
     skip |= validate_handle_array("vkResetFences", "fenceCount", "pFences", fenceCount, pFences, true, true);
     return skip;
@@ -2354,7 +2354,7 @@ bool StatelessValidation::PreCallValidateResetFences(
 
 bool StatelessValidation::PreCallValidateGetFenceStatus(
     VkDevice                                    device,
-    VkFence                                     fence) {
+    VkFence                                     fence) const {
     bool skip = false;
     skip |= validate_required_handle("vkGetFenceStatus", "fence", fence);
     return skip;
@@ -2365,7 +2365,7 @@ bool StatelessValidation::PreCallValidateWaitForFences(
     uint32_t                                    fenceCount,
     const VkFence*                              pFences,
     VkBool32                                    waitAll,
-    uint64_t                                    timeout) {
+    uint64_t                                    timeout) const {
     bool skip = false;
     skip |= validate_handle_array("vkWaitForFences", "fenceCount", "pFences", fenceCount, pFences, true, true);
     skip |= validate_bool32("vkWaitForFences", "waitAll", waitAll);
@@ -2376,7 +2376,7 @@ bool StatelessValidation::PreCallValidateCreateSemaphore(
     VkDevice                                    device,
     const VkSemaphoreCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSemaphore*                                pSemaphore) {
+    VkSemaphore*                                pSemaphore) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreateSemaphore", "pCreateInfo", "VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, true, "VUID-vkCreateSemaphore-pCreateInfo-parameter", "VUID-VkSemaphoreCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -2414,7 +2414,7 @@ bool StatelessValidation::PreCallValidateCreateSemaphore(
 bool StatelessValidation::PreCallValidateDestroySemaphore(
     VkDevice                                    device,
     VkSemaphore                                 semaphore,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -2443,7 +2443,7 @@ bool StatelessValidation::PreCallValidateCreateEvent(
     VkDevice                                    device,
     const VkEventCreateInfo*                    pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkEvent*                                    pEvent) {
+    VkEvent*                                    pEvent) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreateEvent", "pCreateInfo", "VK_STRUCTURE_TYPE_EVENT_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_EVENT_CREATE_INFO, true, "VUID-vkCreateEvent-pCreateInfo-parameter", "VUID-VkEventCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -2479,7 +2479,7 @@ bool StatelessValidation::PreCallValidateCreateEvent(
 bool StatelessValidation::PreCallValidateDestroyEvent(
     VkDevice                                    device,
     VkEvent                                     event,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -2506,7 +2506,7 @@ bool StatelessValidation::PreCallValidateDestroyEvent(
 
 bool StatelessValidation::PreCallValidateGetEventStatus(
     VkDevice                                    device,
-    VkEvent                                     event) {
+    VkEvent                                     event) const {
     bool skip = false;
     skip |= validate_required_handle("vkGetEventStatus", "event", event);
     return skip;
@@ -2514,7 +2514,7 @@ bool StatelessValidation::PreCallValidateGetEventStatus(
 
 bool StatelessValidation::PreCallValidateSetEvent(
     VkDevice                                    device,
-    VkEvent                                     event) {
+    VkEvent                                     event) const {
     bool skip = false;
     skip |= validate_required_handle("vkSetEvent", "event", event);
     return skip;
@@ -2522,7 +2522,7 @@ bool StatelessValidation::PreCallValidateSetEvent(
 
 bool StatelessValidation::PreCallValidateResetEvent(
     VkDevice                                    device,
-    VkEvent                                     event) {
+    VkEvent                                     event) const {
     bool skip = false;
     skip |= validate_required_handle("vkResetEvent", "event", event);
     return skip;
@@ -2532,7 +2532,7 @@ bool StatelessValidation::PreCallValidateCreateQueryPool(
     VkDevice                                    device,
     const VkQueryPoolCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkQueryPool*                                pQueryPool) {
+    VkQueryPool*                                pQueryPool) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreateQueryPool", "pCreateInfo", "VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO, true, "VUID-vkCreateQueryPool-pCreateInfo-parameter", "VUID-VkQueryPoolCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -2571,7 +2571,7 @@ bool StatelessValidation::PreCallValidateCreateQueryPool(
 bool StatelessValidation::PreCallValidateDestroyQueryPool(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -2604,7 +2604,7 @@ bool StatelessValidation::PreCallValidateGetQueryPoolResults(
     size_t                                      dataSize,
     void*                                       pData,
     VkDeviceSize                                stride,
-    VkQueryResultFlags                          flags) {
+    VkQueryResultFlags                          flags) const {
     bool skip = false;
     skip |= validate_required_handle("vkGetQueryPoolResults", "queryPool", queryPool);
     skip |= validate_array("vkGetQueryPoolResults", "dataSize", "pData", dataSize, &pData, true, true, "VUID-vkGetQueryPoolResults-dataSize-arraylength", "VUID-vkGetQueryPoolResults-pData-parameter");
@@ -2616,7 +2616,7 @@ bool StatelessValidation::PreCallValidateCreateBuffer(
     VkDevice                                    device,
     const VkBufferCreateInfo*                   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkBuffer*                                   pBuffer) {
+    VkBuffer*                                   pBuffer) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreateBuffer", "pCreateInfo", "VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, true, "VUID-vkCreateBuffer-pCreateInfo-parameter", "VUID-VkBufferCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -2659,7 +2659,7 @@ bool StatelessValidation::PreCallValidateCreateBuffer(
 bool StatelessValidation::PreCallValidateDestroyBuffer(
     VkDevice                                    device,
     VkBuffer                                    buffer,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -2688,7 +2688,7 @@ bool StatelessValidation::PreCallValidateCreateBufferView(
     VkDevice                                    device,
     const VkBufferViewCreateInfo*               pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkBufferView*                               pView) {
+    VkBufferView*                               pView) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreateBufferView", "pCreateInfo", "VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO, true, "VUID-vkCreateBufferView-pCreateInfo-parameter", "VUID-VkBufferViewCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -2728,7 +2728,7 @@ bool StatelessValidation::PreCallValidateCreateBufferView(
 bool StatelessValidation::PreCallValidateDestroyBufferView(
     VkDevice                                    device,
     VkBufferView                                bufferView,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -2757,7 +2757,7 @@ bool StatelessValidation::PreCallValidateCreateImage(
     VkDevice                                    device,
     const VkImageCreateInfo*                    pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkImage*                                    pImage) {
+    VkImage*                                    pImage) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreateImage", "pCreateInfo", "VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO, true, "VUID-vkCreateImage-pCreateInfo-parameter", "VUID-VkImageCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -2812,7 +2812,7 @@ bool StatelessValidation::PreCallValidateCreateImage(
 bool StatelessValidation::PreCallValidateDestroyImage(
     VkDevice                                    device,
     VkImage                                     image,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -2841,7 +2841,7 @@ bool StatelessValidation::PreCallValidateGetImageSubresourceLayout(
     VkDevice                                    device,
     VkImage                                     image,
     const VkImageSubresource*                   pSubresource,
-    VkSubresourceLayout*                        pLayout) {
+    VkSubresourceLayout*                        pLayout) const {
     bool skip = false;
     skip |= validate_required_handle("vkGetImageSubresourceLayout", "image", image);
     skip |= validate_required_pointer("vkGetImageSubresourceLayout", "pSubresource", pSubresource, "VUID-vkGetImageSubresourceLayout-pSubresource-parameter");
@@ -2861,7 +2861,7 @@ bool StatelessValidation::PreCallValidateCreateImageView(
     VkDevice                                    device,
     const VkImageViewCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkImageView*                                pView) {
+    VkImageView*                                pView) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreateImageView", "pCreateInfo", "VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, true, "VUID-vkCreateImageView-pCreateInfo-parameter", "VUID-VkImageViewCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -2915,7 +2915,7 @@ bool StatelessValidation::PreCallValidateCreateImageView(
 bool StatelessValidation::PreCallValidateDestroyImageView(
     VkDevice                                    device,
     VkImageView                                 imageView,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -2944,7 +2944,7 @@ bool StatelessValidation::PreCallValidateCreateShaderModule(
     VkDevice                                    device,
     const VkShaderModuleCreateInfo*             pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkShaderModule*                             pShaderModule) {
+    VkShaderModule*                             pShaderModule) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreateShaderModule", "pCreateInfo", "VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO, true, "VUID-vkCreateShaderModule-pCreateInfo-parameter", "VUID-VkShaderModuleCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -2984,7 +2984,7 @@ bool StatelessValidation::PreCallValidateCreateShaderModule(
 bool StatelessValidation::PreCallValidateDestroyShaderModule(
     VkDevice                                    device,
     VkShaderModule                              shaderModule,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -3013,7 +3013,7 @@ bool StatelessValidation::PreCallValidateCreatePipelineCache(
     VkDevice                                    device,
     const VkPipelineCacheCreateInfo*            pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkPipelineCache*                            pPipelineCache) {
+    VkPipelineCache*                            pPipelineCache) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreatePipelineCache", "pCreateInfo", "VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO, true, "VUID-vkCreatePipelineCache-pCreateInfo-parameter", "VUID-VkPipelineCacheCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -3051,7 +3051,7 @@ bool StatelessValidation::PreCallValidateCreatePipelineCache(
 bool StatelessValidation::PreCallValidateDestroyPipelineCache(
     VkDevice                                    device,
     VkPipelineCache                             pipelineCache,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -3080,7 +3080,7 @@ bool StatelessValidation::PreCallValidateGetPipelineCacheData(
     VkDevice                                    device,
     VkPipelineCache                             pipelineCache,
     size_t*                                     pDataSize,
-    void*                                       pData) {
+    void*                                       pData) const {
     bool skip = false;
     skip |= validate_required_handle("vkGetPipelineCacheData", "pipelineCache", pipelineCache);
     skip |= validate_array("vkGetPipelineCacheData", "pDataSize", "pData", pDataSize, &pData, true, false, false, kVUIDUndefined, "VUID-vkGetPipelineCacheData-pData-parameter");
@@ -3091,7 +3091,7 @@ bool StatelessValidation::PreCallValidateMergePipelineCaches(
     VkDevice                                    device,
     VkPipelineCache                             dstCache,
     uint32_t                                    srcCacheCount,
-    const VkPipelineCache*                      pSrcCaches) {
+    const VkPipelineCache*                      pSrcCaches) const {
     bool skip = false;
     skip |= validate_required_handle("vkMergePipelineCaches", "dstCache", dstCache);
     skip |= validate_handle_array("vkMergePipelineCaches", "srcCacheCount", "pSrcCaches", srcCacheCount, pSrcCaches, true, true);
@@ -3104,7 +3104,7 @@ bool StatelessValidation::PreCallValidateCreateGraphicsPipelines(
     uint32_t                                    createInfoCount,
     const VkGraphicsPipelineCreateInfo*         pCreateInfos,
     const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines) {
+    VkPipeline*                                 pPipelines) const {
     bool skip = false;
     skip |= validate_struct_type_array("vkCreateGraphicsPipelines", "createInfoCount", "pCreateInfos", "VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO", createInfoCount, pCreateInfos, VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO, true, true, "VUID-VkGraphicsPipelineCreateInfo-sType-sType", "VUID-vkCreateGraphicsPipelines-pCreateInfos-parameter", "VUID-vkCreateGraphicsPipelines-createInfoCount-arraylength");
     if (pCreateInfos != NULL)
@@ -3222,7 +3222,7 @@ bool StatelessValidation::PreCallValidateCreateComputePipelines(
     uint32_t                                    createInfoCount,
     const VkComputePipelineCreateInfo*          pCreateInfos,
     const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines) {
+    VkPipeline*                                 pPipelines) const {
     bool skip = false;
     skip |= validate_struct_type_array("vkCreateComputePipelines", "createInfoCount", "pCreateInfos", "VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO", createInfoCount, pCreateInfos, VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO, true, true, "VUID-VkComputePipelineCreateInfo-sType-sType", "VUID-vkCreateComputePipelines-pCreateInfos-parameter", "VUID-vkCreateComputePipelines-createInfoCount-arraylength");
     if (pCreateInfos != NULL)
@@ -3295,7 +3295,7 @@ bool StatelessValidation::PreCallValidateCreateComputePipelines(
 bool StatelessValidation::PreCallValidateDestroyPipeline(
     VkDevice                                    device,
     VkPipeline                                  pipeline,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -3324,7 +3324,7 @@ bool StatelessValidation::PreCallValidateCreatePipelineLayout(
     VkDevice                                    device,
     const VkPipelineLayoutCreateInfo*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkPipelineLayout*                           pPipelineLayout) {
+    VkPipelineLayout*                           pPipelineLayout) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreatePipelineLayout", "pCreateInfo", "VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, true, "VUID-vkCreatePipelineLayout-pCreateInfo-parameter", "VUID-VkPipelineLayoutCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -3372,7 +3372,7 @@ bool StatelessValidation::PreCallValidateCreatePipelineLayout(
 bool StatelessValidation::PreCallValidateDestroyPipelineLayout(
     VkDevice                                    device,
     VkPipelineLayout                            pipelineLayout,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -3401,7 +3401,7 @@ bool StatelessValidation::PreCallValidateCreateSampler(
     VkDevice                                    device,
     const VkSamplerCreateInfo*                  pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSampler*                                  pSampler) {
+    VkSampler*                                  pSampler) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreateSampler", "pCreateInfo", "VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO, true, "VUID-vkCreateSampler-pCreateInfo-parameter", "VUID-VkSamplerCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -3458,7 +3458,7 @@ bool StatelessValidation::PreCallValidateCreateSampler(
 bool StatelessValidation::PreCallValidateDestroySampler(
     VkDevice                                    device,
     VkSampler                                   sampler,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -3487,7 +3487,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorSetLayout(
     VkDevice                                    device,
     const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDescriptorSetLayout*                      pSetLayout) {
+    VkDescriptorSetLayout*                      pSetLayout) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreateDescriptorSetLayout", "pCreateInfo", "VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, true, "VUID-vkCreateDescriptorSetLayout-pCreateInfo-parameter", "VUID-VkDescriptorSetLayoutCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -3536,7 +3536,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorSetLayout(
 bool StatelessValidation::PreCallValidateDestroyDescriptorSetLayout(
     VkDevice                                    device,
     VkDescriptorSetLayout                       descriptorSetLayout,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -3565,7 +3565,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorPool(
     VkDevice                                    device,
     const VkDescriptorPoolCreateInfo*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDescriptorPool*                           pDescriptorPool) {
+    VkDescriptorPool*                           pDescriptorPool) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreateDescriptorPool", "pCreateInfo", "VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, true, "VUID-vkCreateDescriptorPool-pCreateInfo-parameter", "VUID-VkDescriptorPoolCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -3614,7 +3614,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorPool(
 bool StatelessValidation::PreCallValidateDestroyDescriptorPool(
     VkDevice                                    device,
     VkDescriptorPool                            descriptorPool,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -3642,7 +3642,7 @@ bool StatelessValidation::PreCallValidateDestroyDescriptorPool(
 bool StatelessValidation::PreCallValidateResetDescriptorPool(
     VkDevice                                    device,
     VkDescriptorPool                            descriptorPool,
-    VkDescriptorPoolResetFlags                  flags) {
+    VkDescriptorPoolResetFlags                  flags) const {
     bool skip = false;
     skip |= validate_required_handle("vkResetDescriptorPool", "descriptorPool", descriptorPool);
     skip |= validate_reserved_flags("vkResetDescriptorPool", "flags", flags, "VUID-vkResetDescriptorPool-flags-zerobitmask");
@@ -3652,7 +3652,7 @@ bool StatelessValidation::PreCallValidateResetDescriptorPool(
 bool StatelessValidation::PreCallValidateAllocateDescriptorSets(
     VkDevice                                    device,
     const VkDescriptorSetAllocateInfo*          pAllocateInfo,
-    VkDescriptorSet*                            pDescriptorSets) {
+    VkDescriptorSet*                            pDescriptorSets) const {
     bool skip = false;
     skip |= validate_struct_type("vkAllocateDescriptorSets", "pAllocateInfo", "VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO", pAllocateInfo, VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, true, "VUID-vkAllocateDescriptorSets-pAllocateInfo-parameter", "VUID-VkDescriptorSetAllocateInfo-sType-sType");
     if (pAllocateInfo != NULL)
@@ -3675,7 +3675,7 @@ bool StatelessValidation::PreCallValidateFreeDescriptorSets(
     VkDevice                                    device,
     VkDescriptorPool                            descriptorPool,
     uint32_t                                    descriptorSetCount,
-    const VkDescriptorSet*                      pDescriptorSets) {
+    const VkDescriptorSet*                      pDescriptorSets) const {
     bool skip = false;
     skip |= validate_required_handle("vkFreeDescriptorSets", "descriptorPool", descriptorPool);
     if (!skip) skip |= manual_PreCallValidateFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets);
@@ -3687,7 +3687,7 @@ bool StatelessValidation::PreCallValidateUpdateDescriptorSets(
     uint32_t                                    descriptorWriteCount,
     const VkWriteDescriptorSet*                 pDescriptorWrites,
     uint32_t                                    descriptorCopyCount,
-    const VkCopyDescriptorSet*                  pDescriptorCopies) {
+    const VkCopyDescriptorSet*                  pDescriptorCopies) const {
     bool skip = false;
     skip |= validate_struct_type_array("vkUpdateDescriptorSets", "descriptorWriteCount", "pDescriptorWrites", "VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET", descriptorWriteCount, pDescriptorWrites, VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, false, true, "VUID-VkWriteDescriptorSet-sType-sType", "VUID-vkUpdateDescriptorSets-pDescriptorWrites-parameter", kVUIDUndefined);
     if (pDescriptorWrites != NULL)
@@ -3721,7 +3721,7 @@ bool StatelessValidation::PreCallValidateCreateFramebuffer(
     VkDevice                                    device,
     const VkFramebufferCreateInfo*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkFramebuffer*                              pFramebuffer) {
+    VkFramebuffer*                              pFramebuffer) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreateFramebuffer", "pCreateInfo", "VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, true, "VUID-vkCreateFramebuffer-pCreateInfo-parameter", "VUID-VkFramebufferCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -3762,7 +3762,7 @@ bool StatelessValidation::PreCallValidateCreateFramebuffer(
 bool StatelessValidation::PreCallValidateDestroyFramebuffer(
     VkDevice                                    device,
     VkFramebuffer                               framebuffer,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -3791,7 +3791,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass(
     VkDevice                                    device,
     const VkRenderPassCreateInfo*               pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkRenderPass*                               pRenderPass) {
+    VkRenderPass*                               pRenderPass) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreateRenderPass", "pCreateInfo", "VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, true, "VUID-vkCreateRenderPass-pCreateInfo-parameter", "VUID-VkRenderPassCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -3919,7 +3919,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass(
 bool StatelessValidation::PreCallValidateDestroyRenderPass(
     VkDevice                                    device,
     VkRenderPass                                renderPass,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -3947,7 +3947,7 @@ bool StatelessValidation::PreCallValidateDestroyRenderPass(
 bool StatelessValidation::PreCallValidateGetRenderAreaGranularity(
     VkDevice                                    device,
     VkRenderPass                                renderPass,
-    VkExtent2D*                                 pGranularity) {
+    VkExtent2D*                                 pGranularity) const {
     bool skip = false;
     skip |= validate_required_handle("vkGetRenderAreaGranularity", "renderPass", renderPass);
     skip |= validate_required_pointer("vkGetRenderAreaGranularity", "pGranularity", pGranularity, "VUID-vkGetRenderAreaGranularity-pGranularity-parameter");
@@ -3958,7 +3958,7 @@ bool StatelessValidation::PreCallValidateCreateCommandPool(
     VkDevice                                    device,
     const VkCommandPoolCreateInfo*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkCommandPool*                              pCommandPool) {
+    VkCommandPool*                              pCommandPool) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreateCommandPool", "pCreateInfo", "VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, true, "VUID-vkCreateCommandPool-pCreateInfo-parameter", "VUID-VkCommandPoolCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -3994,7 +3994,7 @@ bool StatelessValidation::PreCallValidateCreateCommandPool(
 bool StatelessValidation::PreCallValidateDestroyCommandPool(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -4022,7 +4022,7 @@ bool StatelessValidation::PreCallValidateDestroyCommandPool(
 bool StatelessValidation::PreCallValidateResetCommandPool(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
-    VkCommandPoolResetFlags                     flags) {
+    VkCommandPoolResetFlags                     flags) const {
     bool skip = false;
     skip |= validate_required_handle("vkResetCommandPool", "commandPool", commandPool);
     skip |= validate_flags("vkResetCommandPool", "flags", "VkCommandPoolResetFlagBits", AllVkCommandPoolResetFlagBits, flags, kOptionalFlags, "VUID-vkResetCommandPool-flags-parameter");
@@ -4032,7 +4032,7 @@ bool StatelessValidation::PreCallValidateResetCommandPool(
 bool StatelessValidation::PreCallValidateAllocateCommandBuffers(
     VkDevice                                    device,
     const VkCommandBufferAllocateInfo*          pAllocateInfo,
-    VkCommandBuffer*                            pCommandBuffers) {
+    VkCommandBuffer*                            pCommandBuffers) const {
     bool skip = false;
     skip |= validate_struct_type("vkAllocateCommandBuffers", "pAllocateInfo", "VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO", pAllocateInfo, VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, true, "VUID-vkAllocateCommandBuffers-pAllocateInfo-parameter", "VUID-VkCommandBufferAllocateInfo-sType-sType");
     if (pAllocateInfo != NULL)
@@ -4053,7 +4053,7 @@ bool StatelessValidation::PreCallValidateFreeCommandBuffers(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
     uint32_t                                    commandBufferCount,
-    const VkCommandBuffer*                      pCommandBuffers) {
+    const VkCommandBuffer*                      pCommandBuffers) const {
     bool skip = false;
     skip |= validate_required_handle("vkFreeCommandBuffers", "commandPool", commandPool);
     return skip;
@@ -4061,7 +4061,7 @@ bool StatelessValidation::PreCallValidateFreeCommandBuffers(
 
 bool StatelessValidation::PreCallValidateBeginCommandBuffer(
     VkCommandBuffer                             commandBuffer,
-    const VkCommandBufferBeginInfo*             pBeginInfo) {
+    const VkCommandBufferBeginInfo*             pBeginInfo) const {
     bool skip = false;
     skip |= validate_struct_type("vkBeginCommandBuffer", "pBeginInfo", "VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO", pBeginInfo, VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, true, "VUID-vkBeginCommandBuffer-pBeginInfo-parameter", "VUID-VkCommandBufferBeginInfo-sType-sType");
     if (pBeginInfo != NULL)
@@ -4077,7 +4077,7 @@ bool StatelessValidation::PreCallValidateBeginCommandBuffer(
 }
 
 bool StatelessValidation::PreCallValidateEndCommandBuffer(
-    VkCommandBuffer                             commandBuffer) {
+    VkCommandBuffer                             commandBuffer) const {
     bool skip = false;
     // No xml-driven validation
     return skip;
@@ -4085,7 +4085,7 @@ bool StatelessValidation::PreCallValidateEndCommandBuffer(
 
 bool StatelessValidation::PreCallValidateResetCommandBuffer(
     VkCommandBuffer                             commandBuffer,
-    VkCommandBufferResetFlags                   flags) {
+    VkCommandBufferResetFlags                   flags) const {
     bool skip = false;
     skip |= validate_flags("vkResetCommandBuffer", "flags", "VkCommandBufferResetFlagBits", AllVkCommandBufferResetFlagBits, flags, kOptionalFlags, "VUID-vkResetCommandBuffer-flags-parameter");
     return skip;
@@ -4094,7 +4094,7 @@ bool StatelessValidation::PreCallValidateResetCommandBuffer(
 bool StatelessValidation::PreCallValidateCmdBindPipeline(
     VkCommandBuffer                             commandBuffer,
     VkPipelineBindPoint                         pipelineBindPoint,
-    VkPipeline                                  pipeline) {
+    VkPipeline                                  pipeline) const {
     bool skip = false;
     skip |= validate_ranged_enum("vkCmdBindPipeline", "pipelineBindPoint", "VkPipelineBindPoint", AllVkPipelineBindPointEnums, pipelineBindPoint, "VUID-vkCmdBindPipeline-pipelineBindPoint-parameter");
     skip |= validate_required_handle("vkCmdBindPipeline", "pipeline", pipeline);
@@ -4105,7 +4105,7 @@ bool StatelessValidation::PreCallValidateCmdSetViewport(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstViewport,
     uint32_t                                    viewportCount,
-    const VkViewport*                           pViewports) {
+    const VkViewport*                           pViewports) const {
     bool skip = false;
     skip |= validate_array("vkCmdSetViewport", "viewportCount", "pViewports", viewportCount, &pViewports, true, true, "VUID-vkCmdSetViewport-viewportCount-arraylength", "VUID-vkCmdSetViewport-pViewports-parameter");
     if (pViewports != NULL)
@@ -4123,7 +4123,7 @@ bool StatelessValidation::PreCallValidateCmdSetScissor(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstScissor,
     uint32_t                                    scissorCount,
-    const VkRect2D*                             pScissors) {
+    const VkRect2D*                             pScissors) const {
     bool skip = false;
     skip |= validate_array("vkCmdSetScissor", "scissorCount", "pScissors", scissorCount, &pScissors, true, true, "VUID-vkCmdSetScissor-scissorCount-arraylength", "VUID-vkCmdSetScissor-pScissors-parameter");
     if (pScissors != NULL)
@@ -4141,7 +4141,7 @@ bool StatelessValidation::PreCallValidateCmdSetScissor(
 
 bool StatelessValidation::PreCallValidateCmdSetLineWidth(
     VkCommandBuffer                             commandBuffer,
-    float                                       lineWidth) {
+    float                                       lineWidth) const {
     bool skip = false;
     // No xml-driven validation
     if (!skip) skip |= manual_PreCallValidateCmdSetLineWidth(commandBuffer, lineWidth);
@@ -4152,7 +4152,7 @@ bool StatelessValidation::PreCallValidateCmdSetDepthBias(
     VkCommandBuffer                             commandBuffer,
     float                                       depthBiasConstantFactor,
     float                                       depthBiasClamp,
-    float                                       depthBiasSlopeFactor) {
+    float                                       depthBiasSlopeFactor) const {
     bool skip = false;
     // No xml-driven validation
     return skip;
@@ -4160,7 +4160,7 @@ bool StatelessValidation::PreCallValidateCmdSetDepthBias(
 
 bool StatelessValidation::PreCallValidateCmdSetBlendConstants(
     VkCommandBuffer                             commandBuffer,
-    const float                                 blendConstants[4]) {
+    const float                                 blendConstants[4]) const {
     bool skip = false;
     skip |= validate_required_pointer("vkCmdSetBlendConstants", "blendConstants", blendConstants, kVUIDUndefined);
     return skip;
@@ -4169,7 +4169,7 @@ bool StatelessValidation::PreCallValidateCmdSetBlendConstants(
 bool StatelessValidation::PreCallValidateCmdSetDepthBounds(
     VkCommandBuffer                             commandBuffer,
     float                                       minDepthBounds,
-    float                                       maxDepthBounds) {
+    float                                       maxDepthBounds) const {
     bool skip = false;
     // No xml-driven validation
     return skip;
@@ -4178,7 +4178,7 @@ bool StatelessValidation::PreCallValidateCmdSetDepthBounds(
 bool StatelessValidation::PreCallValidateCmdSetStencilCompareMask(
     VkCommandBuffer                             commandBuffer,
     VkStencilFaceFlags                          faceMask,
-    uint32_t                                    compareMask) {
+    uint32_t                                    compareMask) const {
     bool skip = false;
     skip |= validate_flags("vkCmdSetStencilCompareMask", "faceMask", "VkStencilFaceFlagBits", AllVkStencilFaceFlagBits, faceMask, kRequiredFlags, "VUID-vkCmdSetStencilCompareMask-faceMask-parameter", "VUID-vkCmdSetStencilCompareMask-faceMask-requiredbitmask");
     return skip;
@@ -4187,7 +4187,7 @@ bool StatelessValidation::PreCallValidateCmdSetStencilCompareMask(
 bool StatelessValidation::PreCallValidateCmdSetStencilWriteMask(
     VkCommandBuffer                             commandBuffer,
     VkStencilFaceFlags                          faceMask,
-    uint32_t                                    writeMask) {
+    uint32_t                                    writeMask) const {
     bool skip = false;
     skip |= validate_flags("vkCmdSetStencilWriteMask", "faceMask", "VkStencilFaceFlagBits", AllVkStencilFaceFlagBits, faceMask, kRequiredFlags, "VUID-vkCmdSetStencilWriteMask-faceMask-parameter", "VUID-vkCmdSetStencilWriteMask-faceMask-requiredbitmask");
     return skip;
@@ -4196,7 +4196,7 @@ bool StatelessValidation::PreCallValidateCmdSetStencilWriteMask(
 bool StatelessValidation::PreCallValidateCmdSetStencilReference(
     VkCommandBuffer                             commandBuffer,
     VkStencilFaceFlags                          faceMask,
-    uint32_t                                    reference) {
+    uint32_t                                    reference) const {
     bool skip = false;
     skip |= validate_flags("vkCmdSetStencilReference", "faceMask", "VkStencilFaceFlagBits", AllVkStencilFaceFlagBits, faceMask, kRequiredFlags, "VUID-vkCmdSetStencilReference-faceMask-parameter", "VUID-vkCmdSetStencilReference-faceMask-requiredbitmask");
     return skip;
@@ -4210,7 +4210,7 @@ bool StatelessValidation::PreCallValidateCmdBindDescriptorSets(
     uint32_t                                    descriptorSetCount,
     const VkDescriptorSet*                      pDescriptorSets,
     uint32_t                                    dynamicOffsetCount,
-    const uint32_t*                             pDynamicOffsets) {
+    const uint32_t*                             pDynamicOffsets) const {
     bool skip = false;
     skip |= validate_ranged_enum("vkCmdBindDescriptorSets", "pipelineBindPoint", "VkPipelineBindPoint", AllVkPipelineBindPointEnums, pipelineBindPoint, "VUID-vkCmdBindDescriptorSets-pipelineBindPoint-parameter");
     skip |= validate_required_handle("vkCmdBindDescriptorSets", "layout", layout);
@@ -4223,7 +4223,7 @@ bool StatelessValidation::PreCallValidateCmdBindIndexBuffer(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,
     VkDeviceSize                                offset,
-    VkIndexType                                 indexType) {
+    VkIndexType                                 indexType) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdBindIndexBuffer", "buffer", buffer);
     skip |= validate_ranged_enum("vkCmdBindIndexBuffer", "indexType", "VkIndexType", AllVkIndexTypeEnums, indexType, "VUID-vkCmdBindIndexBuffer-indexType-parameter");
@@ -4236,7 +4236,7 @@ bool StatelessValidation::PreCallValidateCmdBindVertexBuffers(
     uint32_t                                    firstBinding,
     uint32_t                                    bindingCount,
     const VkBuffer*                             pBuffers,
-    const VkDeviceSize*                         pOffsets) {
+    const VkDeviceSize*                         pOffsets) const {
     bool skip = false;
     skip |= validate_handle_array("vkCmdBindVertexBuffers", "bindingCount", "pBuffers", bindingCount, pBuffers, true, true);
     skip |= validate_array("vkCmdBindVertexBuffers", "bindingCount", "pOffsets", bindingCount, &pOffsets, true, true, "VUID-vkCmdBindVertexBuffers-bindingCount-arraylength", "VUID-vkCmdBindVertexBuffers-pOffsets-parameter");
@@ -4248,7 +4248,7 @@ bool StatelessValidation::PreCallValidateCmdDraw(
     uint32_t                                    vertexCount,
     uint32_t                                    instanceCount,
     uint32_t                                    firstVertex,
-    uint32_t                                    firstInstance) {
+    uint32_t                                    firstInstance) const {
     bool skip = false;
     // No xml-driven validation
     if (!skip) skip |= manual_PreCallValidateCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
@@ -4261,7 +4261,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexed(
     uint32_t                                    instanceCount,
     uint32_t                                    firstIndex,
     int32_t                                     vertexOffset,
-    uint32_t                                    firstInstance) {
+    uint32_t                                    firstInstance) const {
     bool skip = false;
     // No xml-driven validation
     return skip;
@@ -4272,7 +4272,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndirect(
     VkBuffer                                    buffer,
     VkDeviceSize                                offset,
     uint32_t                                    drawCount,
-    uint32_t                                    stride) {
+    uint32_t                                    stride) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdDrawIndirect", "buffer", buffer);
     if (!skip) skip |= manual_PreCallValidateCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride);
@@ -4284,7 +4284,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexedIndirect(
     VkBuffer                                    buffer,
     VkDeviceSize                                offset,
     uint32_t                                    drawCount,
-    uint32_t                                    stride) {
+    uint32_t                                    stride) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdDrawIndexedIndirect", "buffer", buffer);
     if (!skip) skip |= manual_PreCallValidateCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
@@ -4295,7 +4295,7 @@ bool StatelessValidation::PreCallValidateCmdDispatch(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    groupCountX,
     uint32_t                                    groupCountY,
-    uint32_t                                    groupCountZ) {
+    uint32_t                                    groupCountZ) const {
     bool skip = false;
     // No xml-driven validation
     if (!skip) skip |= manual_PreCallValidateCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
@@ -4305,7 +4305,7 @@ bool StatelessValidation::PreCallValidateCmdDispatch(
 bool StatelessValidation::PreCallValidateCmdDispatchIndirect(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,
-    VkDeviceSize                                offset) {
+    VkDeviceSize                                offset) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdDispatchIndirect", "buffer", buffer);
     if (!skip) skip |= manual_PreCallValidateCmdDispatchIndirect(commandBuffer, buffer, offset);
@@ -4317,7 +4317,7 @@ bool StatelessValidation::PreCallValidateCmdCopyBuffer(
     VkBuffer                                    srcBuffer,
     VkBuffer                                    dstBuffer,
     uint32_t                                    regionCount,
-    const VkBufferCopy*                         pRegions) {
+    const VkBufferCopy*                         pRegions) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdCopyBuffer", "srcBuffer", srcBuffer);
     skip |= validate_required_handle("vkCmdCopyBuffer", "dstBuffer", dstBuffer);
@@ -4339,7 +4339,7 @@ bool StatelessValidation::PreCallValidateCmdCopyImage(
     VkImage                                     dstImage,
     VkImageLayout                               dstImageLayout,
     uint32_t                                    regionCount,
-    const VkImageCopy*                          pRegions) {
+    const VkImageCopy*                          pRegions) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdCopyImage", "srcImage", srcImage);
     skip |= validate_ranged_enum("vkCmdCopyImage", "srcImageLayout", "VkImageLayout", AllVkImageLayoutEnums, srcImageLayout, "VUID-vkCmdCopyImage-srcImageLayout-parameter");
@@ -4373,7 +4373,7 @@ bool StatelessValidation::PreCallValidateCmdBlitImage(
     VkImageLayout                               dstImageLayout,
     uint32_t                                    regionCount,
     const VkImageBlit*                          pRegions,
-    VkFilter                                    filter) {
+    VkFilter                                    filter) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdBlitImage", "srcImage", srcImage);
     skip |= validate_ranged_enum("vkCmdBlitImage", "srcImageLayout", "VkImageLayout", AllVkImageLayoutEnums, srcImageLayout, "VUID-vkCmdBlitImage-srcImageLayout-parameter");
@@ -4400,7 +4400,7 @@ bool StatelessValidation::PreCallValidateCmdCopyBufferToImage(
     VkImage                                     dstImage,
     VkImageLayout                               dstImageLayout,
     uint32_t                                    regionCount,
-    const VkBufferImageCopy*                    pRegions) {
+    const VkBufferImageCopy*                    pRegions) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdCopyBufferToImage", "srcBuffer", srcBuffer);
     skip |= validate_required_handle("vkCmdCopyBufferToImage", "dstImage", dstImage);
@@ -4427,7 +4427,7 @@ bool StatelessValidation::PreCallValidateCmdCopyImageToBuffer(
     VkImageLayout                               srcImageLayout,
     VkBuffer                                    dstBuffer,
     uint32_t                                    regionCount,
-    const VkBufferImageCopy*                    pRegions) {
+    const VkBufferImageCopy*                    pRegions) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdCopyImageToBuffer", "srcImage", srcImage);
     skip |= validate_ranged_enum("vkCmdCopyImageToBuffer", "srcImageLayout", "VkImageLayout", AllVkImageLayoutEnums, srcImageLayout, "VUID-vkCmdCopyImageToBuffer-srcImageLayout-parameter");
@@ -4453,7 +4453,7 @@ bool StatelessValidation::PreCallValidateCmdUpdateBuffer(
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
     VkDeviceSize                                dataSize,
-    const void*                                 pData) {
+    const void*                                 pData) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdUpdateBuffer", "dstBuffer", dstBuffer);
     skip |= validate_array("vkCmdUpdateBuffer", "dataSize", "pData", dataSize, &pData, true, true, "VUID-vkCmdUpdateBuffer-dataSize-arraylength", "VUID-vkCmdUpdateBuffer-pData-parameter");
@@ -4466,7 +4466,7 @@ bool StatelessValidation::PreCallValidateCmdFillBuffer(
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
     VkDeviceSize                                size,
-    uint32_t                                    data) {
+    uint32_t                                    data) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdFillBuffer", "dstBuffer", dstBuffer);
     if (!skip) skip |= manual_PreCallValidateCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
@@ -4479,7 +4479,7 @@ bool StatelessValidation::PreCallValidateCmdClearColorImage(
     VkImageLayout                               imageLayout,
     const VkClearColorValue*                    pColor,
     uint32_t                                    rangeCount,
-    const VkImageSubresourceRange*              pRanges) {
+    const VkImageSubresourceRange*              pRanges) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdClearColorImage", "image", image);
     skip |= validate_ranged_enum("vkCmdClearColorImage", "imageLayout", "VkImageLayout", AllVkImageLayoutEnums, imageLayout, "VUID-vkCmdClearColorImage-imageLayout-parameter");
@@ -4505,7 +4505,7 @@ bool StatelessValidation::PreCallValidateCmdClearDepthStencilImage(
     VkImageLayout                               imageLayout,
     const VkClearDepthStencilValue*             pDepthStencil,
     uint32_t                                    rangeCount,
-    const VkImageSubresourceRange*              pRanges) {
+    const VkImageSubresourceRange*              pRanges) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdClearDepthStencilImage", "image", image);
     skip |= validate_ranged_enum("vkCmdClearDepthStencilImage", "imageLayout", "VkImageLayout", AllVkImageLayoutEnums, imageLayout, "VUID-vkCmdClearDepthStencilImage-imageLayout-parameter");
@@ -4530,7 +4530,7 @@ bool StatelessValidation::PreCallValidateCmdClearAttachments(
     uint32_t                                    attachmentCount,
     const VkClearAttachment*                    pAttachments,
     uint32_t                                    rectCount,
-    const VkClearRect*                          pRects) {
+    const VkClearRect*                          pRects) const {
     bool skip = false;
     skip |= validate_array("vkCmdClearAttachments", "attachmentCount", "pAttachments", attachmentCount, &pAttachments, true, true, "VUID-vkCmdClearAttachments-attachmentCount-arraylength", "VUID-vkCmdClearAttachments-pAttachments-parameter");
     if (pAttachments != NULL)
@@ -4565,7 +4565,7 @@ bool StatelessValidation::PreCallValidateCmdResolveImage(
     VkImage                                     dstImage,
     VkImageLayout                               dstImageLayout,
     uint32_t                                    regionCount,
-    const VkImageResolve*                       pRegions) {
+    const VkImageResolve*                       pRegions) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdResolveImage", "srcImage", srcImage);
     skip |= validate_ranged_enum("vkCmdResolveImage", "srcImageLayout", "VkImageLayout", AllVkImageLayoutEnums, srcImageLayout, "VUID-vkCmdResolveImage-srcImageLayout-parameter");
@@ -4593,7 +4593,7 @@ bool StatelessValidation::PreCallValidateCmdResolveImage(
 bool StatelessValidation::PreCallValidateCmdSetEvent(
     VkCommandBuffer                             commandBuffer,
     VkEvent                                     event,
-    VkPipelineStageFlags                        stageMask) {
+    VkPipelineStageFlags                        stageMask) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdSetEvent", "event", event);
     skip |= validate_flags("vkCmdSetEvent", "stageMask", "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, stageMask, kRequiredFlags, "VUID-vkCmdSetEvent-stageMask-parameter", "VUID-vkCmdSetEvent-stageMask-requiredbitmask");
@@ -4603,7 +4603,7 @@ bool StatelessValidation::PreCallValidateCmdSetEvent(
 bool StatelessValidation::PreCallValidateCmdResetEvent(
     VkCommandBuffer                             commandBuffer,
     VkEvent                                     event,
-    VkPipelineStageFlags                        stageMask) {
+    VkPipelineStageFlags                        stageMask) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdResetEvent", "event", event);
     skip |= validate_flags("vkCmdResetEvent", "stageMask", "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, stageMask, kRequiredFlags, "VUID-vkCmdResetEvent-stageMask-parameter", "VUID-vkCmdResetEvent-stageMask-requiredbitmask");
@@ -4621,7 +4621,7 @@ bool StatelessValidation::PreCallValidateCmdWaitEvents(
     uint32_t                                    bufferMemoryBarrierCount,
     const VkBufferMemoryBarrier*                pBufferMemoryBarriers,
     uint32_t                                    imageMemoryBarrierCount,
-    const VkImageMemoryBarrier*                 pImageMemoryBarriers) {
+    const VkImageMemoryBarrier*                 pImageMemoryBarriers) const {
     bool skip = false;
     skip |= validate_handle_array("vkCmdWaitEvents", "eventCount", "pEvents", eventCount, pEvents, true, true);
     skip |= validate_flags("vkCmdWaitEvents", "srcStageMask", "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, srcStageMask, kRequiredFlags, "VUID-vkCmdWaitEvents-srcStageMask-parameter", "VUID-vkCmdWaitEvents-srcStageMask-requiredbitmask");
@@ -4687,7 +4687,7 @@ bool StatelessValidation::PreCallValidateCmdPipelineBarrier(
     uint32_t                                    bufferMemoryBarrierCount,
     const VkBufferMemoryBarrier*                pBufferMemoryBarriers,
     uint32_t                                    imageMemoryBarrierCount,
-    const VkImageMemoryBarrier*                 pImageMemoryBarriers) {
+    const VkImageMemoryBarrier*                 pImageMemoryBarriers) const {
     bool skip = false;
     skip |= validate_flags("vkCmdPipelineBarrier", "srcStageMask", "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, srcStageMask, kRequiredFlags, "VUID-vkCmdPipelineBarrier-srcStageMask-parameter", "VUID-vkCmdPipelineBarrier-srcStageMask-requiredbitmask");
     skip |= validate_flags("vkCmdPipelineBarrier", "dstStageMask", "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, dstStageMask, kRequiredFlags, "VUID-vkCmdPipelineBarrier-dstStageMask-parameter", "VUID-vkCmdPipelineBarrier-dstStageMask-requiredbitmask");
@@ -4747,7 +4747,7 @@ bool StatelessValidation::PreCallValidateCmdBeginQuery(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
-    VkQueryControlFlags                         flags) {
+    VkQueryControlFlags                         flags) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdBeginQuery", "queryPool", queryPool);
     skip |= validate_flags("vkCmdBeginQuery", "flags", "VkQueryControlFlagBits", AllVkQueryControlFlagBits, flags, kOptionalFlags, "VUID-vkCmdBeginQuery-flags-parameter");
@@ -4757,7 +4757,7 @@ bool StatelessValidation::PreCallValidateCmdBeginQuery(
 bool StatelessValidation::PreCallValidateCmdEndQuery(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
-    uint32_t                                    query) {
+    uint32_t                                    query) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdEndQuery", "queryPool", queryPool);
     return skip;
@@ -4767,7 +4767,7 @@ bool StatelessValidation::PreCallValidateCmdResetQueryPool(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
-    uint32_t                                    queryCount) {
+    uint32_t                                    queryCount) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdResetQueryPool", "queryPool", queryPool);
     return skip;
@@ -4777,7 +4777,7 @@ bool StatelessValidation::PreCallValidateCmdWriteTimestamp(
     VkCommandBuffer                             commandBuffer,
     VkPipelineStageFlagBits                     pipelineStage,
     VkQueryPool                                 queryPool,
-    uint32_t                                    query) {
+    uint32_t                                    query) const {
     bool skip = false;
     skip |= validate_flags("vkCmdWriteTimestamp", "pipelineStage", "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pipelineStage, kRequiredSingleBit, "VUID-vkCmdWriteTimestamp-pipelineStage-parameter", "VUID-vkCmdWriteTimestamp-pipelineStage-parameter");
     skip |= validate_required_handle("vkCmdWriteTimestamp", "queryPool", queryPool);
@@ -4792,7 +4792,7 @@ bool StatelessValidation::PreCallValidateCmdCopyQueryPoolResults(
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
     VkDeviceSize                                stride,
-    VkQueryResultFlags                          flags) {
+    VkQueryResultFlags                          flags) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdCopyQueryPoolResults", "queryPool", queryPool);
     skip |= validate_required_handle("vkCmdCopyQueryPoolResults", "dstBuffer", dstBuffer);
@@ -4806,7 +4806,7 @@ bool StatelessValidation::PreCallValidateCmdPushConstants(
     VkShaderStageFlags                          stageFlags,
     uint32_t                                    offset,
     uint32_t                                    size,
-    const void*                                 pValues) {
+    const void*                                 pValues) const {
     bool skip = false;
     skip |= validate_required_handle("vkCmdPushConstants", "layout", layout);
     skip |= validate_flags("vkCmdPushConstants", "stageFlags", "VkShaderStageFlagBits", AllVkShaderStageFlagBits, stageFlags, kRequiredFlags, "VUID-vkCmdPushConstants-stageFlags-parameter", "VUID-vkCmdPushConstants-stageFlags-requiredbitmask");
@@ -4817,7 +4817,7 @@ bool StatelessValidation::PreCallValidateCmdPushConstants(
 bool StatelessValidation::PreCallValidateCmdBeginRenderPass(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    VkSubpassContents                           contents) {
+    VkSubpassContents                           contents) const {
     bool skip = false;
     skip |= validate_struct_type("vkCmdBeginRenderPass", "pRenderPassBegin", "VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO", pRenderPassBegin, VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, true, "VUID-vkCmdBeginRenderPass-pRenderPassBegin-parameter", "VUID-VkRenderPassBeginInfo-sType-sType");
     if (pRenderPassBegin != NULL)
@@ -4852,14 +4852,14 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass(
 
 bool StatelessValidation::PreCallValidateCmdNextSubpass(
     VkCommandBuffer                             commandBuffer,
-    VkSubpassContents                           contents) {
+    VkSubpassContents                           contents) const {
     bool skip = false;
     skip |= validate_ranged_enum("vkCmdNextSubpass", "contents", "VkSubpassContents", AllVkSubpassContentsEnums, contents, "VUID-vkCmdNextSubpass-contents-parameter");
     return skip;
 }
 
 bool StatelessValidation::PreCallValidateCmdEndRenderPass(
-    VkCommandBuffer                             commandBuffer) {
+    VkCommandBuffer                             commandBuffer) const {
     bool skip = false;
     // No xml-driven validation
     return skip;
@@ -4868,7 +4868,7 @@ bool StatelessValidation::PreCallValidateCmdEndRenderPass(
 bool StatelessValidation::PreCallValidateCmdExecuteCommands(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    commandBufferCount,
-    const VkCommandBuffer*                      pCommandBuffers) {
+    const VkCommandBuffer*                      pCommandBuffers) const {
     bool skip = false;
     skip |= validate_handle_array("vkCmdExecuteCommands", "commandBufferCount", "pCommandBuffers", commandBufferCount, pCommandBuffers, true, true);
     return skip;
@@ -4879,7 +4879,7 @@ bool StatelessValidation::PreCallValidateCmdExecuteCommands(
 bool StatelessValidation::PreCallValidateBindBufferMemory2(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindBufferMemoryInfo*               pBindInfos) {
+    const VkBindBufferMemoryInfo*               pBindInfos) const {
     bool skip = false;
     skip |= validate_struct_type_array("vkBindBufferMemory2", "bindInfoCount", "pBindInfos", "VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO", bindInfoCount, pBindInfos, VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO, true, true, "VUID-VkBindBufferMemoryInfo-sType-sType", "VUID-vkBindBufferMemory2-pBindInfos-parameter", "VUID-vkBindBufferMemory2-bindInfoCount-arraylength");
     if (pBindInfos != NULL)
@@ -4901,7 +4901,7 @@ bool StatelessValidation::PreCallValidateBindBufferMemory2(
 bool StatelessValidation::PreCallValidateBindImageMemory2(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindImageMemoryInfo*                pBindInfos) {
+    const VkBindImageMemoryInfo*                pBindInfos) const {
     bool skip = false;
     skip |= validate_struct_type_array("vkBindImageMemory2", "bindInfoCount", "pBindInfos", "VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO", bindInfoCount, pBindInfos, VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO, true, true, "VUID-VkBindImageMemoryInfo-sType-sType", "VUID-vkBindImageMemory2-pBindInfos-parameter", "VUID-vkBindImageMemory2-bindInfoCount-arraylength");
     if (pBindInfos != NULL)
@@ -4923,7 +4923,7 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupPeerMemoryFeatures(
     uint32_t                                    heapIndex,
     uint32_t                                    localDeviceIndex,
     uint32_t                                    remoteDeviceIndex,
-    VkPeerMemoryFeatureFlags*                   pPeerMemoryFeatures) {
+    VkPeerMemoryFeatureFlags*                   pPeerMemoryFeatures) const {
     bool skip = false;
     skip |= validate_required_pointer("vkGetDeviceGroupPeerMemoryFeatures", "pPeerMemoryFeatures", pPeerMemoryFeatures, "VUID-vkGetDeviceGroupPeerMemoryFeatures-pPeerMemoryFeatures-parameter");
     return skip;
@@ -4931,7 +4931,7 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupPeerMemoryFeatures(
 
 bool StatelessValidation::PreCallValidateCmdSetDeviceMask(
     VkCommandBuffer                             commandBuffer,
-    uint32_t                                    deviceMask) {
+    uint32_t                                    deviceMask) const {
     bool skip = false;
     // No xml-driven validation
     return skip;
@@ -4944,7 +4944,7 @@ bool StatelessValidation::PreCallValidateCmdDispatchBase(
     uint32_t                                    baseGroupZ,
     uint32_t                                    groupCountX,
     uint32_t                                    groupCountY,
-    uint32_t                                    groupCountZ) {
+    uint32_t                                    groupCountZ) const {
     bool skip = false;
     // No xml-driven validation
     return skip;
@@ -4953,7 +4953,7 @@ bool StatelessValidation::PreCallValidateCmdDispatchBase(
 bool StatelessValidation::PreCallValidateEnumeratePhysicalDeviceGroups(
     VkInstance                                  instance,
     uint32_t*                                   pPhysicalDeviceGroupCount,
-    VkPhysicalDeviceGroupProperties*            pPhysicalDeviceGroupProperties) {
+    VkPhysicalDeviceGroupProperties*            pPhysicalDeviceGroupProperties) const {
     bool skip = false;
     skip |= validate_struct_type_array("vkEnumeratePhysicalDeviceGroups", "pPhysicalDeviceGroupCount", "pPhysicalDeviceGroupProperties", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES", pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES, true, false, false, "VUID-VkPhysicalDeviceGroupProperties-sType-sType", "VUID-vkEnumeratePhysicalDeviceGroups-pPhysicalDeviceGroupProperties-parameter", kVUIDUndefined);
     if (pPhysicalDeviceGroupProperties != NULL)
@@ -4969,7 +4969,7 @@ bool StatelessValidation::PreCallValidateEnumeratePhysicalDeviceGroups(
 bool StatelessValidation::PreCallValidateGetImageMemoryRequirements2(
     VkDevice                                    device,
     const VkImageMemoryRequirementsInfo2*       pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements) {
+    VkMemoryRequirements2*                      pMemoryRequirements) const {
     bool skip = false;
     skip |= validate_struct_type("vkGetImageMemoryRequirements2", "pInfo", "VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2", pInfo, VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2, true, "VUID-vkGetImageMemoryRequirements2-pInfo-parameter", "VUID-VkImageMemoryRequirementsInfo2-sType-sType");
     if (pInfo != NULL)
@@ -4991,7 +4991,7 @@ bool StatelessValidation::PreCallValidateGetImageMemoryRequirements2(
 bool StatelessValidation::PreCallValidateGetBufferMemoryRequirements2(
     VkDevice                                    device,
     const VkBufferMemoryRequirementsInfo2*      pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements) {
+    VkMemoryRequirements2*                      pMemoryRequirements) const {
     bool skip = false;
     skip |= validate_struct_type("vkGetBufferMemoryRequirements2", "pInfo", "VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2", pInfo, VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2, true, "VUID-vkGetBufferMemoryRequirements2-pInfo-parameter", "VUID-VkBufferMemoryRequirementsInfo2-sType-sType");
     if (pInfo != NULL)
@@ -5012,7 +5012,7 @@ bool StatelessValidation::PreCallValidateGetImageSparseMemoryRequirements2(
     VkDevice                                    device,
     const VkImageSparseMemoryRequirementsInfo2* pInfo,
     uint32_t*                                   pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) {
+    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) const {
     bool skip = false;
     skip |= validate_struct_type("vkGetImageSparseMemoryRequirements2", "pInfo", "VK_STRUCTURE_TYPE_IMAGE_SPARSE_MEMORY_REQUIREMENTS_INFO_2", pInfo, VK_STRUCTURE_TYPE_IMAGE_SPARSE_MEMORY_REQUIREMENTS_INFO_2, true, "VUID-vkGetImageSparseMemoryRequirements2-pInfo-parameter", "VUID-VkImageSparseMemoryRequirementsInfo2-sType-sType");
     if (pInfo != NULL)
@@ -5034,7 +5034,7 @@ bool StatelessValidation::PreCallValidateGetImageSparseMemoryRequirements2(
 
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceFeatures2(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceFeatures2*                  pFeatures) {
+    VkPhysicalDeviceFeatures2*                  pFeatures) const {
     bool skip = false;
     skip |= validate_struct_type("vkGetPhysicalDeviceFeatures2", "pFeatures", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2", pFeatures, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, true, "VUID-vkGetPhysicalDeviceFeatures2-pFeatures-parameter", "VUID-VkPhysicalDeviceFeatures2-sType-sType");
     return skip;
@@ -5042,7 +5042,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceFeatures2(
 
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceProperties2*                pProperties) {
+    VkPhysicalDeviceProperties2*                pProperties) const {
     bool skip = false;
     skip |= validate_struct_type("vkGetPhysicalDeviceProperties2", "pProperties", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2", pProperties, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, true, "VUID-vkGetPhysicalDeviceProperties2-pProperties-parameter", "VUID-VkPhysicalDeviceProperties2-sType-sType");
     if (pProperties != NULL)
@@ -5055,7 +5055,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceFormatProperties2(
     VkPhysicalDevice                            physicalDevice,
     VkFormat                                    format,
-    VkFormatProperties2*                        pFormatProperties) {
+    VkFormatProperties2*                        pFormatProperties) const {
     bool skip = false;
     skip |= validate_ranged_enum("vkGetPhysicalDeviceFormatProperties2", "format", "VkFormat", AllVkFormatEnums, format, "VUID-vkGetPhysicalDeviceFormatProperties2-format-parameter");
     skip |= validate_struct_type("vkGetPhysicalDeviceFormatProperties2", "pFormatProperties", "VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2", pFormatProperties, VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2, true, "VUID-vkGetPhysicalDeviceFormatProperties2-pFormatProperties-parameter", "VUID-VkFormatProperties2-sType-sType");
@@ -5069,7 +5069,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceFormatProperties2(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceImageFormatProperties2(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceImageFormatInfo2*     pImageFormatInfo,
-    VkImageFormatProperties2*                   pImageFormatProperties) {
+    VkImageFormatProperties2*                   pImageFormatProperties) const {
     bool skip = false;
     skip |= validate_struct_type("vkGetPhysicalDeviceImageFormatProperties2", "pImageFormatInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2", pImageFormatInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2, true, "VUID-vkGetPhysicalDeviceImageFormatProperties2-pImageFormatInfo-parameter", "VUID-VkPhysicalDeviceImageFormatInfo2-sType-sType");
     if (pImageFormatInfo != NULL)
@@ -5099,7 +5099,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceImageFormatProperties2
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pQueueFamilyPropertyCount,
-    VkQueueFamilyProperties2*                   pQueueFamilyProperties) {
+    VkQueueFamilyProperties2*                   pQueueFamilyProperties) const {
     bool skip = false;
     skip |= validate_struct_type_array("vkGetPhysicalDeviceQueueFamilyProperties2", "pQueueFamilyPropertyCount", "pQueueFamilyProperties", "VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2", pQueueFamilyPropertyCount, pQueueFamilyProperties, VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2, true, false, false, "VUID-VkQueueFamilyProperties2-sType-sType", "VUID-vkGetPhysicalDeviceQueueFamilyProperties2-pQueueFamilyProperties-parameter", kVUIDUndefined);
     if (pQueueFamilyProperties != NULL)
@@ -5114,7 +5114,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2
 
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceMemoryProperties2(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceMemoryProperties2*          pMemoryProperties) {
+    VkPhysicalDeviceMemoryProperties2*          pMemoryProperties) const {
     bool skip = false;
     skip |= validate_struct_type("vkGetPhysicalDeviceMemoryProperties2", "pMemoryProperties", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2", pMemoryProperties, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2, true, "VUID-vkGetPhysicalDeviceMemoryProperties2-pMemoryProperties-parameter", "VUID-VkPhysicalDeviceMemoryProperties2-sType-sType");
     if (pMemoryProperties != NULL)
@@ -5128,7 +5128,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSparseImageFormatPrope
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo,
     uint32_t*                                   pPropertyCount,
-    VkSparseImageFormatProperties2*             pProperties) {
+    VkSparseImageFormatProperties2*             pProperties) const {
     bool skip = false;
     skip |= validate_struct_type("vkGetPhysicalDeviceSparseImageFormatProperties2", "pFormatInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2", pFormatInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2, true, "VUID-vkGetPhysicalDeviceSparseImageFormatProperties2-pFormatInfo-parameter", "VUID-VkPhysicalDeviceSparseImageFormatInfo2-sType-sType");
     if (pFormatInfo != NULL)
@@ -5159,7 +5159,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSparseImageFormatPrope
 bool StatelessValidation::PreCallValidateTrimCommandPool(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
-    VkCommandPoolTrimFlags                      flags) {
+    VkCommandPoolTrimFlags                      flags) const {
     bool skip = false;
     skip |= validate_required_handle("vkTrimCommandPool", "commandPool", commandPool);
     skip |= validate_reserved_flags("vkTrimCommandPool", "flags", flags, "VUID-vkTrimCommandPool-flags-zerobitmask");
@@ -5169,7 +5169,7 @@ bool StatelessValidation::PreCallValidateTrimCommandPool(
 bool StatelessValidation::PreCallValidateGetDeviceQueue2(
     VkDevice                                    device,
     const VkDeviceQueueInfo2*                   pQueueInfo,
-    VkQueue*                                    pQueue) {
+    VkQueue*                                    pQueue) const {
     bool skip = false;
     skip |= validate_struct_type("vkGetDeviceQueue2", "pQueueInfo", "VK_STRUCTURE_TYPE_DEVICE_QUEUE_INFO_2", pQueueInfo, VK_STRUCTURE_TYPE_DEVICE_QUEUE_INFO_2, true, "VUID-vkGetDeviceQueue2-pQueueInfo-parameter", "VUID-VkDeviceQueueInfo2-sType-sType");
     if (pQueueInfo != NULL)
@@ -5186,7 +5186,7 @@ bool StatelessValidation::PreCallValidateCreateSamplerYcbcrConversion(
     VkDevice                                    device,
     const VkSamplerYcbcrConversionCreateInfo*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSamplerYcbcrConversion*                   pYcbcrConversion) {
+    VkSamplerYcbcrConversion*                   pYcbcrConversion) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreateSamplerYcbcrConversion", "pCreateInfo", "VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO, true, "VUID-vkCreateSamplerYcbcrConversion-pCreateInfo-parameter", "VUID-VkSamplerYcbcrConversionCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -5244,7 +5244,7 @@ bool StatelessValidation::PreCallValidateCreateSamplerYcbcrConversion(
 bool StatelessValidation::PreCallValidateDestroySamplerYcbcrConversion(
     VkDevice                                    device,
     VkSamplerYcbcrConversion                    ycbcrConversion,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -5273,7 +5273,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorUpdateTemplate(
     VkDevice                                    device,
     const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate) {
+    VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate) const {
     bool skip = false;
     skip |= validate_struct_type("vkCreateDescriptorUpdateTemplate", "pCreateInfo", "VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO, true, "VUID-vkCreateDescriptorUpdateTemplate-pCreateInfo-parameter", "VUID-VkDescriptorUpdateTemplateCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -5321,7 +5321,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorUpdateTemplate(
 bool StatelessValidation::PreCallValidateDestroyDescriptorUpdateTemplate(
     VkDevice                                    device,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (pAllocator != NULL)
     {
@@ -5350,7 +5350,7 @@ bool StatelessValidation::PreCallValidateUpdateDescriptorSetWithTemplate(
     VkDevice                                    device,
     VkDescriptorSet                             descriptorSet,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
-    const void*                                 pData) {
+    const void*                                 pData) const {
     bool skip = false;
     skip |= validate_required_handle("vkUpdateDescriptorSetWithTemplate", "descriptorSet", descriptorSet);
     skip |= validate_required_handle("vkUpdateDescriptorSetWithTemplate", "descriptorUpdateTemplate", descriptorUpdateTemplate);
@@ -5360,7 +5360,7 @@ bool StatelessValidation::PreCallValidateUpdateDescriptorSetWithTemplate(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalBufferProperties(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalBufferInfo*   pExternalBufferInfo,
-    VkExternalBufferProperties*                 pExternalBufferProperties) {
+    VkExternalBufferProperties*                 pExternalBufferProperties) const {
     bool skip = false;
     skip |= validate_struct_type("vkGetPhysicalDeviceExternalBufferProperties", "pExternalBufferInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO", pExternalBufferInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO, true, "VUID-vkGetPhysicalDeviceExternalBufferProperties-pExternalBufferInfo-parameter", "VUID-VkPhysicalDeviceExternalBufferInfo-sType-sType");
     if (pExternalBufferInfo != NULL)
@@ -5384,7 +5384,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalBufferProperti
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalFenceProperties(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalFenceInfo*    pExternalFenceInfo,
-    VkExternalFenceProperties*                  pExternalFenceProperties) {
+    VkExternalFenceProperties*                  pExternalFenceProperties) const {
     bool skip = false;
     skip |= validate_struct_type("vkGetPhysicalDeviceExternalFenceProperties", "pExternalFenceInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO", pExternalFenceInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO, true, "VUID-vkGetPhysicalDeviceExternalFenceProperties-pExternalFenceInfo-parameter", "VUID-VkPhysicalDeviceExternalFenceInfo-sType-sType");
     if (pExternalFenceInfo != NULL)
@@ -5404,7 +5404,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalFencePropertie
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalSemaphoreProperties(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
-    VkExternalSemaphoreProperties*              pExternalSemaphoreProperties) {
+    VkExternalSemaphoreProperties*              pExternalSemaphoreProperties) const {
     bool skip = false;
     skip |= validate_struct_type("vkGetPhysicalDeviceExternalSemaphoreProperties", "pExternalSemaphoreInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO", pExternalSemaphoreInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO, true, "VUID-vkGetPhysicalDeviceExternalSemaphoreProperties-pExternalSemaphoreInfo-parameter", "VUID-VkPhysicalDeviceExternalSemaphoreInfo-sType-sType");
     if (pExternalSemaphoreInfo != NULL)
@@ -5426,7 +5426,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalSemaphorePrope
 bool StatelessValidation::PreCallValidateGetDescriptorSetLayoutSupport(
     VkDevice                                    device,
     const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
-    VkDescriptorSetLayoutSupport*               pSupport) {
+    VkDescriptorSetLayoutSupport*               pSupport) const {
     bool skip = false;
     skip |= validate_struct_type("vkGetDescriptorSetLayoutSupport", "pCreateInfo", "VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, true, "VUID-vkGetDescriptorSetLayoutSupport-pCreateInfo-parameter", "VUID-VkDescriptorSetLayoutCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
@@ -5460,7 +5460,7 @@ bool StatelessValidation::PreCallValidateGetDescriptorSetLayoutSupport(
 bool StatelessValidation::PreCallValidateDestroySurfaceKHR(
     VkInstance                                  instance,
     VkSurfaceKHR                                surface,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkDestroySurfaceKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (pAllocator != NULL)
@@ -5490,7 +5490,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     VkSurfaceKHR                                surface,
-    VkBool32*                                   pSupported) {
+    VkBool32*                                   pSupported) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkGetPhysicalDeviceSurfaceSupportKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     skip |= validate_required_handle("vkGetPhysicalDeviceSurfaceSupportKHR", "surface", surface);
@@ -5501,7 +5501,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
-    VkSurfaceCapabilitiesKHR*                   pSurfaceCapabilities) {
+    VkSurfaceCapabilitiesKHR*                   pSurfaceCapabilities) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkGetPhysicalDeviceSurfaceCapabilitiesKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     skip |= validate_required_handle("vkGetPhysicalDeviceSurfaceCapabilitiesKHR", "surface", surface);
@@ -5517,7 +5517,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pSurfaceFormatCount,
-    VkSurfaceFormatKHR*                         pSurfaceFormats) {
+    VkSurfaceFormatKHR*                         pSurfaceFormats) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkGetPhysicalDeviceSurfaceFormatsKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     skip |= validate_required_handle("vkGetPhysicalDeviceSurfaceFormatsKHR", "surface", surface);
@@ -5536,7 +5536,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pPresentModeCount,
-    VkPresentModeKHR*                           pPresentModes) {
+    VkPresentModeKHR*                           pPresentModes) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkGetPhysicalDeviceSurfacePresentModesKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     skip |= validate_required_handle("vkGetPhysicalDeviceSurfacePresentModesKHR", "surface", surface);
@@ -5550,7 +5550,7 @@ bool StatelessValidation::PreCallValidateCreateSwapchainKHR(
     VkDevice                                    device,
     const VkSwapchainCreateInfoKHR*             pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSwapchainKHR*                             pSwapchain) {
+    VkSwapchainKHR*                             pSwapchain) const {
     bool skip = false;
     if (!device_extensions.vk_khr_surface) skip |= OutputExtensionError("vkCreateSwapchainKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkCreateSwapchainKHR", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -5611,7 +5611,7 @@ bool StatelessValidation::PreCallValidateCreateSwapchainKHR(
 bool StatelessValidation::PreCallValidateDestroySwapchainKHR(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (!device_extensions.vk_khr_surface) skip |= OutputExtensionError("vkDestroySwapchainKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkDestroySwapchainKHR", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -5642,7 +5642,7 @@ bool StatelessValidation::PreCallValidateGetSwapchainImagesKHR(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     uint32_t*                                   pSwapchainImageCount,
-    VkImage*                                    pSwapchainImages) {
+    VkImage*                                    pSwapchainImages) const {
     bool skip = false;
     if (!device_extensions.vk_khr_surface) skip |= OutputExtensionError("vkGetSwapchainImagesKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkGetSwapchainImagesKHR", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -5657,7 +5657,7 @@ bool StatelessValidation::PreCallValidateAcquireNextImageKHR(
     uint64_t                                    timeout,
     VkSemaphore                                 semaphore,
     VkFence                                     fence,
-    uint32_t*                                   pImageIndex) {
+    uint32_t*                                   pImageIndex) const {
     bool skip = false;
     if (!device_extensions.vk_khr_surface) skip |= OutputExtensionError("vkAcquireNextImageKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkAcquireNextImageKHR", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -5668,7 +5668,7 @@ bool StatelessValidation::PreCallValidateAcquireNextImageKHR(
 
 bool StatelessValidation::PreCallValidateQueuePresentKHR(
     VkQueue                                     queue,
-    const VkPresentInfoKHR*                     pPresentInfo) {
+    const VkPresentInfoKHR*                     pPresentInfo) const {
     bool skip = false;
     if (!device_extensions.vk_khr_surface) skip |= OutputExtensionError("vkQueuePresentKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkQueuePresentKHR", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -5693,7 +5693,7 @@ bool StatelessValidation::PreCallValidateQueuePresentKHR(
 
 bool StatelessValidation::PreCallValidateGetDeviceGroupPresentCapabilitiesKHR(
     VkDevice                                    device,
-    VkDeviceGroupPresentCapabilitiesKHR*        pDeviceGroupPresentCapabilities) {
+    VkDeviceGroupPresentCapabilitiesKHR*        pDeviceGroupPresentCapabilities) const {
     bool skip = false;
     if (!device_extensions.vk_khr_surface) skip |= OutputExtensionError("vkGetDeviceGroupPresentCapabilitiesKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkGetDeviceGroupPresentCapabilitiesKHR", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -5708,7 +5708,7 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupPresentCapabilitiesKHR(
 bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModesKHR(
     VkDevice                                    device,
     VkSurfaceKHR                                surface,
-    VkDeviceGroupPresentModeFlagsKHR*           pModes) {
+    VkDeviceGroupPresentModeFlagsKHR*           pModes) const {
     bool skip = false;
     if (!device_extensions.vk_khr_surface) skip |= OutputExtensionError("vkGetDeviceGroupSurfacePresentModesKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkGetDeviceGroupSurfacePresentModesKHR", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -5720,7 +5720,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDevicePresentRectanglesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pRectCount,
-    VkRect2D*                                   pRects) {
+    VkRect2D*                                   pRects) const {
     bool skip = false;
     skip |= validate_required_handle("vkGetPhysicalDevicePresentRectanglesKHR", "surface", surface);
     skip |= validate_array("vkGetPhysicalDevicePresentRectanglesKHR", "pRectCount", "pRects", pRectCount, &pRects, true, false, false, kVUIDUndefined, "VUID-vkGetPhysicalDevicePresentRectanglesKHR-pRects-parameter");
@@ -5730,7 +5730,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDevicePresentRectanglesKHR(
 bool StatelessValidation::PreCallValidateAcquireNextImage2KHR(
     VkDevice                                    device,
     const VkAcquireNextImageInfoKHR*            pAcquireInfo,
-    uint32_t*                                   pImageIndex) {
+    uint32_t*                                   pImageIndex) const {
     bool skip = false;
     if (!device_extensions.vk_khr_surface) skip |= OutputExtensionError("vkAcquireNextImage2KHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkAcquireNextImage2KHR", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -5750,7 +5750,7 @@ bool StatelessValidation::PreCallValidateAcquireNextImage2KHR(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayPropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
-    VkDisplayPropertiesKHR*                     pProperties) {
+    VkDisplayPropertiesKHR*                     pProperties) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkGetPhysicalDeviceDisplayPropertiesKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError("vkGetPhysicalDeviceDisplayPropertiesKHR", VK_KHR_DISPLAY_EXTENSION_NAME);
@@ -5768,7 +5768,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayPropertiesKHR(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayPlanePropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
-    VkDisplayPlanePropertiesKHR*                pProperties) {
+    VkDisplayPlanePropertiesKHR*                pProperties) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkGetPhysicalDeviceDisplayPlanePropertiesKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError("vkGetPhysicalDeviceDisplayPlanePropertiesKHR", VK_KHR_DISPLAY_EXTENSION_NAME);
@@ -5787,7 +5787,7 @@ bool StatelessValidation::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    planeIndex,
     uint32_t*                                   pDisplayCount,
-    VkDisplayKHR*                               pDisplays) {
+    VkDisplayKHR*                               pDisplays) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkGetDisplayPlaneSupportedDisplaysKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError("vkGetDisplayPlaneSupportedDisplaysKHR", VK_KHR_DISPLAY_EXTENSION_NAME);
@@ -5799,7 +5799,7 @@ bool StatelessValidation::PreCallValidateGetDisplayModePropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,
     uint32_t*                                   pPropertyCount,
-    VkDisplayModePropertiesKHR*                 pProperties) {
+    VkDisplayModePropertiesKHR*                 pProperties) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkGetDisplayModePropertiesKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError("vkGetDisplayModePropertiesKHR", VK_KHR_DISPLAY_EXTENSION_NAME);
@@ -5820,7 +5820,7 @@ bool StatelessValidation::PreCallValidateCreateDisplayModeKHR(
     VkDisplayKHR                                display,
     const VkDisplayModeCreateInfoKHR*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDisplayModeKHR*                           pMode) {
+    VkDisplayModeKHR*                           pMode) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkCreateDisplayModeKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError("vkCreateDisplayModeKHR", VK_KHR_DISPLAY_EXTENSION_NAME);
@@ -5862,7 +5862,7 @@ bool StatelessValidation::PreCallValidateGetDisplayPlaneCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayModeKHR                            mode,
     uint32_t                                    planeIndex,
-    VkDisplayPlaneCapabilitiesKHR*              pCapabilities) {
+    VkDisplayPlaneCapabilitiesKHR*              pCapabilities) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkGetDisplayPlaneCapabilitiesKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError("vkGetDisplayPlaneCapabilitiesKHR", VK_KHR_DISPLAY_EXTENSION_NAME);
@@ -5879,7 +5879,7 @@ bool StatelessValidation::PreCallValidateCreateDisplayPlaneSurfaceKHR(
     VkInstance                                  instance,
     const VkDisplaySurfaceCreateInfoKHR*        pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) {
+    VkSurfaceKHR*                               pSurface) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkCreateDisplayPlaneSurfaceKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError("vkCreateDisplayPlaneSurfaceKHR", VK_KHR_DISPLAY_EXTENSION_NAME);
@@ -5929,7 +5929,7 @@ bool StatelessValidation::PreCallValidateCreateSharedSwapchainsKHR(
     uint32_t                                    swapchainCount,
     const VkSwapchainCreateInfoKHR*             pCreateInfos,
     const VkAllocationCallbacks*                pAllocator,
-    VkSwapchainKHR*                             pSwapchains) {
+    VkSwapchainKHR*                             pSwapchains) const {
     bool skip = false;
     if (!device_extensions.vk_khr_display) skip |= OutputExtensionError("vkCreateSharedSwapchainsKHR", VK_KHR_DISPLAY_EXTENSION_NAME);
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkCreateSharedSwapchainsKHR", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -5998,7 +5998,7 @@ bool StatelessValidation::PreCallValidateCreateXlibSurfaceKHR(
     VkInstance                                  instance,
     const VkXlibSurfaceCreateInfoKHR*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) {
+    VkSurfaceKHR*                               pSurface) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkCreateXlibSurfaceKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_xlib_surface) skip |= OutputExtensionError("vkCreateXlibSurfaceKHR", VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
@@ -6037,7 +6037,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceXlibPresentationSuppor
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     Display*                                    dpy,
-    VisualID                                    visualID) {
+    VisualID                                    visualID) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkGetPhysicalDeviceXlibPresentationSupportKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_xlib_surface) skip |= OutputExtensionError("vkGetPhysicalDeviceXlibPresentationSupportKHR", VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
@@ -6053,7 +6053,7 @@ bool StatelessValidation::PreCallValidateCreateXcbSurfaceKHR(
     VkInstance                                  instance,
     const VkXcbSurfaceCreateInfoKHR*            pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) {
+    VkSurfaceKHR*                               pSurface) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkCreateXcbSurfaceKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_xcb_surface) skip |= OutputExtensionError("vkCreateXcbSurfaceKHR", VK_KHR_XCB_SURFACE_EXTENSION_NAME);
@@ -6092,7 +6092,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceXcbPresentationSupport
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     xcb_connection_t*                           connection,
-    xcb_visualid_t                              visual_id) {
+    xcb_visualid_t                              visual_id) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkGetPhysicalDeviceXcbPresentationSupportKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_xcb_surface) skip |= OutputExtensionError("vkGetPhysicalDeviceXcbPresentationSupportKHR", VK_KHR_XCB_SURFACE_EXTENSION_NAME);
@@ -6108,7 +6108,7 @@ bool StatelessValidation::PreCallValidateCreateWaylandSurfaceKHR(
     VkInstance                                  instance,
     const VkWaylandSurfaceCreateInfoKHR*        pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) {
+    VkSurfaceKHR*                               pSurface) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkCreateWaylandSurfaceKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_wayland_surface) skip |= OutputExtensionError("vkCreateWaylandSurfaceKHR", VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME);
@@ -6146,7 +6146,7 @@ bool StatelessValidation::PreCallValidateCreateWaylandSurfaceKHR(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
-    struct wl_display*                          display) {
+    struct wl_display*                          display) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkGetPhysicalDeviceWaylandPresentationSupportKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_wayland_surface) skip |= OutputExtensionError("vkGetPhysicalDeviceWaylandPresentationSupportKHR", VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME);
@@ -6162,7 +6162,7 @@ bool StatelessValidation::PreCallValidateCreateAndroidSurfaceKHR(
     VkInstance                                  instance,
     const VkAndroidSurfaceCreateInfoKHR*        pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) {
+    VkSurfaceKHR*                               pSurface) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkCreateAndroidSurfaceKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_android_surface) skip |= OutputExtensionError("vkCreateAndroidSurfaceKHR", VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
@@ -6205,7 +6205,7 @@ bool StatelessValidation::PreCallValidateCreateWin32SurfaceKHR(
     VkInstance                                  instance,
     const VkWin32SurfaceCreateInfoKHR*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) {
+    VkSurfaceKHR*                               pSurface) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkCreateWin32SurfaceKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_win32_surface) skip |= OutputExtensionError("vkCreateWin32SurfaceKHR", VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
@@ -6242,7 +6242,7 @@ bool StatelessValidation::PreCallValidateCreateWin32SurfaceKHR(
 
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
-    uint32_t                                    queueFamilyIndex) {
+    uint32_t                                    queueFamilyIndex) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkGetPhysicalDeviceWin32PresentationSupportKHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_win32_surface) skip |= OutputExtensionError("vkGetPhysicalDeviceWin32PresentationSupportKHR", VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
@@ -6258,7 +6258,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceWin32PresentationSuppo
 
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceFeatures2KHR(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceFeatures2*                  pFeatures) {
+    VkPhysicalDeviceFeatures2*                  pFeatures) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkGetPhysicalDeviceFeatures2KHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     skip |= validate_struct_type("vkGetPhysicalDeviceFeatures2KHR", "pFeatures", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2", pFeatures, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, true, "VUID-vkGetPhysicalDeviceFeatures2-pFeatures-parameter", "VUID-VkPhysicalDeviceFeatures2-sType-sType");
@@ -6267,7 +6267,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceFeatures2KHR(
 
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceProperties2*                pProperties) {
+    VkPhysicalDeviceProperties2*                pProperties) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkGetPhysicalDeviceProperties2KHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     skip |= validate_struct_type("vkGetPhysicalDeviceProperties2KHR", "pProperties", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2", pProperties, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, true, "VUID-vkGetPhysicalDeviceProperties2-pProperties-parameter", "VUID-VkPhysicalDeviceProperties2-sType-sType");
@@ -6281,7 +6281,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceProperties2KHR(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceFormatProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     VkFormat                                    format,
-    VkFormatProperties2*                        pFormatProperties) {
+    VkFormatProperties2*                        pFormatProperties) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkGetPhysicalDeviceFormatProperties2KHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     skip |= validate_ranged_enum("vkGetPhysicalDeviceFormatProperties2KHR", "format", "VkFormat", AllVkFormatEnums, format, "VUID-vkGetPhysicalDeviceFormatProperties2-format-parameter");
@@ -6296,7 +6296,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceFormatProperties2KHR(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceImageFormatInfo2*     pImageFormatInfo,
-    VkImageFormatProperties2*                   pImageFormatProperties) {
+    VkImageFormatProperties2*                   pImageFormatProperties) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkGetPhysicalDeviceImageFormatProperties2KHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     skip |= validate_struct_type("vkGetPhysicalDeviceImageFormatProperties2KHR", "pImageFormatInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2", pImageFormatInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2, true, "VUID-vkGetPhysicalDeviceImageFormatProperties2-pImageFormatInfo-parameter", "VUID-VkPhysicalDeviceImageFormatInfo2-sType-sType");
@@ -6327,7 +6327,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceImageFormatProperties2
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pQueueFamilyPropertyCount,
-    VkQueueFamilyProperties2*                   pQueueFamilyProperties) {
+    VkQueueFamilyProperties2*                   pQueueFamilyProperties) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkGetPhysicalDeviceQueueFamilyProperties2KHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     skip |= validate_struct_type_array("vkGetPhysicalDeviceQueueFamilyProperties2KHR", "pQueueFamilyPropertyCount", "pQueueFamilyProperties", "VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2", pQueueFamilyPropertyCount, pQueueFamilyProperties, VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2, true, false, false, "VUID-VkQueueFamilyProperties2-sType-sType", "VUID-vkGetPhysicalDeviceQueueFamilyProperties2-pQueueFamilyProperties-parameter", kVUIDUndefined);
@@ -6343,7 +6343,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2
 
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceMemoryProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceMemoryProperties2*          pMemoryProperties) {
+    VkPhysicalDeviceMemoryProperties2*          pMemoryProperties) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkGetPhysicalDeviceMemoryProperties2KHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     skip |= validate_struct_type("vkGetPhysicalDeviceMemoryProperties2KHR", "pMemoryProperties", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2", pMemoryProperties, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2, true, "VUID-vkGetPhysicalDeviceMemoryProperties2-pMemoryProperties-parameter", "VUID-VkPhysicalDeviceMemoryProperties2-sType-sType");
@@ -6358,7 +6358,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSparseImageFormatPrope
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo,
     uint32_t*                                   pPropertyCount,
-    VkSparseImageFormatProperties2*             pProperties) {
+    VkSparseImageFormatProperties2*             pProperties) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkGetPhysicalDeviceSparseImageFormatProperties2KHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     skip |= validate_struct_type("vkGetPhysicalDeviceSparseImageFormatProperties2KHR", "pFormatInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2", pFormatInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2, true, "VUID-vkGetPhysicalDeviceSparseImageFormatProperties2-pFormatInfo-parameter", "VUID-VkPhysicalDeviceSparseImageFormatInfo2-sType-sType");
@@ -6394,7 +6394,7 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupPeerMemoryFeaturesKHR(
     uint32_t                                    heapIndex,
     uint32_t                                    localDeviceIndex,
     uint32_t                                    remoteDeviceIndex,
-    VkPeerMemoryFeatureFlags*                   pPeerMemoryFeatures) {
+    VkPeerMemoryFeatureFlags*                   pPeerMemoryFeatures) const {
     bool skip = false;
     if (!device_extensions.vk_khr_device_group_creation) skip |= OutputExtensionError("vkGetDeviceGroupPeerMemoryFeaturesKHR", VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
     if (!device_extensions.vk_khr_device_group) skip |= OutputExtensionError("vkGetDeviceGroupPeerMemoryFeaturesKHR", VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
@@ -6404,7 +6404,7 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupPeerMemoryFeaturesKHR(
 
 bool StatelessValidation::PreCallValidateCmdSetDeviceMaskKHR(
     VkCommandBuffer                             commandBuffer,
-    uint32_t                                    deviceMask) {
+    uint32_t                                    deviceMask) const {
     bool skip = false;
     if (!device_extensions.vk_khr_device_group_creation) skip |= OutputExtensionError("vkCmdSetDeviceMaskKHR", VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
     if (!device_extensions.vk_khr_device_group) skip |= OutputExtensionError("vkCmdSetDeviceMaskKHR", VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
@@ -6419,7 +6419,7 @@ bool StatelessValidation::PreCallValidateCmdDispatchBaseKHR(
     uint32_t                                    baseGroupZ,
     uint32_t                                    groupCountX,
     uint32_t                                    groupCountY,
-    uint32_t                                    groupCountZ) {
+    uint32_t                                    groupCountZ) const {
     bool skip = false;
     if (!device_extensions.vk_khr_device_group_creation) skip |= OutputExtensionError("vkCmdDispatchBaseKHR", VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
     if (!device_extensions.vk_khr_device_group) skip |= OutputExtensionError("vkCmdDispatchBaseKHR", VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
@@ -6435,7 +6435,7 @@ bool StatelessValidation::PreCallValidateCmdDispatchBaseKHR(
 bool StatelessValidation::PreCallValidateTrimCommandPoolKHR(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
-    VkCommandPoolTrimFlags                      flags) {
+    VkCommandPoolTrimFlags                      flags) const {
     bool skip = false;
     if (!device_extensions.vk_khr_maintenance1) skip |= OutputExtensionError("vkTrimCommandPoolKHR", VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     skip |= validate_required_handle("vkTrimCommandPoolKHR", "commandPool", commandPool);
@@ -6448,7 +6448,7 @@ bool StatelessValidation::PreCallValidateTrimCommandPoolKHR(
 bool StatelessValidation::PreCallValidateEnumeratePhysicalDeviceGroupsKHR(
     VkInstance                                  instance,
     uint32_t*                                   pPhysicalDeviceGroupCount,
-    VkPhysicalDeviceGroupProperties*            pPhysicalDeviceGroupProperties) {
+    VkPhysicalDeviceGroupProperties*            pPhysicalDeviceGroupProperties) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_device_group_creation) skip |= OutputExtensionError("vkEnumeratePhysicalDeviceGroupsKHR", VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
     skip |= validate_struct_type_array("vkEnumeratePhysicalDeviceGroupsKHR", "pPhysicalDeviceGroupCount", "pPhysicalDeviceGroupProperties", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES", pPhysicalDeviceGroupCount, pPhysicalDeviceGroupProperties, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES, true, false, false, "VUID-VkPhysicalDeviceGroupProperties-sType-sType", "VUID-vkEnumeratePhysicalDeviceGroups-pPhysicalDeviceGroupProperties-parameter", kVUIDUndefined);
@@ -6467,7 +6467,7 @@ bool StatelessValidation::PreCallValidateEnumeratePhysicalDeviceGroupsKHR(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalBufferPropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalBufferInfo*   pExternalBufferInfo,
-    VkExternalBufferProperties*                 pExternalBufferProperties) {
+    VkExternalBufferProperties*                 pExternalBufferProperties) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkGetPhysicalDeviceExternalBufferPropertiesKHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_external_memory_capabilities) skip |= OutputExtensionError("vkGetPhysicalDeviceExternalBufferPropertiesKHR", VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
@@ -6499,7 +6499,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalBufferProperti
 bool StatelessValidation::PreCallValidateGetMemoryWin32HandleKHR(
     VkDevice                                    device,
     const VkMemoryGetWin32HandleInfoKHR*        pGetWin32HandleInfo,
-    HANDLE*                                     pHandle) {
+    HANDLE*                                     pHandle) const {
     bool skip = false;
     if (!device_extensions.vk_khr_external_memory) skip |= OutputExtensionError("vkGetMemoryWin32HandleKHR", VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     if (!device_extensions.vk_khr_external_memory_win32) skip |= OutputExtensionError("vkGetMemoryWin32HandleKHR", VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
@@ -6520,7 +6520,7 @@ bool StatelessValidation::PreCallValidateGetMemoryWin32HandlePropertiesKHR(
     VkDevice                                    device,
     VkExternalMemoryHandleTypeFlagBits          handleType,
     HANDLE                                      handle,
-    VkMemoryWin32HandlePropertiesKHR*           pMemoryWin32HandleProperties) {
+    VkMemoryWin32HandlePropertiesKHR*           pMemoryWin32HandleProperties) const {
     bool skip = false;
     if (!device_extensions.vk_khr_external_memory) skip |= OutputExtensionError("vkGetMemoryWin32HandlePropertiesKHR", VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     if (!device_extensions.vk_khr_external_memory_win32) skip |= OutputExtensionError("vkGetMemoryWin32HandlePropertiesKHR", VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
@@ -6538,7 +6538,7 @@ bool StatelessValidation::PreCallValidateGetMemoryWin32HandlePropertiesKHR(
 bool StatelessValidation::PreCallValidateGetMemoryFdKHR(
     VkDevice                                    device,
     const VkMemoryGetFdInfoKHR*                 pGetFdInfo,
-    int*                                        pFd) {
+    int*                                        pFd) const {
     bool skip = false;
     if (!device_extensions.vk_khr_external_memory) skip |= OutputExtensionError("vkGetMemoryFdKHR", VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     if (!device_extensions.vk_khr_external_memory_fd) skip |= OutputExtensionError("vkGetMemoryFdKHR", VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
@@ -6559,7 +6559,7 @@ bool StatelessValidation::PreCallValidateGetMemoryFdPropertiesKHR(
     VkDevice                                    device,
     VkExternalMemoryHandleTypeFlagBits          handleType,
     int                                         fd,
-    VkMemoryFdPropertiesKHR*                    pMemoryFdProperties) {
+    VkMemoryFdPropertiesKHR*                    pMemoryFdProperties) const {
     bool skip = false;
     if (!device_extensions.vk_khr_external_memory) skip |= OutputExtensionError("vkGetMemoryFdPropertiesKHR", VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     if (!device_extensions.vk_khr_external_memory_fd) skip |= OutputExtensionError("vkGetMemoryFdPropertiesKHR", VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
@@ -6581,7 +6581,7 @@ bool StatelessValidation::PreCallValidateGetMemoryFdPropertiesKHR(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalSemaphorePropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
-    VkExternalSemaphoreProperties*              pExternalSemaphoreProperties) {
+    VkExternalSemaphoreProperties*              pExternalSemaphoreProperties) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkGetPhysicalDeviceExternalSemaphorePropertiesKHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_external_semaphore_capabilities) skip |= OutputExtensionError("vkGetPhysicalDeviceExternalSemaphorePropertiesKHR", VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
@@ -6610,7 +6610,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalSemaphorePrope
 
 bool StatelessValidation::PreCallValidateImportSemaphoreWin32HandleKHR(
     VkDevice                                    device,
-    const VkImportSemaphoreWin32HandleInfoKHR*  pImportSemaphoreWin32HandleInfo) {
+    const VkImportSemaphoreWin32HandleInfoKHR*  pImportSemaphoreWin32HandleInfo) const {
     bool skip = false;
     if (!device_extensions.vk_khr_external_semaphore) skip |= OutputExtensionError("vkImportSemaphoreWin32HandleKHR", VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
     if (!device_extensions.vk_khr_external_semaphore_win32) skip |= OutputExtensionError("vkImportSemaphoreWin32HandleKHR", VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
@@ -6631,7 +6631,7 @@ bool StatelessValidation::PreCallValidateImportSemaphoreWin32HandleKHR(
 bool StatelessValidation::PreCallValidateGetSemaphoreWin32HandleKHR(
     VkDevice                                    device,
     const VkSemaphoreGetWin32HandleInfoKHR*     pGetWin32HandleInfo,
-    HANDLE*                                     pHandle) {
+    HANDLE*                                     pHandle) const {
     bool skip = false;
     if (!device_extensions.vk_khr_external_semaphore) skip |= OutputExtensionError("vkGetSemaphoreWin32HandleKHR", VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
     if (!device_extensions.vk_khr_external_semaphore_win32) skip |= OutputExtensionError("vkGetSemaphoreWin32HandleKHR", VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
@@ -6652,7 +6652,7 @@ bool StatelessValidation::PreCallValidateGetSemaphoreWin32HandleKHR(
 
 bool StatelessValidation::PreCallValidateImportSemaphoreFdKHR(
     VkDevice                                    device,
-    const VkImportSemaphoreFdInfoKHR*           pImportSemaphoreFdInfo) {
+    const VkImportSemaphoreFdInfoKHR*           pImportSemaphoreFdInfo) const {
     bool skip = false;
     if (!device_extensions.vk_khr_external_semaphore) skip |= OutputExtensionError("vkImportSemaphoreFdKHR", VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
     if (!device_extensions.vk_khr_external_semaphore_fd) skip |= OutputExtensionError("vkImportSemaphoreFdKHR", VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
@@ -6673,7 +6673,7 @@ bool StatelessValidation::PreCallValidateImportSemaphoreFdKHR(
 bool StatelessValidation::PreCallValidateGetSemaphoreFdKHR(
     VkDevice                                    device,
     const VkSemaphoreGetFdInfoKHR*              pGetFdInfo,
-    int*                                        pFd) {
+    int*                                        pFd) const {
     bool skip = false;
     if (!device_extensions.vk_khr_external_semaphore) skip |= OutputExtensionError("vkGetSemaphoreFdKHR", VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
     if (!device_extensions.vk_khr_external_semaphore_fd) skip |= OutputExtensionError("vkGetSemaphoreFdKHR", VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME);
@@ -6698,7 +6698,7 @@ bool StatelessValidation::PreCallValidateCmdPushDescriptorSetKHR(
     VkPipelineLayout                            layout,
     uint32_t                                    set,
     uint32_t                                    descriptorWriteCount,
-    const VkWriteDescriptorSet*                 pDescriptorWrites) {
+    const VkWriteDescriptorSet*                 pDescriptorWrites) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdPushDescriptorSetKHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_push_descriptor) skip |= OutputExtensionError("vkCmdPushDescriptorSetKHR", VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
@@ -6724,7 +6724,7 @@ bool StatelessValidation::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
     VkPipelineLayout                            layout,
     uint32_t                                    set,
-    const void*                                 pData) {
+    const void*                                 pData) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdPushDescriptorSetWithTemplateKHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_push_descriptor) skip |= OutputExtensionError("vkCmdPushDescriptorSetWithTemplateKHR", VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
@@ -6745,7 +6745,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorUpdateTemplateKHR(
     VkDevice                                    device,
     const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate) {
+    VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate) const {
     bool skip = false;
     if (!device_extensions.vk_khr_descriptor_update_template) skip |= OutputExtensionError("vkCreateDescriptorUpdateTemplateKHR", VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     skip |= validate_struct_type("vkCreateDescriptorUpdateTemplateKHR", "pCreateInfo", "VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO, true, "VUID-vkCreateDescriptorUpdateTemplate-pCreateInfo-parameter", "VUID-VkDescriptorUpdateTemplateCreateInfo-sType-sType");
@@ -6794,7 +6794,7 @@ bool StatelessValidation::PreCallValidateCreateDescriptorUpdateTemplateKHR(
 bool StatelessValidation::PreCallValidateDestroyDescriptorUpdateTemplateKHR(
     VkDevice                                    device,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (!device_extensions.vk_khr_descriptor_update_template) skip |= OutputExtensionError("vkDestroyDescriptorUpdateTemplateKHR", VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     if (pAllocator != NULL)
@@ -6824,7 +6824,7 @@ bool StatelessValidation::PreCallValidateUpdateDescriptorSetWithTemplateKHR(
     VkDevice                                    device,
     VkDescriptorSet                             descriptorSet,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
-    const void*                                 pData) {
+    const void*                                 pData) const {
     bool skip = false;
     if (!device_extensions.vk_khr_descriptor_update_template) skip |= OutputExtensionError("vkUpdateDescriptorSetWithTemplateKHR", VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     skip |= validate_required_handle("vkUpdateDescriptorSetWithTemplateKHR", "descriptorSet", descriptorSet);
@@ -6840,7 +6840,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
     VkDevice                                    device,
     const VkRenderPassCreateInfo2KHR*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkRenderPass*                               pRenderPass) {
+    VkRenderPass*                               pRenderPass) const {
     bool skip = false;
     if (!device_extensions.vk_khr_maintenance2) skip |= OutputExtensionError("vkCreateRenderPass2KHR", VK_KHR_MAINTENANCE2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_multiview) skip |= OutputExtensionError("vkCreateRenderPass2KHR", VK_KHR_MULTIVIEW_EXTENSION_NAME);
@@ -6975,7 +6975,7 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
 bool StatelessValidation::PreCallValidateCmdBeginRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    const VkSubpassBeginInfoKHR*                pSubpassBeginInfo) {
+    const VkSubpassBeginInfoKHR*                pSubpassBeginInfo) const {
     bool skip = false;
     if (!device_extensions.vk_khr_maintenance2) skip |= OutputExtensionError("vkCmdBeginRenderPass2KHR", VK_KHR_MAINTENANCE2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_multiview) skip |= OutputExtensionError("vkCmdBeginRenderPass2KHR", VK_KHR_MULTIVIEW_EXTENSION_NAME);
@@ -7020,7 +7020,7 @@ bool StatelessValidation::PreCallValidateCmdBeginRenderPass2KHR(
 bool StatelessValidation::PreCallValidateCmdNextSubpass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkSubpassBeginInfoKHR*                pSubpassBeginInfo,
-    const VkSubpassEndInfoKHR*                  pSubpassEndInfo) {
+    const VkSubpassEndInfoKHR*                  pSubpassEndInfo) const {
     bool skip = false;
     if (!device_extensions.vk_khr_maintenance2) skip |= OutputExtensionError("vkCmdNextSubpass2KHR", VK_KHR_MAINTENANCE2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_multiview) skip |= OutputExtensionError("vkCmdNextSubpass2KHR", VK_KHR_MULTIVIEW_EXTENSION_NAME);
@@ -7042,7 +7042,7 @@ bool StatelessValidation::PreCallValidateCmdNextSubpass2KHR(
 
 bool StatelessValidation::PreCallValidateCmdEndRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassEndInfoKHR*                  pSubpassEndInfo) {
+    const VkSubpassEndInfoKHR*                  pSubpassEndInfo) const {
     bool skip = false;
     if (!device_extensions.vk_khr_maintenance2) skip |= OutputExtensionError("vkCmdEndRenderPass2KHR", VK_KHR_MAINTENANCE2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_multiview) skip |= OutputExtensionError("vkCmdEndRenderPass2KHR", VK_KHR_MULTIVIEW_EXTENSION_NAME);
@@ -7059,7 +7059,7 @@ bool StatelessValidation::PreCallValidateCmdEndRenderPass2KHR(
 
 bool StatelessValidation::PreCallValidateGetSwapchainStatusKHR(
     VkDevice                                    device,
-    VkSwapchainKHR                              swapchain) {
+    VkSwapchainKHR                              swapchain) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_surface_capabilities_2) skip |= OutputExtensionError("vkGetSwapchainStatusKHR", VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkGetSwapchainStatusKHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -7074,7 +7074,7 @@ bool StatelessValidation::PreCallValidateGetSwapchainStatusKHR(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalFencePropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalFenceInfo*    pExternalFenceInfo,
-    VkExternalFenceProperties*                  pExternalFenceProperties) {
+    VkExternalFenceProperties*                  pExternalFenceProperties) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkGetPhysicalDeviceExternalFencePropertiesKHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_external_fence_capabilities) skip |= OutputExtensionError("vkGetPhysicalDeviceExternalFencePropertiesKHR", VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
@@ -7101,7 +7101,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalFencePropertie
 
 bool StatelessValidation::PreCallValidateImportFenceWin32HandleKHR(
     VkDevice                                    device,
-    const VkImportFenceWin32HandleInfoKHR*      pImportFenceWin32HandleInfo) {
+    const VkImportFenceWin32HandleInfoKHR*      pImportFenceWin32HandleInfo) const {
     bool skip = false;
     if (!device_extensions.vk_khr_external_fence) skip |= OutputExtensionError("vkImportFenceWin32HandleKHR", VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
     if (!device_extensions.vk_khr_external_fence_win32) skip |= OutputExtensionError("vkImportFenceWin32HandleKHR", VK_KHR_EXTERNAL_FENCE_WIN32_EXTENSION_NAME);
@@ -7122,7 +7122,7 @@ bool StatelessValidation::PreCallValidateImportFenceWin32HandleKHR(
 bool StatelessValidation::PreCallValidateGetFenceWin32HandleKHR(
     VkDevice                                    device,
     const VkFenceGetWin32HandleInfoKHR*         pGetWin32HandleInfo,
-    HANDLE*                                     pHandle) {
+    HANDLE*                                     pHandle) const {
     bool skip = false;
     if (!device_extensions.vk_khr_external_fence) skip |= OutputExtensionError("vkGetFenceWin32HandleKHR", VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
     if (!device_extensions.vk_khr_external_fence_win32) skip |= OutputExtensionError("vkGetFenceWin32HandleKHR", VK_KHR_EXTERNAL_FENCE_WIN32_EXTENSION_NAME);
@@ -7143,7 +7143,7 @@ bool StatelessValidation::PreCallValidateGetFenceWin32HandleKHR(
 
 bool StatelessValidation::PreCallValidateImportFenceFdKHR(
     VkDevice                                    device,
-    const VkImportFenceFdInfoKHR*               pImportFenceFdInfo) {
+    const VkImportFenceFdInfoKHR*               pImportFenceFdInfo) const {
     bool skip = false;
     if (!device_extensions.vk_khr_external_fence) skip |= OutputExtensionError("vkImportFenceFdKHR", VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
     if (!device_extensions.vk_khr_external_fence_fd) skip |= OutputExtensionError("vkImportFenceFdKHR", VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME);
@@ -7164,7 +7164,7 @@ bool StatelessValidation::PreCallValidateImportFenceFdKHR(
 bool StatelessValidation::PreCallValidateGetFenceFdKHR(
     VkDevice                                    device,
     const VkFenceGetFdInfoKHR*                  pGetFdInfo,
-    int*                                        pFd) {
+    int*                                        pFd) const {
     bool skip = false;
     if (!device_extensions.vk_khr_external_fence) skip |= OutputExtensionError("vkGetFenceFdKHR", VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
     if (!device_extensions.vk_khr_external_fence_fd) skip |= OutputExtensionError("vkGetFenceFdKHR", VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME);
@@ -7188,7 +7188,7 @@ bool StatelessValidation::PreCallValidateGetFenceFdKHR(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
-    VkSurfaceCapabilities2KHR*                  pSurfaceCapabilities) {
+    VkSurfaceCapabilities2KHR*                  pSurfaceCapabilities) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkGetPhysicalDeviceSurfaceCapabilities2KHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_get_surface_capabilities_2) skip |= OutputExtensionError("vkGetPhysicalDeviceSurfaceCapabilities2KHR", VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
@@ -7213,7 +7213,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
     uint32_t*                                   pSurfaceFormatCount,
-    VkSurfaceFormat2KHR*                        pSurfaceFormats) {
+    VkSurfaceFormat2KHR*                        pSurfaceFormats) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkGetPhysicalDeviceSurfaceFormats2KHR", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_get_surface_capabilities_2) skip |= OutputExtensionError("vkGetPhysicalDeviceSurfaceFormats2KHR", VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
@@ -7244,7 +7244,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
-    VkDisplayProperties2KHR*                    pProperties) {
+    VkDisplayProperties2KHR*                    pProperties) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError("vkGetPhysicalDeviceDisplayProperties2KHR", VK_KHR_DISPLAY_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_get_display_properties_2) skip |= OutputExtensionError("vkGetPhysicalDeviceDisplayProperties2KHR", VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME);
@@ -7262,7 +7262,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayProperties2KHR(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceDisplayPlaneProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
-    VkDisplayPlaneProperties2KHR*               pProperties) {
+    VkDisplayPlaneProperties2KHR*               pProperties) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError("vkGetPhysicalDeviceDisplayPlaneProperties2KHR", VK_KHR_DISPLAY_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_get_display_properties_2) skip |= OutputExtensionError("vkGetPhysicalDeviceDisplayPlaneProperties2KHR", VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME);
@@ -7281,7 +7281,7 @@ bool StatelessValidation::PreCallValidateGetDisplayModeProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,
     uint32_t*                                   pPropertyCount,
-    VkDisplayModeProperties2KHR*                pProperties) {
+    VkDisplayModeProperties2KHR*                pProperties) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError("vkGetDisplayModeProperties2KHR", VK_KHR_DISPLAY_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_get_display_properties_2) skip |= OutputExtensionError("vkGetDisplayModeProperties2KHR", VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME);
@@ -7300,7 +7300,7 @@ bool StatelessValidation::PreCallValidateGetDisplayModeProperties2KHR(
 bool StatelessValidation::PreCallValidateGetDisplayPlaneCapabilities2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkDisplayPlaneInfo2KHR*               pDisplayPlaneInfo,
-    VkDisplayPlaneCapabilities2KHR*             pCapabilities) {
+    VkDisplayPlaneCapabilities2KHR*             pCapabilities) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError("vkGetDisplayPlaneCapabilities2KHR", VK_KHR_DISPLAY_EXTENSION_NAME);
     if (!instance_extensions.vk_khr_get_display_properties_2) skip |= OutputExtensionError("vkGetDisplayPlaneCapabilities2KHR", VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME);
@@ -7330,7 +7330,7 @@ bool StatelessValidation::PreCallValidateGetDisplayPlaneCapabilities2KHR(
 bool StatelessValidation::PreCallValidateGetImageMemoryRequirements2KHR(
     VkDevice                                    device,
     const VkImageMemoryRequirementsInfo2*       pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements) {
+    VkMemoryRequirements2*                      pMemoryRequirements) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_memory_requirements_2) skip |= OutputExtensionError("vkGetImageMemoryRequirements2KHR", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     skip |= validate_struct_type("vkGetImageMemoryRequirements2KHR", "pInfo", "VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2", pInfo, VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2, true, "VUID-vkGetImageMemoryRequirements2-pInfo-parameter", "VUID-VkImageMemoryRequirementsInfo2-sType-sType");
@@ -7353,7 +7353,7 @@ bool StatelessValidation::PreCallValidateGetImageMemoryRequirements2KHR(
 bool StatelessValidation::PreCallValidateGetBufferMemoryRequirements2KHR(
     VkDevice                                    device,
     const VkBufferMemoryRequirementsInfo2*      pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements) {
+    VkMemoryRequirements2*                      pMemoryRequirements) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_memory_requirements_2) skip |= OutputExtensionError("vkGetBufferMemoryRequirements2KHR", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     skip |= validate_struct_type("vkGetBufferMemoryRequirements2KHR", "pInfo", "VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2", pInfo, VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2, true, "VUID-vkGetBufferMemoryRequirements2-pInfo-parameter", "VUID-VkBufferMemoryRequirementsInfo2-sType-sType");
@@ -7375,7 +7375,7 @@ bool StatelessValidation::PreCallValidateGetImageSparseMemoryRequirements2KHR(
     VkDevice                                    device,
     const VkImageSparseMemoryRequirementsInfo2* pInfo,
     uint32_t*                                   pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) {
+    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_memory_requirements_2) skip |= OutputExtensionError("vkGetImageSparseMemoryRequirements2KHR", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     skip |= validate_struct_type("vkGetImageSparseMemoryRequirements2KHR", "pInfo", "VK_STRUCTURE_TYPE_IMAGE_SPARSE_MEMORY_REQUIREMENTS_INFO_2", pInfo, VK_STRUCTURE_TYPE_IMAGE_SPARSE_MEMORY_REQUIREMENTS_INFO_2, true, "VUID-vkGetImageSparseMemoryRequirements2-pInfo-parameter", "VUID-VkImageSparseMemoryRequirementsInfo2-sType-sType");
@@ -7404,7 +7404,7 @@ bool StatelessValidation::PreCallValidateCreateSamplerYcbcrConversionKHR(
     VkDevice                                    device,
     const VkSamplerYcbcrConversionCreateInfo*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSamplerYcbcrConversion*                   pYcbcrConversion) {
+    VkSamplerYcbcrConversion*                   pYcbcrConversion) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCreateSamplerYcbcrConversionKHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_memory_requirements_2) skip |= OutputExtensionError("vkCreateSamplerYcbcrConversionKHR", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
@@ -7467,7 +7467,7 @@ bool StatelessValidation::PreCallValidateCreateSamplerYcbcrConversionKHR(
 bool StatelessValidation::PreCallValidateDestroySamplerYcbcrConversionKHR(
     VkDevice                                    device,
     VkSamplerYcbcrConversion                    ycbcrConversion,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkDestroySamplerYcbcrConversionKHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_memory_requirements_2) skip |= OutputExtensionError("vkDestroySamplerYcbcrConversionKHR", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
@@ -7502,7 +7502,7 @@ bool StatelessValidation::PreCallValidateDestroySamplerYcbcrConversionKHR(
 bool StatelessValidation::PreCallValidateBindBufferMemory2KHR(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindBufferMemoryInfo*               pBindInfos) {
+    const VkBindBufferMemoryInfo*               pBindInfos) const {
     bool skip = false;
     if (!device_extensions.vk_khr_bind_memory_2) skip |= OutputExtensionError("vkBindBufferMemory2KHR", VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     skip |= validate_struct_type_array("vkBindBufferMemory2KHR", "bindInfoCount", "pBindInfos", "VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO", bindInfoCount, pBindInfos, VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO, true, true, "VUID-VkBindBufferMemoryInfo-sType-sType", "VUID-vkBindBufferMemory2-pBindInfos-parameter", "VUID-vkBindBufferMemory2-bindInfoCount-arraylength");
@@ -7525,7 +7525,7 @@ bool StatelessValidation::PreCallValidateBindBufferMemory2KHR(
 bool StatelessValidation::PreCallValidateBindImageMemory2KHR(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindImageMemoryInfo*                pBindInfos) {
+    const VkBindImageMemoryInfo*                pBindInfos) const {
     bool skip = false;
     if (!device_extensions.vk_khr_bind_memory_2) skip |= OutputExtensionError("vkBindImageMemory2KHR", VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     skip |= validate_struct_type_array("vkBindImageMemory2KHR", "bindInfoCount", "pBindInfos", "VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO", bindInfoCount, pBindInfos, VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO, true, true, "VUID-VkBindImageMemoryInfo-sType-sType", "VUID-vkBindImageMemory2-pBindInfos-parameter", "VUID-vkBindImageMemory2-bindInfoCount-arraylength");
@@ -7548,7 +7548,7 @@ bool StatelessValidation::PreCallValidateBindImageMemory2KHR(
 bool StatelessValidation::PreCallValidateGetDescriptorSetLayoutSupportKHR(
     VkDevice                                    device,
     const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
-    VkDescriptorSetLayoutSupport*               pSupport) {
+    VkDescriptorSetLayoutSupport*               pSupport) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkGetDescriptorSetLayoutSupportKHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_maintenance3) skip |= OutputExtensionError("vkGetDescriptorSetLayoutSupportKHR", VK_KHR_MAINTENANCE3_EXTENSION_NAME);
@@ -7588,7 +7588,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndirectCountKHR(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride) {
+    uint32_t                                    stride) const {
     bool skip = false;
     if (!device_extensions.vk_khr_draw_indirect_count) skip |= OutputExtensionError("vkCmdDrawIndirectCountKHR", VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     skip |= validate_required_handle("vkCmdDrawIndirectCountKHR", "buffer", buffer);
@@ -7603,7 +7603,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexedIndirectCountKHR(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride) {
+    uint32_t                                    stride) const {
     bool skip = false;
     if (!device_extensions.vk_khr_draw_indirect_count) skip |= OutputExtensionError("vkCmdDrawIndexedIndirectCountKHR", VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     skip |= validate_required_handle("vkCmdDrawIndexedIndirectCountKHR", "buffer", buffer);
@@ -7632,7 +7632,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexedIndirectCountKHR(
 bool StatelessValidation::PreCallValidateGetSemaphoreCounterValueKHR(
     VkDevice                                    device,
     VkSemaphore                                 semaphore,
-    uint64_t*                                   pValue) {
+    uint64_t*                                   pValue) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkGetSemaphoreCounterValueKHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_timeline_semaphore) skip |= OutputExtensionError("vkGetSemaphoreCounterValueKHR", VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
@@ -7644,7 +7644,7 @@ bool StatelessValidation::PreCallValidateGetSemaphoreCounterValueKHR(
 bool StatelessValidation::PreCallValidateWaitSemaphoresKHR(
     VkDevice                                    device,
     const VkSemaphoreWaitInfoKHR*               pWaitInfo,
-    uint64_t                                    timeout) {
+    uint64_t                                    timeout) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkWaitSemaphoresKHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_timeline_semaphore) skip |= OutputExtensionError("vkWaitSemaphoresKHR", VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
@@ -7664,7 +7664,7 @@ bool StatelessValidation::PreCallValidateWaitSemaphoresKHR(
 
 bool StatelessValidation::PreCallValidateSignalSemaphoreKHR(
     VkDevice                                    device,
-    const VkSemaphoreSignalInfoKHR*             pSignalInfo) {
+    const VkSemaphoreSignalInfoKHR*             pSignalInfo) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkSignalSemaphoreKHR", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_timeline_semaphore) skip |= OutputExtensionError("vkSignalSemaphoreKHR", VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
@@ -7690,7 +7690,7 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
     const VkPipelineInfoKHR*                    pPipelineInfo,
     uint32_t*                                   pExecutableCount,
-    VkPipelineExecutablePropertiesKHR*          pProperties) {
+    VkPipelineExecutablePropertiesKHR*          pProperties) const {
     bool skip = false;
     if (!device_extensions.vk_khr_pipeline_executable_properties) skip |= OutputExtensionError("vkGetPipelineExecutablePropertiesKHR", VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
     skip |= validate_struct_type("vkGetPipelineExecutablePropertiesKHR", "pPipelineInfo", "VK_STRUCTURE_TYPE_PIPELINE_INFO_KHR", pPipelineInfo, VK_STRUCTURE_TYPE_PIPELINE_INFO_KHR, true, "VUID-vkGetPipelineExecutablePropertiesKHR-pPipelineInfo-parameter", "VUID-VkPipelineInfoKHR-sType-sType");
@@ -7715,7 +7715,7 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutableStatisticsKHR(
     VkDevice                                    device,
     const VkPipelineExecutableInfoKHR*          pExecutableInfo,
     uint32_t*                                   pStatisticCount,
-    VkPipelineExecutableStatisticKHR*           pStatistics) {
+    VkPipelineExecutableStatisticKHR*           pStatistics) const {
     bool skip = false;
     if (!device_extensions.vk_khr_pipeline_executable_properties) skip |= OutputExtensionError("vkGetPipelineExecutableStatisticsKHR", VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
     skip |= validate_struct_type("vkGetPipelineExecutableStatisticsKHR", "pExecutableInfo", "VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INFO_KHR", pExecutableInfo, VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INFO_KHR, true, "VUID-vkGetPipelineExecutableStatisticsKHR-pExecutableInfo-parameter", "VUID-VkPipelineExecutableInfoKHR-sType-sType");
@@ -7740,7 +7740,7 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutableInternalRepresenta
     VkDevice                                    device,
     const VkPipelineExecutableInfoKHR*          pExecutableInfo,
     uint32_t*                                   pInternalRepresentationCount,
-    VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations) {
+    VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations) const {
     bool skip = false;
     if (!device_extensions.vk_khr_pipeline_executable_properties) skip |= OutputExtensionError("vkGetPipelineExecutableInternalRepresentationsKHR", VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
     skip |= validate_struct_type("vkGetPipelineExecutableInternalRepresentationsKHR", "pExecutableInfo", "VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INFO_KHR", pExecutableInfo, VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INFO_KHR, true, "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pExecutableInfo-parameter", "VUID-VkPipelineExecutableInfoKHR-sType-sType");
@@ -7760,7 +7760,7 @@ bool StatelessValidation::PreCallValidateCreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDebugReportCallbackEXT*                   pCallback) {
+    VkDebugReportCallbackEXT*                   pCallback) const {
     bool skip = false;
     if (!instance_extensions.vk_ext_debug_report) skip |= OutputExtensionError("vkCreateDebugReportCallbackEXT", VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     skip |= validate_struct_type("vkCreateDebugReportCallbackEXT", "pCreateInfo", "VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT", pCreateInfo, VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT, true, "VUID-vkCreateDebugReportCallbackEXT-pCreateInfo-parameter", "VUID-VkDebugReportCallbackCreateInfoEXT-sType-sType");
@@ -7799,7 +7799,7 @@ bool StatelessValidation::PreCallValidateCreateDebugReportCallbackEXT(
 bool StatelessValidation::PreCallValidateDestroyDebugReportCallbackEXT(
     VkInstance                                  instance,
     VkDebugReportCallbackEXT                    callback,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (!instance_extensions.vk_ext_debug_report) skip |= OutputExtensionError("vkDestroyDebugReportCallbackEXT", VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     skip |= validate_required_handle("vkDestroyDebugReportCallbackEXT", "callback", callback);
@@ -7834,7 +7834,7 @@ bool StatelessValidation::PreCallValidateDebugReportMessageEXT(
     size_t                                      location,
     int32_t                                     messageCode,
     const char*                                 pLayerPrefix,
-    const char*                                 pMessage) {
+    const char*                                 pMessage) const {
     bool skip = false;
     if (!instance_extensions.vk_ext_debug_report) skip |= OutputExtensionError("vkDebugReportMessageEXT", VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     skip |= validate_flags("vkDebugReportMessageEXT", "flags", "VkDebugReportFlagBitsEXT", AllVkDebugReportFlagBitsEXT, flags, kRequiredFlags, "VUID-vkDebugReportMessageEXT-flags-parameter", "VUID-vkDebugReportMessageEXT-flags-requiredbitmask");
@@ -7860,7 +7860,7 @@ bool StatelessValidation::PreCallValidateDebugReportMessageEXT(
 
 bool StatelessValidation::PreCallValidateDebugMarkerSetObjectTagEXT(
     VkDevice                                    device,
-    const VkDebugMarkerObjectTagInfoEXT*        pTagInfo) {
+    const VkDebugMarkerObjectTagInfoEXT*        pTagInfo) const {
     bool skip = false;
     if (!device_extensions.vk_ext_debug_report) skip |= OutputExtensionError("vkDebugMarkerSetObjectTagEXT", VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     if (!device_extensions.vk_ext_debug_marker) skip |= OutputExtensionError("vkDebugMarkerSetObjectTagEXT", VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
@@ -7878,7 +7878,7 @@ bool StatelessValidation::PreCallValidateDebugMarkerSetObjectTagEXT(
 
 bool StatelessValidation::PreCallValidateDebugMarkerSetObjectNameEXT(
     VkDevice                                    device,
-    const VkDebugMarkerObjectNameInfoEXT*       pNameInfo) {
+    const VkDebugMarkerObjectNameInfoEXT*       pNameInfo) const {
     bool skip = false;
     if (!device_extensions.vk_ext_debug_report) skip |= OutputExtensionError("vkDebugMarkerSetObjectNameEXT", VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     if (!device_extensions.vk_ext_debug_marker) skip |= OutputExtensionError("vkDebugMarkerSetObjectNameEXT", VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
@@ -7896,7 +7896,7 @@ bool StatelessValidation::PreCallValidateDebugMarkerSetObjectNameEXT(
 
 bool StatelessValidation::PreCallValidateCmdDebugMarkerBeginEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkDebugMarkerMarkerInfoEXT*           pMarkerInfo) {
+    const VkDebugMarkerMarkerInfoEXT*           pMarkerInfo) const {
     bool skip = false;
     if (!device_extensions.vk_ext_debug_report) skip |= OutputExtensionError("vkCmdDebugMarkerBeginEXT", VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     if (!device_extensions.vk_ext_debug_marker) skip |= OutputExtensionError("vkCmdDebugMarkerBeginEXT", VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
@@ -7911,7 +7911,7 @@ bool StatelessValidation::PreCallValidateCmdDebugMarkerBeginEXT(
 }
 
 bool StatelessValidation::PreCallValidateCmdDebugMarkerEndEXT(
-    VkCommandBuffer                             commandBuffer) {
+    VkCommandBuffer                             commandBuffer) const {
     bool skip = false;
     if (!device_extensions.vk_ext_debug_report) skip |= OutputExtensionError("vkCmdDebugMarkerEndEXT", VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     if (!device_extensions.vk_ext_debug_marker) skip |= OutputExtensionError("vkCmdDebugMarkerEndEXT", VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
@@ -7921,7 +7921,7 @@ bool StatelessValidation::PreCallValidateCmdDebugMarkerEndEXT(
 
 bool StatelessValidation::PreCallValidateCmdDebugMarkerInsertEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkDebugMarkerMarkerInfoEXT*           pMarkerInfo) {
+    const VkDebugMarkerMarkerInfoEXT*           pMarkerInfo) const {
     bool skip = false;
     if (!device_extensions.vk_ext_debug_report) skip |= OutputExtensionError("vkCmdDebugMarkerInsertEXT", VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     if (!device_extensions.vk_ext_debug_marker) skip |= OutputExtensionError("vkCmdDebugMarkerInsertEXT", VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
@@ -7947,7 +7947,7 @@ bool StatelessValidation::PreCallValidateCmdBindTransformFeedbackBuffersEXT(
     uint32_t                                    bindingCount,
     const VkBuffer*                             pBuffers,
     const VkDeviceSize*                         pOffsets,
-    const VkDeviceSize*                         pSizes) {
+    const VkDeviceSize*                         pSizes) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdBindTransformFeedbackBuffersEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_ext_transform_feedback) skip |= OutputExtensionError("vkCmdBindTransformFeedbackBuffersEXT", VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
@@ -7962,7 +7962,7 @@ bool StatelessValidation::PreCallValidateCmdBeginTransformFeedbackEXT(
     uint32_t                                    firstCounterBuffer,
     uint32_t                                    counterBufferCount,
     const VkBuffer*                             pCounterBuffers,
-    const VkDeviceSize*                         pCounterBufferOffsets) {
+    const VkDeviceSize*                         pCounterBufferOffsets) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdBeginTransformFeedbackEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_ext_transform_feedback) skip |= OutputExtensionError("vkCmdBeginTransformFeedbackEXT", VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
@@ -7975,7 +7975,7 @@ bool StatelessValidation::PreCallValidateCmdEndTransformFeedbackEXT(
     uint32_t                                    firstCounterBuffer,
     uint32_t                                    counterBufferCount,
     const VkBuffer*                             pCounterBuffers,
-    const VkDeviceSize*                         pCounterBufferOffsets) {
+    const VkDeviceSize*                         pCounterBufferOffsets) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdEndTransformFeedbackEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_ext_transform_feedback) skip |= OutputExtensionError("vkCmdEndTransformFeedbackEXT", VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
@@ -7988,7 +7988,7 @@ bool StatelessValidation::PreCallValidateCmdBeginQueryIndexedEXT(
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
     VkQueryControlFlags                         flags,
-    uint32_t                                    index) {
+    uint32_t                                    index) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdBeginQueryIndexedEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_ext_transform_feedback) skip |= OutputExtensionError("vkCmdBeginQueryIndexedEXT", VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
@@ -8001,7 +8001,7 @@ bool StatelessValidation::PreCallValidateCmdEndQueryIndexedEXT(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
-    uint32_t                                    index) {
+    uint32_t                                    index) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdEndQueryIndexedEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_ext_transform_feedback) skip |= OutputExtensionError("vkCmdEndQueryIndexedEXT", VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
@@ -8016,7 +8016,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndirectByteCountEXT(
     VkBuffer                                    counterBuffer,
     VkDeviceSize                                counterBufferOffset,
     uint32_t                                    counterOffset,
-    uint32_t                                    vertexStride) {
+    uint32_t                                    vertexStride) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdDrawIndirectByteCountEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_ext_transform_feedback) skip |= OutputExtensionError("vkCmdDrawIndirectByteCountEXT", VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
@@ -8028,7 +8028,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndirectByteCountEXT(
 
 bool StatelessValidation::PreCallValidateGetImageViewHandleNVX(
     VkDevice                                    device,
-    const VkImageViewHandleInfoNVX*             pInfo) {
+    const VkImageViewHandleInfoNVX*             pInfo) const {
     bool skip = false;
     if (!device_extensions.vk_nvx_image_view_handle) skip |= OutputExtensionError("vkGetImageViewHandleNVX", VK_NVX_IMAGE_VIEW_HANDLE_EXTENSION_NAME);
     skip |= validate_struct_type("vkGetImageViewHandleNVX", "pInfo", "VK_STRUCTURE_TYPE_IMAGE_VIEW_HANDLE_INFO_NVX", pInfo, VK_STRUCTURE_TYPE_IMAGE_VIEW_HANDLE_INFO_NVX, true, "VUID-vkGetImageViewHandleNVX-pInfo-parameter", "VUID-VkImageViewHandleInfoNVX-sType-sType");
@@ -8052,7 +8052,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndirectCountAMD(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride) {
+    uint32_t                                    stride) const {
     bool skip = false;
     if (!device_extensions.vk_amd_draw_indirect_count) skip |= OutputExtensionError("vkCmdDrawIndirectCountAMD", VK_AMD_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     skip |= validate_required_handle("vkCmdDrawIndirectCountAMD", "buffer", buffer);
@@ -8067,7 +8067,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexedIndirectCountAMD(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride) {
+    uint32_t                                    stride) const {
     bool skip = false;
     if (!device_extensions.vk_amd_draw_indirect_count) skip |= OutputExtensionError("vkCmdDrawIndexedIndirectCountAMD", VK_AMD_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     skip |= validate_required_handle("vkCmdDrawIndexedIndirectCountAMD", "buffer", buffer);
@@ -8091,7 +8091,7 @@ bool StatelessValidation::PreCallValidateGetShaderInfoAMD(
     VkShaderStageFlagBits                       shaderStage,
     VkShaderInfoTypeAMD                         infoType,
     size_t*                                     pInfoSize,
-    void*                                       pInfo) {
+    void*                                       pInfo) const {
     bool skip = false;
     if (!device_extensions.vk_amd_shader_info) skip |= OutputExtensionError("vkGetShaderInfoAMD", VK_AMD_SHADER_INFO_EXTENSION_NAME);
     skip |= validate_required_handle("vkGetShaderInfoAMD", "pipeline", pipeline);
@@ -8111,7 +8111,7 @@ bool StatelessValidation::PreCallValidateCreateStreamDescriptorSurfaceGGP(
     VkInstance                                  instance,
     const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) {
+    VkSurfaceKHR*                               pSurface) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkCreateStreamDescriptorSurfaceGGP", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_ggp_stream_descriptor_surface) skip |= OutputExtensionError("vkCreateStreamDescriptorSurfaceGGP", VK_GGP_STREAM_DESCRIPTOR_SURFACE_EXTENSION_NAME);
@@ -8160,7 +8160,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceExternalImageFormatPro
     VkImageUsageFlags                           usage,
     VkImageCreateFlags                          flags,
     VkExternalMemoryHandleTypeFlagsNV           externalHandleType,
-    VkExternalImageFormatPropertiesNV*          pExternalImageFormatProperties) {
+    VkExternalImageFormatPropertiesNV*          pExternalImageFormatProperties) const {
     bool skip = false;
     if (!instance_extensions.vk_nv_external_memory_capabilities) skip |= OutputExtensionError("vkGetPhysicalDeviceExternalImageFormatPropertiesNV", VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
     skip |= validate_ranged_enum("vkGetPhysicalDeviceExternalImageFormatPropertiesNV", "format", "VkFormat", AllVkFormatEnums, format, "VUID-vkGetPhysicalDeviceExternalImageFormatPropertiesNV-format-parameter");
@@ -8187,7 +8187,7 @@ bool StatelessValidation::PreCallValidateGetMemoryWin32HandleNV(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
     VkExternalMemoryHandleTypeFlagsNV           handleType,
-    HANDLE*                                     pHandle) {
+    HANDLE*                                     pHandle) const {
     bool skip = false;
     if (!device_extensions.vk_nv_external_memory) skip |= OutputExtensionError("vkGetMemoryWin32HandleNV", VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME);
     if (!device_extensions.vk_nv_external_memory_win32) skip |= OutputExtensionError("vkGetMemoryWin32HandleNV", VK_NV_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
@@ -8211,7 +8211,7 @@ bool StatelessValidation::PreCallValidateCreateViSurfaceNN(
     VkInstance                                  instance,
     const VkViSurfaceCreateInfoNN*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) {
+    VkSurfaceKHR*                               pSurface) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkCreateViSurfaceNN", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_nn_vi_surface) skip |= OutputExtensionError("vkCreateViSurfaceNN", VK_NN_VI_SURFACE_EXTENSION_NAME);
@@ -8258,7 +8258,7 @@ bool StatelessValidation::PreCallValidateCreateViSurfaceNN(
 
 bool StatelessValidation::PreCallValidateCmdBeginConditionalRenderingEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkConditionalRenderingBeginInfoEXT*   pConditionalRenderingBegin) {
+    const VkConditionalRenderingBeginInfoEXT*   pConditionalRenderingBegin) const {
     bool skip = false;
     if (!device_extensions.vk_ext_conditional_rendering) skip |= OutputExtensionError("vkCmdBeginConditionalRenderingEXT", VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
     skip |= validate_struct_type("vkCmdBeginConditionalRenderingEXT", "pConditionalRenderingBegin", "VK_STRUCTURE_TYPE_CONDITIONAL_RENDERING_BEGIN_INFO_EXT", pConditionalRenderingBegin, VK_STRUCTURE_TYPE_CONDITIONAL_RENDERING_BEGIN_INFO_EXT, true, "VUID-vkCmdBeginConditionalRenderingEXT-pConditionalRenderingBegin-parameter", "VUID-VkConditionalRenderingBeginInfoEXT-sType-sType");
@@ -8274,7 +8274,7 @@ bool StatelessValidation::PreCallValidateCmdBeginConditionalRenderingEXT(
 }
 
 bool StatelessValidation::PreCallValidateCmdEndConditionalRenderingEXT(
-    VkCommandBuffer                             commandBuffer) {
+    VkCommandBuffer                             commandBuffer) const {
     bool skip = false;
     if (!device_extensions.vk_ext_conditional_rendering) skip |= OutputExtensionError("vkCmdEndConditionalRenderingEXT", VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME);
     // No xml-driven validation
@@ -8285,7 +8285,7 @@ bool StatelessValidation::PreCallValidateCmdEndConditionalRenderingEXT(
 
 bool StatelessValidation::PreCallValidateCmdProcessCommandsNVX(
     VkCommandBuffer                             commandBuffer,
-    const VkCmdProcessCommandsInfoNVX*          pProcessCommandsInfo) {
+    const VkCmdProcessCommandsInfoNVX*          pProcessCommandsInfo) const {
     bool skip = false;
     if (!device_extensions.vk_nvx_device_generated_commands) skip |= OutputExtensionError("vkCmdProcessCommandsNVX", VK_NVX_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
     skip |= validate_struct_type("vkCmdProcessCommandsNVX", "pProcessCommandsInfo", "VK_STRUCTURE_TYPE_CMD_PROCESS_COMMANDS_INFO_NVX", pProcessCommandsInfo, VK_STRUCTURE_TYPE_CMD_PROCESS_COMMANDS_INFO_NVX, true, "VUID-vkCmdProcessCommandsNVX-pProcessCommandsInfo-parameter", "VUID-VkCmdProcessCommandsInfoNVX-sType-sType");
@@ -8314,7 +8314,7 @@ bool StatelessValidation::PreCallValidateCmdProcessCommandsNVX(
 
 bool StatelessValidation::PreCallValidateCmdReserveSpaceForCommandsNVX(
     VkCommandBuffer                             commandBuffer,
-    const VkCmdReserveSpaceForCommandsInfoNVX*  pReserveSpaceInfo) {
+    const VkCmdReserveSpaceForCommandsInfoNVX*  pReserveSpaceInfo) const {
     bool skip = false;
     if (!device_extensions.vk_nvx_device_generated_commands) skip |= OutputExtensionError("vkCmdReserveSpaceForCommandsNVX", VK_NVX_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
     skip |= validate_struct_type("vkCmdReserveSpaceForCommandsNVX", "pReserveSpaceInfo", "VK_STRUCTURE_TYPE_CMD_RESERVE_SPACE_FOR_COMMANDS_INFO_NVX", pReserveSpaceInfo, VK_STRUCTURE_TYPE_CMD_RESERVE_SPACE_FOR_COMMANDS_INFO_NVX, true, "VUID-vkCmdReserveSpaceForCommandsNVX-pReserveSpaceInfo-parameter", "VUID-VkCmdReserveSpaceForCommandsInfoNVX-sType-sType");
@@ -8333,7 +8333,7 @@ bool StatelessValidation::PreCallValidateCreateIndirectCommandsLayoutNVX(
     VkDevice                                    device,
     const VkIndirectCommandsLayoutCreateInfoNVX* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkIndirectCommandsLayoutNVX*                pIndirectCommandsLayout) {
+    VkIndirectCommandsLayoutNVX*                pIndirectCommandsLayout) const {
     bool skip = false;
     if (!device_extensions.vk_nvx_device_generated_commands) skip |= OutputExtensionError("vkCreateIndirectCommandsLayoutNVX", VK_NVX_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
     skip |= validate_struct_type("vkCreateIndirectCommandsLayoutNVX", "pCreateInfo", "VK_STRUCTURE_TYPE_INDIRECT_COMMANDS_LAYOUT_CREATE_INFO_NVX", pCreateInfo, VK_STRUCTURE_TYPE_INDIRECT_COMMANDS_LAYOUT_CREATE_INFO_NVX, true, "VUID-vkCreateIndirectCommandsLayoutNVX-pCreateInfo-parameter", "VUID-VkIndirectCommandsLayoutCreateInfoNVX-sType-sType");
@@ -8382,7 +8382,7 @@ bool StatelessValidation::PreCallValidateCreateIndirectCommandsLayoutNVX(
 bool StatelessValidation::PreCallValidateDestroyIndirectCommandsLayoutNVX(
     VkDevice                                    device,
     VkIndirectCommandsLayoutNVX                 indirectCommandsLayout,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (!device_extensions.vk_nvx_device_generated_commands) skip |= OutputExtensionError("vkDestroyIndirectCommandsLayoutNVX", VK_NVX_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
     skip |= validate_required_handle("vkDestroyIndirectCommandsLayoutNVX", "indirectCommandsLayout", indirectCommandsLayout);
@@ -8413,7 +8413,7 @@ bool StatelessValidation::PreCallValidateCreateObjectTableNVX(
     VkDevice                                    device,
     const VkObjectTableCreateInfoNVX*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkObjectTableNVX*                           pObjectTable) {
+    VkObjectTableNVX*                           pObjectTable) const {
     bool skip = false;
     if (!device_extensions.vk_nvx_device_generated_commands) skip |= OutputExtensionError("vkCreateObjectTableNVX", VK_NVX_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
     skip |= validate_struct_type("vkCreateObjectTableNVX", "pCreateInfo", "VK_STRUCTURE_TYPE_OBJECT_TABLE_CREATE_INFO_NVX", pCreateInfo, VK_STRUCTURE_TYPE_OBJECT_TABLE_CREATE_INFO_NVX, true, "VUID-vkCreateObjectTableNVX-pCreateInfo-parameter", "VUID-VkObjectTableCreateInfoNVX-sType-sType");
@@ -8454,7 +8454,7 @@ bool StatelessValidation::PreCallValidateCreateObjectTableNVX(
 bool StatelessValidation::PreCallValidateDestroyObjectTableNVX(
     VkDevice                                    device,
     VkObjectTableNVX                            objectTable,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (!device_extensions.vk_nvx_device_generated_commands) skip |= OutputExtensionError("vkDestroyObjectTableNVX", VK_NVX_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
     skip |= validate_required_handle("vkDestroyObjectTableNVX", "objectTable", objectTable);
@@ -8486,7 +8486,7 @@ bool StatelessValidation::PreCallValidateRegisterObjectsNVX(
     VkObjectTableNVX                            objectTable,
     uint32_t                                    objectCount,
     const VkObjectTableEntryNVX* const*         ppObjectTableEntries,
-    const uint32_t*                             pObjectIndices) {
+    const uint32_t*                             pObjectIndices) const {
     bool skip = false;
     if (!device_extensions.vk_nvx_device_generated_commands) skip |= OutputExtensionError("vkRegisterObjectsNVX", VK_NVX_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
     skip |= validate_required_handle("vkRegisterObjectsNVX", "objectTable", objectTable);
@@ -8509,7 +8509,7 @@ bool StatelessValidation::PreCallValidateUnregisterObjectsNVX(
     VkObjectTableNVX                            objectTable,
     uint32_t                                    objectCount,
     const VkObjectEntryTypeNVX*                 pObjectEntryTypes,
-    const uint32_t*                             pObjectIndices) {
+    const uint32_t*                             pObjectIndices) const {
     bool skip = false;
     if (!device_extensions.vk_nvx_device_generated_commands) skip |= OutputExtensionError("vkUnregisterObjectsNVX", VK_NVX_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
     skip |= validate_required_handle("vkUnregisterObjectsNVX", "objectTable", objectTable);
@@ -8521,7 +8521,7 @@ bool StatelessValidation::PreCallValidateUnregisterObjectsNVX(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceGeneratedCommandsPropertiesNVX(
     VkPhysicalDevice                            physicalDevice,
     VkDeviceGeneratedCommandsFeaturesNVX*       pFeatures,
-    VkDeviceGeneratedCommandsLimitsNVX*         pLimits) {
+    VkDeviceGeneratedCommandsLimitsNVX*         pLimits) const {
     bool skip = false;
     skip |= validate_struct_type("vkGetPhysicalDeviceGeneratedCommandsPropertiesNVX", "pFeatures", "VK_STRUCTURE_TYPE_DEVICE_GENERATED_COMMANDS_FEATURES_NVX", pFeatures, VK_STRUCTURE_TYPE_DEVICE_GENERATED_COMMANDS_FEATURES_NVX, true, "VUID-vkGetPhysicalDeviceGeneratedCommandsPropertiesNVX-pFeatures-parameter", "VUID-VkDeviceGeneratedCommandsFeaturesNVX-sType-sType");
     skip |= validate_struct_type("vkGetPhysicalDeviceGeneratedCommandsPropertiesNVX", "pLimits", "VK_STRUCTURE_TYPE_DEVICE_GENERATED_COMMANDS_LIMITS_NVX", pLimits, VK_STRUCTURE_TYPE_DEVICE_GENERATED_COMMANDS_LIMITS_NVX, true, "VUID-vkGetPhysicalDeviceGeneratedCommandsPropertiesNVX-pLimits-parameter", "VUID-VkDeviceGeneratedCommandsLimitsNVX-sType-sType");
@@ -8534,7 +8534,7 @@ bool StatelessValidation::PreCallValidateCmdSetViewportWScalingNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstViewport,
     uint32_t                                    viewportCount,
-    const VkViewportWScalingNV*                 pViewportWScalings) {
+    const VkViewportWScalingNV*                 pViewportWScalings) const {
     bool skip = false;
     if (!device_extensions.vk_nv_clip_space_w_scaling) skip |= OutputExtensionError("vkCmdSetViewportWScalingNV", VK_NV_CLIP_SPACE_W_SCALING_EXTENSION_NAME);
     skip |= validate_array("vkCmdSetViewportWScalingNV", "viewportCount", "pViewportWScalings", viewportCount, &pViewportWScalings, true, true, "VUID-vkCmdSetViewportWScalingNV-viewportCount-arraylength", "VUID-vkCmdSetViewportWScalingNV-pViewportWScalings-parameter");
@@ -8553,7 +8553,7 @@ bool StatelessValidation::PreCallValidateCmdSetViewportWScalingNV(
 
 bool StatelessValidation::PreCallValidateReleaseDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
-    VkDisplayKHR                                display) {
+    VkDisplayKHR                                display) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError("vkReleaseDisplayEXT", VK_KHR_DISPLAY_EXTENSION_NAME);
     if (!instance_extensions.vk_ext_direct_mode_display) skip |= OutputExtensionError("vkReleaseDisplayEXT", VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME);
@@ -8568,7 +8568,7 @@ bool StatelessValidation::PreCallValidateReleaseDisplayEXT(
 bool StatelessValidation::PreCallValidateAcquireXlibDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     Display*                                    dpy,
-    VkDisplayKHR                                display) {
+    VkDisplayKHR                                display) const {
     bool skip = false;
     if (!instance_extensions.vk_ext_direct_mode_display) skip |= OutputExtensionError("vkAcquireXlibDisplayEXT", VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME);
     if (!instance_extensions.vk_ext_acquire_xlib_display) skip |= OutputExtensionError("vkAcquireXlibDisplayEXT", VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME);
@@ -8581,7 +8581,7 @@ bool StatelessValidation::PreCallValidateGetRandROutputDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     Display*                                    dpy,
     RROutput                                    rrOutput,
-    VkDisplayKHR*                               pDisplay) {
+    VkDisplayKHR*                               pDisplay) const {
     bool skip = false;
     if (!instance_extensions.vk_ext_direct_mode_display) skip |= OutputExtensionError("vkGetRandROutputDisplayEXT", VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME);
     if (!instance_extensions.vk_ext_acquire_xlib_display) skip |= OutputExtensionError("vkGetRandROutputDisplayEXT", VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME);
@@ -8595,7 +8595,7 @@ bool StatelessValidation::PreCallValidateGetRandROutputDisplayEXT(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EXT(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
-    VkSurfaceCapabilities2EXT*                  pSurfaceCapabilities) {
+    VkSurfaceCapabilities2EXT*                  pSurfaceCapabilities) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_display) skip |= OutputExtensionError("vkGetPhysicalDeviceSurfaceCapabilities2EXT", VK_KHR_DISPLAY_EXTENSION_NAME);
     if (!instance_extensions.vk_ext_display_surface_counter) skip |= OutputExtensionError("vkGetPhysicalDeviceSurfaceCapabilities2EXT", VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME);
@@ -8613,7 +8613,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EX
 bool StatelessValidation::PreCallValidateDisplayPowerControlEXT(
     VkDevice                                    device,
     VkDisplayKHR                                display,
-    const VkDisplayPowerInfoEXT*                pDisplayPowerInfo) {
+    const VkDisplayPowerInfoEXT*                pDisplayPowerInfo) const {
     bool skip = false;
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkDisplayPowerControlEXT", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     if (!device_extensions.vk_ext_display_surface_counter) skip |= OutputExtensionError("vkDisplayPowerControlEXT", VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME);
@@ -8633,7 +8633,7 @@ bool StatelessValidation::PreCallValidateRegisterDeviceEventEXT(
     VkDevice                                    device,
     const VkDeviceEventInfoEXT*                 pDeviceEventInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkFence*                                    pFence) {
+    VkFence*                                    pFence) const {
     bool skip = false;
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkRegisterDeviceEventEXT", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     if (!device_extensions.vk_ext_display_surface_counter) skip |= OutputExtensionError("vkRegisterDeviceEventEXT", VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME);
@@ -8674,7 +8674,7 @@ bool StatelessValidation::PreCallValidateRegisterDisplayEventEXT(
     VkDisplayKHR                                display,
     const VkDisplayEventInfoEXT*                pDisplayEventInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkFence*                                    pFence) {
+    VkFence*                                    pFence) const {
     bool skip = false;
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkRegisterDisplayEventEXT", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     if (!device_extensions.vk_ext_display_surface_counter) skip |= OutputExtensionError("vkRegisterDisplayEventEXT", VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME);
@@ -8715,7 +8715,7 @@ bool StatelessValidation::PreCallValidateGetSwapchainCounterEXT(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     VkSurfaceCounterFlagBitsEXT                 counter,
-    uint64_t*                                   pCounterValue) {
+    uint64_t*                                   pCounterValue) const {
     bool skip = false;
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkGetSwapchainCounterEXT", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     if (!device_extensions.vk_ext_display_surface_counter) skip |= OutputExtensionError("vkGetSwapchainCounterEXT", VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME);
@@ -8731,7 +8731,7 @@ bool StatelessValidation::PreCallValidateGetSwapchainCounterEXT(
 bool StatelessValidation::PreCallValidateGetRefreshCycleDurationGOOGLE(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
-    VkRefreshCycleDurationGOOGLE*               pDisplayTimingProperties) {
+    VkRefreshCycleDurationGOOGLE*               pDisplayTimingProperties) const {
     bool skip = false;
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkGetRefreshCycleDurationGOOGLE", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     if (!device_extensions.vk_google_display_timing) skip |= OutputExtensionError("vkGetRefreshCycleDurationGOOGLE", VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME);
@@ -8748,7 +8748,7 @@ bool StatelessValidation::PreCallValidateGetPastPresentationTimingGOOGLE(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     uint32_t*                                   pPresentationTimingCount,
-    VkPastPresentationTimingGOOGLE*             pPresentationTimings) {
+    VkPastPresentationTimingGOOGLE*             pPresentationTimings) const {
     bool skip = false;
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkGetPastPresentationTimingGOOGLE", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     if (!device_extensions.vk_google_display_timing) skip |= OutputExtensionError("vkGetPastPresentationTimingGOOGLE", VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME);
@@ -8780,7 +8780,7 @@ bool StatelessValidation::PreCallValidateCmdSetDiscardRectangleEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstDiscardRectangle,
     uint32_t                                    discardRectangleCount,
-    const VkRect2D*                             pDiscardRectangles) {
+    const VkRect2D*                             pDiscardRectangles) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdSetDiscardRectangleEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_ext_discard_rectangles) skip |= OutputExtensionError("vkCmdSetDiscardRectangleEXT", VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME);
@@ -8809,7 +8809,7 @@ bool StatelessValidation::PreCallValidateSetHdrMetadataEXT(
     VkDevice                                    device,
     uint32_t                                    swapchainCount,
     const VkSwapchainKHR*                       pSwapchains,
-    const VkHdrMetadataEXT*                     pMetadata) {
+    const VkHdrMetadataEXT*                     pMetadata) const {
     bool skip = false;
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkSetHdrMetadataEXT", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     if (!device_extensions.vk_ext_hdr_metadata) skip |= OutputExtensionError("vkSetHdrMetadataEXT", VK_EXT_HDR_METADATA_EXTENSION_NAME);
@@ -8833,7 +8833,7 @@ bool StatelessValidation::PreCallValidateCreateIOSSurfaceMVK(
     VkInstance                                  instance,
     const VkIOSSurfaceCreateInfoMVK*            pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) {
+    VkSurfaceKHR*                               pSurface) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkCreateIOSSurfaceMVK", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_mvk_ios_surface) skip |= OutputExtensionError("vkCreateIOSSurfaceMVK", VK_MVK_IOS_SURFACE_EXTENSION_NAME);
@@ -8876,7 +8876,7 @@ bool StatelessValidation::PreCallValidateCreateMacOSSurfaceMVK(
     VkInstance                                  instance,
     const VkMacOSSurfaceCreateInfoMVK*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) {
+    VkSurfaceKHR*                               pSurface) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkCreateMacOSSurfaceMVK", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_mvk_macos_surface) skip |= OutputExtensionError("vkCreateMacOSSurfaceMVK", VK_MVK_MACOS_SURFACE_EXTENSION_NAME);
@@ -8919,7 +8919,7 @@ bool StatelessValidation::PreCallValidateCreateMacOSSurfaceMVK(
 
 bool StatelessValidation::PreCallValidateSetDebugUtilsObjectNameEXT(
     VkDevice                                    device,
-    const VkDebugUtilsObjectNameInfoEXT*        pNameInfo) {
+    const VkDebugUtilsObjectNameInfoEXT*        pNameInfo) const {
     bool skip = false;
     if (!device_extensions.vk_ext_debug_utils) skip |= OutputExtensionError("vkSetDebugUtilsObjectNameEXT", VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     skip |= validate_struct_type("vkSetDebugUtilsObjectNameEXT", "pNameInfo", "VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT", pNameInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, true, "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-parameter", "VUID-VkDebugUtilsObjectNameInfoEXT-sType-sType");
@@ -8935,7 +8935,7 @@ bool StatelessValidation::PreCallValidateSetDebugUtilsObjectNameEXT(
 
 bool StatelessValidation::PreCallValidateSetDebugUtilsObjectTagEXT(
     VkDevice                                    device,
-    const VkDebugUtilsObjectTagInfoEXT*         pTagInfo) {
+    const VkDebugUtilsObjectTagInfoEXT*         pTagInfo) const {
     bool skip = false;
     if (!device_extensions.vk_ext_debug_utils) skip |= OutputExtensionError("vkSetDebugUtilsObjectTagEXT", VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     skip |= validate_struct_type("vkSetDebugUtilsObjectTagEXT", "pTagInfo", "VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT", pTagInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT, true, "VUID-vkSetDebugUtilsObjectTagEXT-pTagInfo-parameter", "VUID-VkDebugUtilsObjectTagInfoEXT-sType-sType");
@@ -8953,7 +8953,7 @@ bool StatelessValidation::PreCallValidateSetDebugUtilsObjectTagEXT(
 
 bool StatelessValidation::PreCallValidateQueueBeginDebugUtilsLabelEXT(
     VkQueue                                     queue,
-    const VkDebugUtilsLabelEXT*                 pLabelInfo) {
+    const VkDebugUtilsLabelEXT*                 pLabelInfo) const {
     bool skip = false;
     if (!device_extensions.vk_ext_debug_utils) skip |= OutputExtensionError("vkQueueBeginDebugUtilsLabelEXT", VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     skip |= validate_struct_type("vkQueueBeginDebugUtilsLabelEXT", "pLabelInfo", "VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT", pLabelInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, true, "VUID-vkQueueBeginDebugUtilsLabelEXT-pLabelInfo-parameter", "VUID-VkDebugUtilsLabelEXT-sType-sType");
@@ -8967,7 +8967,7 @@ bool StatelessValidation::PreCallValidateQueueBeginDebugUtilsLabelEXT(
 }
 
 bool StatelessValidation::PreCallValidateQueueEndDebugUtilsLabelEXT(
-    VkQueue                                     queue) {
+    VkQueue                                     queue) const {
     bool skip = false;
     if (!device_extensions.vk_ext_debug_utils) skip |= OutputExtensionError("vkQueueEndDebugUtilsLabelEXT", VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     // No xml-driven validation
@@ -8976,7 +8976,7 @@ bool StatelessValidation::PreCallValidateQueueEndDebugUtilsLabelEXT(
 
 bool StatelessValidation::PreCallValidateQueueInsertDebugUtilsLabelEXT(
     VkQueue                                     queue,
-    const VkDebugUtilsLabelEXT*                 pLabelInfo) {
+    const VkDebugUtilsLabelEXT*                 pLabelInfo) const {
     bool skip = false;
     if (!device_extensions.vk_ext_debug_utils) skip |= OutputExtensionError("vkQueueInsertDebugUtilsLabelEXT", VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     skip |= validate_struct_type("vkQueueInsertDebugUtilsLabelEXT", "pLabelInfo", "VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT", pLabelInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, true, "VUID-vkQueueInsertDebugUtilsLabelEXT-pLabelInfo-parameter", "VUID-VkDebugUtilsLabelEXT-sType-sType");
@@ -8991,7 +8991,7 @@ bool StatelessValidation::PreCallValidateQueueInsertDebugUtilsLabelEXT(
 
 bool StatelessValidation::PreCallValidateCmdBeginDebugUtilsLabelEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkDebugUtilsLabelEXT*                 pLabelInfo) {
+    const VkDebugUtilsLabelEXT*                 pLabelInfo) const {
     bool skip = false;
     if (!device_extensions.vk_ext_debug_utils) skip |= OutputExtensionError("vkCmdBeginDebugUtilsLabelEXT", VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     skip |= validate_struct_type("vkCmdBeginDebugUtilsLabelEXT", "pLabelInfo", "VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT", pLabelInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, true, "VUID-vkCmdBeginDebugUtilsLabelEXT-pLabelInfo-parameter", "VUID-VkDebugUtilsLabelEXT-sType-sType");
@@ -9005,7 +9005,7 @@ bool StatelessValidation::PreCallValidateCmdBeginDebugUtilsLabelEXT(
 }
 
 bool StatelessValidation::PreCallValidateCmdEndDebugUtilsLabelEXT(
-    VkCommandBuffer                             commandBuffer) {
+    VkCommandBuffer                             commandBuffer) const {
     bool skip = false;
     if (!device_extensions.vk_ext_debug_utils) skip |= OutputExtensionError("vkCmdEndDebugUtilsLabelEXT", VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     // No xml-driven validation
@@ -9014,7 +9014,7 @@ bool StatelessValidation::PreCallValidateCmdEndDebugUtilsLabelEXT(
 
 bool StatelessValidation::PreCallValidateCmdInsertDebugUtilsLabelEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkDebugUtilsLabelEXT*                 pLabelInfo) {
+    const VkDebugUtilsLabelEXT*                 pLabelInfo) const {
     bool skip = false;
     if (!device_extensions.vk_ext_debug_utils) skip |= OutputExtensionError("vkCmdInsertDebugUtilsLabelEXT", VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     skip |= validate_struct_type("vkCmdInsertDebugUtilsLabelEXT", "pLabelInfo", "VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT", pLabelInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, true, "VUID-vkCmdInsertDebugUtilsLabelEXT-pLabelInfo-parameter", "VUID-VkDebugUtilsLabelEXT-sType-sType");
@@ -9031,7 +9031,7 @@ bool StatelessValidation::PreCallValidateCreateDebugUtilsMessengerEXT(
     VkInstance                                  instance,
     const VkDebugUtilsMessengerCreateInfoEXT*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDebugUtilsMessengerEXT*                   pMessenger) {
+    VkDebugUtilsMessengerEXT*                   pMessenger) const {
     bool skip = false;
     if (!instance_extensions.vk_ext_debug_utils) skip |= OutputExtensionError("vkCreateDebugUtilsMessengerEXT", VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     skip |= validate_struct_type("vkCreateDebugUtilsMessengerEXT", "pCreateInfo", "VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT", pCreateInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT, true, "VUID-vkCreateDebugUtilsMessengerEXT-pCreateInfo-parameter", "VUID-VkDebugUtilsMessengerCreateInfoEXT-sType-sType");
@@ -9074,7 +9074,7 @@ bool StatelessValidation::PreCallValidateCreateDebugUtilsMessengerEXT(
 bool StatelessValidation::PreCallValidateDestroyDebugUtilsMessengerEXT(
     VkInstance                                  instance,
     VkDebugUtilsMessengerEXT                    messenger,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (!instance_extensions.vk_ext_debug_utils) skip |= OutputExtensionError("vkDestroyDebugUtilsMessengerEXT", VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     skip |= validate_required_handle("vkDestroyDebugUtilsMessengerEXT", "messenger", messenger);
@@ -9105,7 +9105,7 @@ bool StatelessValidation::PreCallValidateSubmitDebugUtilsMessageEXT(
     VkInstance                                  instance,
     VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT             messageTypes,
-    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData) {
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData) const {
     bool skip = false;
     if (!instance_extensions.vk_ext_debug_utils) skip |= OutputExtensionError("vkSubmitDebugUtilsMessageEXT", VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     skip |= validate_flags("vkSubmitDebugUtilsMessageEXT", "messageSeverity", "VkDebugUtilsMessageSeverityFlagBitsEXT", AllVkDebugUtilsMessageSeverityFlagBitsEXT, messageSeverity, kRequiredSingleBit, "VUID-vkSubmitDebugUtilsMessageEXT-messageSeverity-parameter", "VUID-vkSubmitDebugUtilsMessageEXT-messageSeverity-parameter");
@@ -9165,7 +9165,7 @@ bool StatelessValidation::PreCallValidateSubmitDebugUtilsMessageEXT(
 bool StatelessValidation::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(
     VkDevice                                    device,
     const struct AHardwareBuffer*               buffer,
-    VkAndroidHardwareBufferPropertiesANDROID*   pProperties) {
+    VkAndroidHardwareBufferPropertiesANDROID*   pProperties) const {
     bool skip = false;
     if (!device_extensions.vk_ext_queue_family_foreign) skip |= OutputExtensionError("vkGetAndroidHardwareBufferPropertiesANDROID", VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
     if (!device_extensions.vk_khr_external_memory) skip |= OutputExtensionError("vkGetAndroidHardwareBufferPropertiesANDROID", VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
@@ -9183,7 +9183,7 @@ bool StatelessValidation::PreCallValidateGetAndroidHardwareBufferPropertiesANDRO
 bool StatelessValidation::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(
     VkDevice                                    device,
     const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
-    struct AHardwareBuffer**                    pBuffer) {
+    struct AHardwareBuffer**                    pBuffer) const {
     bool skip = false;
     if (!device_extensions.vk_ext_queue_family_foreign) skip |= OutputExtensionError("vkGetMemoryAndroidHardwareBufferANDROID", VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
     if (!device_extensions.vk_khr_external_memory) skip |= OutputExtensionError("vkGetMemoryAndroidHardwareBufferANDROID", VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
@@ -9216,7 +9216,7 @@ bool StatelessValidation::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(
 
 bool StatelessValidation::PreCallValidateCmdSetSampleLocationsEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkSampleLocationsInfoEXT*             pSampleLocationsInfo) {
+    const VkSampleLocationsInfoEXT*             pSampleLocationsInfo) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdSetSampleLocationsEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_ext_sample_locations) skip |= OutputExtensionError("vkCmdSetSampleLocationsEXT", VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
@@ -9245,7 +9245,7 @@ bool StatelessValidation::PreCallValidateCmdSetSampleLocationsEXT(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceMultisamplePropertiesEXT(
     VkPhysicalDevice                            physicalDevice,
     VkSampleCountFlagBits                       samples,
-    VkMultisamplePropertiesEXT*                 pMultisampleProperties) {
+    VkMultisamplePropertiesEXT*                 pMultisampleProperties) const {
     bool skip = false;
     skip |= validate_flags("vkGetPhysicalDeviceMultisamplePropertiesEXT", "samples", "VkSampleCountFlagBits", AllVkSampleCountFlagBits, samples, kRequiredSingleBit, "VUID-vkGetPhysicalDeviceMultisamplePropertiesEXT-samples-parameter", "VUID-vkGetPhysicalDeviceMultisamplePropertiesEXT-samples-parameter");
     skip |= validate_struct_type("vkGetPhysicalDeviceMultisamplePropertiesEXT", "pMultisampleProperties", "VK_STRUCTURE_TYPE_MULTISAMPLE_PROPERTIES_EXT", pMultisampleProperties, VK_STRUCTURE_TYPE_MULTISAMPLE_PROPERTIES_EXT, true, "VUID-vkGetPhysicalDeviceMultisamplePropertiesEXT-pMultisampleProperties-parameter", "VUID-VkMultisamplePropertiesEXT-sType-sType");
@@ -9273,7 +9273,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceMultisamplePropertiesE
 bool StatelessValidation::PreCallValidateGetImageDrmFormatModifierPropertiesEXT(
     VkDevice                                    device,
     VkImage                                     image,
-    VkImageDrmFormatModifierPropertiesEXT*      pProperties) {
+    VkImageDrmFormatModifierPropertiesEXT*      pProperties) const {
     bool skip = false;
     if (!device_extensions.vk_khr_sampler_ycbcr_conversion) skip |= OutputExtensionError("vkGetImageDrmFormatModifierPropertiesEXT", VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     if (!device_extensions.vk_khr_image_format_list) skip |= OutputExtensionError("vkGetImageDrmFormatModifierPropertiesEXT", VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
@@ -9295,7 +9295,7 @@ bool StatelessValidation::PreCallValidateCreateValidationCacheEXT(
     VkDevice                                    device,
     const VkValidationCacheCreateInfoEXT*       pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkValidationCacheEXT*                       pValidationCache) {
+    VkValidationCacheEXT*                       pValidationCache) const {
     bool skip = false;
     if (!device_extensions.vk_ext_validation_cache) skip |= OutputExtensionError("vkCreateValidationCacheEXT", VK_EXT_VALIDATION_CACHE_EXTENSION_NAME);
     skip |= validate_struct_type("vkCreateValidationCacheEXT", "pCreateInfo", "VK_STRUCTURE_TYPE_VALIDATION_CACHE_CREATE_INFO_EXT", pCreateInfo, VK_STRUCTURE_TYPE_VALIDATION_CACHE_CREATE_INFO_EXT, true, "VUID-vkCreateValidationCacheEXT-pCreateInfo-parameter", "VUID-VkValidationCacheCreateInfoEXT-sType-sType");
@@ -9334,7 +9334,7 @@ bool StatelessValidation::PreCallValidateCreateValidationCacheEXT(
 bool StatelessValidation::PreCallValidateDestroyValidationCacheEXT(
     VkDevice                                    device,
     VkValidationCacheEXT                        validationCache,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (!device_extensions.vk_ext_validation_cache) skip |= OutputExtensionError("vkDestroyValidationCacheEXT", VK_EXT_VALIDATION_CACHE_EXTENSION_NAME);
     if (pAllocator != NULL)
@@ -9364,7 +9364,7 @@ bool StatelessValidation::PreCallValidateMergeValidationCachesEXT(
     VkDevice                                    device,
     VkValidationCacheEXT                        dstCache,
     uint32_t                                    srcCacheCount,
-    const VkValidationCacheEXT*                 pSrcCaches) {
+    const VkValidationCacheEXT*                 pSrcCaches) const {
     bool skip = false;
     if (!device_extensions.vk_ext_validation_cache) skip |= OutputExtensionError("vkMergeValidationCachesEXT", VK_EXT_VALIDATION_CACHE_EXTENSION_NAME);
     skip |= validate_required_handle("vkMergeValidationCachesEXT", "dstCache", dstCache);
@@ -9376,7 +9376,7 @@ bool StatelessValidation::PreCallValidateGetValidationCacheDataEXT(
     VkDevice                                    device,
     VkValidationCacheEXT                        validationCache,
     size_t*                                     pDataSize,
-    void*                                       pData) {
+    void*                                       pData) const {
     bool skip = false;
     if (!device_extensions.vk_ext_validation_cache) skip |= OutputExtensionError("vkGetValidationCacheDataEXT", VK_EXT_VALIDATION_CACHE_EXTENSION_NAME);
     skip |= validate_required_handle("vkGetValidationCacheDataEXT", "validationCache", validationCache);
@@ -9393,7 +9393,7 @@ bool StatelessValidation::PreCallValidateGetValidationCacheDataEXT(
 bool StatelessValidation::PreCallValidateCmdBindShadingRateImageNV(
     VkCommandBuffer                             commandBuffer,
     VkImageView                                 imageView,
-    VkImageLayout                               imageLayout) {
+    VkImageLayout                               imageLayout) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdBindShadingRateImageNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_nv_shading_rate_image) skip |= OutputExtensionError("vkCmdBindShadingRateImageNV", VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
@@ -9405,7 +9405,7 @@ bool StatelessValidation::PreCallValidateCmdSetViewportShadingRatePaletteNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstViewport,
     uint32_t                                    viewportCount,
-    const VkShadingRatePaletteNV*               pShadingRatePalettes) {
+    const VkShadingRatePaletteNV*               pShadingRatePalettes) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdSetViewportShadingRatePaletteNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_nv_shading_rate_image) skip |= OutputExtensionError("vkCmdSetViewportShadingRatePaletteNV", VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
@@ -9425,7 +9425,7 @@ bool StatelessValidation::PreCallValidateCmdSetCoarseSampleOrderNV(
     VkCommandBuffer                             commandBuffer,
     VkCoarseSampleOrderTypeNV                   sampleOrderType,
     uint32_t                                    customSampleOrderCount,
-    const VkCoarseSampleOrderCustomNV*          pCustomSampleOrders) {
+    const VkCoarseSampleOrderCustomNV*          pCustomSampleOrders) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdSetCoarseSampleOrderNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_nv_shading_rate_image) skip |= OutputExtensionError("vkCmdSetCoarseSampleOrderNV", VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME);
@@ -9458,7 +9458,7 @@ bool StatelessValidation::PreCallValidateCreateAccelerationStructureNV(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoNV*  pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkAccelerationStructureNV*                  pAccelerationStructure) {
+    VkAccelerationStructureNV*                  pAccelerationStructure) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_memory_requirements_2) skip |= OutputExtensionError("vkCreateAccelerationStructureNV", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCreateAccelerationStructureNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -9530,7 +9530,7 @@ bool StatelessValidation::PreCallValidateCreateAccelerationStructureNV(
 bool StatelessValidation::PreCallValidateDestroyAccelerationStructureNV(
     VkDevice                                    device,
     VkAccelerationStructureNV                   accelerationStructure,
-    const VkAllocationCallbacks*                pAllocator) {
+    const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_memory_requirements_2) skip |= OutputExtensionError("vkDestroyAccelerationStructureNV", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkDestroyAccelerationStructureNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -9562,7 +9562,7 @@ bool StatelessValidation::PreCallValidateDestroyAccelerationStructureNV(
 bool StatelessValidation::PreCallValidateGetAccelerationStructureMemoryRequirementsNV(
     VkDevice                                    device,
     const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
-    VkMemoryRequirements2KHR*                   pMemoryRequirements) {
+    VkMemoryRequirements2KHR*                   pMemoryRequirements) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_memory_requirements_2) skip |= OutputExtensionError("vkGetAccelerationStructureMemoryRequirementsNV", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkGetAccelerationStructureMemoryRequirementsNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -9583,7 +9583,7 @@ bool StatelessValidation::PreCallValidateGetAccelerationStructureMemoryRequireme
 bool StatelessValidation::PreCallValidateBindAccelerationStructureMemoryNV(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindAccelerationStructureMemoryInfoNV* pBindInfos) {
+    const VkBindAccelerationStructureMemoryInfoNV* pBindInfos) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_memory_requirements_2) skip |= OutputExtensionError("vkBindAccelerationStructureMemoryNV", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkBindAccelerationStructureMemoryNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -9614,7 +9614,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructureNV(
     VkAccelerationStructureNV                   dst,
     VkAccelerationStructureNV                   src,
     VkBuffer                                    scratch,
-    VkDeviceSize                                scratchOffset) {
+    VkDeviceSize                                scratchOffset) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_memory_requirements_2) skip |= OutputExtensionError("vkCmdBuildAccelerationStructureNV", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdBuildAccelerationStructureNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -9665,7 +9665,7 @@ bool StatelessValidation::PreCallValidateCmdCopyAccelerationStructureNV(
     VkCommandBuffer                             commandBuffer,
     VkAccelerationStructureNV                   dst,
     VkAccelerationStructureNV                   src,
-    VkCopyAccelerationStructureModeNV           mode) {
+    VkCopyAccelerationStructureModeNV           mode) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_memory_requirements_2) skip |= OutputExtensionError("vkCmdCopyAccelerationStructureNV", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdCopyAccelerationStructureNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -9691,7 +9691,7 @@ bool StatelessValidation::PreCallValidateCmdTraceRaysNV(
     VkDeviceSize                                callableShaderBindingStride,
     uint32_t                                    width,
     uint32_t                                    height,
-    uint32_t                                    depth) {
+    uint32_t                                    depth) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_memory_requirements_2) skip |= OutputExtensionError("vkCmdTraceRaysNV", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdTraceRaysNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -9706,7 +9706,7 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesNV(
     uint32_t                                    createInfoCount,
     const VkRayTracingPipelineCreateInfoNV*     pCreateInfos,
     const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines) {
+    VkPipeline*                                 pPipelines) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_memory_requirements_2) skip |= OutputExtensionError("vkCreateRayTracingPipelinesNV", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCreateRayTracingPipelinesNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -9803,7 +9803,7 @@ bool StatelessValidation::PreCallValidateGetRayTracingShaderGroupHandlesNV(
     uint32_t                                    firstGroup,
     uint32_t                                    groupCount,
     size_t                                      dataSize,
-    void*                                       pData) {
+    void*                                       pData) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_memory_requirements_2) skip |= OutputExtensionError("vkGetRayTracingShaderGroupHandlesNV", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkGetRayTracingShaderGroupHandlesNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -9817,7 +9817,7 @@ bool StatelessValidation::PreCallValidateGetAccelerationStructureHandleNV(
     VkDevice                                    device,
     VkAccelerationStructureNV                   accelerationStructure,
     size_t                                      dataSize,
-    void*                                       pData) {
+    void*                                       pData) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_memory_requirements_2) skip |= OutputExtensionError("vkGetAccelerationStructureHandleNV", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkGetAccelerationStructureHandleNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -9834,7 +9834,7 @@ bool StatelessValidation::PreCallValidateCmdWriteAccelerationStructuresPropertie
     const VkAccelerationStructureNV*            pAccelerationStructures,
     VkQueryType                                 queryType,
     VkQueryPool                                 queryPool,
-    uint32_t                                    firstQuery) {
+    uint32_t                                    firstQuery) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_memory_requirements_2) skip |= OutputExtensionError("vkCmdWriteAccelerationStructuresPropertiesNV", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdWriteAccelerationStructuresPropertiesNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -9848,7 +9848,7 @@ bool StatelessValidation::PreCallValidateCmdWriteAccelerationStructuresPropertie
 bool StatelessValidation::PreCallValidateCompileDeferredNV(
     VkDevice                                    device,
     VkPipeline                                  pipeline,
-    uint32_t                                    shader) {
+    uint32_t                                    shader) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_memory_requirements_2) skip |= OutputExtensionError("vkCompileDeferredNV", VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCompileDeferredNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -9869,7 +9869,7 @@ bool StatelessValidation::PreCallValidateGetMemoryHostPointerPropertiesEXT(
     VkDevice                                    device,
     VkExternalMemoryHandleTypeFlagBits          handleType,
     const void*                                 pHostPointer,
-    VkMemoryHostPointerPropertiesEXT*           pMemoryHostPointerProperties) {
+    VkMemoryHostPointerPropertiesEXT*           pMemoryHostPointerProperties) const {
     bool skip = false;
     if (!device_extensions.vk_khr_external_memory) skip |= OutputExtensionError("vkGetMemoryHostPointerPropertiesEXT", VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
     if (!device_extensions.vk_ext_external_memory_host) skip |= OutputExtensionError("vkGetMemoryHostPointerPropertiesEXT", VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME);
@@ -9890,7 +9890,7 @@ bool StatelessValidation::PreCallValidateCmdWriteBufferMarkerAMD(
     VkPipelineStageFlagBits                     pipelineStage,
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
-    uint32_t                                    marker) {
+    uint32_t                                    marker) const {
     bool skip = false;
     if (!device_extensions.vk_amd_buffer_marker) skip |= OutputExtensionError("vkCmdWriteBufferMarkerAMD", VK_AMD_BUFFER_MARKER_EXTENSION_NAME);
     skip |= validate_flags("vkCmdWriteBufferMarkerAMD", "pipelineStage", "VkPipelineStageFlagBits", AllVkPipelineStageFlagBits, pipelineStage, kRequiredSingleBit, "VUID-vkCmdWriteBufferMarkerAMD-pipelineStage-parameter", "VUID-vkCmdWriteBufferMarkerAMD-pipelineStage-parameter");
@@ -9905,7 +9905,7 @@ bool StatelessValidation::PreCallValidateCmdWriteBufferMarkerAMD(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceCalibrateableTimeDomainsEXT(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pTimeDomainCount,
-    VkTimeDomainEXT*                            pTimeDomains) {
+    VkTimeDomainEXT*                            pTimeDomains) const {
     bool skip = false;
     skip |= validate_array("vkGetPhysicalDeviceCalibrateableTimeDomainsEXT", "pTimeDomainCount", "pTimeDomains", pTimeDomainCount, &pTimeDomains, true, false, false, kVUIDUndefined, "VUID-vkGetPhysicalDeviceCalibrateableTimeDomainsEXT-pTimeDomains-parameter");
     return skip;
@@ -9916,7 +9916,7 @@ bool StatelessValidation::PreCallValidateGetCalibratedTimestampsEXT(
     uint32_t                                    timestampCount,
     const VkCalibratedTimestampInfoEXT*         pTimestampInfos,
     uint64_t*                                   pTimestamps,
-    uint64_t*                                   pMaxDeviation) {
+    uint64_t*                                   pMaxDeviation) const {
     bool skip = false;
     if (!device_extensions.vk_ext_calibrated_timestamps) skip |= OutputExtensionError("vkGetCalibratedTimestampsEXT", VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
     skip |= validate_struct_type_array("vkGetCalibratedTimestampsEXT", "timestampCount", "pTimestampInfos", "VK_STRUCTURE_TYPE_CALIBRATED_TIMESTAMP_INFO_EXT", timestampCount, pTimestampInfos, VK_STRUCTURE_TYPE_CALIBRATED_TIMESTAMP_INFO_EXT, true, true, "VUID-VkCalibratedTimestampInfoEXT-sType-sType", "VUID-vkGetCalibratedTimestampsEXT-pTimestampInfos-parameter", "VUID-vkGetCalibratedTimestampsEXT-timestampCount-arraylength");
@@ -9955,7 +9955,7 @@ bool StatelessValidation::PreCallValidateGetCalibratedTimestampsEXT(
 bool StatelessValidation::PreCallValidateCmdDrawMeshTasksNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    taskCount,
-    uint32_t                                    firstTask) {
+    uint32_t                                    firstTask) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdDrawMeshTasksNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_nv_mesh_shader) skip |= OutputExtensionError("vkCmdDrawMeshTasksNV", VK_NV_MESH_SHADER_EXTENSION_NAME);
@@ -9969,7 +9969,7 @@ bool StatelessValidation::PreCallValidateCmdDrawMeshTasksIndirectNV(
     VkBuffer                                    buffer,
     VkDeviceSize                                offset,
     uint32_t                                    drawCount,
-    uint32_t                                    stride) {
+    uint32_t                                    stride) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdDrawMeshTasksIndirectNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_nv_mesh_shader) skip |= OutputExtensionError("vkCmdDrawMeshTasksIndirectNV", VK_NV_MESH_SHADER_EXTENSION_NAME);
@@ -9985,7 +9985,7 @@ bool StatelessValidation::PreCallValidateCmdDrawMeshTasksIndirectCountNV(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride) {
+    uint32_t                                    stride) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdDrawMeshTasksIndirectCountNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_nv_mesh_shader) skip |= OutputExtensionError("vkCmdDrawMeshTasksIndirectCountNV", VK_NV_MESH_SHADER_EXTENSION_NAME);
@@ -10005,7 +10005,7 @@ bool StatelessValidation::PreCallValidateCmdSetExclusiveScissorNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstExclusiveScissor,
     uint32_t                                    exclusiveScissorCount,
-    const VkRect2D*                             pExclusiveScissors) {
+    const VkRect2D*                             pExclusiveScissors) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdSetExclusiveScissorNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_nv_scissor_exclusive) skip |= OutputExtensionError("vkCmdSetExclusiveScissorNV", VK_NV_SCISSOR_EXCLUSIVE_EXTENSION_NAME);
@@ -10027,7 +10027,7 @@ bool StatelessValidation::PreCallValidateCmdSetExclusiveScissorNV(
 
 bool StatelessValidation::PreCallValidateCmdSetCheckpointNV(
     VkCommandBuffer                             commandBuffer,
-    const void*                                 pCheckpointMarker) {
+    const void*                                 pCheckpointMarker) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdSetCheckpointNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_nv_device_diagnostic_checkpoints) skip |= OutputExtensionError("vkCmdSetCheckpointNV", VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
@@ -10038,7 +10038,7 @@ bool StatelessValidation::PreCallValidateCmdSetCheckpointNV(
 bool StatelessValidation::PreCallValidateGetQueueCheckpointDataNV(
     VkQueue                                     queue,
     uint32_t*                                   pCheckpointDataCount,
-    VkCheckpointDataNV*                         pCheckpointData) {
+    VkCheckpointDataNV*                         pCheckpointData) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkGetQueueCheckpointDataNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_nv_device_diagnostic_checkpoints) skip |= OutputExtensionError("vkGetQueueCheckpointDataNV", VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
@@ -10059,7 +10059,7 @@ bool StatelessValidation::PreCallValidateGetQueueCheckpointDataNV(
 
 bool StatelessValidation::PreCallValidateInitializePerformanceApiINTEL(
     VkDevice                                    device,
-    const VkInitializePerformanceApiInfoINTEL*  pInitializeInfo) {
+    const VkInitializePerformanceApiInfoINTEL*  pInitializeInfo) const {
     bool skip = false;
     if (!device_extensions.vk_intel_performance_query) skip |= OutputExtensionError("vkInitializePerformanceApiINTEL", VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME);
     skip |= validate_struct_type("vkInitializePerformanceApiINTEL", "pInitializeInfo", "VK_STRUCTURE_TYPE_INITIALIZE_PERFORMANCE_API_INFO_INTEL", pInitializeInfo, VK_STRUCTURE_TYPE_INITIALIZE_PERFORMANCE_API_INFO_INTEL, true, "VUID-vkInitializePerformanceApiINTEL-pInitializeInfo-parameter", "VUID-VkInitializePerformanceApiInfoINTEL-sType-sType");
@@ -10073,7 +10073,7 @@ bool StatelessValidation::PreCallValidateInitializePerformanceApiINTEL(
 }
 
 bool StatelessValidation::PreCallValidateUninitializePerformanceApiINTEL(
-    VkDevice                                    device) {
+    VkDevice                                    device) const {
     bool skip = false;
     if (!device_extensions.vk_intel_performance_query) skip |= OutputExtensionError("vkUninitializePerformanceApiINTEL", VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME);
     // No xml-driven validation
@@ -10082,7 +10082,7 @@ bool StatelessValidation::PreCallValidateUninitializePerformanceApiINTEL(
 
 bool StatelessValidation::PreCallValidateCmdSetPerformanceMarkerINTEL(
     VkCommandBuffer                             commandBuffer,
-    const VkPerformanceMarkerInfoINTEL*         pMarkerInfo) {
+    const VkPerformanceMarkerInfoINTEL*         pMarkerInfo) const {
     bool skip = false;
     if (!device_extensions.vk_intel_performance_query) skip |= OutputExtensionError("vkCmdSetPerformanceMarkerINTEL", VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME);
     skip |= validate_struct_type("vkCmdSetPerformanceMarkerINTEL", "pMarkerInfo", "VK_STRUCTURE_TYPE_PERFORMANCE_MARKER_INFO_INTEL", pMarkerInfo, VK_STRUCTURE_TYPE_PERFORMANCE_MARKER_INFO_INTEL, true, "VUID-vkCmdSetPerformanceMarkerINTEL-pMarkerInfo-parameter", "VUID-VkPerformanceMarkerInfoINTEL-sType-sType");
@@ -10095,7 +10095,7 @@ bool StatelessValidation::PreCallValidateCmdSetPerformanceMarkerINTEL(
 
 bool StatelessValidation::PreCallValidateCmdSetPerformanceStreamMarkerINTEL(
     VkCommandBuffer                             commandBuffer,
-    const VkPerformanceStreamMarkerInfoINTEL*   pMarkerInfo) {
+    const VkPerformanceStreamMarkerInfoINTEL*   pMarkerInfo) const {
     bool skip = false;
     if (!device_extensions.vk_intel_performance_query) skip |= OutputExtensionError("vkCmdSetPerformanceStreamMarkerINTEL", VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME);
     skip |= validate_struct_type("vkCmdSetPerformanceStreamMarkerINTEL", "pMarkerInfo", "VK_STRUCTURE_TYPE_PERFORMANCE_STREAM_MARKER_INFO_INTEL", pMarkerInfo, VK_STRUCTURE_TYPE_PERFORMANCE_STREAM_MARKER_INFO_INTEL, true, "VUID-vkCmdSetPerformanceStreamMarkerINTEL-pMarkerInfo-parameter", "VUID-VkPerformanceStreamMarkerInfoINTEL-sType-sType");
@@ -10108,7 +10108,7 @@ bool StatelessValidation::PreCallValidateCmdSetPerformanceStreamMarkerINTEL(
 
 bool StatelessValidation::PreCallValidateCmdSetPerformanceOverrideINTEL(
     VkCommandBuffer                             commandBuffer,
-    const VkPerformanceOverrideInfoINTEL*       pOverrideInfo) {
+    const VkPerformanceOverrideInfoINTEL*       pOverrideInfo) const {
     bool skip = false;
     if (!device_extensions.vk_intel_performance_query) skip |= OutputExtensionError("vkCmdSetPerformanceOverrideINTEL", VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME);
     skip |= validate_struct_type("vkCmdSetPerformanceOverrideINTEL", "pOverrideInfo", "VK_STRUCTURE_TYPE_PERFORMANCE_OVERRIDE_INFO_INTEL", pOverrideInfo, VK_STRUCTURE_TYPE_PERFORMANCE_OVERRIDE_INFO_INTEL, true, "VUID-vkCmdSetPerformanceOverrideINTEL-pOverrideInfo-parameter", "VUID-VkPerformanceOverrideInfoINTEL-sType-sType");
@@ -10126,7 +10126,7 @@ bool StatelessValidation::PreCallValidateCmdSetPerformanceOverrideINTEL(
 bool StatelessValidation::PreCallValidateAcquirePerformanceConfigurationINTEL(
     VkDevice                                    device,
     const VkPerformanceConfigurationAcquireInfoINTEL* pAcquireInfo,
-    VkPerformanceConfigurationINTEL*            pConfiguration) {
+    VkPerformanceConfigurationINTEL*            pConfiguration) const {
     bool skip = false;
     if (!device_extensions.vk_intel_performance_query) skip |= OutputExtensionError("vkAcquirePerformanceConfigurationINTEL", VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME);
     skip |= validate_struct_type("vkAcquirePerformanceConfigurationINTEL", "pAcquireInfo", "VK_STRUCTURE_TYPE_PERFORMANCE_CONFIGURATION_ACQUIRE_INFO_INTEL", pAcquireInfo, VK_STRUCTURE_TYPE_PERFORMANCE_CONFIGURATION_ACQUIRE_INFO_INTEL, true, "VUID-vkAcquirePerformanceConfigurationINTEL-pAcquireInfo-parameter", "VUID-VkPerformanceConfigurationAcquireInfoINTEL-sType-sType");
@@ -10142,7 +10142,7 @@ bool StatelessValidation::PreCallValidateAcquirePerformanceConfigurationINTEL(
 
 bool StatelessValidation::PreCallValidateReleasePerformanceConfigurationINTEL(
     VkDevice                                    device,
-    VkPerformanceConfigurationINTEL             configuration) {
+    VkPerformanceConfigurationINTEL             configuration) const {
     bool skip = false;
     if (!device_extensions.vk_intel_performance_query) skip |= OutputExtensionError("vkReleasePerformanceConfigurationINTEL", VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME);
     skip |= validate_required_handle("vkReleasePerformanceConfigurationINTEL", "configuration", configuration);
@@ -10151,7 +10151,7 @@ bool StatelessValidation::PreCallValidateReleasePerformanceConfigurationINTEL(
 
 bool StatelessValidation::PreCallValidateQueueSetPerformanceConfigurationINTEL(
     VkQueue                                     queue,
-    VkPerformanceConfigurationINTEL             configuration) {
+    VkPerformanceConfigurationINTEL             configuration) const {
     bool skip = false;
     if (!device_extensions.vk_intel_performance_query) skip |= OutputExtensionError("vkQueueSetPerformanceConfigurationINTEL", VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME);
     skip |= validate_required_handle("vkQueueSetPerformanceConfigurationINTEL", "configuration", configuration);
@@ -10161,7 +10161,7 @@ bool StatelessValidation::PreCallValidateQueueSetPerformanceConfigurationINTEL(
 bool StatelessValidation::PreCallValidateGetPerformanceParameterINTEL(
     VkDevice                                    device,
     VkPerformanceParameterTypeINTEL             parameter,
-    VkPerformanceValueINTEL*                    pValue) {
+    VkPerformanceValueINTEL*                    pValue) const {
     bool skip = false;
     if (!device_extensions.vk_intel_performance_query) skip |= OutputExtensionError("vkGetPerformanceParameterINTEL", VK_INTEL_PERFORMANCE_QUERY_EXTENSION_NAME);
     skip |= validate_ranged_enum("vkGetPerformanceParameterINTEL", "parameter", "VkPerformanceParameterTypeINTEL", AllVkPerformanceParameterTypeINTELEnums, parameter, "VUID-vkGetPerformanceParameterINTEL-parameter-parameter");
@@ -10176,7 +10176,7 @@ bool StatelessValidation::PreCallValidateGetPerformanceParameterINTEL(
 bool StatelessValidation::PreCallValidateSetLocalDimmingAMD(
     VkDevice                                    device,
     VkSwapchainKHR                              swapChain,
-    VkBool32                                    localDimmingEnable) {
+    VkBool32                                    localDimmingEnable) const {
     bool skip = false;
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkSetLocalDimmingAMD", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_surface_capabilities_2) skip |= OutputExtensionError("vkSetLocalDimmingAMD", VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
@@ -10195,7 +10195,7 @@ bool StatelessValidation::PreCallValidateCreateImagePipeSurfaceFUCHSIA(
     VkInstance                                  instance,
     const VkImagePipeSurfaceCreateInfoFUCHSIA*  pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) {
+    VkSurfaceKHR*                               pSurface) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkCreateImagePipeSurfaceFUCHSIA", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_fuchsia_imagepipe_surface) skip |= OutputExtensionError("vkCreateImagePipeSurfaceFUCHSIA", VK_FUCHSIA_IMAGEPIPE_SURFACE_EXTENSION_NAME);
@@ -10238,7 +10238,7 @@ bool StatelessValidation::PreCallValidateCreateMetalSurfaceEXT(
     VkInstance                                  instance,
     const VkMetalSurfaceCreateInfoEXT*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) {
+    VkSurfaceKHR*                               pSurface) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkCreateMetalSurfaceEXT", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_ext_metal_surface) skip |= OutputExtensionError("vkCreateMetalSurfaceEXT", VK_EXT_METAL_SURFACE_EXTENSION_NAME);
@@ -10297,7 +10297,7 @@ bool StatelessValidation::PreCallValidateCreateMetalSurfaceEXT(
 
 bool StatelessValidation::PreCallValidateGetBufferDeviceAddressEXT(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoEXT*         pInfo) {
+    const VkBufferDeviceAddressInfoEXT*         pInfo) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkGetBufferDeviceAddressEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_ext_buffer_device_address) skip |= OutputExtensionError("vkGetBufferDeviceAddressEXT", VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
@@ -10320,7 +10320,7 @@ bool StatelessValidation::PreCallValidateGetBufferDeviceAddressEXT(
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceCooperativeMatrixPropertiesNV(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
-    VkCooperativeMatrixPropertiesNV*            pProperties) {
+    VkCooperativeMatrixPropertiesNV*            pProperties) const {
     bool skip = false;
     skip |= validate_struct_type_array("vkGetPhysicalDeviceCooperativeMatrixPropertiesNV", "pPropertyCount", "pProperties", "VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_NV", pPropertyCount, pProperties, VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_NV, true, false, false, "VUID-VkCooperativeMatrixPropertiesNV-sType-sType", "VUID-vkGetPhysicalDeviceCooperativeMatrixPropertiesNV-pProperties-parameter", kVUIDUndefined);
     return skip;
@@ -10331,7 +10331,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceCooperativeMatrixPrope
 bool StatelessValidation::PreCallValidateGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pCombinationCount,
-    VkFramebufferMixedSamplesCombinationNV*     pCombinations) {
+    VkFramebufferMixedSamplesCombinationNV*     pCombinations) const {
     bool skip = false;
     skip |= validate_struct_type_array("vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV", "pCombinationCount", "pCombinations", "VK_STRUCTURE_TYPE_FRAMEBUFFER_MIXED_SAMPLES_COMBINATION_NV", pCombinationCount, pCombinations, VK_STRUCTURE_TYPE_FRAMEBUFFER_MIXED_SAMPLES_COMBINATION_NV, true, false, false, "VUID-VkFramebufferMixedSamplesCombinationNV-sType-sType", "VUID-vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV-pCombinations-parameter", kVUIDUndefined);
     if (pCombinations != NULL)
@@ -10356,7 +10356,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EX
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
     uint32_t*                                   pPresentModeCount,
-    VkPresentModeKHR*                           pPresentModes) {
+    VkPresentModeKHR*                           pPresentModes) const {
     bool skip = false;
     skip |= validate_struct_type("vkGetPhysicalDeviceSurfacePresentModes2EXT", "pSurfaceInfo", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR", pSurfaceInfo, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR, true, "VUID-vkGetPhysicalDeviceSurfacePresentModes2EXT-pSurfaceInfo-parameter", "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-sType");
     if (pSurfaceInfo != NULL)
@@ -10373,7 +10373,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EX
 
 bool StatelessValidation::PreCallValidateAcquireFullScreenExclusiveModeEXT(
     VkDevice                                    device,
-    VkSwapchainKHR                              swapchain) {
+    VkSwapchainKHR                              swapchain) const {
     bool skip = false;
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkAcquireFullScreenExclusiveModeEXT", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_surface_capabilities_2) skip |= OutputExtensionError("vkAcquireFullScreenExclusiveModeEXT", VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
@@ -10386,7 +10386,7 @@ bool StatelessValidation::PreCallValidateAcquireFullScreenExclusiveModeEXT(
 
 bool StatelessValidation::PreCallValidateReleaseFullScreenExclusiveModeEXT(
     VkDevice                                    device,
-    VkSwapchainKHR                              swapchain) {
+    VkSwapchainKHR                              swapchain) const {
     bool skip = false;
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkReleaseFullScreenExclusiveModeEXT", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     if (!device_extensions.vk_khr_get_surface_capabilities_2) skip |= OutputExtensionError("vkReleaseFullScreenExclusiveModeEXT", VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
@@ -10403,7 +10403,7 @@ bool StatelessValidation::PreCallValidateCreateHeadlessSurfaceEXT(
     VkInstance                                  instance,
     const VkHeadlessSurfaceCreateInfoEXT*       pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) {
+    VkSurfaceKHR*                               pSurface) const {
     bool skip = false;
     if (!instance_extensions.vk_khr_surface) skip |= OutputExtensionError("vkCreateHeadlessSurfaceEXT", VK_KHR_SURFACE_EXTENSION_NAME);
     if (!instance_extensions.vk_ext_headless_surface) skip |= OutputExtensionError("vkCreateHeadlessSurfaceEXT", VK_EXT_HEADLESS_SURFACE_EXTENSION_NAME);
@@ -10443,7 +10443,7 @@ bool StatelessValidation::PreCallValidateCreateHeadlessSurfaceEXT(
 bool StatelessValidation::PreCallValidateCmdSetLineStippleEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    lineStippleFactor,
-    uint16_t                                    lineStipplePattern) {
+    uint16_t                                    lineStipplePattern) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdSetLineStippleEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_ext_line_rasterization) skip |= OutputExtensionError("vkCmdSetLineStippleEXT", VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
@@ -10458,7 +10458,7 @@ bool StatelessValidation::PreCallValidateResetQueryPoolEXT(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
-    uint32_t                                    queryCount) {
+    uint32_t                                    queryCount) const {
     bool skip = false;
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkResetQueryPoolEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_ext_host_query_reset) skip |= OutputExtensionError("vkResetQueryPoolEXT", VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
