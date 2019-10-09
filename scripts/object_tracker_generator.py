@@ -305,7 +305,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         output_func = ''
         for objtype in ['instance', 'device']:
             upper_objtype = objtype.capitalize();
-            output_func += 'bool ObjectLifetimes::ReportUndestroyed%sObjects(Vk%s %s, const std::string& error_code) {\n' % (upper_objtype, upper_objtype, objtype)
+            output_func += 'bool ObjectLifetimes::ReportUndestroyed%sObjects(Vk%s %s, const std::string& error_code) const {\n' % (upper_objtype, upper_objtype, objtype)
             output_func += '    bool skip = false;\n'
             if objtype == 'device':
                 output_func += '    skip |= ReportLeaked%sObjects(%s, kVulkanObjectTypeCommandBuffer, error_code);\n' % (upper_objtype, objtype)

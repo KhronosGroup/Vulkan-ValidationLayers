@@ -113,7 +113,7 @@ class StatelessValidation : public ValidationObject {
     // Though this validation object is predominantly statless, the Framebuffer checks are greatly simplified by creating and
     // updating a map of the renderpass usage states, and these accesses need thread protection. Use a mutex separate from the
     // parent object's to maintain that functionality.
-    std::mutex renderpass_map_mutex;
+    mutable std::mutex renderpass_map_mutex;
     std::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
 
     // Constructor for stateles validation tracking
@@ -131,7 +131,7 @@ class StatelessValidation : public ValidationObject {
      */
     template <typename T>
     bool ValidateGreaterThan(const T value, const T lower_bound, const ParameterName &parameter_name, const std::string &vuid,
-                             const LogMiscParams &misc) {
+                             const LogMiscParams &misc) const {
         bool skip_call = false;
 
         if (value <= lower_bound) {
@@ -147,7 +147,7 @@ class StatelessValidation : public ValidationObject {
 
     template <typename T>
     bool ValidateGreaterThanZero(const T value, const ParameterName &parameter_name, const std::string &vuid,
-                                 const LogMiscParams &misc) {
+                                 const LogMiscParams &misc) const {
         return ValidateGreaterThan(value, T{0}, parameter_name, vuid, misc);
     }
     /**
@@ -161,7 +161,7 @@ class StatelessValidation : public ValidationObject {
      * @return Boolean value indicating that the call should be skipped.
      */
     bool validate_required_pointer(const char *apiName, const ParameterName &parameterName, const void *value,
-                                   const std::string &vuid) {
+                                   const std::string &vuid) const {
         bool skip_call = false;
 
         if (value == NULL) {
@@ -191,7 +191,7 @@ class StatelessValidation : public ValidationObject {
     template <typename T1, typename T2>
     bool validate_array(const char *apiName, const ParameterName &countName, const ParameterName &arrayName, T1 count,
                         const T2 *array, bool countRequired, bool arrayRequired, const char *count_required_vuid,
-                        const char *array_required_vuid) {
+                        const char *array_required_vuid) const {
         bool skip_call = false;
 
         // Count parameters not tagged as optional cannot be 0
@@ -233,7 +233,7 @@ class StatelessValidation : public ValidationObject {
     template <typename T1, typename T2>
     bool validate_array(const char *apiName, const ParameterName &countName, const ParameterName &arrayName, const T1 *count,
                         const T2 *array, bool countPtrRequired, bool countValueRequired, bool arrayRequired,
-                        const char *count_required_vuid, const char *array_required_vuid) {
+                        const char *count_required_vuid, const char *array_required_vuid) const {
         bool skip_call = false;
 
         if (count == NULL) {
@@ -267,7 +267,7 @@ class StatelessValidation : public ValidationObject {
      */
     template <typename T>
     bool validate_struct_type(const char *apiName, const ParameterName &parameterName, const char *sTypeName, const T *value,
-                              VkStructureType sType, bool required, const char *struct_vuid, const char *stype_vuid) {
+                              VkStructureType sType, bool required, const char *struct_vuid, const char *stype_vuid) const {
         bool skip_call = false;
 
         if (value == NULL) {
@@ -306,7 +306,7 @@ class StatelessValidation : public ValidationObject {
     bool validate_struct_type_array(const char *apiName, const ParameterName &countName, const ParameterName &arrayName,
                                     const char *sTypeName, uint32_t count, const T *array, VkStructureType sType,
                                     bool countRequired, bool arrayRequired, const char *stype_vuid, const char *param_vuid,
-                                    const char *count_required_vuid) {
+                                    const char *count_required_vuid) const {
         bool skip_call = false;
 
         if ((count == 0) || (array == NULL)) {
@@ -350,7 +350,7 @@ class StatelessValidation : public ValidationObject {
     bool validate_struct_type_array(const char *apiName, const ParameterName &countName, const ParameterName &arrayName,
                                     const char *sTypeName, uint32_t *count, const T *array, VkStructureType sType,
                                     bool countPtrRequired, bool countValueRequired, bool arrayRequired, const char *stype_vuid,
-                                    const char *param_vuid, const char *count_required_vuid) {
+                                    const char *param_vuid, const char *count_required_vuid) const {
         bool skip_call = false;
 
         if (count == NULL) {
@@ -378,7 +378,7 @@ class StatelessValidation : public ValidationObject {
      * @return Boolean value indicating that the call should be skipped.
      */
     template <typename T>
-    bool validate_required_handle(const char *api_name, const ParameterName &parameter_name, T value) {
+    bool validate_required_handle(const char *api_name, const ParameterName &parameter_name, T value) const {
         bool skip_call = false;
 
         if (value == VK_NULL_HANDLE) {
@@ -413,7 +413,7 @@ class StatelessValidation : public ValidationObject {
      */
     template <typename T>
     bool validate_handle_array(const char *api_name, const ParameterName &count_name, const ParameterName &array_name,
-                               uint32_t count, const T *array, bool count_required, bool array_required) {
+                               uint32_t count, const T *array, bool count_required, bool array_required) const {
         bool skip_call = false;
 
         if ((count == 0) || (array == NULL)) {
@@ -453,7 +453,7 @@ class StatelessValidation : public ValidationObject {
      */
     bool validate_string_array(const char *apiName, const ParameterName &countName, const ParameterName &arrayName, uint32_t count,
                                const char *const *array, bool countRequired, bool arrayRequired, const char *count_required_vuid,
-                               const char *array_required_vuid) {
+                               const char *array_required_vuid) const {
         bool skip_call = false;
 
         if ((count == 0) || (array == NULL)) {
@@ -474,7 +474,8 @@ class StatelessValidation : public ValidationObject {
     }
 
     // Forward declaration for pNext validation
-    bool ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure *header);
+    bool ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name,
+                                     const VkBaseOutStructure *header) const;
 
     /**
      * Validate a structure's pNext member.
@@ -494,7 +495,7 @@ class StatelessValidation : public ValidationObject {
      */
     bool validate_struct_pnext(const char *api_name, const ParameterName &parameter_name, const char *allowed_struct_names,
                                const void *next, size_t allowed_type_count, const VkStructureType *allowed_types,
-                               uint32_t header_version, const char *vuid) {
+                               uint32_t header_version, const char *vuid) const {
         bool skip_call = false;
 
         // TODO: The valid pNext structure types are not recursive. Each structure has its own list of valid sTypes for pNext.
@@ -592,7 +593,7 @@ class StatelessValidation : public ValidationObject {
      * @param value Boolean value to validate.
      * @return Boolean value indicating that the call should be skipped.
      */
-    bool validate_bool32(const char *apiName, const ParameterName &parameterName, VkBool32 value) {
+    bool validate_bool32(const char *apiName, const ParameterName &parameterName, VkBool32 value) const {
         bool skip_call = false;
 
         if ((value != VK_TRUE) && (value != VK_FALSE)) {
@@ -623,7 +624,7 @@ class StatelessValidation : public ValidationObject {
      */
     template <typename T>
     bool validate_ranged_enum(const char *apiName, const ParameterName &parameterName, const char *enumName,
-                              const std::vector<T> &valid_values, T value, const char *vuid) {
+                              const std::vector<T> &valid_values, T value, const char *vuid) const {
         bool skip = false;
 
         if (std::find(valid_values.begin(), valid_values.end(), value) == valid_values.end()) {
@@ -661,7 +662,7 @@ class StatelessValidation : public ValidationObject {
     template <typename T>
     bool validate_ranged_enum_array(const char *apiName, const ParameterName &countName, const ParameterName &arrayName,
                                     const char *enumName, const std::vector<T> &valid_values, uint32_t count, const T *array,
-                                    bool countRequired, bool arrayRequired) {
+                                    bool countRequired, bool arrayRequired) const {
         bool skip_call = false;
 
         if ((count == 0) || (array == NULL)) {
@@ -693,7 +694,7 @@ class StatelessValidation : public ValidationObject {
      * @param value Value to validate.
      * @return Boolean value indicating that the call should be skipped.
      */
-    bool validate_reserved_flags(const char *api_name, const ParameterName &parameter_name, VkFlags value, const char *vuid) {
+    bool validate_reserved_flags(const char *api_name, const ParameterName &parameter_name, VkFlags value, const char *vuid) const {
         bool skip_call = false;
 
         if (value != 0) {
@@ -723,7 +724,7 @@ class StatelessValidation : public ValidationObject {
      * @return Boolean value indicating that the call should be skipped.
      */
     bool validate_flags(const char *api_name, const ParameterName &parameter_name, const char *flag_bits_name, VkFlags all_flags,
-                        VkFlags value, const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) {
+                        VkFlags value, const FlagType flag_type, const char *vuid, const char *flags_zero_vuid = nullptr) const {
         bool skip_call = false;
 
         if ((value & ~all_flags) != 0) {
@@ -774,7 +775,7 @@ class StatelessValidation : public ValidationObject {
      */
     bool validate_flags_array(const char *api_name, const ParameterName &count_name, const ParameterName &array_name,
                               const char *flag_bits_name, VkFlags all_flags, uint32_t count, const VkFlags *array,
-                              bool count_required, bool array_required) {
+                              bool count_required, bool array_required) const {
         bool skip_call = false;
 
         if ((count == 0) || (array == NULL)) {
@@ -805,7 +806,7 @@ class StatelessValidation : public ValidationObject {
 
     template <typename ExtensionState>
     bool validate_extension_reqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,
-                                 const char *extension_name) {
+                                 const char *extension_name) const {
         bool skip = false;
         if (!extension_name) {
             return skip;  // Robust to invalid char *
@@ -839,7 +840,7 @@ class StatelessValidation : public ValidationObject {
     template <typename RenderPassCreateInfoGeneric>
     bool ValidateSubpassGraphicsFlags(const debug_report_data *report_data, const RenderPassCreateInfoGeneric *pCreateInfo,
                                       uint32_t dependency_index, uint32_t subpass, VkPipelineStageFlags stages, const char *vuid,
-                                      const char *target) {
+                                      const char *target) const {
         const VkPipelineStageFlags kCommonStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT | VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
         const VkPipelineStageFlags kFramebufferStages =
             VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
@@ -885,7 +886,7 @@ class StatelessValidation : public ValidationObject {
     template <typename RenderPassCreateInfoGeneric>
     bool CreateRenderPassGeneric(VkDevice device, const RenderPassCreateInfoGeneric *pCreateInfo,
                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
-                                 RenderPassCreateVersion rp_version) {
+                                 RenderPassCreateVersion rp_version) const {
         bool skip = false;
         uint32_t max_color_attachments = device_limits.maxColorAttachments;
         bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
@@ -961,15 +962,16 @@ class StatelessValidation : public ValidationObject {
         }
     }
 
-    bool require_device_extension(bool flag, char const *function_name, char const *extension_name);
+    bool require_device_extension(bool flag, char const *function_name, char const *extension_name) const;
 
-    bool validate_instance_extensions(const VkInstanceCreateInfo *pCreateInfo);
+    bool validate_instance_extensions(const VkInstanceCreateInfo *pCreateInfo) const;
 
-    bool validate_api_version(uint32_t api_version, uint32_t effective_api_version);
+    bool validate_api_version(uint32_t api_version, uint32_t effective_api_version) const;
 
-    bool validate_string(const char *apiName, const ParameterName &stringName, const std::string &vuid, const char *validateString);
+    bool validate_string(const char *apiName, const ParameterName &stringName, const std::string &vuid,
+                         const char *validateString) const;
 
-    bool ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV *order);
+    bool ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV *order) const;
 
     bool ValidateQueueFamilies(uint32_t queue_family_count, const uint32_t *queue_families, const char *cmd_name,
                                const char *array_parameter_name, const std::string &unique_error_code,
@@ -987,7 +989,7 @@ class StatelessValidation : public ValidationObject {
     bool ValidateAccelerationStructureInfoNV(const VkAccelerationStructureInfoNV &info, VkDebugReportObjectTypeEXT object_type,
                                              uint64_t object_handle, const char *func_nam) const;
 
-    bool OutputExtensionError(const std::string &api_name, const std::string &extension_name);
+    bool OutputExtensionError(const std::string &api_name, const std::string &extension_name) const;
 
     void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
                                         const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass, VkResult result);

@@ -1468,7 +1468,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
 // func_str is the name of the calling function
 // Return false if no errors occur
 // Return true if validation error occurs and callback returns true (to skip upcoming API call down the chain)
-bool CoreChecks::ValidateIdleDescriptorSet(VkDescriptorSet set, const char *func_str) {
+bool CoreChecks::ValidateIdleDescriptorSet(VkDescriptorSet set, const char *func_str) const {
     if (disabled.idle_descriptor_set) return false;
     bool skip = false;
     auto set_node = setMap.find(set);
@@ -1648,7 +1648,7 @@ bool CoreChecks::OutsideRenderPass(const CMD_BUFFER_STATE *pCB, const char *apiN
 }
 
 bool CoreChecks::ValidateQueueFamilyIndex(const PHYSICAL_DEVICE_STATE *pd_state, uint32_t requested_queue_family,
-                                          const char *err_code, const char *cmd_name, const char *queue_family_var_name) {
+                                          const char *err_code, const char *cmd_name, const char *queue_family_var_name) const {
     bool skip = false;
 
     if (requested_queue_family >= pd_state->queue_family_known_count) {
@@ -1671,7 +1671,7 @@ bool CoreChecks::ValidateQueueFamilyIndex(const PHYSICAL_DEVICE_STATE *pd_state,
 
 // Verify VkDeviceQueueCreateInfos
 bool CoreChecks::ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE *pd_state, uint32_t info_count,
-                                                const VkDeviceQueueCreateInfo *infos) {
+                                                const VkDeviceQueueCreateInfo *infos) const {
     bool skip = false;
 
     std::unordered_set<uint32_t> queue_family_set;
@@ -3096,7 +3096,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(VkPhy
 }
 
 bool CoreChecks::PreCallValidateDestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks *pAllocator) {
-    PIPELINE_STATE *pipeline_state = GetPipelineState(pipeline);
+    const PIPELINE_STATE *pipeline_state = GetPipelineState(pipeline);
     const VulkanTypedHandle obj_struct(pipeline, kVulkanObjectTypePipeline);
     bool skip = false;
     if (pipeline_state) {
@@ -3117,7 +3117,7 @@ bool CoreChecks::PreCallValidateDestroySampler(VkDevice device, VkSampler sample
 
 bool CoreChecks::PreCallValidateDestroyDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool,
                                                       const VkAllocationCallbacks *pAllocator) {
-    DESCRIPTOR_POOL_STATE *desc_pool_state = GetDescriptorPoolState(descriptorPool);
+    const DESCRIPTOR_POOL_STATE *desc_pool_state = GetDescriptorPoolState(descriptorPool);
     const VulkanTypedHandle obj_struct(descriptorPool, kVulkanObjectTypeDescriptorPool);
     bool skip = false;
     if (desc_pool_state) {
@@ -4078,7 +4078,7 @@ bool CoreChecks::PreCallValidateResetDescriptorPool(VkDevice device, VkDescripto
     // Make sure sets being destroyed are not currently in-use
     if (disabled.idle_descriptor_set) return false;
     bool skip = false;
-    DESCRIPTOR_POOL_STATE *pPool = GetDescriptorPoolState(descriptorPool);
+    const DESCRIPTOR_POOL_STATE *pPool = GetDescriptorPoolState(descriptorPool);
     if (pPool != nullptr) {
         for (auto ds : pPool->sets) {
             if (ds && ds->in_use.load()) {
@@ -4115,7 +4115,7 @@ bool CoreChecks::PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptor
             skip |= ValidateIdleDescriptorSet(pDescriptorSets[i], "vkFreeDescriptorSets");
         }
     }
-    DESCRIPTOR_POOL_STATE *pool_state = GetDescriptorPoolState(descriptorPool);
+    const DESCRIPTOR_POOL_STATE *pool_state = GetDescriptorPoolState(descriptorPool);
     if (pool_state && !(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT & pool_state->createInfo.flags)) {
         // Can't Free from a NON_FREE pool
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,
@@ -4427,7 +4427,7 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
             // XXX TODO: While the VUID says "each subresource", only the base mip level is
             // actually used. Since we don't have an existing convenience function to iterate
             // over all mip levels, just don't bother with non-base levels.
-            VkImageSubresourceRange &range = view_state->create_info.subresourceRange;
+            const VkImageSubresourceRange &range = view_state->create_info.subresourceRange;
             VkImageSubresourceLayers subresource = {range.aspectMask, range.baseMipLevel, range.baseArrayLayer, range.layerCount};
 
             if (image_state) {
@@ -5132,7 +5132,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
                     // Create an empty proxy in order to use the existing descriptor set update validation
                     // TODO move the validation (like this) that doesn't need descriptor set state to the DSL object so we
                     // don't have to do this.
-                    cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, VK_NULL_HANDLE, dsl, 0, this);
+                    cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, VK_NULL_HANDLE, dsl, 0, nullptr, this);
                     skip |= ValidatePushDescriptorsUpdate(&proxy_ds, descriptorWriteCount, pDescriptorWrites, func_name);
                 }
             }
@@ -6210,7 +6210,7 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
                                               uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
                                               uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                               uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
 
     auto barrier_op_type = ComputeBarrierOperationsType(cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
@@ -8517,7 +8517,7 @@ void CoreChecks::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffe
 }
 
 bool CoreChecks::ValidateFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BUFFER_STATE *pCB, VkCommandBuffer secondaryBuffer,
-                                     const CMD_BUFFER_STATE *pSubCB, const char *caller) {
+                                     const CMD_BUFFER_STATE *pSubCB, const char *caller) const {
     bool skip = false;
     if (!pSubCB->beginInfo.pInheritanceInfo) {
         return skip;
@@ -8545,7 +8545,7 @@ bool CoreChecks::ValidateFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BU
     return skip;
 }
 
-bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE *pCB, const CMD_BUFFER_STATE *pSubCB) {
+bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE *pCB, const CMD_BUFFER_STATE *pSubCB) const {
     bool skip = false;
     unordered_set<int> activeTypes;
     if (!disabled.query_validation) {
@@ -9714,10 +9714,6 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                 auto image = swapchain_data->images[pPresentInfo->pImageIndices[i]];
                 const auto image_state = GetImageState(image);
 
-                if (image_state->shared_presentable) {
-                    image_state->layout_locked = true;
-                }
-
                 if (!image_state->acquired) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
                                     HandleToUint64(pPresentInfo->pSwapchains[i]), kVUID_Core_DrawState_SwapchainImageNotAcquired,
@@ -9967,7 +9963,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDev
 }
 
 bool CoreChecks::ValidateDescriptorUpdateTemplate(const char *func_name,
-                                                  const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo) {
+                                                  const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo) const {
     bool skip = false;
     const auto layout = GetDescriptorSetLayoutShared(pCreateInfo->descriptorSetLayout);
     if (VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET == pCreateInfo->templateType && !layout) {
@@ -10025,7 +10021,7 @@ bool CoreChecks::PreCallValidateCreateDescriptorUpdateTemplateKHR(VkDevice devic
 
 bool CoreChecks::ValidateUpdateDescriptorSetWithTemplate(VkDescriptorSet descriptorSet,
                                                          VkDescriptorUpdateTemplateKHR descriptorUpdateTemplate,
-                                                         const void *pData) {
+                                                         const void *pData) const {
     bool skip = false;
     auto const template_map_entry = desc_template_map.find(descriptorUpdateTemplate);
     if ((template_map_entry == desc_template_map.end()) || (template_map_entry->second.get() == nullptr)) {
@@ -10119,7 +10115,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
 
     if (dsl && template_state) {
         // Create an empty proxy in order to use the existing descriptor set update validation
-        cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, VK_NULL_HANDLE, dsl, 0, this);
+        cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, VK_NULL_HANDLE, dsl, 0, nullptr, this);
         // Decode the template into a set of write updates
         cvdescriptorset::DecodedTemplateUpdate decoded_template(this, VK_NULL_HANDLE, template_state, pData,
                                                                 dsl->GetDescriptorSetLayout());
@@ -10194,7 +10190,7 @@ bool CoreChecks::PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuff
 bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
                                                         VkQueryControlFlags flags, uint32_t index) {
     if (disabled.query_validation) return false;
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     QueryObject query_obj(queryPool, query, index);
     const char *cmd_name = "vkCmdBeginQueryIndexedEXT()";
@@ -10468,8 +10464,8 @@ bool CoreChecks::ValidateCmdDrawStrideWithBuffer(VkCommandBuffer commandBuffer, 
     return skip;
 }
 
-void PIPELINE_STATE::initGraphicsPipeline(ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
-                                          std::shared_ptr<RENDER_PASS_STATE> &&rpstate) {
+void PIPELINE_STATE::initGraphicsPipeline(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
+                                          const std::shared_ptr<RENDER_PASS_STATE> &&rpstate) {
     reset();
     bool uses_color_attachment = false;
     bool uses_depthstencil_attachment = false;
@@ -10534,7 +10530,7 @@ void PIPELINE_STATE::initGraphicsPipeline(ValidationStateTracker *state_data, co
     rp_state = rpstate;
 }
 
-void PIPELINE_STATE::initComputePipeline(ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo) {
+void PIPELINE_STATE::initComputePipeline(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo) {
     reset();
     computePipelineCI.initialize(pCreateInfo);
     switch (computePipelineCI.stage.stage) {
@@ -10549,7 +10545,7 @@ void PIPELINE_STATE::initComputePipeline(ValidationStateTracker *state_data, con
     }
 }
 
-void PIPELINE_STATE::initRayTracingPipelineNV(ValidationStateTracker *state_data,
+void PIPELINE_STATE::initRayTracingPipelineNV(const ValidationStateTracker *state_data,
                                               const VkRayTracingPipelineCreateInfoNV *pCreateInfo) {
     reset();
     raytracingPipelineCI.initialize(pCreateInfo);

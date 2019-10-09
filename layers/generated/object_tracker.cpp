@@ -33,7 +33,7 @@
 
 
 // ObjectTracker undestroyed objects validation function
-bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance, const std::string& error_code) {
+bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance, const std::string& error_code) const {
     bool skip = false;
     skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeSurfaceKHR, error_code);
     skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeSwapchainKHR, error_code);
@@ -43,7 +43,7 @@ bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance, cons
     skip |= ReportLeakedInstanceObjects(instance, kVulkanObjectTypeDebugUtilsMessengerEXT, error_code);
     return skip;
 }
-bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const std::string& error_code) {
+bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const std::string& error_code) const {
     bool skip = false;
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeCommandBuffer, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeSemaphore, error_code);

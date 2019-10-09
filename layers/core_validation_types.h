@@ -1249,10 +1249,10 @@ class PIPELINE_STATE : public BASE_NODE {
         stage_state.clear();
     }
 
-    void initGraphicsPipeline(ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
-                              std::shared_ptr<RENDER_PASS_STATE> &&rpstate);
-    void initComputePipeline(ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo);
-    void initRayTracingPipelineNV(ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo);
+    void initGraphicsPipeline(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
+                              const std::shared_ptr<RENDER_PASS_STATE> &&rpstate);
+    void initComputePipeline(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo);
+    void initRayTracingPipelineNV(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo);
 
     inline VkPipelineBindPoint getPipelineType() const {
         if (graphicsPipelineCI.sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO)

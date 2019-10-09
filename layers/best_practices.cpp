@@ -25,7 +25,7 @@
 #include <iomanip>
 
 // get the API name is proper format
-std::string BestPractices::GetAPIVersionName(uint32_t version) {
+std::string BestPractices::GetAPIVersionName(uint32_t version) const {
     std::stringstream version_name;
     uint32_t major = VK_VERSION_MAJOR(version);
     uint32_t minor = VK_VERSION_MINOR(version);
@@ -65,7 +65,7 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
     // get API version of physical device passed when creating device.
     VkPhysicalDeviceProperties physical_device_properties{};
     DispatchGetPhysicalDeviceProperties(physicalDevice, &physical_device_properties);
-    device_api_version = physical_device_properties.apiVersion;
+    auto device_api_version = physical_device_properties.apiVersion;
 
     // check api versions and warn if instance api Version is higher than version on device.
     if (instance_api_version > device_api_version) {
@@ -232,9 +232,7 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
                                                   const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory) {
     bool skip = false;
 
-    num_mem_objects++;
-
-    if (num_mem_objects > kMemoryObjectWarningLimit) {
+    if (num_mem_objects + 1 > kMemoryObjectWarningLimit) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         kVUID_BestPractices_AllocateMemory_TooManyObjects,
                         "Performance Warning: This app has > %" PRIu32 " memory objects.", kMemoryObjectWarningLimit);
@@ -245,10 +243,18 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
     return skip;
 }
 
+void BestPractices::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
+                                                 const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
+                                                 VkResult result) {
+    if (VK_SUCCESS == result) {
+        num_mem_objects++;
+    }
+}
+
 bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) {
     bool skip = false;
 
-    DEVICE_MEMORY_STATE* mem_info = GetDevMemState(memory);
+    const DEVICE_MEMORY_STATE* mem_info = GetDevMemState(memory);
 
     for (auto& obj : mem_info->obj_bindings) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, get_debug_report_enum[obj.type], 0, layer_name.c_str(),
@@ -265,9 +271,9 @@ void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memo
     }
 }
 
-bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, const char* api_name) {
+bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, const char* api_name) const {
     bool skip = false;
-    BUFFER_STATE* buffer_state = GetBufferState(buffer);
+    const BUFFER_STATE* buffer_state = GetBufferState(buffer);
 
     if (!buffer_state->memory_requirements_checked) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -315,9 +321,9 @@ bool BestPractices::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_
     return skip;
 }
 
-bool BestPractices::ValidateBindImageMemory(VkImage image, const char* api_name) {
+bool BestPractices::ValidateBindImageMemory(VkImage image, const char* api_name) const {
     bool skip = false;
-    IMAGE_STATE* image_state = GetImageState(image);
+    const IMAGE_STATE* image_state = GetImageState(image);
 
     if (!image_state->memory_requirements_checked) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -400,7 +406,7 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
     return skip;
 }
 
-bool BestPractices::CheckPipelineStageFlags(std::string api_name, const VkPipelineStageFlags flags) {
+bool BestPractices::CheckPipelineStageFlags(std::string api_name, const VkPipelineStageFlags flags) const {
     bool skip = false;
 
     if (flags & VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT) {
@@ -703,7 +709,10 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
     for (uint32_t bindIdx = 0; bindIdx < bindInfoCount; bindIdx++) {
         const VkBindSparseInfo& bindInfo = pBindInfo[bindIdx];
         // Store sparse binding image_state and after binding is complete make sure that any requiring metadata have it bound
-        std::unordered_set<IMAGE_STATE*> sparse_images;
+        std::unordered_set<const IMAGE_STATE*> sparse_images;
+        // Track images getting metadata bound by this call in a set, it'll be recorded into the image_state
+        // in RecordQueueBindSparse.
+        std::unordered_set<const IMAGE_STATE*> sparse_images_with_metadata;
         // If we're binding sparse image memory make sure reqs were queried and note if metadata is required and bound
         for (uint32_t i = 0; i < bindInfo.imageBindCount; ++i) {
             const auto& image_bind = bindInfo.pImageBinds[i];
@@ -756,12 +765,13 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
             }
             for (uint32_t j = 0; j < image_opaque_bind.bindCount; ++j) {
                 if (image_opaque_bind.pBinds[j].flags & VK_SPARSE_MEMORY_BIND_METADATA_BIT) {
-                    image_state->sparse_metadata_bound = true;
+                    sparse_images_with_metadata.insert(image_state);
                 }
             }
         }
         for (const auto& sparse_image_state : sparse_images) {
-            if (sparse_image_state->sparse_metadata_required && !sparse_image_state->sparse_metadata_bound) {
+            if (sparse_image_state->sparse_metadata_required && !sparse_image_state->sparse_metadata_bound &&
+                sparse_images_with_metadata.find(sparse_image_state) == sparse_images_with_metadata.end()) {
                 // Warn if sparse image binding metadata required for image with sparse binding, but metadata not bound
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
                                 HandleToUint64(sparse_image_state->image), kVUID_Core_MemTrack_InvalidState,
@@ -773,4 +783,24 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
     }
 
     return skip;
+}
+
+void BestPractices::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
+                                                  VkFence fence, VkResult result) {
+    if (result != VK_SUCCESS) return;
+
+    for (uint32_t bindIdx = 0; bindIdx < bindInfoCount; bindIdx++) {
+        const VkBindSparseInfo& bindInfo = pBindInfo[bindIdx];
+        for (uint32_t i = 0; i < bindInfo.imageOpaqueBindCount; ++i) {
+            const auto& image_opaque_bind = bindInfo.pImageOpaqueBinds[i];
+            auto image_state = GetImageState(bindInfo.pImageOpaqueBinds[i].image);
+            if (!image_state)
+                continue;  // Param/Object validation should report image_bind.image handles being invalid, so just skip here.
+            for (uint32_t j = 0; j < image_opaque_bind.bindCount; ++j) {
+                if (image_opaque_bind.pBinds[j].flags & VK_SPARSE_MEMORY_BIND_METADATA_BIT) {
+                    image_state->sparse_metadata_bound = true;
+                }
+            }
+        }
+    }
 }

@@ -133,7 +133,8 @@ class GpuAssisted : public ValidationStateTracker {
         }
         return buffer_list->second;
     }
-    void ReportSetupProblem(VkDebugReportObjectTypeEXT object_type, uint64_t object_handle, const char* const specific_message);
+    void ReportSetupProblem(VkDebugReportObjectTypeEXT object_type, uint64_t object_handle,
+                            const char* const specific_message) const;
 
   public:
     VkDescriptorSetLayout debug_desc_layout;

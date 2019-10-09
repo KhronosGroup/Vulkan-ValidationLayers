@@ -72,7 +72,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, ui
                                     VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndexed-commandBuffer-cmdpool",
                                     "VUID-vkCmdDrawIndexed-renderpass", "VUID-vkCmdDrawIndexed-None-02700",
                                     "VUID-vkCmdDrawIndexed-commandBuffer-02701");
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     if (!skip && (cb_state->status & CBSTATUS_INDEX_BUFFER_BOUND)) {
         unsigned int index_size = 0;
         const auto &index_buffer_binding = cb_state->index_buffer_binding;

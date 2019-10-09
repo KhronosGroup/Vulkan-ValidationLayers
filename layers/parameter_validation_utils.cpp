@@ -36,7 +36,7 @@ inline bool in_inclusive_range(const T &value, const T &min, const T &max) {
 }
 
 bool StatelessValidation::validate_string(const char *apiName, const ParameterName &stringName, const std::string &vuid,
-                                          const char *validateString) {
+                                          const char *validateString) const {
     bool skip = false;
 
     VkStringErrorFlags result = vk_string_validate(MaxParamCheckerStringLength, validateString);
@@ -53,7 +53,7 @@ bool StatelessValidation::validate_string(const char *apiName, const ParameterNa
     return skip;
 }
 
-bool StatelessValidation::validate_api_version(uint32_t api_version, uint32_t effective_api_version) {
+bool StatelessValidation::validate_api_version(uint32_t api_version, uint32_t effective_api_version) const {
     bool skip = false;
     uint32_t api_version_nopatch = VK_MAKE_VERSION(VK_VERSION_MAJOR(api_version), VK_VERSION_MINOR(api_version), 0);
     if (api_version_nopatch != effective_api_version) {
@@ -74,7 +74,7 @@ bool StatelessValidation::validate_api_version(uint32_t api_version, uint32_t ef
     return skip;
 }
 
-bool StatelessValidation::validate_instance_extensions(const VkInstanceCreateInfo *pCreateInfo) {
+bool StatelessValidation::validate_instance_extensions(const VkInstanceCreateInfo *pCreateInfo) const {
     bool skip = false;
     // Create and use a local instance extension object, as an actual instance has not been created yet
     uint32_t specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
@@ -303,7 +303,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     return skip;
 }
 
-bool StatelessValidation::require_device_extension(bool flag, char const *function_name, char const *extension_name) {
+bool StatelessValidation::require_device_extension(bool flag, char const *function_name, char const *extension_name) const {
     if (!flag) {
         return log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                        kVUID_PVError_ExtensionNotEnabled,
@@ -809,7 +809,7 @@ static SampleOrderInfo sampleOrderInfos[] = {
     {VK_SHADING_RATE_PALETTE_ENTRY_1_INVOCATION_PER_4X4_PIXELS_NV, 4, 4},
 };
 
-bool StatelessValidation::ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV *order) {
+bool StatelessValidation::ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV *order) const {
     bool skip = false;
 
     SampleOrderInfo *sampleOrderInfo;

@@ -29,7 +29,7 @@ class BestPractices : public ValidationStateTracker {
   public:
     using StateTracker = ValidationStateTracker;
 
-    std::string GetAPIVersionName(uint32_t version);
+    std::string GetAPIVersionName(uint32_t version) const;
 
     bool PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                        VkInstance* pInstance);
@@ -50,12 +50,14 @@ class BestPractices : public ValidationStateTracker {
                                          const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass);
     bool PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory);
+    void PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
+                                      const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory, VkResult result);
     void PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator);
-    bool ValidateBindBufferMemory(VkBuffer buffer, const char* api_name);
+    bool ValidateBindBufferMemory(VkBuffer buffer, const char* api_name) const;
     bool PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset);
     bool PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos);
     bool PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos);
-    bool ValidateBindImageMemory(VkImage image, const char* api_name);
+    bool ValidateBindImageMemory(VkImage image, const char* api_name) const;
     bool PreCallValidateBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset);
     bool PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos);
     bool PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos);
@@ -67,7 +69,7 @@ class BestPractices : public ValidationStateTracker {
                                                const VkComputePipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, void* pipe_state);
 
-    bool CheckPipelineStageFlags(std::string api_name, const VkPipelineStageFlags flags);
+    bool CheckPipelineStageFlags(std::string api_name, const VkPipelineStageFlags flags) const;
     bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence);
     bool PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
     bool PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
@@ -110,10 +112,11 @@ class BestPractices : public ValidationStateTracker {
     bool PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                           const VkBindAccelerationStructureMemoryInfoNV* pBindInfos);
     bool PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence);
+    void PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence,
+                                       VkResult result);
 
   private:
     uint32_t instance_api_version;
-    uint32_t device_api_version;
 
     uint32_t num_mem_objects;
 };

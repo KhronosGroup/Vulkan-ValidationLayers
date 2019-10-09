@@ -210,7 +210,7 @@ class vl_concurrent_unordered_map {
         return maps[h].erase(key);
     }
 
-    bool contains(const Key &key) {
+    bool contains(const Key &key) const {
         uint32_t h = ConcurrentMapHashObject(key);
         read_lock_guard_t lock(locks[h].lock);
         return maps[h].count(key) != 0;
@@ -241,9 +241,9 @@ class vl_concurrent_unordered_map {
 
     // find()/end() return a FindResult containing a copy of the value. For end(),
     // return a default value.
-    FindResult end() { return FindResult(false, T()); }
+    FindResult end() const { return FindResult(false, T()); }
 
-    FindResult find(const Key &key) {
+    FindResult find(const Key &key) const {
         uint32_t h = ConcurrentMapHashObject(key);
         read_lock_guard_t lock(locks[h].lock);
 
@@ -273,7 +273,7 @@ class vl_concurrent_unordered_map {
         }
     }
 
-    std::vector<std::pair<const Key, T>> snapshot(std::function<bool(T)> f = nullptr) {
+    std::vector<std::pair<const Key, T>> snapshot(std::function<bool(T)> f = nullptr) const {
         std::vector<std::pair<const Key, T>> ret;
         for (int h = 0; h < BUCKETS; ++h) {
             read_lock_guard_t lock(locks[h].lock);
@@ -302,7 +302,7 @@ class vl_concurrent_unordered_map {
 
     std::unordered_map<Key, T, Hash> maps[BUCKETS];
     struct {
-        lock_t lock;
+        mutable lock_t lock;
         // Put each lock on its own cache line to avoid false cache line sharing.
         char padding[(-int(sizeof(lock_t))) & 63];
     } locks[BUCKETS];

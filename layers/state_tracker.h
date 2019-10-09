@@ -988,7 +988,7 @@ class ValidationStateTracker : public ValidationObject {
                                                    VkDescriptorUpdateTemplateKHR* pDescriptorUpdateTemplate);
     void RecordMappedMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
     void RecordPipelineShaderStage(const VkPipelineShaderStageCreateInfo* pStage, PIPELINE_STATE* pipeline,
-                                   PIPELINE_STATE::StageState* stage_state);
+                                   PIPELINE_STATE::StageState* stage_state) const;
     void RecordRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2KHR* pCreateInfo,
                              RENDER_PASS_STATE* render_pass);
     void RecordVulkanSurface(VkSurfaceKHR* pSurface);
@@ -1017,7 +1017,7 @@ class ValidationStateTracker : public ValidationObject {
     void UpdateStateCmdDrawDispatchType(CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint bind_point);
     void UpdateStateCmdDrawType(CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint bind_point);
     void UpdateDrawState(CMD_BUFFER_STATE* cb_state, const VkPipelineBindPoint bind_point);
-    void UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo*, cvdescriptorset::AllocateDescriptorSetsData*);
+    void UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo*, cvdescriptorset::AllocateDescriptorSetsData*) const;
 
     DeviceFeatures enabled_features = {};
     // Device specific data

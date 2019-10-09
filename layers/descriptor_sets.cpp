@@ -576,15 +576,19 @@ cvdescriptorset::AllocateDescriptorSetsData::AllocateDescriptorSetsData(uint32_t
 
 cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, const VkDescriptorPool pool,
                                               const std::shared_ptr<DescriptorSetLayout const> &layout, uint32_t variable_count,
-                                              cvdescriptorset::DescriptorSet::StateTracker *state_data)
+                                              cvdescriptorset::DescriptorSet::StateTracker *state_data,
+                                              const cvdescriptorset::DescriptorSet::StateTracker *state_data_const)
     : some_update_(false),
       set_(set),
       pool_state_(nullptr),
       p_layout_(layout),
       state_data_(state_data),
+      state_data_const_(state_data_const),
       variable_count_(variable_count),
       change_count_(0) {
-    pool_state_ = state_data->GetDescriptorPoolState(pool);
+    if (pool) {
+        pool_state_ = state_data->GetDescriptorPoolState(pool);
+    }
     // Foreach binding, create default descriptors of given type
     descriptors_.reserve(p_layout_->GetTotalDescriptorCount());
     for (uint32_t i = 0; i < p_layout_->GetBindingCount(); ++i) {
@@ -934,7 +938,10 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const st
 
 // Set is being deleted or updates so invalidate all bound cmd buffers
 void cvdescriptorset::DescriptorSet::InvalidateBoundCmdBuffers() {
-    state_data_->InvalidateCommandBuffers(cb_bindings, VulkanTypedHandle(set_, kVulkanObjectTypeDescriptorSet), /*unlink*/ false);
+    if (state_data_) {
+        state_data_->InvalidateCommandBuffers(cb_bindings, VulkanTypedHandle(set_, kVulkanObjectTypeDescriptorSet),
+                                              /*unlink*/ false);
+    }
 }
 
 // Loop through the write updates to do for a push descriptor set, ignoring dstSet
@@ -999,7 +1006,7 @@ void cvdescriptorset::DescriptorSet::PerformWriteUpdate(const VkWriteDescriptorS
 }
 // Validate Copy update
 bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const DescriptorSet *dst_set, const DescriptorSet *src_set,
-                                    const char *func_name, std::string *error_code, std::string *error_msg) {
+                                    const char *func_name, std::string *error_code, std::string *error_msg) const {
     auto dst_layout = dst_set->GetLayout();
     auto src_layout = src_set->GetLayout();
 
@@ -1764,7 +1771,7 @@ void cvdescriptorset::TexelDescriptor::UpdateDrawState(ValidationStateTracker *d
 //  be skipped, then true is returned.
 // If there is no issue with the update, then false is returned.
 bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t write_count, const VkWriteDescriptorSet *p_wds, uint32_t copy_count,
-                                              const VkCopyDescriptorSet *p_cds, const char *func_name) {
+                                              const VkCopyDescriptorSet *p_cds, const char *func_name) const {
     bool skip = false;
     // Validate Write updates
     for (uint32_t i = 0; i < write_count; i++) {
@@ -1917,7 +1924,7 @@ cvdescriptorset::DecodedTemplateUpdate::DecodedTemplateUpdate(const ValidationSt
 // These helper functions carry out the validate and record descriptor updates peformed via update templates. They decode
 // the templatized data and leverage the non-template UpdateDescriptor helper functions.
 bool CoreChecks::ValidateUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE *template_state,
-                                                             const void *pData) {
+                                                             const void *pData) const {
     // Translate the templated update into a normal update for validation...
     cvdescriptorset::DecodedTemplateUpdate decoded_update(this, descriptorSet, template_state, pData);
     return ValidateUpdateDescriptorSets(static_cast<uint32_t>(decoded_update.desc_writes.size()), decoded_update.desc_writes.data(),
@@ -1929,11 +1936,11 @@ std::string cvdescriptorset::DescriptorSet::StringifySetAndLayout() const {
     auto layout_handle = p_layout_->GetDescriptorSetLayout();
     if (IsPushDescriptor()) {
         string_sprintf(&out, "Push Descriptors defined with VkDescriptorSetLayout %s",
-                       state_data_->report_data->FormatHandle(layout_handle).c_str());
+                       state_data_const_->report_data->FormatHandle(layout_handle).c_str());
     } else {
         string_sprintf(&out, "VkDescriptorSet %s allocated with VkDescriptorSetLayout %s",
-                       state_data_->report_data->FormatHandle(set_).c_str(),
-                       state_data_->report_data->FormatHandle(layout_handle).c_str());
+                       state_data_const_->report_data->FormatHandle(set_).c_str(),
+                       state_data_const_->report_data->FormatHandle(layout_handle).c_str());
     }
     return out;
 };
@@ -2096,7 +2103,8 @@ bool CoreChecks::ValidateBufferUpdate(VkDescriptorBufferInfo const *buffer_info,
 }
 // Verify that the contents of the update are ok, but don't perform actual update
 bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, const DescriptorSet *src_set, VkDescriptorType type,
-                                          uint32_t index, const char *func_name, std::string *error_code, std::string *error_msg) {
+                                          uint32_t index, const char *func_name, std::string *error_code,
+                                          std::string *error_msg) const {
     // Note : Repurposing some Write update error codes here as specific details aren't called out for copy updates like they are
     // for write updates
     using DescriptorClass = cvdescriptorset::DescriptorClass;
@@ -2222,7 +2230,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, con
 }
 // Verify that the state at allocate time is correct, but don't actually allocate the sets yet
 bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInfo *p_alloc_info,
-                                                const cvdescriptorset::AllocateDescriptorSetsData *ds_data) {
+                                                const cvdescriptorset::AllocateDescriptorSetsData *ds_data) const {
     bool skip = false;
     auto pool_state = GetDescriptorPoolState(p_alloc_info->descriptorPool);
 
@@ -2257,14 +2265,17 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
         }
         // Determine whether descriptor counts are satisfiable
         for (auto it = ds_data->required_descriptors_by_type.begin(); it != ds_data->required_descriptors_by_type.end(); ++it) {
-            if (ds_data->required_descriptors_by_type.at(it->first) > pool_state->availableDescriptorTypeCount[it->first]) {
-                skip |= log_msg(
-                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,
-                    HandleToUint64(pool_state->pool), "VUID-VkDescriptorSetAllocateInfo-descriptorPool-00307",
-                    "Unable to allocate %u descriptors of type %s from %s"
-                    ". This pool only has %d descriptors of this type remaining.",
-                    ds_data->required_descriptors_by_type.at(it->first), string_VkDescriptorType(VkDescriptorType(it->first)),
-                    report_data->FormatHandle(pool_state->pool).c_str(), pool_state->availableDescriptorTypeCount[it->first]);
+            auto count_iter = pool_state->availableDescriptorTypeCount.find(it->first);
+            uint32_t availableCount = (count_iter != pool_state->availableDescriptorTypeCount.end()) ? count_iter->second : 0;
+
+            if (ds_data->required_descriptors_by_type.at(it->first) > availableCount) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT,
+                                HandleToUint64(pool_state->pool), "VUID-VkDescriptorSetAllocateInfo-descriptorPool-00307",
+                                "Unable to allocate %u descriptors of type %s from %s"
+                                ". This pool only has %d descriptors of this type remaining.",
+                                ds_data->required_descriptors_by_type.at(it->first),
+                                string_VkDescriptorType(VkDescriptorType(it->first)),
+                                report_data->FormatHandle(pool_state->pool).c_str(), availableCount);
             }
         }
     }
