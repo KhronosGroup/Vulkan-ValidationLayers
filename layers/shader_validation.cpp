@@ -1001,35 +1001,43 @@ static bool ValidateFsOutputsAgainstRenderPass(debug_report_data const *report_d
 
     const auto rpci = pipeline->rp_state->createInfo.ptr();
 
-    std::map<uint32_t, const VkAttachmentDescription2KHR *> color_attachments;
+    struct Attachment {
+        const VkAttachmentReference2KHR *reference = nullptr;
+        const VkAttachmentDescription2KHR *attachment = nullptr;
+        const interface_var *output = nullptr;
+    };
+    std::map<uint32_t, Attachment> location_map;
+
     const auto subpass = rpci->pSubpasses[subpass_index];
     for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
-        const uint32_t attachment = subpass.pColorAttachments[i].attachment;
-        if (attachment != VK_ATTACHMENT_UNUSED && rpci->pAttachments[attachment].format != VK_FORMAT_UNDEFINED) {
-            color_attachments[i] = &rpci->pAttachments[attachment];
+        auto const &reference = subpass.pColorAttachments[i];
+        location_map[i].reference = &reference;
+        if (reference.attachment != VK_ATTACHMENT_UNUSED &&
+            rpci->pAttachments[reference.attachment].format != VK_FORMAT_UNDEFINED) {
+            location_map[i].attachment = &rpci->pAttachments[reference.attachment];
         }
     }
 
     // TODO: dual source blend index (spv::DecIndex, zero if not provided)
 
     const auto outputs = CollectInterfaceByLocation(fs, entrypoint, spv::StorageClassOutput, false);
-
-    struct AttachmentOutputPair {
-        const VkAttachmentDescription2KHR *attachment = nullptr;
-        const interface_var *output = nullptr;
-    };
-    std::map<uint32_t, AttachmentOutputPair> location_map;
-    for (const auto &attachment_it : color_attachments) location_map[attachment_it.first].attachment = attachment_it.second;
-    for (const auto &output_it : outputs) location_map[output_it.first.first].output = &output_it.second;
+    for (const auto &output_it : outputs) {
+        auto const location = output_it.first.first;
+        location_map[location].output = &output_it.second;
+    }
 
     const bool alphaToCoverageEnabled = pipeline->graphicsPipelineCI.pMultisampleState != NULL &&
                                         pipeline->graphicsPipelineCI.pMultisampleState->alphaToCoverageEnable == VK_TRUE;
 
     for (const auto location_it : location_map) {
+        const auto reference = location_it.second.reference;
+        if (reference != nullptr && reference->attachment == VK_ATTACHMENT_UNUSED) {
+            continue;
+        }
+
         const auto location = location_it.first;
         const auto attachment = location_it.second.attachment;
         const auto output = location_it.second.output;
-
         if (attachment && !output) {
             if (pipeline->attachments[location].colorWriteMask != 0) {
                 skip |=
