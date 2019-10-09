@@ -630,7 +630,9 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 if (self.featureExtraProtect is not None):
                     self.declarations += [ '#ifdef %s' % self.featureExtraProtect ]
                 # Strip off 'vk' from API name
-                self.declarations += [ '%s%s' % ('bool PreCallValidate', decls[0].split("VKAPI_CALL vk")[1])]
+                decl = '%s%s' % ('bool PreCallValidate', decls[0].split("VKAPI_CALL vk")[1])
+                decl = str(decl).replace(';', ' const;')
+                self.declarations += [ decl ]
                 if (self.featureExtraProtect is not None):
                     self.declarations += [ '#endif' ]
         if self.source_file:
@@ -1281,7 +1283,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     ext_test = 'if (!%s_extensions.%s) skip |= OutputExtensionError("%s", %s);\n' % (ext_table_type, ext_enable_name, command.name, ext_name_define)
                     lines.insert(0, ext_test)
             if lines:
-                func_sig = self.getCmdDef(command) + ' {\n'
+                func_sig = self.getCmdDef(command) + ' const {\n'
                 func_sig = func_sig.split('VKAPI_CALL vk')[1]
                 cmdDef = 'bool StatelessValidation::PreCallValidate' + func_sig
                 cmdDef += '%sbool skip = false;\n' % indent

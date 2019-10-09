@@ -98,7 +98,8 @@ bool extension_state_by_name(const ExtensionState &extensions, const char *exten
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceCreateInfo *pCreateInfo,
-                                                               const VkAllocationCallbacks *pAllocator, VkInstance *pInstance) {
+                                                               const VkAllocationCallbacks *pAllocator,
+                                                               VkInstance *pInstance) const {
     bool skip = false;
     // Note: From the spec--
     //  Providing a NULL VkInstanceCreateInfo::pApplicationInfo or providing an apiVersion of 0 is equivalent to providing
@@ -194,7 +195,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
-                                                             const VkAllocationCallbacks *pAllocator, VkDevice *pDevice) {
+                                                             const VkAllocationCallbacks *pAllocator, VkDevice *pDevice) const {
     bool skip = false;
 
     for (size_t i = 0; i < pCreateInfo->enabledLayerCount; i++) {
@@ -315,7 +316,7 @@ bool StatelessValidation::require_device_extension(bool flag, char const *functi
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
-                                                             const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer) {
+                                                             const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer) const {
     bool skip = false;
 
     const LogMiscParams log_misc{VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, VK_NULL_HANDLE, "vkCreateBuffer"};
@@ -359,7 +360,7 @@ bool StatelessValidation::manual_PreCallValidateCreateBuffer(VkDevice device, co
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
-                                                            const VkAllocationCallbacks *pAllocator, VkImage *pImage) {
+                                                            const VkAllocationCallbacks *pAllocator, VkImage *pImage) const {
     bool skip = false;
 
     const LogMiscParams log_misc{VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, VK_NULL_HANDLE, "vkCreateImage"};
@@ -638,7 +639,7 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
 
 bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewport, const char *fn_name,
                                                          const ParameterName &parameter_name,
-                                                         VkDebugReportObjectTypeEXT object_type, uint64_t object = 0) {
+                                                         VkDebugReportObjectTypeEXT object_type, uint64_t object = 0) const {
     bool skip = false;
 
     // Note: for numerical correctness
@@ -904,7 +905,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                                                         uint32_t createInfoCount,
                                                                         const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                                         const VkAllocationCallbacks *pAllocator,
-                                                                        VkPipeline *pPipelines) {
+                                                                        VkPipeline *pPipelines) const {
     bool skip = false;
 
     if (pCreateInfos != nullptr) {
@@ -2054,7 +2055,7 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
                                                                        uint32_t createInfoCount,
                                                                        const VkComputePipelineCreateInfo *pCreateInfos,
                                                                        const VkAllocationCallbacks *pAllocator,
-                                                                       VkPipeline *pPipelines) {
+                                                                       VkPipeline *pPipelines) const {
     bool skip = false;
     for (uint32_t i = 0; i < createInfoCount; i++) {
         skip |= validate_string("vkCreateComputePipelines",
@@ -2073,7 +2074,7 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
-                                                              const VkAllocationCallbacks *pAllocator, VkSampler *pSampler) {
+                                                              const VkAllocationCallbacks *pAllocator, VkSampler *pSampler) const {
     bool skip = false;
 
     if (pCreateInfo != nullptr) {
@@ -2192,7 +2193,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
 bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevice device,
                                                                           const VkDescriptorSetLayoutCreateInfo *pCreateInfo,
                                                                           const VkAllocationCallbacks *pAllocator,
-                                                                          VkDescriptorSetLayout *pSetLayout) {
+                                                                          VkDescriptorSetLayout *pSetLayout) const {
     bool skip = false;
 
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
@@ -2235,7 +2236,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
 
 bool StatelessValidation::manual_PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool,
                                                                    uint32_t descriptorSetCount,
-                                                                   const VkDescriptorSet *pDescriptorSets) {
+                                                                   const VkDescriptorSet *pDescriptorSets) const {
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     // This is an array of handles, where the elements are allowed to be VK_NULL_HANDLE, and does not require any validation beyond
     // validate_array()
@@ -2246,7 +2247,7 @@ bool StatelessValidation::manual_PreCallValidateFreeDescriptorSets(VkDevice devi
 bool StatelessValidation::manual_PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                                                      const VkWriteDescriptorSet *pDescriptorWrites,
                                                                      uint32_t descriptorCopyCount,
-                                                                     const VkCopyDescriptorSet *pDescriptorCopies) {
+                                                                     const VkCopyDescriptorSet *pDescriptorCopies) const {
     bool skip = false;
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     if (pDescriptorWrites != NULL) {
@@ -2380,19 +2381,19 @@ bool StatelessValidation::manual_PreCallValidateUpdateDescriptorSets(VkDevice de
 
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
                                                                  const VkAllocationCallbacks *pAllocator,
-                                                                 VkRenderPass *pRenderPass) {
+                                                                 VkRenderPass *pRenderPass) const {
     return CreateRenderPassGeneric(device, pCreateInfo, pAllocator, pRenderPass, RENDER_PASS_VERSION_1);
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
-                                                                     VkRenderPass *pRenderPass) {
+                                                                     VkRenderPass *pRenderPass) const {
     return CreateRenderPassGeneric(device, pCreateInfo, pAllocator, pRenderPass, RENDER_PASS_VERSION_2);
 }
 
 bool StatelessValidation::manual_PreCallValidateFreeCommandBuffers(VkDevice device, VkCommandPool commandPool,
                                                                    uint32_t commandBufferCount,
-                                                                   const VkCommandBuffer *pCommandBuffers) {
+                                                                   const VkCommandBuffer *pCommandBuffers) const {
     bool skip = false;
 
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
@@ -2404,7 +2405,7 @@ bool StatelessValidation::manual_PreCallValidateFreeCommandBuffers(VkDevice devi
 }
 
 bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer,
-                                                                   const VkCommandBufferBeginInfo *pBeginInfo) {
+                                                                   const VkCommandBufferBeginInfo *pBeginInfo) const {
     bool skip = false;
 
     // VkCommandBufferInheritanceInfo validation, due to a 'noautovalidity' of pBeginInfo->pInheritanceInfo in vkBeginCommandBuffer
@@ -2476,7 +2477,7 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport,
-                                                               uint32_t viewportCount, const VkViewport *pViewports) {
+                                                               uint32_t viewportCount, const VkViewport *pViewports) const {
     bool skip = false;
 
     if (!physical_device_features.multiViewport) {
@@ -2517,7 +2518,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewport(VkCommandBuffer c
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor,
-                                                              uint32_t scissorCount, const VkRect2D *pScissors) {
+                                                              uint32_t scissorCount, const VkRect2D *pScissors) const {
     bool skip = false;
 
     if (!physical_device_features.multiViewport) {
@@ -2585,7 +2586,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetScissor(VkCommandBuffer co
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {
+bool StatelessValidation::manual_PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) const {
     bool skip = false;
 
     if (!physical_device_features.wideLines && (lineWidth != 1.0f)) {
@@ -2598,7 +2599,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetLineWidth(VkCommandBuffer 
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
-                                                        uint32_t firstVertex, uint32_t firstInstance) {
+                                                        uint32_t firstVertex, uint32_t firstInstance) const {
     bool skip = false;
     if (vertexCount == 0) {
         // TODO: Verify against Valid Usage section. I don't see a non-zero vertexCount listed, may need to add that and make
@@ -2617,7 +2618,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDraw(VkCommandBuffer commandB
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                                uint32_t count, uint32_t stride) {
+                                                                uint32_t count, uint32_t stride) const {
     bool skip = false;
 
     if (!physical_device_features.multiDrawIndirect && ((count > 1))) {
@@ -2629,7 +2630,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndirect(VkCommandBuffer 
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                       VkDeviceSize offset, uint32_t count, uint32_t stride) {
+                                                                       VkDeviceSize offset, uint32_t count, uint32_t stride) const {
     bool skip = false;
     if (!physical_device_features.multiDrawIndirect && ((count > 1))) {
         skip |= log_msg(
@@ -2641,7 +2642,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirect(VkCommand
 
 bool StatelessValidation::manual_PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                                     const VkClearAttachment *pAttachments, uint32_t rectCount,
-                                                                    const VkClearRect *pRects) {
+                                                                    const VkClearRect *pRects) const {
     bool skip = false;
     for (uint32_t rect = 0; rect < rectCount; rect++) {
         if (pRects[rect].layerCount == 0) {
@@ -2656,7 +2657,7 @@ bool StatelessValidation::manual_PreCallValidateCmdClearAttachments(VkCommandBuf
 bool StatelessValidation::manual_PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage,
                                                              VkImageLayout srcImageLayout, VkImage dstImage,
                                                              VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                             const VkImageCopy *pRegions) {
+                                                             const VkImageCopy *pRegions) const {
     bool skip = false;
 
     VkImageAspectFlags legal_aspect_flags =
@@ -2685,7 +2686,7 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyImage(VkCommandBuffer com
 bool StatelessValidation::manual_PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage,
                                                              VkImageLayout srcImageLayout, VkImage dstImage,
                                                              VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                             const VkImageBlit *pRegions, VkFilter filter) {
+                                                             const VkImageBlit *pRegions, VkFilter filter) const {
     bool skip = false;
 
     VkImageAspectFlags legal_aspect_flags =
@@ -2713,7 +2714,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBlitImage(VkCommandBuffer com
 
 bool StatelessValidation::manual_PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer,
                                                                      VkImage dstImage, VkImageLayout dstImageLayout,
-                                                                     uint32_t regionCount, const VkBufferImageCopy *pRegions) {
+                                                                     uint32_t regionCount,
+                                                                     const VkBufferImageCopy *pRegions) const {
     bool skip = false;
 
     VkImageAspectFlags legal_aspect_flags =
@@ -2735,7 +2737,8 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyBufferToImage(VkCommandBu
 
 bool StatelessValidation::manual_PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage,
                                                                      VkImageLayout srcImageLayout, VkBuffer dstBuffer,
-                                                                     uint32_t regionCount, const VkBufferImageCopy *pRegions) {
+                                                                     uint32_t regionCount,
+                                                                     const VkBufferImageCopy *pRegions) const {
     bool skip = false;
 
     VkImageAspectFlags legal_aspect_flags =
@@ -2756,7 +2759,8 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyImageToBuffer(VkCommandBu
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer,
-                                                                VkDeviceSize dstOffset, VkDeviceSize dataSize, const void *pData) {
+                                                                VkDeviceSize dstOffset, VkDeviceSize dataSize,
+                                                                const void *pData) const {
     bool skip = false;
 
     if (dstOffset & 3) {
@@ -2782,7 +2786,7 @@ bool StatelessValidation::manual_PreCallValidateCmdUpdateBuffer(VkCommandBuffer 
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer,
-                                                              VkDeviceSize dstOffset, VkDeviceSize size, uint32_t data) {
+                                                              VkDeviceSize dstOffset, VkDeviceSize size, uint32_t data) const {
     bool skip = false;
 
     if (dstOffset & 3) {
@@ -2809,7 +2813,7 @@ bool StatelessValidation::manual_PreCallValidateCmdFillBuffer(VkCommandBuffer co
 
 bool StatelessValidation::manual_PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
                                                                    const VkAllocationCallbacks *pAllocator,
-                                                                   VkSwapchainKHR *pSwapchain) {
+                                                                   VkSwapchainKHR *pSwapchain) const {
     bool skip = false;
 
     const LogMiscParams log_misc{VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT, VK_NULL_HANDLE, "vkCreateSwapchainKHR"};
@@ -2843,7 +2847,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSwapchainKHR(VkDevice devi
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) {
+bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) const {
     bool skip = false;
 
     if (pPresentInfo && pPresentInfo->pNext) {
@@ -2879,7 +2883,7 @@ bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, c
 bool StatelessValidation::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance instance,
                                                                       const VkWin32SurfaceCreateInfoKHR *pCreateInfo,
                                                                       const VkAllocationCallbacks *pAllocator,
-                                                                      VkSurfaceKHR *pSurface) {
+                                                                      VkSurfaceKHR *pSurface) const {
     bool skip = false;
 
     if (pCreateInfo->hwnd == nullptr) {
@@ -2894,7 +2898,7 @@ bool StatelessValidation::manual_PreCallValidateCreateWin32SurfaceKHR(VkInstance
 
 bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo *pCreateInfo,
                                                                      const VkAllocationCallbacks *pAllocator,
-                                                                     VkDescriptorPool *pDescriptorPool) {
+                                                                     VkDescriptorPool *pDescriptorPool) const {
     bool skip = false;
 
     if (pCreateInfo) {
@@ -2929,7 +2933,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorPool(VkDevice de
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX,
-                                                            uint32_t groupCountY, uint32_t groupCountZ) {
+                                                            uint32_t groupCountY, uint32_t groupCountZ) const {
     bool skip = false;
 
     if (groupCountX > device_limits.maxComputeWorkGroupCount[0]) {
@@ -2960,7 +2964,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDispatch(VkCommandBuffer comm
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                    VkDeviceSize offset) {
+                                                                    VkDeviceSize offset) const {
     bool skip = false;
 
     if ((offset % 4) != 0) {
@@ -2973,7 +2977,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDispatchIndirect(VkCommandBuf
 
 bool StatelessValidation::manual_PreCallValidateCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX,
                                                                    uint32_t baseGroupY, uint32_t baseGroupZ, uint32_t groupCountX,
-                                                                   uint32_t groupCountY, uint32_t groupCountZ) {
+                                                                   uint32_t groupCountY, uint32_t groupCountZ) const {
     bool skip = false;
 
     // Paired if {} else if {} tests used to avoid any possible uint underflow
@@ -3028,7 +3032,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDispatchBaseKHR(VkCommandBuff
 bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer,
                                                                          uint32_t firstExclusiveScissor,
                                                                          uint32_t exclusiveScissorCount,
-                                                                         const VkRect2D *pExclusiveScissors) {
+                                                                         const VkRect2D *pExclusiveScissors) const {
     bool skip = false;
 
     if (!physical_device_features.multiViewport) {
@@ -3110,7 +3114,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetExclusiveScissorNV(VkComma
 
 bool StatelessValidation::manual_PreCallValidateCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                                          uint32_t viewportCount,
-                                                                         const VkViewportWScalingNV *pViewportWScalings) {
+                                                                         const VkViewportWScalingNV *pViewportWScalings) const {
     bool skip = false;
     if (firstViewport >= device_limits.maxViewports) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
@@ -3133,7 +3137,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewportWScalingNV(VkComma
 
 bool StatelessValidation::manual_PreCallValidateCmdSetViewportShadingRatePaletteNV(
     VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
-    const VkShadingRatePaletteNV *pShadingRatePalettes) {
+    const VkShadingRatePaletteNV *pShadingRatePalettes) const {
     bool skip = false;
 
     if (!physical_device_features.multiViewport) {
@@ -3175,10 +3179,9 @@ bool StatelessValidation::manual_PreCallValidateCmdSetViewportShadingRatePalette
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdSetCoarseSampleOrderNV(VkCommandBuffer commandBuffer,
-                                                                          VkCoarseSampleOrderTypeNV sampleOrderType,
-                                                                          uint32_t customSampleOrderCount,
-                                                                          const VkCoarseSampleOrderCustomNV *pCustomSampleOrders) {
+bool StatelessValidation::manual_PreCallValidateCmdSetCoarseSampleOrderNV(
+    VkCommandBuffer commandBuffer, VkCoarseSampleOrderTypeNV sampleOrderType, uint32_t customSampleOrderCount,
+    const VkCoarseSampleOrderCustomNV *pCustomSampleOrders) const {
     bool skip = false;
 
     if (sampleOrderType != VK_COARSE_SAMPLE_ORDER_TYPE_CUSTOM_NV && customSampleOrderCount != 0) {
@@ -3196,7 +3199,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetCoarseSampleOrderNV(VkComm
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount,
-                                                                   uint32_t firstTask) {
+                                                                   uint32_t firstTask) const {
     bool skip = false;
 
     if (taskCount > phys_dev_ext_props.mesh_shader_props.maxDrawMeshTasksCount) {
@@ -3213,7 +3216,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksNV(VkCommandBuff
 
 bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                            VkDeviceSize offset, uint32_t drawCount,
-                                                                           uint32_t stride) {
+                                                                           uint32_t stride) const {
     bool skip = false;
     static const int condition_multiples = 0b0011;
     if (offset & condition_multiples) {
@@ -3242,7 +3245,7 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksIndirectNV(VkCom
 bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer,
                                                                                 VkDeviceSize offset, VkBuffer countBuffer,
                                                                                 VkDeviceSize countBufferOffset,
-                                                                                uint32_t maxDrawCount, uint32_t stride) {
+                                                                                uint32_t maxDrawCount, uint32_t stride) const {
     bool skip = false;
 
     if (offset & 3) {
@@ -3265,7 +3268,8 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawMeshTasksIndirectCountNV(
 }
 
 bool StatelessValidation::manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
-                                                                const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool) {
+                                                                const VkAllocationCallbacks *pAllocator,
+                                                                VkQueryPool *pQueryPool) const {
     bool skip = false;
 
     // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
@@ -3286,7 +3290,7 @@ bool StatelessValidation::manual_PreCallValidateCreateQueryPool(VkDevice device,
 
 bool StatelessValidation::manual_PreCallValidateEnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice,
                                                                                    const char *pLayerName, uint32_t *pPropertyCount,
-                                                                                   VkExtensionProperties *pProperties) {
+                                                                                   VkExtensionProperties *pProperties) const {
     return validate_array("vkEnumerateDeviceExtensionProperties", "pPropertyCount", "pProperties", pPropertyCount, &pProperties,
                           true, false, false, kVUIDUndefined, "VUID-vkEnumerateDeviceExtensionProperties-pProperties-parameter");
 }
@@ -3314,7 +3318,8 @@ void StatelessValidation::PostCallRecordDestroyRenderPass(VkDevice device, VkRen
 }
 
 bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
-                                                               const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory) {
+                                                               const VkAllocationCallbacks *pAllocator,
+                                                               VkDeviceMemory *pMemory) const {
     bool skip = false;
 
     if (pAllocateInfo) {
@@ -3488,7 +3493,7 @@ bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerati
 
 bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureNV(
     VkDevice device, const VkAccelerationStructureCreateInfoNV *pCreateInfo, const VkAllocationCallbacks *pAllocator,
-    VkAccelerationStructureNV *pAccelerationStructure) {
+    VkAccelerationStructureNV *pAccelerationStructure) const {
     bool skip = false;
 
     if (pCreateInfo) {
@@ -3508,9 +3513,12 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureNV(
     return skip;
 }
 
-bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructureNV(
-    VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV *pInfo, VkBuffer instanceData, VkDeviceSize instanceOffset,
-    VkBool32 update, VkAccelerationStructureNV dst, VkAccelerationStructureNV src, VkBuffer scratch, VkDeviceSize scratchOffset) {
+bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer,
+                                                                                const VkAccelerationStructureInfoNV *pInfo,
+                                                                                VkBuffer instanceData, VkDeviceSize instanceOffset,
+                                                                                VkBool32 update, VkAccelerationStructureNV dst,
+                                                                                VkAccelerationStructureNV src, VkBuffer scratch,
+                                                                                VkDeviceSize scratchOffset) const {
     bool skip = false;
 
     if (pInfo != nullptr) {
@@ -3523,7 +3531,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructureNV(
 
 bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureHandleNV(VkDevice device,
                                                                                  VkAccelerationStructureNV accelerationStructure,
-                                                                                 size_t dataSize, void *pData) {
+                                                                                 size_t dataSize, void *pData) const {
     bool skip = false;
     if (dataSize < 8) {
         skip = log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT,
@@ -3537,7 +3545,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDe
                                                                             uint32_t createInfoCount,
                                                                             const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                                             const VkAllocationCallbacks *pAllocator,
-                                                                            VkPipeline *pPipelines) {
+                                                                            VkPipeline *pPipelines) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < createInfoCount; i++) {
@@ -3558,7 +3566,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDe
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(VkDevice device,
                                                                                const VkPhysicalDeviceSurfaceInfo2KHR *pSurfaceInfo,
-                                                                               VkDeviceGroupPresentModeFlagsKHR *pModes) {
+                                                                               VkDeviceGroupPresentModeFlagsKHR *pModes) const {
     bool skip = false;
     if (!device_extensions.vk_khr_swapchain)
         skip |= OutputExtensionError("vkGetDeviceGroupSurfacePresentModes2EXT", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -3594,7 +3602,7 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(V
 
 bool StatelessValidation::manual_PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
                                                                   const VkAllocationCallbacks *pAllocator,
-                                                                  VkFramebuffer *pFramebuffer) {
+                                                                  VkFramebuffer *pFramebuffer) const {
     // Validation for pAttachments which is excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
     bool skip = false;
     if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) == 0) {
@@ -3605,7 +3613,7 @@ bool StatelessValidation::manual_PreCallValidateCreateFramebuffer(VkDevice devic
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
-                                                                     uint16_t lineStipplePattern) {
+                                                                     uint16_t lineStipplePattern) const {
     bool skip = false;
 
     if (lineStippleFactor < 1 || lineStippleFactor > 256) {
@@ -3618,7 +3626,7 @@ bool StatelessValidation::manual_PreCallValidateCmdSetLineStippleEXT(VkCommandBu
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                                                   VkDeviceSize offset, VkIndexType indexType) {
+                                                                   VkDeviceSize offset, VkIndexType indexType) const {
     bool skip = false;
 
     if (indexType == VK_INDEX_TYPE_NONE_NV) {
@@ -3639,7 +3647,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuff
 }
 
 bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device,
-                                                                           const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
+                                                                           const VkDebugUtilsObjectNameInfoEXT *pNameInfo) const {
     bool skip = false;
     if (pNameInfo->objectType == VK_OBJECT_TYPE_UNKNOWN) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
@@ -3650,7 +3658,7 @@ bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDev
 }
 
 bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device,
-                                                                          const VkDebugUtilsObjectTagInfoEXT *pTagInfo) {
+                                                                          const VkDebugUtilsObjectTagInfoEXT *pTagInfo) const {
     bool skip = false;
     if (pTagInfo->objectType == VK_OBJECT_TYPE_UNKNOWN) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),

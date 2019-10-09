@@ -1401,7 +1401,7 @@ bool CoreChecks::ValidateGetImageSubresourceLayoutANDROID(const VkImage image) c
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
 bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
-                                            const VkAllocationCallbacks *pAllocator, VkImage *pImage) {
+                                            const VkAllocationCallbacks *pAllocator, VkImage *pImage) const {
     bool skip = false;
 
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
@@ -1612,7 +1612,7 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
     imageLayoutMap[subpair] = image_state;
 }
 
-bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
+bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) const {
     const IMAGE_STATE *image_state = GetImageState(image);
     const VulkanTypedHandle obj_struct(image, kVulkanObjectTypeImage);
     bool skip = false;
@@ -1759,7 +1759,7 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE *cb_node, const I
 
 bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                    const VkClearColorValue *pColor, uint32_t rangeCount,
-                                                   const VkImageSubresourceRange *pRanges) {
+                                                   const VkImageSubresourceRange *pRanges) const {
     bool skip = false;
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
     const auto *cb_node = GetCBState(commandBuffer);
@@ -1801,7 +1801,7 @@ void CoreChecks::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, 
 
 bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                           const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
-                                                          const VkImageSubresourceRange *pRanges) {
+                                                          const VkImageSubresourceRange *pRanges) const {
     bool skip = false;
 
     // TODO : Verify memory is in VK_IMAGE_STATE_CLEAR state
@@ -2514,7 +2514,7 @@ bool CoreChecks::CopyImageMultiplaneValidation(VkCommandBuffer command_buffer, c
 
 bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                              VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                             const VkImageCopy *pRegions) {
+                                             const VkImageCopy *pRegions) const {
     const auto *cb_node = GetCBState(commandBuffer);
     const auto *src_image_state = GetImageState(srcImage);
     const auto *dst_image_state = GetImageState(dstImage);
@@ -2845,7 +2845,7 @@ bool CoreChecks::ValidateClearAttachmentExtent(VkCommandBuffer command_buffer, u
 
 bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                     const VkClearAttachment *pAttachments, uint32_t rectCount,
-                                                    const VkClearRect *pRects) {
+                                                    const VkClearRect *pRects) const {
     bool skip = false;
     const CMD_BUFFER_STATE *cb_node = GetCBState(commandBuffer);  // TODO: Should be const, and never modified during validation
     if (!cb_node) return skip;
@@ -2991,7 +2991,7 @@ void CoreChecks::PreCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer,
 
 bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                 VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                const VkImageResolve *pRegions) {
+                                                const VkImageResolve *pRegions) const {
     const auto *cb_node = GetCBState(commandBuffer);
     const auto *src_image_state = GetImageState(srcImage);
     const auto *dst_image_state = GetImageState(dstImage);
@@ -3085,7 +3085,7 @@ bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, V
 
 bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                              VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                             const VkImageBlit *pRegions, VkFilter filter) {
+                                             const VkImageBlit *pRegions, VkFilter filter) const {
     const auto *cb_node = GetCBState(commandBuffer);
     const auto *src_image_state = GetImageState(srcImage);
     const auto *dst_image_state = GetImageState(dstImage);
@@ -3904,7 +3904,7 @@ bool CoreChecks::ValidateBufferViewBuffer(const BUFFER_STATE *buffer_state, cons
 }
 
 bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
-                                             const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer) {
+                                             const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer) const {
     bool skip = false;
 
     // TODO: Add check for "VUID-vkCreateBuffer-flags-00911"        (sparse address space accounting)
@@ -3968,7 +3968,7 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
 }
 
 bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
-                                                 const VkAllocationCallbacks *pAllocator, VkBufferView *pView) {
+                                                 const VkAllocationCallbacks *pAllocator, VkBufferView *pView) const {
     bool skip = false;
     const BUFFER_STATE *buffer_state = GetBufferState(pCreateInfo->buffer);
     // If this isn't a sparse buffer, it needs to have memory backing it at CreateBufferView time
@@ -4254,7 +4254,7 @@ bool CoreChecks::ValidateImageBarrierSubresourceRange(const IMAGE_STATE *image_s
 }
 
 bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
-                                                const VkAllocationCallbacks *pAllocator, VkImageView *pView) {
+                                                const VkAllocationCallbacks *pAllocator, VkImageView *pView) const {
     bool skip = false;
     const IMAGE_STATE *image_state = GetImageState(pCreateInfo->image);
     if (image_state) {
@@ -4532,7 +4532,7 @@ static inline bool ValidateCmdCopyBufferBounds(const debug_report_data *report_d
 }
 
 bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
-                                              uint32_t regionCount, const VkBufferCopy *pRegions) {
+                                              uint32_t regionCount, const VkBufferCopy *pRegions) const {
     const auto cb_node = GetCBState(commandBuffer);
     const auto src_buffer_state = GetBufferState(srcBuffer);
     const auto dst_buffer_state = GetBufferState(dstBuffer);
@@ -4573,7 +4573,8 @@ bool CoreChecks::ValidateIdleBuffer(VkBuffer buffer) const {
     return skip;
 }
 
-bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator) {
+bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView,
+                                                 const VkAllocationCallbacks *pAllocator) const {
     const IMAGE_VIEW_STATE *image_view_state = GetImageViewState(imageView);
     const VulkanTypedHandle obj_struct(imageView, kVulkanObjectTypeImageView);
 
@@ -4585,7 +4586,7 @@ bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView im
     return skip;
 }
 
-bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
+bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) const {
     auto buffer_state = GetBufferState(buffer);
 
     bool skip = false;
@@ -4596,7 +4597,7 @@ bool CoreChecks::PreCallValidateDestroyBuffer(VkDevice device, VkBuffer buffer, 
 }
 
 bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView bufferView,
-                                                  const VkAllocationCallbacks *pAllocator) {
+                                                  const VkAllocationCallbacks *pAllocator) const {
     auto buffer_view_state = GetBufferViewState(bufferView);
     const VulkanTypedHandle obj_struct(bufferView, kVulkanObjectTypeBufferView);
     bool skip = false;
@@ -4608,7 +4609,7 @@ bool CoreChecks::PreCallValidateDestroyBufferView(VkDevice device, VkBufferView 
 }
 
 bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                              VkDeviceSize size, uint32_t data) {
+                                              VkDeviceSize size, uint32_t data) const {
     auto cb_node = GetCBState(commandBuffer);
     auto buffer_state = GetBufferState(dstBuffer);
     bool skip = false;
@@ -4924,7 +4925,8 @@ static inline bool ValidateBufferBounds(const debug_report_data *report_data, co
 }
 
 bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                     VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions) {
+                                                     VkBuffer dstBuffer, uint32_t regionCount,
+                                                     const VkBufferImageCopy *pRegions) const {
     const auto cb_node = GetCBState(commandBuffer);
     const auto src_image_state = GetImageState(srcImage);
     const auto dst_buffer_state = GetBufferState(dstBuffer);
@@ -5005,7 +5007,7 @@ void CoreChecks::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer
 
 bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
                                                      VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                     const VkBufferImageCopy *pRegions) {
+                                                     const VkBufferImageCopy *pRegions) const {
     const auto cb_node = GetCBState(commandBuffer);
     const auto src_buffer_state = GetBufferState(srcBuffer);
     const auto dst_image_state = GetImageState(dstImage);
@@ -5081,7 +5083,7 @@ void CoreChecks::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer
 }
 
 bool CoreChecks::PreCallValidateGetImageSubresourceLayout(VkDevice device, VkImage image, const VkImageSubresource *pSubresource,
-                                                          VkSubresourceLayout *pLayout) {
+                                                          VkSubresourceLayout *pLayout) const {
     bool skip = false;
     const VkImageAspectFlags sub_aspect = pSubresource->aspectMask;
 
