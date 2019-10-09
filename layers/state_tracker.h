@@ -77,8 +77,6 @@ class QUEUE_STATE {
   public:
     VkQueue queue;
     uint32_t queueFamilyIndex;
-    std::unordered_map<VkEvent, VkPipelineStageFlags> eventToStageMap;
-    std::map<QueryObject, QueryState> queryToStateMap;
 
     uint64_t seq;
     std::deque<CB_SUBMISSION> submissions;
@@ -229,7 +227,7 @@ class ValidationStateTracker : public ValidationObject {
     unordered_map<VkDescriptorSetLayout, std::shared_ptr<cvdescriptorset::DescriptorSetLayout>> descriptorSetLayoutMap;
 
     std::unordered_set<VkQueue> queues;  // All queues under given device
-    std::map<QueryObject, QueryState> queryToStateMap;
+    QueryMap queryToStateMap;
     unordered_map<VkSamplerYcbcrConversion, uint64_t> ycbcr_conversion_ahb_fmt_map;
 
     // Traits for State function resolution.  Specializations defined in the macro.
@@ -366,6 +364,7 @@ class ValidationStateTracker : public ValidationObject {
     const RENDER_PASS_STATE* GetRenderPassState(VkRenderPass renderpass) const;
     RENDER_PASS_STATE* GetRenderPassState(VkRenderPass renderpass);
     std::shared_ptr<RENDER_PASS_STATE> GetRenderPassStateSharedPtr(VkRenderPass renderpass);
+    const EVENT_STATE* GetEventState(VkEvent event) const;
     EVENT_STATE* GetEventState(VkEvent event);
     const QUEUE_STATE* GetQueueState(VkQueue queue) const;
     QUEUE_STATE* GetQueueState(VkQueue queue);
@@ -927,13 +926,14 @@ class ValidationStateTracker : public ValidationObject {
     void ResetCommandBufferState(const VkCommandBuffer cb);
     void RetireFence(VkFence fence);
     void RetireWorkOnQueue(QUEUE_STATE* pQueue, uint64_t seq, bool switch_finished_queries);
-    bool SetEventStageMask(VkQueue queue, VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask);
+    static bool SetEventStageMask(VkEvent event, VkPipelineStageFlags stageMask, EventToStageMap* localEventToStageMap);
     void ResetCommandBufferPushConstantDataIfIncompatible(CMD_BUFFER_STATE* cb_state, VkPipelineLayout layout);
     void SetMemBinding(VkDeviceMemory mem, BINDABLE* mem_binding, VkDeviceSize memory_offset,
                        const VulkanTypedHandle& typed_handle);
-    bool SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject object, QueryState value);
-    bool SetQueryStateMulti(VkQueue queue, VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
-                            uint32_t queryCount, QueryState value);
+    static bool SetQueryState(QueryObject object, QueryState value, QueryMap* localQueryToStateMap);
+    static bool SetQueryStateMulti(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, QueryState value,
+                                   QueryMap* localQueryToStateMap);
+    QueryState GetQueryState(const QueryMap* localQueryToStateMap, VkQueryPool queryPool, uint32_t queryIndex) const;
     bool SetSparseMemBinding(MEM_BINDING binding, const VulkanTypedHandle& typed_handle);
     void UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset);
     void UpdateBindImageMemoryState(const VkBindImageMemoryInfo& bindInfo);

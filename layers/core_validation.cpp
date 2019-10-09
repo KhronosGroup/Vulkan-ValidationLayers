@@ -2118,12 +2118,15 @@ bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitIn
                                                  ImageSubresPairLayoutMap *localImageLayoutMap_arg,
                                                  vector<VkCommandBuffer> *current_cmds_arg) const {
     bool skip = false;
+    auto queue_state = GetQueueState(queue);
 
     ImageSubresPairLayoutMap &localImageLayoutMap = *localImageLayoutMap_arg;
     vector<VkCommandBuffer> &current_cmds = *current_cmds_arg;
 
     QFOTransferCBScoreboards<VkImageMemoryBarrier> qfo_image_scoreboards;
     QFOTransferCBScoreboards<VkBufferMemoryBarrier> qfo_buffer_scoreboards;
+    QueryMap localQueryToStateMap;
+    EventToStageMap localEventToStageMap;
 
     for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
         const auto *cb_node = GetCBState(submit->pCommandBuffers[i]);
@@ -2140,15 +2143,16 @@ bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitIn
                 return true;
             }
 
-            // Call submit-time functions to validate/update state
+            // Call submit-time functions to validate or update local mirrors of state
+            // (to preserve const-ness at validate time)
             for (auto &function : cb_node->queue_submit_functions) {
-                skip |= function();
+                skip |= function(this, queue_state);
             }
             for (auto &function : cb_node->eventUpdates) {
-                skip |= function(queue);
+                skip |= function(this, /*do_validate*/ true, &localEventToStageMap);
             }
             for (auto &function : cb_node->queryUpdates) {
-                skip |= function(queue);
+                skip |= function(this, /*do_validate*/ true, &localQueryToStateMap);
             }
         }
     }
@@ -5774,7 +5778,7 @@ static const std::string buffer_error_codes[] = {
 
 class ValidatorState {
   public:
-    ValidatorState(const CoreChecks *device_data, const char *func_name, const CMD_BUFFER_STATE *cb_state,
+    ValidatorState(const ValidationStateTracker *device_data, const char *func_name, const CMD_BUFFER_STATE *cb_state,
                    const VulkanTypedHandle &barrier_handle, const VkSharingMode sharing_mode)
         : report_data_(device_data->report_data),
           func_name_(func_name),
@@ -5810,18 +5814,15 @@ class ValidatorState {
     // This abstract Vu can only be tested at submit time, thus we need a callback from the closure containing the needed
     // data. Note that the mem_barrier is copied to the closure as the lambda lifespan exceed the guarantees of validity for
     // application input.
-    static bool ValidateAtQueueSubmit(const VkQueue queue, const CoreChecks *device_data, uint32_t src_family, uint32_t dst_family,
-                                      const ValidatorState &val) {
-        auto queue_data_it = device_data->queueMap.find(queue);
-        if (queue_data_it == device_data->queueMap.end()) return false;
-
-        uint32_t queue_family = queue_data_it->second.queueFamilyIndex;
+    static bool ValidateAtQueueSubmit(const QUEUE_STATE *queue_state, const ValidationStateTracker *device_data,
+                                      uint32_t src_family, uint32_t dst_family, const ValidatorState &val) {
+        uint32_t queue_family = queue_state->queueFamilyIndex;
         if ((src_family != queue_family) && (dst_family != queue_family)) {
             const std::string &val_code = val.val_codes_[kSubmitQueueMustMatchSrcOrDst];
             const char *src_annotation = val.GetFamilyAnnotation(src_family);
             const char *dst_annotation = val.GetFamilyAnnotation(dst_family);
             return log_msg(device_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT,
-                           HandleToUint64(queue), val_code,
+                           HandleToUint64(queue_state->queue), val_code,
                            "%s: Barrier submitted to queue with family index %u, using %s %s created with sharingMode %s, has "
                            "srcQueueFamilyIndex %u%s and dstQueueFamilyIndex %u%s. %s",
                            "vkQueueSubmit", queue_family, val.GetTypeString(),
@@ -5920,12 +5921,13 @@ bool Validate(const CoreChecks *device_data, const char *func_name, const CMD_BU
 }
 }  // namespace barrier_queue_families
 
-bool CoreChecks::ValidateConcurrentBarrierAtSubmit(VkQueue queue, const char *func_name, const CMD_BUFFER_STATE *cb_state,
+bool CoreChecks::ValidateConcurrentBarrierAtSubmit(const ValidationStateTracker *state_data, const QUEUE_STATE *queue_state,
+                                                   const char *func_name, const CMD_BUFFER_STATE *cb_state,
                                                    const VulkanTypedHandle &typed_handle, uint32_t src_queue_family,
-                                                   uint32_t dst_queue_family) const {
+                                                   uint32_t dst_queue_family) {
     using barrier_queue_families::ValidatorState;
-    ValidatorState val(this, func_name, cb_state, typed_handle, VK_SHARING_MODE_CONCURRENT);
-    return ValidatorState::ValidateAtQueueSubmit(queue, this, src_queue_family, dst_queue_family, val);
+    ValidatorState val(state_data, func_name, cb_state, typed_handle, VK_SHARING_MODE_CONCURRENT);
+    return ValidatorState::ValidateAtQueueSubmit(queue_state, state_data, src_queue_family, dst_queue_family, val);
 }
 
 // Type specific wrapper for image barriers
@@ -6070,24 +6072,24 @@ bool CoreChecks::ValidateBarriers(const char *funcName, const CMD_BUFFER_STATE *
     return skip;
 }
 
-bool CoreChecks::ValidateEventStageMask(VkQueue queue, CMD_BUFFER_STATE *pCB, size_t eventCount, size_t firstEventIndex,
-                                        VkPipelineStageFlags sourceStageMask) {
+bool CoreChecks::ValidateEventStageMask(const ValidationStateTracker *state_data, const CMD_BUFFER_STATE *pCB, size_t eventCount,
+                                        size_t firstEventIndex, VkPipelineStageFlags sourceStageMask,
+                                        EventToStageMap *localEventToStageMap) {
     bool skip = false;
     VkPipelineStageFlags stageMask = 0;
     const auto max_event = std::min((firstEventIndex + eventCount), pCB->events.size());
     for (size_t event_index = firstEventIndex; event_index < max_event; ++event_index) {
         auto event = pCB->events[event_index];
-        auto queue_data = queueMap.find(queue);
-        if (queue_data == queueMap.end()) return false;
-        auto event_data = queue_data->second.eventToStageMap.find(event);
-        if (event_data != queue_data->second.eventToStageMap.end()) {
+        auto event_data = localEventToStageMap->find(event);
+        if (event_data != localEventToStageMap->end()) {
             stageMask |= event_data->second;
         } else {
-            auto global_event_data = GetEventState(event);
+            auto global_event_data = state_data->GetEventState(event);
             if (!global_event_data) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT,
+                skip |= log_msg(state_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT,
                                 HandleToUint64(event), kVUID_Core_DrawState_InvalidEvent,
-                                "%s cannot be waited on if it has never been set.", report_data->FormatHandle(event).c_str());
+                                "%s cannot be waited on if it has never been set.",
+                                state_data->report_data->FormatHandle(event).c_str());
             } else {
                 stageMask |= global_event_data->stageMask;
             }
@@ -6096,7 +6098,7 @@ bool CoreChecks::ValidateEventStageMask(VkQueue queue, CMD_BUFFER_STATE *pCB, si
     // TODO: Need to validate that host_bit is only set if set event is called
     // but set event can be called at any time.
     if (sourceStageMask != stageMask && sourceStageMask != (stageMask | VK_PIPELINE_STAGE_HOST_BIT)) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+        skip |= log_msg(state_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(pCB->commandBuffer), "VUID-vkCmdWaitEvents-srcStageMask-parameter",
                         "Submitting cmdbuffer with call to VkCmdWaitEvents using srcStageMask 0x%X which must be the bitwise OR of "
                         "the stageMask parameters used in calls to vkCmdSetEvent and VK_PIPELINE_STAGE_HOST_BIT if used with "
@@ -6260,8 +6262,14 @@ void CoreChecks::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint3
                                              imageMemoryBarrierCount, pImageMemoryBarriers);
     auto event_added_count = cb_state->events.size() - first_event_index;
 
+    const CMD_BUFFER_STATE *cb_state_const = cb_state;
     cb_state->eventUpdates.emplace_back(
-        [=](VkQueue q) { return ValidateEventStageMask(q, cb_state, event_added_count, first_event_index, sourceStageMask); });
+        [cb_state_const, event_added_count, first_event_index, sourceStageMask](
+            const ValidationStateTracker *device_data, bool do_validate, EventToStageMap *localEventToStageMap) {
+            if (!do_validate) return false;
+            return ValidateEventStageMask(device_data, cb_state_const, event_added_count, first_event_index, sourceStageMask,
+                                          localEventToStageMap);
+        });
     TransitionImageLayouts(cb_state, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
@@ -6406,21 +6414,19 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
                               "VUID-vkCmdBeginQuery-query-00802");
 }
 
-bool CoreChecks::VerifyQueryIsReset(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject query_obj) const {
+bool CoreChecks::VerifyQueryIsReset(const ValidationStateTracker *state_data, VkCommandBuffer commandBuffer, QueryObject query_obj,
+                                    QueryMap *localQueryToStateMap) {
     bool skip = false;
 
-    auto queue_data = GetQueueState(queue);
-    if (!queue_data) return false;
-
-    QueryState state = GetQueryState(queue_data, query_obj.pool, query_obj.query);
+    QueryState state = state_data->GetQueryState(localQueryToStateMap, query_obj.pool, query_obj.query);
     if (state != QUERYSTATE_RESET) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+        skip |= log_msg(state_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), kVUID_Core_DrawState_QueryNotReset,
                         "vkCmdBeginQuery(): %s and query %" PRIu32
                         ": query not reset. "
                         "After query pool creation, each query must be reset before it is used. "
                         "Queries must also be reset between uses.",
-                        report_data->FormatHandle(query_obj.pool).c_str(), query_obj.query);
+                        state_data->report_data->FormatHandle(query_obj.pool).c_str(), query_obj.query);
     }
 
     return skip;
@@ -6431,7 +6437,10 @@ void CoreChecks::EnqueueVerifyBeginQuery(VkCommandBuffer command_buffer, const Q
 
     // Enqueue the submit time validation here, ahead of the submit time state update in the StateTracker's PostCallRecord
     cb_state->queryUpdates.emplace_back(
-        [this, cb_state, query_obj](VkQueue q) { return VerifyQueryIsReset(q, cb_state->commandBuffer, query_obj); });
+        [command_buffer, query_obj](const ValidationStateTracker *device_data, bool do_validate, QueryMap *localQueryToStateMap) {
+            if (!do_validate) return false;
+            return VerifyQueryIsReset(device_data, command_buffer, query_obj, localQueryToStateMap);
+        });
 }
 
 void CoreChecks::PreCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) {
@@ -6475,20 +6484,6 @@ bool CoreChecks::PreCallValidateCmdResetQueryPool(VkCommandBuffer commandBuffer,
     return skip;
 }
 
-QueryState CoreChecks::GetQueryState(const QUEUE_STATE *queue_data, VkQueryPool queryPool, uint32_t queryIndex) const {
-    QueryObject query = {queryPool, queryIndex};
-
-    const std::array<const decltype(queryToStateMap) *, 2> map_list = {&queue_data->queryToStateMap, &queryToStateMap};
-
-    for (const auto map : map_list) {
-        auto query_data = map->find(query);
-        if (query_data != map->end()) {
-            return query_data->second;
-        }
-    }
-    return QUERYSTATE_UNKNOWN;
-}
-
 static QueryResultType GetQueryResultType(QueryState state, VkQueryResultFlags flags) {
     switch (state) {
         case QUERYSTATE_UNKNOWN:
@@ -6516,19 +6511,18 @@ static QueryResultType GetQueryResultType(QueryState state, VkQueryResultFlags f
     return QUERYRESULT_UNKNOWN;
 }
 
-bool CoreChecks::ValidateQuery(VkQueue queue, CMD_BUFFER_STATE *pCB, VkQueryPool queryPool, uint32_t firstQuery,
-                               uint32_t queryCount, VkQueryResultFlags flags) const {
+bool CoreChecks::ValidateQuery(const ValidationStateTracker *state_data, VkCommandBuffer commandBuffer, VkQueryPool queryPool,
+                               uint32_t firstQuery, uint32_t queryCount, VkQueryResultFlags flags, QueryMap *localQueryToStateMap) {
     bool skip = false;
-    auto queue_data = GetQueueState(queue);
-    if (!queue_data) return false;
     for (uint32_t i = 0; i < queryCount; i++) {
-        QueryState state = GetQueryState(queue_data, queryPool, firstQuery + i);
+        QueryState state = state_data->GetQueryState(localQueryToStateMap, queryPool, firstQuery + i);
         QueryResultType result_type = GetQueryResultType(state, flags);
         if (result_type != QUERYRESULT_SOME_DATA) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidQuery,
+            skip |= log_msg(state_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(commandBuffer), kVUID_Core_DrawState_InvalidQuery,
                             "Requesting a copy from query to buffer on %s query %" PRIu32 ": %s",
-                            report_data->FormatHandle(queryPool).c_str(), firstQuery + i, string_QueryResultType(result_type));
+                            state_data->report_data->FormatHandle(queryPool).c_str(), firstQuery + i,
+                            string_QueryResultType(result_type));
         }
     }
     return skip;
@@ -6562,9 +6556,12 @@ void CoreChecks::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuf
                                                       VkDeviceSize stride, VkQueryResultFlags flags) {
     if (disabled.query_validation) return;
     auto cb_state = GetCBState(commandBuffer);
-    cb_state->queryUpdates.emplace_back([this, cb_state, queryPool, firstQuery, queryCount, flags](VkQueue q) {
-        return ValidateQuery(q, cb_state, queryPool, firstQuery, queryCount, flags);
-    });
+    cb_state->queryUpdates.emplace_back(
+        [commandBuffer, queryPool, firstQuery, queryCount, flags](const ValidationStateTracker *device_data, bool do_validate,
+                                                                  QueryMap *localQueryToStateMap) {
+            if (!do_validate) return false;
+            return ValidateQuery(device_data, commandBuffer, queryPool, firstQuery, queryCount, flags, localQueryToStateMap);
+        });
 }
 
 bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
@@ -6639,7 +6636,10 @@ void CoreChecks::PreCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, V
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     QueryObject query = {queryPool, slot};
     cb_state->queryUpdates.emplace_back(
-        [this, commandBuffer, query](VkQueue q) { return VerifyQueryIsReset(q, commandBuffer, query); });
+        [commandBuffer, query](const ValidationStateTracker *device_data, bool do_validate, QueryMap *localQueryToStateMap) {
+            if (!do_validate) return false;
+            return VerifyQueryIsReset(device_data, commandBuffer, query, localQueryToStateMap);
+        });
 }
 
 bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2KHR *attachments, const VkFramebufferCreateInfo *fbci,

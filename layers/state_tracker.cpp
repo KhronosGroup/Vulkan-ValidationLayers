@@ -369,6 +369,14 @@ void ValidationStateTracker::RemoveAliasingImages(const std::unordered_set<VkIma
     }
 }
 
+const EVENT_STATE *ValidationStateTracker::GetEventState(VkEvent event) const {
+    auto it = eventMap.find(event);
+    if (it == eventMap.end()) {
+        return nullptr;
+    }
+    return &it->second;
+}
+
 EVENT_STATE *ValidationStateTracker::GetEventState(VkEvent event) {
     auto it = eventMap.find(event);
     if (it == eventMap.end()) {
@@ -906,11 +914,9 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
         pCB->waitedEvents.clear();
         pCB->events.clear();
         pCB->writeEventsBeforeWait.clear();
-        pCB->queryToStateMap.clear();
         pCB->activeQueries.clear();
         pCB->startedQueries.clear();
         pCB->image_layout_map.clear();
-        pCB->eventToStageMap.clear();
         pCB->cb_vertex_buffer_binding_info.clear();
         pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings.clear();
         pCB->vertex_buffer_used = false;
@@ -1289,14 +1295,24 @@ void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq
                     eventNode->second.write_in_use--;
                 }
             }
-            for (auto queryStatePair : cb_node->queryToStateMap) {
+            QueryMap localQueryToStateMap;
+            for (auto &function : cb_node->queryUpdates) {
+                function(nullptr, /*do_validate*/ false, &localQueryToStateMap);
+            }
+
+            for (auto queryStatePair : localQueryToStateMap) {
                 const QueryState newState =
                     ((queryStatePair.second == QUERYSTATE_ENDED && switch_finished_queries) ? QUERYSTATE_AVAILABLE
                                                                                             : queryStatePair.second);
-                pQueue->queryToStateMap[queryStatePair.first] = newState;
                 queryToStateMap[queryStatePair.first] = newState;
             }
-            for (auto eventStagePair : cb_node->eventToStageMap) {
+
+            EventToStageMap localEventToStageMap;
+            for (auto &function : cb_node->eventUpdates) {
+                function(nullptr, /*do_validate*/ false, &localEventToStageMap);
+            }
+
+            for (auto eventStagePair : localEventToStageMap) {
                 eventMap[eventStagePair.first].stageMask = eventStagePair.second;
             }
 
@@ -2941,16 +2957,9 @@ void ValidationStateTracker::PostCallRecordCmdUpdateBuffer(VkCommandBuffer comma
     AddCommandBufferBindingBuffer(cb_state, dst_buffer_state);
 }
 
-bool ValidationStateTracker::SetEventStageMask(VkQueue queue, VkCommandBuffer commandBuffer, VkEvent event,
-                                               VkPipelineStageFlags stageMask) {
-    CMD_BUFFER_STATE *pCB = GetCBState(commandBuffer);
-    if (pCB) {
-        pCB->eventToStageMap[event] = stageMask;
-    }
-    auto queue_data = queueMap.find(queue);
-    if (queue_data != queueMap.end()) {
-        queue_data->second.eventToStageMap[event] = stageMask;
-    }
+bool ValidationStateTracker::SetEventStageMask(VkEvent event, VkPipelineStageFlags stageMask,
+                                               EventToStageMap *localEventToStageMap) {
+    (*localEventToStageMap)[event] = stageMask;
     return false;
 }
 
@@ -2966,7 +2975,10 @@ void ValidationStateTracker::PreCallRecordCmdSetEvent(VkCommandBuffer commandBuf
     if (!cb_state->waitedEvents.count(event)) {
         cb_state->writeEventsBeforeWait.push_back(event);
     }
-    cb_state->eventUpdates.emplace_back([=](VkQueue q) { return SetEventStageMask(q, commandBuffer, event, stageMask); });
+    cb_state->eventUpdates.emplace_back(
+        [event, stageMask](const ValidationStateTracker *device_data, bool do_validate, EventToStageMap *localEventToStageMap) {
+            return SetEventStageMask(event, stageMask, localEventToStageMap);
+        });
 }
 
 void ValidationStateTracker::PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event,
@@ -2983,7 +2995,9 @@ void ValidationStateTracker::PreCallRecordCmdResetEvent(VkCommandBuffer commandB
     }
 
     cb_state->eventUpdates.emplace_back(
-        [=](VkQueue q) { return SetEventStageMask(q, commandBuffer, event, VkPipelineStageFlags(0)); });
+        [event](const ValidationStateTracker *, bool do_validate, EventToStageMap *localEventToStageMap) {
+            return SetEventStageMask(event, VkPipelineStageFlags(0), localEventToStageMap);
+        });
 }
 
 void ValidationStateTracker::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
@@ -3005,43 +3019,44 @@ void ValidationStateTracker::PreCallRecordCmdWaitEvents(VkCommandBuffer commandB
     }
 }
 
-bool ValidationStateTracker::SetQueryState(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject object, QueryState value) {
-    CMD_BUFFER_STATE *pCB = GetCBState(commandBuffer);
-    if (pCB) {
-        pCB->queryToStateMap[object] = value;
-    }
-    auto queue_data = queueMap.find(queue);
-    if (queue_data != queueMap.end()) {
-        queue_data->second.queryToStateMap[object] = value;
+bool ValidationStateTracker::SetQueryState(QueryObject object, QueryState value, QueryMap *localQueryToStateMap) {
+    (*localQueryToStateMap)[object] = value;
+    return false;
+}
+
+bool ValidationStateTracker::SetQueryStateMulti(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, QueryState value,
+                                                QueryMap *localQueryToStateMap) {
+    for (uint32_t i = 0; i < queryCount; i++) {
+        QueryObject object = {queryPool, firstQuery + i};
+        (*localQueryToStateMap)[object] = value;
     }
     return false;
 }
 
-bool ValidationStateTracker::SetQueryStateMulti(VkQueue queue, VkCommandBuffer commandBuffer, VkQueryPool queryPool,
-                                                uint32_t firstQuery, uint32_t queryCount, QueryState value) {
-    CMD_BUFFER_STATE *pCB = GetCBState(commandBuffer);
-    auto queue_data = queueMap.find(queue);
+QueryState ValidationStateTracker::GetQueryState(const QueryMap *localQueryToStateMap, VkQueryPool queryPool,
+                                                 uint32_t queryIndex) const {
+    QueryObject query = {queryPool, queryIndex};
 
-    for (uint32_t i = 0; i < queryCount; i++) {
-        QueryObject object = {queryPool, firstQuery + i};
-        if (pCB) {
-            pCB->queryToStateMap[object] = value;
-        }
-        if (queue_data != queueMap.end()) {
-            queue_data->second.queryToStateMap[object] = value;
+    const std::array<const decltype(queryToStateMap) *, 2> map_list = {localQueryToStateMap, &queryToStateMap};
+
+    for (const auto map : map_list) {
+        auto query_data = map->find(query);
+        if (query_data != map->end()) {
+            return query_data->second;
         }
     }
-    return false;
+    return QUERYSTATE_UNKNOWN;
 }
 
 void ValidationStateTracker::RecordCmdBeginQuery(CMD_BUFFER_STATE *cb_state, const QueryObject &query_obj) {
     if (disabled.query_validation) return;
     cb_state->activeQueries.insert(query_obj);
     cb_state->startedQueries.insert(query_obj);
-    cb_state->queryUpdates.emplace_back([this, cb_state, query_obj](VkQueue q) {
-        SetQueryState(q, cb_state->commandBuffer, query_obj, QUERYSTATE_RUNNING);
-        return false;
-    });
+    cb_state->queryUpdates.emplace_back(
+        [query_obj](const ValidationStateTracker *device_data, bool do_validate, QueryMap *localQueryToStateMap) {
+            SetQueryState(query_obj, QUERYSTATE_RUNNING, localQueryToStateMap);
+            return false;
+        });
     AddCommandBufferBinding(&GetQueryPoolState(query_obj.pool)->cb_bindings,
                             VulkanTypedHandle(query_obj.pool, kVulkanObjectTypeQueryPool), cb_state);
 }
@@ -3058,7 +3073,9 @@ void ValidationStateTracker::RecordCmdEndQuery(CMD_BUFFER_STATE *cb_state, const
     if (disabled.query_validation) return;
     cb_state->activeQueries.erase(query_obj);
     cb_state->queryUpdates.emplace_back(
-        [this, cb_state, query_obj](VkQueue q) { return SetQueryState(q, cb_state->commandBuffer, query_obj, QUERYSTATE_ENDED); });
+        [query_obj](const ValidationStateTracker *device_data, bool do_validate, QueryMap *localQueryToStateMap) {
+            return SetQueryState(query_obj, QUERYSTATE_ENDED, localQueryToStateMap);
+        });
     AddCommandBufferBinding(&GetQueryPoolState(query_obj.pool)->cb_bindings,
                             VulkanTypedHandle(query_obj.pool, kVulkanObjectTypeQueryPool), cb_state);
 }
@@ -3075,8 +3092,9 @@ void ValidationStateTracker::PostCallRecordCmdResetQueryPool(VkCommandBuffer com
     if (disabled.query_validation) return;
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
 
-    cb_state->queryUpdates.emplace_back([this, commandBuffer, queryPool, firstQuery, queryCount](VkQueue q) {
-        return SetQueryStateMulti(q, commandBuffer, queryPool, firstQuery, queryCount, QUERYSTATE_RESET);
+    cb_state->queryUpdates.emplace_back([queryPool, firstQuery, queryCount](const ValidationStateTracker *device_data,
+                                                                            bool do_validate, QueryMap *localQueryToStateMap) {
+        return SetQueryStateMulti(queryPool, firstQuery, queryCount, QUERYSTATE_RESET, localQueryToStateMap);
     });
     AddCommandBufferBinding(&GetQueryPoolState(queryPool)->cb_bindings, VulkanTypedHandle(queryPool, kVulkanObjectTypeQueryPool),
                             cb_state);
@@ -3102,7 +3120,9 @@ void ValidationStateTracker::PostCallRecordCmdWriteTimestamp(VkCommandBuffer com
                             cb_state);
     QueryObject query = {queryPool, slot};
     cb_state->queryUpdates.emplace_back(
-        [this, commandBuffer, query](VkQueue q) { return SetQueryState(q, commandBuffer, query, QUERYSTATE_ENDED); });
+        [query](const ValidationStateTracker *device_data, bool do_validate, QueryMap *localQueryToStateMap) {
+            return SetQueryState(query, QUERYSTATE_ENDED, localQueryToStateMap);
+        });
 }
 
 void ValidationStateTracker::PostCallRecordCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
@@ -3396,15 +3416,6 @@ void ValidationStateTracker::PreCallRecordSetEvent(VkDevice device, VkEvent even
     auto event_state = GetEventState(event);
     if (event_state) {
         event_state->stageMask = VK_PIPELINE_STAGE_HOST_BIT;
-    }
-    // Host setting event is visible to all queues immediately so update stageMask for any queue that's seen this event
-    // TODO : For correctness this needs separate fix to verify that app doesn't make incorrect assumptions about the
-    // ordering of this command in relation to vkCmd[Set|Reset]Events (see GH297)
-    for (auto queue_data : queueMap) {
-        auto event_entry = queue_data.second.eventToStageMap.find(event);
-        if (event_entry != queue_data.second.eventToStageMap.end()) {
-            event_entry->second |= VK_PIPELINE_STAGE_HOST_BIT;
-        }
     }
 }
 
