@@ -1454,6 +1454,9 @@ struct QFOTransferCBScoreboards {
     QFOTransferCBScoreboard<Barrier> release;
 };
 
+typedef std::map<QueryObject, QueryState> QueryMap;
+typedef std::unordered_map<VkEvent, VkPipelineStageFlags> EventToStageMap;
+
 // Cmd Buffer Wrapper Struct - TODO : This desperately needs its own class
 struct CMD_BUFFER_STATE : public BASE_NODE {
     VkCommandBuffer commandBuffer;
@@ -1500,12 +1503,10 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::unordered_set<VkEvent> waitedEvents;
     std::vector<VkEvent> writeEventsBeforeWait;
     std::vector<VkEvent> events;
-    std::map<QueryObject, QueryState> queryToStateMap;
     std::unordered_set<QueryObject> activeQueries;
     std::unordered_set<QueryObject> startedQueries;
     typedef std::unordered_map<VkImage, std::unique_ptr<ImageSubresourceLayoutMap>> ImageLayoutMap;
     ImageLayoutMap image_layout_map;
-    std::unordered_map<VkEvent, VkPipelineStageFlags> eventToStageMap;
     std::vector<CBVertexBufferBindingInfo> cb_vertex_buffer_binding_info;
     CBVertexBufferBindingInfo current_vertex_buffer_binding_info;
     bool vertex_buffer_used;  // Track for perf warning to make sure any bound vtx buffer used
@@ -1514,12 +1515,16 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     // If secondary, the primary command buffers we will be called by.
     std::unordered_set<CMD_BUFFER_STATE *> linkedCommandBuffers;
     // Validation functions run at primary CB queue submit time
-    std::vector<std::function<bool()>> queue_submit_functions;
+    std::vector<std::function<bool(const ValidationStateTracker *device_data, const class QUEUE_STATE *queue_state)>>
+        queue_submit_functions;
     // Validation functions run when secondary CB is executed in primary
     std::vector<std::function<bool(const CMD_BUFFER_STATE *, VkFramebuffer)>> cmd_execute_commands_functions;
     std::unordered_set<VkDeviceMemory> memObjs;
-    std::vector<std::function<bool(VkQueue)>> eventUpdates;
-    std::vector<std::function<bool(VkQueue)>> queryUpdates;
+    std::vector<
+        std::function<bool(const ValidationStateTracker *device_data, bool do_validate, EventToStageMap *localEventToStageMap)>>
+        eventUpdates;
+    std::vector<std::function<bool(const ValidationStateTracker *device_data, bool do_validate, QueryMap *localQueryToStateMap)>>
+        queryUpdates;
     std::unordered_set<cvdescriptorset::DescriptorSet *> validated_descriptor_sets;
     // Contents valid only after an index buffer is bound (CBSTATUS_INDEX_BUFFER_BOUND set)
     IndexBufferBinding index_buffer_binding;

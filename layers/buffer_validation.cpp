@@ -972,10 +972,11 @@ void CoreChecks::RecordBarrierArrayValidationInfo(const char *func_name, CMD_BUF
             bool mode_concurrent = handle_state ? handle_state->createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT : false;
             if (!mode_concurrent) {
                 const auto typed_handle = BarrierTypedHandle(barrier);
-                cb_state->eventUpdates.emplace_back(
-                    [this, func_name, cb_state, typed_handle, src_queue_family, dst_queue_family](VkQueue queue) {
-                        return ValidateConcurrentBarrierAtSubmit(queue, func_name, cb_state, typed_handle, src_queue_family,
-                                                                 dst_queue_family);
+                cb_state->queue_submit_functions.emplace_back(
+                    [func_name, cb_state, typed_handle, src_queue_family, dst_queue_family](
+                        const ValidationStateTracker *device_data, const QUEUE_STATE *queue_state) {
+                        return ValidateConcurrentBarrierAtSubmit(device_data, queue_state, func_name, cb_state, typed_handle,
+                                                                 src_queue_family, dst_queue_family);
                     });
             }
         }

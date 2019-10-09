@@ -96,9 +96,10 @@ class CoreChecks : public ValidationStateTracker {
                                         uint32_t active_subpass, const safe_VkSubpassDescription2KHR& sub_desc,
                                         const VulkanTypedHandle& rp_handle, uint32_t img_index,
                                         const VkImageMemoryBarrier& img_barrier) const;
-    bool ValidateConcurrentBarrierAtSubmit(VkQueue queue, const char* func_name, const CMD_BUFFER_STATE* cb_state,
-                                           const VulkanTypedHandle& typed_handle, uint32_t src_queue_family,
-                                           uint32_t dst_queue_family) const;
+    static bool ValidateConcurrentBarrierAtSubmit(const ValidationStateTracker* state_data, const QUEUE_STATE* queue_data,
+                                                  const char* func_name, const CMD_BUFFER_STATE* cb_state,
+                                                  const VulkanTypedHandle& typed_handle, uint32_t src_queue_family,
+                                                  uint32_t dst_queue_family);
     bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
                                     const VkRenderPassBeginInfo* pRenderPassBegin) const;
     bool ValidateDependencies(FRAMEBUFFER_STATE const* framebuffer, RENDER_PASS_STATE const* renderPass) const;
@@ -156,10 +157,10 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateBindImageMemory(const VkBindImageMemoryInfo& bindInfo, const char* api_name) const;
     bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                                  const char* api_name) const;
-    bool ValidateQuery(VkQueue queue, CMD_BUFFER_STATE* pCB, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
-                       VkQueryResultFlags flags) const;
-    QueryState GetQueryState(const QUEUE_STATE* queue_data, VkQueryPool queryPool, uint32_t queryIndex) const;
-    bool VerifyQueryIsReset(VkQueue queue, VkCommandBuffer commandBuffer, QueryObject query_obj) const;
+    static bool ValidateQuery(const ValidationStateTracker* state_data, VkCommandBuffer commandBuffer, VkQueryPool queryPool,
+                              uint32_t firstQuery, uint32_t queryCount, VkQueryResultFlags flags, QueryMap* localQueryToStateMap);
+    static bool VerifyQueryIsReset(const ValidationStateTracker* state_data, VkCommandBuffer commandBuffer, QueryObject query_obj,
+                                   QueryMap* localQueryToStateMap);
     bool ValidateImportSemaphore(VkSemaphore semaphore, const char* caller_name) const;
     bool ValidateBeginQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, VkFlags flags, CMD_TYPE cmd,
                             const char* cmd_name, const char* vuid_queue_flags, const char* vuid_queue_feedback,
@@ -280,8 +281,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCmdBufDrawState(const CMD_BUFFER_STATE* cb_node, CMD_TYPE cmd_type, const bool indexed,
                                  const VkPipelineBindPoint bind_point, const char* function, const char* pipe_err_code,
                                  const char* state_err_code) const;
-    bool ValidateEventStageMask(VkQueue queue, CMD_BUFFER_STATE* pCB, size_t eventCount, size_t firstEventIndex,
-                                VkPipelineStageFlags sourceStageMask);
+    static bool ValidateEventStageMask(const ValidationStateTracker* state_data, const CMD_BUFFER_STATE* pCB, size_t eventCount,
+                                       size_t firstEventIndex, VkPipelineStageFlags sourceStageMask,
+                                       EventToStageMap* localEventToStageMap);
     bool ValidateQueueFamilyIndices(const CMD_BUFFER_STATE* pCB, VkQueue queue) const;
     VkResult CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkValidationCacheEXT* pValidationCache);
