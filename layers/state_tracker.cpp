@@ -2893,7 +2893,7 @@ void ValidationStateTracker::RecordCmdPushDescriptorSetState(CMD_BUFFER_STATE *c
     auto &push_descriptor_set = last_bound.push_descriptor_set;
     // If we are disturbing the current push_desriptor_set clear it
     if (!push_descriptor_set || !CompatForSet(set, last_bound, pipeline_layout->compat_for_set)) {
-        last_bound.UnbindAndResetPushDescriptorSet(new cvdescriptorset::DescriptorSet(0, 0, dsl, 0, this));
+        last_bound.UnbindAndResetPushDescriptorSet(new cvdescriptorset::DescriptorSet(0, 0, dsl, 0, this, this));
     }
 
     UpdateLastBoundDescriptorSets(cb_state, pipelineBindPoint, pipeline_layout, set, 1, nullptr, push_descriptor_set.get(), 0,
@@ -3601,6 +3601,9 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
             auto image_state = GetImageState(image);
             if (image_state) {
                 image_state->acquired = false;
+                if (image_state->shared_presentable) {
+                    image_state->layout_locked = true;
+                }
             }
         }
     }
@@ -4206,7 +4209,7 @@ void ValidationStateTracker::PerformUpdateDescriptorSetsWithTemplateKHR(VkDescri
 
 // Update the common AllocateDescriptorSetsData
 void ValidationStateTracker::UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo *p_alloc_info,
-                                                              cvdescriptorset::AllocateDescriptorSetsData *ds_data) {
+                                                              cvdescriptorset::AllocateDescriptorSetsData *ds_data) const {
     for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
         auto layout = GetDescriptorSetLayoutShared(p_alloc_info->pSetLayouts[i]);
         if (layout) {
@@ -4241,7 +4244,7 @@ void ValidationStateTracker::PerformAllocateDescriptorSets(const VkDescriptorSet
         uint32_t variable_count = variable_count_valid ? variable_count_info->pDescriptorCounts[i] : 0;
 
         auto new_ds = std::make_shared<cvdescriptorset::DescriptorSet>(descriptor_sets[i], p_alloc_info->descriptorPool,
-                                                                       ds_data->layout_nodes[i], variable_count, this);
+                                                                       ds_data->layout_nodes[i], variable_count, this, this);
         pool_state->sets.insert(new_ds.get());
         new_ds->in_use.store(0);
         setMap[descriptor_sets[i]] = std::move(new_ds);
@@ -4379,7 +4382,7 @@ void ValidationStateTracker::PostCallRecordCreateShaderModule(VkDevice device, c
 }
 
 void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCreateInfo const *pStage, PIPELINE_STATE *pipeline,
-                                                       PIPELINE_STATE::StageState *stage_state) {
+                                                       PIPELINE_STATE::StageState *stage_state) const {
     // Validation shouldn't rely on anything in stage state being valid if the spirv isn't
     auto module = GetShaderModuleState(pStage->module);
     if (!module->has_valid_spirv) return;

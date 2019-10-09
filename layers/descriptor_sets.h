@@ -560,7 +560,7 @@ class DescriptorSet : public BASE_NODE {
   public:
     using StateTracker = ValidationStateTracker;
     DescriptorSet(const VkDescriptorSet, const VkDescriptorPool, const std::shared_ptr<DescriptorSetLayout const> &,
-                  uint32_t variable_count, StateTracker *);
+                  uint32_t variable_count, StateTracker *state_data, const StateTracker *state_data_const);
     ~DescriptorSet();
     // A number of common Get* functions that return data based on layout from which this set was created
     uint32_t GetTotalDescriptorCount() const { return p_layout_->GetTotalDescriptorCount(); };
@@ -643,7 +643,10 @@ class DescriptorSet : public BASE_NODE {
     DESCRIPTOR_POOL_STATE *pool_state_;
     const std::shared_ptr<DescriptorSetLayout const> p_layout_;
     std::vector<std::unique_ptr<Descriptor>> descriptors_;
+    // Some transient fake descriptor sets are created in Core validation for push descriptors,
+    // and these only have a const StateTracker available.
     StateTracker *state_data_;
+    const StateTracker *state_data_const_;
     uint32_t variable_count_;
     uint64_t change_count_;
 

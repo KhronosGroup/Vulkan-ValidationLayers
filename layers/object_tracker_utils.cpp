@@ -60,7 +60,7 @@ void ObjectLifetimes::DestroyUndestroyedObjects(VulkanObjectType object_type) {
 // NOTE: This is of dubious value. In most circumstances Vulkan will die a flaming death if a dispatchable object is invalid.
 // However, if this layer is loaded first and GetProcAddress is used to make API calls, it will detect bad DOs.
 bool ObjectLifetimes::ValidateDeviceObject(const VulkanTypedHandle &device_typed, const char *invalid_handle_code,
-                                           const char *wrong_device_code) {
+                                           const char *wrong_device_code) const {
     auto instance_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
     auto instance_object_lifetime_data = GetObjectLifetimeData(instance_data->object_dispatch);
     if (instance_object_lifetime_data->object_map[kVulkanObjectTypeDevice].contains(device_typed.handle)) {
@@ -71,7 +71,7 @@ bool ObjectLifetimes::ValidateDeviceObject(const VulkanTypedHandle &device_typed
 }
 
 bool ObjectLifetimes::ValidateAnonymousObject(uint64_t object_handle, VkObjectType core_object_type, bool null_allowed,
-                                              const char *invalid_handle_code, const char *wrong_device_code) {
+                                              const char *invalid_handle_code, const char *wrong_device_code) const {
     if (null_allowed && (object_handle == VK_NULL_HANDLE)) return false;
     auto object_type = ConvertCoreObjectToVulkanObject(core_object_type);
 
@@ -99,7 +99,7 @@ void ObjectLifetimes::AllocateCommandBuffer(const VkCommandPool command_pool, co
     num_total_objects++;
 }
 
-bool ObjectLifetimes::ValidateCommandBuffer(VkCommandPool command_pool, VkCommandBuffer command_buffer) {
+bool ObjectLifetimes::ValidateCommandBuffer(VkCommandPool command_pool, VkCommandBuffer command_buffer) const {
     bool skip = false;
     uint64_t object_handle = HandleToUint64(command_buffer);
     auto iter = object_map[kVulkanObjectTypeCommandBuffer].find(object_handle);
@@ -140,7 +140,7 @@ void ObjectLifetimes::AllocateDescriptorSet(VkDescriptorPool descriptor_pool, Vk
     }
 }
 
-bool ObjectLifetimes::ValidateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set) {
+bool ObjectLifetimes::ValidateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set) const {
     bool skip = false;
     uint64_t object_handle = HandleToUint64(descriptor_set);
     auto dsItem = object_map[kVulkanObjectTypeDescriptorSet].find(object_handle);
@@ -163,7 +163,7 @@ bool ObjectLifetimes::ValidateDescriptorSet(VkDescriptorPool descriptor_pool, Vk
     return skip;
 }
 
-bool ObjectLifetimes::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPush) {
+bool ObjectLifetimes::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPush) const {
     bool skip = false;
 
     if (!isPush && desc->dstSet) {
@@ -247,7 +247,7 @@ void ObjectLifetimes::CreateSwapchainImageObject(VkImage swapchain_image, VkSwap
 }
 
 bool ObjectLifetimes::ReportLeakedInstanceObjects(VkInstance instance, VulkanObjectType object_type,
-                                                  const std::string &error_code) {
+                                                  const std::string &error_code) const {
     bool skip = false;
 
     auto snapshot = object_map[object_type].snapshot();
@@ -260,7 +260,8 @@ bool ObjectLifetimes::ReportLeakedInstanceObjects(VkInstance instance, VulkanObj
     return skip;
 }
 
-bool ObjectLifetimes::ReportLeakedDeviceObjects(VkDevice device, VulkanObjectType object_type, const std::string &error_code) {
+bool ObjectLifetimes::ReportLeakedDeviceObjects(VkDevice device, VulkanObjectType object_type,
+                                                const std::string &error_code) const {
     bool skip = false;
 
     auto snapshot = object_map[object_type].snapshot();
@@ -294,7 +295,6 @@ bool ObjectLifetimes::PreCallValidateDestroyInstance(VkInstance instance, const 
 
         // Throw errors if any device objects belonging to this instance have not been destroyed
         skip |= ReportUndestroyedDeviceObjects(device, "VUID-vkDestroyDevice-device-00378");
-        DestroyLeakedDeviceObjects();
 
         skip |= ValidateDestroyObject(device, kVulkanObjectTypeDevice, pAllocator, "VUID-vkDestroyInstance-instance-00630",
                                       "VUID-vkDestroyInstance-instance-00631");
@@ -306,7 +306,6 @@ bool ObjectLifetimes::PreCallValidateDestroyInstance(VkInstance instance, const 
 
     // Report any remaining instance objects
     skip |= ReportUndestroyedInstanceObjects(instance, "VUID-vkDestroyInstance-instance-00629");
-    DestroyLeakedInstanceObjects();
 
     return skip;
 }
@@ -534,7 +533,7 @@ void ObjectLifetimes::PostCallRecordCreateDescriptorSetLayout(VkDevice device, c
     CreateObject(*pSetLayout, kVulkanObjectTypeDescriptorSetLayout, pAllocator);
 }
 
-bool ObjectLifetimes::ValidateSamplerObjects(const VkDescriptorSetLayoutCreateInfo *pCreateInfo) {
+bool ObjectLifetimes::ValidateSamplerObjects(const VkDescriptorSetLayoutCreateInfo *pCreateInfo) const {
     bool skip = false;
     if (pCreateInfo->pBindings) {
         for (uint32_t index1 = 0; index1 < pCreateInfo->bindingCount; ++index1) {

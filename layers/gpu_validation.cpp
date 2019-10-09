@@ -377,7 +377,7 @@ VkResult GpuAssisted::InitializeVma(VkPhysicalDevice physical_device, VkDevice d
 
 // Convenience function for reporting problems with setting up GPU Validation.
 void GpuAssisted::ReportSetupProblem(VkDebugReportObjectTypeEXT object_type, uint64_t object_handle,
-                                     const char *const specific_message) {
+                                     const char *const specific_message) const {
     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle, "UNASSIGNED-GPU-Assisted Validation Error. ",
             "Detail: (%s)", specific_message);
 }

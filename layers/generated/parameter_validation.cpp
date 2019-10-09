@@ -204,7 +204,7 @@ const std::vector<VkFullScreenExclusiveEXT> AllVkFullScreenExclusiveEXTEnums = {
 const std::vector<VkLineRasterizationModeEXT> AllVkLineRasterizationModeEXTEnums = {VK_LINE_RASTERIZATION_MODE_DEFAULT_EXT, VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT, VK_LINE_RASTERIZATION_MODE_BRESENHAM_EXT, VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH_EXT, };
 
 
-bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure* header) {
+bool StatelessValidation::ValidatePnextStructContents(const char *api_name, const ParameterName &parameter_name, const VkBaseOutStructure* header) const {
     bool skip = false;
     switch(header->sType) {
 
@@ -1510,7 +1510,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
 }
 
 
-bool StatelessValidation::OutputExtensionError(const std::string &api_name, const std::string &extension_name) {
+bool StatelessValidation::OutputExtensionError(const std::string &api_name, const std::string &extension_name) const {
     return log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                    kVUID_PVError_ExtensionNotEnabled, "Attemped to call %s() but its required extension %s has not been enabled\n",
                    api_name.c_str(), extension_name.c_str());

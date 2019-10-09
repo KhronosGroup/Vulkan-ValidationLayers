@@ -271,7 +271,7 @@ bool CoreChecks::FindGlobalLayout(ImageSubresourcePair imgpair, VkImageLayout &l
     return true;
 }
 
-bool CoreChecks::FindLayouts(VkImage image, std::vector<VkImageLayout> &layouts) {
+bool CoreChecks::FindLayouts(VkImage image, std::vector<VkImageLayout> &layouts) const {
     auto sub_data = imageSubresourceMap.find(image);
     if (sub_data == imageSubresourceMap.end()) return false;
     auto image_state = GetImageState(image);
@@ -1251,7 +1251,7 @@ void CoreChecks::TransitionFinalSubpassLayouts(CMD_BUFFER_STATE *pCB, const VkRe
 //
 // AHB-specific validation within non-AHB APIs
 //
-bool CoreChecks::ValidateCreateImageANDROID(const debug_report_data *report_data, const VkImageCreateInfo *create_info) {
+bool CoreChecks::ValidateCreateImageANDROID(const debug_report_data *report_data, const VkImageCreateInfo *create_info) const {
     bool skip = false;
 
     const VkExternalFormatANDROID *ext_fmt_android = lvl_find_in_chain<VkExternalFormatANDROID>(create_info->pNext);
@@ -1328,9 +1328,9 @@ bool CoreChecks::ValidateCreateImageANDROID(const debug_report_data *report_data
     return skip;
 }
 
-bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *create_info) {
+bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *create_info) const {
     bool skip = false;
-    IMAGE_STATE *image_state = GetImageState(create_info->image);
+    const IMAGE_STATE *image_state = GetImageState(create_info->image);
 
     if (image_state->has_ahb_format) {
         if (VK_FORMAT_UNDEFINED != create_info->format) {
@@ -1390,11 +1390,11 @@ bool CoreChecks::ValidateGetImageSubresourceLayoutANDROID(const VkImage image) c
 
 #else
 
-bool CoreChecks::ValidateCreateImageANDROID(const debug_report_data *report_data, const VkImageCreateInfo *create_info) {
+bool CoreChecks::ValidateCreateImageANDROID(const debug_report_data *report_data, const VkImageCreateInfo *create_info) const {
     return false;
 }
 
-bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *create_info) { return false; }
+bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *create_info) const { return false; }
 
 bool CoreChecks::ValidateGetImageSubresourceLayoutANDROID(const VkImage image) const { return false; }
 
@@ -1613,7 +1613,7 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
 }
 
 bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) {
-    IMAGE_STATE *image_state = GetImageState(image);
+    const IMAGE_STATE *image_state = GetImageState(image);
     const VulkanTypedHandle obj_struct(image, kVulkanObjectTypeImage);
     bool skip = false;
     if (image_state) {
@@ -3838,7 +3838,7 @@ bool CoreChecks::ValidateBufferUsageFlags(BUFFER_STATE const *buffer_state, VkFl
 }
 
 bool CoreChecks::ValidateBufferViewRange(const BUFFER_STATE *buffer_state, const VkBufferViewCreateInfo *pCreateInfo,
-                                         const VkPhysicalDeviceLimits *device_limits) {
+                                         const VkPhysicalDeviceLimits *device_limits) const {
     bool skip = false;
 
     const VkDeviceSize &range = pCreateInfo->range;
@@ -3883,7 +3883,7 @@ bool CoreChecks::ValidateBufferViewRange(const BUFFER_STATE *buffer_state, const
     return skip;
 }
 
-bool CoreChecks::ValidateBufferViewBuffer(const BUFFER_STATE *buffer_state, const VkBufferViewCreateInfo *pCreateInfo) {
+bool CoreChecks::ValidateBufferViewBuffer(const BUFFER_STATE *buffer_state, const VkBufferViewCreateInfo *pCreateInfo) const {
     bool skip = false;
     const VkFormatProperties format_properties = GetPDFormatProperties(pCreateInfo->format);
     if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT) &&
@@ -3970,7 +3970,7 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
 bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkBufferView *pView) {
     bool skip = false;
-    BUFFER_STATE *buffer_state = GetBufferState(pCreateInfo->buffer);
+    const BUFFER_STATE *buffer_state = GetBufferState(pCreateInfo->buffer);
     // If this isn't a sparse buffer, it needs to have memory backing it at CreateBufferView time
     if (buffer_state) {
         skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCreateBufferView()", "VUID-VkBufferViewCreateInfo-buffer-00935");
@@ -4186,7 +4186,7 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
 }
 
 bool CoreChecks::ValidateCreateImageViewSubresourceRange(const IMAGE_STATE *image_state, bool is_imageview_2d_type,
-                                                         const VkImageSubresourceRange &subresourceRange) {
+                                                         const VkImageSubresourceRange &subresourceRange) const {
     bool is_khr_maintenance1 = device_extensions.vk_khr_maintenance1;
     bool is_image_slicable = image_state->createInfo.imageType == VK_IMAGE_TYPE_3D &&
                              (image_state->createInfo.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR);
@@ -4256,7 +4256,7 @@ bool CoreChecks::ValidateImageBarrierSubresourceRange(const IMAGE_STATE *image_s
 bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
                                                 const VkAllocationCallbacks *pAllocator, VkImageView *pView) {
     bool skip = false;
-    IMAGE_STATE *image_state = GetImageState(pCreateInfo->image);
+    const IMAGE_STATE *image_state = GetImageState(pCreateInfo->image);
     if (image_state) {
         skip |=
             ValidateImageUsageFlags(image_state,
@@ -4556,7 +4556,7 @@ bool CoreChecks::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkB
     return skip;
 }
 
-bool CoreChecks::ValidateIdleBuffer(VkBuffer buffer) {
+bool CoreChecks::ValidateIdleBuffer(VkBuffer buffer) const {
     bool skip = false;
     auto buffer_state = GetBufferState(buffer);
     if (!buffer_state) {
@@ -4574,7 +4574,7 @@ bool CoreChecks::ValidateIdleBuffer(VkBuffer buffer) {
 }
 
 bool CoreChecks::PreCallValidateDestroyImageView(VkDevice device, VkImageView imageView, const VkAllocationCallbacks *pAllocator) {
-    IMAGE_VIEW_STATE *image_view_state = GetImageViewState(imageView);
+    const IMAGE_VIEW_STATE *image_view_state = GetImageViewState(imageView);
     const VulkanTypedHandle obj_struct(imageView, kVulkanObjectTypeImageView);
 
     bool skip = false;
@@ -4624,8 +4624,8 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     return skip;
 }
 
-bool CoreChecks::ValidateBufferImageCopyData(uint32_t regionCount, const VkBufferImageCopy *pRegions, IMAGE_STATE *image_state,
-                                             const char *function) {
+bool CoreChecks::ValidateBufferImageCopyData(uint32_t regionCount, const VkBufferImageCopy *pRegions,
+                                             const IMAGE_STATE *image_state, const char *function) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < regionCount; i++) {
@@ -4875,9 +4875,9 @@ static bool ValidateImageBounds(const debug_report_data *report_data, const IMAG
     return skip;
 }
 
-static inline bool ValidateBufferBounds(const debug_report_data *report_data, IMAGE_STATE *image_state, BUFFER_STATE *buff_state,
-                                        uint32_t regionCount, const VkBufferImageCopy *pRegions, const char *func_name,
-                                        const char *msg_code) {
+static inline bool ValidateBufferBounds(const debug_report_data *report_data, const IMAGE_STATE *image_state,
+                                        const BUFFER_STATE *buff_state, uint32_t regionCount, const VkBufferImageCopy *pRegions,
+                                        const char *func_name, const char *msg_code) {
     bool skip = false;
 
     VkDeviceSize buffer_size = buff_state->createInfo.size;
