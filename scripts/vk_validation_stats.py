@@ -497,7 +497,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
 """
         self.spec_url = "https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html"
 
-    def dump_txt(self):
+    def dump_txt(self, only_unimplemented = False):
         print("\n Dumping database to text file: %s" % txt_filename)
         with open (txt_filename, 'w') as txt:
             txt.write("## VUID Database\n")
@@ -510,7 +510,10 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
                 for db_entry in db_list:
                     checked = 'N'
                     if vuid in self.vs.all_vuids:
-                        checked = 'Y'
+                        if only_unimplemented:
+                            continue
+                        else:
+                            checked = 'Y'
                     test = 'None'
                     if vuid in self.vt.vuid_to_tests:
                         test_list = list(self.vt.vuid_to_tests[vuid])
@@ -520,7 +523,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
 
                     txt.write("%s | %s | %s | %s | %s | %s | %s\n" % (vuid, checked, test, db_entry['type'], db_entry['api'], db_entry['ext'], db_entry['text']))
 
-    def dump_csv(self):
+    def dump_csv(self, only_unimplemented = False):
         print("\n Dumping database to csv file: %s" % csv_filename)
         with open (csv_filename, 'w', newline='') as csvfile:
             cw = csv.writer(csvfile)
@@ -531,7 +534,10 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
                 for db_entry in self.vj.vuid_db[vuid]:
                     row = [vuid]
                     if vuid in self.vs.all_vuids:
-                        row.append('Y')
+                        if only_unimplemented:
+                            continue
+                        else:
+                            row.append('Y')
                     else:
                         row.append('N')
                     test = 'None'
@@ -545,7 +551,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
                     row.append(db_entry['text'])
                     cw.writerow(row)
 
-    def dump_html(self):
+    def dump_html(self, only_unimplemented = False):
         print("\n Dumping database to html file: %s" % html_filename)
         preamble = '<!DOCTYPE html>\n<html>\n<head>\n<style>\ntable, th, td {\n border: 1px solid black;\n border-collapse: collapse; \n}\n</style>\n<body>\n<h2>Valid Usage Database</h2>\n<font size="2" face="Arial">\n<table style="width:100%">\n'
         headers = '<tr><th>VUID NAME</th><th>CHECKED</th><th>TEST</th><th>TYPE</th><th>API/STRUCT</th><th>EXTENSION</th><th>VUID TEXT</th></tr>\n'
@@ -556,10 +562,13 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
             vuid_list.sort()
             for vuid in vuid_list:
                 for db_entry in self.vj.vuid_db[vuid]:
-                    hfile.write('<tr><th>%s</th>' % vuid)
                     checked = '<span style="color:red;">N</span>'
                     if vuid in self.vs.all_vuids:
-                        checked = '<span style="color:limegreen;">Y</span>'
+                        if only_unimplemented:
+                            continue
+                        else:
+                            checked = '<span style="color:limegreen;">Y</span>'
+                    hfile.write('<tr><th>%s</th>' % vuid)
                     hfile.write('<th>%s</th>' % checked)
                     test = 'None'
                     if vuid in self.vt.vuid_to_tests:
@@ -796,11 +805,11 @@ def main(argv):
     # Output database in requested format(s)
     db_out = OutputDatabase(val_json, val_source, val_tests)
     if txt_out:
-        db_out.dump_txt()
+        db_out.dump_txt(report_unimplemented)
     if csv_out:
-        db_out.dump_csv()
+        db_out.dump_csv(report_unimplemented)
     if html_out:
-        db_out.dump_html()
+        db_out.dump_html(report_unimplemented)
     if header_out:
         db_out.export_header()
     return result
