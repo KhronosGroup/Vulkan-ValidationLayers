@@ -3040,6 +3040,7 @@ bool ValidationStateTracker::SetQueryStateMulti(VkQueue queue, VkCommandBuffer c
 }
 
 void ValidationStateTracker::RecordCmdBeginQuery(CMD_BUFFER_STATE *cb_state, const QueryObject &query_obj) {
+    if (disabled.query_validation) return;
     cb_state->activeQueries.insert(query_obj);
     cb_state->startedQueries.insert(query_obj);
     cb_state->queryUpdates.emplace_back([this, cb_state, query_obj](VkQueue q) {
@@ -3052,12 +3053,14 @@ void ValidationStateTracker::RecordCmdBeginQuery(CMD_BUFFER_STATE *cb_state, con
 
 void ValidationStateTracker::PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                                          VkFlags flags) {
+    if (disabled.query_validation) return;
     QueryObject query = {queryPool, slot};
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     RecordCmdBeginQuery(cb_state, query);
 }
 
 void ValidationStateTracker::RecordCmdEndQuery(CMD_BUFFER_STATE *cb_state, const QueryObject &query_obj) {
+    if (disabled.query_validation) return;
     cb_state->activeQueries.erase(query_obj);
     cb_state->queryUpdates.emplace_back(
         [this, cb_state, query_obj](VkQueue q) { return SetQueryState(q, cb_state->commandBuffer, query_obj, QUERYSTATE_ENDED); });
@@ -3066,6 +3069,7 @@ void ValidationStateTracker::RecordCmdEndQuery(CMD_BUFFER_STATE *cb_state, const
 }
 
 void ValidationStateTracker::PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) {
+    if (disabled.query_validation) return;
     QueryObject query_obj = {queryPool, slot};
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     RecordCmdEndQuery(cb_state, query_obj);
@@ -3073,6 +3077,7 @@ void ValidationStateTracker::PostCallRecordCmdEndQuery(VkCommandBuffer commandBu
 
 void ValidationStateTracker::PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
                                                              uint32_t firstQuery, uint32_t queryCount) {
+    if (disabled.query_validation) return;
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
 
     cb_state->queryUpdates.emplace_back([this, commandBuffer, queryPool, firstQuery, queryCount](VkQueue q) {
@@ -3086,6 +3091,7 @@ void ValidationStateTracker::PostCallRecordCmdCopyQueryPoolResults(VkCommandBuff
                                                                    uint32_t firstQuery, uint32_t queryCount, VkBuffer dstBuffer,
                                                                    VkDeviceSize dstOffset, VkDeviceSize stride,
                                                                    VkQueryResultFlags flags) {
+    if (disabled.query_validation) return;
     auto cb_state = GetCBState(commandBuffer);
     auto dst_buff_state = GetBufferState(dstBuffer);
     AddCommandBufferBindingBuffer(cb_state, dst_buff_state);
@@ -3095,6 +3101,7 @@ void ValidationStateTracker::PostCallRecordCmdCopyQueryPoolResults(VkCommandBuff
 
 void ValidationStateTracker::PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                              VkQueryPool queryPool, uint32_t slot) {
+    if (disabled.query_validation) return;
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     AddCommandBufferBinding(&GetQueryPoolState(queryPool)->cb_bindings, VulkanTypedHandle(queryPool, kVulkanObjectTypeQueryPool),
                             cb_state);
