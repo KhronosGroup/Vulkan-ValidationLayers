@@ -143,6 +143,19 @@ class LayerChassisDispatchOutputGenerator(OutputGenerator):
 
 #define DISPATCH_MAX_STACK_ALLOCATIONS 32
 
+// The VK_EXT_pipeline_creation_feedback extension returns data from the driver -- we've created a copy of the pnext chain, so
+// copy the returned data to the caller before freeing the copy's data.
+void CopyCreatePipelineFeedbackData(const void *src_chain, const void *dst_chain) {
+    auto src_feedback_struct = lvl_find_in_chain<VkPipelineCreationFeedbackCreateInfoEXT>(src_chain);
+    if (!src_feedback_struct) return;
+    auto dst_feedback_struct = const_cast<VkPipelineCreationFeedbackCreateInfoEXT *>(
+        lvl_find_in_chain<VkPipelineCreationFeedbackCreateInfoEXT>(dst_chain));
+    *dst_feedback_struct->pPipelineCreationFeedback = *src_feedback_struct->pPipelineCreationFeedback;
+    for (uint32_t i = 0; i < src_feedback_struct->pipelineStageCreationFeedbackCount; i++) {
+        dst_feedback_struct->pPipelineStageCreationFeedbacks[i] = src_feedback_struct->pPipelineStageCreationFeedbacks[i];
+    }
+}
+
 VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                          const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
@@ -193,6 +206,8 @@ VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipeli
 
     VkResult result = layer_data->device_dispatch_table.CreateGraphicsPipelines(device, pipelineCache, createInfoCount,
                                                                                 local_pCreateInfos->ptr(), pAllocator, pPipelines);
+    if (pCreateInfos->pNext) CopyCreatePipelineFeedbackData(local_pCreateInfos->pNext, pCreateInfos->pNext);
+
     delete[] local_pCreateInfos;
     {
         for (uint32_t i = 0; i < createInfoCount; ++i) {
@@ -1771,6 +1786,8 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
             self.appendSection('source_file', '    ' + assignresult + api_func + '(' + wrapped_paramstext + ');')
 
             # And add the post-API-call codegen
+            if ('CreateGraphicsPipelines' in cmdname) or ('CreateComputePipelines' in cmdname) or ('CreateRayTracingPipelines' in cmdname):
+                self.appendSection('source_file', '    if (pCreateInfos->pNext) CopyCreatePipelineFeedbackData(local_pCreateInfos->pNext, pCreateInfos->pNext);\n')
             self.appendSection('source_file', "\n".join(str(api_post).rstrip().split("\n")))
             # Handle the return result variable, if any
             if (resulttype is not None):
