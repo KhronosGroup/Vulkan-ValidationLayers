@@ -6435,6 +6435,7 @@ void CoreChecks::EnqueueVerifyBeginQuery(VkCommandBuffer command_buffer, const Q
 }
 
 void CoreChecks::PreCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot, VkFlags flags) {
+    if (disabled.query_validation) return;
     QueryObject query_obj = {queryPool, slot};
     EnqueueVerifyBeginQuery(commandBuffer, query_obj);
 }
@@ -6559,6 +6560,7 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
 void CoreChecks::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                       uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                       VkDeviceSize stride, VkQueryResultFlags flags) {
+    if (disabled.query_validation) return;
     auto cb_state = GetCBState(commandBuffer);
     cb_state->queryUpdates.emplace_back([this, cb_state, queryPool, firstQuery, queryCount, flags](VkQueue q) {
         return ValidateQuery(q, cb_state, queryPool, firstQuery, queryCount, flags);
@@ -6632,6 +6634,7 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer,
 
 void CoreChecks::PreCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                 VkQueryPool queryPool, uint32_t slot) {
+    if (disabled.query_validation) return;
     // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall...
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     QueryObject query = {queryPool, slot};
@@ -10239,6 +10242,7 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
 
 void CoreChecks::PreCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t query,
                                                       VkQueryControlFlags flags, uint32_t index) {
+    if (disabled.query_validation) return;
     QueryObject query_obj = {queryPool, query, index};
     EnqueueVerifyBeginQuery(commandBuffer, query_obj);
 }
