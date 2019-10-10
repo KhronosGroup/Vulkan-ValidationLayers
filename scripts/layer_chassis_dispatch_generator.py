@@ -143,45 +143,6 @@ class LayerChassisDispatchOutputGenerator(OutputGenerator):
 
 #define DISPATCH_MAX_STACK_ALLOCATIONS 32
 
-VkResult DispatchCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                        const VkComputePipelineCreateInfo *pCreateInfos,
-                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    if (!wrap_handles) return layer_data->device_dispatch_table.CreateComputePipelines(device, pipelineCache, createInfoCount,
-                                                                                          pCreateInfos, pAllocator, pPipelines);
-    safe_VkComputePipelineCreateInfo *local_pCreateInfos = NULL;
-    if (pCreateInfos) {
-        local_pCreateInfos = new safe_VkComputePipelineCreateInfo[createInfoCount];
-        for (uint32_t idx0 = 0; idx0 < createInfoCount; ++idx0) {
-            local_pCreateInfos[idx0].initialize(&pCreateInfos[idx0]);
-            if (pCreateInfos[idx0].basePipelineHandle) {
-                local_pCreateInfos[idx0].basePipelineHandle = layer_data->Unwrap(pCreateInfos[idx0].basePipelineHandle);
-            }
-            if (pCreateInfos[idx0].layout) {
-                local_pCreateInfos[idx0].layout = layer_data->Unwrap(pCreateInfos[idx0].layout);
-            }
-            if (pCreateInfos[idx0].stage.module) {
-                local_pCreateInfos[idx0].stage.module = layer_data->Unwrap(pCreateInfos[idx0].stage.module);
-            }
-        }
-    }
-    if (pipelineCache) {
-        pipelineCache = layer_data->Unwrap(pipelineCache);
-    }
-
-    VkResult result = layer_data->device_dispatch_table.CreateComputePipelines(device, pipelineCache, createInfoCount,
-                                                                               local_pCreateInfos->ptr(), pAllocator, pPipelines);
-    delete[] local_pCreateInfos;
-    {
-        for (uint32_t i = 0; i < createInfoCount; ++i) {
-            if (pPipelines[i] != VK_NULL_HANDLE) {
-                pPipelines[i] = layer_data->WrapNew(pPipelines[i]);
-            }
-        }
-    }
-    return result;
-}
-
 VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                          const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
@@ -1007,13 +968,12 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
             'vkDestroyInstance',
             'vkCreateDevice',
             'vkDestroyDevice',
-            'vkCreateComputePipelines',
-            'vkCreateGraphicsPipelines',
             'vkCreateSwapchainKHR',
             'vkCreateSharedSwapchainsKHR',
             'vkGetSwapchainImagesKHR',
             'vkDestroySwapchainKHR',
             'vkQueuePresentKHR',
+            'vkCreateGraphicsPipelines',
             'vkResetDescriptorPool',
             'vkDestroyDescriptorPool',
             'vkAllocateDescriptorSets',
@@ -1396,15 +1356,26 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
             if cmd_info[-1].len is not None:
                 ndo_array = True;
             handle_name = params[-1].find('name')
-            create_ndo_code += '%sif (VK_SUCCESS == result) {\n' % (indent)
+            # Special case return value handling for the createpipeline APIs
+            is_create_pipelines = ('CreateGraphicsPipelines' in proto.text) or ('CreateComputePipelines' in proto.text) or ('CreateRayTracingPipelines' in proto.text)
+            if is_create_pipelines:
+                create_ndo_code += '%s{\n' % (indent)
+            else:
+                create_ndo_code += '%sif (VK_SUCCESS == result) {\n' % (indent)
             indent = self.incIndent(indent)
             ndo_dest = '*%s' % handle_name.text
             if ndo_array == True:
                 create_ndo_code += '%sfor (uint32_t index0 = 0; index0 < %s; index0++) {\n' % (indent, cmd_info[-1].len)
                 indent = self.incIndent(indent)
                 ndo_dest = '%s[index0]' % cmd_info[-1].name
+                if is_create_pipelines:
+                    create_ndo_code += '%sif (%s != VK_NULL_HANDLE) {\n' % (indent, ndo_dest)
+                    indent = self.incIndent(indent)
             create_ndo_code += '%s%s = layer_data->WrapNew(%s);\n' % (indent, ndo_dest, ndo_dest)
             if ndo_array == True:
+                if is_create_pipelines:
+                    indent = self.decIndent(indent)
+                    create_ndo_code += '%s}\n' % indent
                 indent = self.decIndent(indent)
                 create_ndo_code += '%s}\n' % indent
             indent = self.decIndent(indent)

@@ -163,45 +163,6 @@ void WrapPnextChainHandles(ValidationObject *layer_data, const void *pNext) {
 
 #define DISPATCH_MAX_STACK_ALLOCATIONS 32
 
-VkResult DispatchCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                        const VkComputePipelineCreateInfo *pCreateInfos,
-                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
-    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
-    if (!wrap_handles) return layer_data->device_dispatch_table.CreateComputePipelines(device, pipelineCache, createInfoCount,
-                                                                                          pCreateInfos, pAllocator, pPipelines);
-    safe_VkComputePipelineCreateInfo *local_pCreateInfos = NULL;
-    if (pCreateInfos) {
-        local_pCreateInfos = new safe_VkComputePipelineCreateInfo[createInfoCount];
-        for (uint32_t idx0 = 0; idx0 < createInfoCount; ++idx0) {
-            local_pCreateInfos[idx0].initialize(&pCreateInfos[idx0]);
-            if (pCreateInfos[idx0].basePipelineHandle) {
-                local_pCreateInfos[idx0].basePipelineHandle = layer_data->Unwrap(pCreateInfos[idx0].basePipelineHandle);
-            }
-            if (pCreateInfos[idx0].layout) {
-                local_pCreateInfos[idx0].layout = layer_data->Unwrap(pCreateInfos[idx0].layout);
-            }
-            if (pCreateInfos[idx0].stage.module) {
-                local_pCreateInfos[idx0].stage.module = layer_data->Unwrap(pCreateInfos[idx0].stage.module);
-            }
-        }
-    }
-    if (pipelineCache) {
-        pipelineCache = layer_data->Unwrap(pipelineCache);
-    }
-
-    VkResult result = layer_data->device_dispatch_table.CreateComputePipelines(device, pipelineCache, createInfoCount,
-                                                                               local_pCreateInfos->ptr(), pAllocator, pPipelines);
-    delete[] local_pCreateInfos;
-    {
-        for (uint32_t i = 0; i < createInfoCount; ++i) {
-            if (pPipelines[i] != VK_NULL_HANDLE) {
-                pPipelines[i] = layer_data->WrapNew(pPipelines[i]);
-            }
-        }
-    }
-    return result;
-}
-
 VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                          const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) {
@@ -2048,7 +2009,48 @@ VkResult DispatchMergePipelineCaches(
 
 // Skip vkCreateGraphicsPipelines dispatch, manually generated
 
-// Skip vkCreateComputePipelines dispatch, manually generated
+VkResult DispatchCreateComputePipelines(
+    VkDevice                                    device,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkComputePipelineCreateInfo*          pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
+    safe_VkComputePipelineCreateInfo *local_pCreateInfos = NULL;
+    {
+        pipelineCache = layer_data->Unwrap(pipelineCache);
+        if (pCreateInfos) {
+            local_pCreateInfos = new safe_VkComputePipelineCreateInfo[createInfoCount];
+            for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
+                local_pCreateInfos[index0].initialize(&pCreateInfos[index0]);
+                if (pCreateInfos[index0].stage.module) {
+                    local_pCreateInfos[index0].stage.module = layer_data->Unwrap(pCreateInfos[index0].stage.module);
+                }
+                if (pCreateInfos[index0].layout) {
+                    local_pCreateInfos[index0].layout = layer_data->Unwrap(pCreateInfos[index0].layout);
+                }
+                if (pCreateInfos[index0].basePipelineHandle) {
+                    local_pCreateInfos[index0].basePipelineHandle = layer_data->Unwrap(pCreateInfos[index0].basePipelineHandle);
+                }
+            }
+        }
+    }
+    VkResult result = layer_data->device_dispatch_table.CreateComputePipelines(device, pipelineCache, createInfoCount, (const VkComputePipelineCreateInfo*)local_pCreateInfos, pAllocator, pPipelines);
+    if (local_pCreateInfos) {
+        delete[] local_pCreateInfos;
+    }
+    {
+        for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {
+            if (pPipelines[index0] != VK_NULL_HANDLE) {
+                pPipelines[index0] = layer_data->WrapNew(pPipelines[index0]);
+            }
+        }
+    }
+    return result;
+}
 
 void DispatchDestroyPipeline(
     VkDevice                                    device,
@@ -6248,9 +6250,11 @@ VkResult DispatchCreateRayTracingPipelinesNV(
     if (local_pCreateInfos) {
         delete[] local_pCreateInfos;
     }
-    if (VK_SUCCESS == result) {
+    {
         for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {
-            pPipelines[index0] = layer_data->WrapNew(pPipelines[index0]);
+            if (pPipelines[index0] != VK_NULL_HANDLE) {
+                pPipelines[index0] = layer_data->WrapNew(pPipelines[index0]);
+            }
         }
     }
     return result;
