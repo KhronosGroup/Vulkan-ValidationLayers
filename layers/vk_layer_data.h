@@ -22,30 +22,32 @@
 
 #include <cassert>
 #include <unordered_map>
+#include <unordered_set>
 
 // This is a wrapper around unordered_map that optimizes for the common case
 // of only containing a small number of elements. The first N elements are stored
 // inline in the object and don't require hashing or memory (de)allocation.
-template <typename Key, typename T, int N = 1>
-class small_unordered_map {
+
+template <typename Key, typename value_type, typename inner_container_type, typename value_type_helper, int N>
+class small_container {
+  protected:
     bool small_data_allocated[N];
-    using value_type = std::pair<const Key, T>;
     value_type small_data[N];
 
-    std::unordered_map<Key, T> inner_map;
+    inner_container_type inner_cont;
 
   public:
-    small_unordered_map() {
+    small_container() {
         for (int i = 0; i < N; ++i) {
             small_data_allocated[i] = false;
         }
     }
 
     class iterator {
-        typedef typename std::unordered_map<Key, T>::iterator inner_iterator;
-        friend class small_unordered_map<Key, T, N>;
+        typedef typename inner_container_type::iterator inner_iterator;
+        friend class small_container<Key, value_type, inner_container_type, value_type_helper, N>;
 
-        small_unordered_map<Key, T, N> *parent;
+        small_container<Key, value_type, inner_container_type, value_type_helper, N> *parent;
         int index;
         inner_iterator it;
 
@@ -61,7 +63,7 @@ class small_unordered_map {
                 if (index < N) {
                     return *this;
                 }
-                it = parent->inner_map.begin();
+                it = parent->inner_cont.begin();
                 return *this;
             }
             ++it;
@@ -94,6 +96,59 @@ class small_unordered_map {
         }
     };
 
+    class const_iterator {
+        typedef typename inner_container_type::const_iterator inner_iterator;
+        friend class small_container<Key, value_type, inner_container_type, value_type_helper, N>;
+
+        const small_container<Key, value_type, inner_container_type, value_type_helper, N> *parent;
+        int index;
+        inner_iterator it;
+
+      public:
+        const_iterator() {}
+
+        const_iterator operator++() {
+            if (index < N) {
+                index++;
+                while (index < N && !parent->small_data_allocated[index]) {
+                    index++;
+                }
+                if (index < N) {
+                    return *this;
+                }
+                it = parent->inner_cont.begin();
+                return *this;
+            }
+            ++it;
+            return *this;
+        }
+
+        bool operator==(const const_iterator &other) const {
+            if ((index < N) != (other.index < N)) {
+                return false;
+            }
+            if (index < N) {
+                return (index == other.index);
+            }
+            return it == other.it;
+        }
+
+        bool operator!=(const const_iterator &other) const { return !(*this == other); }
+
+        const value_type &operator*() const {
+            if (index < N) {
+                return parent->small_data[index];
+            }
+            return *it;
+        }
+        const value_type *operator->() const {
+            if (index < N) {
+                return &parent->small_data[index];
+            }
+            return &*it;
+        }
+    };
+
     iterator begin() {
         iterator it;
         it.parent = this;
@@ -111,53 +166,49 @@ class small_unordered_map {
         iterator it;
         it.parent = this;
         it.index = N;
-        it.it = inner_map.end();
+        it.it = inner_cont.end();
+        return it;
+    }
+
+    const_iterator begin() const {
+        const_iterator it;
+        it.parent = this;
+        // If index 0 is allocated, return it, otherwise use operator++ to find the first
+        // allocated element.
+        it.index = 0;
+        if (small_data_allocated[0]) {
+            return it;
+        }
+        ++it;
+        return it;
+    }
+
+    const_iterator end() const {
+        const_iterator it;
+        it.parent = this;
+        it.index = N;
+        it.it = inner_cont.end();
         return it;
     }
 
     bool contains(const Key &key) const {
         for (int i = 0; i < N; ++i) {
-            if (small_data[i].first == key && small_data_allocated[i]) {
+            if (value_type_helper().compare_equal(small_data[i], key) && small_data_allocated[i]) {
                 return true;
             }
         }
         // check size() first to avoid hashing key unnecessarily.
-        if (inner_map.size() == 0) {
+        if (inner_cont.size() == 0) {
             return false;
         }
-        return inner_map.find(key) != inner_map.end();
+        return inner_cont.find(key) != inner_cont.end();
     }
 
-    T &operator[](const Key &key) {
-        for (int i = 0; i < N; ++i) {
-            if (small_data[i].first == key && small_data_allocated[i]) {
-                return small_data[i].second;
-            }
-        }
-        auto iter = inner_map.find(key);
-        if (iter != inner_map.end()) {
-            return iter->second;
-        } else {
-            for (int i = 0; i < N; ++i) {
-                if (!small_data_allocated[i]) {
-                    small_data_allocated[i] = true;
-
-                    // While the const_cast may be unsatisfactory, we are using small_data as
-                    // stand-in for placement new and a small-block allocator, so the const_cast
-                    // is minimal, contained, valid, and allows operators * and -> to avoid copies
-                    const_cast<Key &>(small_data[i].first) = key;
-                    small_data[i].second = T();
-
-                    return small_data[i].second;
-                }
-            }
-            return inner_map[key];
-        }
-    }
+    typename inner_container_type::size_type count(const Key &key) const { return contains(key) ? 1 : 0; }
 
     std::pair<iterator, bool> insert(const value_type &value) {
         for (int i = 0; i < N; ++i) {
-            if (small_data[i].first == value.first && small_data_allocated[i]) {
+            if (value_type_helper().compare_equal(small_data[i], value) && small_data_allocated[i]) {
                 iterator it;
                 it.parent = this;
                 it.index = i;
@@ -165,8 +216,8 @@ class small_unordered_map {
             }
         }
         // check size() first to avoid hashing key unnecessarily.
-        auto iter = inner_map.size() > 0 ? inner_map.find(value.first) : inner_map.end();
-        if (iter != inner_map.end()) {
+        auto iter = inner_cont.size() > 0 ? inner_cont.find(value_type_helper().get_key(value)) : inner_cont.end();
+        if (iter != inner_cont.end()) {
             iterator it;
             it.parent = this;
             it.index = N;
@@ -176,15 +227,14 @@ class small_unordered_map {
             for (int i = 0; i < N; ++i) {
                 if (!small_data_allocated[i]) {
                     small_data_allocated[i] = true;
-                    const_cast<Key &>(small_data[i].first) = value.first;
-                    small_data[i].second = value.second;
+                    value_type_helper().assign(small_data[i], value);
                     iterator it;
                     it.parent = this;
                     it.index = i;
                     return std::make_pair(it, true);
                 }
             }
-            iter = inner_map.insert(value).first;
+            iter = inner_cont.insert(value).first;
             iterator it;
             it.parent = this;
             it.index = N;
@@ -193,23 +243,103 @@ class small_unordered_map {
         }
     }
 
-    typename std::unordered_map<Key, T>::size_type erase(const Key &key) {
+    typename inner_container_type::size_type erase(const Key &key) {
         for (int i = 0; i < N; ++i) {
-            if (small_data[i].first == key && small_data_allocated[i]) {
+            if (value_type_helper().compare_equal(small_data[i], key) && small_data_allocated[i]) {
                 small_data_allocated[i] = false;
                 return 1;
             }
         }
-        return inner_map.erase(key);
+        return inner_cont.erase(key);
+    }
+
+    typename inner_container_type::size_type size() const {
+        auto size = inner_cont.size();
+        for (int i = 0; i < N; ++i) {
+            if (small_data_allocated[i]) {
+                size++;
+            }
+        }
+        return size;
+    }
+
+    bool empty() const {
+        for (int i = 0; i < N; ++i) {
+            if (small_data_allocated[i]) {
+                return false;
+            }
+        }
+        return inner_cont.size() == 0;
     }
 
     void clear() {
         for (int i = 0; i < N; ++i) {
             small_data_allocated[i] = false;
         }
-        inner_map.clear();
+        inner_cont.clear();
     }
 };
+
+// Helper function objects to compare/assign/get keys in small_unordered_set/map.
+// This helps to abstract away whether value_type is a Key or a pair<Key, T>.
+template <typename Key, typename T>
+class value_type_helper_map {
+  public:
+    bool compare_equal(const std::pair<const Key, T> &lhs, const Key &rhs) const { return lhs.first == rhs; }
+    bool compare_equal(const std::pair<const Key, T> &lhs, const std::pair<const Key, T> &rhs) const {
+        return lhs.first == rhs.first;
+    }
+
+    void assign(std::pair<const Key, T> &lhs, const std::pair<Key, T> &rhs) const {
+        // While the const_cast may be unsatisfactory, we are using small_data as
+        // stand-in for placement new and a small-block allocator, so the const_cast
+        // is minimal, contained, valid, and allows operators * and -> to avoid copies
+        const_cast<Key &>(lhs.first) = rhs.first;
+        lhs.second = rhs.second;
+    }
+
+    Key get_key(const std::pair<const Key, T> &value) const { return value.first; }
+};
+
+template <typename Key>
+class value_type_helper_set {
+  public:
+    bool compare_equal(const Key &lhs, const Key &rhs) const { return lhs == rhs; }
+
+    void assign(Key &lhs, const Key &rhs) const { lhs = rhs; }
+
+    Key get_key(const Key &value) const { return value; }
+};
+
+template <typename Key, typename T, int N = 1>
+class small_unordered_map
+    : public small_container<Key, std::pair<const Key, T>, std::unordered_map<Key, T>, value_type_helper_map<Key, T>, N> {
+  public:
+    T &operator[](const Key &key) {
+        for (int i = 0; i < N; ++i) {
+            if (value_type_helper_map<Key, T>().compare_equal(this->small_data[i], key) && this->small_data_allocated[i]) {
+                return this->small_data[i].second;
+            }
+        }
+        auto iter = this->inner_cont.find(key);
+        if (iter != this->inner_cont.end()) {
+            return iter->second;
+        } else {
+            for (int i = 0; i < N; ++i) {
+                if (!this->small_data_allocated[i]) {
+                    this->small_data_allocated[i] = true;
+                    value_type_helper_map<Key, T>().assign(this->small_data[i], std::make_pair(key, T()));
+
+                    return this->small_data[i].second;
+                }
+            }
+            return this->inner_cont[key];
+        }
+    }
+};
+
+template <typename Key, int N = 1>
+class small_unordered_set : public small_container<Key, Key, std::unordered_set<Key>, value_type_helper_set<Key>, N> {};
 
 // For the given data key, look up the layer_data instance from given layer_data_map
 template <typename DATA_T>
