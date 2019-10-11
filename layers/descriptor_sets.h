@@ -356,8 +356,8 @@ enum DescriptorClass { PlainSampler, ImageSampler, Image, TexelBuffer, GeneralBu
 class Descriptor {
   public:
     virtual ~Descriptor(){};
-    virtual void WriteUpdate(ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) = 0;
-    virtual void CopyUpdate(ValidationStateTracker *dev_data, const Descriptor *) = 0;
+    virtual void WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) = 0;
+    virtual void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) = 0;
     // Create binding between resources of this descriptor and given cb_node
     virtual void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) = 0;
     virtual DescriptorClass GetClass() const { return descriptor_class; };
@@ -385,9 +385,9 @@ bool ValidateDescriptorSetLayoutCreateInfo(const debug_report_data *report_data,
 
 class SamplerDescriptor : public Descriptor {
   public:
-    SamplerDescriptor(ValidationStateTracker *dev_data, const VkSampler *);
-    void WriteUpdate(ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override;
-    void CopyUpdate(ValidationStateTracker *dev_data, const Descriptor *) override;
+    SamplerDescriptor(const ValidationStateTracker *dev_data, const VkSampler *);
+    void WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override;
+    void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override;
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
     virtual bool IsImmutableSampler() const override { return immutable_; };
     VkSampler GetSampler() const { return sampler_; }
@@ -402,9 +402,9 @@ class SamplerDescriptor : public Descriptor {
 
 class ImageSamplerDescriptor : public Descriptor {
   public:
-    ImageSamplerDescriptor(ValidationStateTracker *dev_data, const VkSampler *);
-    void WriteUpdate(ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override;
-    void CopyUpdate(ValidationStateTracker *dev_data, const Descriptor *) override;
+    ImageSamplerDescriptor(const ValidationStateTracker *dev_data, const VkSampler *);
+    void WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override;
+    void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override;
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
     virtual bool IsImmutableSampler() const override { return immutable_; };
     VkSampler GetSampler() const { return sampler_; }
@@ -427,8 +427,8 @@ class ImageSamplerDescriptor : public Descriptor {
 class ImageDescriptor : public Descriptor {
   public:
     ImageDescriptor(const VkDescriptorType);
-    void WriteUpdate(ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override;
-    void CopyUpdate(ValidationStateTracker *dev_data, const Descriptor *) override;
+    void WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override;
+    void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override;
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
     virtual bool IsStorage() const override { return storage_; }
     VkImageView GetImageView() const { return image_view_; }
@@ -446,8 +446,8 @@ class ImageDescriptor : public Descriptor {
 class TexelDescriptor : public Descriptor {
   public:
     TexelDescriptor(const VkDescriptorType);
-    void WriteUpdate(ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override;
-    void CopyUpdate(ValidationStateTracker *dev_data, const Descriptor *) override;
+    void WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override;
+    void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override;
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
     virtual bool IsStorage() const override { return storage_; }
     VkBufferView GetBufferView() const { return buffer_view_; }
@@ -463,8 +463,8 @@ class TexelDescriptor : public Descriptor {
 class BufferDescriptor : public Descriptor {
   public:
     BufferDescriptor(const VkDescriptorType);
-    void WriteUpdate(ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override;
-    void CopyUpdate(ValidationStateTracker *dev_data, const Descriptor *) override;
+    void WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override;
+    void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override;
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
     virtual bool IsDynamic() const override { return dynamic_; }
     virtual bool IsStorage() const override { return storage_; }
@@ -489,8 +489,10 @@ class InlineUniformDescriptor : public Descriptor {
         updated = false;
         descriptor_class = InlineUniform;
     }
-    void WriteUpdate(ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override { updated = true; }
-    void CopyUpdate(ValidationStateTracker *dev_data, const Descriptor *) override { updated = true; }
+    void WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override {
+        updated = true;
+    }
+    void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override { updated = true; }
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override {}
 };
 
@@ -500,8 +502,10 @@ class AccelerationStructureDescriptor : public Descriptor {
         updated = false;
         descriptor_class = AccelerationStructure;
     }
-    void WriteUpdate(ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override { updated = true; }
-    void CopyUpdate(ValidationStateTracker *dev_data, const Descriptor *) override { updated = true; }
+    void WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override {
+        updated = true;
+    }
+    void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override { updated = true; }
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override {}
 };
 
@@ -559,8 +563,8 @@ struct DecodedTemplateUpdate {
 class DescriptorSet : public BASE_NODE {
   public:
     using StateTracker = ValidationStateTracker;
-    DescriptorSet(const VkDescriptorSet, const VkDescriptorPool, const std::shared_ptr<DescriptorSetLayout const> &,
-                  uint32_t variable_count, StateTracker *state_data, const StateTracker *state_data_const);
+    DescriptorSet(const VkDescriptorSet, DESCRIPTOR_POOL_STATE *, const std::shared_ptr<DescriptorSetLayout const> &,
+                  uint32_t variable_count, const StateTracker *state_data_const);
     ~DescriptorSet();
     // A number of common Get* functions that return data based on layout from which this set was created
     uint32_t GetTotalDescriptorCount() const { return p_layout_->GetTotalDescriptorCount(); };
@@ -582,11 +586,11 @@ class DescriptorSet : public BASE_NODE {
     std::string StringifySetAndLayout() const;
 
     // Perform a push update whose contents were just validated using ValidatePushDescriptorsUpdate
-    void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *p_wds);
+    void PerformPushDescriptorsUpdate(ValidationStateTracker *dev_data, uint32_t write_count, const VkWriteDescriptorSet *p_wds);
     // Perform a WriteUpdate whose contents were just validated using ValidateWriteUpdate
-    void PerformWriteUpdate(const VkWriteDescriptorSet *);
+    void PerformWriteUpdate(ValidationStateTracker *dev_data, const VkWriteDescriptorSet *);
     // Perform a CopyUpdate whose contents were just validated using ValidateCopyUpdate
-    void PerformCopyUpdate(const VkCopyDescriptorSet *, const DescriptorSet *);
+    void PerformCopyUpdate(ValidationStateTracker *dev_data, const VkCopyDescriptorSet *, const DescriptorSet *);
 
     const std::shared_ptr<DescriptorSetLayout const> GetLayout() const { return p_layout_; };
     VkDescriptorSetLayout GetDescriptorSetLayout() const { return p_layout_->GetDescriptorSetLayout(); }
@@ -637,16 +641,13 @@ class DescriptorSet : public BASE_NODE {
 
   private:
     // Private helper to set all bound cmd buffers to INVALID state
-    void InvalidateBoundCmdBuffers();
+    void InvalidateBoundCmdBuffers(ValidationStateTracker *state_data);
     bool some_update_;  // has any part of the set ever been updated?
     VkDescriptorSet set_;
     DESCRIPTOR_POOL_STATE *pool_state_;
     const std::shared_ptr<DescriptorSetLayout const> p_layout_;
     std::vector<std::unique_ptr<Descriptor>> descriptors_;
-    // Some transient fake descriptor sets are created in Core validation for push descriptors,
-    // and these only have a const StateTracker available.
-    StateTracker *state_data_;
-    const StateTracker *state_data_const_;
+    const StateTracker *state_data_;
     uint32_t variable_count_;
     uint64_t change_count_;
 

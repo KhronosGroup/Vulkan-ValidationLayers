@@ -722,7 +722,9 @@ void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, const V
 void ValidationStateTracker::FreeDescriptorSet(cvdescriptorset::DescriptorSet *descriptor_set) {
     descriptor_set->destroyed = true;
     const VulkanTypedHandle obj_struct(descriptor_set->GetSet(), kVulkanObjectTypeDescriptorSet);
+    // Any bound cmd buffers are now invalid
     InvalidateCommandBuffers(descriptor_set->cb_bindings, obj_struct);
+
     setMap.erase(descriptor_set->GetSet());
 }
 
@@ -2893,7 +2895,7 @@ void ValidationStateTracker::RecordCmdPushDescriptorSetState(CMD_BUFFER_STATE *c
     auto &push_descriptor_set = last_bound.push_descriptor_set;
     // If we are disturbing the current push_desriptor_set clear it
     if (!push_descriptor_set || !CompatForSet(set, last_bound, pipeline_layout->compat_for_set)) {
-        last_bound.UnbindAndResetPushDescriptorSet(new cvdescriptorset::DescriptorSet(0, 0, dsl, 0, this, this));
+        last_bound.UnbindAndResetPushDescriptorSet(new cvdescriptorset::DescriptorSet(0, nullptr, dsl, 0, this));
     }
 
     UpdateLastBoundDescriptorSets(cb_state, pipelineBindPoint, pipeline_layout, set, 1, nullptr, push_descriptor_set.get(), 0,
@@ -2901,7 +2903,7 @@ void ValidationStateTracker::RecordCmdPushDescriptorSetState(CMD_BUFFER_STATE *c
     last_bound.pipeline_layout = layout;
 
     // Now that we have either the new or extant push_descriptor set ... do the write updates against it
-    push_descriptor_set->PerformPushDescriptorsUpdate(descriptorWriteCount, pDescriptorWrites);
+    push_descriptor_set->PerformPushDescriptorsUpdate(this, descriptorWriteCount, pDescriptorWrites);
 }
 
 void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer,
@@ -4243,8 +4245,8 @@ void ValidationStateTracker::PerformAllocateDescriptorSets(const VkDescriptorSet
     for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
         uint32_t variable_count = variable_count_valid ? variable_count_info->pDescriptorCounts[i] : 0;
 
-        auto new_ds = std::make_shared<cvdescriptorset::DescriptorSet>(descriptor_sets[i], p_alloc_info->descriptorPool,
-                                                                       ds_data->layout_nodes[i], variable_count, this, this);
+        auto new_ds = std::make_shared<cvdescriptorset::DescriptorSet>(descriptor_sets[i], pool_state, ds_data->layout_nodes[i],
+                                                                       variable_count, this);
         pool_state->sets.insert(new_ds.get());
         new_ds->in_use.store(0);
         setMap[descriptor_sets[i]] = std::move(new_ds);
