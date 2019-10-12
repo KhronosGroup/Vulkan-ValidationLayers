@@ -188,7 +188,7 @@ static inline bool operator==(const DescriptorSetLayoutDef &lhs, const Descripto
 using DescriptorSetLayoutDict = hash_util::Dictionary<DescriptorSetLayoutDef, hash_util::HasHashMember<DescriptorSetLayoutDef>>;
 using DescriptorSetLayoutId = DescriptorSetLayoutDict::Id;
 
-class DescriptorSetLayout {
+class DescriptorSetLayout : public BASE_NODE {
   public:
     // Constructors and destructor
     DescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *p_create_info, const VkDescriptorSetLayout layout);
@@ -199,8 +199,6 @@ class DescriptorSetLayout {
     bool IsCompatible(DescriptorSetLayout const *rh_ds_layout) const;
     // Straightforward Get functions
     VkDescriptorSetLayout GetDescriptorSetLayout() const { return layout_; };
-    bool IsDestroyed() const { return layout_destroyed_; }
-    void MarkDestroyed() { layout_destroyed_ = true; }
     const DescriptorSetLayoutDef *GetLayoutDef() const { return layout_id_.get(); }
     DescriptorSetLayoutId GetLayoutId() const { return layout_id_; }
     uint32_t GetTotalDescriptorCount() const { return layout_id_->GetTotalDescriptorCount(); };
@@ -342,7 +340,6 @@ class DescriptorSetLayout {
 
   private:
     VkDescriptorSetLayout layout_;
-    bool layout_destroyed_;
     DescriptorSetLayoutId layout_id_;
 };
 

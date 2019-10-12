@@ -382,15 +382,6 @@ bool CoreChecks::ValidateStatus(const CMD_BUFFER_STATE *pNode, CBStatusFlags sta
     return false;
 }
 
-std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> const GetDescriptorSetLayout(const ValidationStateTracker *state_data,
-                                                                                         VkDescriptorSetLayout dsLayout) {
-    auto it = state_data->descriptorSetLayoutMap.find(dsLayout);
-    if (it == state_data->descriptorSetLayoutMap.end()) {
-        return nullptr;
-    }
-    return it->second;
-}
-
 // Return true if for a given PSO, the given state enum is dynamic, else return false
 static bool IsDynamic(const PIPELINE_STATE *pPipeline, const VkDynamicState state) {
     if (pPipeline && pPipeline->graphicsPipelineCI.pDynamicState) {
@@ -3725,7 +3716,7 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     unsigned int push_descriptor_set_count = 0;
     {
         for (i = 0; i < pCreateInfo->setLayoutCount; ++i) {
-            set_layouts[i] = GetDescriptorSetLayout(this, pCreateInfo->pSetLayouts[i]);
+            set_layouts[i] = GetDescriptorSetLayoutShared(pCreateInfo->pSetLayouts[i]);
             if (set_layouts[i]->IsPushDescriptor()) ++push_descriptor_set_count;
         }
     }
@@ -9984,7 +9975,7 @@ bool CoreChecks::PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(VkPhysicalDev
 bool CoreChecks::ValidateDescriptorUpdateTemplate(const char *func_name,
                                                   const VkDescriptorUpdateTemplateCreateInfoKHR *pCreateInfo) {
     bool skip = false;
-    const auto layout = GetDescriptorSetLayout(this, pCreateInfo->descriptorSetLayout);
+    const auto layout = GetDescriptorSetLayoutShared(pCreateInfo->descriptorSetLayout);
     if (VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET == pCreateInfo->templateType && !layout) {
         const VulkanTypedHandle ds_typed(pCreateInfo->descriptorSetLayout, kVulkanObjectTypeDescriptorSetLayout);
         skip |=

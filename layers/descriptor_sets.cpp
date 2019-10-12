@@ -340,7 +340,7 @@ bool cvdescriptorset::DescriptorSetLayoutDef::IsNextBindingConsistent(const uint
 // handle invariant portion
 cvdescriptorset::DescriptorSetLayout::DescriptorSetLayout(const VkDescriptorSetLayoutCreateInfo *p_create_info,
                                                           const VkDescriptorSetLayout layout)
-    : layout_(layout), layout_destroyed_(false), layout_id_(GetCanonicalId(p_create_info)) {}
+    : layout_(layout), layout_id_(GetCanonicalId(p_create_info)) {}
 
 // Validate descriptor set layout create info
 bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
@@ -1004,7 +1004,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
     auto src_layout = src_set->GetLayout();
 
     // Verify dst layout still valid
-    if (dst_layout->IsDestroyed()) {
+    if (dst_layout->destroyed) {
         *error_code = "VUID-VkCopyDescriptorSet-dstSet-parameter";
         string_sprintf(error_msg,
                        "Cannot call %s to perform copy update on dstSet %s"
@@ -1015,7 +1015,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
     }
 
     // Verify src layout still valid
-    if (src_layout->IsDestroyed()) {
+    if (src_layout->destroyed) {
         *error_code = "VUID-VkCopyDescriptorSet-srcSet-parameter";
         string_sprintf(error_msg,
                        "Cannot call %s to perform copy update of dstSet %s"
@@ -1846,7 +1846,7 @@ cvdescriptorset::DecodedTemplateUpdate::DecodedTemplateUpdate(const ValidationSt
     VkDescriptorSetLayout effective_dsl = create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET
                                               ? create_info.descriptorSetLayout
                                               : push_layout;
-    auto layout_obj = GetDescriptorSetLayout(device_data, effective_dsl);
+    auto layout_obj = device_data->GetDescriptorSetLayoutShared(effective_dsl);
 
     // Create a WriteDescriptorSet struct for each template update entry
     for (uint32_t i = 0; i < create_info.descriptorUpdateEntryCount; i++) {
@@ -2229,7 +2229,7 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
     auto pool_state = GetDescriptorPoolState(p_alloc_info->descriptorPool);
 
     for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
-        auto layout = GetDescriptorSetLayout(this, p_alloc_info->pSetLayouts[i]);
+        auto layout = GetDescriptorSetLayoutShared(p_alloc_info->pSetLayouts[i]);
         if (layout) {  // nullptr layout indicates no valid layout handle for this device, validated/logged in object_tracker
             if (layout->IsPushDescriptor()) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT,
@@ -2284,7 +2284,7 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
         }
         if (count_allocate_info->descriptorSetCount == p_alloc_info->descriptorSetCount) {
             for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
-                auto layout = GetDescriptorSetLayout(this, p_alloc_info->pSetLayouts[i]);
+                auto layout = GetDescriptorSetLayoutShared(p_alloc_info->pSetLayouts[i]);
                 if (count_allocate_info->pDescriptorCounts[i] > layout->GetDescriptorCountFromBinding(layout->GetMaxBinding())) {
                     skip |= log_msg(
                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT, 0,
@@ -2375,7 +2375,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
     const auto dest_layout = dest_set->GetLayout();
 
     // Verify dst layout still valid
-    if (dest_layout->IsDestroyed()) {
+    if (dest_layout->destroyed) {
         *error_code = "VUID-VkWriteDescriptorSet-dstSet-00320";
         string_sprintf(error_msg, "Cannot call %s to perform write update on %s which has been destroyed", func_name,
                        dest_set->StringifySetAndLayout().c_str());

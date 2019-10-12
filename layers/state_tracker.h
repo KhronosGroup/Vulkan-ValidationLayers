@@ -223,9 +223,6 @@ class ValidationStateTracker : public ValidationObject {
     unordered_map<VkQueue, QUEUE_STATE> queueMap;
     unordered_map<VkEvent, EVENT_STATE> eventMap;
 
-    unordered_map<VkRenderPass, std::shared_ptr<RENDER_PASS_STATE>> renderPassMap;
-    unordered_map<VkDescriptorSetLayout, std::shared_ptr<cvdescriptorset::DescriptorSetLayout>> descriptorSetLayoutMap;
-
     std::unordered_set<VkQueue> queues;  // All queues under given device
     QueryMap queryToStateMap;
     unordered_map<VkSamplerYcbcrConversion, uint64_t> ycbcr_conversion_ahb_fmt_map;
@@ -248,6 +245,8 @@ class ValidationStateTracker : public ValidationObject {
         using MapType = unordered_map<HandleType, MappedType>;
     };
 
+    VALSTATETRACK_MAP_AND_TRAITS(VkRenderPass, RENDER_PASS_STATE, renderPassMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkDescriptorSetLayout, cvdescriptorset::DescriptorSetLayout, descriptorSetLayoutMap)
     VALSTATETRACK_MAP_AND_TRAITS(VkSampler, SAMPLER_STATE, samplerMap)
     VALSTATETRACK_MAP_AND_TRAITS(VkImageView, IMAGE_VIEW_STATE, imageViewMap)
     VALSTATETRACK_MAP_AND_TRAITS(VkImage, IMAGE_STATE, imageMap)
@@ -332,6 +331,22 @@ class ValidationStateTracker : public ValidationObject {
     };
 
     // Accessors for the VALSTATE... maps
+    const std::shared_ptr<cvdescriptorset::DescriptorSetLayout> GetDescriptorSetLayoutShared(VkDescriptorSetLayout dsLayout) const {
+        return GetShared<cvdescriptorset::DescriptorSetLayout>(dsLayout);
+    }
+    std::shared_ptr<cvdescriptorset::DescriptorSetLayout> GetDescriptorSetLayoutShared(VkDescriptorSetLayout dsLayout) {
+        return GetShared<cvdescriptorset::DescriptorSetLayout>(dsLayout);
+    }
+
+    const std::shared_ptr<RENDER_PASS_STATE> GetRenderPassShared(VkRenderPass renderpass) const {
+        return GetShared<RENDER_PASS_STATE>(renderpass);
+    }
+    std::shared_ptr<RENDER_PASS_STATE> GetRenderPassShared(VkRenderPass renderpass) {
+        return GetShared<RENDER_PASS_STATE>(renderpass);
+    }
+    const RENDER_PASS_STATE* GetRenderPassState(VkRenderPass renderpass) const { return Get<RENDER_PASS_STATE>(renderpass); }
+    RENDER_PASS_STATE* GetRenderPassState(VkRenderPass renderpass) { return Get<RENDER_PASS_STATE>(renderpass); }
+
     const std::shared_ptr<SAMPLER_STATE> GetSamplerShared(VkSampler sampler) const { return GetShared<SAMPLER_STATE>(sampler); }
     std::shared_ptr<SAMPLER_STATE> GetSamplerShared(VkSampler sampler) { return GetShared<SAMPLER_STATE>(sampler); }
     const SAMPLER_STATE* GetSamplerState(VkSampler sampler) const { return Get<SAMPLER_STATE>(sampler); }
@@ -419,9 +434,6 @@ class ValidationStateTracker : public ValidationObject {
     // Class Declarations for helper functions
     IMAGE_VIEW_STATE* GetAttachmentImageViewState(FRAMEBUFFER_STATE* framebuffer, uint32_t index);
     const IMAGE_VIEW_STATE* GetAttachmentImageViewState(const FRAMEBUFFER_STATE* framebuffer, uint32_t index) const;
-    const RENDER_PASS_STATE* GetRenderPassState(VkRenderPass renderpass) const;
-    RENDER_PASS_STATE* GetRenderPassState(VkRenderPass renderpass);
-    std::shared_ptr<RENDER_PASS_STATE> GetRenderPassStateSharedPtr(VkRenderPass renderpass);
     const EVENT_STATE* GetEventState(VkEvent event) const;
     EVENT_STATE* GetEventState(VkEvent event);
     const QUEUE_STATE* GetQueueState(VkQueue queue) const;

@@ -693,30 +693,6 @@ bool ValidationStateTracker::SetSparseMemBinding(MEM_BINDING binding, const Vulk
     return skip;
 }
 
-const RENDER_PASS_STATE *ValidationStateTracker::GetRenderPassState(VkRenderPass renderpass) const {
-    auto it = renderPassMap.find(renderpass);
-    if (it == renderPassMap.end()) {
-        return nullptr;
-    }
-    return it->second.get();
-}
-
-RENDER_PASS_STATE *ValidationStateTracker::GetRenderPassState(VkRenderPass renderpass) {
-    auto it = renderPassMap.find(renderpass);
-    if (it == renderPassMap.end()) {
-        return nullptr;
-    }
-    return it->second.get();
-}
-
-std::shared_ptr<RENDER_PASS_STATE> ValidationStateTracker::GetRenderPassStateSharedPtr(VkRenderPass renderpass) {
-    auto it = renderPassMap.find(renderpass);
-    if (it == renderPassMap.end()) {
-        return nullptr;
-    }
-    return it->second;
-}
-
 void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, const VkPipelineBindPoint bind_point) {
     auto &state = cb_state->lastBound[bind_point];
     PIPELINE_STATE *pPipe = state.pipeline_state;
@@ -1942,7 +1918,7 @@ void ValidationStateTracker::PreCallRecordDestroyDescriptorSetLayout(VkDevice de
     if (!descriptorSetLayout) return;
     auto layout_it = descriptorSetLayoutMap.find(descriptorSetLayout);
     if (layout_it != descriptorSetLayoutMap.end()) {
-        layout_it->second.get()->MarkDestroyed();
+        layout_it->second.get()->destroyed = true;
         descriptorSetLayoutMap.erase(layout_it);
     }
 }
@@ -2113,8 +2089,7 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
     cgpl_state->pipe_state.reserve(count);
     for (uint32_t i = 0; i < count; i++) {
         cgpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>());
-        (cgpl_state->pipe_state)[i]->initGraphicsPipeline(this, &pCreateInfos[i],
-                                                          GetRenderPassStateSharedPtr(pCreateInfos[i].renderPass));
+        (cgpl_state->pipe_state)[i]->initGraphicsPipeline(this, &pCreateInfos[i], GetRenderPassShared(pCreateInfos[i].renderPass));
         (cgpl_state->pipe_state)[i]->pipeline_layout = GetPipelineLayoutShared(pCreateInfos[i].layout);
     }
     return false;
@@ -2268,7 +2243,7 @@ void ValidationStateTracker::PostCallRecordCreatePipelineLayout(VkDevice device,
     pipeline_layout_state->set_layouts.resize(pCreateInfo->setLayoutCount);
     PipelineLayoutSetLayoutsDef set_layouts(pCreateInfo->setLayoutCount);
     for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
-        pipeline_layout_state->set_layouts[i] = GetDescriptorSetLayout(this, pCreateInfo->pSetLayouts[i]);
+        pipeline_layout_state->set_layouts[i] = GetDescriptorSetLayoutShared(pCreateInfo->pSetLayouts[i]);
         set_layouts[i] = pipeline_layout_state->set_layouts[i]->GetLayoutId();
     }
 
@@ -3153,8 +3128,7 @@ void ValidationStateTracker::PostCallRecordCreateFramebuffer(VkDevice device, co
                                                              VkResult result) {
     if (VK_SUCCESS != result) return;
     // Shadow create info and store in map
-    auto fb_state =
-        std::make_shared<FRAMEBUFFER_STATE>(*pFramebuffer, pCreateInfo, GetRenderPassStateSharedPtr(pCreateInfo->renderPass));
+    auto fb_state = std::make_shared<FRAMEBUFFER_STATE>(*pFramebuffer, pCreateInfo, GetRenderPassShared(pCreateInfo->renderPass));
 
     if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) == 0) {
         for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
@@ -4088,7 +4062,7 @@ void ValidationStateTracker::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(
         auto layout_data = GetPipelineLayout(layout);
         auto dsl = GetDslFromPipelineLayout(layout_data, set);
         const auto &template_ci = template_state->create_info;
-        if (dsl && !dsl->IsDestroyed()) {
+        if (dsl && !dsl->destroyed) {
             // Decode the template into a set of write updates
             cvdescriptorset::DecodedTemplateUpdate decoded_template(this, VK_NULL_HANDLE, template_state, pData,
                                                                     dsl->GetDescriptorSetLayout());
@@ -4218,7 +4192,7 @@ void ValidationStateTracker::PerformUpdateDescriptorSetsWithTemplateKHR(VkDescri
 void ValidationStateTracker::UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo *p_alloc_info,
                                                               cvdescriptorset::AllocateDescriptorSetsData *ds_data) {
     for (uint32_t i = 0; i < p_alloc_info->descriptorSetCount; i++) {
-        auto layout = GetDescriptorSetLayout(this, p_alloc_info->pSetLayouts[i]);
+        auto layout = GetDescriptorSetLayoutShared(p_alloc_info->pSetLayouts[i]);
         if (layout) {
             ds_data->layout_nodes[i] = layout;
             // Count total descriptors required per type
