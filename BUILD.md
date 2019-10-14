@@ -424,6 +424,16 @@ repository to other Linux distributions.
     sudo apt-get install git build-essential libx11-xcb-dev \
         libxkbcommon-dev libwayland-dev libxrandr-dev \
         libegl1-mesa-dev
+		
+##### Required package for Ubuntu 18.04 users
+
+For python2 users
+
+    sudo apt install python-distutils
+
+or for python3 users
+
+	sudo apt install python3-distutils
 
 ### Linux Build
 
