@@ -226,7 +226,11 @@ VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipeli
 
     VkResult result = layer_data->device_dispatch_table.CreateGraphicsPipelines(device, pipelineCache, createInfoCount,
                                                                                 local_pCreateInfos->ptr(), pAllocator, pPipelines);
-    if (pCreateInfos->pNext) CopyCreatePipelineFeedbackData(local_pCreateInfos->pNext, pCreateInfos->pNext);
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        if (pCreateInfos[i].pNext != VK_NULL_HANDLE) {
+            CopyCreatePipelineFeedbackData(local_pCreateInfos[i].pNext, pCreateInfos[i].pNext);
+        }
+    }
 
     delete[] local_pCreateInfos;
     {
@@ -2054,7 +2058,11 @@ VkResult DispatchCreateComputePipelines(
         }
     }
     VkResult result = layer_data->device_dispatch_table.CreateComputePipelines(device, pipelineCache, createInfoCount, (const VkComputePipelineCreateInfo*)local_pCreateInfos, pAllocator, pPipelines);
-    if (pCreateInfos->pNext) CopyCreatePipelineFeedbackData(local_pCreateInfos->pNext, pCreateInfos->pNext);
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        if (pCreateInfos[i].pNext != VK_NULL_HANDLE) {
+            CopyCreatePipelineFeedbackData(local_pCreateInfos[i].pNext, pCreateInfos[i].pNext);
+        }
+    }
 
     if (local_pCreateInfos) {
         delete[] local_pCreateInfos;
@@ -6264,7 +6272,11 @@ VkResult DispatchCreateRayTracingPipelinesNV(
         }
     }
     VkResult result = layer_data->device_dispatch_table.CreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, (const VkRayTracingPipelineCreateInfoNV*)local_pCreateInfos, pAllocator, pPipelines);
-    if (pCreateInfos->pNext) CopyCreatePipelineFeedbackData(local_pCreateInfos->pNext, pCreateInfos->pNext);
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        if (pCreateInfos[i].pNext != VK_NULL_HANDLE) {
+            CopyCreatePipelineFeedbackData(local_pCreateInfos[i].pNext, pCreateInfos[i].pNext);
+        }
+    }
 
     if (local_pCreateInfos) {
         delete[] local_pCreateInfos;
