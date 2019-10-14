@@ -206,7 +206,11 @@ VkResult DispatchCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipeli
 
     VkResult result = layer_data->device_dispatch_table.CreateGraphicsPipelines(device, pipelineCache, createInfoCount,
                                                                                 local_pCreateInfos->ptr(), pAllocator, pPipelines);
-    if (pCreateInfos->pNext) CopyCreatePipelineFeedbackData(local_pCreateInfos->pNext, pCreateInfos->pNext);
+    for (uint32_t i = 0; i < createInfoCount; ++i) {
+        if (pCreateInfos[i].pNext != VK_NULL_HANDLE) {
+            CopyCreatePipelineFeedbackData(local_pCreateInfos[i].pNext, pCreateInfos[i].pNext);
+        }
+    }
 
     delete[] local_pCreateInfos;
     {
@@ -1787,7 +1791,12 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
 
             # And add the post-API-call codegen
             if ('CreateGraphicsPipelines' in cmdname) or ('CreateComputePipelines' in cmdname) or ('CreateRayTracingPipelines' in cmdname):
-                self.appendSection('source_file', '    if (pCreateInfos->pNext) CopyCreatePipelineFeedbackData(local_pCreateInfos->pNext, pCreateInfos->pNext);\n')
+                copy_feedback_source  = '    for (uint32_t i = 0; i < createInfoCount; ++i) {\n'
+                copy_feedback_source += '        if (pCreateInfos[i].pNext != VK_NULL_HANDLE) {\n'
+                copy_feedback_source += '            CopyCreatePipelineFeedbackData(local_pCreateInfos[i].pNext, pCreateInfos[i].pNext);\n'
+                copy_feedback_source += '        }\n'
+                copy_feedback_source += '    }\n'
+                self.appendSection('source_file', copy_feedback_source)
             self.appendSection('source_file', "\n".join(str(api_post).rstrip().split("\n")))
             # Handle the return result variable, if any
             if (resulttype is not None):
