@@ -551,6 +551,8 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo,
                                                   HANDLE* pHandle, VkResult result);
 #endif  // VK_USE_PLATFORM_WIN32_KHR
+    void PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
+                                             VkImage* pSwapchainImages, VkResult result);
     void PostCallRecordImportFenceFdKHR(VkDevice device, const VkImportFenceFdInfoKHR* pImportFenceFdInfo, VkResult result);
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     void PostCallRecordImportFenceWin32HandleKHR(VkDevice device,
