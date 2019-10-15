@@ -9661,69 +9661,6 @@ bool CoreChecks::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwapcha
     return skip;
 }
 
-void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain,
-                                                                 uint32_t *pSwapchainImageCount, VkImage *pSwapchainImages,
-                                                                 VkResult result) {
-    if ((result != VK_SUCCESS) && (result != VK_INCOMPLETE)) return;
-    auto swapchain_state = GetSwapchainState(swapchain);
-
-    if (*pSwapchainImageCount > swapchain_state->images.size()) swapchain_state->images.resize(*pSwapchainImageCount);
-
-    if (pSwapchainImages) {
-        if (swapchain_state->vkGetSwapchainImagesKHRState < QUERY_DETAILS) {
-            swapchain_state->vkGetSwapchainImagesKHRState = QUERY_DETAILS;
-        }
-        for (uint32_t i = 0; i < *pSwapchainImageCount; ++i) {
-            if (swapchain_state->images[i] != VK_NULL_HANDLE) continue;  // Already retrieved this.
-
-            // Add imageMap entries for each swapchain image
-            VkImageCreateInfo image_ci;
-            image_ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-            image_ci.pNext = nullptr;                    // to be set later
-            image_ci.flags = VK_IMAGE_CREATE_ALIAS_BIT;  // to be updated below
-            image_ci.imageType = VK_IMAGE_TYPE_2D;
-            image_ci.format = swapchain_state->createInfo.imageFormat;
-            image_ci.extent.width = swapchain_state->createInfo.imageExtent.width;
-            image_ci.extent.height = swapchain_state->createInfo.imageExtent.height;
-            image_ci.extent.depth = 1;
-            image_ci.mipLevels = 1;
-            image_ci.arrayLayers = swapchain_state->createInfo.imageArrayLayers;
-            image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
-            image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-            image_ci.usage = swapchain_state->createInfo.imageUsage;
-            image_ci.sharingMode = swapchain_state->createInfo.imageSharingMode;
-            image_ci.queueFamilyIndexCount = swapchain_state->createInfo.queueFamilyIndexCount;
-            image_ci.pQueueFamilyIndices = swapchain_state->createInfo.pQueueFamilyIndices;
-            image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-            image_ci.pNext = lvl_find_in_chain<VkImageFormatListCreateInfoKHR>(swapchain_state->createInfo.pNext);
-
-            if (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR)
-                image_ci.flags |= VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
-            if (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR)
-                image_ci.flags |= VK_IMAGE_CREATE_PROTECTED_BIT;
-            if (swapchain_state->createInfo.flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR)
-                image_ci.flags |= (VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT_KHR);
-
-            imageMap[pSwapchainImages[i]] = std::make_shared<IMAGE_STATE>(pSwapchainImages[i], &image_ci);
-            auto &image_state = imageMap[pSwapchainImages[i]];
-            image_state->valid = false;
-            image_state->create_from_swapchain = swapchain;
-            image_state->bind_swapchain = swapchain;
-            image_state->bind_swapchain_imageIndex = i;
-            AddAliasingImage(image_state.get());
-            swapchain_state->images[i] = pSwapchainImages[i];
-            swapchain_state->bound_images.insert(pSwapchainImages[i]);
-        }
-    }
-
-    if (*pSwapchainImageCount) {
-        if (swapchain_state->vkGetSwapchainImagesKHRState < QUERY_COUNT) {
-            swapchain_state->vkGetSwapchainImagesKHRState = QUERY_COUNT;
-        }
-        swapchain_state->get_swapchain_image_count = *pSwapchainImageCount;
-    }
-}
 void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
                                                      VkImage *pSwapchainImages, VkResult result) {
     // Usually we'd call the StateTracker first, but
