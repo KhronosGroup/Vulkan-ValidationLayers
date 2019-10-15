@@ -20,18 +20,6 @@
  * Author: Tobin Ehlis <tobine@google.com>
  */
 
-// shared_mutex support added in MSVC 2015 update 2
-#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
-#include <shared_mutex>
-typedef std::shared_mutex object_lifetime_mutex_t;
-typedef std::shared_lock<object_lifetime_mutex_t> read_object_lifetime_mutex_t;
-typedef std::unique_lock<object_lifetime_mutex_t> write_object_lifetime_mutex_t;
-#else
-typedef std::mutex object_lifetime_mutex_t;
-typedef std::unique_lock<object_lifetime_mutex_t> read_object_lifetime_mutex_t;
-typedef std::unique_lock<object_lifetime_mutex_t> write_object_lifetime_mutex_t;
-#endif
-
 // Suppress unused warning on Linux
 #if defined(__GNUC__)
 #define DECORATE_UNUSED __attribute__((unused))
@@ -74,13 +62,12 @@ class ObjectLifetimes : public ValidationObject {
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.
     // This class does its own locking with a shared mutex.
-    virtual std::unique_lock<std::mutex> write_lock() {
-        return std::unique_lock<std::mutex>(validation_object_mutex, std::defer_lock);
-    }
+    virtual read_lock_guard_t read_lock() { return read_lock_guard_t(validation_object_mutex, std::defer_lock); }
+    virtual write_lock_guard_t write_lock() { return write_lock_guard_t(validation_object_mutex, std::defer_lock); }
 
-    mutable object_lifetime_mutex_t object_lifetime_mutex;
-    write_object_lifetime_mutex_t write_shared_lock() { return write_object_lifetime_mutex_t(object_lifetime_mutex); }
-    read_object_lifetime_mutex_t read_shared_lock() const { return read_object_lifetime_mutex_t(object_lifetime_mutex); }
+    mutable ReadWriteLock object_lifetime_mutex;
+    write_lock_guard_t write_shared_lock() { return write_lock_guard_t(object_lifetime_mutex); }
+    read_lock_guard_t read_shared_lock() const { return read_lock_guard_t(object_lifetime_mutex); }
 
     std::atomic<uint64_t> num_objects[kVulkanObjectTypeMax + 1];
     std::atomic<uint64_t> num_total_objects;
