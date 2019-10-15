@@ -1625,6 +1625,7 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
         {spv::CapabilitySubgroupVoteKHR, {VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_ext_shader_subgroup_vote }},
         {spv::CapabilityGroupNonUniformPartitionedNV, {VK_NV_SHADER_SUBGROUP_PARTITIONED_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_nv_shader_subgroup_partitioned}},
         {spv::CapabilityInt64Atomics, {VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_khr_shader_atomic_int64 }},
+        {spv::CapabilityShaderClockKHR, {VK_KHR_SHADER_CLOCK_EXTENSION_NAME, nullptr, &DeviceExtensions::vk_khr_shader_clock }},
 
         {spv::CapabilityComputeDerivativeGroupQuadsNV, {"VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupQuads", &VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupQuads, &DeviceExtensions::vk_nv_compute_shader_derivatives}},
         {spv::CapabilityComputeDerivativeGroupLinearNV, {"VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupLinear", &VkPhysicalDeviceComputeShaderDerivativesFeaturesNV::computeDerivativeGroupLinear, &DeviceExtensions::vk_nv_compute_shader_derivatives}},
