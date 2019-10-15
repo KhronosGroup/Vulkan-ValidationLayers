@@ -95,7 +95,8 @@ class StatelessValidation : public ValidationObject {
 
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.
-    std::unique_lock<std::mutex> write_lock() { return std::unique_lock<std::mutex>(validation_object_mutex, std::defer_lock); }
+    virtual read_lock_guard_t read_lock() { return read_lock_guard_t(validation_object_mutex, std::defer_lock); }
+    virtual write_lock_guard_t write_lock() { return write_lock_guard_t(validation_object_mutex, std::defer_lock); }
 
     // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2KHR::pNext chain
     struct DeviceExtensionProperties {

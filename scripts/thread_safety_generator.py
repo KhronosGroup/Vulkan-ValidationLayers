@@ -156,10 +156,6 @@ class ThreadOutputGenerator(OutputGenerator):
 #include <thread>
 #include <unordered_set>
 #include <vector>
-// shared_mutex support added in MSVC 2015 update 2
-#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
-    #include <shared_mutex>
-#endif
 
 VK_DEFINE_NON_DISPATCHABLE_HANDLE(DISTINCT_NONDISPATCHABLE_PHONY_HANDLE)
 // The following line must match the vulkan_core.h condition guarding VK_DEFINE_NON_DISPATCHABLE_HANDLE
@@ -415,22 +411,15 @@ private:
 class ThreadSafety : public ValidationObject {
 public:
 
-// shared_mutex support added in MSVC 2015 update 2
-#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
-    typedef std::shared_mutex thread_safety_lock_t;
-    typedef std::shared_lock<thread_safety_lock_t> read_lock_guard_t;
-    typedef std::unique_lock<thread_safety_lock_t> write_lock_guard_t;
-#else
-    typedef std::mutex thread_safety_lock_t;
-    typedef std::unique_lock<thread_safety_lock_t> read_lock_guard_t;
-    typedef std::unique_lock<thread_safety_lock_t> write_lock_guard_t;
-#endif
-    thread_safety_lock_t thread_safety_lock;
+    ReadWriteLock thread_safety_lock;
 
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.
-    std::unique_lock<std::mutex> write_lock() {
-        return std::unique_lock<std::mutex>(validation_object_mutex, std::defer_lock);
+    virtual read_lock_guard_t read_lock() {
+        return read_lock_guard_t(validation_object_mutex, std::defer_lock);
+    }
+    virtual write_lock_guard_t write_lock() {
+        return write_lock_guard_t(validation_object_mutex, std::defer_lock);
     }
 
     // If this ThreadSafety is for a VkDevice, then parent_instance points to the

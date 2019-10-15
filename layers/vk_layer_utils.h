@@ -163,6 +163,39 @@ static inline int u_ffs(int val) {
 #include <shared_mutex>
 #endif
 
+class ReadWriteLock {
+  private:
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
+    typedef std::shared_mutex lock_t;
+#else
+    typedef std::mutex lock_t;
+#endif
+
+  public:
+    void lock() { m_lock.lock(); }
+    bool try_lock() { return m_lock.try_lock(); }
+    void unlock() { m_lock.unlock(); }
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
+    void lock_shared() { m_lock.lock_shared(); }
+    bool try_lock_shared() { return m_lock.try_lock_shared(); }
+    void unlock_shared() { m_lock.unlock_shared(); }
+#else
+    void lock_shared() { lock(); }
+    bool try_lock_shared() { return try_lock(); }
+    void unlock_shared() { unlock(); }
+#endif
+  private:
+    lock_t m_lock;
+};
+
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
+typedef std::shared_lock<ReadWriteLock> read_lock_guard_t;
+typedef std::unique_lock<ReadWriteLock> write_lock_guard_t;
+#else
+typedef std::unique_lock<ReadWriteLock> read_lock_guard_t;
+typedef std::unique_lock<ReadWriteLock> write_lock_guard_t;
+#endif
+
 // Limited concurrent_unordered_map that supports internally-synchronized
 // insert/erase/access. Splits locking across N buckets and uses shared_mutex
 // for read/write locking. Iterators are not supported. The following
@@ -288,23 +321,12 @@ class vl_concurrent_unordered_map {
 
   private:
     static const int BUCKETS = (1 << BUCKETSLOG2);
-// shared_mutex support added in MSVC 2015 update 2
-#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
-#include <shared_mutex>
-    typedef std::shared_mutex lock_t;
-    typedef std::shared_lock<lock_t> read_lock_guard_t;
-    typedef std::unique_lock<lock_t> write_lock_guard_t;
-#else
-    typedef std::mutex lock_t;
-    typedef std::unique_lock<lock_t> read_lock_guard_t;
-    typedef std::unique_lock<lock_t> write_lock_guard_t;
-#endif
 
     std::unordered_map<Key, T, Hash> maps[BUCKETS];
     struct {
-        mutable lock_t lock;
+        mutable ReadWriteLock lock;
         // Put each lock on its own cache line to avoid false cache line sharing.
-        char padding[(-int(sizeof(lock_t))) & 63];
+        char padding[(-int(sizeof(ReadWriteLock))) & 63];
     } locks[BUCKETS];
 
     uint32_t ConcurrentMapHashObject(const Key &object) const {

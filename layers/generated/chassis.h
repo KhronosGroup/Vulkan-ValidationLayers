@@ -2481,9 +2481,12 @@ class ValidationObject {
         // Destructor
         virtual ~ValidationObject() {};
 
-        std::mutex validation_object_mutex;
-        virtual std::unique_lock<std::mutex> write_lock() {
-            return std::unique_lock<std::mutex>(validation_object_mutex);
+        ReadWriteLock validation_object_mutex;
+        virtual read_lock_guard_t read_lock() {
+            return read_lock_guard_t(validation_object_mutex);
+        }
+        virtual write_lock_guard_t write_lock() {
+            return write_lock_guard_t(validation_object_mutex);
         }
 
         ValidationObject* GetValidationObject(std::vector<ValidationObject*>& object_dispatch, LayerObjectTypeId object_type) {
