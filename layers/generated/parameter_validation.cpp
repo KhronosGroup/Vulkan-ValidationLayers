@@ -27,7 +27,7 @@
 
 #include "stateless_validation.h"
 
-const uint32_t GeneratedVulkanHeaderVersion = 124;
+const uint32_t GeneratedVulkanHeaderVersion = 125;
 
 const VkAccessFlags AllVkAccessFlagBits = VK_ACCESS_INDIRECT_COMMAND_READ_BIT|VK_ACCESS_INDEX_READ_BIT|VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT|VK_ACCESS_UNIFORM_READ_BIT|VK_ACCESS_INPUT_ATTACHMENT_READ_BIT|VK_ACCESS_SHADER_READ_BIT|VK_ACCESS_SHADER_WRITE_BIT|VK_ACCESS_COLOR_ATTACHMENT_READ_BIT|VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT|VK_ACCESS_TRANSFER_READ_BIT|VK_ACCESS_TRANSFER_WRITE_BIT|VK_ACCESS_HOST_READ_BIT|VK_ACCESS_HOST_WRITE_BIT|VK_ACCESS_MEMORY_READ_BIT|VK_ACCESS_MEMORY_WRITE_BIT|VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT|VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT|VK_ACCESS_COMMAND_PROCESS_READ_BIT_NVX|VK_ACCESS_COMMAND_PROCESS_WRITE_BIT_NVX|VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT|VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV|VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT;
 const VkAttachmentDescriptionFlags AllVkAttachmentDescriptionFlagBits = VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
@@ -6848,7 +6848,9 @@ bool StatelessValidation::PreCallValidateCreateRenderPass2KHR(
     skip |= validate_struct_type("vkCreateRenderPass2KHR", "pCreateInfo", "VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2_KHR", pCreateInfo, VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2_KHR, true, "VUID-vkCreateRenderPass2KHR-pCreateInfo-parameter", "VUID-VkRenderPassCreateInfo2KHR-sType-sType");
     if (pCreateInfo != NULL)
     {
-        skip |= validate_struct_pnext("vkCreateRenderPass2KHR", "pCreateInfo->pNext", NULL, pCreateInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkRenderPassCreateInfo2KHR-pNext-pNext");
+        const VkStructureType allowed_structs_VkRenderPassCreateInfo2KHR[] = { VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT };
+
+        skip |= validate_struct_pnext("vkCreateRenderPass2KHR", "pCreateInfo->pNext", "VkRenderPassFragmentDensityMapCreateInfoEXT", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkRenderPassCreateInfo2KHR), allowed_structs_VkRenderPassCreateInfo2KHR, GeneratedVulkanHeaderVersion, "VUID-VkRenderPassCreateInfo2KHR-pNext-pNext");
 
         skip |= validate_struct_type_array("vkCreateRenderPass2KHR", "pCreateInfo->attachmentCount", "pCreateInfo->pAttachments", "VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2_KHR", pCreateInfo->attachmentCount, pCreateInfo->pAttachments, VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2_KHR, false, true, "VUID-VkAttachmentDescription2KHR-sType-sType", "VUID-VkRenderPassCreateInfo2KHR-pAttachments-parameter", kVUIDUndefined);
 
@@ -7677,6 +7679,8 @@ bool StatelessValidation::PreCallValidateSignalSemaphoreKHR(
     }
     return skip;
 }
+
+
 
 
 
