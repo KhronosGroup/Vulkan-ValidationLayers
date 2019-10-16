@@ -810,3 +810,25 @@ void BestPractices::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindIn
         }
     }
 }
+
+bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
+                                        const VkClearAttachment* pAttachments, uint32_t rectCount, const VkClearRect* pRects) {
+    bool skip = false;
+    const CMD_BUFFER_STATE* cb_node = GetCBState(commandBuffer);
+    if (!cb_node) return skip;
+
+        // Warn if this is issued prior to Draw Cmd and clearing the entire attachment
+    if (!cb_node->hasDrawCmd && (cb_node->activeRenderPassBeginInfo.renderArea.extent.width == pRects[0].rect.extent.width) &&
+        (cb_node->activeRenderPassBeginInfo.renderArea.extent.height == pRects[0].rect.extent.height)) {
+        // There are times where app needs to use ClearAttachments (generally when reusing a buffer inside of a render pass)
+        // This warning should be made more specific. It'd be best to avoid triggering this test if it's a use that must call
+        // CmdClearAttachments.
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), kVUID_Core_DrawState_ClearCmdBeforeDraw,
+                        "vkCmdClearAttachments() issued on %s prior to any Draw Cmds. It is recommended you "
+                        "use RenderPass LOAD_OP_CLEAR on Attachments prior to any Draw.",
+                        report_data->FormatHandle(commandBuffer).c_str());
+    }
+
+        return skip;
+}
