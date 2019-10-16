@@ -1114,6 +1114,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.subgroup_extended_types_features = *subgroup_extended_types_features;
     }
 
+    const auto *separate_depth_stencil_layouts_features =
+        lvl_find_in_chain<VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR>(pCreateInfo->pNext);
+    if (separate_depth_stencil_layouts_features) {
+        state_tracker->enabled_features.separate_depth_stencil_layouts_features = *separate_depth_stencil_layouts_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);
