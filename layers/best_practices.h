@@ -20,7 +20,7 @@
 #pragma once
 
 #include "chassis.h"
-#include "core_validation.h"
+#include "state_tracker.h"
 #include <string>
 
 static const uint32_t kMemoryObjectWarningLimit = 250;
