@@ -6370,6 +6370,7 @@ static std::unordered_map<VkPipelineStageFlags, VkQueueFlags> supported_pipeline
     {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_QUEUE_GRAPHICS_BIT},
     {VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_QUEUE_COMPUTE_BIT},
     {VK_PIPELINE_STAGE_TRANSFER_BIT, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT},
+    {VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT},
     {VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_QUEUE_GRAPHICS_BIT}};
 
 static const VkPipelineStageFlags stage_flag_bit_array[] = {VK_PIPELINE_STAGE_COMMAND_PROCESS_BIT_NVX,
@@ -6385,6 +6386,7 @@ static const VkPipelineStageFlags stage_flag_bit_array[] = {VK_PIPELINE_STAGE_CO
                                                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                                             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                                                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                                            VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT,
                                                             VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT};
 
 bool CoreChecks::CheckStageMaskQueueCompatibility(VkCommandBuffer command_buffer, VkPipelineStageFlags stage_mask,
