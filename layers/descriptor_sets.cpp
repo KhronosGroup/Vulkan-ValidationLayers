@@ -1000,8 +1000,8 @@ void cvdescriptorset::DescriptorSet::PerformWriteUpdate(ValidationStateTracker *
 // Validate Copy update
 bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const DescriptorSet *dst_set, const DescriptorSet *src_set,
                                     const char *func_name, std::string *error_code, std::string *error_msg) const {
-    auto dst_layout = dst_set->GetLayout();
-    auto src_layout = src_set->GetLayout();
+    auto dst_layout = dst_set->GetLayout().get();
+    auto src_layout = src_set->GetLayout().get();
 
     // Verify dst layout still valid
     if (dst_layout->destroyed) {
@@ -1095,10 +1095,10 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
         return false;
     }
     // Verify consistency of src & dst bindings if update crosses binding boundaries
-    if ((!VerifyUpdateConsistency(DescriptorSetLayout::ConstBindingIterator(src_layout.get(), update->srcBinding),
+    if ((!VerifyUpdateConsistency(DescriptorSetLayout::ConstBindingIterator(src_layout, update->srcBinding),
                                   update->srcArrayElement, update->descriptorCount, "copy update from", src_set->GetSet(),
                                   error_msg)) ||
-        (!VerifyUpdateConsistency(DescriptorSetLayout::ConstBindingIterator(dst_layout.get(), update->dstBinding),
+        (!VerifyUpdateConsistency(DescriptorSetLayout::ConstBindingIterator(dst_layout, update->dstBinding),
                                   update->dstArrayElement, update->descriptorCount, "copy update to", dst_set->GetSet(),
                                   error_msg))) {
         return false;
@@ -1367,7 +1367,6 @@ bool CoreChecks::ValidateSampler(const VkSampler sampler) const { return (GetSam
 
 bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image_layout, VkDescriptorType type,
                                      const char *func_name, std::string *error_code, std::string *error_msg) const {
-    *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00326";
     auto iv_state = GetImageViewState(image_view);
     assert(iv_state);
 
@@ -2375,7 +2374,7 @@ bool cvdescriptorset::VerifyUpdateConsistency(DescriptorSetLayout::ConstBindingI
 //  If an error would occur for this update, return false and fill in details in error_msg string
 bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWriteDescriptorSet *update, const char *func_name,
                                      std::string *error_code, std::string *error_msg) const {
-    const auto dest_layout = dest_set->GetLayout();
+    const auto dest_layout = dest_set->GetLayout().get();
 
     // Verify dst layout still valid
     if (dest_layout->destroyed) {
@@ -2393,7 +2392,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
         return false;
     }
 
-    DescriptorSetLayout::ConstBindingIterator dest(dest_layout.get(), update->dstBinding);
+    DescriptorSetLayout::ConstBindingIterator dest(dest_layout, update->dstBinding);
     // Make sure binding isn't empty
     if (0 == dest.GetDescriptorCount()) {
         *error_code = "VUID-VkWriteDescriptorSet-dstBinding-00316";
@@ -2477,7 +2476,7 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
         }
     }
     // Verify consecutive bindings match (if needed)
-    if (!VerifyUpdateConsistency(DescriptorSetLayout::ConstBindingIterator(dest_layout.get(), update->dstBinding),
+    if (!VerifyUpdateConsistency(DescriptorSetLayout::ConstBindingIterator(dest_layout, update->dstBinding),
                                  update->dstArrayElement, update->descriptorCount, "write update to", dest_set->GetSet(),
                                  error_msg)) {
         // TODO : Should break out "consecutive binding updates" language into valid usage statements

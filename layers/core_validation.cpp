@@ -805,9 +805,8 @@ static bool VerifySetLayoutCompatibility(const debug_report_data *report_data, c
         return false;
     }
     if (descriptor_set->IsPushDescriptor()) return true;
-    auto layout_node = pipeline_layout->set_layouts[layoutIndex];
-    return cvdescriptorset::VerifySetLayoutCompatibility(report_data, layout_node.get(), descriptor_set->GetLayout().get(),
-                                                         &errorMsg);
+    auto layout_node = pipeline_layout->set_layouts[layoutIndex].get();
+    return cvdescriptorset::VerifySetLayoutCompatibility(report_data, layout_node, descriptor_set->GetLayout().get(), &errorMsg);
 }
 
 static const char *string_VuidNotCompatibleForSet(CMD_TYPE cmd_type) {
