@@ -241,6 +241,7 @@ class ValidationStateTracker : public ValidationObject {
         using HandleType = typename AccessorStateHandle<StateType>::HandleType;
         using ReturnType = StateType*;
         using SharedType = std::shared_ptr<StateType>;
+        using ConstSharedType = std::shared_ptr<const StateType>;
         using MappedType = std::shared_ptr<StateType>;
         using MapType = unordered_map<HandleType, MappedType>;
     };
@@ -317,7 +318,7 @@ class ValidationStateTracker : public ValidationObject {
     };
 
     template <typename State>
-    const typename AccessorTraits<State>::SharedType GetShared(typename AccessorTraits<State>::HandleType handle) const {
+    typename AccessorTraits<State>::ConstSharedType GetShared(typename AccessorTraits<State>::HandleType handle) const {
         using Traits = AccessorTraits<State>;
         auto map_member = Traits::Map();
         const typename Traits::MapType& map =
@@ -331,14 +332,14 @@ class ValidationStateTracker : public ValidationObject {
     };
 
     // Accessors for the VALSTATE... maps
-    const std::shared_ptr<cvdescriptorset::DescriptorSetLayout> GetDescriptorSetLayoutShared(VkDescriptorSetLayout dsLayout) const {
+    std::shared_ptr<const cvdescriptorset::DescriptorSetLayout> GetDescriptorSetLayoutShared(VkDescriptorSetLayout dsLayout) const {
         return GetShared<cvdescriptorset::DescriptorSetLayout>(dsLayout);
     }
     std::shared_ptr<cvdescriptorset::DescriptorSetLayout> GetDescriptorSetLayoutShared(VkDescriptorSetLayout dsLayout) {
         return GetShared<cvdescriptorset::DescriptorSetLayout>(dsLayout);
     }
 
-    const std::shared_ptr<RENDER_PASS_STATE> GetRenderPassShared(VkRenderPass renderpass) const {
+    std::shared_ptr<const RENDER_PASS_STATE> GetRenderPassShared(VkRenderPass renderpass) const {
         return GetShared<RENDER_PASS_STATE>(renderpass);
     }
     std::shared_ptr<RENDER_PASS_STATE> GetRenderPassShared(VkRenderPass renderpass) {
@@ -347,24 +348,24 @@ class ValidationStateTracker : public ValidationObject {
     const RENDER_PASS_STATE* GetRenderPassState(VkRenderPass renderpass) const { return Get<RENDER_PASS_STATE>(renderpass); }
     RENDER_PASS_STATE* GetRenderPassState(VkRenderPass renderpass) { return Get<RENDER_PASS_STATE>(renderpass); }
 
-    const std::shared_ptr<SAMPLER_STATE> GetSamplerShared(VkSampler sampler) const { return GetShared<SAMPLER_STATE>(sampler); }
+    std::shared_ptr<const SAMPLER_STATE> GetSamplerShared(VkSampler sampler) const { return GetShared<SAMPLER_STATE>(sampler); }
     std::shared_ptr<SAMPLER_STATE> GetSamplerShared(VkSampler sampler) { return GetShared<SAMPLER_STATE>(sampler); }
     const SAMPLER_STATE* GetSamplerState(VkSampler sampler) const { return Get<SAMPLER_STATE>(sampler); }
     SAMPLER_STATE* GetSamplerState(VkSampler sampler) { return Get<SAMPLER_STATE>(sampler); }
 
-    const std::shared_ptr<IMAGE_VIEW_STATE> GetImageViewShared(VkImageView image_view) const {
+    std::shared_ptr<const IMAGE_VIEW_STATE> GetImageViewShared(VkImageView image_view) const {
         return GetShared<IMAGE_VIEW_STATE>(image_view);
     }
     std::shared_ptr<IMAGE_VIEW_STATE> GetImageViewShared(VkImageView image_view) { return GetShared<IMAGE_VIEW_STATE>(image_view); }
     const IMAGE_VIEW_STATE* GetImageViewState(VkImageView image_view) const { return Get<IMAGE_VIEW_STATE>(image_view); }
     IMAGE_VIEW_STATE* GetImageViewState(VkImageView image_view) { return Get<IMAGE_VIEW_STATE>(image_view); }
 
-    const std::shared_ptr<IMAGE_STATE> GetImageShared(VkImage image) const { return GetShared<IMAGE_STATE>(image); }
+    std::shared_ptr<const IMAGE_STATE> GetImageShared(VkImage image) const { return GetShared<IMAGE_STATE>(image); }
     std::shared_ptr<IMAGE_STATE> GetImageShared(VkImage image) { return GetShared<IMAGE_STATE>(image); }
     const IMAGE_STATE* GetImageState(VkImage image) const { return Get<IMAGE_STATE>(image); }
     IMAGE_STATE* GetImageState(VkImage image) { return Get<IMAGE_STATE>(image); }
 
-    const std::shared_ptr<BUFFER_VIEW_STATE> GetBufferViewShared(VkBufferView buffer_view) const {
+    std::shared_ptr<const BUFFER_VIEW_STATE> GetBufferViewShared(VkBufferView buffer_view) const {
         return GetShared<BUFFER_VIEW_STATE>(buffer_view);
     }
     std::shared_ptr<BUFFER_VIEW_STATE> GetBufferViewShared(VkBufferView buffer_view) {
@@ -373,7 +374,7 @@ class ValidationStateTracker : public ValidationObject {
     const BUFFER_VIEW_STATE* GetBufferViewState(VkBufferView buffer_view) const { return Get<BUFFER_VIEW_STATE>(buffer_view); }
     BUFFER_VIEW_STATE* GetBufferViewState(VkBufferView buffer_view) { return Get<BUFFER_VIEW_STATE>(buffer_view); }
 
-    const std::shared_ptr<BUFFER_STATE> GetBufferShared(VkBuffer buffer) const { return GetShared<BUFFER_STATE>(buffer); }
+    std::shared_ptr<const BUFFER_STATE> GetBufferShared(VkBuffer buffer) const { return GetShared<BUFFER_STATE>(buffer); }
     std::shared_ptr<BUFFER_STATE> GetBufferShared(VkBuffer buffer) { return GetShared<BUFFER_STATE>(buffer); }
     const BUFFER_STATE* GetBufferState(VkBuffer buffer) const { return Get<BUFFER_STATE>(buffer); }
     BUFFER_STATE* GetBufferState(VkBuffer buffer) { return Get<BUFFER_STATE>(buffer); }
@@ -405,7 +406,7 @@ class ValidationStateTracker : public ValidationObject {
     const COMMAND_POOL_STATE* GetCommandPoolState(VkCommandPool pool) const { return Get<COMMAND_POOL_STATE>(pool); }
     COMMAND_POOL_STATE* GetCommandPoolState(VkCommandPool pool) { return Get<COMMAND_POOL_STATE>(pool); }
 
-    const std::shared_ptr<PIPELINE_LAYOUT_STATE> GetPipelineLayoutShared(VkPipelineLayout pipeLayout) const {
+    std::shared_ptr<const PIPELINE_LAYOUT_STATE> GetPipelineLayoutShared(VkPipelineLayout pipeLayout) const {
         return GetShared<PIPELINE_LAYOUT_STATE>(pipeLayout);
     }
     std::shared_ptr<PIPELINE_LAYOUT_STATE> GetPipelineLayoutShared(VkPipelineLayout pipeLayout) {

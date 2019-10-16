@@ -2894,7 +2894,7 @@ void ValidationStateTracker::RecordCmdPushDescriptorSetState(CMD_BUFFER_STATE *c
     auto &push_descriptor_set = last_bound.push_descriptor_set;
     // If we are disturbing the current push_desriptor_set clear it
     if (!push_descriptor_set || !CompatForSet(set, last_bound, pipeline_layout->compat_for_set)) {
-        last_bound.UnbindAndResetPushDescriptorSet(new cvdescriptorset::DescriptorSet(0, nullptr, dsl, 0, this));
+        last_bound.UnbindAndResetPushDescriptorSet(new cvdescriptorset::DescriptorSet(0, nullptr, dsl, 0, this, report_data));
     }
 
     UpdateLastBoundDescriptorSets(cb_state, pipelineBindPoint, pipeline_layout, set, 1, nullptr, push_descriptor_set.get(), 0,
@@ -4245,7 +4245,7 @@ void ValidationStateTracker::PerformAllocateDescriptorSets(const VkDescriptorSet
         uint32_t variable_count = variable_count_valid ? variable_count_info->pDescriptorCounts[i] : 0;
 
         auto new_ds = std::make_shared<cvdescriptorset::DescriptorSet>(descriptor_sets[i], pool_state, ds_data->layout_nodes[i],
-                                                                       variable_count, this);
+                                                                       variable_count, this, report_data);
         pool_state->sets.insert(new_ds.get());
         new_ds->in_use.store(0);
         setMap[descriptor_sets[i]] = std::move(new_ds);
