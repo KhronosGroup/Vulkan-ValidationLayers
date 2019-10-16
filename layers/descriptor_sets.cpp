@@ -576,12 +576,13 @@ cvdescriptorset::AllocateDescriptorSetsData::AllocateDescriptorSetsData(uint32_t
 
 cvdescriptorset::DescriptorSet::DescriptorSet(const VkDescriptorSet set, DESCRIPTOR_POOL_STATE *pool_state,
                                               const std::shared_ptr<DescriptorSetLayout const> &layout, uint32_t variable_count,
-                                              const cvdescriptorset::DescriptorSet::StateTracker *state_data)
+                                              cvdescriptorset::DescriptorSet::StateTracker *state_data,
+                                              const debug_report_data *report_data)
     : some_update_(false),
       set_(set),
       pool_state_(pool_state),
       p_layout_(layout),
-      state_data_(state_data),
+      report_data_(report_data),
       variable_count_(variable_count),
       change_count_(0) {
     // Foreach binding, create default descriptors of given type
@@ -975,7 +976,7 @@ void cvdescriptorset::DescriptorSet::PerformWriteUpdate(ValidationStateTracker *
         // Loop over the updates for a single binding at a time
         uint32_t update_count = std::min(descriptors_remaining, current_binding.GetDescriptorCount() - offset);
         for (uint32_t di = 0; di < update_count; ++di, ++update_index) {
-            descriptors_[global_idx + di]->WriteUpdate(state_data_, update, update_index);
+            descriptors_[global_idx + di]->WriteUpdate(dev_data, update, update_index);
         }
         // Roll over to next binding in case of consecutive update
         descriptors_remaining -= update_count;
@@ -1207,7 +1208,7 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(ValidationStateTracker *d
         auto src = src_set->descriptors_[src_start_idx + di].get();
         auto dst = descriptors_[dst_start_idx + di].get();
         if (src->updated) {
-            dst->CopyUpdate(state_data_, src);
+            dst->CopyUpdate(dev_data, src);
             some_update_ = true;
             change_count_++;
         } else {
@@ -1351,7 +1352,7 @@ void cvdescriptorset::DescriptorSet::UpdateValidationCache(const CMD_BUFFER_STAT
     }
 }
 
-cvdescriptorset::SamplerDescriptor::SamplerDescriptor(const ValidationStateTracker *dev_data, const VkSampler *immut)
+cvdescriptorset::SamplerDescriptor::SamplerDescriptor(ValidationStateTracker *dev_data, const VkSampler *immut)
     : sampler_(VK_NULL_HANDLE), immutable_(false) {
     updated = false;
     descriptor_class = PlainSampler;
@@ -1585,7 +1586,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     return true;
 }
 
-void cvdescriptorset::SamplerDescriptor::WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *update,
+void cvdescriptorset::SamplerDescriptor::WriteUpdate(ValidationStateTracker *dev_data, const VkWriteDescriptorSet *update,
                                                      const uint32_t index) {
     if (!immutable_) {
         sampler_ = update->pImageInfo[index].sampler;
@@ -1594,7 +1595,7 @@ void cvdescriptorset::SamplerDescriptor::WriteUpdate(const ValidationStateTracke
     updated = true;
 }
 
-void cvdescriptorset::SamplerDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
+void cvdescriptorset::SamplerDescriptor::CopyUpdate(ValidationStateTracker *dev_data, const Descriptor *src) {
     if (!immutable_) {
         auto update_sampler = static_cast<const SamplerDescriptor *>(src)->sampler_;
         sampler_ = update_sampler;
@@ -1610,7 +1611,7 @@ void cvdescriptorset::SamplerDescriptor::UpdateDrawState(ValidationStateTracker 
     }
 }
 
-cvdescriptorset::ImageSamplerDescriptor::ImageSamplerDescriptor(const ValidationStateTracker *dev_data, const VkSampler *immut)
+cvdescriptorset::ImageSamplerDescriptor::ImageSamplerDescriptor(ValidationStateTracker *dev_data, const VkSampler *immut)
     : sampler_(VK_NULL_HANDLE), immutable_(false), image_view_(VK_NULL_HANDLE), image_layout_(VK_IMAGE_LAYOUT_UNDEFINED) {
     updated = false;
     descriptor_class = ImageSampler;
@@ -1621,8 +1622,8 @@ cvdescriptorset::ImageSamplerDescriptor::ImageSamplerDescriptor(const Validation
     }
 }
 
-void cvdescriptorset::ImageSamplerDescriptor::WriteUpdate(const ValidationStateTracker *dev_data,
-                                                          const VkWriteDescriptorSet *update, const uint32_t index) {
+void cvdescriptorset::ImageSamplerDescriptor::WriteUpdate(ValidationStateTracker *dev_data, const VkWriteDescriptorSet *update,
+                                                          const uint32_t index) {
     updated = true;
     const auto &image_info = update->pImageInfo[index];
     if (!immutable_) {
@@ -1634,7 +1635,7 @@ void cvdescriptorset::ImageSamplerDescriptor::WriteUpdate(const ValidationStateT
     image_view_state_ = dev_data->GetImageViewShared(image_view_);
 }
 
-void cvdescriptorset::ImageSamplerDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
+void cvdescriptorset::ImageSamplerDescriptor::CopyUpdate(ValidationStateTracker *dev_data, const Descriptor *src) {
     if (!immutable_) {
         auto update_sampler = static_cast<const ImageSamplerDescriptor *>(src)->sampler_;
         sampler_ = update_sampler;
@@ -1669,7 +1670,7 @@ cvdescriptorset::ImageDescriptor::ImageDescriptor(const VkDescriptorType type)
     if (VK_DESCRIPTOR_TYPE_STORAGE_IMAGE == type) storage_ = true;
 }
 
-void cvdescriptorset::ImageDescriptor::WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *update,
+void cvdescriptorset::ImageDescriptor::WriteUpdate(ValidationStateTracker *dev_data, const VkWriteDescriptorSet *update,
                                                    const uint32_t index) {
     updated = true;
     const auto &image_info = update->pImageInfo[index];
@@ -1678,7 +1679,7 @@ void cvdescriptorset::ImageDescriptor::WriteUpdate(const ValidationStateTracker 
     image_view_state_ = dev_data->GetImageViewShared(image_view_);
 }
 
-void cvdescriptorset::ImageDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
+void cvdescriptorset::ImageDescriptor::CopyUpdate(ValidationStateTracker *dev_data, const Descriptor *src) {
     auto image_view = static_cast<const ImageDescriptor *>(src)->image_view_;
     auto image_layout = static_cast<const ImageDescriptor *>(src)->image_layout_;
     updated = true;
@@ -1709,7 +1710,7 @@ cvdescriptorset::BufferDescriptor::BufferDescriptor(const VkDescriptorType type)
         storage_ = true;
     }
 }
-void cvdescriptorset::BufferDescriptor::WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *update,
+void cvdescriptorset::BufferDescriptor::WriteUpdate(ValidationStateTracker *dev_data, const VkWriteDescriptorSet *update,
                                                     const uint32_t index) {
     updated = true;
     const auto &buffer_info = update->pBufferInfo[index];
@@ -1719,7 +1720,7 @@ void cvdescriptorset::BufferDescriptor::WriteUpdate(const ValidationStateTracker
     buffer_state_ = dev_data->GetBufferShared(buffer_);
 }
 
-void cvdescriptorset::BufferDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
+void cvdescriptorset::BufferDescriptor::CopyUpdate(ValidationStateTracker *dev_data, const Descriptor *src) {
     auto buff_desc = static_cast<const BufferDescriptor *>(src);
     updated = true;
     buffer_ = buff_desc->buffer_;
@@ -1739,14 +1740,14 @@ cvdescriptorset::TexelDescriptor::TexelDescriptor(const VkDescriptorType type) :
     if (VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER == type) storage_ = true;
 }
 
-void cvdescriptorset::TexelDescriptor::WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *update,
+void cvdescriptorset::TexelDescriptor::WriteUpdate(ValidationStateTracker *dev_data, const VkWriteDescriptorSet *update,
                                                    const uint32_t index) {
     updated = true;
     buffer_view_ = update->pTexelBufferView[index];
     buffer_view_state_ = dev_data->GetBufferViewShared(buffer_view_);
 }
 
-void cvdescriptorset::TexelDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
+void cvdescriptorset::TexelDescriptor::CopyUpdate(ValidationStateTracker *dev_data, const Descriptor *src) {
     updated = true;
     buffer_view_ = static_cast<const TexelDescriptor *>(src)->buffer_view_;
     buffer_view_state_ = dev_data->GetBufferViewShared(buffer_view_);
@@ -1930,11 +1931,10 @@ std::string cvdescriptorset::DescriptorSet::StringifySetAndLayout() const {
     auto layout_handle = p_layout_->GetDescriptorSetLayout();
     if (IsPushDescriptor()) {
         string_sprintf(&out, "Push Descriptors defined with VkDescriptorSetLayout %s",
-                       state_data_->report_data->FormatHandle(layout_handle).c_str());
+                       report_data_->FormatHandle(layout_handle).c_str());
     } else {
-        string_sprintf(&out, "VkDescriptorSet %s allocated with VkDescriptorSetLayout %s",
-                       state_data_->report_data->FormatHandle(set_).c_str(),
-                       state_data_->report_data->FormatHandle(layout_handle).c_str());
+        string_sprintf(&out, "VkDescriptorSet %s allocated with VkDescriptorSetLayout %s", report_data_->FormatHandle(set_).c_str(),
+                       report_data_->FormatHandle(layout_handle).c_str());
     }
     return out;
 };

@@ -1203,7 +1203,7 @@ class PIPELINE_STATE : public BASE_NODE {
     safe_VkComputePipelineCreateInfo computePipelineCI;
     safe_VkRayTracingPipelineCreateInfoNV raytracingPipelineCI;
     // Hold shared ptr to RP in case RP itself is destroyed
-    std::shared_ptr<RENDER_PASS_STATE> rp_state;
+    std::shared_ptr<const RENDER_PASS_STATE> rp_state;
     // Flag of which shader stages are active for this pipeline
     uint32_t active_shaders;
     uint32_t duplicate_shaders;
@@ -1219,7 +1219,7 @@ class PIPELINE_STATE : public BASE_NODE {
     std::unordered_map<uint32_t, uint32_t> vertex_binding_to_index_map_;
     std::vector<VkPipelineColorBlendAttachmentState> attachments;
     bool blendConstantsEnabled;  // Blend constants enabled for any attachments
-    std::shared_ptr<PIPELINE_LAYOUT_STATE> pipeline_layout;
+    std::shared_ptr<const PIPELINE_LAYOUT_STATE> pipeline_layout;
     VkPrimitiveTopology topology_at_rasterizer;
 
     // Default constructor
@@ -1252,7 +1252,7 @@ class PIPELINE_STATE : public BASE_NODE {
     }
 
     void initGraphicsPipeline(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
-                              const std::shared_ptr<RENDER_PASS_STATE> &&rpstate);
+                              std::shared_ptr<const RENDER_PASS_STATE> &&rpstate);
     void initComputePipeline(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo);
     void initRayTracingPipelineNV(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo);
 
@@ -1603,7 +1603,7 @@ class FRAMEBUFFER_STATE : public BASE_NODE {
   public:
     VkFramebuffer framebuffer;
     safe_VkFramebufferCreateInfo createInfo;
-    std::shared_ptr<RENDER_PASS_STATE> rp_state;
+    std::shared_ptr<const RENDER_PASS_STATE> rp_state;
     FRAMEBUFFER_STATE(VkFramebuffer fb, const VkFramebufferCreateInfo *pCreateInfo, std::shared_ptr<RENDER_PASS_STATE> &&rpstate)
         : framebuffer(fb), createInfo(pCreateInfo), rp_state(rpstate){};
 };

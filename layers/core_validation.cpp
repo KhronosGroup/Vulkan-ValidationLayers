@@ -5181,7 +5181,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandB
                     // Create an empty proxy in order to use the existing descriptor set update validation
                     // TODO move the validation (like this) that doesn't need descriptor set state to the DSL object so we
                     // don't have to do this.
-                    cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, this);
+                    cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, nullptr, report_data);
                     skip |= ValidatePushDescriptorsUpdate(&proxy_ds, descriptorWriteCount, pDescriptorWrites, func_name);
                 }
             }
@@ -10138,7 +10138,7 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
 
     if (dsl && template_state) {
         // Create an empty proxy in order to use the existing descriptor set update validation
-        cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, this);
+        cvdescriptorset::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, nullptr, report_data);
         // Decode the template into a set of write updates
         cvdescriptorset::DecodedTemplateUpdate decoded_template(this, VK_NULL_HANDLE, template_state, pData,
                                                                 dsl->GetDescriptorSetLayout());
@@ -10490,7 +10490,7 @@ bool CoreChecks::ValidateCmdDrawStrideWithBuffer(VkCommandBuffer commandBuffer, 
 }
 
 void PIPELINE_STATE::initGraphicsPipeline(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
-                                          const std::shared_ptr<RENDER_PASS_STATE> &&rpstate) {
+                                          std::shared_ptr<const RENDER_PASS_STATE> &&rpstate) {
     reset();
     bool uses_color_attachment = false;
     bool uses_depthstencil_attachment = false;
