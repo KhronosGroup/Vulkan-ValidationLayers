@@ -247,6 +247,8 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
 void BestPractices::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
                                                  VkResult result) {
+    ValidationStateTracker::PostCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, result);
+
     if (VK_SUCCESS == result) {
         num_mem_objects++;
     }
@@ -256,7 +258,7 @@ bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory me
                                               const VkAllocationCallbacks* pAllocator) const {
     bool skip = false;
 
-    const DEVICE_MEMORY_STATE* mem_info = GetDevMemState(memory);
+    const DEVICE_MEMORY_STATE* mem_info = ValidationStateTracker::GetDevMemState(memory);
 
     for (auto& obj : mem_info->obj_bindings) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, get_debug_report_enum[obj.type], 0, layer_name.c_str(),
