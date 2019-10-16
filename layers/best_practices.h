@@ -124,5 +124,5 @@ class BestPractices : public ValidationStateTracker {
   private:
     uint32_t instance_api_version;
 
-    uint32_t num_mem_objects;
+    uint32_t num_mem_objects = 0;
 };
