@@ -232,6 +232,7 @@ config("vulkan_stateless_validation_config") {
 foreach(layer_info, layers) {
   name = layer_info[0]
   shared_library("VkLayer_$name") {
+    defines = []
     configs -= [ "//build/config/compiler:chromium_code" ]
     configs += [ "//build/config/compiler:no_chromium_code" ]
     configs -= vulkan_undefine_configs
@@ -251,6 +252,9 @@ foreach(layer_info, layers) {
     if (is_linux || is_android) {
       ldflags = [ "-Wl,-Bsymbolic,--exclude-libs,ALL" ]
     }
+    if (use_x11) {
+      defines += [ "VK_USE_PLATFORM_XLIB_KHR" ]
+    }
     if (is_android) {
       libs = [
         "log",
@@ -258,7 +262,7 @@ foreach(layer_info, layers) {
       ]
       configs -= [ "//build/config/android:hide_all_but_jni_onload" ]
     }
-    defines = layer_info[3]
+    defines += layer_info[3]
   }
 }
 
