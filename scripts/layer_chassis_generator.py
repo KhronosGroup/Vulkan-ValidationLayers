@@ -262,6 +262,7 @@ enum LayerObjectTypeId {
     LayerObjectTypeCoreValidation,              // Instance or device core validation layer object
     LayerObjectTypeBestPractices,               // Instance or device best practices layer object
     LayerObjectTypeGpuAssisted,                 // Instance or device gpu assisted validation layer object
+    LayerObjectTypeShaderPrintf,                // Instance or device shader debug printf layer object
     LayerObjectTypeMaxEnum,                     // Max enum count
 };
 
@@ -320,6 +321,7 @@ struct CHECK_ENABLED {
     bool gpu_validation_reserve_binding_slot;
     bool best_practices;
     bool vendor_specific_arm;                       // Vendor-specific validation for Arm platforms
+    bool shader_printf;
 
     void SetAllVendorSpecific(bool value) { std::fill(&vendor_specific_arm, &vendor_specific_arm + 1, value); }
 };
@@ -563,6 +565,7 @@ bool wrap_handles = true;
 #include "command_counter.h"
 #include "gpu_validation.h"
 #include "object_lifetime_validation.h"
+#include "shader_debug_printf.h"
 #include "stateless_validation.h"
 #include "thread_safety.h"
 
@@ -997,6 +1000,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     gpu_assisted->container_type = LayerObjectTypeGpuAssisted;
     gpu_assisted->api_version = api_version;
     gpu_assisted->report_data = report_data;
+    auto shader_printf = new ShaderPrintf;
+    if (local_enables.shader_printf) {
+        local_object_dispatch.emplace_back(shader_printf);
+    }
+    shader_printf->container_type = LayerObjectTypeShaderPrintf;
+    shader_printf->api_version = api_version;
+    shader_printf->report_data = report_data;
 
     // If handle wrapping is disabled via the ValidationFeatures extension, override build flag
     if (local_disables.handle_wrapping) {
@@ -1049,6 +1059,9 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     gpu_assisted->instance_dispatch_table = framework->instance_dispatch_table;
     gpu_assisted->enabled = framework->enabled;
     gpu_assisted->disabled = framework->disabled;
+    shader_printf->instance_dispatch_table = framework->instance_dispatch_table;
+    shader_printf->enabled = framework->enabled;
+    shader_printf->disabled = framework->disabled;
 
     for (auto intercept : framework->object_dispatch) {
         intercept->PostCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance, result);
@@ -1195,6 +1208,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     if (instance_interceptor->enabled.gpu_validation) {
         device_interceptor->object_dispatch.emplace_back(gpu_assisted);
     }
+    auto shader_printf = new ShaderPrintf;
+    shader_printf->container_type = LayerObjectTypeShaderPrintf;
+    shader_printf->instance_state = reinterpret_cast<ShaderPrintf *>(
+        shader_printf->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeShaderPrintf));
+    if (instance_interceptor->enabled.shader_printf) {
+        device_interceptor->object_dispatch.emplace_back(shader_printf);
+    }
 
     // Set per-intercept common data items
     for (auto dev_intercept : device_interceptor->object_dispatch) {
@@ -1273,6 +1293,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(
     }
 
     auto usepCreateInfos = (!cgpl_state[LayerObjectTypeGpuAssisted].pCreateInfos) ? pCreateInfos : cgpl_state[LayerObjectTypeGpuAssisted].pCreateInfos;
+    if (cgpl_state[LayerObjectTypeShaderPrintf].pCreateInfos) usepCreateInfos = cgpl_state[LayerObjectTypeShaderPrintf].pCreateInfos;
 
     VkResult result = DispatchCreateGraphicsPipelines(device, pipelineCache, createInfoCount, usepCreateInfos, pAllocator, pPipelines);
 
@@ -1308,6 +1329,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(
     }
 
     auto usepCreateInfos = (!ccpl_state[LayerObjectTypeGpuAssisted].pCreateInfos) ? pCreateInfos : ccpl_state[LayerObjectTypeGpuAssisted].pCreateInfos;
+    if (ccpl_state[LayerObjectTypeShaderPrintf].pCreateInfos) usepCreateInfos = ccpl_state[LayerObjectTypeShaderPrintf].pCreateInfos;
 
     VkResult result = DispatchCreateComputePipelines(device, pipelineCache, createInfoCount, usepCreateInfos, pAllocator, pPipelines);
 
