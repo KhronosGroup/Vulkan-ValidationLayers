@@ -202,6 +202,10 @@ set(GPU_ASSISTED_LIBRARY_FILES
     gpu_validation.cpp
     gpu_validation.h)
 
+set(SHADER_DEBUG_PRINTF_LIBRARY_FILES
+    shader_debug_printf.cpp
+    shader_debug_printf.h)
+
 if(BUILD_LAYERS)
     AddVkLayer(khronos_validation ""
         ${CHASSIS_LIBRARY_FILES}
@@ -210,7 +214,8 @@ if(BUILD_LAYERS)
         ${THREAD_SAFETY_LIBRARY_FILES}
         ${STATELESS_VALIDATION_LIBRARY_FILES}
         ${BEST_PRACTICES_LIBRARY_FILES}
-        ${GPU_ASSISTED_LIBRARY_FILES})
+        ${GPU_ASSISTED_LIBRARY_FILES}
+        ${SHADER_DEBUG_PRINTF_LIBRARY_FILES})
 
     # Khronos validation additional dependencies
     target_include_directories(VkLayer_khronos_validation PRIVATE ${GLSLANG_SPIRV_INCLUDE_DIR})

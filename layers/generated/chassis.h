@@ -2661,6 +2661,7 @@ enum LayerObjectTypeId {
     LayerObjectTypeCoreValidation,              // Instance or device core validation layer object
     LayerObjectTypeBestPractices,               // Instance or device best practices layer object
     LayerObjectTypeGpuAssisted,                 // Instance or device gpu assisted validation layer object
+    LayerObjectTypeShaderPrintf,                // Instance or device shader debug printf layer object
     LayerObjectTypeMaxEnum,                     // Max enum count
 };
 
@@ -2719,6 +2720,7 @@ struct CHECK_ENABLED {
     bool gpu_validation_reserve_binding_slot;
     bool best_practices;
     bool vendor_specific_arm;                       // Vendor-specific validation for Arm platforms
+    bool shader_printf;
 
     void SetAllVendorSpecific(bool value) { std::fill(&vendor_specific_arm, &vendor_specific_arm + 1, value); }
 };

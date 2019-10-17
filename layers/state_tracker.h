@@ -127,6 +127,7 @@ struct PHYSICAL_DEVICE_STATE {
 // This structure is used to save data across the CreateGraphicsPipelines down-chain API call
 struct create_graphics_pipeline_api_state {
     std::vector<safe_VkGraphicsPipelineCreateInfo> gpu_create_infos;
+    std::vector<safe_VkGraphicsPipelineCreateInfo> printf_create_infos;
     std::vector<std::shared_ptr<PIPELINE_STATE>> pipe_state;
     const VkGraphicsPipelineCreateInfo* pCreateInfos;
 };
@@ -134,6 +135,7 @@ struct create_graphics_pipeline_api_state {
 // This structure is used to save data across the CreateComputePipelines down-chain API call
 struct create_compute_pipeline_api_state {
     std::vector<safe_VkComputePipelineCreateInfo> gpu_create_infos;
+    std::vector<safe_VkComputePipelineCreateInfo> printf_create_infos;
     std::vector<std::shared_ptr<PIPELINE_STATE>> pipe_state;
     const VkComputePipelineCreateInfo* pCreateInfos;
 };
@@ -141,6 +143,7 @@ struct create_compute_pipeline_api_state {
 // This structure is used to save data across the CreateRayTracingPipelinesNV down-chain API call.
 struct create_ray_tracing_pipeline_api_state {
     std::vector<safe_VkRayTracingPipelineCreateInfoCommon> gpu_create_infos;
+    std::vector<safe_VkRayTracingPipelineCreateInfoCommon> printf_create_infos;
     std::vector<std::shared_ptr<PIPELINE_STATE>> pipe_state;
     const VkRayTracingPipelineCreateInfoNV* pCreateInfos;
 };
