@@ -1231,7 +1231,7 @@ void ValidationStateTracker::DecrementBoundResources(CMD_BUFFER_STATE const *cb_
     }
 }
 
-void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq, bool switch_finished_queries) {
+void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq) {
     std::unordered_map<VkQueue, uint64_t> otherQueueSeqs;
 
     // Roll this queue forward, one submission at a time.
@@ -1280,21 +1280,10 @@ void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq
             }
 
             for (auto queryStatePair : localQueryToStateMap) {
-                const QueryState newState =
-                    ((queryStatePair.second == QUERYSTATE_ENDED && switch_finished_queries) ? QUERYSTATE_AVAILABLE
-                                                                                            : queryStatePair.second);
-                queryToStateMap[queryStatePair.first] = newState;
+                if (queryStatePair.second == QUERYSTATE_ENDED) {
+                    queryToStateMap[queryStatePair.first] = QUERYSTATE_AVAILABLE;
+                }
             }
-
-            EventToStageMap localEventToStageMap;
-            for (auto &function : cb_node->eventUpdates) {
-                function(nullptr, /*do_validate*/ false, &localEventToStageMap);
-            }
-
-            for (auto eventStagePair : localEventToStageMap) {
-                eventMap[eventStagePair.first].stageMask = eventStagePair.second;
-            }
-
             cb_node->in_use.fetch_sub(1);
         }
 
@@ -1309,7 +1298,7 @@ void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq
 
     // Roll other queues forward to the highest seq we saw a wait for
     for (auto qs : otherQueueSeqs) {
-        RetireWorkOnQueue(GetQueueState(qs.first), qs.second, switch_finished_queries);
+        RetireWorkOnQueue(GetQueueState(qs.first), qs.second);
     }
 }
 
@@ -1396,6 +1385,24 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
                     IncrementResources(secondaryCmdBuffer);
                 }
                 IncrementResources(cb_node);
+
+                QueryMap localQueryToStateMap;
+                for (auto &function : cb_node->queryUpdates) {
+                    function(nullptr, /*do_validate*/ false, &localQueryToStateMap);
+                }
+
+                for (auto queryStatePair : localQueryToStateMap) {
+                    queryToStateMap[queryStatePair.first] = queryStatePair.second;
+                }
+
+                EventToStageMap localEventToStageMap;
+                for (auto &function : cb_node->eventUpdates) {
+                    function(nullptr, /*do_validate*/ false, &localEventToStageMap);
+                }
+
+                for (auto eventStagePair : localEventToStageMap) {
+                    eventMap[eventStagePair.first].stageMask = eventStagePair.second;
+                }
             }
         }
         pQueue->submissions.emplace_back(cbs, semaphore_waits, semaphore_signals, semaphore_externals,
@@ -1403,7 +1410,7 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
     }
 
     if (early_retire_seq) {
-        RetireWorkOnQueue(pQueue, early_retire_seq, true);
+        RetireWorkOnQueue(pQueue, early_retire_seq);
     }
 }
 
@@ -1545,7 +1552,7 @@ void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32
     }
 
     if (early_retire_seq) {
-        RetireWorkOnQueue(pQueue, early_retire_seq, true);
+        RetireWorkOnQueue(pQueue, early_retire_seq);
     }
 }
 
@@ -1588,7 +1595,7 @@ void ValidationStateTracker::RetireFence(VkFence fence) {
     if (pFence && pFence->scope == kSyncScopeInternal) {
         if (pFence->signaler.first != VK_NULL_HANDLE) {
             // Fence signaller is a queue -- use this as proof that prior operations on that queue have completed.
-            RetireWorkOnQueue(GetQueueState(pFence->signaler.first), pFence->signaler.second, true);
+            RetireWorkOnQueue(GetQueueState(pFence->signaler.first), pFence->signaler.second);
         } else {
             // Fence signaller is the WSI. We're not tracking what the WSI op actually /was/ in CV yet, but we need to mark
             // the fence as retired.
@@ -1640,13 +1647,13 @@ void ValidationStateTracker::PostCallRecordGetDeviceQueue2(VkDevice device, cons
 void ValidationStateTracker::PostCallRecordQueueWaitIdle(VkQueue queue, VkResult result) {
     if (VK_SUCCESS != result) return;
     QUEUE_STATE *queue_state = GetQueueState(queue);
-    RetireWorkOnQueue(queue_state, queue_state->seq + queue_state->submissions.size(), true);
+    RetireWorkOnQueue(queue_state, queue_state->seq + queue_state->submissions.size());
 }
 
 void ValidationStateTracker::PostCallRecordDeviceWaitIdle(VkDevice device, VkResult result) {
     if (VK_SUCCESS != result) return;
     for (auto &queue : queueMap) {
-        RetireWorkOnQueue(&queue.second, queue.second.seq + queue.second.submissions.size(), true);
+        RetireWorkOnQueue(&queue.second, queue.second.seq + queue.second.submissions.size());
     }
 }
 

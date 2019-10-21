@@ -1008,7 +1008,7 @@ class ValidationStateTracker : public ValidationObject {
     void RemoveImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE* mem_info);
     void ResetCommandBufferState(const VkCommandBuffer cb);
     void RetireFence(VkFence fence);
-    void RetireWorkOnQueue(QUEUE_STATE* pQueue, uint64_t seq, bool switch_finished_queries);
+    void RetireWorkOnQueue(QUEUE_STATE* pQueue, uint64_t seq);
     static bool SetEventStageMask(VkEvent event, VkPipelineStageFlags stageMask, EventToStageMap* localEventToStageMap);
     void ResetCommandBufferPushConstantDataIfIncompatible(CMD_BUFFER_STATE* cb_state, VkPipelineLayout layout);
     void SetMemBinding(VkDeviceMemory mem, BINDABLE* mem_binding, VkDeviceSize memory_offset,
