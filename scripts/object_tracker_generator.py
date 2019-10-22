@@ -478,7 +478,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         self.headerVersion = None
         self.featureExtraProtect = GetFeatureProtect(interface)
 
-        if self.featureName != 'VK_VERSION_1_0' and self.featureName != 'VK_VERSION_1_1':
+        if interface.tag == 'extension':
             white_list_entry = []
             if (self.featureExtraProtect is not None):
                 white_list_entry += [ '#ifdef %s' % self.featureExtraProtect ]
