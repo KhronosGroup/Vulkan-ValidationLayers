@@ -1385,146 +1385,162 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBRayTracingShaders) {
         reinterpret_cast<PFN_vkCmdTraceRaysNV>(vk::GetDeviceProcAddr(m_device->handle(), "vkCmdTraceRaysNV"));
     ASSERT_TRUE(vkCmdTraceRaysNV != nullptr);
 
-    for (const auto &test : tests) {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, test.expected_error);
+    // Iteration 0 tests with no descriptor set bound (to sanity test "draw" validation). Iteration 1
+    // tests what's in the test case vector.
+    for (int i = 0; i < 2; ++i) {
+        for (const auto &test : tests) {
+            if (i == 1) {
+                m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, test.expected_error);
+            }
 
-        VkShaderObj rgen_shader(m_device, test.rgen_shader_source.c_str(), VK_SHADER_STAGE_RAYGEN_BIT_NV, this, "main");
-        VkShaderObj ahit_shader(m_device, test.ahit_shader_source.c_str(), VK_SHADER_STAGE_ANY_HIT_BIT_NV, this, "main");
-        VkShaderObj chit_shader(m_device, test.chit_shader_source.c_str(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV, this, "main");
-        VkShaderObj miss_shader(m_device, test.miss_shader_source.c_str(), VK_SHADER_STAGE_MISS_BIT_NV, this, "main");
-        VkShaderObj intr_shader(m_device, test.intr_shader_source.c_str(), VK_SHADER_STAGE_INTERSECTION_BIT_NV, this, "main");
-        VkShaderObj call_shader(m_device, test.call_shader_source.c_str(), VK_SHADER_STAGE_CALLABLE_BIT_NV, this, "main");
+            VkShaderObj rgen_shader(m_device, test.rgen_shader_source.c_str(), VK_SHADER_STAGE_RAYGEN_BIT_NV, this, "main");
+            VkShaderObj ahit_shader(m_device, test.ahit_shader_source.c_str(), VK_SHADER_STAGE_ANY_HIT_BIT_NV, this, "main");
+            VkShaderObj chit_shader(m_device, test.chit_shader_source.c_str(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV, this, "main");
+            VkShaderObj miss_shader(m_device, test.miss_shader_source.c_str(), VK_SHADER_STAGE_MISS_BIT_NV, this, "main");
+            VkShaderObj intr_shader(m_device, test.intr_shader_source.c_str(), VK_SHADER_STAGE_INTERSECTION_BIT_NV, this, "main");
+            VkShaderObj call_shader(m_device, test.call_shader_source.c_str(), VK_SHADER_STAGE_CALLABLE_BIT_NV, this, "main");
 
-        VkPipelineShaderStageCreateInfo stage_create_infos[6] = {};
-        stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
-        stage_create_infos[0].module = rgen_shader.handle();
-        stage_create_infos[0].pName = "main";
+            VkPipelineShaderStageCreateInfo stage_create_infos[6] = {};
+            stage_create_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
+            stage_create_infos[0].module = rgen_shader.handle();
+            stage_create_infos[0].pName = "main";
 
-        stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        stage_create_infos[1].stage = VK_SHADER_STAGE_ANY_HIT_BIT_NV;
-        stage_create_infos[1].module = ahit_shader.handle();
-        stage_create_infos[1].pName = "main";
+            stage_create_infos[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            stage_create_infos[1].stage = VK_SHADER_STAGE_ANY_HIT_BIT_NV;
+            stage_create_infos[1].module = ahit_shader.handle();
+            stage_create_infos[1].pName = "main";
 
-        stage_create_infos[2].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        stage_create_infos[2].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
-        stage_create_infos[2].module = chit_shader.handle();
-        stage_create_infos[2].pName = "main";
+            stage_create_infos[2].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            stage_create_infos[2].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
+            stage_create_infos[2].module = chit_shader.handle();
+            stage_create_infos[2].pName = "main";
 
-        stage_create_infos[3].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        stage_create_infos[3].stage = VK_SHADER_STAGE_MISS_BIT_NV;
-        stage_create_infos[3].module = miss_shader.handle();
-        stage_create_infos[3].pName = "main";
+            stage_create_infos[3].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            stage_create_infos[3].stage = VK_SHADER_STAGE_MISS_BIT_NV;
+            stage_create_infos[3].module = miss_shader.handle();
+            stage_create_infos[3].pName = "main";
 
-        stage_create_infos[4].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        stage_create_infos[4].stage = VK_SHADER_STAGE_INTERSECTION_BIT_NV;
-        stage_create_infos[4].module = intr_shader.handle();
-        stage_create_infos[4].pName = "main";
+            stage_create_infos[4].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            stage_create_infos[4].stage = VK_SHADER_STAGE_INTERSECTION_BIT_NV;
+            stage_create_infos[4].module = intr_shader.handle();
+            stage_create_infos[4].pName = "main";
 
-        stage_create_infos[5].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        stage_create_infos[5].stage = VK_SHADER_STAGE_CALLABLE_BIT_NV;
-        stage_create_infos[5].module = call_shader.handle();
-        stage_create_infos[5].pName = "main";
+            stage_create_infos[5].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            stage_create_infos[5].stage = VK_SHADER_STAGE_CALLABLE_BIT_NV;
+            stage_create_infos[5].module = call_shader.handle();
+            stage_create_infos[5].pName = "main";
 
-        VkRayTracingShaderGroupCreateInfoNV group_create_infos[4] = {};
-        group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
-        group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
-        group_create_infos[0].generalShader = 0;  // rgen
-        group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
-        group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
-        group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
+            VkRayTracingShaderGroupCreateInfoNV group_create_infos[4] = {};
+            group_create_infos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+            group_create_infos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+            group_create_infos[0].generalShader = 0;  // rgen
+            group_create_infos[0].closestHitShader = VK_SHADER_UNUSED_NV;
+            group_create_infos[0].anyHitShader = VK_SHADER_UNUSED_NV;
+            group_create_infos[0].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
-        group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
-        group_create_infos[1].generalShader = 3;  // miss
-        group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
-        group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
-        group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
+            group_create_infos[1].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+            group_create_infos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+            group_create_infos[1].generalShader = 3;  // miss
+            group_create_infos[1].closestHitShader = VK_SHADER_UNUSED_NV;
+            group_create_infos[1].anyHitShader = VK_SHADER_UNUSED_NV;
+            group_create_infos[1].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        group_create_infos[2].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
-        group_create_infos[2].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV;
-        group_create_infos[2].generalShader = VK_SHADER_UNUSED_NV;
-        group_create_infos[2].closestHitShader = 2;
-        group_create_infos[2].anyHitShader = 1;
-        group_create_infos[2].intersectionShader = 4;
+            group_create_infos[2].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+            group_create_infos[2].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV;
+            group_create_infos[2].generalShader = VK_SHADER_UNUSED_NV;
+            group_create_infos[2].closestHitShader = 2;
+            group_create_infos[2].anyHitShader = 1;
+            group_create_infos[2].intersectionShader = 4;
 
-        group_create_infos[3].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
-        group_create_infos[3].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
-        group_create_infos[3].generalShader = 5;  // call
-        group_create_infos[3].closestHitShader = VK_SHADER_UNUSED_NV;
-        group_create_infos[3].anyHitShader = VK_SHADER_UNUSED_NV;
-        group_create_infos[3].intersectionShader = VK_SHADER_UNUSED_NV;
+            group_create_infos[3].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
+            group_create_infos[3].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+            group_create_infos[3].generalShader = 5;  // call
+            group_create_infos[3].closestHitShader = VK_SHADER_UNUSED_NV;
+            group_create_infos[3].anyHitShader = VK_SHADER_UNUSED_NV;
+            group_create_infos[3].intersectionShader = VK_SHADER_UNUSED_NV;
 
-        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
-        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
-        pipeline_ci.stageCount = 6;
-        pipeline_ci.pStages = stage_create_infos;
-        pipeline_ci.groupCount = 4;
-        pipeline_ci.pGroups = group_create_infos;
-        pipeline_ci.maxRecursionDepth = 2;
-        pipeline_ci.layout = test.variable_length ? pipeline_layout_variable.handle() : pipeline_layout.handle();
+            VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
+            pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+            pipeline_ci.stageCount = 6;
+            pipeline_ci.pStages = stage_create_infos;
+            pipeline_ci.groupCount = 4;
+            pipeline_ci.pGroups = group_create_infos;
+            pipeline_ci.maxRecursionDepth = 2;
+            pipeline_ci.layout = test.variable_length ? pipeline_layout_variable.handle() : pipeline_layout.handle();
 
-        VkPipeline pipeline = VK_NULL_HANDLE;
-        ASSERT_VK_SUCCESS(vkCreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline));
+            VkPipeline pipeline = VK_NULL_HANDLE;
+            ASSERT_VK_SUCCESS(
+                vkCreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline));
 
-        std::vector<uint8_t> shader_binding_table_data;
-        shader_binding_table_data.resize(static_cast<std::size_t>(shader_binding_table_buffer_size), 0);
-        ASSERT_VK_SUCCESS(vkGetRayTracingShaderGroupHandlesNV(m_device->handle(), pipeline, 0, 4,
-                                                              static_cast<std::size_t>(shader_binding_table_buffer_size),
-                                                              shader_binding_table_data.data()));
+            std::vector<uint8_t> shader_binding_table_data;
+            shader_binding_table_data.resize(static_cast<std::size_t>(shader_binding_table_buffer_size), 0);
+            ASSERT_VK_SUCCESS(vkGetRayTracingShaderGroupHandlesNV(m_device->handle(), pipeline, 0, 4,
+                                                                  static_cast<std::size_t>(shader_binding_table_buffer_size),
+                                                                  shader_binding_table_data.data()));
 
-        uint8_t *mapped_shader_binding_table_data = (uint8_t *)shader_binding_table_buffer.memory().map();
-        std::memcpy(mapped_shader_binding_table_data, shader_binding_table_data.data(), shader_binding_table_data.size());
-        shader_binding_table_buffer.memory().unmap();
+            uint8_t *mapped_shader_binding_table_data = (uint8_t *)shader_binding_table_buffer.memory().map();
+            std::memcpy(mapped_shader_binding_table_data, shader_binding_table_data.data(), shader_binding_table_data.size());
+            shader_binding_table_buffer.memory().unmap();
 
-        ray_tracing_command_buffer.begin();
+            ray_tracing_command_buffer.begin();
 
-        vk::CmdBindPipeline(ray_tracing_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, pipeline);
-        vk::CmdBindDescriptorSets(ray_tracing_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_NV,
-                                  test.variable_length ? pipeline_layout_variable.handle() : pipeline_layout.handle(), 0, 1,
-                                  test.variable_length ? &ds_variable.set_ : &ds.set_, 0, nullptr);
+            vk::CmdBindPipeline(ray_tracing_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, pipeline);
 
-        vkCmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
-                         ray_tracing_properties.shaderGroupHandleSize * 0ull, shader_binding_table_buffer.handle(),
-                         ray_tracing_properties.shaderGroupHandleSize * 1ull, ray_tracing_properties.shaderGroupHandleSize,
-                         shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupHandleSize * 2ull,
-                         ray_tracing_properties.shaderGroupHandleSize, shader_binding_table_buffer.handle(),
-                         ray_tracing_properties.shaderGroupHandleSize * 3ull, ray_tracing_properties.shaderGroupHandleSize,
-                         /*width=*/1, /*height=*/1, /*depth=*/1);
+            if (i == 1) {
+                vk::CmdBindDescriptorSets(ray_tracing_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_NV,
+                                          test.variable_length ? pipeline_layout_variable.handle() : pipeline_layout.handle(), 0, 1,
+                                          test.variable_length ? &ds_variable.set_ : &ds.set_, 0, nullptr);
+            } else {
+                m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdTraceRaysNV-None-02697");
+                m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                     "UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotBound");
+            }
 
-        ray_tracing_command_buffer.end();
+            vkCmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
+                             ray_tracing_properties.shaderGroupHandleSize * 0ull, shader_binding_table_buffer.handle(),
+                             ray_tracing_properties.shaderGroupHandleSize * 1ull, ray_tracing_properties.shaderGroupHandleSize,
+                             shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupHandleSize * 2ull,
+                             ray_tracing_properties.shaderGroupHandleSize, shader_binding_table_buffer.handle(),
+                             ray_tracing_properties.shaderGroupHandleSize * 3ull, ray_tracing_properties.shaderGroupHandleSize,
+                             /*width=*/1, /*height=*/1, /*depth=*/1);
 
-        // Update the index of the texture that the shaders should read
-        uint32_t *mapped_storage_buffer_data = (uint32_t *)storage_buffer.memory().map();
-        mapped_storage_buffer_data[0] = test.rgen_index;
-        mapped_storage_buffer_data[1] = test.ahit_index;
-        mapped_storage_buffer_data[2] = test.chit_index;
-        mapped_storage_buffer_data[3] = test.miss_index;
-        mapped_storage_buffer_data[4] = test.intr_index;
-        mapped_storage_buffer_data[5] = test.call_index;
-        mapped_storage_buffer_data[6] = 0;
-        mapped_storage_buffer_data[7] = 0;
-        mapped_storage_buffer_data[8] = 0;
-        mapped_storage_buffer_data[9] = 0;
-        mapped_storage_buffer_data[10] = 0;
-        mapped_storage_buffer_data[11] = 0;
-        storage_buffer.memory().unmap();
+            ray_tracing_command_buffer.end();
 
-        m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotUpdated");
-        vk::QueueSubmit(ray_tracing_queue, 1, &submit_info, VK_NULL_HANDLE);
-        vk::QueueWaitIdle(ray_tracing_queue);
-        m_errorMonitor->VerifyFound();
+            // Update the index of the texture that the shaders should read
+            uint32_t *mapped_storage_buffer_data = (uint32_t *)storage_buffer.memory().map();
+            mapped_storage_buffer_data[0] = test.rgen_index;
+            mapped_storage_buffer_data[1] = test.ahit_index;
+            mapped_storage_buffer_data[2] = test.chit_index;
+            mapped_storage_buffer_data[3] = test.miss_index;
+            mapped_storage_buffer_data[4] = test.intr_index;
+            mapped_storage_buffer_data[5] = test.call_index;
+            mapped_storage_buffer_data[6] = 0;
+            mapped_storage_buffer_data[7] = 0;
+            mapped_storage_buffer_data[8] = 0;
+            mapped_storage_buffer_data[9] = 0;
+            mapped_storage_buffer_data[10] = 0;
+            mapped_storage_buffer_data[11] = 0;
+            storage_buffer.memory().unmap();
 
-        mapped_storage_buffer_data = (uint32_t *)storage_buffer.memory().map();
-        ASSERT_TRUE(mapped_storage_buffer_data[6] == 1);
-        ASSERT_TRUE(mapped_storage_buffer_data[7] == 2);
-        ASSERT_TRUE(mapped_storage_buffer_data[8] == 3);
-        ASSERT_TRUE(mapped_storage_buffer_data[9] == 4);
-        ASSERT_TRUE(mapped_storage_buffer_data[10] == 5);
-        ASSERT_TRUE(mapped_storage_buffer_data[11] == 6);
-        storage_buffer.memory().unmap();
+            m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotUpdated");
+            vk::QueueSubmit(ray_tracing_queue, 1, &submit_info, VK_NULL_HANDLE);
+            vk::QueueWaitIdle(ray_tracing_queue);
+            m_errorMonitor->VerifyFound();
 
-        vk::DestroyPipeline(m_device->handle(), pipeline, nullptr);
+            mapped_storage_buffer_data = (uint32_t *)storage_buffer.memory().map();
+            if (i == 1) {
+                ASSERT_TRUE(mapped_storage_buffer_data[6] == 1);
+                ASSERT_TRUE(mapped_storage_buffer_data[7] == 2);
+                ASSERT_TRUE(mapped_storage_buffer_data[8] == 3);
+                ASSERT_TRUE(mapped_storage_buffer_data[9] == 4);
+                ASSERT_TRUE(mapped_storage_buffer_data[10] == 5);
+                ASSERT_TRUE(mapped_storage_buffer_data[11] == 6);
+            }
+            storage_buffer.memory().unmap();
+
+            vk::DestroyPipeline(m_device->handle(), pipeline, nullptr);
+        }
     }
 }
 
