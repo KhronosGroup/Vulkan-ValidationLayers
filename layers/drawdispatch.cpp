@@ -259,6 +259,20 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer c
     return skip;
 }
 
+bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
+                                               VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
+                                               VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
+                                               VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
+                                               VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
+                                               VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
+                                               uint32_t width, uint32_t height, uint32_t depth) const {
+    bool skip =
+        ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, CMD_TRACERAYSNV, "vkCmdTraceRaysNV()",
+                            VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdTraceRaysNV-commandBuffer-cmdpool", "VUID-vkCmdTraceRaysNV-renderpass",
+                            "VUID-vkCmdTraceRaysNV-None-02700", "VUID-vkCmdTraceRaysNV-commandBuffer-02701");
+    return skip;
+}
+
 void CoreChecks::PostCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
                                               VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
                                               VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
