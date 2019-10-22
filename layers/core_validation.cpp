@@ -826,7 +826,7 @@ static const char *string_VuidNotCompatibleForSet(CMD_TYPE cmd_type) {
         // Not implemented on this path...
         // { CMD_DRAWDISPATCHBASE, "VUID-vkCmdDispatchBase-None-02697" },
         // { CMD_DRAWINDIRECTBYTECOUNTEXT, "VUID-vkCmdDrawIndirectByteCountEXT-None-02697"},
-        // { CMD_TRACERAYSNV, "VUID-vkCmdTraceRaysNV-None-02697"},
+        {CMD_TRACERAYSNV, "VUID-vkCmdTraceRaysNV-None-02697"},
     };
     auto find_it = incompatible_for_set_vuid.find(cmd_type);
     if (find_it == incompatible_for_set_vuid.cend()) {
