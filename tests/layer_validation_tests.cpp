@@ -245,7 +245,7 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, co
     if (rp2_supported && rp2_vuid) {
         PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
             (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
-        safe_VkRenderPassCreateInfo2KHR create_info2;
+        safe_VkRenderPassCreateInfo2 create_info2;
         ConvertVkRenderPassCreateInfoToV2KHR(*create_info, &create_info2);
 
         error_monitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, rp2_vuid);
@@ -268,7 +268,7 @@ void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice de
     if (rp2_supported) {
         PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
             (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2KHR");
-        safe_VkRenderPassCreateInfo2KHR create_info2;
+        safe_VkRenderPassCreateInfo2 create_info2;
         ConvertVkRenderPassCreateInfoToV2KHR(*create_info, &create_info2);
 
         error_monitor->ExpectSuccess();

@@ -679,7 +679,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
 }
 
 void CoreChecks::TransitionAttachmentRefLayout(CMD_BUFFER_STATE *pCB, FRAMEBUFFER_STATE *pFramebuffer,
-                                               const safe_VkAttachmentReference2KHR &ref) {
+                                               const safe_VkAttachmentReference2 &ref) {
     if (ref.attachment != VK_ATTACHMENT_UNUSED) {
         auto image_view = GetAttachmentImageViewState(pFramebuffer, ref.attachment);
         if (image_view) {

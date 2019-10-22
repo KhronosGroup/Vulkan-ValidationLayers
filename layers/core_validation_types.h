@@ -1012,7 +1012,7 @@ struct DAGNode {
 
 struct RENDER_PASS_STATE : public BASE_NODE {
     VkRenderPass renderPass;
-    safe_VkRenderPassCreateInfo2KHR createInfo;
+    safe_VkRenderPassCreateInfo2 createInfo;
     std::vector<std::vector<uint32_t>> self_dependencies;
     std::vector<DAGNode> subpassToNode;
     std::unordered_map<uint32_t, bool> attachment_first_read;

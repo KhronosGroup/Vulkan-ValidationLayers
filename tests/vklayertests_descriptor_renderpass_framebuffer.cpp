@@ -1978,7 +1978,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentDescriptionInvalidFinalLayout) {
             attach_desc.format = depth_stencil_format;
 
             if (rp2Supported) {
-                safe_VkRenderPassCreateInfo2KHR rpci2;
+                safe_VkRenderPassCreateInfo2 rpci2;
 
                 attach_desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
                 ConvertVkRenderPassCreateInfoToV2KHR(rpci, &rpci2);
@@ -2006,7 +2006,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentDescriptionInvalidFinalLayout) {
             attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
 
             if (rp2Supported) {
-                safe_VkRenderPassCreateInfo2KHR rpci2;
+                safe_VkRenderPassCreateInfo2 rpci2;
 
                 attach_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR;
                 ConvertVkRenderPassCreateInfoToV2KHR(rpci, &rpci2);
@@ -2085,7 +2085,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentDescriptionInvalidFinalLayout) {
             auto attachment_description_stencil_layout = lvl_init_struct<VkAttachmentDescriptionStencilLayoutKHR>();
             attachment_description_stencil_layout.stencilInitialLayout = VK_IMAGE_LAYOUT_GENERAL;
             attachment_description_stencil_layout.stencilFinalLayout = VK_IMAGE_LAYOUT_GENERAL;
-            safe_VkRenderPassCreateInfo2KHR rpci2;
+            safe_VkRenderPassCreateInfo2 rpci2;
             ConvertVkRenderPassCreateInfoToV2KHR(rpci, &rpci2);
             rpci2.pAttachments[0].pNext = &attachment_description_stencil_layout;
 
@@ -2420,7 +2420,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReferenceInvalidLayout) {
                          "VUID-VkAttachmentReference2KHR-layout-03077");
 
     if (rp2Supported) {
-        safe_VkRenderPassCreateInfo2KHR rpci2;
+        safe_VkRenderPassCreateInfo2 rpci2;
         ConvertVkRenderPassCreateInfoToV2KHR(rpci, &rpci2);
 
         if (separate_depth_stencil_layouts_features.separateDepthStencilLayouts) {
@@ -2544,7 +2544,7 @@ TEST_F(VkLayerTest, RenderPassCreateOverlappingCorrelationMasks) {
         viewMasks[0] = 0;
         correlationMasks[0] = 0;
         correlationMasks[1] = 0;
-        safe_VkRenderPassCreateInfo2KHR safe_rpci2;
+        safe_VkRenderPassCreateInfo2 safe_rpci2;
         ConvertVkRenderPassCreateInfoToV2KHR(rpci, &safe_rpci2);
 
         TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), safe_rpci2.ptr(),

@@ -3203,7 +3203,7 @@ TEST_F(VkLayerTest, HostQueryResetInvalidQueryPool) {
     vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 
     // Attempt to reuse the query pool handle.
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkResetQueryPoolEXT-queryPool-parameter");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkResetQueryPool-queryPool-parameter");
     fpvkResetQueryPoolEXT(m_device->device(), query_pool, 0, 1);
     m_errorMonitor->VerifyFound();
 }
@@ -3262,7 +3262,7 @@ TEST_F(VkLayerTest, HostQueryResetWrongDevice) {
     VkDevice second_device;
     ASSERT_VK_SUCCESS(vk::CreateDevice(gpu(), &device_create_info, nullptr, &second_device));
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkResetQueryPoolEXT-queryPool-parent");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkResetQueryPool-queryPool-parent");
     // Run vk::ResetQueryPoolExt on the wrong device.
     fpvkResetQueryPoolEXT(second_device, query_pool, 0, 1);
     m_errorMonitor->VerifyFound();
