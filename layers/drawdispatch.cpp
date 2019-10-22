@@ -192,7 +192,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandB
                                                 buffer_state);
     }
 
-    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTCOUNTKHR,
+    skip |= ValidateCmdDrawType(commandBuffer, false, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDIRECTCOUNT,
                                 "vkCmdDrawIndirectCountKHR()", VK_QUEUE_GRAPHICS_BIT,
                                 "VUID-vkCmdDrawIndirectCountKHR-commandBuffer-cmdpool", "VUID-vkCmdDrawIndirectCountKHR-renderpass",
                                 "VUID-vkCmdDrawIndirectCountKHR-None-02700", "VUID-vkCmdDrawIndirectCountKHR-commandBuffer-02701",
@@ -242,7 +242,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer c
     }
 
     skip |= ValidateCmdDrawType(
-        commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECTCOUNTKHR, "vkCmdDrawIndexedIndirectCountKHR()",
+        commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECTCOUNT, "vkCmdDrawIndexedIndirectCountKHR()",
         VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdDrawIndexedIndirectCountKHR-commandBuffer-cmdpool",
         "VUID-vkCmdDrawIndexedIndirectCountKHR-renderpass", "VUID-vkCmdDrawIndexedIndirectCountKHR-None-02700",
         "VUID-vkCmdDrawIndexedIndirectCountKHR-commandBuffer-02701", "VUID-vkCmdDrawIndexedIndirectCountKHR-None-02720");

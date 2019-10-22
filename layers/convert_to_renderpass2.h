@@ -21,4 +21,4 @@
 #pragma once
 #include "vk_safe_struct.h"
 
-void ConvertVkRenderPassCreateInfoToV2KHR(const VkRenderPassCreateInfo& in_struct, safe_VkRenderPassCreateInfo2KHR* out_struct);
+void ConvertVkRenderPassCreateInfoToV2KHR(const VkRenderPassCreateInfo& in_struct, safe_VkRenderPassCreateInfo2* out_struct);

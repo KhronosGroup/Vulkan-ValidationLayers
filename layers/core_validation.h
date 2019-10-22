@@ -99,7 +99,7 @@ class CoreChecks : public ValidationStateTracker {
                                                          uint32_t imageMemBarrierCount,
                                                          const VkImageMemoryBarrier* pImageMemBarriers);
     bool ValidateImageBarrierAttachment(const char* funcName, CMD_BUFFER_STATE const* cb_state, VkFramebuffer framebuffer,
-                                        uint32_t active_subpass, const safe_VkSubpassDescription2KHR& sub_desc,
+                                        uint32_t active_subpass, const safe_VkSubpassDescription2& sub_desc,
                                         const VulkanTypedHandle& rp_handle, uint32_t img_index,
                                         const VkImageMemoryBarrier& img_barrier) const;
     static bool ValidateConcurrentBarrierAtSubmit(const ValidationStateTracker* state_data, const QUEUE_STATE* queue_data,
@@ -133,8 +133,8 @@ class CoreChecks : public ValidationStateTracker {
                                                     VkPipelineStageFlags dest_stage_mask, BarrierOperationsType barrier_op_type,
                                                     const char* function, const char* error_code) const;
     bool ValidateRenderPassImageBarriers(const char* funcName, const CMD_BUFFER_STATE* cb_state, uint32_t active_subpass,
-                                         const safe_VkSubpassDescription2KHR& sub_desc, const VulkanTypedHandle& rp_handle,
-                                         const safe_VkSubpassDependency2KHR* dependencies,
+                                         const safe_VkSubpassDescription2& sub_desc, const VulkanTypedHandle& rp_handle,
+                                         const safe_VkSubpassDependency2* dependencies,
                                          const std::vector<uint32_t>& self_dependencies, uint32_t image_mem_barrier_count,
                                          const VkImageMemoryBarrier* image_barriers) const;
     bool ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE* pCB, const CMD_BUFFER_STATE* pSubCB) const;
@@ -492,7 +492,7 @@ class CoreChecks : public ValidationStateTracker {
     void RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                          const VkSubpassContents contents);
     void TransitionAttachmentRefLayout(CMD_BUFFER_STATE* pCB, FRAMEBUFFER_STATE* pFramebuffer,
-                                       const safe_VkAttachmentReference2KHR& ref);
+                                       const safe_VkAttachmentReference2& ref);
 
     void TransitionSubpassLayouts(CMD_BUFFER_STATE*, const RENDER_PASS_STATE*, const int, FRAMEBUFFER_STATE*);
 

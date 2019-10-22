@@ -744,7 +744,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 rp_error = "VUID-vkCmdDrawIndirect-renderPass-02684";
                 sp_error = "VUID-vkCmdDrawIndirect-subpass-02685";
                 break;
-            case CMD_DRAWINDIRECTCOUNTKHR:
+            case CMD_DRAWINDIRECTCOUNT:
                 rp_error = "VUID-vkCmdDrawIndirectCountKHR-renderPass-02684";
                 sp_error = "VUID-vkCmdDrawIndirectCountKHR-subpass-02685";
                 break;
@@ -752,7 +752,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 rp_error = "VUID-vkCmdDrawIndexedIndirect-renderPass-02684";
                 sp_error = "VUID-vkCmdDrawIndexedIndirect-subpass-02685";
                 break;
-            case CMD_DRAWINDEXEDINDIRECTCOUNTKHR:
+            case CMD_DRAWINDEXEDINDIRECTCOUNT:
                 rp_error = "VUID-vkCmdDrawIndexedIndirectCountKHR-renderPass-02684";
                 sp_error = "VUID-vkCmdDrawIndexedIndirectCountKHR-subpass-02685";
                 break;
@@ -814,9 +814,9 @@ static const char *string_VuidNotCompatibleForSet(CMD_TYPE cmd_type) {
         {CMD_DRAW, "VUID-vkCmdDraw-None-02697"},
         {CMD_DRAWINDEXED, "VUID-vkCmdDrawIndexed-None-02697"},
         {CMD_DRAWINDEXEDINDIRECT, "VUID-vkCmdDrawIndexedIndirect-None-02697"},
-        {CMD_DRAWINDEXEDINDIRECTCOUNTKHR, "VUID-vkCmdDrawIndexedIndirectCountKHR-None-02697"},
+        {CMD_DRAWINDEXEDINDIRECTCOUNT, "VUID-vkCmdDrawIndexedIndirectCountKHR-None-02697"},
         {CMD_DRAWINDIRECT, "VUID-vkCmdDrawIndirect-None-02697"},
-        {CMD_DRAWINDIRECTCOUNTKHR, "VUID-vkCmdDrawIndirectCountKHR-None-02697"},
+        {CMD_DRAWINDIRECTCOUNT, "VUID-vkCmdDrawIndirectCountKHR-None-02697"},
         {CMD_DRAWMESHTASKSINDIRECTCOUNTNV, "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02697"},
         {CMD_DRAWMESHTASKSINDIRECTNV, "VUID-vkCmdDrawMeshTasksIndirectNV-None-02697"},
         {CMD_DRAWMESHTASKSNV, "VUID-vkCmdDrawMeshTasksNV-None-02697"},
@@ -1545,7 +1545,7 @@ bool CoreChecks::ValidateCmdSubpassState(const CMD_BUFFER_STATE *pCB, const CMD_
     bool skip = false;
     if (pCB->activeSubpassContents == VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS &&
         (cmd_type != CMD_EXECUTECOMMANDS && cmd_type != CMD_NEXTSUBPASS && cmd_type != CMD_ENDRENDERPASS &&
-         cmd_type != CMD_NEXTSUBPASS2KHR && cmd_type != CMD_ENDRENDERPASS2KHR)) {
+         cmd_type != CMD_NEXTSUBPASS2 && cmd_type != CMD_ENDRENDERPASS2)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidCommandBuffer,
                         "Commands cannot be called in a subpass using secondary command buffers.");
@@ -5861,7 +5861,7 @@ static VkPipelineStageFlagBits GetLogicallyLatestGraphicsPipelineStage(VkPipelin
 
 // Verify image barrier image state and that the image is consistent with FB image
 bool CoreChecks::ValidateImageBarrierAttachment(const char *funcName, CMD_BUFFER_STATE const *cb_state, VkFramebuffer framebuffer,
-                                                uint32_t active_subpass, const safe_VkSubpassDescription2KHR &sub_desc,
+                                                uint32_t active_subpass, const safe_VkSubpassDescription2 &sub_desc,
                                                 const VulkanTypedHandle &rp_handle, uint32_t img_index,
                                                 const VkImageMemoryBarrier &img_barrier) const {
     bool skip = false;
@@ -5948,8 +5948,8 @@ bool CoreChecks::ValidateImageBarrierAttachment(const char *funcName, CMD_BUFFER
 
 // Validate image barriers within a renderPass
 bool CoreChecks::ValidateRenderPassImageBarriers(const char *funcName, const CMD_BUFFER_STATE *cb_state, uint32_t active_subpass,
-                                                 const safe_VkSubpassDescription2KHR &sub_desc, const VulkanTypedHandle &rp_handle,
-                                                 const safe_VkSubpassDependency2KHR *dependencies,
+                                                 const safe_VkSubpassDescription2 &sub_desc, const VulkanTypedHandle &rp_handle,
+                                                 const safe_VkSubpassDependency2 *dependencies,
                                                  const std::vector<uint32_t> &self_dependencies, uint32_t image_mem_barrier_count,
                                                  const VkImageMemoryBarrier *image_barriers) const {
     bool skip = false;
@@ -8471,7 +8471,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
     }
 
     if (!skip) {
-        safe_VkRenderPassCreateInfo2KHR create_info_2;
+        safe_VkRenderPassCreateInfo2 create_info_2;
         ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo, &create_info_2);
         skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_1, create_info_2.ptr());
     }
@@ -8631,7 +8631,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRe
         skip |= ValidateDepthStencilResolve(report_data, phys_dev_ext_props.depth_stencil_resolve_props, pCreateInfo);
     }
 
-    safe_VkRenderPassCreateInfo2KHR create_info_2(pCreateInfo);
+    safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
     skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_2, create_info_2.ptr());
 
     return skip;
@@ -8689,7 +8689,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                                 pRenderPassAttachmentBeginInfo->attachmentCount,
                                 pFramebufferAttachmentsCreateInfo->attachmentImageInfoCount);
             } else {
-                const safe_VkRenderPassCreateInfo2KHR *pRenderPassCreateInfo =
+                const safe_VkRenderPassCreateInfo2 *pRenderPassCreateInfo =
                     &GetRenderPassState(pRenderPassBeginInfo->renderPass)->createInfo;
                 for (uint32_t i = 0; i < pRenderPassAttachmentBeginInfo->attachmentCount; ++i) {
                     const VkImageViewCreateInfo *pImageViewCreateInfo =
@@ -8933,7 +8933,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2KHR-commandBuffer-cmdpool" : "VUID-vkCmdBeginRenderPass-commandBuffer-cmdpool";
         skip |= ValidateCmdQueueFlags(cb_state, function_name, VK_QUEUE_GRAPHICS_BIT, vuid);
 
-        const CMD_TYPE cmd_type = use_rp2 ? CMD_BEGINRENDERPASS2KHR : CMD_BEGINRENDERPASS;
+        const CMD_TYPE cmd_type = use_rp2 ? CMD_BEGINRENDERPASS2 : CMD_BEGINRENDERPASS;
         skip |= ValidateCmd(cb_state, cmd_type, function_name);
     }
 
@@ -9009,7 +9009,7 @@ bool CoreChecks::ValidateCmdNextSubpass(RenderPassCreateVersion rp_version, VkCo
 
     vuid = use_rp2 ? "VUID-vkCmdNextSubpass2KHR-commandBuffer-cmdpool" : "VUID-vkCmdNextSubpass-commandBuffer-cmdpool";
     skip |= ValidateCmdQueueFlags(cb_state, function_name, VK_QUEUE_GRAPHICS_BIT, vuid);
-    const CMD_TYPE cmd_type = use_rp2 ? CMD_NEXTSUBPASS2KHR : CMD_NEXTSUBPASS;
+    const CMD_TYPE cmd_type = use_rp2 ? CMD_NEXTSUBPASS2 : CMD_NEXTSUBPASS;
     skip |= ValidateCmd(cb_state, cmd_type, function_name);
 
     vuid = use_rp2 ? "VUID-vkCmdNextSubpass2KHR-renderpass" : "VUID-vkCmdNextSubpass-renderpass";
@@ -9076,7 +9076,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(RenderPassCreateVersion rp_version, Vk
     vuid = use_rp2 ? "VUID-vkCmdEndRenderPass2KHR-commandBuffer-cmdpool" : "VUID-vkCmdEndRenderPass-commandBuffer-cmdpool";
     skip |= ValidateCmdQueueFlags(cb_state, function_name, VK_QUEUE_GRAPHICS_BIT, vuid);
 
-    const CMD_TYPE cmd_type = use_rp2 ? CMD_ENDRENDERPASS2KHR : CMD_ENDRENDERPASS;
+    const CMD_TYPE cmd_type = use_rp2 ? CMD_ENDRENDERPASS2 : CMD_ENDRENDERPASS;
     skip |= ValidateCmd(cb_state, cmd_type, function_name);
     return skip;
 }
