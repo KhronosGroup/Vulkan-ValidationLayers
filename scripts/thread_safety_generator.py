@@ -431,6 +431,20 @@ public:
     std::unordered_map<VkCommandPool, std::unordered_set<VkCommandBuffer>> pool_command_buffers_map;
     std::unordered_map<VkDevice, std::unordered_set<VkQueue>> device_queues_map;
 
+    // Track per-descriptorsetlayout and per-descriptorset whether UPDATE_AFTER_BIND is used.
+    // This is used to (sloppily) implement the relaxed externsync rules for UPDATE_AFTER_BIND
+    // descriptors. We model updates of UPDATE_AFTER_BIND descriptors as if they were reads
+    // rather than writes, because they only conflict with the set being freed or reset.
+    //
+    // We don't track the UPDATE_AFTER_BIND state per-binding for a couple reasons:
+    // (1) We only have one counter per object, and if we treated non-UAB as writes
+    //     and UAB as reads then they'd appear to conflict with each other.
+    // (2) Avoid additional tracking of descriptor binding state in the descriptor set
+    //     layout, and tracking of which bindings are accessed by a VkDescriptorUpdateTemplate.
+    vl_concurrent_unordered_map<VkDescriptorSetLayout, bool, 4> dsl_update_after_bind_map;
+    vl_concurrent_unordered_map<VkDescriptorSet, bool, 6> ds_update_after_bind_map;
+    bool DsUpdateAfterBind(VkDescriptorSet) const;
+
     counter<VkCommandBuffer> c_VkCommandBuffer;
     counter<VkDevice> c_VkDevice;
     counter<VkInstance> c_VkInstance;
@@ -589,6 +603,40 @@ void ThreadSafety::PostCallRecordAllocateCommandBuffers(VkDevice device, const V
     }
 }
 
+
+void ThreadSafety::PreCallRecordCreateDescriptorSetLayout(
+    VkDevice                                    device,
+    const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkDescriptorSetLayout*                      pSetLayout) {
+    StartReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PostCallRecordCreateDescriptorSetLayout(
+    VkDevice                                    device,
+    const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkDescriptorSetLayout*                      pSetLayout,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device);
+    if (result == VK_SUCCESS) {
+        CreateObject(*pSetLayout);
+
+        // Check whether any binding uses UPDATE_AFTER_BIND
+        bool update_after_bind = false;
+        const auto *flags_create_info = lvl_find_in_chain<VkDescriptorSetLayoutBindingFlagsCreateInfoEXT>(pCreateInfo->pNext);
+        if (flags_create_info) {
+            for (uint32_t i = 0; i < flags_create_info->bindingCount; ++i) {
+                if (flags_create_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT) {
+                    update_after_bind = true;
+                    break;
+                }
+            }
+        }
+        dsl_update_after_bind_map.insert_or_assign(*pSetLayout, update_after_bind);
+    }
+}
+
 void ThreadSafety::PreCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
                                                        VkDescriptorSet *pDescriptorSets) {
     StartReadObjectParentInstance(device);
@@ -607,6 +655,13 @@ void ThreadSafety::PostCallRecordAllocateDescriptorSets(VkDevice device, const V
         for (uint32_t index0 = 0; index0 < pAllocateInfo->descriptorSetCount; index0++) {
             CreateObject(pDescriptorSets[index0]);
             pool_descriptor_sets.insert(pDescriptorSets[index0]);
+
+            auto iter = dsl_update_after_bind_map.find(pAllocateInfo->pSetLayouts[index0]);
+            if (iter != dsl_update_after_bind_map.end()) {
+                ds_update_after_bind_map.insert_or_assign(pDescriptorSets[index0], iter->second);
+            } else {
+                assert(0 && "descriptor set layout not found");
+            }
         }
     }
 }
@@ -726,6 +781,151 @@ void ThreadSafety::PostCallRecordResetDescriptorPool(
         }
         pool_descriptor_sets_map[descriptorPool].clear();
     }
+}
+
+bool ThreadSafety::DsUpdateAfterBind(VkDescriptorSet set) const
+{
+    auto iter = ds_update_after_bind_map.find(set);
+    if (iter != ds_update_after_bind_map.end()) {
+        return iter->second;
+    }
+    return false;
+}
+
+void ThreadSafety::PreCallRecordUpdateDescriptorSets(
+    VkDevice                                    device,
+    uint32_t                                    descriptorWriteCount,
+    const VkWriteDescriptorSet*                 pDescriptorWrites,
+    uint32_t                                    descriptorCopyCount,
+    const VkCopyDescriptorSet*                  pDescriptorCopies) {
+    StartReadObjectParentInstance(device);
+    if (pDescriptorWrites) {
+        for (uint32_t index=0; index < descriptorWriteCount; index++) {
+            auto dstSet = pDescriptorWrites[index].dstSet;
+            bool update_after_bind = DsUpdateAfterBind(dstSet);
+            if (update_after_bind) {
+                StartReadObject(dstSet);
+            } else {
+                StartWriteObject(dstSet);
+            }
+        }
+    }
+    if (pDescriptorCopies) {
+        for (uint32_t index=0; index < descriptorCopyCount; index++) {
+            auto dstSet = pDescriptorCopies[index].dstSet;
+            bool update_after_bind = DsUpdateAfterBind(dstSet);
+            if (update_after_bind) {
+                StartReadObject(dstSet);
+            } else {
+                StartWriteObject(dstSet);
+            }
+            StartReadObject(pDescriptorCopies[index].srcSet);
+        }
+    }
+    // Host access to pDescriptorWrites[].dstSet must be externally synchronized
+    // Host access to pDescriptorCopies[].dstSet must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordUpdateDescriptorSets(
+    VkDevice                                    device,
+    uint32_t                                    descriptorWriteCount,
+    const VkWriteDescriptorSet*                 pDescriptorWrites,
+    uint32_t                                    descriptorCopyCount,
+    const VkCopyDescriptorSet*                  pDescriptorCopies) {
+    FinishReadObjectParentInstance(device);
+    if (pDescriptorWrites) {
+        for (uint32_t index=0; index < descriptorWriteCount; index++) {
+            auto dstSet = pDescriptorWrites[index].dstSet;
+            bool update_after_bind = DsUpdateAfterBind(dstSet);
+            if (update_after_bind) {
+                FinishReadObject(dstSet);
+            } else {
+                FinishWriteObject(dstSet);
+            }
+        }
+    }
+    if (pDescriptorCopies) {
+        for (uint32_t index=0; index < descriptorCopyCount; index++) {
+            auto dstSet = pDescriptorCopies[index].dstSet;
+            bool update_after_bind = DsUpdateAfterBind(dstSet);
+            if (update_after_bind) {
+                FinishReadObject(dstSet);
+            } else {
+                FinishWriteObject(dstSet);
+            }
+            FinishReadObject(pDescriptorCopies[index].srcSet);
+        }
+    }
+    // Host access to pDescriptorWrites[].dstSet must be externally synchronized
+    // Host access to pDescriptorCopies[].dstSet must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordUpdateDescriptorSetWithTemplate(
+    VkDevice                                    device,
+    VkDescriptorSet                             descriptorSet,
+    VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
+    const void*                                 pData) {
+    StartReadObjectParentInstance(device);
+    StartReadObject(descriptorUpdateTemplate);
+
+    bool update_after_bind = DsUpdateAfterBind(descriptorSet);
+    if (update_after_bind) {
+        StartReadObject(descriptorSet);
+    } else {
+        StartWriteObject(descriptorSet);
+    }
+    // Host access to descriptorSet must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordUpdateDescriptorSetWithTemplate(
+    VkDevice                                    device,
+    VkDescriptorSet                             descriptorSet,
+    VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
+    const void*                                 pData) {
+    FinishReadObjectParentInstance(device);
+    FinishReadObject(descriptorUpdateTemplate);
+
+    bool update_after_bind = DsUpdateAfterBind(descriptorSet);
+    if (update_after_bind) {
+        FinishReadObject(descriptorSet);
+    } else {
+        FinishWriteObject(descriptorSet);
+    }
+    // Host access to descriptorSet must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordUpdateDescriptorSetWithTemplateKHR(
+    VkDevice                                    device,
+    VkDescriptorSet                             descriptorSet,
+    VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
+    const void*                                 pData) {
+    StartReadObjectParentInstance(device);
+    StartReadObject(descriptorUpdateTemplate);
+
+    bool update_after_bind = DsUpdateAfterBind(descriptorSet);
+    if (update_after_bind) {
+        StartReadObject(descriptorSet);
+    } else {
+        StartWriteObject(descriptorSet);
+    }
+    // Host access to descriptorSet must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordUpdateDescriptorSetWithTemplateKHR(
+    VkDevice                                    device,
+    VkDescriptorSet                             descriptorSet,
+    VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
+    const void*                                 pData) {
+    FinishReadObjectParentInstance(device);
+    FinishReadObject(descriptorUpdateTemplate);
+
+    bool update_after_bind = DsUpdateAfterBind(descriptorSet);
+    if (update_after_bind) {
+        FinishReadObject(descriptorSet);
+    } else {
+        FinishWriteObject(descriptorSet);
+    }
+    // Host access to descriptorSet must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
@@ -1287,6 +1487,10 @@ void ThreadSafety::PostCallRecordGetDeviceQueue2(
             'vkDestroyDevice',
             'vkGetDeviceQueue',
             'vkGetDeviceQueue2',
+            'vkCreateDescriptorSetLayout',
+            'vkUpdateDescriptorSets',
+            'vkUpdateDescriptorSetWithTemplate',
+            'vkUpdateDescriptorSetWithTemplateKHR',
         ]
         if name == 'vkQueuePresentKHR' or (name in special_functions and self.source_file):
             return
