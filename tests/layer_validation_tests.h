@@ -661,10 +661,14 @@ struct thread_data_struct {
     VkCommandBuffer commandBuffer;
     VkDevice device;
     VkEvent event;
-    bool bailout;
+    VkDescriptorSet descriptorSet;
+    VkBuffer buffer;
+    uint32_t binding;
+    bool *bailout;
 };
 
 extern "C" void *AddToCommandBuffer(void *arg);
+extern "C" void *UpdateDescriptor(void *arg);
 #endif  // GTEST_IS_THREADSAFE
 
 extern "C" void *ReleaseNullFence(void *arg);

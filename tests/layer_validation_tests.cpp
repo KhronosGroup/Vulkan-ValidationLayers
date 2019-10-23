@@ -157,12 +157,39 @@ extern "C" void *AddToCommandBuffer(void *arg) {
 
     for (int i = 0; i < 80000; i++) {
         vk::CmdSetEvent(data->commandBuffer, data->event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-        if (data->bailout) {
+        if (*data->bailout) {
             break;
         }
     }
     return NULL;
 }
+
+extern "C" void *UpdateDescriptor(void *arg) {
+    struct thread_data_struct *data = (struct thread_data_struct *)arg;
+
+    VkDescriptorBufferInfo buffer_info = {};
+    buffer_info.buffer = data->buffer;
+    buffer_info.offset = 0;
+    buffer_info.range = 1;
+
+    VkWriteDescriptorSet descriptor_write;
+    memset(&descriptor_write, 0, sizeof(descriptor_write));
+    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_write.dstSet = data->descriptorSet;
+    descriptor_write.dstBinding = data->binding;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptor_write.pBufferInfo = &buffer_info;
+
+    for (int i = 0; i < 80000; i++) {
+        vk::UpdateDescriptorSets(data->device, 1, &descriptor_write, 0, NULL);
+        if (*data->bailout) {
+            break;
+        }
+    }
+    return NULL;
+}
+
 #endif  // GTEST_IS_THREADSAFE
 
 extern "C" void *ReleaseNullFence(void *arg) {
@@ -170,7 +197,7 @@ extern "C" void *ReleaseNullFence(void *arg) {
 
     for (int i = 0; i < 40000; i++) {
         vk::DestroyFence(data->device, VK_NULL_HANDLE, NULL);
-        if (data->bailout) {
+        if (*data->bailout) {
             break;
         }
     }
