@@ -4211,6 +4211,8 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComp
     }
 }
 
+// ShaderC does validation and croaks if these particular limits are exceeded
+#if !defined(ANDROID)
 TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
     TEST_DESCRIPTION(
         "Test that errors are produced when the number of input and/or output components to the geometry stage exceeds the device "
@@ -4298,6 +4300,7 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
         }
     }
 }
+#endif  // !ANDROID
 
 TEST_F(VkLayerTest, CreatePipelineExceedMaxFragmentInputComponents) {
     TEST_DESCRIPTION(
