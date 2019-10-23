@@ -6142,8 +6142,9 @@ TEST_F(VkPositiveLayerTest, ThreadNullFenceCollision) {
 
     struct thread_data_struct data;
     data.device = m_device->device();
-    data.bailout = false;
-    m_errorMonitor->SetBailout(&data.bailout);
+    bool bailout = false;
+    data.bailout = &bailout;
+    m_errorMonitor->SetBailout(data.bailout);
 
     // Call vk::DestroyFence of VK_NULL_HANDLE repeatedly using multiple threads.
     // There should be no validation error from collision of that non-object.
