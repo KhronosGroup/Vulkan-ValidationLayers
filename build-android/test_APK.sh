@@ -249,7 +249,7 @@ adb $serialFlag shell input keyevent "KEYCODE_HOME"
 adb $serialFlag shell am force-stop com.example.VulkanLayerValidationTests
 
 echo
-echo Fetching test output and filtered logcat text...
+echo Fetching test output and logcat text...
 
 # Avoid characters that are illegal in Windows filenames, so these
 # files can be archived to a Windows host system for later reference
@@ -259,7 +259,7 @@ errFile="VulkanLayerValidationTests.$platform.$today.err.txt"
 logFile="VulkanLayerValidationTests.$platform.$today.logcat.txt"
 adb $serialFlag pull /sdcard/Android/data/com.example.VulkanLayerValidationTests/files/out.txt $outFile
 adb $serialFlag pull /sdcard/Android/data/com.example.VulkanLayerValidationTests/files/err.txt $errFile
-adb $serialFlag logcat -d | grep VulkanLayerValidationTests > $logFile
+adb $serialFlag logcat -d > $logFile
 
 if [ -f $outFile ]; then
     echo $outFile size $(wc -c < $outFile)
