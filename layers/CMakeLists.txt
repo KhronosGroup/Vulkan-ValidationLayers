@@ -206,6 +206,10 @@ set(SHADER_DEBUG_PRINTF_LIBRARY_FILES
     shader_debug_printf.cpp
     shader_debug_printf.h)
 
+set(GPU_SHARED_LIBRARY_FILES
+    gpu_shared.cpp
+    gpu_shared.h)
+
 if(BUILD_LAYERS)
     AddVkLayer(khronos_validation ""
         ${CHASSIS_LIBRARY_FILES}
@@ -214,6 +218,7 @@ if(BUILD_LAYERS)
         ${THREAD_SAFETY_LIBRARY_FILES}
         ${STATELESS_VALIDATION_LIBRARY_FILES}
         ${BEST_PRACTICES_LIBRARY_FILES}
+        ${GPU_SHARED_LIBRARY_FILES}
         ${GPU_ASSISTED_LIBRARY_FILES}
         ${SHADER_DEBUG_PRINTF_LIBRARY_FILES})
 
