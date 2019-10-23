@@ -23,6 +23,7 @@
 #include "chassis.h"
 #include "state_tracker.h"
 #include "vk_mem_alloc.h"
+#include "gpu_shared.h"
 class GpuAssisted;
 
 struct GpuAssistedDeviceMemoryBlock {
@@ -47,33 +48,6 @@ struct GpuAssistedBufferInfo {
           desc_set(desc_set),
           desc_pool(desc_pool),
           pipeline_bind_point(pipeline_bind_point){};
-};
-
-struct GpuAssistedQueueBarrierCommandInfo {
-    VkCommandPool barrier_command_pool = VK_NULL_HANDLE;
-    VkCommandBuffer barrier_command_buffer = VK_NULL_HANDLE;
-};
-
-// Class to encapsulate Descriptor Set allocation.  This manager creates and destroys Descriptor Pools
-// as needed to satisfy requests for descriptor sets.
-class GpuAssistedDescriptorSetManager {
-  public:
-    GpuAssistedDescriptorSetManager(GpuAssisted* dev_data);
-    ~GpuAssistedDescriptorSetManager();
-
-    VkResult GetDescriptorSet(VkDescriptorPool* desc_pool, VkDescriptorSet* desc_sets);
-    VkResult GetDescriptorSets(uint32_t count, VkDescriptorPool* pool, std::vector<VkDescriptorSet>* desc_sets);
-    void PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set);
-
-  private:
-    static const uint32_t kItemsPerChunk = 512;
-    struct PoolTracker {
-        uint32_t size;
-        uint32_t used;
-    };
-
-    GpuAssisted* dev_data_;
-    std::unordered_map<VkDescriptorPool, struct PoolTracker> desc_pool_map_;
 };
 
 struct GpuAssistedShaderTracker {
@@ -110,21 +84,28 @@ struct GpuAssistedAccelerationStructureBuildValidationState {
 };
 
 class GpuAssisted : public ValidationStateTracker {
-    bool aborted = false;
+    VkPhysicalDeviceFeatures supported_features;
     VkBool32 shaderInt64;
-    uint32_t adjusted_max_desc_sets;
-    uint32_t desc_set_bind_index;
     uint32_t unique_shader_module_id = 0;
-    std::unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
-    std::unique_ptr<GpuAssistedDescriptorSetManager> desc_set_manager;
-    std::map<VkQueue, GpuAssistedQueueBarrierCommandInfo> queue_barrier_command_infos;
     std::unordered_map<VkCommandBuffer, std::vector<GpuAssistedBufferInfo>> command_buffer_map;  // gpu_buffer_list;
     uint32_t output_buffer_size;
-    VmaAllocator vmaAllocator = {};
-    PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
     std::map<VkDeviceAddress, VkDeviceSize> buffer_map;
     GpuAssistedAccelerationStructureBuildValidationState acceleration_structure_validation_state;
-    std::vector<GpuAssistedBufferInfo>& GetGpuAssistedBufferInfo(const VkCommandBuffer command_buffer) {
+
+  public:
+    bool aborted = false;
+    VkDevice device;
+    VkPhysicalDevice physicalDevice;
+    uint32_t adjusted_max_desc_sets;
+    uint32_t desc_set_bind_index;
+    VkDescriptorSetLayout debug_desc_layout;
+    VkDescriptorSetLayout dummy_desc_layout;
+    std::unique_ptr<SharedDescriptorSetManager> desc_set_manager;
+    std::unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
+    PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
+    VmaAllocator vmaAllocator = {};
+    std::map<VkQueue, SharedQueueBarrierCommandInfo> queue_barrier_command_infos;
+    std::vector<GpuAssistedBufferInfo>& GetBufferInfo(const VkCommandBuffer command_buffer) {
         auto buffer_list = command_buffer_map.find(command_buffer);
         if (buffer_list == command_buffer_map.end()) {
             std::vector<GpuAssistedBufferInfo> new_list{};
@@ -134,12 +115,9 @@ class GpuAssisted : public ValidationStateTracker {
         return buffer_list->second;
     }
 
+  public:
     template <typename T>
     void ReportSetupProblem(T object, const char* const specific_message) const;
-
-  public:
-    VkDescriptorSetLayout debug_desc_layout;
-    VkDescriptorSetLayout dummy_desc_layout;
     void PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
                                    safe_VkDeviceCreateInfo* modified_create_info);
@@ -191,15 +169,6 @@ class GpuAssisted : public ValidationStateTracker {
                                                    const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
                                                    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                    void* crtpl_state_data);
-    template <typename CreateInfo, typename SafeCreateInfo>
-    void PreCallRecordPipelineCreations(uint32_t count, const CreateInfo* pCreateInfos, const VkAllocationCallbacks* pAllocator,
-                                        VkPipeline* pPipelines, std::vector<std::shared_ptr<PIPELINE_STATE>>& pipe_state,
-                                        std::vector<SafeCreateInfo>* new_pipeline_create_infos,
-                                        const VkPipelineBindPoint bind_point);
-    template <typename CreateInfo>
-    void PostCallRecordPipelineCreations(const uint32_t count, const CreateInfo* pCreateInfos,
-                                         const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                         const VkPipelineBindPoint bind_point);
     void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
@@ -222,11 +191,9 @@ class GpuAssisted : public ValidationStateTracker {
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                          void* csm_state_data);
-    void AnalyzeAndReportError(CMD_BUFFER_STATE* cb_node, VkQueue queue, VkPipelineBindPoint pipeline_bind_point,
-                               uint32_t operation_index, uint32_t* const debug_output_buffer);
-    void ProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE* cb_node);
+    void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, VkPipelineBindPoint pipeline_bind_point,
+                                    uint32_t operation_index, uint32_t* const debug_output_buffer);
     void UpdateInstrumentationBuffer(CMD_BUFFER_STATE* cb_node);
-    void SubmitBarrier(VkQueue queue);
     void PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence);
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                    VkResult result);
@@ -281,5 +248,4 @@ class GpuAssisted : public ValidationStateTracker {
                                                    VkPhysicalDeviceProperties* pPhysicalDeviceProperties);
     void PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
                                                     VkPhysicalDeviceProperties2* pPhysicalDeviceProperties2);
-    VkResult InitializeVma(VkPhysicalDevice physicalDevice, VkDevice device, VmaAllocator* pAllocator);
 };
