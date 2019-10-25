@@ -8387,3 +8387,117 @@ TEST_F(VkPositiveLayerTest, GeometryShaderPassthroughNV) {
 
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    if (!AddSwapchainDeviceExtension()) {
+        printf("%s swapchain extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!InitSwapchain()) {
+        printf("%s Cannot create surface or swapchain, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
+        return;
+    }
+    uint32_t image_index = 0, image_count;
+    PFN_vkGetSwapchainImagesKHR fpGetSwapchainImagesKHR =
+        (PFN_vkGetSwapchainImagesKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetSwapchainImagesKHR");
+    fpGetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, NULL);
+    VkImage *swapchainImages = (VkImage *)malloc(image_count * sizeof(VkImage));
+    fpGetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, swapchainImages);
+    VkFenceCreateInfo fenceci = {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, 0};
+    VkFence fence;
+    VkResult ret = vk::CreateFence(m_device->device(), &fenceci, nullptr, &fence);
+    ASSERT_VK_SUCCESS(ret);
+    PFN_vkAcquireNextImageKHR fpAcquireNextImageKHR =
+        (PFN_vkAcquireNextImageKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkAcquireNextImageKHR");
+    ret = fpAcquireNextImageKHR(m_device->handle(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fence, &image_index);
+    ASSERT_VK_SUCCESS(ret);
+    VkAttachmentDescription attach[] = {
+        {0, VK_FORMAT_B8G8R8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
+         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+    };
+    VkAttachmentReference att_ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+
+    VkSubpassDescription subpass = {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &att_ref, nullptr, nullptr, 0, nullptr};
+    VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attach, 1, &subpass, 0, nullptr};
+    VkRenderPass rp1, rp2;
+
+    ret = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp1);
+    ASSERT_VK_SUCCESS(ret);
+    attach[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    ret = vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &rp2);
+    VkImageViewCreateInfo ivci = {
+        VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        nullptr,
+        0,
+        swapchainImages[image_index],
+        VK_IMAGE_VIEW_TYPE_2D,
+        VK_FORMAT_B8G8R8A8_UNORM,
+        {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+         VK_COMPONENT_SWIZZLE_IDENTITY},
+        {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
+    };
+    VkImageView view;
+    ret = vk::CreateImageView(m_device->device(), &ivci, nullptr, &view);
+    ASSERT_VK_SUCCESS(ret);
+    VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp1, 1, &view, 32, 32, 1};
+    VkFramebuffer fb1, fb2;
+    ret = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb1);
+    fci.renderPass = rp2;
+    ret = vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &fb2);
+    ASSERT_VK_SUCCESS(ret);
+    VkRenderPassBeginInfo rpbi = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, rp1, fb1, {{0, 0}, {32, 32}}, 0, nullptr};
+    m_commandBuffer->begin();
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+    rpbi.framebuffer = fb2;
+    rpbi.renderPass = rp2;
+    vk::CmdBeginRenderPass(m_commandBuffer->handle(), &rpbi, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdEndRenderPass(m_commandBuffer->handle());
+
+    VkImageMemoryBarrier img_barrier = {};
+    img_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    img_barrier.srcAccessMask = 0;
+    img_barrier.dstAccessMask = 0;
+    img_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    img_barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    img_barrier.image = swapchainImages[image_index];
+    img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    img_barrier.subresourceRange.baseArrayLayer = 0;
+    img_barrier.subresourceRange.baseMipLevel = 0;
+    img_barrier.subresourceRange.layerCount = 1;
+    img_barrier.subresourceRange.levelCount = 1;
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
+                           nullptr, 0, nullptr, 1, &img_barrier);
+    m_commandBuffer->end();
+    VkSubmitInfo submit_info;
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.pNext = NULL;
+    submit_info.waitSemaphoreCount = 0;
+    submit_info.pWaitSemaphores = NULL;
+    submit_info.pWaitDstStageMask = NULL;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    submit_info.signalSemaphoreCount = 0;
+    submit_info.pSignalSemaphores = NULL;
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    m_errorMonitor->ExpectSuccess();
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyNotFound();
+
+    free(swapchainImages);
+    vk::DestroyFramebuffer(m_device->device(), fb1, NULL);
+    vk::DestroyRenderPass(m_device->device(), rp1, NULL);
+    vk::DestroyFramebuffer(m_device->device(), fb2, NULL);
+    vk::DestroyRenderPass(m_device->device(), rp2, NULL);
+    vk::DestroyFence(m_device->device(), fence, NULL);
+    vk::DestroyImageView(m_device->device(), view, NULL);
+}
