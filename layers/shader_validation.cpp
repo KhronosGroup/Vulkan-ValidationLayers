@@ -1957,7 +1957,9 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
         (pStage->stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || pStage->stage == VK_SHADER_STAGE_MESH_BIT_NV);
     bool strip_input_array_level =
         (pStage->stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT ||
-         pStage->stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT || pStage->stage == VK_SHADER_STAGE_GEOMETRY_BIT);
+         pStage->stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT ||
+         pStage->stage == VK_SHADER_STAGE_GEOMETRY_BIT ||
+         pStage->stage == VK_SHADER_STAGE_FRAGMENT_BIT);
 
     uint32_t numCompIn = 0, numCompOut = 0;
     for (auto &var : variables) {
