@@ -26,6 +26,32 @@
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
 
+VkFormat FindSupportedDepthOnlyFormat(VkPhysicalDevice phy) {
+    const VkFormat ds_formats[] = {VK_FORMAT_D16_UNORM, VK_FORMAT_X8_D24_UNORM_PACK32, VK_FORMAT_D32_SFLOAT};
+    for (uint32_t i = 0; i < size(ds_formats); ++i) {
+        VkFormatProperties format_props;
+        vk::GetPhysicalDeviceFormatProperties(phy, ds_formats[i], &format_props);
+
+        if (format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+            return ds_formats[i];
+        }
+    }
+    return VK_FORMAT_UNDEFINED;
+}
+
+VkFormat FindSupportedStencilOnlyFormat(VkPhysicalDevice phy) {
+    const VkFormat ds_formats[] = {VK_FORMAT_S8_UINT};
+    for (uint32_t i = 0; i < size(ds_formats); ++i) {
+        VkFormatProperties format_props;
+        vk::GetPhysicalDeviceFormatProperties(phy, ds_formats[i], &format_props);
+
+        if (format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+            return ds_formats[i];
+        }
+    }
+    return VK_FORMAT_UNDEFINED;
+}
+
 VkFormat FindSupportedDepthStencilFormat(VkPhysicalDevice phy) {
     const VkFormat ds_formats[] = {VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT};
     for (uint32_t i = 0; i < size(ds_formats); ++i) {

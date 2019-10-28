@@ -166,6 +166,8 @@ size_t size(ElementT (&)[array_size]) {
 }
 
 // Format search helper
+VkFormat FindSupportedDepthOnlyFormat(VkPhysicalDevice phy);
+VkFormat FindSupportedStencilOnlyFormat(VkPhysicalDevice phy);
 VkFormat FindSupportedDepthStencilFormat(VkPhysicalDevice phy);
 
 // Returns true if *any* requested features are available.
