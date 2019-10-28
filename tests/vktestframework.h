@@ -58,8 +58,8 @@ class VkTestFramework : public ::testing::Test {
     static void InitArgs(int *argc, char *argv[]);
     static void Finish();
 
-    bool GLSLtoSPV(const VkShaderStageFlagBits shader_type, const char *pshader, std::vector<unsigned int> &spv, bool debug = false,
-                   uint32_t spirv_minor_version = 0);
+    bool GLSLtoSPV(VkPhysicalDeviceLimits const *const device_limits, const VkShaderStageFlagBits shader_type, const char *pshader,
+                   std::vector<unsigned int> &spv, bool debug = false, uint32_t spirv_minor_version = 0);
     bool ASMtoSPV(const spv_target_env target_env, const uint32_t options, const char *pasm, std::vector<unsigned int> &spv);
     static bool m_canonicalize_spv;
     static bool m_strip_spv;
@@ -78,7 +78,7 @@ class VkTestFramework : public ::testing::Test {
     int m_num_shader_strings;
     TBuiltInResource Resources;
     void SetMessageOptions(EShMessages &messages);
-    void ProcessConfigFile();
+    void ProcessConfigFile(VkPhysicalDeviceLimits const *const device_limits);
     EShLanguage FindLanguage(const std::string &name);
     EShLanguage FindLanguage(const VkShaderStageFlagBits shader_type);
     std::string ConfigFile;

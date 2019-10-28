@@ -37,8 +37,8 @@ class VkTestFramework : public ::testing::Test {
     static void Finish();
 
     VkFormat GetFormat(VkInstance instance, vk_testing::Device *device);
-    bool GLSLtoSPV(const VkShaderStageFlagBits shader_type, const char *pshader, std::vector<unsigned int> &spv, bool debug = false,
-                   uint32_t spirv_minor_version = 0);
+    bool GLSLtoSPV(VkPhysicalDeviceLimits const *const device_limits, const VkShaderStageFlagBits shader_type, const char *pshader,
+                   std::vector<unsigned int> &spv, bool debug = false, uint32_t spirv_minor_version = 0);
     bool ASMtoSPV(const spv_target_env target_env, const uint32_t options, const char *pasm, std::vector<unsigned int> &spv);
     static bool m_devsim_layer;
     static ANativeWindow *window;
