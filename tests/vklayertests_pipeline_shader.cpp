@@ -2826,7 +2826,7 @@ TEST_F(VkLayerTest, InvalidSPIRVCodeSize) {
     VkShaderModule shader_module;
     module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     module_create_info.pNext = NULL;
-    this->GLSLtoSPV(VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText, shader);
+    this->GLSLtoSPV(&m_device->props.limits, VK_SHADER_STAGE_VERTEX_BIT, bindStateVertShaderText, shader);
     module_create_info.pCode = shader.data();
     // Introduce failure by making codeSize a non-multiple of 4
     module_create_info.codeSize = shader.size() * sizeof(unsigned int) - 1;

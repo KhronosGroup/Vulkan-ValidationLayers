@@ -1611,7 +1611,7 @@ VkShaderObj::VkShaderObj(VkDeviceObj *device, const char *shader_code, VkShaderS
     m_stage_info.pSpecializationInfo = specInfo;
 
     std::vector<unsigned int> spv;
-    framework->GLSLtoSPV(stage, shader_code, spv, debug, spirv_minor_version);
+    framework->GLSLtoSPV(&device->props.limits, stage, shader_code, spv, debug, spirv_minor_version);
 
     VkShaderModuleCreateInfo moduleCreateInfo = {};
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

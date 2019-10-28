@@ -82,8 +82,8 @@ shaderc_shader_kind MapShadercType(VkShaderStageFlagBits vkShader) {
 
 // Compile a given string containing GLSL into SPIR-V
 // Return value of false means an error was encountered
-bool VkTestFramework::GLSLtoSPV(const VkShaderStageFlagBits shader_type, const char *pshader, std::vector<unsigned int> &spirv,
-                                bool debug, uint32_t spirv_minor_version) {
+bool VkTestFramework::GLSLtoSPV(VkPhysicalDeviceLimits const *const device_limits, const VkShaderStageFlagBits shader_type,
+                                const char *pshader, std::vector<unsigned int> &spirv, bool debug, uint32_t spirv_minor_version) {
     // On Android, use shaderc instead.
     shaderc::Compiler compiler;
     shaderc::CompileOptions options;
@@ -110,6 +110,23 @@ bool VkTestFramework::GLSLtoSPV(const VkShaderStageFlagBits shader_type, const c
             options.SetTargetSpirv(shaderc_spirv_version_1_4);
             break;
     }
+
+    // Override glslang built-in GL settings with actual hardware values
+    options.SetLimit(shaderc_limit_max_clip_distances, device_limits->maxClipDistances);
+    options.SetLimit(shaderc_limit_max_compute_work_group_count_x, device_limits->maxComputeWorkGroupCount[0]);
+    options.SetLimit(shaderc_limit_max_compute_work_group_count_y, device_limits->maxComputeWorkGroupCount[1]);
+    options.SetLimit(shaderc_limit_max_compute_work_group_count_z, device_limits->maxComputeWorkGroupCount[2]);
+    options.SetLimit(shaderc_limit_max_compute_work_group_size_x, device_limits->maxComputeWorkGroupSize[0]);
+    options.SetLimit(shaderc_limit_max_compute_work_group_size_y, device_limits->maxComputeWorkGroupSize[1]);
+    options.SetLimit(shaderc_limit_max_compute_work_group_size_z, device_limits->maxComputeWorkGroupSize[2]);
+    options.SetLimit(shaderc_limit_max_cull_distances, device_limits->maxCullDistances);
+    options.SetLimit(shaderc_limit_max_fragment_input_components, device_limits->maxFragmentInputComponents);
+    options.SetLimit(shaderc_limit_max_geometry_input_components, device_limits->maxGeometryInputComponents);
+    options.SetLimit(shaderc_limit_max_geometry_output_components, device_limits->maxGeometryOutputComponents);
+    options.SetLimit(shaderc_limit_max_geometry_output_vertices, device_limits->maxGeometryOutputVertices);
+    options.SetLimit(shaderc_limit_max_geometry_total_output_components, device_limits->maxGeometryTotalOutputComponents);
+    options.SetLimit(shaderc_limit_max_vertex_output_components, device_limits->maxVertexOutputComponents);
+    options.SetLimit(shaderc_limit_max_viewports, device_limits->maxViewports);
 
     shaderc::SpvCompilationResult result =
         compiler.CompileGlslToSpv(pshader, strlen(pshader), MapShadercType(shader_type), "shader", options);
