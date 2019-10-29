@@ -127,7 +127,7 @@ void ValidationStateTracker::PreCallRecordDestroyImage(VkDevice device, VkImage 
     if (image_state->bind_swapchain) {
         auto swapchain = GetSwapchainState(image_state->bind_swapchain);
         if (swapchain) {
-            swapchain->bound_images.erase(image_state->image);
+            swapchain->images[image_state->bind_swapchain_imageIndex].bound_images.erase(image_state->image);
         }
     }
     RemoveAliasingImage(image_state);
@@ -326,10 +326,10 @@ void ValidationStateTracker::AddAliasingImage(IMAGE_STATE *image_state) {
     if (!(image_state->createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT)) return;
     std::unordered_set<VkImage> *bound_images = nullptr;
 
-    if (image_state->create_from_swapchain) {
-        auto swapchain_state = GetSwapchainState(image_state->create_from_swapchain);
+    if (image_state->bind_swapchain) {
+        auto swapchain_state = GetSwapchainState(image_state->bind_swapchain);
         if (swapchain_state) {
-            bound_images = &swapchain_state->bound_images;
+            bound_images = &swapchain_state->images[image_state->bind_swapchain_imageIndex].bound_images;
         }
     } else {
         auto mem_state = GetDevMemState(image_state->binding.mem);
@@ -3397,7 +3397,7 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
         if (swapchain_info) {
             auto swapchain = GetSwapchainState(swapchain_info->swapchain);
             if (swapchain) {
-                swapchain->bound_images.insert(image_state->image);
+                swapchain->images[swapchain_info->imageIndex].bound_images.emplace(image_state->image);
                 image_state->bind_swapchain = swapchain_info->swapchain;
                 image_state->bind_swapchain_imageIndex = swapchain_info->imageIndex;
             }
@@ -3586,15 +3586,15 @@ void ValidationStateTracker::PreCallRecordDestroySwapchainKHR(VkDevice device, V
     auto swapchain_data = GetSwapchainState(swapchain);
     if (swapchain_data) {
         for (const auto &swapchain_image : swapchain_data->images) {
-            ClearMemoryObjectBindings(VulkanTypedHandle(swapchain_image, kVulkanObjectTypeImage));
-            imageMap.erase(swapchain_image);
+            ClearMemoryObjectBindings(VulkanTypedHandle(swapchain_image.image, kVulkanObjectTypeImage));
+            imageMap.erase(swapchain_image.image);
+            RemoveAliasingImages(swapchain_image.bound_images);
         }
 
         auto surface_state = GetSurfaceState(swapchain_data->createInfo.surface);
         if (surface_state) {
             if (surface_state->swapchain == swapchain_data) surface_state->swapchain = nullptr;
         }
-        RemoveAliasingImages(swapchain_data->bound_images);
         swapchain_data->destroyed = true;
         swapchainMap.erase(swapchain);
     }
@@ -3618,7 +3618,7 @@ void ValidationStateTracker::PostCallRecordQueuePresentKHR(VkQueue queue, const 
         // Mark the image as having been released to the WSI
         auto swapchain_data = GetSwapchainState(pPresentInfo->pSwapchains[i]);
         if (swapchain_data && (swapchain_data->images.size() > pPresentInfo->pImageIndices[i])) {
-            auto image = swapchain_data->images[pPresentInfo->pImageIndices[i]];
+            auto image = swapchain_data->images[pPresentInfo->pImageIndices[i]].image;
             auto image_state = GetImageState(image);
             if (image_state) {
                 image_state->acquired = false;
@@ -3666,7 +3666,7 @@ void ValidationStateTracker::RecordAcquireNextImageState(VkDevice device, VkSwap
     // Mark the image as acquired.
     auto swapchain_data = GetSwapchainState(swapchain);
     if (swapchain_data && (swapchain_data->images.size() > *pImageIndex)) {
-        auto image = swapchain_data->images[*pImageIndex];
+        auto image = swapchain_data->images[*pImageIndex].image;
         auto image_state = GetImageState(image);
         if (image_state) {
             image_state->acquired = true;
@@ -4457,7 +4457,7 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
             swapchain_state->vkGetSwapchainImagesKHRState = QUERY_DETAILS;
         }
         for (uint32_t i = 0; i < *pSwapchainImageCount; ++i) {
-            if (swapchain_state->images[i] != VK_NULL_HANDLE) continue;  // Already retrieved this.
+            if (swapchain_state->images[i].image != VK_NULL_HANDLE) continue;  // Already retrieved this.
 
             // Add imageMap entries for each swapchain image
             VkImageCreateInfo image_ci;
@@ -4494,9 +4494,8 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
             image_state->create_from_swapchain = swapchain;
             image_state->bind_swapchain = swapchain;
             image_state->bind_swapchain_imageIndex = i;
-            AddAliasingImage(image_state.get());
-            swapchain_state->images[i] = pSwapchainImages[i];
-            swapchain_state->bound_images.insert(pSwapchainImages[i]);
+            swapchain_state->images[i].image = pSwapchainImages[i];
+            swapchain_state->images[i].bound_images.emplace(pSwapchainImages[i]);
         }
     }
 
