@@ -462,12 +462,16 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
           p_driver_data(0){};
 };
 
+struct SWAPCHAIN_IMAGE {
+    VkImage image;
+    std::unordered_set<VkImage> bound_images;
+};
+
 class SWAPCHAIN_NODE : public BASE_NODE {
   public:
     safe_VkSwapchainCreateInfoKHR createInfo;
     VkSwapchainKHR swapchain;
-    std::vector<VkImage> images;
-    std::unordered_set<VkImage> bound_images;
+    std::vector<SWAPCHAIN_IMAGE> images;
     bool retired = false;
     bool shared_presentable = false;
     CALL_STATE vkGetSwapchainImagesKHRState = UNCALLED;
