@@ -9679,7 +9679,7 @@ void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKH
         auto swapchain_data = GetSwapchainState(swapchain);
         if (swapchain_data) {
             for (const auto &swapchain_image : swapchain_data->images) {
-                auto image_sub = imageSubresourceMap.find(swapchain_image);
+                auto image_sub = imageSubresourceMap.find(swapchain_image.image);
                 if (image_sub != imageSubresourceMap.end()) {
                     for (auto imgsubpair : image_sub->second) {
                         auto image_item = imageLayoutMap.find(imgsubpair);
@@ -9689,7 +9689,7 @@ void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKH
                     }
                     imageSubresourceMap.erase(image_sub);
                 }
-                EraseQFOImageRelaseBarriers(swapchain_image);
+                EraseQFOImageRelaseBarriers(swapchain_image.image);
             }
         }
     }
@@ -9734,7 +9734,7 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
         for (uint32_t i = 0; i < *pSwapchainImageCount; ++i) {
             // This is check makes sure that we don't have an image initialized for this swapchain index, but
             // given that it's StateTracker that stores this information, need to protect against non-extant entries in the vector
-            if ((i < image_vector_size) && (swapchain_state->images[i] != VK_NULL_HANDLE)) continue;
+            if ((i < image_vector_size) && (swapchain_state->images[i].image != VK_NULL_HANDLE)) continue;
 
             ImageSubresourcePair subpair = {pSwapchainImages[i], false, VkImageSubresource()};
             imageSubresourceMap[pSwapchainImages[i]].push_back(subpair);
@@ -9770,7 +9770,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                             "vkQueuePresentKHR: Swapchain image index too large (%u). There are only %u images in this swapchain.",
                             pPresentInfo->pImageIndices[i], (uint32_t)swapchain_data->images.size());
             } else {
-                auto image = swapchain_data->images[pPresentInfo->pImageIndices[i]];
+                auto image = swapchain_data->images[pPresentInfo->pImageIndices[i]].image;
                 const auto image_state = GetImageState(image);
 
                 if (!image_state->acquired) {
@@ -9921,7 +9921,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapch
         auto physical_device_state = GetPhysicalDeviceState();
         if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState != UNCALLED) {
             uint64_t acquired_images = std::count_if(swapchain_data->images.begin(), swapchain_data->images.end(),
-                                                     [=](VkImage image) { return GetImageState(image)->acquired; });
+                                                     [=](SWAPCHAIN_IMAGE image) { return GetImageState(image.image)->acquired; });
             if (acquired_images > swapchain_data->images.size() - physical_device_state->surfaceCapabilities.minImageCount) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
                                 HandleToUint64(swapchain), kVUID_Core_DrawState_SwapchainTooManyImages,
