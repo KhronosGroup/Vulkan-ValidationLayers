@@ -249,6 +249,8 @@ void InitDispatchTable() {
 
 #if(WIN32)
     const char filename[] = "vulkan-1.dll";
+#elif(__APPLE__)
+    const char filename[] = "libvulkan.dylib";
 #else
     const char filename[] = "libvulkan.so";
 #endif
