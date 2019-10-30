@@ -203,6 +203,8 @@ class LvtFileOutputGenerator(OutputGenerator):
         table += '\n'
         table += '#if(WIN32)\n'
         table += '    const char filename[] = "vulkan-1.dll";\n'
+        table += '#elif(__APPLE__)\n'
+        table += '    const char filename[] = "libvulkan.dylib";\n'
         table += '#else\n'
         table += '    const char filename[] = "libvulkan.so";\n'
         table += '#endif\n'
