@@ -76,6 +76,8 @@ class ShaderPrintf : public ValidationStateTracker {
 
   public:
     bool aborted = false;
+    bool verbose = false;
+    bool use_stdout = false;
     VkDevice device;
     VkPhysicalDevice physicalDevice;
     uint32_t adjusted_max_desc_sets;
@@ -204,4 +206,5 @@ class ShaderPrintf : public ValidationStateTracker {
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                    VkResult result);
     void AllocateShaderPrintfResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point);
+    void SendStringToCallback(std::vector<VkLayerDbgFunctionState> debug_callback_list, std::string shader_message);
 };
