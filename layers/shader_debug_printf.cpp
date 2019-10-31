@@ -54,7 +54,14 @@ void ShaderPrintf::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, c
     ShaderPrintf *device_shader_printf = static_cast<ShaderPrintf *>(validation_data);
     device_shader_printf->physicalDevice = physicalDevice;
     device_shader_printf->device = *pDevice;
-    device_shader_printf->output_buffer_size = 1024;
+
+    const char *size_string = getLayerOption("khronos_validation.printf_buffer_size");
+    device_shader_printf->output_buffer_size = *size_string ? atoi(size_string) : 1024;
+    const char *verbose_string = getLayerOption("khronos_validation.printf_verbose");
+    device_shader_printf->verbose = *verbose_string ? !strcmp(verbose_string, "true") : false;
+    const char *stdout_string = getLayerOption("khronos_validation.printf_to_stdout");
+    device_shader_printf->use_stdout = *stdout_string ? !strcmp(stdout_string, "true") : false;
+    if (getenv("DEBUG_PRINTF_TO_STDOUT")) device_shader_printf->use_stdout = true;
 
     if (device_shader_printf->phys_dev_props.apiVersion < VK_API_VERSION_1_1) {
         ReportSetupProblem(device, "Shader Debug Printf requires Vulkan 1.1 or later.  GPU-Assisted Validation disabled.");
@@ -438,16 +445,11 @@ void ShaderPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, Vk
 
     uint32_t index = 1;  // First word is total number of words written  Skip that
     while (debug_output_buffer[index]) {
-        std::string stage_message;
-        std::string common_message;
         std::stringstream shader_message;
-        std::string filename_message;
-        std::string source_message;
         VkShaderModule shader_module_handle = VK_NULL_HANDLE;
         VkPipeline pipeline_handle = VK_NULL_HANDLE;
         std::vector<unsigned int> pgm;
 
-        shader_message << "Shader Printf = \"";
         SPFOutputRecord *debug_record = reinterpret_cast<SPFOutputRecord *>(&debug_output_buffer[index]);
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
         // by the instrumented shader.
@@ -501,20 +503,65 @@ void ShaderPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, Vk
                 snprintf_with_malloc(shader_message, substring, needed, values);
             }
         }
-        shader_message << "\"";
-        SharedGenerateStageMessage(&debug_output_buffer[index], stage_message);
-        SharedGenerateCommonMessage(report_data, command_buffer, &debug_output_buffer[index], shader_module_handle, pipeline_handle,
-                                    pipeline_bind_point, operation_index, common_message);
-        SharedGenerateSourceMessages(pgm, &debug_output_buffer[index], true, filename_message, source_message);
-        LogError(queue, "UNASSIGNED-GPU-Assisted Debug Shader Printf", "%s %s %s %s%s", common_message.c_str(),
-                 stage_message.c_str(), shader_message.str().c_str(), filename_message.c_str(), source_message.c_str());
+
+        if (verbose) {
+            std::string stage_message;
+            std::string common_message;
+            std::string filename_message;
+            std::string source_message;
+            SharedGenerateStageMessage(&debug_output_buffer[index], stage_message);
+            SharedGenerateCommonMessage(report_data, command_buffer, &debug_output_buffer[index], shader_module_handle,
+                                        pipeline_handle, pipeline_bind_point, operation_index, common_message);
+            SharedGenerateSourceMessages(pgm, &debug_output_buffer[index], true, filename_message, source_message);
+            if (use_stdout) {
+                std::cout << "UNASSIGNED-GPU-Assisted Debug Shader Printf " << common_message.c_str() << " "
+                          << stage_message.c_str() << " " << shader_message.str().c_str() << " " << filename_message.c_str() << " "
+                          << source_message.c_str();
+            } else {
+                LogError(queue, "UNASSIGNED-GPU-Assisted Debug Shader Printf", "%s %s %s %s%s", common_message.c_str(),
+                         stage_message.c_str(), shader_message.str().c_str(), filename_message.c_str(), source_message.c_str());
+            }
+        } else {
+            if (use_stdout)
+                std::cout << shader_message.str();
+            else
+                SendStringToCallback(report_data->debug_callback_list, shader_message.str());
+        }
         index += debug_record->size;
     }
     memset(debug_output_buffer, 0, 4 * (debug_output_buffer[0] + 1));
 }
+
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
+
+void ShaderPrintf::SendStringToCallback(std::vector<VkLayerDbgFunctionState> debug_callback_list, std::string shader_message) {
+    // We only output to default callbacks if there are no non-default callbacks
+    bool use_default_callbacks = true;
+    for (auto current_callback : debug_callback_list) {
+        use_default_callbacks &= current_callback.IsDefault();
+    }
+
+    for (auto current_callback : debug_callback_list) {
+        // Skip callback if it's a default callback and there are non-default callbacks present
+        if (current_callback.IsDefault() && !use_default_callbacks) continue;
+
+        if (current_callback.IsUtils() && current_callback.debug_utils_callback_function_ptr) {
+            VkDebugUtilsMessengerCallbackDataEXT callback_data = {};
+            callback_data.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT;
+            callback_data.pMessageIdName = "Shader Debug Printf";
+            callback_data.pMessage = shader_message.c_str();
+            current_callback.debug_utils_callback_function_ptr(VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT,
+                                                               VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT, &callback_data,
+                                                               current_callback.pUserData);
+        } else if (!current_callback.IsUtils() && current_callback.debug_report_callback_function_ptr) {
+            current_callback.debug_report_callback_function_ptr(
+                VK_DEBUG_REPORT_DEBUG_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT, 0, 0, 0, "Shader Debug Printf",
+                shader_message.c_str(), current_callback.pUserData);
+        }
+    }
+}
 
 // Issue a memory barrier to make GPU-written data available to host.
 // Wait for the queue to complete execution.
