@@ -2694,6 +2694,10 @@ typedef enum ValidationCheckEnables {
     VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL,
 } ValidationCheckEnables;
 
+typedef enum VkValidationFeatureEnable {
+    VK_VALIDATION_FEATURE_ENABLE_SHADER_DEBUG_PRINTF,
+} VkValidationFeatureEnable;
+
 // CHECK_DISABLED struct is a container for bools that can block validation checks from being performed.
 // These bools are all "false" by default meaning that all checks are enabled. Enum values can be specified
 // via the vk_layer_setting.txt config file or at CreateInstance time via the VK_EXT_validation_features extension

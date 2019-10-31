@@ -130,6 +130,10 @@ static const std::unordered_map<std::string, VkValidationFeatureEnableEXT> VkVal
     {"VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT", VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT},
 };
 
+static const std::unordered_map<std::string, VkValidationFeatureEnable> VkValFeatureEnableLookup2 = {
+    {"VK_VALIDATION_FEATURE_ENABLE_SHADER_DEBUG_PRINTF", VK_VALIDATION_FEATURE_ENABLE_SHADER_DEBUG_PRINTF},
+};
+
 static const std::unordered_map<std::string, ValidationCheckDisables> ValidationDisableLookup = {
     {"VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE", VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE},
     {"VALIDATION_CHECK_DISABLE_OBJECT_IN_USE", VALIDATION_CHECK_DISABLE_OBJECT_IN_USE},
@@ -230,6 +234,16 @@ void SetValidationFeatureEnable(CHECK_ENABLED *enable_data, const VkValidationFe
     }
 }
 
+void SetValidationFeatureEnable2(CHECK_ENABLED *enable_data, const VkValidationFeatureEnable feature_enable) {
+    switch(feature_enable) {
+        case VK_VALIDATION_FEATURE_ENABLE_SHADER_DEBUG_PRINTF:
+            enable_data->shader_printf = true;
+            break;
+        default:
+            break;
+    }
+}
+
 // Set the local disable flag for settings specified through the VK_EXT_validation_flags extension
 void SetValidationFlags(CHECK_DISABLED* disables, const VkValidationFlagsEXT* val_flags_struct) {
     for (uint32_t i = 0; i < val_flags_struct->disabledValidationCheckCount; ++i) {
@@ -274,6 +288,11 @@ void SetLocalEnableSetting(std::string list_of_enables, std::string delimiter, C
             auto result = VkValFeatureEnableLookup.find(token);
             if (result != VkValFeatureEnableLookup.end()) {
                 SetValidationFeatureEnable(enables, result->second);
+            } else {
+                auto result2 = VkValFeatureEnableLookup2.find(token);
+                if (result2 != VkValFeatureEnableLookup2.end()) {
+                  SetValidationFeatureEnable2(enables, result2->second);
+                }
             }
         }
         else if (token.find("VALIDATION_CHECK_ENABLE_") != std::string::npos) {
