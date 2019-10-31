@@ -65,6 +65,8 @@ class SEMAPHORE_STATE : public BASE_NODE {
     std::pair<VkQueue, uint64_t> signaler;
     bool signaled;
     SyncScope scope;
+    VkSemaphoreTypeKHR type;
+    uint64_t payload;
 };
 
 class EVENT_STATE : public BASE_NODE {
@@ -589,6 +591,7 @@ class ValidationStateTracker : public ValidationObject {
                                                      const VkImportSemaphoreWin32HandleInfoKHR* pImportSemaphoreWin32HandleInfo,
                                                      VkResult result);
 #endif  // VK_USE_PLATFORM_WIN32_KHR
+    void PostCallRecordSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfoKHR* pSignalInfo, VkResult result);
 
     // Create/Destroy/Bind
     void PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
@@ -1075,6 +1078,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT texel_buffer_alignment_props;
         VkPhysicalDeviceFragmentDensityMapPropertiesEXT fragment_density_map_props;
         VkPhysicalDevicePerformanceQueryPropertiesKHR performance_query_props;
+        VkPhysicalDeviceTimelineSemaphorePropertiesKHR timeline_semaphore_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;

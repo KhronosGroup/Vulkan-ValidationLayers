@@ -1126,6 +1126,11 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.performance_query_features = *performance_query_features;
     }
 
+    const auto *timeline_semaphore_features = lvl_find_in_chain<VkPhysicalDeviceTimelineSemaphoreFeaturesKHR>(pCreateInfo->pNext);
+    if (timeline_semaphore_features) {
+        state_tracker->enabled_features.timeline_semaphore_features = *timeline_semaphore_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);
@@ -1151,6 +1156,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_texel_buffer_alignment, &phys_dev_props->texel_buffer_alignment_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_fragment_density_map, &phys_dev_props->fragment_density_map_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_performance_query, &phys_dev_props->performance_query_props);
+    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_timeline_semaphore, &phys_dev_props->timeline_semaphore_props);
     if (state_tracker->device_extensions.vk_nv_cooperative_matrix) {
         // Get the needed cooperative_matrix properties
         auto cooperative_matrix_props = lvl_init_struct<VkPhysicalDeviceCooperativeMatrixPropertiesNV>();
@@ -1359,6 +1365,7 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
         vector<SEMAPHORE_WAIT> semaphore_waits;
         vector<VkSemaphore> semaphore_signals;
         vector<VkSemaphore> semaphore_externals;
+        auto *timeline_semaphore_submit = lvl_find_in_chain<VkTimelineSemaphoreSubmitInfoKHR>(submit->pNext);
         for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
             VkSemaphore semaphore = submit->pWaitSemaphores[i];
             auto pSemaphore = GetSemaphoreState(semaphore);
@@ -1384,9 +1391,13 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
             auto pSemaphore = GetSemaphoreState(semaphore);
             if (pSemaphore) {
                 if (pSemaphore->scope == kSyncScopeInternal) {
-                    pSemaphore->signaler.first = queue;
-                    pSemaphore->signaler.second = pQueue->seq + pQueue->submissions.size() + 1;
-                    pSemaphore->signaled = true;
+                    if (pSemaphore->type == VK_SEMAPHORE_TYPE_BINARY_KHR) {
+                        pSemaphore->signaler.first = queue;
+                        pSemaphore->signaler.second = pQueue->seq + pQueue->submissions.size() + 1;
+                        pSemaphore->signaled = true;
+                    } else {
+                        pSemaphore->payload = timeline_semaphore_submit->pSignalSemaphoreValues[i];
+                    }
                     pSemaphore->in_use.fetch_add(1);
                     semaphore_signals.push_back(semaphore);
                 } else {
@@ -1588,6 +1599,13 @@ void ValidationStateTracker::PostCallRecordCreateSemaphore(VkDevice device, cons
     semaphore_state->signaler.second = 0;
     semaphore_state->signaled = false;
     semaphore_state->scope = kSyncScopeInternal;
+    semaphore_state->type = VK_SEMAPHORE_TYPE_BINARY_KHR;
+    semaphore_state->payload = 0;
+    auto semaphore_type_create_info = lvl_find_in_chain<VkSemaphoreTypeCreateInfoKHR>(pCreateInfo->pNext);
+    if (semaphore_type_create_info) {
+        semaphore_state->type = semaphore_type_create_info->semaphoreType;
+        semaphore_state->payload = semaphore_type_create_info->initialValue;
+    }
     semaphoreMap[*pSemaphore] = std::move(semaphore_state);
 }
 
@@ -1602,6 +1620,12 @@ void ValidationStateTracker::RecordImportSemaphoreState(VkSemaphore semaphore, V
             sema_node->scope = kSyncScopeExternalPermanent;
         }
     }
+}
+
+void ValidationStateTracker::PostCallRecordSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfoKHR *pSignalInfo,
+                                                              VkResult result) {
+    auto *pSemaphore = GetSemaphoreState(pSignalInfo->semaphore);
+    pSemaphore->payload = pSignalInfo->value;
 }
 
 void ValidationStateTracker::RecordMappedMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void **ppData) {

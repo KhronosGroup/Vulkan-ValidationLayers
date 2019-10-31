@@ -60,7 +60,11 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo* submit,
                                      std::unordered_set<VkSemaphore>* unsignaled_sema_arg,
                                      std::unordered_set<VkSemaphore>* signaled_sema_arg,
-                                     std::unordered_set<VkSemaphore>* internal_sema_arg) const;
+                                     std::unordered_set<VkSemaphore>* internal_sema_arg,
+                                     unordered_map<VkSemaphore, std::set<uint64_t>>* timeline_values_arg) const;
+    bool ValidateMaxTimelineSemaphoreValueDifference(VkQueue queue, VkSemaphore semaphore, const uint64_t semaphoreHandleValue,
+                                                     unordered_map<VkSemaphore, std::set<uint64_t>>* timeline_values_arg,
+                                                     const char* func_name, const char* vuid) const;
     bool ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitInfo* submit,
                                          ImageSubresPairLayoutMap* localImageLayoutMap_arg, QueryMap* local_query_to_state_map,
                                          std::vector<VkCommandBuffer>* current_cmds_arg) const;
@@ -140,7 +144,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCreateSamplerYcbcrConversion(const char* func_name, const VkSamplerYcbcrConversionCreateInfo* create_info) const;
     bool ValidateImportFence(VkFence fence, const char* caller_name) const;
     bool ValidateAcquireNextImage(VkDevice device, CommandVersion cmd_version, VkSwapchainKHR swapchain, uint64_t timeout,
-                                  VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex, const char* func_name) const;
+                                  VkSemaphore semaphore, VkFence fence, uint32_t* pImageIndex, const char* func_name,
+                                  const char* semaphore_type_vuid) const;
     bool VerifyRenderAreaBounds(const VkRenderPassBeginInfo* pRenderPassBegin) const;
     bool VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBeginInfo* pRenderPassBeginInfo) const;
     bool ValidatePrimaryCommandBuffer(const CMD_BUFFER_STATE* pCB, char const* cmd_name, const char* error_code) const;
@@ -693,6 +698,9 @@ class CoreChecks : public ValidationStateTracker {
                                       uint64_t timeout) const;
     bool PreCallValidateQueueWaitIdle(VkQueue queue) const;
     bool PreCallValidateDeviceWaitIdle(VkDevice device) const;
+    bool PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
+                                        const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore) const;
+    bool PreCallValidateWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfoKHR* pWaitInfo, uint64_t timeout) const;
     bool PreCallValidateDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator) const;
     bool PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator) const;
     bool PreCallValidateDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator) const;
@@ -917,6 +925,7 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateSetEvent(VkDevice device, VkEvent event) const;
     bool PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
                                         VkFence fence) const;
+    bool PreCallValidateSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfoKHR* pSignalInfo) const;
     bool PreCallValidateImportSemaphoreFdKHR(VkDevice device, const VkImportSemaphoreFdInfoKHR* pImportSemaphoreFdInfo) const;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     bool PreCallValidateImportSemaphoreWin32HandleKHR(
@@ -994,6 +1003,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask, const char* func_name) const;
     bool PreCallValidateCmdSetDeviceMask(VkCommandBuffer commandBuffer, uint32_t deviceMask) const;
     bool PreCallValidateCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffer, uint32_t deviceMask) const;
+    bool PreCallValidateGetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore sempahore, uint64_t* pValue) const;
     bool ValidateComputeWorkGroupSizes(const SHADER_MODULE_STATE* shader) const;
 
     bool ValidateQueryRange(VkDevice device, VkQueryPool queryPool, uint32_t totalCount, uint32_t firstQuery, uint32_t queryCount,
