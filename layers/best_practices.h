@@ -121,7 +121,8 @@ class BestPractices : public ValidationStateTracker {
     void PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence,
                                        VkResult result);
     bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
-                                            const VkClearAttachment* pAttachments, uint32_t rectCount, const VkClearRect* pRects);
+                                            const VkClearAttachment* pAttachments, uint32_t rectCount,
+                                            const VkClearRect* pRects) const;
 
   private:
     uint32_t instance_api_version;
