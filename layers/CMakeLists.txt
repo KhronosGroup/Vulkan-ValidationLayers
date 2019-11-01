@@ -74,7 +74,8 @@ if(BUILD_LAYER_SUPPORT_FILES)
 endif()
 
 set(TARGET_NAMES
-    VkLayer_khronos_validation)
+    VkLayer_khronos_validation
+    VkLayer_standard_validation)
 
 if(BUILD_LAYERS)
     # Install the layer json files
@@ -231,7 +232,7 @@ if(BUILD_LAYERS)
                 -DRELATIVE_LAYER_BINARY="${RELATIVE_PATH_PREFIX}$<TARGET_FILE_NAME:${TARGET_NAME}>")
             # If this json file is a metalayer, make the output path match core validation, and there is no layer binary file
         else()
-            set(CONFIG_DEFINES ${CONFIG_DEFINES} -DOUTPUT_FILE="$<TARGET_FILE_DIR:VkLayer_core_validation>/${TARGET_NAME}.json")
+            set(CONFIG_DEFINES ${CONFIG_DEFINES} -DOUTPUT_FILE="$<TARGET_FILE_DIR:VkLayer_khronos_validation>/${TARGET_NAME}.json")
         endif()
         add_custom_target(${TARGET_NAME}-json ALL
                           COMMAND ${CMAKE_COMMAND} ${CONFIG_DEFINES} -P "${CMAKE_CURRENT_BINARY_DIR}/generator.cmake")
