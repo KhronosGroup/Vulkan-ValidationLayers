@@ -442,8 +442,10 @@ void ShaderPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, Vk
     //    7         Printf Format String Id
     //    8         Printf Values Word 0 (optional)
     //    9         Printf Values Word 1 (optional)
+    uint32_t expect = debug_output_buffer[0];
+    if (!expect) return;
 
-    uint32_t index = 1;  // First word is total number of words written  Skip that
+    uint32_t index = 1;
     while (debug_output_buffer[index]) {
         std::stringstream shader_message;
         VkShaderModule shader_module_handle = VK_NULL_HANDLE;
@@ -528,6 +530,11 @@ void ShaderPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, Vk
                 SendStringToCallback(report_data->debug_callback_list, shader_message.str());
         }
         index += debug_record->size;
+    }
+    if ((index - 1) != expect) {
+        SendStringToCallback(
+            report_data->debug_callback_list,
+            "WARNING - Shader Debug Printf message was truncated, likely due to a buffer size that was too small for the message");
     }
     memset(debug_output_buffer, 0, 4 * (debug_output_buffer[0] + 1));
 }
