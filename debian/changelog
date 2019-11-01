@@ -1,3 +1,10 @@
+
+vulkan-validationlayers (1.1.126.0~rc2-1ubuntu16.04.1.1) xenial; urgency=medium
+
+  * Automated package build
+
+ -- John Zupin <john@odin>  Thu, 31 Oct 2019 15:06:40 -0600
+
 vulkan-validationlayers (1.1.126.0~rc1-1ubuntu16.04.1.1) xenial; urgency=medium
 
   * Automated package build
