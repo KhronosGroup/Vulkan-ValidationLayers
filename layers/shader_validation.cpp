@@ -19,11 +19,14 @@
  * Author: Dave Houlton <daveh@lunarg.com>
  */
 
+#define NOMINMAX
+
 #include "shader_validation.h"
 
 #include <cassert>
 #include <chrono>
 #include <cinttypes>
+#include <cmath>
 #include <map>
 #include <sstream>
 #include <string>
@@ -1913,6 +1916,8 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
 
     uint32_t numVertices = 0;
 
+    auto entrypointVariables = FindEntrypointInterfaces(entrypoint);
+
     for (auto insn : *src) {
         switch (insn.opcode()) {
             // Find all Patch decorations
@@ -1930,7 +1935,9 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
             case spv::OpVariable: {
                 Variable var = {};
                 var.storageClass = insn.word(3);
-                if (var.storageClass == spv::StorageClassInput || var.storageClass == spv::StorageClassOutput) {
+                if ((var.storageClass == spv::StorageClassInput || var.storageClass == spv::StorageClassOutput) &&
+                    // Only include variables in the entrypoint's interface
+                    find(entrypointVariables.begin(), entrypointVariables.end(), insn.word(2)) != entrypointVariables.end()) {
                     var.baseTypePtrID = insn.word(1);
                     var.ID = insn.word(2);
                     variables.push_back(var);
@@ -1960,6 +1967,51 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
          pStage->stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT || pStage->stage == VK_SHADER_STAGE_GEOMETRY_BIT);
 
     uint32_t numCompIn = 0, numCompOut = 0;
+    int maxCompIn = 0, maxCompOut = 0;
+
+    auto inputs = CollectInterfaceByLocation(src, entrypoint, spv::StorageClassInput, strip_input_array_level);
+    auto outputs = CollectInterfaceByLocation(src, entrypoint, spv::StorageClassOutput, strip_output_array_level);
+
+    // Find max component location used for input variables.
+    for (auto &var : inputs) {
+        int location = var.first.first;
+        int component = var.first.second;
+        interface_var &iv = var.second;
+
+        // Only need to look at the first location, since we use the type's whole size
+        if (iv.offset != 0) {
+            continue;
+        }
+
+        if (iv.is_patch) {
+            continue;
+        }
+
+        int numComponents = GetComponentsConsumedByType(src, iv.type_id, strip_input_array_level);
+        maxCompIn = std::max(maxCompIn, location * 4 + component + numComponents);
+    }
+
+    // Find max component location used for output variables.
+    for (auto &var : outputs) {
+        int location = var.first.first;
+        int component = var.first.second;
+        interface_var &iv = var.second;
+
+        // Only need to look at the first location, since we use the type's whole size
+        if (iv.offset != 0) {
+            continue;
+        }
+
+        if (iv.is_patch) {
+            continue;
+        }
+
+        int numComponents = GetComponentsConsumedByType(src, iv.type_id, strip_output_array_level);
+        maxCompOut = std::max(maxCompOut, location * 4 + component + numComponents);
+    }
+
+    // XXX TODO: Would be nice to rewrite this to use CollectInterfaceByLocation (or something similar),
+    // but that doesn't include builtins.
     for (auto &var : variables) {
         // Check if the variable is a patch. Patches can also be members of blocks,
         // but if they are then the top-level arrayness has already been stripped
@@ -1983,6 +2035,13 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
                                 "components by %u components",
                                 limits.maxVertexOutputComponents, numCompOut - limits.maxVertexOutputComponents);
             }
+            if (maxCompOut > (int)limits.maxVertexOutputComponents) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
+                                "Invalid Pipeline CreateInfo State: Vertex shader output variable uses location that "
+                                "exceeds component limit VkPhysicalDeviceLimits::maxVertexOutputComponents (%u)",
+                                limits.maxVertexOutputComponents);
+            }
             break;
 
         case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
@@ -1995,6 +2054,14 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
                                 limits.maxTessellationControlPerVertexInputComponents,
                                 numCompIn - limits.maxTessellationControlPerVertexInputComponents);
             }
+            if (maxCompIn > (int)limits.maxTessellationControlPerVertexInputComponents) {
+                skip |=
+                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                            HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
+                            "Invalid Pipeline CreateInfo State: Tessellation control shader input variable uses location that "
+                            "exceeds component limit VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents (%u)",
+                            limits.maxTessellationControlPerVertexInputComponents);
+            }
             if (numCompOut > limits.maxTessellationControlPerVertexOutputComponents) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                                 HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
@@ -2003,6 +2070,14 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
                                 "components by %u components",
                                 limits.maxTessellationControlPerVertexOutputComponents,
                                 numCompOut - limits.maxTessellationControlPerVertexOutputComponents);
+            }
+            if (maxCompOut > (int)limits.maxTessellationControlPerVertexOutputComponents) {
+                skip |=
+                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                            HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
+                            "Invalid Pipeline CreateInfo State: Tessellation control shader output variable uses location that "
+                            "exceeds component limit VkPhysicalDeviceLimits::maxTessellationControlPerVertexOutputComponents (%u)",
+                            limits.maxTessellationControlPerVertexOutputComponents);
             }
             break;
 
@@ -2016,6 +2091,14 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
                                 limits.maxTessellationEvaluationInputComponents,
                                 numCompIn - limits.maxTessellationEvaluationInputComponents);
             }
+            if (maxCompIn > (int)limits.maxTessellationEvaluationInputComponents) {
+                skip |=
+                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                            HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
+                            "Invalid Pipeline CreateInfo State: Tessellation evaluation shader input variable uses location that "
+                            "exceeds component limit VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents (%u)",
+                            limits.maxTessellationEvaluationInputComponents);
+            }
             if (numCompOut > limits.maxTessellationEvaluationOutputComponents) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                                 HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
@@ -2024,6 +2107,14 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
                                 "components by %u components",
                                 limits.maxTessellationEvaluationOutputComponents,
                                 numCompOut - limits.maxTessellationEvaluationOutputComponents);
+            }
+            if (maxCompOut > (int)limits.maxTessellationEvaluationOutputComponents) {
+                skip |=
+                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                            HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
+                            "Invalid Pipeline CreateInfo State: Tessellation evaluation shader output variable uses location that "
+                            "exceeds component limit VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents (%u)",
+                            limits.maxTessellationEvaluationOutputComponents);
             }
             break;
 
@@ -2036,6 +2127,13 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
                                 "components by %u components",
                                 limits.maxGeometryInputComponents, numCompIn - limits.maxGeometryInputComponents);
             }
+            if (maxCompIn > (int)limits.maxGeometryInputComponents) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
+                                "Invalid Pipeline CreateInfo State: Geometry shader input variable uses location that "
+                                "exceeds component limit VkPhysicalDeviceLimits::maxGeometryInputComponents (%u)",
+                                limits.maxGeometryInputComponents);
+            }
             if (numCompOut > limits.maxGeometryOutputComponents) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
                                 HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
@@ -2043,6 +2141,13 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
                                 "VkPhysicalDeviceLimits::maxGeometryOutputComponents of %u "
                                 "components by %u components",
                                 limits.maxGeometryOutputComponents, numCompOut - limits.maxGeometryOutputComponents);
+            }
+            if (maxCompOut > (int)limits.maxGeometryOutputComponents) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
+                                "Invalid Pipeline CreateInfo State: Geometry shader output variable uses location that "
+                                "exceeds component limit VkPhysicalDeviceLimits::maxGeometryOutputComponents (%u)",
+                                limits.maxGeometryOutputComponents);
             }
             if (numCompOut * numVertices > limits.maxGeometryTotalOutputComponents) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
@@ -2063,6 +2168,13 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
                                 "VkPhysicalDeviceLimits::maxFragmentInputComponents of %u "
                                 "components by %u components",
                                 limits.maxFragmentInputComponents, numCompIn - limits.maxFragmentInputComponents);
+            }
+            if (maxCompIn > (int)limits.maxFragmentInputComponents) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT,
+                                HandleToUint64(pipeline->pipeline), kVUID_Core_Shader_ExceedDeviceLimit,
+                                "Invalid Pipeline CreateInfo State: Fragment shader input variable uses location that "
+                                "exceeds component limit VkPhysicalDeviceLimits::maxFragmentInputComponents (%u)",
+                                limits.maxFragmentInputComponents);
             }
             break;
 

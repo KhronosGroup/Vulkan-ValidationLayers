@@ -3958,25 +3958,31 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxVertexOutputComponents) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    for (int overflow = 0; overflow < 2; ++overflow) {
+    // overflow == 0: no overflow, 1: too many components, 2: location number too large
+    for (int overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
 
         const uint32_t maxVsOutComp = m_device->props.limits.maxVertexOutputComponents + overflow;
         std::string vsSourceStr = "#version 450\n\n";
         const uint32_t numVec4 = maxVsOutComp / 4;
         uint32_t location = 0;
-        for (uint32_t i = 0; i < numVec4; i++) {
-            vsSourceStr += "layout(location=" + std::to_string(location) + ") out vec4 v" + std::to_string(i) + ";\n";
-            location += 1;
-        }
-        const uint32_t remainder = maxVsOutComp % 4;
-        if (remainder != 0) {
-            if (remainder == 1) {
-                vsSourceStr += "layout(location=" + std::to_string(location) + ") out float" + " vn;\n";
-            } else {
-                vsSourceStr += "layout(location=" + std::to_string(location) + ") out vec" + std::to_string(remainder) + " vn;\n";
+        if (overflow == 2) {
+            vsSourceStr += "layout(location=" + std::to_string(numVec4 + 1) + ") out vec4 vn;\n";
+        } else {
+            for (uint32_t i = 0; i < numVec4; i++) {
+                vsSourceStr += "layout(location=" + std::to_string(location) + ") out vec4 v" + std::to_string(i) + ";\n";
+                location += 1;
             }
-            location += 1;
+            const uint32_t remainder = maxVsOutComp % 4;
+            if (remainder != 0) {
+                if (remainder == 1) {
+                    vsSourceStr += "layout(location=" + std::to_string(location) + ") out float" + " vn;\n";
+                } else {
+                    vsSourceStr +=
+                        "layout(location=" + std::to_string(location) + ") out vec" + std::to_string(remainder) + " vn;\n";
+                }
+                location += 1;
+            }
         }
         vsSourceStr +=
             "void main(){\n"
@@ -3997,11 +4003,25 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxVertexOutputComponents) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         };
-        if (overflow) {
-            CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                              "Vertex shader exceeds VkPhysicalDeviceLimits::maxVertexOutputComponents", false);
-        } else {
-            CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "", true);
+
+        switch (overflow) {
+            case 2:
+                CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                  "Vertex shader output variable uses location that exceeds component limit "
+                                                  "VkPhysicalDeviceLimits::maxVertexOutputComponents");
+                break;
+            case 1:
+                CreatePipelineHelper::OneshotTest(
+                    *this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                    vector<string>{"Vertex shader exceeds VkPhysicalDeviceLimits::maxVertexOutputComponents",
+                                   "Vertex shader output variable uses location that exceeds component limit "
+                                   "VkPhysicalDeviceLimits::maxVertexOutputComponents"});
+                break;
+            default:
+                assert(0);
+            case 0:
+                CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "", true);
+                break;
         }
     }
 }
@@ -4014,7 +4034,8 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputCompone
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    for (int overflow = 0; overflow < 2; ++overflow) {
+    // overflow == 0: no overflow, 1: too many components, 2: location number too large
+    for (int overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
         VkPhysicalDeviceFeatures feat;
         vk::GetPhysicalDeviceFeatures(gpu(), &feat);
@@ -4031,38 +4052,46 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputCompone
         const uint32_t maxTescInComp = m_device->props.limits.maxTessellationControlPerVertexInputComponents + overflow;
         const uint32_t numInVec4 = maxTescInComp / 4;
         uint32_t inLocation = 0;
-        for (uint32_t i = 0; i < numInVec4; i++) {
-            tcsSourceStr += "layout(location=" + std::to_string(inLocation) + ") in vec4 v" + std::to_string(i) + "In[];\n";
-            inLocation += 1;
-        }
-        const uint32_t inRemainder = maxTescInComp % 4;
-        if (inRemainder != 0) {
-            if (inRemainder == 1) {
-                tcsSourceStr += "layout(location=" + std::to_string(inLocation) + ") in float" + " vnIn[];\n";
-            } else {
-                tcsSourceStr +=
-                    "layout(location=" + std::to_string(inLocation) + ") in vec" + std::to_string(inRemainder) + " vnIn[];\n";
+        if (overflow == 2) {
+            tcsSourceStr += "layout(location=" + std::to_string(numInVec4 + 1) + ") in vec4 vnIn[];\n";
+        } else {
+            for (uint32_t i = 0; i < numInVec4; i++) {
+                tcsSourceStr += "layout(location=" + std::to_string(inLocation) + ") in vec4 v" + std::to_string(i) + "In[];\n";
+                inLocation += 1;
             }
-            inLocation += 1;
+            const uint32_t inRemainder = maxTescInComp % 4;
+            if (inRemainder != 0) {
+                if (inRemainder == 1) {
+                    tcsSourceStr += "layout(location=" + std::to_string(inLocation) + ") in float" + " vnIn[];\n";
+                } else {
+                    tcsSourceStr +=
+                        "layout(location=" + std::to_string(inLocation) + ") in vec" + std::to_string(inRemainder) + " vnIn[];\n";
+                }
+                inLocation += 1;
+            }
         }
 
         // Output components
         const uint32_t maxTescOutComp = m_device->props.limits.maxTessellationControlPerVertexOutputComponents + overflow;
         const uint32_t numOutVec4 = maxTescOutComp / 4;
         uint32_t outLocation = 0;
-        for (uint32_t i = 0; i < numOutVec4; i++) {
-            tcsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out vec4 v" + std::to_string(i) + "Out[3];\n";
-            outLocation += 1;
-        }
-        const uint32_t outRemainder = maxTescOutComp % 4;
-        if (outRemainder != 0) {
-            if (outRemainder == 1) {
-                tcsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out float" + " vnOut[3];\n";
-            } else {
-                tcsSourceStr +=
-                    "layout(location=" + std::to_string(outLocation) + ") out vec" + std::to_string(outRemainder) + " vnOut[3];\n";
+        if (overflow == 2) {
+            tcsSourceStr += "layout(location=" + std::to_string(numOutVec4 + 1) + ") out vec4 vnOut[3];\n";
+        } else {
+            for (uint32_t i = 0; i < numOutVec4; i++) {
+                tcsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out vec4 v" + std::to_string(i) + "Out[3];\n";
+                outLocation += 1;
             }
-            outLocation += 1;
+            const uint32_t outRemainder = maxTescOutComp % 4;
+            if (outRemainder != 0) {
+                if (outRemainder == 1) {
+                    tcsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out float" + " vnOut[3];\n";
+                } else {
+                    tcsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out vec" + std::to_string(outRemainder) +
+                                    " vnOut[3];\n";
+                }
+                outLocation += 1;
+            }
         }
 
         tcsSourceStr += "layout(vertices=3) out;\n";
@@ -4096,14 +4125,33 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationControlInputOutputCompone
             helper.gp_ci_.pTessellationState = &tessInfo;
             helper.gp_ci_.pInputAssemblyState = &inputAssemblyInfo;
         };
-        if (overflow) {
-            CreatePipelineHelper::OneshotTest(
-                *this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                vector<string>{
-                    "Tessellation control shader exceeds VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents",
-                    "Tessellation control shader exceeds VkPhysicalDeviceLimits::maxTessellationControlPerVertexOutputComponents"});
-        } else {
-            CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "", true);
+
+        switch (overflow) {
+            case 2:
+                CreatePipelineHelper::OneshotTest(
+                    *this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                    vector<string>{"Tessellation control shader input variable uses location that exceeds component limit "
+                                   "VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents",
+                                   "Tessellation control shader output variable uses location that exceeds component limit "
+                                   "VkPhysicalDeviceLimits::maxTessellationControlPerVertexOutputComponents"});
+                break;
+            case 1:
+                CreatePipelineHelper::OneshotTest(
+                    *this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                    vector<string>{"Tessellation control shader exceeds "
+                                   "VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents",
+                                   "Tessellation control shader exceeds "
+                                   "VkPhysicalDeviceLimits::maxTessellationControlPerVertexOutputComponents",
+                                   "Tessellation control shader input variable uses location that exceeds component limit "
+                                   "VkPhysicalDeviceLimits::maxTessellationControlPerVertexInputComponents",
+                                   "Tessellation control shader output variable uses location that exceeds component limit "
+                                   "VkPhysicalDeviceLimits::maxTessellationControlPerVertexOutputComponents"});
+                break;
+            default:
+                assert(0);
+            case 0:
+                CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "", true);
+                break;
         }
     }
 }
@@ -4116,7 +4164,8 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComp
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    for (int overflow = 0; overflow < 2; ++overflow) {
+    // overflow == 0: no overflow, 1: too many components, 2: location number too large
+    for (int overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
         VkPhysicalDeviceFeatures feat;
         vk::GetPhysicalDeviceFeatures(gpu(), &feat);
@@ -4135,38 +4184,46 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComp
         const uint32_t maxTeseInComp = m_device->props.limits.maxTessellationEvaluationInputComponents + overflow;
         const uint32_t numInVec4 = maxTeseInComp / 4;
         uint32_t inLocation = 0;
-        for (uint32_t i = 0; i < numInVec4; i++) {
-            tesSourceStr += "layout(location=" + std::to_string(inLocation) + ") in vec4 v" + std::to_string(i) + "In[];\n";
-            inLocation += 1;
-        }
-        const uint32_t inRemainder = maxTeseInComp % 4;
-        if (inRemainder != 0) {
-            if (inRemainder == 1) {
-                tesSourceStr += "layout(location=" + std::to_string(inLocation) + ") in float" + " vnIn[];\n";
-            } else {
-                tesSourceStr +=
-                    "layout(location=" + std::to_string(inLocation) + ") in vec" + std::to_string(inRemainder) + " vnIn[];\n";
+        if (overflow == 2) {
+            tesSourceStr += "layout(location=" + std::to_string(numInVec4 + 1) + ") in vec4 vnIn[];\n";
+        } else {
+            for (uint32_t i = 0; i < numInVec4; i++) {
+                tesSourceStr += "layout(location=" + std::to_string(inLocation) + ") in vec4 v" + std::to_string(i) + "In[];\n";
+                inLocation += 1;
             }
-            inLocation += 1;
+            const uint32_t inRemainder = maxTeseInComp % 4;
+            if (inRemainder != 0) {
+                if (inRemainder == 1) {
+                    tesSourceStr += "layout(location=" + std::to_string(inLocation) + ") in float" + " vnIn[];\n";
+                } else {
+                    tesSourceStr +=
+                        "layout(location=" + std::to_string(inLocation) + ") in vec" + std::to_string(inRemainder) + " vnIn[];\n";
+                }
+                inLocation += 1;
+            }
         }
 
         // Output components
         const uint32_t maxTeseOutComp = m_device->props.limits.maxTessellationEvaluationOutputComponents + overflow;
         const uint32_t numOutVec4 = maxTeseOutComp / 4;
         uint32_t outLocation = 0;
-        for (uint32_t i = 0; i < numOutVec4; i++) {
-            tesSourceStr += "layout(location=" + std::to_string(outLocation) + ") out vec4 v" + std::to_string(i) + "Out;\n";
-            outLocation += 1;
-        }
-        const uint32_t outRemainder = maxTeseOutComp % 4;
-        if (outRemainder != 0) {
-            if (outRemainder == 1) {
-                tesSourceStr += "layout(location=" + std::to_string(outLocation) + ") out float" + " vnOut;\n";
-            } else {
-                tesSourceStr +=
-                    "layout(location=" + std::to_string(outLocation) + ") out vec" + std::to_string(outRemainder) + " vnOut;\n";
+        if (overflow == 2) {
+            tesSourceStr += "layout(location=" + std::to_string(numOutVec4 + 1) + ") out vec4 vnOut;\n";
+        } else {
+            for (uint32_t i = 0; i < numOutVec4; i++) {
+                tesSourceStr += "layout(location=" + std::to_string(outLocation) + ") out vec4 v" + std::to_string(i) + "Out;\n";
+                outLocation += 1;
             }
-            outLocation += 1;
+            const uint32_t outRemainder = maxTeseOutComp % 4;
+            if (outRemainder != 0) {
+                if (outRemainder == 1) {
+                    tesSourceStr += "layout(location=" + std::to_string(outLocation) + ") out float" + " vnOut;\n";
+                } else {
+                    tesSourceStr +=
+                        "layout(location=" + std::to_string(outLocation) + ") out vec" + std::to_string(outRemainder) + " vnOut;\n";
+                }
+                outLocation += 1;
+            }
         }
 
         // Finalize
@@ -4199,14 +4256,32 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxTessellationEvaluationInputOutputComp
             helper.gp_ci_.pTessellationState = &tessInfo;
             helper.gp_ci_.pInputAssemblyState = &inputAssemblyInfo;
         };
-        if (overflow) {
-            CreatePipelineHelper::OneshotTest(
-                *this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                vector<string>{
-                    "Tessellation evaluation shader exceeds VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents",
-                    "Tessellation evaluation shader exceeds VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents"});
-        } else {
-            CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "", true);
+
+        switch (overflow) {
+            case 2:
+                CreatePipelineHelper::OneshotTest(
+                    *this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                    vector<string>{"Tessellation evaluation shader input variable uses location that exceeds component limit "
+                                   "VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents",
+                                   "Tessellation evaluation shader output variable uses location that exceeds component limit "
+                                   "VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents"});
+                break;
+            case 1:
+                CreatePipelineHelper::OneshotTest(
+                    *this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                    vector<string>{
+                        "Tessellation evaluation shader exceeds VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents",
+                        "Tessellation evaluation shader exceeds VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents",
+                        "Tessellation evaluation shader input variable uses location that exceeds component limit "
+                        "VkPhysicalDeviceLimits::maxTessellationEvaluationInputComponents",
+                        "Tessellation evaluation shader output variable uses location that exceeds component limit "
+                        "VkPhysicalDeviceLimits::maxTessellationEvaluationOutputComponents"});
+                break;
+            default:
+                assert(0);
+            case 0:
+                CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "", true);
+                break;
         }
     }
 }
@@ -4219,7 +4294,8 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    for (int overflow = 0; overflow < 2; ++overflow) {
+    // overflow == 0: no overflow, 1: too many components, 2: location number too large
+    for (int overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
         VkPhysicalDeviceFeatures feat;
         vk::GetPhysicalDeviceFeatures(gpu(), &feat);
@@ -4238,38 +4314,46 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
         const uint32_t maxGeomInComp = m_device->props.limits.maxGeometryInputComponents + overflow;
         const uint32_t numInVec4 = maxGeomInComp / 4;
         uint32_t inLocation = 0;
-        for (uint32_t i = 0; i < numInVec4; i++) {
-            gsSourceStr += "layout(location=" + std::to_string(inLocation) + ") in vec4 v" + std::to_string(i) + "In[];\n";
-            inLocation += 1;
-        }
-        const uint32_t inRemainder = maxGeomInComp % 4;
-        if (inRemainder != 0) {
-            if (inRemainder == 1) {
-                gsSourceStr += "layout(location=" + std::to_string(inLocation) + ") in float" + " vnIn[];\n";
-            } else {
-                gsSourceStr +=
-                    "layout(location=" + std::to_string(inLocation) + ") in vec" + std::to_string(inRemainder) + " vnIn[];\n";
+        if (overflow == 2) {
+            gsSourceStr += "layout(location=" + std::to_string(numInVec4 + 1) + ") in vec4 vnIn[];\n";
+        } else {
+            for (uint32_t i = 0; i < numInVec4; i++) {
+                gsSourceStr += "layout(location=" + std::to_string(inLocation) + ") in vec4 v" + std::to_string(i) + "In[];\n";
+                inLocation += 1;
             }
-            inLocation += 1;
+            const uint32_t inRemainder = maxGeomInComp % 4;
+            if (inRemainder != 0) {
+                if (inRemainder == 1) {
+                    gsSourceStr += "layout(location=" + std::to_string(inLocation) + ") in float" + " vnIn[];\n";
+                } else {
+                    gsSourceStr +=
+                        "layout(location=" + std::to_string(inLocation) + ") in vec" + std::to_string(inRemainder) + " vnIn[];\n";
+                }
+                inLocation += 1;
+            }
         }
 
         // Output components
         const uint32_t maxGeomOutComp = m_device->props.limits.maxGeometryOutputComponents + overflow;
         const uint32_t numOutVec4 = maxGeomOutComp / 4;
         uint32_t outLocation = 0;
-        for (uint32_t i = 0; i < numOutVec4; i++) {
-            gsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out vec4 v" + std::to_string(i) + "Out;\n";
-            outLocation += 1;
-        }
-        const uint32_t outRemainder = maxGeomOutComp % 4;
-        if (outRemainder != 0) {
-            if (outRemainder == 1) {
-                gsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out float" + " vnOut;\n";
-            } else {
-                gsSourceStr +=
-                    "layout(location=" + std::to_string(outLocation) + ") out vec" + std::to_string(outRemainder) + " vnOut;\n";
+        if (overflow == 2) {
+            gsSourceStr += "layout(location=" + std::to_string(numOutVec4) + ") out vec4 vnOut;\n";
+        } else {
+            for (uint32_t i = 0; i < numOutVec4; i++) {
+                gsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out vec4 v" + std::to_string(i) + "Out;\n";
+                outLocation += 1;
             }
-            outLocation += 1;
+            const uint32_t outRemainder = maxGeomOutComp % 4;
+            if (outRemainder != 0) {
+                if (outRemainder == 1) {
+                    gsSourceStr += "layout(location=" + std::to_string(outLocation) + ") out float" + " vnOut;\n";
+                } else {
+                    gsSourceStr +=
+                        "layout(location=" + std::to_string(outLocation) + ") out vec" + std::to_string(outRemainder) + " vnOut;\n";
+                }
+                outLocation += 1;
+            }
         }
 
         // Finalize
@@ -4287,14 +4371,32 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxGeometryInputOutputComponents) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), gs.GetStageCreateInfo(), helper.fs_->GetStageCreateInfo()};
         };
-        if (overflow) {
-            CreatePipelineHelper::OneshotTest(
-                *this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                vector<string>{"Geometry shader exceeds VkPhysicalDeviceLimits::maxGeometryInputComponents",
-                               "Geometry shader exceeds VkPhysicalDeviceLimits::maxGeometryOutputComponents",
-                               "Geometry shader exceeds VkPhysicalDeviceLimits::maxGeometryTotalOutputComponents"});
-        } else {
-            CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "", true);
+
+        switch (overflow) {
+            case 2:
+                CreatePipelineHelper::OneshotTest(
+                    *this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                    vector<string>{"Geometry shader input variable uses location that exceeds component limit "
+                                   "VkPhysicalDeviceLimits::maxGeometryInputComponents",
+                                   "Geometry shader output variable uses location that exceeds component limit "
+                                   "VkPhysicalDeviceLimits::maxGeometryOutputComponents"});
+                break;
+            case 1:
+                CreatePipelineHelper::OneshotTest(
+                    *this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                    vector<string>{"Geometry shader exceeds VkPhysicalDeviceLimits::maxGeometryInputComponents",
+                                   "Geometry shader exceeds VkPhysicalDeviceLimits::maxGeometryOutputComponents",
+                                   "Geometry shader input variable uses location that exceeds component limit "
+                                   "VkPhysicalDeviceLimits::maxGeometryInputComponents",
+                                   "Geometry shader output variable uses location that exceeds component limit "
+                                   "VkPhysicalDeviceLimits::maxGeometryOutputComponents",
+                                   "Geometry shader exceeds VkPhysicalDeviceLimits::maxGeometryTotalOutputComponents"});
+                break;
+            default:
+                assert(0);
+            case 0:
+                CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "", true);
+                break;
         }
     }
 }
@@ -4306,25 +4408,31 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxFragmentInputComponents) {
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    for (int overflow = 0; overflow < 2; ++overflow) {
+    // overflow == 0: no overflow, 1: too many components, 2: location number too large
+    for (int overflow = 0; overflow < 3; ++overflow) {
         m_errorMonitor->Reset();
 
         const uint32_t maxFsInComp = m_device->props.limits.maxFragmentInputComponents + overflow;
         std::string fsSourceStr = "#version 450\n\n";
         const uint32_t numVec4 = maxFsInComp / 4;
         uint32_t location = 0;
-        for (uint32_t i = 0; i < numVec4; i++) {
-            fsSourceStr += "layout(location=" + std::to_string(location) + ") in vec4 v" + std::to_string(i) + ";\n";
-            location += 1;
-        }
-        const uint32_t remainder = maxFsInComp % 4;
-        if (remainder != 0) {
-            if (remainder == 1) {
-                fsSourceStr += "layout(location=" + std::to_string(location) + ") in float" + " vn;\n";
-            } else {
-                fsSourceStr += "layout(location=" + std::to_string(location) + ") in vec" + std::to_string(remainder) + " vn;\n";
+        if (overflow == 2) {
+            fsSourceStr += "layout(location=" + std::to_string(numVec4 + 1) + ") in float" + " vn;\n";
+        } else {
+            for (uint32_t i = 0; i < numVec4; i++) {
+                fsSourceStr += "layout(location=" + std::to_string(location) + ") in vec4 v" + std::to_string(i) + ";\n";
+                location += 1;
             }
-            location += 1;
+            const uint32_t remainder = maxFsInComp % 4;
+            if (remainder != 0) {
+                if (remainder == 1) {
+                    fsSourceStr += "layout(location=" + std::to_string(location) + ") in float" + " vn;\n";
+                } else {
+                    fsSourceStr +=
+                        "layout(location=" + std::to_string(location) + ") in vec" + std::to_string(remainder) + " vn;\n";
+                }
+                location += 1;
+            }
         }
         fsSourceStr +=
             "layout(location=0) out vec4 color;"
@@ -4338,12 +4446,24 @@ TEST_F(VkLayerTest, CreatePipelineExceedMaxFragmentInputComponents) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         };
-        if (overflow) {
-            CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                              "Fragment shader exceeds "
-                                              "VkPhysicalDeviceLimits::maxFragmentInputComponents");
-        } else {
-            CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "", true);
+        switch (overflow) {
+            case 2:
+                CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                  "Fragment shader input variable uses location that exceeds component limit "
+                                                  "VkPhysicalDeviceLimits::maxFragmentInputComponents");
+                break;
+            case 1:
+                CreatePipelineHelper::OneshotTest(
+                    *this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                    vector<string>{"Fragment shader exceeds VkPhysicalDeviceLimits::maxFragmentInputComponents",
+                                   "Fragment shader input variable uses location that exceeds component limit "
+                                   "VkPhysicalDeviceLimits::maxFragmentInputComponents"});
+                break;
+            default:
+                assert(0);
+            case 0:
+                CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "", true);
+                break;
         }
     }
 }
