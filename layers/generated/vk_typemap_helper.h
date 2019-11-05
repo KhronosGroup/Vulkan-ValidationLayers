@@ -1756,6 +1756,33 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_
     typedef VkSurfaceProtectedCapabilitiesKHR Type;
 };
 
+// Map type VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES_KHR
+template <> struct LvlTypeMap<VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES_KHR> {
+    typedef VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR Type;
+};
+
+// Map type VkAttachmentReferenceStencilLayoutKHR to id VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT_KHR
+template <> struct LvlTypeMap<VkAttachmentReferenceStencilLayoutKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT_KHR> {
+    typedef VkAttachmentReferenceStencilLayoutKHR Type;
+};
+
+// Map type VkAttachmentDescriptionStencilLayoutKHR to id VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT_KHR
+template <> struct LvlTypeMap<VkAttachmentDescriptionStencilLayoutKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT_KHR> {
+    typedef VkAttachmentDescriptionStencilLayoutKHR Type;
+};
+
 // Map type VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES_KHR
 template <> struct LvlTypeMap<VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES_KHR;

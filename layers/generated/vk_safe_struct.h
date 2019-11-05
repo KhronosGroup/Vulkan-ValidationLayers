@@ -3485,6 +3485,52 @@ struct safe_VkSurfaceProtectedCapabilitiesKHR {
     VkSurfaceProtectedCapabilitiesKHR const *ptr() const { return reinterpret_cast<VkSurfaceProtectedCapabilitiesKHR const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 separateDepthStencilLayouts;
+    safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR(const VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR* in_struct);
+    safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR(const safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR& src);
+    safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR& operator=(const safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR& src);
+    safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR();
+    ~safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR();
+    void initialize(const VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR* src);
+    VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR *>(this); }
+    VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR const *>(this); }
+};
+
+struct safe_VkAttachmentReferenceStencilLayoutKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkImageLayout stencilLayout;
+    safe_VkAttachmentReferenceStencilLayoutKHR(const VkAttachmentReferenceStencilLayoutKHR* in_struct);
+    safe_VkAttachmentReferenceStencilLayoutKHR(const safe_VkAttachmentReferenceStencilLayoutKHR& src);
+    safe_VkAttachmentReferenceStencilLayoutKHR& operator=(const safe_VkAttachmentReferenceStencilLayoutKHR& src);
+    safe_VkAttachmentReferenceStencilLayoutKHR();
+    ~safe_VkAttachmentReferenceStencilLayoutKHR();
+    void initialize(const VkAttachmentReferenceStencilLayoutKHR* in_struct);
+    void initialize(const safe_VkAttachmentReferenceStencilLayoutKHR* src);
+    VkAttachmentReferenceStencilLayoutKHR *ptr() { return reinterpret_cast<VkAttachmentReferenceStencilLayoutKHR *>(this); }
+    VkAttachmentReferenceStencilLayoutKHR const *ptr() const { return reinterpret_cast<VkAttachmentReferenceStencilLayoutKHR const *>(this); }
+};
+
+struct safe_VkAttachmentDescriptionStencilLayoutKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkImageLayout stencilInitialLayout;
+    VkImageLayout stencilFinalLayout;
+    safe_VkAttachmentDescriptionStencilLayoutKHR(const VkAttachmentDescriptionStencilLayoutKHR* in_struct);
+    safe_VkAttachmentDescriptionStencilLayoutKHR(const safe_VkAttachmentDescriptionStencilLayoutKHR& src);
+    safe_VkAttachmentDescriptionStencilLayoutKHR& operator=(const safe_VkAttachmentDescriptionStencilLayoutKHR& src);
+    safe_VkAttachmentDescriptionStencilLayoutKHR();
+    ~safe_VkAttachmentDescriptionStencilLayoutKHR();
+    void initialize(const VkAttachmentDescriptionStencilLayoutKHR* in_struct);
+    void initialize(const safe_VkAttachmentDescriptionStencilLayoutKHR* src);
+    VkAttachmentDescriptionStencilLayoutKHR *ptr() { return reinterpret_cast<VkAttachmentDescriptionStencilLayoutKHR *>(this); }
+    VkAttachmentDescriptionStencilLayoutKHR const *ptr() const { return reinterpret_cast<VkAttachmentDescriptionStencilLayoutKHR const *>(this); }
+};
+
 struct safe_VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR {
     VkStructureType sType;
     void* pNext;

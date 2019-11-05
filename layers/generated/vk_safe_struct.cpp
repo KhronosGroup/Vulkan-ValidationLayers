@@ -15635,6 +15635,167 @@ void safe_VkSurfaceProtectedCapabilitiesKHR::initialize(const safe_VkSurfaceProt
     pNext = SafePnextCopy(src->pNext);
 }
 
+safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR::safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR(const VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR* in_struct) :
+    sType(in_struct->sType),
+    separateDepthStencilLayouts(in_struct->separateDepthStencilLayouts)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR::safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR() :
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR::safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR(const safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR& src)
+{
+    sType = src.sType;
+    separateDepthStencilLayouts = src.separateDepthStencilLayouts;
+    pNext = SafePnextCopy(src.pNext);
+}
+
+safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR& safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR::operator=(const safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR& src)
+{
+    if (&src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = src.sType;
+    separateDepthStencilLayouts = src.separateDepthStencilLayouts;
+    pNext = SafePnextCopy(src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR::~safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR::initialize(const VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR* in_struct)
+{
+    sType = in_struct->sType;
+    separateDepthStencilLayouts = in_struct->separateDepthStencilLayouts;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR::initialize(const safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR* src)
+{
+    sType = src->sType;
+    separateDepthStencilLayouts = src->separateDepthStencilLayouts;
+    pNext = SafePnextCopy(src->pNext);
+}
+
+safe_VkAttachmentReferenceStencilLayoutKHR::safe_VkAttachmentReferenceStencilLayoutKHR(const VkAttachmentReferenceStencilLayoutKHR* in_struct) :
+    sType(in_struct->sType),
+    stencilLayout(in_struct->stencilLayout)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkAttachmentReferenceStencilLayoutKHR::safe_VkAttachmentReferenceStencilLayoutKHR() :
+    pNext(nullptr)
+{}
+
+safe_VkAttachmentReferenceStencilLayoutKHR::safe_VkAttachmentReferenceStencilLayoutKHR(const safe_VkAttachmentReferenceStencilLayoutKHR& src)
+{
+    sType = src.sType;
+    stencilLayout = src.stencilLayout;
+    pNext = SafePnextCopy(src.pNext);
+}
+
+safe_VkAttachmentReferenceStencilLayoutKHR& safe_VkAttachmentReferenceStencilLayoutKHR::operator=(const safe_VkAttachmentReferenceStencilLayoutKHR& src)
+{
+    if (&src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = src.sType;
+    stencilLayout = src.stencilLayout;
+    pNext = SafePnextCopy(src.pNext);
+
+    return *this;
+}
+
+safe_VkAttachmentReferenceStencilLayoutKHR::~safe_VkAttachmentReferenceStencilLayoutKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkAttachmentReferenceStencilLayoutKHR::initialize(const VkAttachmentReferenceStencilLayoutKHR* in_struct)
+{
+    sType = in_struct->sType;
+    stencilLayout = in_struct->stencilLayout;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkAttachmentReferenceStencilLayoutKHR::initialize(const safe_VkAttachmentReferenceStencilLayoutKHR* src)
+{
+    sType = src->sType;
+    stencilLayout = src->stencilLayout;
+    pNext = SafePnextCopy(src->pNext);
+}
+
+safe_VkAttachmentDescriptionStencilLayoutKHR::safe_VkAttachmentDescriptionStencilLayoutKHR(const VkAttachmentDescriptionStencilLayoutKHR* in_struct) :
+    sType(in_struct->sType),
+    stencilInitialLayout(in_struct->stencilInitialLayout),
+    stencilFinalLayout(in_struct->stencilFinalLayout)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkAttachmentDescriptionStencilLayoutKHR::safe_VkAttachmentDescriptionStencilLayoutKHR() :
+    pNext(nullptr)
+{}
+
+safe_VkAttachmentDescriptionStencilLayoutKHR::safe_VkAttachmentDescriptionStencilLayoutKHR(const safe_VkAttachmentDescriptionStencilLayoutKHR& src)
+{
+    sType = src.sType;
+    stencilInitialLayout = src.stencilInitialLayout;
+    stencilFinalLayout = src.stencilFinalLayout;
+    pNext = SafePnextCopy(src.pNext);
+}
+
+safe_VkAttachmentDescriptionStencilLayoutKHR& safe_VkAttachmentDescriptionStencilLayoutKHR::operator=(const safe_VkAttachmentDescriptionStencilLayoutKHR& src)
+{
+    if (&src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = src.sType;
+    stencilInitialLayout = src.stencilInitialLayout;
+    stencilFinalLayout = src.stencilFinalLayout;
+    pNext = SafePnextCopy(src.pNext);
+
+    return *this;
+}
+
+safe_VkAttachmentDescriptionStencilLayoutKHR::~safe_VkAttachmentDescriptionStencilLayoutKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkAttachmentDescriptionStencilLayoutKHR::initialize(const VkAttachmentDescriptionStencilLayoutKHR* in_struct)
+{
+    sType = in_struct->sType;
+    stencilInitialLayout = in_struct->stencilInitialLayout;
+    stencilFinalLayout = in_struct->stencilFinalLayout;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkAttachmentDescriptionStencilLayoutKHR::initialize(const safe_VkAttachmentDescriptionStencilLayoutKHR* src)
+{
+    sType = src->sType;
+    stencilInitialLayout = src->stencilInitialLayout;
+    stencilFinalLayout = src->stencilFinalLayout;
+    pNext = SafePnextCopy(src->pNext);
+}
+
 safe_VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR::safe_VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR(const VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR* in_struct) :
     sType(in_struct->sType),
     uniformBufferStandardLayout(in_struct->uniformBufferStandardLayout)
@@ -29212,6 +29373,15 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR:
             safe_pNext = new safe_VkSurfaceProtectedCapabilitiesKHR(reinterpret_cast<const VkSurfaceProtectedCapabilitiesKHR *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES_KHR:
+            safe_pNext = new safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR(reinterpret_cast<const VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT_KHR:
+            safe_pNext = new safe_VkAttachmentReferenceStencilLayoutKHR(reinterpret_cast<const VkAttachmentReferenceStencilLayoutKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT_KHR:
+            safe_pNext = new safe_VkAttachmentDescriptionStencilLayoutKHR(reinterpret_cast<const VkAttachmentDescriptionStencilLayoutKHR *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES_KHR:
             safe_pNext = new safe_VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR(reinterpret_cast<const VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR *>(pNext));
             break;
@@ -29859,6 +30029,15 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR:
             delete reinterpret_cast<const safe_VkSurfaceProtectedCapabilitiesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SEPARATE_DEPTH_STENCIL_LAYOUTS_FEATURES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT_KHR:
+            delete reinterpret_cast<const safe_VkAttachmentReferenceStencilLayoutKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT_KHR:
+            delete reinterpret_cast<const safe_VkAttachmentDescriptionStencilLayoutKHR *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES_KHR:
             delete reinterpret_cast<const safe_VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR *>(header);

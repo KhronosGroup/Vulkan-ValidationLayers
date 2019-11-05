@@ -388,6 +388,7 @@ struct DeviceExtensions : public InstanceExtensions {
     bool vk_khr_relaxed_block_layout{false};
     bool vk_khr_sampler_mirror_clamp_to_edge{false};
     bool vk_khr_sampler_ycbcr_conversion{false};
+    bool vk_khr_separate_depth_stencil_layouts{false};
     bool vk_khr_shader_atomic_int64{false};
     bool vk_khr_shader_clock{false};
     bool vk_khr_shader_draw_parameters{false};
@@ -659,6 +660,9 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_bind_memory_2, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_get_memory_requirements_2, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
+            std::make_pair(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_separate_depth_stencil_layouts, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_create_renderpass_2, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_atomic_int64, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_SHADER_CLOCK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_clock, {{
@@ -936,6 +940,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME,
     VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME,
     VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME,
+    VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME,
     VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME,
     VK_KHR_SHADER_CLOCK_EXTENSION_NAME,
     VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,

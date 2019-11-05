@@ -20,7 +20,7 @@
       "sub_dir" : "Vulkan-Headers",
       "build_dir" : "Vulkan-Headers/build",
       "install_dir" : "Vulkan-Headers/build/install",
-      "commit" : "5bc459e2921304c32568b73edaac8d6df5f98b84"
+      "commit" : "v1.1.127"
     },
     {
       "name" : "VulkanTools",
@@ -28,7 +28,7 @@
       "sub_dir" : "VulkanTools",
       "build_dir" : "VulkanTools/build",
       "install_dir" : "VulkanTools/build/install",
-      "commit" : "c9e9e3a1736e6ee1fe2912b06f81167d49f2832e",
+      "commit" : "2e800639b5f09f8e572a08a5798488155a9f7b75",
       "deps" : [
         {
           "var_name" : "VULKAN_HEADERS_INSTALL_DIR",
@@ -66,7 +66,7 @@
       "sub_dir" : "Vulkan-Tools",
       "build_dir" : "Vulkan-Tools/build",
       "install_dir" : "Vulkan-Tools/build/install",
-      "commit" : "v1.1.126",
+      "commit" : "1efe15633cf80f070852ecc54d591b7fb3e2a67e",
       "deps" : [
         {
           "var_name" : "VULKAN_HEADERS_INSTALL_DIR",

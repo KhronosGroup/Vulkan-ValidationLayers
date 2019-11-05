@@ -3452,7 +3452,7 @@ bool CoreChecks::PreCallValidateGetPipelineExecutablePropertiesKHR(VkDevice devi
 
     if (!enabled_features.pipeline_exe_props_features.pipelineExecutableInfo) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        "VUID-vkGetPipelineExecutablePropertiesKHR-pipelineExecutableProperties-03270",
+                        "VUID-vkGetPipelineExecutablePropertiesKHR-pipelineExecutableInfo-03270",
                         "vkGetPipelineExecutablePropertiesKHR called when pipelineExecutableInfo feature is not enabled.");
     }
 
