@@ -99,8 +99,14 @@ class BestPractices : public ValidationStateTracker {
                                                uint32_t drawCount, uint32_t stride) const;
     bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
                                     uint32_t groupCountZ) const;
+    bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, const char* api_name) const;
     bool PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                             uint32_t* pDisplayCount, VkDisplayKHR* pDisplays) const;
+    bool PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode, uint32_t planeIndex,
+                                                       VkDisplayPlaneCapabilitiesKHR* pCapabilities) const;
+    bool PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                        const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
+                                                        VkDisplayPlaneCapabilities2KHR* pCapabilities) const;
     bool PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
                                               VkImage* pSwapchainImages) const;
     bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,

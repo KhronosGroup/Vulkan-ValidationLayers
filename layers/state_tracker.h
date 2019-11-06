@@ -106,9 +106,11 @@ struct PHYSICAL_DEVICE_STATE {
     CALL_STATE vkGetPhysicalDeviceExtensionPropertiesState = UNCALLED;
     CALL_STATE vkGetPhysicalDeviceFeaturesState = UNCALLED;
     CALL_STATE vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = UNCALLED;
+    bool vkGetPhysicalDeviceSurfaceCapabilitiesKHRCalled = false;
     CALL_STATE vkGetPhysicalDeviceSurfacePresentModesKHRState = UNCALLED;
     CALL_STATE vkGetPhysicalDeviceSurfaceFormatsKHRState = UNCALLED;
     CALL_STATE vkGetPhysicalDeviceDisplayPlanePropertiesKHRState = UNCALLED;
+    bool vkGetPhysicalDeviceDisplayPlanePropertiesKHRCalled = false;
     safe_VkPhysicalDeviceFeatures2 features2 = {};
     VkPhysicalDevice phys_device = VK_NULL_HANDLE;
     uint32_t queue_family_known_count = 1;  // spec implies one QF must always be supported
