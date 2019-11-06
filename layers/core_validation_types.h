@@ -226,6 +226,8 @@ class BINDABLE : public BASE_NODE {
     VkMemoryRequirements requirements;
     // bool to track if memory requirements were checked
     bool memory_requirements_checked;
+    // Tracks external memory types creating resource
+    VkExternalMemoryHandleTypeFlags external_memory_handle;
     // Sparse binding data, initially just tracking MEM_BINDING per mem object
     //  There's more data for sparse bindings so need better long-term solution
     // TODO : Need to update solution to track all sparse binding data
@@ -234,7 +236,13 @@ class BINDABLE : public BASE_NODE {
     small_unordered_set<VkDeviceMemory, 1> bound_memory_set_;
 
     BINDABLE()
-        : sparse(false), binding{}, requirements{}, memory_requirements_checked(false), sparse_bindings{}, bound_memory_set_{} {};
+        : sparse(false),
+          binding{},
+          requirements{},
+          memory_requirements_checked(false),
+          external_memory_handle(0),
+          sparse_bindings{},
+          bound_memory_set_{} {};
 
     // Update the cached set of memory bindings.
     // Code that changes binding.mem or sparse_bindings must call UpdateBoundMemorySet()
@@ -270,6 +278,11 @@ class BUFFER_STATE : public BINDABLE {
 
         if (createInfo.flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) {
             sparse = true;
+        }
+
+        auto *externalMemoryInfo = lvl_find_in_chain<VkExternalMemoryBufferCreateInfo>(pCreateInfo->pNext);
+        if (externalMemoryInfo) {
+            external_memory_handle = externalMemoryInfo->handleTypes;
         }
     };
 
