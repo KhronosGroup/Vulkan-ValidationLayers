@@ -279,7 +279,7 @@ bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, const char* api_na
     bool skip = false;
     const BUFFER_STATE* buffer_state = GetBufferState(buffer);
 
-    if (!buffer_state->memory_requirements_checked) {
+    if (!buffer_state->memory_requirements_checked && !buffer_state->external_memory_handle) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         kVUID_BestPractices_BufferMemReqNotCalled,
                         "%s: Binding memory to %s but vkGetBufferMemoryRequirements() has not been called on that buffer.",
@@ -329,7 +329,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, const char* api_name)
     bool skip = false;
     const IMAGE_STATE* image_state = GetImageState(image);
 
-    if (!image_state->memory_requirements_checked) {
+    if (!image_state->memory_requirements_checked && !image_state->external_memory_handle) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         kVUID_BestPractices_ImageMemReqNotCalled,
                         "%s: Binding memory to %s but vkGetImageMemoryRequirements() has not been called on that image.", api_name,
