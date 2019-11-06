@@ -91,6 +91,11 @@ IMAGE_STATE::IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
     }
     full_range = NormalizeSubresourceRange(*this, init_range);
 
+    auto *externalMemoryInfo = lvl_find_in_chain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
+    if (externalMemoryInfo) {
+        external_memory_handle = externalMemoryInfo->handleTypes;
+    }
+
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     auto external_format = lvl_find_in_chain<VkExternalFormatANDROID>(createInfo.pNext);
     if (external_format) {
