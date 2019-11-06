@@ -562,18 +562,47 @@ bool BestPractices::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, ui
     return skip;
 }
 
+bool BestPractices::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice,
+                                                                            const char* api_name) const {
+    bool skip = false;
+    const auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
+
+    if (physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState == UNCALLED) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+                        HandleToUint64(physicalDevice), kVUID_BestPractices_DisplayPlane_PropertiesNotCalled,
+                        "Potential problem with calling %s() without first retrieving properties from "
+                        "vkGetPhysicalDeviceDisplayPlanePropertiesKHR or vkGetPhysicalDeviceDisplayPlaneProperties2KHR.",
+                        api_name);
+    }
+
+    return skip;
+}
+
 bool BestPractices::PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                                        uint32_t* pDisplayCount, VkDisplayKHR* pDisplays) const {
     bool skip = false;
 
-    auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
+    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, "vkGetDisplayPlaneSupportedDisplaysKHR");
 
-    if (physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState != QUERY_DETAILS) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        kVUID_BestPractices_DisplayPlane_PropertiesNotCalled,
-                        "vkGetDisplayPlaneSupportedDisplaysKHR() called before getting diplay plane properties from "
-                        "vkGetPhysicalDeviceDisplayPlanePropertiesKHR().");
-    }
+    return skip;
+}
+
+bool BestPractices::PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode,
+                                                                  uint32_t planeIndex,
+                                                                  VkDisplayPlaneCapabilitiesKHR* pCapabilities) const {
+    bool skip = false;
+
+    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, "vkGetDisplayPlaneCapabilitiesKHR");
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
+                                                                   const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
+                                                                   VkDisplayPlaneCapabilities2KHR* pCapabilities) const {
+    bool skip = false;
+
+    skip |= ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(physicalDevice, "vkGetDisplayPlaneCapabilities2KHR");
 
     return skip;
 }

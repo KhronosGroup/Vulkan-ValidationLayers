@@ -1714,16 +1714,13 @@ bool CoreChecks::ValidateQueueFamilyIndex(const PHYSICAL_DEVICE_STATE *pd_state,
         const char *conditional_ext_cmd =
             instance_extensions.vk_khr_get_physical_device_properties_2 ? " or vkGetPhysicalDeviceQueueFamilyProperties2[KHR]" : "";
 
-        const std::string count_note = (UNCALLED == pd_state->vkGetPhysicalDeviceQueueFamilyPropertiesState)
-                                           ? "the pQueueFamilyPropertyCount was never obtained"
-                                           : "i.e. is not less than " + std::to_string(pd_state->queue_family_known_count);
-
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
                         HandleToUint64(pd_state->phys_device), err_code,
                         "%s: %s (= %" PRIu32
                         ") is not less than any previously obtained pQueueFamilyPropertyCount from "
-                        "vkGetPhysicalDeviceQueueFamilyProperties%s (%s).",
-                        cmd_name, queue_family_var_name, requested_queue_family, conditional_ext_cmd, count_note.c_str());
+                        "vkGetPhysicalDeviceQueueFamilyProperties%s (i.e. is not less than %s).",
+                        cmd_name, queue_family_var_name, requested_queue_family, conditional_ext_cmd,
+                        std::to_string(pd_state->queue_family_known_count).c_str());
     }
     return skip;
 }
@@ -9774,7 +9771,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     const auto *surface_formats_ref = &surface_formats;
 
     // Validate pCreateInfo values with the results of vkGetPhysicalDeviceSurfaceFormatsKHR():
-    if (physical_device_state->vkGetPhysicalDeviceSurfaceFormatsKHRState != QUERY_DETAILS) {
+    if (physical_device_state->surface_formats.empty()) {
         uint32_t surface_format_count = 0;
         DispatchGetPhysicalDeviceSurfaceFormatsKHR(physical_device, pCreateInfo->surface, &surface_format_count, nullptr);
         surface_formats.resize(surface_format_count);
@@ -9825,7 +9822,7 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     const auto *present_modes_ref = &present_modes;
 
     // Validate pCreateInfo values with the results of vkGetPhysicalDeviceSurfacePresentModesKHR():
-    if (physical_device_state->vkGetPhysicalDeviceSurfacePresentModesKHRState != QUERY_DETAILS) {
+    if (physical_device_state->present_modes.empty()) {
         uint32_t present_mode_count = 0;
         DispatchGetPhysicalDeviceSurfacePresentModesKHR(physical_device_state->phys_device, pCreateInfo->surface,
                                                         &present_mode_count, nullptr);
@@ -10170,7 +10167,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const CommandVersion 
 
         auto physical_device_state = GetPhysicalDeviceState();
         // TODO: this is technically wrong on many levels, but requires massive cleanup
-        if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState != UNCALLED) {
+        if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRCalled) {
             const uint32_t acquired_images =
                 static_cast<uint32_t>(std::count_if(swapchain_data->images.begin(), swapchain_data->images.end(),
                                                     [=](SWAPCHAIN_IMAGE image) { return GetImageState(image.image)->acquired; }));
@@ -10460,22 +10457,17 @@ bool CoreChecks::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysi
                                                                          const char *api_name) const {
     bool skip = false;
     const auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
-    if (physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState == UNCALLED) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
-                        HandleToUint64(physicalDevice), kVUID_Core_Swapchain_GetSupportedDisplaysWithoutQuery,
-                        "Potential problem with calling %s() without first retrieving properties from "
-                        "vkGetPhysicalDeviceDisplayPlanePropertiesKHR or vkGetPhysicalDeviceDisplayPlaneProperties2KHR.",
-                        api_name);
-    } else {
+    if (physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRCalled) {
         if (planeIndex >= physical_device_state->display_plane_property_count) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
-                HandleToUint64(physicalDevice), "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249",
-                "%s(): planeIndex must be in the range [0, %d] that was returned by vkGetPhysicalDeviceDisplayPlanePropertiesKHR "
-                "or vkGetPhysicalDeviceDisplayPlaneProperties2KHR. Do you have the plane index hardcoded?",
-                api_name, physical_device_state->display_plane_property_count - 1);
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
+                            HandleToUint64(physicalDevice), "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249",
+                            "%s(): planeIndex must be in the range [0, %d] that was returned by "
+                            "vkGetPhysicalDeviceDisplayPlanePropertiesKHR "
+                            "or vkGetPhysicalDeviceDisplayPlaneProperties2KHR. Do you have the plane index hardcoded?",
+                            api_name, physical_device_state->display_plane_property_count - 1);
         }
     }
+
     return skip;
 }
 
