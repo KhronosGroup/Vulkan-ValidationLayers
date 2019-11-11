@@ -2040,12 +2040,13 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(const CMD_BUFFER_STATE *pCB, 
         // TODO: replace with InvalidateCommandBuffers() at recording.
         if ((pSubCB->primaryCommandBuffer != pCB->commandBuffer) &&
             !(pSubCB->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
-            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, 0,
-                    "VUID-vkQueueSubmit-pCommandBuffers-00073",
-                    "%s was submitted with secondary %s but that buffer has subsequently been bound to "
-                    "primary %s and it does not have VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
-                    report_data->FormatHandle(pCB->commandBuffer).c_str(), report_data->FormatHandle(pSubCB->commandBuffer).c_str(),
-                    report_data->FormatHandle(pSubCB->primaryCommandBuffer).c_str());
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, 0,
+                            "VUID-vkQueueSubmit-pCommandBuffers-00073",
+                            "%s was submitted with secondary %s but that buffer has subsequently been bound to "
+                            "primary %s and it does not have VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
+                            report_data->FormatHandle(pCB->commandBuffer).c_str(),
+                            report_data->FormatHandle(pSubCB->commandBuffer).c_str(),
+                            report_data->FormatHandle(pSubCB->primaryCommandBuffer).c_str());
         }
     }
 
