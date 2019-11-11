@@ -23,6 +23,8 @@
  * Author: Shannon McPherson <shannon@lunarg.com>
  * Author: John Zulauf <jzulauf@lunarg.com>
  */
+#include <chrono>
+#include <thread>
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
 
@@ -209,6 +211,7 @@ extern "C" void *UpdateDescriptor(void *arg) {
 
     for (int i = 0; i < 80000; i++) {
         vk::UpdateDescriptorSets(data->device, 1, &descriptor_write, 0, NULL);
+        std::this_thread::sleep_for(std::chrono::microseconds(1));
         if (*data->bailout) {
             break;
         }
