@@ -2030,25 +2030,33 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(const CMD_BUFFER_STATE *pCB, 
     // Track in-use for resources off of primary and any secondary CBs
     bool skip = false;
 
+    if (pCB->createInfo.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(pCB->commandBuffer), "VUID-VkSubmitInfo-pCommandBuffers-00075",
+                        "Command buffer %s was included in the pCommandBuffers array of QueueSubmit but was allocated with "
+                        "VK_COMMAND_BUFFER_LEVEL_SECONDARY.",
+                        report_data->FormatHandle(pCB->commandBuffer).c_str());
+    } else {
+        for (auto pSubCB : pCB->linkedCommandBuffers) {
+            skip |= ValidateQueuedQFOTransfers(pSubCB, qfo_image_scoreboards, qfo_buffer_scoreboards);
+            // TODO: replace with InvalidateCommandBuffers() at recording.
+            if ((pSubCB->primaryCommandBuffer != pCB->commandBuffer) &&
+                !(pSubCB->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, 0,
+                                "VUID-vkQueueSubmit-pCommandBuffers-00073",
+                                "%s was submitted with secondary %s but that buffer has subsequently been bound to "
+                                "primary %s and it does not have VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
+                                report_data->FormatHandle(pCB->commandBuffer).c_str(),
+                                report_data->FormatHandle(pSubCB->commandBuffer).c_str(),
+                                report_data->FormatHandle(pSubCB->primaryCommandBuffer).c_str());
+            }
+        }
+    }
+
     // If USAGE_SIMULTANEOUS_USE_BIT not set then CB cannot already be executing on device
     skip |= ValidateCommandBufferSimultaneousUse(pCB, current_submit_count);
 
     skip |= ValidateQueuedQFOTransfers(pCB, qfo_image_scoreboards, qfo_buffer_scoreboards);
-
-    for (auto pSubCB : pCB->linkedCommandBuffers) {
-        skip |= ValidateQueuedQFOTransfers(pSubCB, qfo_image_scoreboards, qfo_buffer_scoreboards);
-        // TODO: replace with InvalidateCommandBuffers() at recording.
-        if ((pSubCB->primaryCommandBuffer != pCB->commandBuffer) &&
-            !(pSubCB->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, 0,
-                            "VUID-vkQueueSubmit-pCommandBuffers-00073",
-                            "%s was submitted with secondary %s but that buffer has subsequently been bound to "
-                            "primary %s and it does not have VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
-                            report_data->FormatHandle(pCB->commandBuffer).c_str(),
-                            report_data->FormatHandle(pSubCB->commandBuffer).c_str(),
-                            report_data->FormatHandle(pSubCB->primaryCommandBuffer).c_str());
-        }
-    }
 
     skip |= ValidateCommandBufferState(pCB, "vkQueueSubmit()", current_submit_count, "VUID-vkQueueSubmit-pCommandBuffers-00072");
 
