@@ -119,6 +119,9 @@ class ErrorMonitor {
     // function and its definition.
     void SetUnexpectedError(const char *const msg);
 
+    // Set an error that should not cause a test failure
+    void SetAllowedFailureMsg(const char *const msg);
+
     VkBool32 CheckForDesiredMsg(const char *const msgString);
     vector<string> GetOtherFailureMsgs() const;
     VkDebugReportFlagsEXT GetMessageFlags() const;
@@ -145,6 +148,7 @@ class ErrorMonitor {
     std::unordered_multiset<std::string> desired_message_strings_;
     std::unordered_multiset<std::string> failure_message_strings_;
     std::vector<std::string> ignore_message_strings_;
+    std::vector<std::string> allowed_message_strings_;
     vector<string> other_messages_;
     test_platform_thread_mutex mutex_;
     bool *bailout_;

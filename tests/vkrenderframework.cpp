@@ -42,6 +42,7 @@ void ErrorMonitor::Reset() {
     failure_message_strings_.clear();
     desired_message_strings_.clear();
     ignore_message_strings_.clear();
+    allowed_message_strings_.clear();
     other_messages_.clear();
 }
 
@@ -53,6 +54,12 @@ void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msgFlags, const char *cons
     test_platform_thread_lock_mutex(&mutex_);
     desired_message_strings_.insert(msgString);
     message_flags_ |= msgFlags;
+    test_platform_thread_unlock_mutex(&mutex_);
+}
+
+void ErrorMonitor::SetAllowedFailureMsg(const char *const msg) {
+    test_platform_thread_lock_mutex(&mutex_);
+    allowed_message_strings_.emplace_back(msg);
     test_platform_thread_unlock_mutex(&mutex_);
 }
 
@@ -93,6 +100,16 @@ VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *const msgString) {
                 // Multiset mutation is acceptable because `break` causes flow of control to exit the for loop
                 desired_message_strings_.erase(desired_msg_it);
                 break;
+            }
+        }
+
+        if (!found_expected && allowed_message_strings_.size()) {
+            for (auto allowed_msg_it = allowed_message_strings_.begin(); allowed_msg_it != allowed_message_strings_.end();
+                 ++allowed_msg_it) {
+                if (errorString.find(*allowed_msg_it) != string::npos) {
+                    found_expected = true;
+                    break;
+                }
             }
         }
 
