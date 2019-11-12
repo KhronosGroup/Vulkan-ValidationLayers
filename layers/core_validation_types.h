@@ -1663,6 +1663,7 @@ struct DeviceFeatures {
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
+enum CommandVersion { CMD_VERSION_1 = 0, CMD_VERSION_2 = 1 };
 
 enum BarrierOperationsType {
     kAllAcquire,  // All Barrier operations are "ownership acquire" operations
