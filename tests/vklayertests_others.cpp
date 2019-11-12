@@ -1254,6 +1254,113 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoSync2KHR) {
     DestroySwapchain();
 }
 
+TEST_F(VkLayerTest, SwapchainAcquireTooManyImages) {
+    TEST_DESCRIPTION("Acquiring invalid amount of images from the swapchain.");
+
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (!AddSwapchainDeviceExtension()) {
+        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_TRUE(InitSwapchain());
+    uint32_t image_count;
+    ASSERT_VK_SUCCESS(vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
+    VkSurfaceCapabilitiesKHR caps;
+    ASSERT_VK_SUCCESS(vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(gpu(), m_surface, &caps));
+
+    const uint32_t acquirable_count = image_count - caps.minImageCount + 1;
+    uint32_t image_i;
+    std::vector<VkFenceObj> fences(acquirable_count);
+    for (uint32_t i = 0; i < acquirable_count; ++i) {
+        fences[i].init(*m_device, VkFenceObj::create_info());
+        const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fences[i].handle(), &image_i);
+        ASSERT_TRUE(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
+    }
+    VkFenceObj error_fence;
+    error_fence.init(*m_device, VkFenceObj::create_info());
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkAcquireNextImageKHR-swapchain-01802");
+    vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, error_fence.handle(), &image_i);
+    m_errorMonitor->VerifyFound();
+
+    // Cleanup
+    vk::WaitForFences(device(), fences.size(), MakeVkHandles<VkFence>(fences).data(), VK_TRUE, UINT64_MAX);
+    DestroySwapchain();
+}
+
+TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
+    TEST_DESCRIPTION("Acquiring invalid amount of images from the swapchain via vkAcquireNextImage2KHR.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    bool extension_dependency_satisfied = false;
+    if (InstanceExtensionSupported(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
+        extension_dependency_satisfied = true;
+    } else if (m_instance_api_version < VK_API_VERSION_1_1) {
+        printf("%s vkAcquireNextImage2KHR not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (extension_dependency_satisfied && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+    } else if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s vkAcquireNextImage2KHR not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (!AddSwapchainDeviceExtension()) {
+        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_TRUE(InitSwapchain());
+    uint32_t image_count;
+    ASSERT_VK_SUCCESS(vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
+    VkSurfaceCapabilitiesKHR caps;
+    ASSERT_VK_SUCCESS(vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(gpu(), m_surface, &caps));
+
+    const uint32_t acquirable_count = image_count - caps.minImageCount + 1;
+    uint32_t image_i;
+    std::vector<VkFenceObj> fences(acquirable_count);
+    for (uint32_t i = 0; i < acquirable_count; ++i) {
+        fences[i].init(*m_device, VkFenceObj::create_info());
+        const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fences[i].handle(), &image_i);
+        ASSERT_TRUE(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
+    }
+    VkFenceObj error_fence;
+    error_fence.init(*m_device, VkFenceObj::create_info());
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkAcquireNextImage2KHR-swapchain-01803");
+    VkAcquireNextImageInfoKHR acquire_info = {VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR};
+    acquire_info.swapchain = m_swapchain;
+    acquire_info.timeout = UINT64_MAX;
+    acquire_info.fence = error_fence.handle();
+    acquire_info.deviceMask = 0x1;
+
+    vk::AcquireNextImage2KHR(device(), &acquire_info, &image_i);
+    m_errorMonitor->VerifyFound();
+
+    // Cleanup
+    vk::WaitForFences(device(), fences.size(), MakeVkHandles<VkFence>(fences).data(), VK_TRUE, UINT64_MAX);
+    DestroySwapchain();
+}
+
 TEST_F(VkLayerTest, InvalidDeviceMask) {
     TEST_DESCRIPTION("Invalid deviceMask.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
