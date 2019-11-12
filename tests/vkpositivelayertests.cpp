@@ -746,6 +746,66 @@ TEST_F(VkPositiveLayerTest, DestroyPipelineRenderPass) {
     vk::QueueWaitIdle(m_device->m_queue);
 }
 
+TEST_F(VkPositiveLayerTest, ResetQueryPoolFromDifferentCB) {
+    TEST_DESCRIPTION("Reset a query on one CB and use it in another.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    m_errorMonitor->ExpectSuccess();
+
+    VkQueryPool query_pool;
+    VkQueryPoolCreateInfo query_pool_create_info{};
+    query_pool_create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    query_pool_create_info.queryCount = 1;
+    vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
+
+    VkCommandBuffer command_buffer[2];
+    VkCommandBufferAllocateInfo command_buffer_allocate_info{};
+    command_buffer_allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    command_buffer_allocate_info.commandPool = m_commandPool->handle();
+    command_buffer_allocate_info.commandBufferCount = 2;
+    command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    vk::AllocateCommandBuffers(m_device->device(), &command_buffer_allocate_info, command_buffer);
+
+    {
+        VkCommandBufferBeginInfo begin_info{};
+        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+        vk::BeginCommandBuffer(command_buffer[0], &begin_info);
+        vk::CmdResetQueryPool(command_buffer[0], query_pool, 0, 1);
+        vk::EndCommandBuffer(command_buffer[0]);
+
+        vk::BeginCommandBuffer(command_buffer[1], &begin_info);
+        vk::CmdBeginQuery(command_buffer[1], query_pool, 0, 0);
+        vk::CmdEndQuery(command_buffer[1], query_pool, 0);
+        vk::EndCommandBuffer(command_buffer[1]);
+    }
+    {
+        VkSubmitInfo submit_info[2]{};
+        submit_info[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit_info[0].commandBufferCount = 1;
+        submit_info[0].pCommandBuffers = &command_buffer[0];
+        submit_info[0].signalSemaphoreCount = 0;
+        submit_info[0].pSignalSemaphores = nullptr;
+
+        submit_info[1].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit_info[1].commandBufferCount = 1;
+        submit_info[1].pCommandBuffers = &command_buffer[1];
+        submit_info[1].signalSemaphoreCount = 0;
+        submit_info[1].pSignalSemaphores = nullptr;
+
+        vk::QueueSubmit(m_device->m_queue, 2, &submit_info[0], VK_NULL_HANDLE);
+    }
+
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
+    vk::FreeCommandBuffers(m_device->device(), m_commandPool->handle(), 2, command_buffer);
+
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkPositiveLayerTest, BasicQuery) {
     TEST_DESCRIPTION("Use a couple occlusion queries");
     m_errorMonitor->ExpectSuccess();
