@@ -1589,35 +1589,37 @@ void GpuAssisted::PostCallRecordPipelineCreations(const uint32_t count, const Cr
                 assert(false);
             }
 
-            std::vector<unsigned int> code;
-            // Save the shader binary if debug info is present.
-            // The core_validation ShaderModule tracker saves the binary too, but discards it when the ShaderModule
-            // is destroyed.  Applications may destroy ShaderModules after they are placed in a pipeline and before
-            // the pipeline is used, so we have to keep another copy.
-            if (shader_state && shader_state->has_valid_spirv) {  // really checking for presense of SPIR-V code.
-                for (auto insn : *shader_state) {
-                    if (insn.opcode() == spv::OpLine) {
-                        code = shader_state->words;
-                        break;
+            if (shader_state) {
+                std::vector<unsigned int> code;
+                // Save the shader binary if debug info is present.
+                // The core_validation ShaderModule tracker saves the binary too, but discards it when the ShaderModule
+                // is destroyed.  Applications may destroy ShaderModules after they are placed in a pipeline and before
+                // the pipeline is used, so we have to keep another copy.
+                if (shader_state->has_valid_spirv) {  // really checking for presense of SPIR-V code.
+                    for (auto insn : *shader_state) {
+                        if (insn.opcode() == spv::OpLine) {
+                            code = shader_state->words;
+                            break;
+                        }
                     }
                 }
+                shader_map[shader_state->gpu_validation_shader_id].pipeline = pipeline_state->pipeline;
+                // Be careful to use the originally bound (instrumented) shader here, even if PreCallRecord had to back it
+                // out with a non-instrumented shader.  The non-instrumented shader (found in pCreateInfo) was destroyed above.
+                VkShaderModule shader_module = VK_NULL_HANDLE;
+                if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+                    shader_module = pipeline_state->graphicsPipelineCI.pStages[stage].module;
+                } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
+                    assert(stage == 0);
+                    shader_module = pipeline_state->computePipelineCI.stage.module;
+                } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
+                    shader_module = pipeline_state->raytracingPipelineCI.pStages[stage].module;
+                } else {
+                    assert(false);
+                }
+                shader_map[shader_state->gpu_validation_shader_id].shader_module = shader_module;
+                shader_map[shader_state->gpu_validation_shader_id].pgm = std::move(code);
             }
-            shader_map[shader_state->gpu_validation_shader_id].pipeline = pipeline_state->pipeline;
-            // Be careful to use the originally bound (instrumented) shader here, even if PreCallRecord had to back it
-            // out with a non-instrumented shader.  The non-instrumented shader (found in pCreateInfo) was destroyed above.
-            VkShaderModule shader_module = VK_NULL_HANDLE;
-            if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-                shader_module = pipeline_state->graphicsPipelineCI.pStages[stage].module;
-            } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-                assert(stage == 0);
-                shader_module = pipeline_state->computePipelineCI.stage.module;
-            } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
-                shader_module = pipeline_state->raytracingPipelineCI.pStages[stage].module;
-            } else {
-                assert(false);
-            }
-            shader_map[shader_state->gpu_validation_shader_id].shader_module = shader_module;
-            shader_map[shader_state->gpu_validation_shader_id].pgm = std::move(code);
         }
     }
 }
