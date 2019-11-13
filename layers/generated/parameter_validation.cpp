@@ -5683,6 +5683,7 @@ bool StatelessValidation::PreCallValidateAcquireNextImageKHR(
     if (!device_extensions.vk_khr_swapchain) skip |= OutputExtensionError("vkAcquireNextImageKHR", VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     skip |= validate_required_handle("vkAcquireNextImageKHR", "swapchain", swapchain);
     skip |= validate_required_pointer("vkAcquireNextImageKHR", "pImageIndex", pImageIndex, "VUID-vkAcquireNextImageKHR-pImageIndex-parameter");
+    if (!skip) skip |= manual_PreCallValidateAcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex);
     return skip;
 }
 
@@ -5762,6 +5763,7 @@ bool StatelessValidation::PreCallValidateAcquireNextImage2KHR(
         skip |= validate_required_handle("vkAcquireNextImage2KHR", "pAcquireInfo->swapchain", pAcquireInfo->swapchain);
     }
     skip |= validate_required_pointer("vkAcquireNextImage2KHR", "pImageIndex", pImageIndex, "VUID-vkAcquireNextImage2KHR-pImageIndex-parameter");
+    if (!skip) skip |= manual_PreCallValidateAcquireNextImage2KHR(device, pAcquireInfo, pImageIndex);
     return skip;
 }
 

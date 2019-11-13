@@ -9898,13 +9898,6 @@ bool CoreChecks::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint3
 bool CoreChecks::ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                           VkFence fence, uint32_t *pImageIndex, const char *func_name) const {
     bool skip = false;
-    if (fence == VK_NULL_HANDLE && semaphore == VK_NULL_HANDLE) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                        "VUID-vkAcquireNextImageKHR-semaphore-01780",
-                        "%s: Semaphore and fence cannot both be VK_NULL_HANDLE. There would be no way to "
-                        "determine the completion of this operation.",
-                        func_name);
-    }
 
     auto pSemaphore = GetSemaphoreState(semaphore);
     if (pSemaphore && pSemaphore->scope == kSyncScopeInternal && pSemaphore->signaled) {

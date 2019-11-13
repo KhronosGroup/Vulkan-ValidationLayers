@@ -3667,3 +3667,30 @@ bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectTagEXT(VkDevi
     }
     return skip;
 }
+
+bool StatelessValidation::manual_PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
+                                                                    VkSemaphore semaphore, VkFence fence,
+                                                                    uint32_t *pImageIndex) const {
+    bool skip = false;
+
+    if (semaphore == VK_NULL_HANDLE && fence == VK_NULL_HANDLE) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
+                        HandleToUint64(swapchain), "VUID-vkAcquireNextImageKHR-semaphore-01780",
+                        "vkAcquireNextImageKHR: semaphore and fence are both VK_NULL_HANDLE.");
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
+                                                                     uint32_t *pImageIndex) const {
+    bool skip = false;
+
+    if (pAcquireInfo->semaphore == VK_NULL_HANDLE && pAcquireInfo->fence == VK_NULL_HANDLE) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
+                        HandleToUint64(pAcquireInfo->swapchain), "VUID-VkAcquireNextImageInfoKHR-semaphore-01782",
+                        "vkAcquireNextImage2KHR: pAcquireInfo->semaphore and pAcquireInfo->fence are both VK_NULL_HANDLE.");
+    }
+
+    return skip;
+}

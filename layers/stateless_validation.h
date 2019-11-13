@@ -1366,5 +1366,11 @@ class StatelessValidation : public ValidationObject {
 
     bool manual_PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, const VkDebugUtilsObjectTagInfoEXT *pTagInfo) const;
 
+    bool manual_PreCallValidateAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
+                                                   VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex) const;
+
+    bool manual_PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
+                                                    uint32_t *pImageIndex) const;
+
 #include "parameter_validation.h"
 };  // Class StatelessValidation
