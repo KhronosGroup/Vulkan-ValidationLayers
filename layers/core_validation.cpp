@@ -2161,6 +2161,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *
 }
 bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitInfo *submit,
                                                  ImageSubresPairLayoutMap *localImageLayoutMap_arg,
+                                                 QueryMap *local_query_to_state_map,
                                                  vector<VkCommandBuffer> *current_cmds_arg) const {
     bool skip = false;
     auto queue_state = GetQueueState(queue);
@@ -2170,7 +2171,6 @@ bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitIn
 
     QFOTransferCBScoreboards<VkImageMemoryBarrier> qfo_image_scoreboards;
     QFOTransferCBScoreboards<VkBufferMemoryBarrier> qfo_buffer_scoreboards;
-    QueryMap localQueryToStateMap;
     EventToStageMap localEventToStageMap;
 
     for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
@@ -2209,8 +2209,7 @@ bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitIn
                 return true;
             }
 
-            // Call submit-time functions to validate or update local mirrors of state
-            // (to preserve const-ness at validate time)
+            // Call submit-time functions to validate or update local mirrors of state (to preserve const-ness at validate time)
             for (auto &function : cb_node->queue_submit_functions) {
                 skip |= function(this, queue_state);
             }
@@ -2218,7 +2217,7 @@ bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitIn
                 skip |= function(this, /*do_validate*/ true, &localEventToStageMap);
             }
             for (auto &function : cb_node->queryUpdates) {
-                skip |= function(this, /*do_validate*/ true, &localQueryToStateMap);
+                skip |= function(this, /*do_validate*/ true, local_query_to_state_map);
             }
         }
     }
@@ -2238,11 +2237,13 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
     unordered_set<VkSemaphore> internal_semaphores;
     vector<VkCommandBuffer> current_cmds;
     ImageSubresPairLayoutMap localImageLayoutMap;
+    QueryMap local_query_to_state_map;
+
     // Now verify each individual submit
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         skip |= ValidateSemaphoresForSubmit(queue, submit, &unsignaled_semaphores, &signaled_semaphores, &internal_semaphores);
-        skip |= ValidateCommandBuffersForSubmit(queue, submit, &localImageLayoutMap, &current_cmds);
+        skip |= ValidateCommandBuffersForSubmit(queue, submit, &localImageLayoutMap, &local_query_to_state_map, &current_cmds);
 
         auto chained_device_group_struct = lvl_find_in_chain<VkDeviceGroupSubmitInfo>(submit->pNext);
         if (chained_device_group_struct && chained_device_group_struct->commandBufferCount > 0) {

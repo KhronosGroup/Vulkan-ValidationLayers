@@ -60,7 +60,7 @@ class CoreChecks : public ValidationStateTracker {
                                      std::unordered_set<VkSemaphore>* signaled_sema_arg,
                                      std::unordered_set<VkSemaphore>* internal_sema_arg) const;
     bool ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitInfo* submit,
-                                         ImageSubresPairLayoutMap* localImageLayoutMap_arg,
+                                         ImageSubresPairLayoutMap* localImageLayoutMap_arg, QueryMap* local_query_to_state_map,
                                          std::vector<VkCommandBuffer>* current_cmds_arg) const;
     bool ValidateStatus(const CMD_BUFFER_STATE* pNode, CBStatusFlags status_mask, VkFlags msg_flags, const char* fail_msg,
                         const char* msg_code) const;
