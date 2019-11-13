@@ -183,6 +183,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkSetDebugUtilsObjectNameEXT',
             'vkSetDebugUtilsObjectTagEXT',
             'vkCmdSetViewportWScalingNV',
+            'vkAcquireNextImageKHR',
+            'vkAcquireNextImage2KHR',
             ]
 
         # Commands to ignore
