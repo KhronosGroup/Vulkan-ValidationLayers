@@ -1277,7 +1277,7 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages) {
     ASSERT_VK_SUCCESS(vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(gpu(), m_surface, &caps));
 
     const uint32_t acquirable_count = image_count - caps.minImageCount + 1;
-    uint32_t image_i;
+    uint32_t image_i = 0;  // MockICD does not write this so trick it to return sane value
     std::vector<VkFenceObj> fences(acquirable_count);
     for (uint32_t i = 0; i < acquirable_count; ++i) {
         fences[i].init(*m_device, VkFenceObj::create_info());
@@ -1336,7 +1336,7 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
     ASSERT_VK_SUCCESS(vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(gpu(), m_surface, &caps));
 
     const uint32_t acquirable_count = image_count - caps.minImageCount + 1;
-    uint32_t image_i;
+    uint32_t image_i = 0;  // MockICD does not write this so trick it to return sane value
     std::vector<VkFenceObj> fences(acquirable_count);
     for (uint32_t i = 0; i < acquirable_count; ++i) {
         fences[i].init(*m_device, VkFenceObj::create_info());
