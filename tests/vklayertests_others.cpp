@@ -1174,6 +1174,86 @@ TEST_F(VkLayerTest, DeviceFeature2AndVertexAttributeDivisorExtensionUnenabled) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, SwapchainAcquireImageNoSync) {
+    TEST_DESCRIPTION("Test vkAcquireNextImageKHR with VK_NULL_HANDLE semaphore and fence");
+
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (!AddSwapchainDeviceExtension()) {
+        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_TRUE(InitSwapchain());
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkAcquireNextImageKHR-semaphore-01780");
+        uint32_t dummy;
+        vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, VK_NULL_HANDLE, &dummy);
+        m_errorMonitor->VerifyFound();
+    }
+
+    DestroySwapchain();
+}
+
+TEST_F(VkLayerTest, SwapchainAcquireImageNoSync2KHR) {
+    TEST_DESCRIPTION("Test vkAcquireNextImage2KHR with VK_NULL_HANDLE semaphore and fence");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    bool extension_dependency_satisfied = false;
+    if (InstanceExtensionSupported(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
+        extension_dependency_satisfied = true;
+    } else if (m_instance_api_version < VK_API_VERSION_1_1) {
+        printf("%s vkAcquireNextImage2KHR not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (extension_dependency_satisfied && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+    } else if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s vkAcquireNextImage2KHR not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    if (!AddSwapchainDeviceExtension()) {
+        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_TRUE(InitSwapchain());
+
+    {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAcquireNextImageInfoKHR-semaphore-01782");
+        VkAcquireNextImageInfoKHR acquire_info = {VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR};
+        acquire_info.swapchain = m_swapchain;
+        acquire_info.timeout = UINT64_MAX;
+        acquire_info.semaphore = VK_NULL_HANDLE;
+        acquire_info.fence = VK_NULL_HANDLE;
+        acquire_info.deviceMask = 0x1;
+
+        uint32_t dummy;
+        vk::AcquireNextImage2KHR(device(), &acquire_info, &dummy);
+        m_errorMonitor->VerifyFound();
+    }
+
+    DestroySwapchain();
+}
+
 TEST_F(VkLayerTest, InvalidDeviceMask) {
     TEST_DESCRIPTION("Invalid deviceMask.");
     SetTargetApiVersion(VK_API_VERSION_1_1);
