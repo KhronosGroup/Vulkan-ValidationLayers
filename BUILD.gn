@@ -100,6 +100,11 @@ core_validation_sources = [
   "layers/shader_validation.h",
   "layers/xxhash.c",
   "layers/xxhash.h",
+  "layers/image_layout_map.cpp",
+  "layers/image_layout_map.h",
+  "layers/range_vector.h",
+  "layers/subresource_adapter.cpp",
+  "layers/subresource_adapter.h",
 ]
 
 object_lifetimes_sources = [

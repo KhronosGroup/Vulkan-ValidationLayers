@@ -75,6 +75,8 @@ add_library(VkLayer_khronos_validation SHARED
         ${COMMON_DIR}/include/object_tracker.cpp
         ${SRC_DIR}/layers/object_tracker_utils.cpp
         ${COMMON_DIR}/include/thread_safety.cpp
+        ${SRC_DIR}/layers/image_layout_map.cpp
+        ${SRC_DIR}/layers/subresource_adapter.cpp
         ${SRC_DIR}/layers/xxhash.c)
 target_include_directories(VkLayer_khronos_validation PRIVATE
         ${SRC_DIR}/include
