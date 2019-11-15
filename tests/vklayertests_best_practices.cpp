@@ -16,15 +16,20 @@
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
 
-TEST_F(VkLayerTest, CmdClearAttachmentTest) {
-    TEST_DESCRIPTION("Various tests for validating usage of vkCmdClearAttachments");
-
+void VkBestPracticesLayerTest::InitBestPracticesFramework() {
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT};
     VkValidationFeaturesEXT features = {};
     features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
     features.enabledValidationFeatureCount = 1;
     features.pEnabledValidationFeatures = enables;
+
     InitFramework(myDbgFunc, m_errorMonitor, &features);
+}
+
+TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTest) {
+    TEST_DESCRIPTION("Test for validating usage of vkCmdClearAttachments");
+
+    InitBestPracticesFramework();
     InitState();
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 

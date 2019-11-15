@@ -257,6 +257,13 @@ class VkPositiveLayerTest : public VkLayerTest {
   protected:
 };
 
+class VkBestPracticesLayerTest : public VkLayerTest {
+  public:
+    void InitBestPracticesFramework();
+
+  protected:
+};
+
 class VkWsiEnabledLayerTest : public VkLayerTest {
   public:
   protected:
