@@ -130,15 +130,6 @@ GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> &CoreChecks::GetGlobalQFORele
     return qfo_release_buffer_barrier_map;
 }
 
-ImageSubresourceLayoutMap::InitialLayoutState::InitialLayoutState(const CMD_BUFFER_STATE &cb_state,
-                                                                  const IMAGE_VIEW_STATE *view_state)
-    : image_view(VK_NULL_HANDLE), aspect_mask(0), label(cb_state.debug_label) {
-    if (view_state) {
-        image_view = view_state->image_view;
-        aspect_mask = view_state->create_info.subresourceRange.aspectMask;
-    }
-}
-
 std::string FormatDebugLabel(const char *prefix, const LoggingLabel &label) {
     if (label.Empty()) return std::string();
     std::string out;
@@ -147,45 +138,8 @@ std::string FormatDebugLabel(const char *prefix, const LoggingLabel &label) {
     return out;
 }
 
-// the ImageLayoutMap implementation bakes in the number of valid aspects -- we have to choose the correct one at construction time
-template <uint32_t kThreshold>
-static std::unique_ptr<ImageSubresourceLayoutMap> LayoutMapFactoryByAspect(const IMAGE_STATE &image_state) {
-    ImageSubresourceLayoutMap *map = nullptr;
-    switch (image_state.full_range.aspectMask) {
-        case VK_IMAGE_ASPECT_COLOR_BIT:
-            map = new ImageSubresourceLayoutMapImpl<ColorAspectTraits, kThreshold>(image_state);
-            break;
-        case VK_IMAGE_ASPECT_DEPTH_BIT:
-            map = new ImageSubresourceLayoutMapImpl<DepthAspectTraits, kThreshold>(image_state);
-            break;
-        case VK_IMAGE_ASPECT_STENCIL_BIT:
-            map = new ImageSubresourceLayoutMapImpl<StencilAspectTraits, kThreshold>(image_state);
-            break;
-        case VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT:
-            map = new ImageSubresourceLayoutMapImpl<DepthStencilAspectTraits, kThreshold>(image_state);
-            break;
-        case VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT:
-            map = new ImageSubresourceLayoutMapImpl<Multiplane2AspectTraits, kThreshold>(image_state);
-            break;
-        case VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT:
-            map = new ImageSubresourceLayoutMapImpl<Multiplane3AspectTraits, kThreshold>(image_state);
-            break;
-    }
-
-    assert(map);  // We shouldn't be able to get here null unless the traits cases are incomplete
-    return std::unique_ptr<ImageSubresourceLayoutMap>(map);
-}
-
 static std::unique_ptr<ImageSubresourceLayoutMap> LayoutMapFactory(const IMAGE_STATE &image_state) {
-    std::unique_ptr<ImageSubresourceLayoutMap> map;
-    const uint32_t kAlwaysDenseLimit = 16;  // About a cacheline on deskop architectures
-    if (image_state.full_range.layerCount <= kAlwaysDenseLimit) {
-        // Create a dense row map
-        map = LayoutMapFactoryByAspect<0>(image_state);
-    } else {
-        // Create an initially sparse row map
-        map = LayoutMapFactoryByAspect<kAlwaysDenseLimit>(image_state);
-    }
+    std::unique_ptr<ImageSubresourceLayoutMap> map(new ImageSubresourceLayoutMap(image_state));
     return map;
 }
 
@@ -9352,16 +9306,17 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             const auto &sub_cb_subres_map = sub_layout_map_entry.second;
             // Validate the initial_uses, that they match the current state of the primary cb, or absent a current state,
             // that the match any initial_layout.
-            for (auto it_init = sub_cb_subres_map->BeginInitialUse(); !it_init.AtEnd(); ++it_init) {
-                const auto &sub_layout = (*it_init).layout;
+            for (const auto &subres_layout : *sub_cb_subres_map) {
+                const auto &sub_layout = subres_layout.initial_layout;
+                const auto &subresource = subres_layout.subresource;
                 if (VK_IMAGE_LAYOUT_UNDEFINED == sub_layout) continue;  // secondary doesn't care about current or initial
-                const auto &subresource = (*it_init).subresource;
-                // Look up the current layout (if any)
-                VkImageLayout cb_layout = cb_subres_map->GetSubresourceLayout(subresource);
+
+                // Look up the layout to compared to the intial layout of the sub command buffer (current else initial)
+                auto cb_layouts = cb_subres_map->GetSubresourceLayouts(subresource);
+                auto cb_layout = cb_layouts.current_layout;
                 const char *layout_type = "current";
-                if (cb_layout == kInvalidLayout) {
-                    // Find initial layout (if any)
-                    cb_layout = cb_subres_map->GetSubresourceInitialLayout(subresource);
+                if (cb_layouts.current_layout == kInvalidLayout) {
+                    cb_layout = cb_layouts.initial_layout;
                     layout_type = "initial";
                 }
                 if ((cb_layout != kInvalidLayout) && (cb_layout != sub_layout)) {
