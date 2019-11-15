@@ -162,7 +162,12 @@ set(CHASSIS_LIBRARY_FILES
     generated/chassis.cpp
     generated/layer_chassis_dispatch.cpp
     generated/command_counter_helper.cpp
-    state_tracker.cpp)
+    state_tracker.cpp
+    image_layout_map.cpp
+    image_layout_map.h
+    range_vector.h
+    subresource_adapter.cpp
+    subresource_adapter.h)
 
 set(CORE_VALIDATION_LIBRARY_FILES
     core_validation.cpp

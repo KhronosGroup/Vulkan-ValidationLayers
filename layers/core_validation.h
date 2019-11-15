@@ -25,6 +25,7 @@
 #pragma once
 
 #include "state_tracker.h"
+#include "image_layout_map.h"
 #include "gpu_validation.h"
 #include "shader_validation.h"
 
@@ -1054,3 +1055,34 @@ class CoreChecks : public ValidationStateTracker {
 #endif  // VK_USE_PLATFORM_XLIB_KHR
 
 };  // Class CoreChecks
+
+// Utility type for ForRange callbacks
+struct LayoutUseCheckAndMessage {
+    const static VkImageAspectFlags kDepthOrStencil = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    const ImageSubresourceLayoutMap* layout_map;
+    const VkImageAspectFlags aspect_mask;
+    const char* message;
+    VkImageLayout layout;
+
+    LayoutUseCheckAndMessage() = delete;
+    LayoutUseCheckAndMessage(const ImageSubresourceLayoutMap* layout_map_, const VkImageAspectFlags aspect_mask_ = 0)
+        : layout_map(layout_map_), aspect_mask{aspect_mask_}, message(nullptr), layout(kInvalidLayout) {}
+    bool Check(const VkImageSubresource& subres, VkImageLayout check, VkImageLayout current_layout, VkImageLayout initial_layout) {
+        message = nullptr;
+        layout = kInvalidLayout;  // Success status
+        if (current_layout != kInvalidLayout && !ImageLayoutMatches(aspect_mask, check, current_layout)) {
+            message = "previous known";
+            layout = current_layout;
+        } else if ((initial_layout != kInvalidLayout) && !ImageLayoutMatches(aspect_mask, check, initial_layout)) {
+            // To check the relaxed rule matching we need to see how the initial use was used
+            const auto initial_layout_state = layout_map->GetSubresourceInitialLayoutState(subres);
+            assert(initial_layout_state);  // If we have an initial layout, we better have a state for it
+            if (!((initial_layout_state->aspect_mask & kDepthOrStencil) &&
+                  ImageLayoutMatches(initial_layout_state->aspect_mask, check, initial_layout))) {
+                message = "previously used";
+                layout = initial_layout;
+            }
+        }
+        return layout == kInvalidLayout;
+    }
+};
