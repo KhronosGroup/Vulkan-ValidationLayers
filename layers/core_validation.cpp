@@ -8013,33 +8013,43 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
     // If the pNext list of VkSubpassDescription2KHR includes a VkSubpassDescriptionDepthStencilResolveKHR structure,
     // then that structure describes depth/stencil resolve operations for the subpass.
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; i++) {
-        VkSubpassDescription2KHR subpass = pCreateInfo->pSubpasses[i];
+        const VkSubpassDescription2KHR &subpass = pCreateInfo->pSubpasses[i];
         const auto *resolve = lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolveKHR>(subpass.pNext);
 
         if (resolve == nullptr) {
             continue;
         }
 
-        if (resolve->pDepthStencilResolveAttachment != nullptr &&
-            resolve->pDepthStencilResolveAttachment->attachment != VK_ATTACHMENT_UNUSED) {
-            if (subpass.pDepthStencilAttachment->attachment == VK_ATTACHMENT_UNUSED) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                "VUID-VkSubpassDescriptionDepthStencilResolveKHR-pDepthStencilResolveAttachment-03177",
-                                "vkCreateRenderPass2KHR(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolveKHR "
-                                "structure with resolve attachment %u, but pDepthStencilAttachment=VK_ATTACHMENT_UNUSED.",
-                                i, resolve->pDepthStencilResolveAttachment->attachment);
-            }
-            if (resolve->depthResolveMode == VK_RESOLVE_MODE_NONE_KHR && resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE_KHR) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                "VUID-VkSubpassDescriptionDepthStencilResolveKHR-pDepthStencilResolveAttachment-03178",
-                                "vkCreateRenderPass2KHR(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolveKHR "
-                                "structure with resolve attachment %u, but both depth and stencil resolve modes are "
-                                "VK_RESOLVE_MODE_NONE_KHR.",
-                                i, resolve->pDepthStencilResolveAttachment->attachment);
-            }
+        const bool resolve_attachment_not_unused = (resolve->pDepthStencilResolveAttachment != nullptr &&
+                                                    resolve->pDepthStencilResolveAttachment->attachment != VK_ATTACHMENT_UNUSED);
+        const bool valid_resolve_attachment_index =
+            (resolve_attachment_not_unused && resolve->pDepthStencilResolveAttachment->attachment < pCreateInfo->attachmentCount);
+
+        const bool ds_attachment_not_unused =
+            (subpass.pDepthStencilAttachment != nullptr && subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED);
+        const bool valid_ds_attachment_index =
+            (ds_attachment_not_unused && subpass.pDepthStencilAttachment->attachment < pCreateInfo->attachmentCount);
+
+        if (resolve_attachment_not_unused && subpass.pDepthStencilAttachment != nullptr &&
+            subpass.pDepthStencilAttachment->attachment == VK_ATTACHMENT_UNUSED) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkSubpassDescriptionDepthStencilResolveKHR-pDepthStencilResolveAttachment-03177",
+                            "vkCreateRenderPass2KHR(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolveKHR "
+                            "structure with resolve attachment %u, but pDepthStencilAttachment=VK_ATTACHMENT_UNUSED.",
+                            i, resolve->pDepthStencilResolveAttachment->attachment);
         }
 
-        if (resolve->pDepthStencilResolveAttachment != nullptr &&
+        if (resolve_attachment_not_unused && resolve->depthResolveMode == VK_RESOLVE_MODE_NONE_KHR &&
+            resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE_KHR) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkSubpassDescriptionDepthStencilResolveKHR-pDepthStencilResolveAttachment-03178",
+                            "vkCreateRenderPass2KHR(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolveKHR "
+                            "structure with resolve attachment %u, but both depth and stencil resolve modes are "
+                            "VK_RESOLVE_MODE_NONE_KHR.",
+                            i, resolve->pDepthStencilResolveAttachment->attachment);
+        }
+
+        if (resolve_attachment_not_unused && valid_ds_attachment_index &&
             pCreateInfo->pAttachments[subpass.pDepthStencilAttachment->attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
             skip |= log_msg(
                 report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -8049,7 +8059,8 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
                 i, resolve->pDepthStencilResolveAttachment->attachment);
         }
 
-        if (pCreateInfo->pAttachments[resolve->pDepthStencilResolveAttachment->attachment].samples != VK_SAMPLE_COUNT_1_BIT) {
+        if (valid_resolve_attachment_index &&
+            pCreateInfo->pAttachments[resolve->pDepthStencilResolveAttachment->attachment].samples != VK_SAMPLE_COUNT_1_BIT) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkSubpassDescriptionDepthStencilResolveKHR-pDepthStencilResolveAttachment-03180",
                             "vkCreateRenderPass2KHR(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolveKHR "
@@ -8057,13 +8068,17 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
                             i, resolve->pDepthStencilResolveAttachment->attachment);
         }
 
-        VkFormat pDepthStencilAttachmentFormat = pCreateInfo->pAttachments[subpass.pDepthStencilAttachment->attachment].format;
+        VkFormat pDepthStencilAttachmentFormat =
+            (valid_ds_attachment_index ? pCreateInfo->pAttachments[subpass.pDepthStencilAttachment->attachment].format
+                                       : VK_FORMAT_UNDEFINED);
         VkFormat pDepthStencilResolveAttachmentFormat =
-            pCreateInfo->pAttachments[resolve->pDepthStencilResolveAttachment->attachment].format;
+            (valid_resolve_attachment_index ? pCreateInfo->pAttachments[resolve->pDepthStencilResolveAttachment->attachment].format
+                                            : VK_FORMAT_UNDEFINED);
 
-        if ((FormatDepthSize(pDepthStencilAttachmentFormat) != FormatDepthSize(pDepthStencilResolveAttachmentFormat)) ||
-            (FormatDepthNumericalType(pDepthStencilAttachmentFormat) !=
-             FormatDepthNumericalType(pDepthStencilResolveAttachmentFormat))) {
+        if (valid_ds_attachment_index && valid_resolve_attachment_index &&
+            ((FormatDepthSize(pDepthStencilAttachmentFormat) != FormatDepthSize(pDepthStencilResolveAttachmentFormat)) ||
+             (FormatDepthNumericalType(pDepthStencilAttachmentFormat) !=
+              FormatDepthNumericalType(pDepthStencilResolveAttachmentFormat)))) {
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkSubpassDescriptionDepthStencilResolveKHR-pDepthStencilResolveAttachment-03181",
@@ -8074,9 +8089,10 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
                         FormatDepthSize(pDepthStencilResolveAttachmentFormat), FormatDepthSize(pDepthStencilAttachmentFormat));
         }
 
-        if ((FormatStencilSize(pDepthStencilAttachmentFormat) != FormatStencilSize(pDepthStencilResolveAttachmentFormat)) ||
-            (FormatStencilNumericalType(pDepthStencilAttachmentFormat) !=
-             FormatStencilNumericalType(pDepthStencilResolveAttachmentFormat))) {
+        if (valid_ds_attachment_index && valid_resolve_attachment_index &&
+            ((FormatStencilSize(pDepthStencilAttachmentFormat) != FormatStencilSize(pDepthStencilResolveAttachmentFormat)) ||
+             (FormatStencilNumericalType(pDepthStencilAttachmentFormat) !=
+              FormatStencilNumericalType(pDepthStencilResolveAttachmentFormat)))) {
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkSubpassDescriptionDepthStencilResolveKHR-pDepthStencilResolveAttachment-03182",
@@ -8105,7 +8121,7 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
                             i, resolve->stencilResolveMode);
         }
 
-        if (FormatIsDepthAndStencil(pDepthStencilResolveAttachmentFormat) &&
+        if (valid_resolve_attachment_index && FormatIsDepthAndStencil(pDepthStencilResolveAttachmentFormat) &&
             depth_stencil_resolve_props.independentResolve == VK_FALSE &&
             depth_stencil_resolve_props.independentResolveNone == VK_FALSE &&
             !(resolve->depthResolveMode == resolve->stencilResolveMode)) {
@@ -8116,7 +8132,7 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
                             i, resolve->depthResolveMode, resolve->stencilResolveMode);
         }
 
-        if (FormatIsDepthAndStencil(pDepthStencilResolveAttachmentFormat) &&
+        if (valid_resolve_attachment_index && FormatIsDepthAndStencil(pDepthStencilResolveAttachmentFormat) &&
             depth_stencil_resolve_props.independentResolve == VK_FALSE &&
             depth_stencil_resolve_props.independentResolveNone == VK_TRUE &&
             !(resolve->depthResolveMode == resolve->stencilResolveMode || resolve->depthResolveMode == VK_RESOLVE_MODE_NONE_KHR ||
