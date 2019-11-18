@@ -2899,6 +2899,21 @@ void PostCallRecordGetFenceFdKHR(
     int*                                        pFd,
     VkResult                                    result);
 
+void PreCallRecordAcquireProfilingLockKHR(
+    VkDevice                                    device,
+    const VkAcquireProfilingLockInfoKHR*        pInfo);
+
+void PostCallRecordAcquireProfilingLockKHR(
+    VkDevice                                    device,
+    const VkAcquireProfilingLockInfoKHR*        pInfo,
+    VkResult                                    result);
+
+void PreCallRecordReleaseProfilingLockKHR(
+    VkDevice                                    device);
+
+void PostCallRecordReleaseProfilingLockKHR(
+    VkDevice                                    device);
+
 void PreCallRecordGetDisplayModeProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,

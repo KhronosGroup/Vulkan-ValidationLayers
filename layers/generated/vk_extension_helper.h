@@ -383,6 +383,7 @@ struct DeviceExtensions : public InstanceExtensions {
     bool vk_khr_maintenance2{false};
     bool vk_khr_maintenance3{false};
     bool vk_khr_multiview{false};
+    bool vk_khr_performance_query{false};
     bool vk_khr_pipeline_executable_properties{false};
     bool vk_khr_push_descriptor{false};
     bool vk_khr_relaxed_block_layout{false};
@@ -649,6 +650,8 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_KHR_MAINTENANCE3_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_maintenance3, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_MULTIVIEW_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_multiview, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
+            std::make_pair(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_performance_query, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_pipeline_executable_properties, {})),
             std::make_pair(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_push_descriptor, {{
@@ -935,6 +938,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_MAINTENANCE2_EXTENSION_NAME,
     VK_KHR_MAINTENANCE3_EXTENSION_NAME,
     VK_KHR_MULTIVIEW_EXTENSION_NAME,
+    VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME,
     VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME,
     VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
     VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME,

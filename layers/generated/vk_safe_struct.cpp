@@ -13965,6 +13965,485 @@ void safe_VkFenceGetFdInfoKHR::initialize(const safe_VkFenceGetFdInfoKHR* src)
     pNext = SafePnextCopy(src->pNext);
 }
 
+safe_VkPhysicalDevicePerformanceQueryFeaturesKHR::safe_VkPhysicalDevicePerformanceQueryFeaturesKHR(const VkPhysicalDevicePerformanceQueryFeaturesKHR* in_struct) :
+    sType(in_struct->sType),
+    performanceCounterQueryPools(in_struct->performanceCounterQueryPools),
+    performanceCounterMultipleQueryPools(in_struct->performanceCounterMultipleQueryPools)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDevicePerformanceQueryFeaturesKHR::safe_VkPhysicalDevicePerformanceQueryFeaturesKHR() :
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDevicePerformanceQueryFeaturesKHR::safe_VkPhysicalDevicePerformanceQueryFeaturesKHR(const safe_VkPhysicalDevicePerformanceQueryFeaturesKHR& src)
+{
+    sType = src.sType;
+    performanceCounterQueryPools = src.performanceCounterQueryPools;
+    performanceCounterMultipleQueryPools = src.performanceCounterMultipleQueryPools;
+    pNext = SafePnextCopy(src.pNext);
+}
+
+safe_VkPhysicalDevicePerformanceQueryFeaturesKHR& safe_VkPhysicalDevicePerformanceQueryFeaturesKHR::operator=(const safe_VkPhysicalDevicePerformanceQueryFeaturesKHR& src)
+{
+    if (&src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = src.sType;
+    performanceCounterQueryPools = src.performanceCounterQueryPools;
+    performanceCounterMultipleQueryPools = src.performanceCounterMultipleQueryPools;
+    pNext = SafePnextCopy(src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDevicePerformanceQueryFeaturesKHR::~safe_VkPhysicalDevicePerformanceQueryFeaturesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDevicePerformanceQueryFeaturesKHR::initialize(const VkPhysicalDevicePerformanceQueryFeaturesKHR* in_struct)
+{
+    sType = in_struct->sType;
+    performanceCounterQueryPools = in_struct->performanceCounterQueryPools;
+    performanceCounterMultipleQueryPools = in_struct->performanceCounterMultipleQueryPools;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDevicePerformanceQueryFeaturesKHR::initialize(const safe_VkPhysicalDevicePerformanceQueryFeaturesKHR* src)
+{
+    sType = src->sType;
+    performanceCounterQueryPools = src->performanceCounterQueryPools;
+    performanceCounterMultipleQueryPools = src->performanceCounterMultipleQueryPools;
+    pNext = SafePnextCopy(src->pNext);
+}
+
+safe_VkPhysicalDevicePerformanceQueryPropertiesKHR::safe_VkPhysicalDevicePerformanceQueryPropertiesKHR(const VkPhysicalDevicePerformanceQueryPropertiesKHR* in_struct) :
+    sType(in_struct->sType),
+    allowCommandBufferQueryCopies(in_struct->allowCommandBufferQueryCopies)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDevicePerformanceQueryPropertiesKHR::safe_VkPhysicalDevicePerformanceQueryPropertiesKHR() :
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDevicePerformanceQueryPropertiesKHR::safe_VkPhysicalDevicePerformanceQueryPropertiesKHR(const safe_VkPhysicalDevicePerformanceQueryPropertiesKHR& src)
+{
+    sType = src.sType;
+    allowCommandBufferQueryCopies = src.allowCommandBufferQueryCopies;
+    pNext = SafePnextCopy(src.pNext);
+}
+
+safe_VkPhysicalDevicePerformanceQueryPropertiesKHR& safe_VkPhysicalDevicePerformanceQueryPropertiesKHR::operator=(const safe_VkPhysicalDevicePerformanceQueryPropertiesKHR& src)
+{
+    if (&src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = src.sType;
+    allowCommandBufferQueryCopies = src.allowCommandBufferQueryCopies;
+    pNext = SafePnextCopy(src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDevicePerformanceQueryPropertiesKHR::~safe_VkPhysicalDevicePerformanceQueryPropertiesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDevicePerformanceQueryPropertiesKHR::initialize(const VkPhysicalDevicePerformanceQueryPropertiesKHR* in_struct)
+{
+    sType = in_struct->sType;
+    allowCommandBufferQueryCopies = in_struct->allowCommandBufferQueryCopies;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDevicePerformanceQueryPropertiesKHR::initialize(const safe_VkPhysicalDevicePerformanceQueryPropertiesKHR* src)
+{
+    sType = src->sType;
+    allowCommandBufferQueryCopies = src->allowCommandBufferQueryCopies;
+    pNext = SafePnextCopy(src->pNext);
+}
+
+safe_VkPerformanceCounterKHR::safe_VkPerformanceCounterKHR(const VkPerformanceCounterKHR* in_struct) :
+    sType(in_struct->sType),
+    unit(in_struct->unit),
+    scope(in_struct->scope),
+    storage(in_struct->storage)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
+        uuid[i] = in_struct->uuid[i];
+    }
+}
+
+safe_VkPerformanceCounterKHR::safe_VkPerformanceCounterKHR() :
+    pNext(nullptr)
+{}
+
+safe_VkPerformanceCounterKHR::safe_VkPerformanceCounterKHR(const safe_VkPerformanceCounterKHR& src)
+{
+    sType = src.sType;
+    unit = src.unit;
+    scope = src.scope;
+    storage = src.storage;
+    pNext = SafePnextCopy(src.pNext);
+    for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
+        uuid[i] = src.uuid[i];
+    }
+}
+
+safe_VkPerformanceCounterKHR& safe_VkPerformanceCounterKHR::operator=(const safe_VkPerformanceCounterKHR& src)
+{
+    if (&src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = src.sType;
+    unit = src.unit;
+    scope = src.scope;
+    storage = src.storage;
+    pNext = SafePnextCopy(src.pNext);
+    for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
+        uuid[i] = src.uuid[i];
+    }
+
+    return *this;
+}
+
+safe_VkPerformanceCounterKHR::~safe_VkPerformanceCounterKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPerformanceCounterKHR::initialize(const VkPerformanceCounterKHR* in_struct)
+{
+    sType = in_struct->sType;
+    unit = in_struct->unit;
+    scope = in_struct->scope;
+    storage = in_struct->storage;
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
+        uuid[i] = in_struct->uuid[i];
+    }
+}
+
+void safe_VkPerformanceCounterKHR::initialize(const safe_VkPerformanceCounterKHR* src)
+{
+    sType = src->sType;
+    unit = src->unit;
+    scope = src->scope;
+    storage = src->storage;
+    pNext = SafePnextCopy(src->pNext);
+    for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
+        uuid[i] = src->uuid[i];
+    }
+}
+
+safe_VkPerformanceCounterDescriptionKHR::safe_VkPerformanceCounterDescriptionKHR(const VkPerformanceCounterDescriptionKHR* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
+        name[i] = in_struct->name[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
+        category[i] = in_struct->category[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
+        description[i] = in_struct->description[i];
+    }
+}
+
+safe_VkPerformanceCounterDescriptionKHR::safe_VkPerformanceCounterDescriptionKHR() :
+    pNext(nullptr)
+{}
+
+safe_VkPerformanceCounterDescriptionKHR::safe_VkPerformanceCounterDescriptionKHR(const safe_VkPerformanceCounterDescriptionKHR& src)
+{
+    sType = src.sType;
+    flags = src.flags;
+    pNext = SafePnextCopy(src.pNext);
+    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
+        name[i] = src.name[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
+        category[i] = src.category[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
+        description[i] = src.description[i];
+    }
+}
+
+safe_VkPerformanceCounterDescriptionKHR& safe_VkPerformanceCounterDescriptionKHR::operator=(const safe_VkPerformanceCounterDescriptionKHR& src)
+{
+    if (&src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = src.sType;
+    flags = src.flags;
+    pNext = SafePnextCopy(src.pNext);
+    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
+        name[i] = src.name[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
+        category[i] = src.category[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
+        description[i] = src.description[i];
+    }
+
+    return *this;
+}
+
+safe_VkPerformanceCounterDescriptionKHR::~safe_VkPerformanceCounterDescriptionKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPerformanceCounterDescriptionKHR::initialize(const VkPerformanceCounterDescriptionKHR* in_struct)
+{
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
+        name[i] = in_struct->name[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
+        category[i] = in_struct->category[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
+        description[i] = in_struct->description[i];
+    }
+}
+
+void safe_VkPerformanceCounterDescriptionKHR::initialize(const safe_VkPerformanceCounterDescriptionKHR* src)
+{
+    sType = src->sType;
+    flags = src->flags;
+    pNext = SafePnextCopy(src->pNext);
+    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
+        name[i] = src->name[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
+        category[i] = src->category[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
+        description[i] = src->description[i];
+    }
+}
+
+safe_VkQueryPoolPerformanceCreateInfoKHR::safe_VkQueryPoolPerformanceCreateInfoKHR(const VkQueryPoolPerformanceCreateInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    queueFamilyIndex(in_struct->queueFamilyIndex),
+    counterIndexCount(in_struct->counterIndexCount),
+    pCounterIndices(nullptr)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pCounterIndices) {
+        pCounterIndices = new uint32_t[in_struct->counterIndexCount];
+        memcpy ((void *)pCounterIndices, (void *)in_struct->pCounterIndices, sizeof(uint32_t)*in_struct->counterIndexCount);
+    }
+}
+
+safe_VkQueryPoolPerformanceCreateInfoKHR::safe_VkQueryPoolPerformanceCreateInfoKHR() :
+    pNext(nullptr),
+    pCounterIndices(nullptr)
+{}
+
+safe_VkQueryPoolPerformanceCreateInfoKHR::safe_VkQueryPoolPerformanceCreateInfoKHR(const safe_VkQueryPoolPerformanceCreateInfoKHR& src)
+{
+    sType = src.sType;
+    queueFamilyIndex = src.queueFamilyIndex;
+    counterIndexCount = src.counterIndexCount;
+    pCounterIndices = nullptr;
+    pNext = SafePnextCopy(src.pNext);
+    if (src.pCounterIndices) {
+        pCounterIndices = new uint32_t[src.counterIndexCount];
+        memcpy ((void *)pCounterIndices, (void *)src.pCounterIndices, sizeof(uint32_t)*src.counterIndexCount);
+    }
+}
+
+safe_VkQueryPoolPerformanceCreateInfoKHR& safe_VkQueryPoolPerformanceCreateInfoKHR::operator=(const safe_VkQueryPoolPerformanceCreateInfoKHR& src)
+{
+    if (&src == this) return *this;
+
+    if (pCounterIndices)
+        delete[] pCounterIndices;
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = src.sType;
+    queueFamilyIndex = src.queueFamilyIndex;
+    counterIndexCount = src.counterIndexCount;
+    pCounterIndices = nullptr;
+    pNext = SafePnextCopy(src.pNext);
+    if (src.pCounterIndices) {
+        pCounterIndices = new uint32_t[src.counterIndexCount];
+        memcpy ((void *)pCounterIndices, (void *)src.pCounterIndices, sizeof(uint32_t)*src.counterIndexCount);
+    }
+
+    return *this;
+}
+
+safe_VkQueryPoolPerformanceCreateInfoKHR::~safe_VkQueryPoolPerformanceCreateInfoKHR()
+{
+    if (pCounterIndices)
+        delete[] pCounterIndices;
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkQueryPoolPerformanceCreateInfoKHR::initialize(const VkQueryPoolPerformanceCreateInfoKHR* in_struct)
+{
+    sType = in_struct->sType;
+    queueFamilyIndex = in_struct->queueFamilyIndex;
+    counterIndexCount = in_struct->counterIndexCount;
+    pCounterIndices = nullptr;
+    pNext = SafePnextCopy(in_struct->pNext);
+    if (in_struct->pCounterIndices) {
+        pCounterIndices = new uint32_t[in_struct->counterIndexCount];
+        memcpy ((void *)pCounterIndices, (void *)in_struct->pCounterIndices, sizeof(uint32_t)*in_struct->counterIndexCount);
+    }
+}
+
+void safe_VkQueryPoolPerformanceCreateInfoKHR::initialize(const safe_VkQueryPoolPerformanceCreateInfoKHR* src)
+{
+    sType = src->sType;
+    queueFamilyIndex = src->queueFamilyIndex;
+    counterIndexCount = src->counterIndexCount;
+    pCounterIndices = nullptr;
+    pNext = SafePnextCopy(src->pNext);
+    if (src->pCounterIndices) {
+        pCounterIndices = new uint32_t[src->counterIndexCount];
+        memcpy ((void *)pCounterIndices, (void *)src->pCounterIndices, sizeof(uint32_t)*src->counterIndexCount);
+    }
+}
+
+safe_VkAcquireProfilingLockInfoKHR::safe_VkAcquireProfilingLockInfoKHR(const VkAcquireProfilingLockInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    flags(in_struct->flags),
+    timeout(in_struct->timeout)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkAcquireProfilingLockInfoKHR::safe_VkAcquireProfilingLockInfoKHR() :
+    pNext(nullptr)
+{}
+
+safe_VkAcquireProfilingLockInfoKHR::safe_VkAcquireProfilingLockInfoKHR(const safe_VkAcquireProfilingLockInfoKHR& src)
+{
+    sType = src.sType;
+    flags = src.flags;
+    timeout = src.timeout;
+    pNext = SafePnextCopy(src.pNext);
+}
+
+safe_VkAcquireProfilingLockInfoKHR& safe_VkAcquireProfilingLockInfoKHR::operator=(const safe_VkAcquireProfilingLockInfoKHR& src)
+{
+    if (&src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = src.sType;
+    flags = src.flags;
+    timeout = src.timeout;
+    pNext = SafePnextCopy(src.pNext);
+
+    return *this;
+}
+
+safe_VkAcquireProfilingLockInfoKHR::~safe_VkAcquireProfilingLockInfoKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkAcquireProfilingLockInfoKHR::initialize(const VkAcquireProfilingLockInfoKHR* in_struct)
+{
+    sType = in_struct->sType;
+    flags = in_struct->flags;
+    timeout = in_struct->timeout;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkAcquireProfilingLockInfoKHR::initialize(const safe_VkAcquireProfilingLockInfoKHR* src)
+{
+    sType = src->sType;
+    flags = src->flags;
+    timeout = src->timeout;
+    pNext = SafePnextCopy(src->pNext);
+}
+
+safe_VkPerformanceQuerySubmitInfoKHR::safe_VkPerformanceQuerySubmitInfoKHR(const VkPerformanceQuerySubmitInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    counterPassIndex(in_struct->counterPassIndex)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPerformanceQuerySubmitInfoKHR::safe_VkPerformanceQuerySubmitInfoKHR() :
+    pNext(nullptr)
+{}
+
+safe_VkPerformanceQuerySubmitInfoKHR::safe_VkPerformanceQuerySubmitInfoKHR(const safe_VkPerformanceQuerySubmitInfoKHR& src)
+{
+    sType = src.sType;
+    counterPassIndex = src.counterPassIndex;
+    pNext = SafePnextCopy(src.pNext);
+}
+
+safe_VkPerformanceQuerySubmitInfoKHR& safe_VkPerformanceQuerySubmitInfoKHR::operator=(const safe_VkPerformanceQuerySubmitInfoKHR& src)
+{
+    if (&src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = src.sType;
+    counterPassIndex = src.counterPassIndex;
+    pNext = SafePnextCopy(src.pNext);
+
+    return *this;
+}
+
+safe_VkPerformanceQuerySubmitInfoKHR::~safe_VkPerformanceQuerySubmitInfoKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPerformanceQuerySubmitInfoKHR::initialize(const VkPerformanceQuerySubmitInfoKHR* in_struct)
+{
+    sType = in_struct->sType;
+    counterPassIndex = in_struct->counterPassIndex;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPerformanceQuerySubmitInfoKHR::initialize(const safe_VkPerformanceQuerySubmitInfoKHR* src)
+{
+    sType = src->sType;
+    counterPassIndex = src->counterPassIndex;
+    pNext = SafePnextCopy(src->pNext);
+}
+
 safe_VkPhysicalDeviceSurfaceInfo2KHR::safe_VkPhysicalDeviceSurfaceInfo2KHR(const VkPhysicalDeviceSurfaceInfo2KHR* in_struct) :
     sType(in_struct->sType),
     surface(in_struct->surface)
@@ -29328,6 +29807,18 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_SHARED_PRESENT_SURFACE_CAPABILITIES_KHR:
             safe_pNext = new safe_VkSharedPresentSurfaceCapabilitiesKHR(reinterpret_cast<const VkSharedPresentSurfaceCapabilitiesKHR *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR:
+            safe_pNext = new safe_VkPhysicalDevicePerformanceQueryFeaturesKHR(reinterpret_cast<const VkPhysicalDevicePerformanceQueryFeaturesKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_PROPERTIES_KHR:
+            safe_pNext = new safe_VkPhysicalDevicePerformanceQueryPropertiesKHR(reinterpret_cast<const VkPhysicalDevicePerformanceQueryPropertiesKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR:
+            safe_pNext = new safe_VkQueryPoolPerformanceCreateInfoKHR(reinterpret_cast<const VkQueryPoolPerformanceCreateInfoKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR:
+            safe_pNext = new safe_VkPerformanceQuerySubmitInfoKHR(reinterpret_cast<const VkPerformanceQuerySubmitInfoKHR *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO_KHR:
             safe_pNext = new safe_VkImageFormatListCreateInfoKHR(reinterpret_cast<const VkImageFormatListCreateInfoKHR *>(pNext));
             break;
@@ -29984,6 +30475,18 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_SHARED_PRESENT_SURFACE_CAPABILITIES_KHR:
             delete reinterpret_cast<const safe_VkSharedPresentSurfaceCapabilitiesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDevicePerformanceQueryFeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_PROPERTIES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDevicePerformanceQueryPropertiesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR:
+            delete reinterpret_cast<const safe_VkQueryPoolPerformanceCreateInfoKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR:
+            delete reinterpret_cast<const safe_VkPerformanceQuerySubmitInfoKHR *>(header);
             break;
         case VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO_KHR:
             delete reinterpret_cast<const safe_VkImageFormatListCreateInfoKHR *>(header);

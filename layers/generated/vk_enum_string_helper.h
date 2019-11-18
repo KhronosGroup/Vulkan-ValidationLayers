@@ -135,6 +135,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV";
         case VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR:
             return "VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR";
+        case VK_STRUCTURE_TYPE_ACQUIRE_PROFILING_LOCK_INFO_KHR:
+            return "VK_STRUCTURE_TYPE_ACQUIRE_PROFILING_LOCK_INFO_KHR";
         case VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID:
             return "VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID";
         case VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID:
@@ -475,10 +477,16 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_OBJECT_TABLE_CREATE_INFO_NVX";
         case VK_STRUCTURE_TYPE_PERFORMANCE_CONFIGURATION_ACQUIRE_INFO_INTEL:
             return "VK_STRUCTURE_TYPE_PERFORMANCE_CONFIGURATION_ACQUIRE_INFO_INTEL";
+        case VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_DESCRIPTION_KHR:
+            return "VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_DESCRIPTION_KHR";
+        case VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_KHR:
+            return "VK_STRUCTURE_TYPE_PERFORMANCE_COUNTER_KHR";
         case VK_STRUCTURE_TYPE_PERFORMANCE_MARKER_INFO_INTEL:
             return "VK_STRUCTURE_TYPE_PERFORMANCE_MARKER_INFO_INTEL";
         case VK_STRUCTURE_TYPE_PERFORMANCE_OVERRIDE_INFO_INTEL:
             return "VK_STRUCTURE_TYPE_PERFORMANCE_OVERRIDE_INFO_INTEL";
+        case VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR:
+            return "VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR";
         case VK_STRUCTURE_TYPE_PERFORMANCE_STREAM_MARKER_INFO_INTEL:
             return "VK_STRUCTURE_TYPE_PERFORMANCE_STREAM_MARKER_INFO_INTEL";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES:
@@ -591,6 +599,10 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_FEATURES_KHR";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_PROPERTIES_KHR:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PERFORMANCE_QUERY_PROPERTIES_KHR";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES:
@@ -773,6 +785,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO";
         case VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO_INTEL:
             return "VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO_INTEL";
+        case VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR:
+            return "VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR";
         case VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_NV:
             return "VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_NV";
         case VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2:
@@ -2035,6 +2049,8 @@ static inline const char* string_VkQueryType(VkQueryType input_value)
             return "VK_QUERY_TYPE_OCCLUSION";
         case VK_QUERY_TYPE_PERFORMANCE_QUERY_INTEL:
             return "VK_QUERY_TYPE_PERFORMANCE_QUERY_INTEL";
+        case VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR:
+            return "VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR";
         case VK_QUERY_TYPE_PIPELINE_STATISTICS:
             return "VK_QUERY_TYPE_PIPELINE_STATISTICS";
         case VK_QUERY_TYPE_TIMESTAMP:
@@ -2363,8 +2379,8 @@ static inline const char* string_VkPipelineCreateFlagBits(VkPipelineCreateFlagBi
             return "VK_PIPELINE_CREATE_DERIVATIVE_BIT";
         case VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT:
             return "VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT";
-        case VK_PIPELINE_CREATE_DISPATCH_BASE:
-            return "VK_PIPELINE_CREATE_DISPATCH_BASE";
+        case VK_PIPELINE_CREATE_DISPATCH_BASE_BIT:
+            return "VK_PIPELINE_CREATE_DISPATCH_BASE_BIT";
         case VK_PIPELINE_CREATE_VIEW_INDEX_FROM_DEVICE_INDEX_BIT:
             return "VK_PIPELINE_CREATE_VIEW_INDEX_FROM_DEVICE_INDEX_BIT";
         default:
@@ -4659,6 +4675,102 @@ static inline std::string string_VkFenceImportFlagsKHR(VkFenceImportFlagsKHR inp
         input_value >>= 1;
     }
     if( ret.empty()) ret.append(string_VkFenceImportFlagBitsKHR(static_cast<VkFenceImportFlagBitsKHR>(0)));
+    return ret;
+}
+
+static inline const char* string_VkPerformanceCounterUnitKHR(VkPerformanceCounterUnitKHR input_value)
+{
+    switch ((VkPerformanceCounterUnitKHR)input_value)
+    {
+        case VK_PERFORMANCE_COUNTER_UNIT_AMPS_KHR:
+            return "VK_PERFORMANCE_COUNTER_UNIT_AMPS_KHR";
+        case VK_PERFORMANCE_COUNTER_UNIT_BYTES_KHR:
+            return "VK_PERFORMANCE_COUNTER_UNIT_BYTES_KHR";
+        case VK_PERFORMANCE_COUNTER_UNIT_BYTES_PER_SECOND_KHR:
+            return "VK_PERFORMANCE_COUNTER_UNIT_BYTES_PER_SECOND_KHR";
+        case VK_PERFORMANCE_COUNTER_UNIT_CYCLES_KHR:
+            return "VK_PERFORMANCE_COUNTER_UNIT_CYCLES_KHR";
+        case VK_PERFORMANCE_COUNTER_UNIT_GENERIC_KHR:
+            return "VK_PERFORMANCE_COUNTER_UNIT_GENERIC_KHR";
+        case VK_PERFORMANCE_COUNTER_UNIT_HERTZ_KHR:
+            return "VK_PERFORMANCE_COUNTER_UNIT_HERTZ_KHR";
+        case VK_PERFORMANCE_COUNTER_UNIT_KELVIN_KHR:
+            return "VK_PERFORMANCE_COUNTER_UNIT_KELVIN_KHR";
+        case VK_PERFORMANCE_COUNTER_UNIT_NANOSECONDS_KHR:
+            return "VK_PERFORMANCE_COUNTER_UNIT_NANOSECONDS_KHR";
+        case VK_PERFORMANCE_COUNTER_UNIT_PERCENTAGE_KHR:
+            return "VK_PERFORMANCE_COUNTER_UNIT_PERCENTAGE_KHR";
+        case VK_PERFORMANCE_COUNTER_UNIT_VOLTS_KHR:
+            return "VK_PERFORMANCE_COUNTER_UNIT_VOLTS_KHR";
+        case VK_PERFORMANCE_COUNTER_UNIT_WATTS_KHR:
+            return "VK_PERFORMANCE_COUNTER_UNIT_WATTS_KHR";
+        default:
+            return "Unhandled VkPerformanceCounterUnitKHR";
+    }
+}
+
+static inline const char* string_VkPerformanceCounterScopeKHR(VkPerformanceCounterScopeKHR input_value)
+{
+    switch ((VkPerformanceCounterScopeKHR)input_value)
+    {
+        case VK_QUERY_SCOPE_COMMAND_BUFFER_KHR:
+            return "VK_QUERY_SCOPE_COMMAND_BUFFER_KHR";
+        case VK_QUERY_SCOPE_COMMAND_KHR:
+            return "VK_QUERY_SCOPE_COMMAND_KHR";
+        case VK_QUERY_SCOPE_RENDER_PASS_KHR:
+            return "VK_QUERY_SCOPE_RENDER_PASS_KHR";
+        default:
+            return "Unhandled VkPerformanceCounterScopeKHR";
+    }
+}
+
+static inline const char* string_VkPerformanceCounterStorageKHR(VkPerformanceCounterStorageKHR input_value)
+{
+    switch ((VkPerformanceCounterStorageKHR)input_value)
+    {
+        case VK_PERFORMANCE_COUNTER_STORAGE_FLOAT32_KHR:
+            return "VK_PERFORMANCE_COUNTER_STORAGE_FLOAT32_KHR";
+        case VK_PERFORMANCE_COUNTER_STORAGE_FLOAT64_KHR:
+            return "VK_PERFORMANCE_COUNTER_STORAGE_FLOAT64_KHR";
+        case VK_PERFORMANCE_COUNTER_STORAGE_INT32_KHR:
+            return "VK_PERFORMANCE_COUNTER_STORAGE_INT32_KHR";
+        case VK_PERFORMANCE_COUNTER_STORAGE_INT64_KHR:
+            return "VK_PERFORMANCE_COUNTER_STORAGE_INT64_KHR";
+        case VK_PERFORMANCE_COUNTER_STORAGE_UINT32_KHR:
+            return "VK_PERFORMANCE_COUNTER_STORAGE_UINT32_KHR";
+        case VK_PERFORMANCE_COUNTER_STORAGE_UINT64_KHR:
+            return "VK_PERFORMANCE_COUNTER_STORAGE_UINT64_KHR";
+        default:
+            return "Unhandled VkPerformanceCounterStorageKHR";
+    }
+}
+
+static inline const char* string_VkPerformanceCounterDescriptionFlagBitsKHR(VkPerformanceCounterDescriptionFlagBitsKHR input_value)
+{
+    switch ((VkPerformanceCounterDescriptionFlagBitsKHR)input_value)
+    {
+        case VK_PERFORMANCE_COUNTER_DESCRIPTION_CONCURRENTLY_IMPACTED_KHR:
+            return "VK_PERFORMANCE_COUNTER_DESCRIPTION_CONCURRENTLY_IMPACTED_KHR";
+        case VK_PERFORMANCE_COUNTER_DESCRIPTION_PERFORMANCE_IMPACTING_KHR:
+            return "VK_PERFORMANCE_COUNTER_DESCRIPTION_PERFORMANCE_IMPACTING_KHR";
+        default:
+            return "Unhandled VkPerformanceCounterDescriptionFlagBitsKHR";
+    }
+}
+
+static inline std::string string_VkPerformanceCounterDescriptionFlagsKHR(VkPerformanceCounterDescriptionFlagsKHR input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkPerformanceCounterDescriptionFlagBitsKHR(static_cast<VkPerformanceCounterDescriptionFlagBitsKHR>(1 << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkPerformanceCounterDescriptionFlagBitsKHR(static_cast<VkPerformanceCounterDescriptionFlagBitsKHR>(0)));
     return ret;
 }
 

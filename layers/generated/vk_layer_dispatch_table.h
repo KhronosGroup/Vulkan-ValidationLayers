@@ -140,6 +140,10 @@ typedef struct VkLayerInstanceDispatchTable_ {
     // ---- VK_KHR_external_fence_capabilities extension commands
     PFN_vkGetPhysicalDeviceExternalFencePropertiesKHR GetPhysicalDeviceExternalFencePropertiesKHR;
 
+    // ---- VK_KHR_performance_query extension commands
+    PFN_vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR EnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR;
+    PFN_vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR GetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR;
+
     // ---- VK_KHR_get_surface_capabilities2 extension commands
     PFN_vkGetPhysicalDeviceSurfaceCapabilities2KHR GetPhysicalDeviceSurfaceCapabilities2KHR;
     PFN_vkGetPhysicalDeviceSurfaceFormats2KHR GetPhysicalDeviceSurfaceFormats2KHR;
@@ -449,6 +453,10 @@ typedef struct VkLayerDispatchTable_ {
     // ---- VK_KHR_external_fence_fd extension commands
     PFN_vkImportFenceFdKHR ImportFenceFdKHR;
     PFN_vkGetFenceFdKHR GetFenceFdKHR;
+
+    // ---- VK_KHR_performance_query extension commands
+    PFN_vkAcquireProfilingLockKHR AcquireProfilingLockKHR;
+    PFN_vkReleaseProfilingLockKHR ReleaseProfilingLockKHR;
 
     // ---- VK_KHR_get_memory_requirements2 extension commands
     PFN_vkGetImageMemoryRequirements2KHR GetImageMemoryRequirements2KHR;

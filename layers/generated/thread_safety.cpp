@@ -4069,6 +4069,29 @@ void ThreadSafety::PostCallRecordGetFenceFdKHR(
     FinishReadObjectParentInstance(device);
 }
 
+void ThreadSafety::PreCallRecordAcquireProfilingLockKHR(
+    VkDevice                                    device,
+    const VkAcquireProfilingLockInfoKHR*        pInfo) {
+    StartReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PostCallRecordAcquireProfilingLockKHR(
+    VkDevice                                    device,
+    const VkAcquireProfilingLockInfoKHR*        pInfo,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PreCallRecordReleaseProfilingLockKHR(
+    VkDevice                                    device) {
+    StartReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PostCallRecordReleaseProfilingLockKHR(
+    VkDevice                                    device) {
+    FinishReadObjectParentInstance(device);
+}
+
 void ThreadSafety::PreCallRecordGetDisplayModeProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,
