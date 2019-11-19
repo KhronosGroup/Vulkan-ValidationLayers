@@ -756,7 +756,7 @@ TEST_F(VkPositiveLayerTest, ResetQueryPoolFromDifferentCB) {
     VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info{};
     query_pool_create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
-    query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
     query_pool_create_info.queryCount = 1;
     vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
 
