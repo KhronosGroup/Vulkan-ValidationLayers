@@ -1282,17 +1282,9 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoSync2KHR) {
 TEST_F(VkLayerTest, SwapchainAcquireTooManyImages) {
     TEST_DESCRIPTION("Acquiring invalid amount of images from the swapchain.");
 
-    if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
-
+    if (!AddSurfaceInstanceExtension()) return;
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-
-    if (!AddSwapchainDeviceExtension()) {
-        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
+    if (!AddSwapchainDeviceExtension()) return;
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_TRUE(InitSwapchain());
@@ -1334,11 +1326,7 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
         return;
     }
 
-    if (!AddSurfaceInstanceExtension()) {
-        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
-
+    if (!AddSurfaceInstanceExtension()) return;
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
 
     if (extension_dependency_satisfied && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
@@ -1348,10 +1336,7 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
         return;
     }
 
-    if (!AddSwapchainDeviceExtension()) {
-        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
-        return;
-    }
+    if (!AddSwapchainDeviceExtension()) return;
 
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_TRUE(InitSwapchain());
