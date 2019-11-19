@@ -195,7 +195,7 @@ bool ImageSubresourceLayoutMap::ForRange(const VkImageSubresourceRange& range, c
     if (!InRange(range)) return false;  // Don't even try to process bogus subreources
 
     RangeGenerator range_gen(encoder_, range);
-    SubresourceGenerator& subres_gen = range_gen.SubresourceGenerator();
+    SubresourceGenerator& subres_gen = range_gen.GetSubresourceGenerator();
     ParallelIterator<const RangeMap, const RangeMap> parallel_it(layouts_.current, layouts_.initial, range_gen->begin);
 
     bool keep_on = true;
@@ -272,12 +272,12 @@ void ImageSubresourceLayoutMap::ConstIterator::UpdateRangeAndValue() {
             }
             if (!skip_invalid_ || (pos_.current_layout != kInvalidLayout) || (pos_.initial_layout != kInvalidLayout)) {
                 // we found it ... set the position and exit condition.
-                pos_.subresource = *range_gen_.SubresourceGenerator();
+                pos_.subresource = range_gen_.GetSubresource();
                 not_found = false;
             } else {
                 // We're skipping this constant value range, set the index to the exclusive end and look again
                 // Note that we ONLY need to seek the Subresource generator on a skip condition.
-                range_gen_.SubresourceGenerator().seek(
+                range_gen_.GetSubresourceGenerator().seek(
                     constant_value_bound_);  // Move the subresource to the end of the skipped range
                 current_index_ = constant_value_bound_;
 
@@ -303,11 +303,11 @@ void ImageSubresourceLayoutMap::ConstIterator::UpdateRangeAndValue() {
 
 void ImageSubresourceLayoutMap::ConstIterator::Increment() {
     ++current_index_;
-    ++(range_gen_.SubresourceGenerator());
+    ++(range_gen_.GetSubresourceGenerator());
     if (constant_value_bound_ <= current_index_) {
         UpdateRangeAndValue();
     } else {
-        pos_.subresource = *(range_gen_.SubresourceGenerator());
+        pos_.subresource = range_gen_.GetSubresource();
     }
 }
 ImageSubresourceLayoutMap::ConstIterator::ConstIterator(const RangeMap& current, const RangeMap& initial, const Encoder& encoder,
