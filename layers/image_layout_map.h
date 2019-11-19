@@ -128,8 +128,11 @@ class ImageSubresourceLayoutMap {
     };
 
     ConstIterator Find(const VkImageSubresourceRange& subres_range, bool skip_invalid = true,
-                       bool always_get_initial = true) const {
-        return ConstIterator(layouts_.current, layouts_.initial, encoder_, subres_range, skip_invalid, always_get_initial);
+                       bool always_get_initial = false) const {
+        if (InRange(subres_range)) {
+            return ConstIterator(layouts_.current, layouts_.initial, encoder_, subres_range, skip_invalid, always_get_initial);
+        }
+        return End();
     }
 
     // Begin is a find of the full range with the default skip/ always get parameters
