@@ -1294,10 +1294,10 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages) {
     ASSERT_VK_SUCCESS(vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(gpu(), m_surface, &caps));
 
     const uint32_t acquirable_count = image_count - caps.minImageCount + 1;
-    uint32_t image_i = 0;  // MockICD does not write this so trick it to return sane value
     std::vector<VkFenceObj> fences(acquirable_count);
     for (uint32_t i = 0; i < acquirable_count; ++i) {
         fences[i].init(*m_device, VkFenceObj::create_info());
+        uint32_t image_i = i;  // WORKAROUND: MockICD does not modify the value, so we have to or the validator state gets corrupted
         const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fences[i].handle(), &image_i);
         ASSERT_TRUE(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
     }
@@ -1305,6 +1305,7 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages) {
     error_fence.init(*m_device, VkFenceObj::create_info());
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkAcquireNextImageKHR-swapchain-01802");
+    uint32_t image_i;
     vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, error_fence.handle(), &image_i);
     m_errorMonitor->VerifyFound();
 
@@ -1346,10 +1347,10 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
     ASSERT_VK_SUCCESS(vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(gpu(), m_surface, &caps));
 
     const uint32_t acquirable_count = image_count - caps.minImageCount + 1;
-    uint32_t image_i = 0;  // MockICD does not write this so trick it to return sane value
     std::vector<VkFenceObj> fences(acquirable_count);
     for (uint32_t i = 0; i < acquirable_count; ++i) {
         fences[i].init(*m_device, VkFenceObj::create_info());
+        uint32_t image_i = i;  // WORKAROUND: MockICD does not modify the value, so we have to or the validator state gets corrupted
         const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fences[i].handle(), &image_i);
         ASSERT_TRUE(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
     }
@@ -1363,6 +1364,7 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
     acquire_info.fence = error_fence.handle();
     acquire_info.deviceMask = 0x1;
 
+    uint32_t image_i;
     vk::AcquireNextImage2KHR(device(), &acquire_info, &image_i);
     m_errorMonitor->VerifyFound();
 
