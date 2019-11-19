@@ -91,7 +91,7 @@ class ImageSubresourceLayoutMap {
     using InitialLayoutMap = RangeMap;
     using Encoder = subresource_adapter::RangeEncoder;
     using RangeGenerator = subresource_adapter::RangeGenerator;
-    using SubresourceGenerator = subresource_adapter::VkImageSubresourceGenerator;
+    using SubresourceGenerator = subresource_adapter::SubresourceGenerator;
 
     class ConstIterator {
       public:
@@ -166,8 +166,8 @@ class ImageSubresourceLayoutMap {
         return encoder_.MakeVkSubresource(subres);
     }
 
-    inline uint32_t LevelLimit(uint32_t level) const { return std::min(encoder_.Limits().mip_level, level); }
-    inline uint32_t LayerLimit(uint32_t layer) const { return std::min(encoder_.Limits().array_layer, layer); }
+    inline uint32_t LevelLimit(uint32_t level) const { return std::min(encoder_.Limits().mipLevel, level); }
+    inline uint32_t LayerLimit(uint32_t layer) const { return std::min(encoder_.Limits().arrayLayer, layer); }
 
     bool InRange(const VkImageSubresource& subres) const { return encoder_.InRange(subres); }
     bool InRange(const VkImageSubresourceRange& range) const { return encoder_.InRange(range); }
