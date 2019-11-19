@@ -1174,6 +1174,31 @@ TEST_F(VkLayerTest, DeviceFeature2AndVertexAttributeDivisorExtensionUnenabled) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, BeginQueryOnTimestampPool) {
+    TEST_DESCRIPTION("Call CmdBeginQuery on a TIMESTAMP query pool.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkQueryPool query_pool;
+    VkQueryPoolCreateInfo query_pool_create_info{};
+    query_pool_create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    query_pool_create_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    query_pool_create_info.queryCount = 1;
+    vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBeginQuery-queryType-02804");
+    VkCommandBufferBeginInfo begin_info{};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+    vk::BeginCommandBuffer(m_commandBuffer->handle(), &begin_info);
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+    vk::EndCommandBuffer(m_commandBuffer->handle());
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
+}
+
 TEST_F(VkLayerTest, SwapchainAcquireImageNoSync) {
     TEST_DESCRIPTION("Test vkAcquireNextImageKHR with VK_NULL_HANDLE semaphore and fence");
 
