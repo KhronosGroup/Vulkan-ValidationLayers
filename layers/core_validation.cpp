@@ -6447,6 +6447,12 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE *cb_state, const Quer
     bool skip = false;
     const auto &query_pool_ci = GetQueryPoolState(query_obj.pool)->createInfo;
 
+    if (query_pool_ci.queryType == VK_QUERY_TYPE_TIMESTAMP) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdBeginQuery-queryType-02804",
+                        "%s: The querypool's query type must not be VK_QUERY_TYPE_TIMESTAMP.", cmd_name);
+    }
+
     // There are tighter queue constraints to test for certain query pools
     if (query_pool_ci.queryType == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT) {
         skip |= ValidateCmdQueueFlags(cb_state, cmd_name, VK_QUEUE_GRAPHICS_BIT, vuid_queue_feedback);
