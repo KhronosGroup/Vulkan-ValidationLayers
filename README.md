@@ -34,8 +34,7 @@ Please see the [GOVERNANCE.md](GOVERNANCE.md) file in this repository for reposi
 [BUILD.md](BUILD.md)
 Includes directions for building all components as well as running validation tests.
 
-Information on how to enable the various Validation layers is in
-[layers/README.md](layers/README.md).
+Information on how to enable the various Validation layers is in [LAYER_CONFIGURATION.md](LAYER_CONFIGURATION.md).
 
 ## Version Tagging Scheme
 
@@ -48,7 +47,7 @@ This scheme was adopted following the 1.1.96 Vulkan specification release.
 ## License
 This work is released as open source under a Apache-style license from Khronos including a Khronos copyright.
 
-See COPYRIGHT.txt for a full list of licenses used in this repository.
+See [LICENSE.txt](LICENSE.txt) for a full list of licenses used in this repository.
 
 ## Acknowledgements
 While this project has been developed primarily by LunarG, Inc., there are many other
