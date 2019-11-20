@@ -228,7 +228,7 @@ bool ImageSubresourceLayoutMap::ForRange(const VkImageSubresourceRange& range, c
                     if (!keep_on) return keep_on;  // False value from the callback aborts the range traversal
                 }
             } else {
-                subres_gen.seek(constant_value_bound);  // Move the subresource to the end of the skipped range
+                subres_gen.Seek(constant_value_bound);  // Move the subresource to the end of the skipped range
                 current = constant_value_bound;
             }
             // Advance the parallel it if needed and possible
@@ -276,8 +276,8 @@ void ImageSubresourceLayoutMap::ConstIterator::UpdateRangeAndValue() {
                 not_found = false;
             } else {
                 // We're skipping this constant value range, set the index to the exclusive end and look again
-                // Note that we ONLY need to seek the Subresource generator on a skip condition.
-                range_gen_.GetSubresourceGenerator().seek(
+                // Note that we ONLY need to Seek the Subresource generator on a skip condition.
+                range_gen_.GetSubresourceGenerator().Seek(
                     constant_value_bound_);  // Move the subresource to the end of the skipped range
                 current_index_ = constant_value_bound_;
 

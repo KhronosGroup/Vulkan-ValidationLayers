@@ -65,85 +65,9 @@ struct Subresource : public VkImageSubresource {
 //    array_layer_index
 // into continuous index ranges
 class RangeEncoder {
+  public:
     static constexpr uint32_t kMaxSupportedAspect = 3;
 
-  public:
-    using IndexRange = sparse_container::range<IndexType>;
-
-  protected:
-    Subresource limits_;
-    const size_t mip_size_;
-    const size_t aspect_size_;
-    const VkImageAspectFlagBits* const aspect_bits_;
-    uint32_t (*const mask_index_function_)(VkImageAspectFlags);
-    IndexType (RangeEncoder::*encode_function_)(const Subresource&) const;
-    Subresource (RangeEncoder::*decode_function_)(const IndexType&) const;
-    uint32_t (RangeEncoder::*lower_bound_function_)(VkImageAspectFlags aspect_mask) const;
-    uint32_t (RangeEncoder::*lower_bound_with_start_function_)(VkImageAspectFlags aspect_mask, uint32_t start) const;
-    IndexType aspect_base_[kMaxSupportedAspect];
-
-    IndexType Encode1AspectArrayOnly(const Subresource& pos) const;
-    IndexType Encode1AspectMipArray(const Subresource& pos) const;
-    IndexType Encode1AspectMipOnly(const Subresource& pos) const;
-
-    IndexType EncodeAspectArrayOnly(const Subresource& pos) const;
-    IndexType EncodeAspectMipArray(const Subresource& pos) const;
-    IndexType EncodeAspectMipOnly(const Subresource& pos) const;
-
-    // Use compiler to create the aspect count variants...
-    // For ranges that only have a single mip level...
-    template <uint32_t N>
-    Subresource DecodeAspectArrayOnly(const IndexType& index) const {
-        if ((N > 2) && (index >= aspect_base_[2])) {
-            return Subresource(aspect_bits_[2], 0, static_cast<uint32_t>(index - aspect_base_[2]), 2);
-        } else if ((N > 1) && (index >= aspect_base_[1])) {
-            return Subresource(aspect_bits_[1], 0, static_cast<uint32_t>(index - aspect_base_[1]), 1);
-        }
-        // NOTE: aspect_base_[0] is always 0... here and below
-        return Subresource(aspect_bits_[0], 0, static_cast<uint32_t>(index), 0);
-    }
-
-    // For ranges that only have a single array layer...
-    template <uint32_t N>
-    Subresource DecodeAspectMipOnly(const IndexType& index) const {
-        if ((N > 2) && (index >= aspect_base_[2])) {
-            return Subresource(aspect_bits_[2], static_cast<uint32_t>(index - aspect_base_[2]), 0, 2);
-        } else if ((N > 1) && (index >= aspect_base_[1])) {
-            return Subresource(aspect_bits_[1], static_cast<uint32_t>(index - aspect_base_[1]), 0, 1);
-        }
-        return Subresource(aspect_bits_[0], static_cast<uint32_t>(index), 0, 0);
-    }
-
-    // For ranges that only have both > 1 layer and level
-    template <uint32_t N>
-    Subresource DecodeAspectMipArray(const IndexType& index) const {
-        assert(limits_.aspect_index <= N);
-        uint32_t aspect_index = 0;
-        if ((N > 2) && (index >= aspect_base_[2])) {
-            aspect_index = 2;
-        } else if ((N > 1) && (index >= aspect_base_[1])) {
-            aspect_index = 1;
-        }
-
-        // aspect_base_[0] is always zero, so use the template to cheat
-        const IndexType base_index = index - ((N == 1) ? 0 : aspect_base_[aspect_index]);
-
-        const IndexType mip_level = base_index / mip_size_;
-        const IndexType mip_start = mip_level * mip_size_;
-        const IndexType array_offset = base_index - mip_start;
-
-        return Subresource(aspect_bits_[aspect_index], static_cast<uint32_t>(mip_level), static_cast<uint32_t>(array_offset),
-                           aspect_index);
-    }
-
-    uint32_t LowerBoundImpl1(VkImageAspectFlags aspect_mask) const;
-    uint32_t LowerBoundImpl2(VkImageAspectFlags aspect_mask) const;
-    uint32_t LowerBoundImpl3(VkImageAspectFlags aspect_mask) const;
-    uint32_t LowerBoundWithStartImpl1(VkImageAspectFlags aspect_mask, uint32_t start) const;
-    uint32_t LowerBoundWithStartImpl2(VkImageAspectFlags aspect_mask, uint32_t start) const;
-    uint32_t LowerBoundWithStartImpl3(VkImageAspectFlags aspect_mask, uint32_t start) const;
-
-  public:
     // The default constructor for default iterators
     RangeEncoder()
         : limits_(),
@@ -223,12 +147,81 @@ class RangeEncoder {
 
   protected:
     void PopulateFunctionPointers();
+
+    IndexType Encode1AspectArrayOnly(const Subresource& pos) const;
+    IndexType Encode1AspectMipArray(const Subresource& pos) const;
+    IndexType Encode1AspectMipOnly(const Subresource& pos) const;
+    IndexType EncodeAspectArrayOnly(const Subresource& pos) const;
+    IndexType EncodeAspectMipArray(const Subresource& pos) const;
+    IndexType EncodeAspectMipOnly(const Subresource& pos) const;
+
+    // Use compiler to create the aspect count variants...
+    // For ranges that only have a single mip level...
+    template <uint32_t N>
+    Subresource DecodeAspectArrayOnly(const IndexType& index) const {
+        if ((N > 2) && (index >= aspect_base_[2])) {
+            return Subresource(aspect_bits_[2], 0, static_cast<uint32_t>(index - aspect_base_[2]), 2);
+        } else if ((N > 1) && (index >= aspect_base_[1])) {
+            return Subresource(aspect_bits_[1], 0, static_cast<uint32_t>(index - aspect_base_[1]), 1);
+        }
+        // NOTE: aspect_base_[0] is always 0... here and below
+        return Subresource(aspect_bits_[0], 0, static_cast<uint32_t>(index), 0);
+    }
+
+    // For ranges that only have a single array layer...
+    template <uint32_t N>
+    Subresource DecodeAspectMipOnly(const IndexType& index) const {
+        if ((N > 2) && (index >= aspect_base_[2])) {
+            return Subresource(aspect_bits_[2], static_cast<uint32_t>(index - aspect_base_[2]), 0, 2);
+        } else if ((N > 1) && (index >= aspect_base_[1])) {
+            return Subresource(aspect_bits_[1], static_cast<uint32_t>(index - aspect_base_[1]), 0, 1);
+        }
+        return Subresource(aspect_bits_[0], static_cast<uint32_t>(index), 0, 0);
+    }
+
+    // For ranges that only have both > 1 layer and level
+    template <uint32_t N>
+    Subresource DecodeAspectMipArray(const IndexType& index) const {
+        assert(limits_.aspect_index <= N);
+        uint32_t aspect_index = 0;
+        if ((N > 2) && (index >= aspect_base_[2])) {
+            aspect_index = 2;
+        } else if ((N > 1) && (index >= aspect_base_[1])) {
+            aspect_index = 1;
+        }
+
+        // aspect_base_[0] is always zero, so use the template to cheat
+        const IndexType base_index = index - ((N == 1) ? 0 : aspect_base_[aspect_index]);
+
+        const IndexType mip_level = base_index / mip_size_;
+        const IndexType mip_start = mip_level * mip_size_;
+        const IndexType array_offset = base_index - mip_start;
+
+        return Subresource(aspect_bits_[aspect_index], static_cast<uint32_t>(mip_level), static_cast<uint32_t>(array_offset),
+                           aspect_index);
+    }
+
+    uint32_t LowerBoundImpl1(VkImageAspectFlags aspect_mask) const;
+    uint32_t LowerBoundImpl2(VkImageAspectFlags aspect_mask) const;
+    uint32_t LowerBoundImpl3(VkImageAspectFlags aspect_mask) const;
+    uint32_t LowerBoundWithStartImpl1(VkImageAspectFlags aspect_mask, uint32_t start) const;
+    uint32_t LowerBoundWithStartImpl2(VkImageAspectFlags aspect_mask, uint32_t start) const;
+    uint32_t LowerBoundWithStartImpl3(VkImageAspectFlags aspect_mask, uint32_t start) const;
+
+  private:
+    Subresource limits_;
+    const size_t mip_size_;
+    const size_t aspect_size_;
+    const VkImageAspectFlagBits* const aspect_bits_;
+    uint32_t (*const mask_index_function_)(VkImageAspectFlags);
+    IndexType (RangeEncoder::*encode_function_)(const Subresource&) const;
+    Subresource (RangeEncoder::*decode_function_)(const IndexType&) const;
+    uint32_t (RangeEncoder::*lower_bound_function_)(VkImageAspectFlags aspect_mask) const;
+    uint32_t (RangeEncoder::*lower_bound_with_start_function_)(VkImageAspectFlags aspect_mask, uint32_t start) const;
+    IndexType aspect_base_[kMaxSupportedAspect];
 };
 
 class SubresourceGenerator : public Subresource {
-    const RangeEncoder* encoder_;
-    const VkImageSubresourceRange limits_;
-
   public:
     SubresourceGenerator() : Subresource(), encoder_(nullptr), limits_(){};
     SubresourceGenerator(const RangeEncoder& encoder, const VkImageSubresourceRange& range)
@@ -237,8 +230,8 @@ class SubresourceGenerator : public Subresource {
     const VkImageSubresourceRange& Limits() const { return limits_; }
 
     // Seek functions are used by generators to force synchronization, as callers may have altered the position
-    // to iterater between calls to the generator increment, offset, or seek functions
-    void seek_aspect(uint32_t seek_index) {
+    // to iterater between calls to the generator increment or Seek functions
+    void SeekAspect(uint32_t seek_index) {
         arrayLayer = limits_.baseArrayLayer;
         mipLevel = limits_.baseMipLevel;
         const auto aspect_index_limit = encoder_->Limits().aspect_index;
@@ -253,59 +246,47 @@ class SubresourceGenerator : public Subresource {
         }
     }
 
-    void seek_mip(uint32_t mip_level) {
+    void SeekMip(uint32_t mip_level) {
         arrayLayer = limits_.baseArrayLayer;
         mipLevel = mip_level;
     }
 
     // Next and and ++ functions are for iteration from a base with the bounds, this may be additionally
-    // controlled/updated by an owning generator (like RangeGenerator using seek functions)
-    inline void next_aspect() { seek_aspect(encoder_->LowerBoundFromMask(limits_.aspectMask, aspect_index + 1)); }
+    // controlled/updated by an owning generator (like RangeGenerator using Seek functions)
+    inline void NextAspect() { SeekAspect(encoder_->LowerBoundFromMask(limits_.aspectMask, aspect_index + 1)); }
 
-    void next_mip() {
+    void NextMip() {
         arrayLayer = limits_.baseArrayLayer;
         mipLevel++;
         if (mipLevel >= (limits_.baseMipLevel + limits_.levelCount)) {
-            next_aspect();
+            NextAspect();
         }
     }
 
     SubresourceGenerator& operator++() {
         arrayLayer++;
         if (arrayLayer >= (limits_.baseArrayLayer + limits_.layerCount)) {
-            next_mip();
+            NextMip();
         }
         return *this;
     }
 
     // General purpose and slow, when we have no other information to update the generator
-    void seek(IndexType index) {
+    void Seek(IndexType index) {
         // skip forward past discontinuities
         *static_cast<Subresource* const>(this) = encoder_->Decode(index);
     }
 
-    // TODO -- optimize this if it becomes a hotspot.
-    void offset(IndexType offset) {
-        // skip forward past discontinuities
-        IndexType index = encoder_->Encode(*this);
-        seek(index + offset);
-    }
-
     const VkImageSubresource& operator*() const { return *this; }
     const VkImageSubresource* operator->() const { return this; }
+
+  private:
+    const RangeEncoder* encoder_;
+    const VkImageSubresourceRange limits_;
 };
 
 // Like an iterator for ranges...
 class RangeGenerator {
-    const RangeEncoder* encoder_;
-    SubresourceGenerator isr_pos_;
-    IndexRange pos_;
-    IndexRange aspect_base_;
-    uint32_t mip_count_ = 0;
-    uint32_t mip_index_ = 0;
-    uint32_t aspect_count_ = 0;
-    uint32_t aspect_index_ = 0;
-
   public:
     RangeGenerator() : encoder_(nullptr), isr_pos_(), pos_(), aspect_base_() {}
     bool operator!=(const RangeGenerator& rhs) { return (pos_ != rhs.pos_) || (&encoder_ != &rhs.encoder_); }
@@ -317,6 +298,16 @@ class RangeGenerator {
     SubresourceGenerator& GetSubresourceGenerator() { return isr_pos_; }
     Subresource& GetSubresource() { return isr_pos_; }
     RangeGenerator& operator++();
+
+  private:
+    const RangeEncoder* encoder_;
+    SubresourceGenerator isr_pos_;
+    IndexRange pos_;
+    IndexRange aspect_base_;
+    uint32_t mip_count_ = 0;
+    uint32_t mip_index_ = 0;
+    uint32_t aspect_count_ = 0;
+    uint32_t aspect_index_ = 0;
 };
 
 }  // namespace subresource_adapter

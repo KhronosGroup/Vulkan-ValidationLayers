@@ -229,7 +229,7 @@ RangeGenerator& RangeGenerator::operator++() {
         aspect_index_ = encoder_->LowerBoundFromMask(isr_pos_.Limits().aspectMask, aspect_index_ + 1);
         if (aspect_index_ < aspect_count_) {
             // Force isr_pos to the beginning of this found aspect
-            isr_pos_.seek_aspect(aspect_index_);
+            isr_pos_.SeekAspect(aspect_index_);
             // SubresourceGenerator should never be at tombstones we we aren't
             assert(isr_pos_.aspectMask != 0);
 
@@ -246,7 +246,7 @@ RangeGenerator& RangeGenerator::operator++() {
         // Note: for the layerCount < full_range.layerCount case, because the generated ranges per mip_level are discontinuous
         // we have to do each individual array of ranges
         pos_ += encoder_->MipSize();
-        isr_pos_.seek_mip(isr_pos_.Limits().baseMipLevel + mip_index_);
+        isr_pos_.SeekMip(isr_pos_.Limits().baseMipLevel + mip_index_);
     }
     return *this;
 }
