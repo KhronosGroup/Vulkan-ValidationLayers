@@ -127,6 +127,12 @@ best_practices_sources = [
   "layers/best_practices_error_enums.h",
 ]
 
+command_counter_sources = [
+  "layers/generated/command_counter_helper.cpp",
+  "layers/generated/command_counter_helper.h",
+  "layers/command_counter.h",
+]
+
 chassis_sources = [
   "layers/state_tracker.h",
   "layers/core_validation.h",
@@ -144,7 +150,8 @@ layers = [ [
       "khronos_validation",
       core_validation_sources + object_lifetimes_sources +
           stateless_validation_sources + thread_safety_sources +
-          unique_objects_sources + best_practices_sources + chassis_sources,
+          unique_objects_sources + best_practices_sources +
+          command_counter_sources + chassis_sources,
       [ ":vulkan_core_validation_glslang" ],
       [],
     ] ]
