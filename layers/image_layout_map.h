@@ -181,6 +181,7 @@ class ImageSubresourceLayoutMap {
     // This map *also* needs "write once" semantics
     using InitialLayoutStateMap = sparse_container::range_map<IndexType, InitialLayoutState*>;
 
+  private:
     Encoder encoder_;
     const IMAGE_STATE& image_state_;
     LayoutMaps layouts_;
@@ -188,5 +189,5 @@ class ImageSubresourceLayoutMap {
     InitialLayoutStateMap initial_layout_state_map_;
     static const ConstIterator end_iterator;  // Just to hold the end condition tombstone (aspectMask == 0)
 };
-};  // namespace image_layout_map
+}  // namespace image_layout_map
 #endif
