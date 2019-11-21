@@ -3462,10 +3462,9 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const I
         isr_pair.image = image;
         isr_pair.hasSubresource = true;
         // Validate the initial_uses for each subresource referenced
-        for (auto it = subres_map->begin(); it != subres_map->end(); ++it) {
-            const auto &subres_layout = *it;
-            isr_pair.subresource = subres_layout.subresource;
-            VkImageLayout initial_layout = subres_layout.initial_layout;
+        for (const auto &pos : subres_map->InitialLayoutView()) {
+            isr_pair.subresource = pos.subresource;
+            VkImageLayout initial_layout = pos.it->second;  // Point directly into the RangeMap iterated but the view
             VkImageLayout image_layout;
             if (FindLayout(overlayLayoutMap, isr_pair, image_layout) || FindLayout(globalImageLayoutMap, isr_pair, image_layout)) {
                 if (initial_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
@@ -3491,12 +3490,11 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const I
         }
 
         // Update all layout set operations (which will be a subset of the initial_layouts
-        for (auto it_set = subres_map->Begin(/* always_get_inital */ false); it_set != subres_map->End(); ++it_set) {
-            VkImageLayout layout = it_set->current_layout;
-            if (layout != kInvalidLayout) {
-                isr_pair.subresource = it_set->subresource;
-                SetLayout(overlayLayoutMap, isr_pair, layout);
-            }
+        for (const auto &pos : subres_map->CurrentLayoutView()) {
+            VkImageLayout layout = pos.it->second;
+            assert(layout != kInvalidLayout);
+            isr_pair.subresource = pos.subresource;
+            SetLayout(overlayLayoutMap, isr_pair, layout);
         }
     }
 
@@ -3514,12 +3512,11 @@ void CoreChecks::UpdateCmdBufImageLayouts(CMD_BUFFER_STATE *pCB) {
         isr_pair.hasSubresource = true;
 
         // Update all layout set operations (which will be a subset of the initial_layouts
-        for (auto it_set = subres_map->Begin(/* always_get_initial */ false); it_set != subres_map->End(); ++it_set) {
-            VkImageLayout layout = (*it_set).current_layout;
-            if (layout != kInvalidLayout) {
-                isr_pair.subresource = (*it_set).subresource;
-                SetGlobalLayout(isr_pair, layout);
-            }
+        for (const auto &pos : subres_map->CurrentLayoutView()) {
+            VkImageLayout layout = pos.it->second;
+            assert(layout != kInvalidLayout);
+            isr_pair.subresource = pos.subresource;
+            SetGlobalLayout(isr_pair, layout);
         }
     }
 }

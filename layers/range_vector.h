@@ -696,14 +696,18 @@ class cached_lower_bound_impl {
 
     // Allow reuse of a type with const semantics
     void set_value(const index_type &index, const iterator &it) {
+        RANGE_ASSERT(it == lower_bound(index));
         index_ = index;
         lower_bound_ = it;
         valid_ = is_valid();
     }
+
     void update(const index_type &index) {
-        iterator keep_it = lower_bound_;  // by copy set modifies in place
-        set_value(index, keep_it);
+        RANGE_ASSERT(lower_bound_ == lower_bound(index));
+        index_ = index;
+        valid_ = is_valid();
     }
+
     inline iterator lower_bound(const index_type &index) { return map_->lower_bound(key_type(index, index + 1)); }
     inline bool at_end(const iterator &it) const { return it == map_->end(); }
     inline bool at_end() const { return at_end(lower_bound_); }
@@ -737,54 +741,58 @@ class cached_lower_bound_impl {
         return *this;
     }
 
-    // seek(index) updates lower_bound for index and invalidates the cached lower_bound
-    value_type &seek(const index_type &index) {
-        set_value(index, lower_bound(index));
-        return pos_;
+    // seek(index) updates lower_bound for index, updating lower_bound_ as needed.
+    cached_lower_bound_impl &seek(const index_type &seek_to) {
+        // Optimize seeking to  forward
+        if (index_ == seek_to) {
+            // seek to self is a NOOP.  To reset lower bound after a map change, use invalidate
+        } else if (index_ < seek_to) {
+            // See if the current or next ranges are the appropriate lower_bound... should be a common use case
+            if (is_lower_than(seek_to, lower_bound_)) {
+                // lower_bound_ is still the correct lower bound
+                update(seek_to);
+            } else {
+                // Look to see if the next range is the new lower_bound (and we aren't at end)
+                auto next_it = lower_bound_;
+                ++next_it;
+                if (is_lower_than(seek_to, next_it)) {
+                    // next_it is the correct new lower bound
+                    set_value(seek_to, next_it);
+                } else {
+                    // We don't know where we are...  and we aren't going to walk the tree looking for seek_to.
+                    set_value(seek_to, lower_bound(seek_to));
+                }
+            }
+        } else {
+            // General case... this is += so we're not implmenting optimized negative offset logic
+            set_value(seek_to, lower_bound(seek_to));
+        }
+        return *this;
     }
 
     // Advance the cached location by offset.
     cached_lower_bound_impl &offset(const index_type &offset) {
         const index_type next = index_ + offset;
-        if (index_ < next) {  // The needed for overflow or signed indices
-            // See if the current or next ranges are the appropriate lower_bound... should be a common use case
-            if (is_lower_than(next, lower_bound_)) {
-                // lower_bound_ is still the correct lower bound
-                update(next);
-            } else {
-                // Look to see if the next range is the new lower_bound (and we aren't at end)
-                auto next_it = lower_bound_;
-                ++next_it;
-                if (is_lower_than(next, next_it)) {
-                    // next_it is the correct new lower bound
-                    set_value(next, next_it);
-                } else {
-                    // We don't know where we are...  and we aren't going to walk the tree looking for next.
-                    seek(next);
-                }
-            }
-        } else {
-            // General case... this is += so we're not implmenting optimized negative offset logic
-            seek(next);
-        }
-        return *this;
+        return seek(next);
     }
 
     // invalidate() resets the the lower_bound_ cache, needed after insert/erase/overwrite/split operations
-    value_type &invalidate() {
+    cached_lower_bound_impl &invalidate() {
         index_type index = index_;  // copy as set modifies in place.
-        return seek(index);
+        set_value(index, lower_bound(index));
+        return *this;
     }
 
     // Allow a hint for a *valid* lower bound for current index
     // TODO: if the fail-over becomes a hot-spot, the hint logic could be far more clever (looking at previous/next...)
-    value_type &invalidate(const iterator &hint) {
+    cached_lower_bound_impl &invalidate(const iterator &hint) {
         if ((hint != map_->end()) && hint->first.includes(index_)) {
             auto index = index_;  // by copy set modifies in place
             set_value(index, hint);
         } else {
             invalidate();
         }
+        return *this;
     }
 
     // The offset in index type to the next change (the end of the current range, or the transition from invalid to
@@ -802,7 +810,8 @@ class cached_lower_bound_impl {
 
     // Default constructed object reports valid (correctly) as false, but otherwise will fail (assert) under nearly any use.
     cached_lower_bound_impl() : map_(nullptr), pos_(index_, lower_bound_, valid_), index_(0), lower_bound_(), valid_(false) {}
-    cached_lower_bound_impl(Map &map, const index_type &index) : map_(&map), pos_(index_, lower_bound_, valid_) { seek(index); }
+    cached_lower_bound_impl(Map &map, const index_type &index)
+        : map_(&map), pos_(index_, lower_bound_, valid_), index_(index), lower_bound_(lower_bound(index)), valid_(is_valid()) {}
 };
 
 template <typename CachedLowerBound, typename MappedType = typename CachedLowerBound::mapped_type>
