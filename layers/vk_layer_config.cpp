@@ -255,10 +255,11 @@ void ConfigFile::ParseFile(const char *filename) {
         if (comments_pos != string::npos) line.erase(comments_pos);
 
         const auto value_pos = line.find_first_of('=');
-
-        const string option = string_trim(line.substr(0, value_pos));
-        const string value = string_trim(line.substr(value_pos));
-        value_map_[option] = value;
+        if (value_pos != string::npos) {
+            const string option = string_trim(line.substr(0, value_pos));
+            const string value = string_trim(line.substr(value_pos + 1));
+            value_map_[option] = value;
+        }
     }
 }
 
