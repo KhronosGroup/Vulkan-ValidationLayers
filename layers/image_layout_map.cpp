@@ -42,6 +42,8 @@ ImageSubresourceLayoutMap::ImageSubresourceLayoutMap(const IMAGE_STATE& image_st
     : encoder_(image_state.full_range),
       image_state_(image_state),
       layouts_(),
+      current_layout_view_(layouts_.current, encoder_),
+      initial_layout_view_(layouts_.initial, encoder_),
       initial_layout_states_(),
       initial_layout_state_map_() {}
 

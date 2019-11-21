@@ -84,6 +84,7 @@ class ImageSubresourceLayoutMap {
     };
 
     using RangeMap = sparse_container::range_map<IndexType, VkImageLayout>;
+    using MapView = subresource_adapter::ConstMapView<RangeMap>;
     template <typename MapA, typename MapB>
     using ParallelIterator = sparse_container::parallel_iterator<MapA, MapB>;
     using NoSplit = RangeMap::insert_range_no_split_bounds;
@@ -153,6 +154,8 @@ class ImageSubresourceLayoutMap {
     const InitialLayoutState* GetSubresourceInitialLayoutState(const VkImageSubresource subresource) const;
     bool UpdateFrom(const ImageSubresourceLayoutMap& from);
     uintptr_t CompatibilityKey() const;
+    const MapView& InitialLayoutView() const { return initial_layout_view_; }
+    const MapView& CurrentLayoutView() const { return current_layout_view_; }
     ImageSubresourceLayoutMap(const IMAGE_STATE& image_state);
     ~ImageSubresourceLayoutMap() {}
 
@@ -185,8 +188,11 @@ class ImageSubresourceLayoutMap {
     Encoder encoder_;
     const IMAGE_STATE& image_state_;
     LayoutMaps layouts_;
+    MapView current_layout_view_;
+    MapView initial_layout_view_;
     InitialLayoutStates initial_layout_states_;
     InitialLayoutStateMap initial_layout_state_map_;
+
     static const ConstIterator end_iterator;  // Just to hold the end condition tombstone (aspectMask == 0)
 };
 }  // namespace image_layout_map

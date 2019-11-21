@@ -147,7 +147,8 @@ void RangeEncoder::PopulateFunctionPointers() {
 }
 
 RangeEncoder::RangeEncoder(const VkImageSubresourceRange& full_range, const AspectParameters* param)
-    : limits_(param->AspectMask(), full_range.levelCount, full_range.layerCount, param->AspectCount()),
+    : full_range_(full_range),
+      limits_(param->AspectMask(), full_range.levelCount, full_range.layerCount, param->AspectCount()),
       mip_size_(full_range.layerCount),
       aspect_size_(mip_size_ * full_range.levelCount),
       aspect_bits_(param->AspectBits()),
