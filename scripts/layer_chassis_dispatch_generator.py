@@ -268,6 +268,19 @@ VkResult DispatchCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateI
     return result;
 }
 
+VkResult DispatchCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+                                      const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    VkResult result = layer_data->device_dispatch_table.CreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass);
+    if (!wrap_handles) return result;
+    if (VK_SUCCESS == result) {
+        write_lock_guard_t lock(dispatch_lock);
+        UpdateCreateRenderPassState(layer_data, pCreateInfo, *pRenderPass);
+        *pRenderPass = layer_data->WrapNew(*pRenderPass);
+    }
+    return result;
+}
+
 void DispatchDestroyRenderPass(VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks *pAllocator) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.DestroyRenderPass(device, renderPass, pAllocator);
@@ -1025,6 +1038,7 @@ VkResult DispatchGetPhysicalDeviceToolPropertiesEXT(
             'vkDebugMarkerSetObjectNameEXT',
             'vkCreateRenderPass',
             'vkCreateRenderPass2KHR',
+            'vkCreateRenderPass2',
             'vkDestroyRenderPass',
             'vkSetDebugUtilsObjectNameEXT',
             'vkSetDebugUtilsObjectTagEXT',
