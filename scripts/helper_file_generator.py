@@ -538,6 +538,40 @@ class HelperFileOutputGenerator(OutputGenerator):
             'vk_khr_variable_pointers',
             ]
 
+        V_1_2_level_feature_set = [
+            'VK_VERSION_1_2',
+            ]
+
+        V_1_1_instance_extensions_promoted_to_V_1_2_core = [
+            ]
+
+        V_1_1_device_extensions_promoted_to_V_1_2_core = [
+            'vk_khr_8bit_storage',
+            'vk_khr_buffer_device_address',
+            'vk_khr_create_renderpass_2',
+            'vk_khr_depth_stencil_resolve',
+            'vk_khr_draw_indirect_count',
+            'vk_khr_driver_properties',
+            'vk_khr_image_format_list',
+            'vk_khr_imageless_framebuffer',
+            'vk_khr_sampler_mirror_clamp_to_edge',
+            'vk_khr_separate_depth_stencil_layouts',
+            'vk_khr_shader_atomic_int64',
+            'vk_khr_shader_float16_int8',
+            'vk_khr_shader_float_controls',
+            'vk_khr_shader_subgroup_extended_types',
+            'vk_khr_spirv_1_4',
+            'vk_khr_timeline_semaphore',
+            'vk_khr_uniform_buffer_standard_layout',
+            'vk_khr_vulkan_memory_model',
+            'vk_ext_descriptor_indexing',
+            'vk_ext_host_query_reset',
+            'vk_ext_sampler_filter_minmax',
+            'vk_ext_scalar_block_layout',
+            'vk_ext_separate_stencil_usage',
+            'vk_ext_shader_viewport_index_layer',
+            ]
+
         output = [
             '',
             '#ifndef VK_EXTENSION_HELPER_H_',
@@ -564,6 +598,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             '    if (feature == kNotEnabled) return false;',
             '    return true;',
             '};',
+            '#define VK_VERSION_1_2_NAME "VK_VERSION_1_2"',
             '']
 
         def guarded(ifdef, value):
@@ -576,12 +611,14 @@ class HelperFileOutputGenerator(OutputGenerator):
             struct_type = '%sExtensions' % type
             if type == 'Instance':
                 extension_dict = self.instance_extension_info
-                promoted_ext_list = V_1_0_instance_extensions_promoted_to_V_1_1_core
+                promoted_1_1_ext_list = V_1_0_instance_extensions_promoted_to_V_1_1_core
+                promoted_1_2_ext_list = V_1_1_instance_extensions_promoted_to_V_1_2_core
                 struct_decl = 'struct %s {' % struct_type
                 instance_struct_type = struct_type
             else:
                 extension_dict = self.device_extension_info
-                promoted_ext_list = V_1_0_device_extensions_promoted_to_V_1_1_core
+                promoted_1_1_ext_list = V_1_0_device_extensions_promoted_to_V_1_1_core
+                promoted_1_2_ext_list = V_1_1_device_extensions_promoted_to_V_1_2_core
                 struct_decl = 'struct %s : public %s {' % (struct_type, instance_struct_type)
 
             extension_items = sorted(extension_dict.items())
@@ -589,6 +626,8 @@ class HelperFileOutputGenerator(OutputGenerator):
             field_name = { ext_name: re.sub('_extension_name', '', info['define'].lower()) for ext_name, info in extension_items }
 
             # Add in pseudo-extensions for core API versions so real extensions can depend on them
+            extension_dict['VK_VERSION_1_2'] = {'define':"VK_VERSION_1_2_NAME", 'ifdef':None, 'reqs':[]}
+            field_name['VK_VERSION_1_2'] = "vk_feature_version_1_2"
             extension_dict['VK_VERSION_1_1'] = {'define':"VK_VERSION_1_1_NAME", 'ifdef':None, 'reqs':[]}
             field_name['VK_VERSION_1_1'] = "vk_feature_version_1_1"
 
@@ -604,6 +643,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             # Output the data member list
             struct  = [struct_decl]
             struct.extend([ '    ExtEnabled vk_feature_version_1_1{kNotEnabled};'])
+            struct.extend([ '    ExtEnabled vk_feature_version_1_2{kNotEnabled};'])
             struct.extend([ '    ExtEnabled %s{kNotEnabled};' % field_name[ext_name] for ext_name, info in extension_items])
 
             # Construct the extension information map -- mapping name to data member (field), and required extensions
@@ -630,6 +670,8 @@ class HelperFileOutputGenerator(OutputGenerator):
                 '        static const %s info_map = {' % info_map_type ])
             struct.extend([
                 '            std::make_pair("VK_VERSION_1_1", %sInfo(&%sExtensions::vk_feature_version_1_1, {})),' % (type, type)])
+            struct.extend([
+                '            std::make_pair("VK_VERSION_1_2", %sInfo(&%sExtensions::vk_feature_version_1_2, {})),' % (type, type)])
 
             field_format = '&' + struct_type + '::%s'
             req_format = '{' + field_format+ ', %s}'
@@ -656,8 +698,12 @@ class HelperFileOutputGenerator(OutputGenerator):
             if type == 'Instance':
                 struct.extend([
                     '    uint32_t NormalizeApiVersion(uint32_t specified_version) {',
-                    '        uint32_t api_version = (specified_version < VK_API_VERSION_1_1) ? VK_API_VERSION_1_0 : VK_API_VERSION_1_1;',
-                    '        return api_version;',
+                    '        if (specified_version < VK_API_VERSION_1_1)',
+                    '            return VK_API_VERSION_1_0;',
+                    '        else if (specified_version < VK_API_VERSION_1_2)',
+                    '            return VK_API_VERSION_1_1;',
+                    '        else',
+                    '            return VK_API_VERSION_1_2;',
                     '    }',
                     '',
                     '    uint32_t InitFromInstanceCreateInfo(uint32_t requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {'])
@@ -675,7 +721,11 @@ class HelperFileOutputGenerator(OutputGenerator):
             struct.extend([
                 '',
                 '        static const std::vector<const char *> V_1_1_promoted_%s_apis = {' % type.lower() ])
-            struct.extend(['            %s_EXTENSION_NAME,' % ext_name.upper() for ext_name in promoted_ext_list])
+            struct.extend(['            %s_EXTENSION_NAME,' % ext_name.upper() for ext_name in promoted_1_1_ext_list])
+            struct.extend([
+                '        };',
+                '        static const std::vector<const char *> V_1_2_promoted_%s_apis = {' % type.lower() ])
+            struct.extend(['            %s_EXTENSION_NAME,' % ext_name.upper() for ext_name in promoted_1_2_ext_list])
             struct.extend([
                 '        };',
                 '',
@@ -690,6 +740,15 @@ class HelperFileOutputGenerator(OutputGenerator):
                 '                if (info.state) this->*(info.state) = kEnabledByApiLevel;',
                 '            }',
                 '        }',
+                '        if (api_version >= VK_API_VERSION_1_2) {',
+                '            auto info = get_info("VK_VERSION_1_2");',
+                '            if (info.state) this->*(info.state) = kEnabledByCreateinfo;',
+                '            for (auto promoted_ext : V_1_2_promoted_%s_apis) {' % type.lower(),
+                '                info = get_info(promoted_ext);',
+                '                assert(info.state);',
+                '                if (info.state) this->*(info.state) = kEnabledByApiLevel;',
+                '            }',
+                '        }',
                 '        // CreateInfo takes precedence over promoted',
                 '        if (pCreateInfo->ppEnabledExtensionNames) {',
                 '            for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {',
@@ -698,7 +757,6 @@ class HelperFileOutputGenerator(OutputGenerator):
                 '                if (info.state) this->*(info.state) = kEnabledByCreateinfo;',
                 '            }',
                 '        }',
-
                 '        return api_version;',
                 '    }',
                 '};'])

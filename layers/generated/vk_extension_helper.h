@@ -54,9 +54,11 @@ static bool IsExtEnabled(ExtEnabled feature) {
     if (feature == kNotEnabled) return false;
     return true;
 };
+#define VK_VERSION_1_2_NAME "VK_VERSION_1_2"
 
 struct InstanceExtensions {
     ExtEnabled vk_feature_version_1_1{kNotEnabled};
+    ExtEnabled vk_feature_version_1_2{kNotEnabled};
     ExtEnabled vk_ext_acquire_xlib_display{kNotEnabled};
     ExtEnabled vk_ext_debug_report{kNotEnabled};
     ExtEnabled vk_ext_debug_utils{kNotEnabled};
@@ -104,6 +106,7 @@ struct InstanceExtensions {
     static const InstanceInfo &get_info(const char *name) {
         static const InstanceInfoMap info_map = {
             std::make_pair("VK_VERSION_1_1", InstanceInfo(&InstanceExtensions::vk_feature_version_1_1, {})),
+            std::make_pair("VK_VERSION_1_2", InstanceInfo(&InstanceExtensions::vk_feature_version_1_2, {})),
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
             std::make_pair(VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME, InstanceInfo(&InstanceExtensions::vk_ext_acquire_xlib_display, {{
                            {&InstanceExtensions::vk_ext_direct_mode_display, VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME}}})),
@@ -194,8 +197,12 @@ struct InstanceExtensions {
     }
 
     uint32_t NormalizeApiVersion(uint32_t specified_version) {
-        uint32_t api_version = (specified_version < VK_API_VERSION_1_1) ? VK_API_VERSION_1_0 : VK_API_VERSION_1_1;
-        return api_version;
+        if (specified_version < VK_API_VERSION_1_1)
+            return VK_API_VERSION_1_0;
+        else if (specified_version < VK_API_VERSION_1_2)
+            return VK_API_VERSION_1_1;
+        else
+            return VK_API_VERSION_1_2;
     }
 
     uint32_t InitFromInstanceCreateInfo(uint32_t requested_api_version, const VkInstanceCreateInfo *pCreateInfo) {
@@ -207,6 +214,8 @@ struct InstanceExtensions {
             VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
             VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
         };
+        static const std::vector<const char *> V_1_2_promoted_instance_apis = {
+        };
 
         // Initialize struct data, robust to invalid pCreateInfo
         uint32_t api_version = NormalizeApiVersion(requested_api_version);
@@ -214,6 +223,15 @@ struct InstanceExtensions {
             auto info = get_info("VK_VERSION_1_1");
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
             for (auto promoted_ext : V_1_1_promoted_instance_apis) {
+                info = get_info(promoted_ext);
+                assert(info.state);
+                if (info.state) this->*(info.state) = kEnabledByApiLevel;
+            }
+        }
+        if (api_version >= VK_API_VERSION_1_2) {
+            auto info = get_info("VK_VERSION_1_2");
+            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+            for (auto promoted_ext : V_1_2_promoted_instance_apis) {
                 info = get_info(promoted_ext);
                 assert(info.state);
                 if (info.state) this->*(info.state) = kEnabledByApiLevel;
@@ -291,6 +309,7 @@ static const std::set<std::string> kInstanceExtensionNames = {
 
 struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_feature_version_1_1{kNotEnabled};
+    ExtEnabled vk_feature_version_1_2{kNotEnabled};
     ExtEnabled vk_amd_buffer_marker{kNotEnabled};
     ExtEnabled vk_amd_device_coherent_memory{kNotEnabled};
     ExtEnabled vk_amd_display_native_hdr{kNotEnabled};
@@ -469,6 +488,7 @@ struct DeviceExtensions : public InstanceExtensions {
     static const DeviceInfo &get_info(const char *name) {
         static const DeviceInfoMap info_map = {
             std::make_pair("VK_VERSION_1_1", DeviceInfo(&DeviceExtensions::vk_feature_version_1_1, {})),
+            std::make_pair("VK_VERSION_1_2", DeviceInfo(&DeviceExtensions::vk_feature_version_1_2, {})),
             std::make_pair(VK_AMD_BUFFER_MARKER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_buffer_marker, {})),
             std::make_pair(VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_device_coherent_memory, {})),
             std::make_pair(VK_AMD_DISPLAY_NATIVE_HDR_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_amd_display_native_hdr, {{
@@ -816,6 +836,32 @@ struct DeviceExtensions : public InstanceExtensions {
             VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME,
             VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME,
         };
+        static const std::vector<const char *> V_1_2_promoted_device_apis = {
+            VK_KHR_8BIT_STORAGE_EXTENSION_NAME,
+            VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+            VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
+            VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
+            VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME,
+            VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME,
+            VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME,
+            VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME,
+            VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME,
+            VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME,
+            VK_KHR_SHADER_ATOMIC_INT64_EXTENSION_NAME,
+            VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME,
+            VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
+            VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME,
+            VK_KHR_SPIRV_1_4_EXTENSION_NAME,
+            VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
+            VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME,
+            VK_KHR_VULKAN_MEMORY_MODEL_EXTENSION_NAME,
+            VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+            VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME,
+            VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME,
+            VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME,
+            VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME,
+            VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME,
+        };
 
         // Initialize struct data, robust to invalid pCreateInfo
         uint32_t api_version = NormalizeApiVersion(requested_api_version);
@@ -823,6 +869,15 @@ struct DeviceExtensions : public InstanceExtensions {
             auto info = get_info("VK_VERSION_1_1");
             if (info.state) this->*(info.state) = kEnabledByCreateinfo;
             for (auto promoted_ext : V_1_1_promoted_device_apis) {
+                info = get_info(promoted_ext);
+                assert(info.state);
+                if (info.state) this->*(info.state) = kEnabledByApiLevel;
+            }
+        }
+        if (api_version >= VK_API_VERSION_1_2) {
+            auto info = get_info("VK_VERSION_1_2");
+            if (info.state) this->*(info.state) = kEnabledByCreateinfo;
+            for (auto promoted_ext : V_1_2_promoted_device_apis) {
                 info = get_info(promoted_ext);
                 assert(info.state);
                 if (info.state) this->*(info.state) = kEnabledByApiLevel;
