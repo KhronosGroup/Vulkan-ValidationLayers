@@ -5888,7 +5888,7 @@ bool CoreChecks::ValidateImageBarrierAttachment(const char *funcName, CMD_BUFFER
             sub_image_found = true;
         }
         if (!sub_image_found && device_extensions.vk_khr_depth_stencil_resolve) {
-            const auto *resolve = lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolveKHR>(sub_desc.pNext);
+            const auto *resolve = lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolve>(sub_desc.pNext);
             if (resolve && resolve->pDepthStencilResolveAttachment &&
                 resolve->pDepthStencilResolveAttachment->attachment == attach_index) {
                 sub_image_layout = resolve->pDepthStencilResolveAttachment->layout;
@@ -7274,7 +7274,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
 
     auto rp_state = GetRenderPassState(pCreateInfo->renderPass);
     if (rp_state) {
-        const VkRenderPassCreateInfo2KHR *rpci = rp_state->createInfo.ptr();
+        const VkRenderPassCreateInfo2 *rpci = rp_state->createInfo.ptr();
         if (rpci->attachmentCount != pCreateInfo->attachmentCount) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
                             HandleToUint64(pCreateInfo->renderPass), "VUID-VkFramebufferCreateInfo-attachmentCount-00876",
@@ -7472,8 +7472,8 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                     skip |= MatchUsage(rpci->pSubpasses[i].inputAttachmentCount, rpci->pSubpasses[i].pInputAttachments, pCreateInfo,
                                        VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-flags-03204");
 
-                    const VkSubpassDescriptionDepthStencilResolveKHR *pDepthStencilResolve =
-                        lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolveKHR>(rpci->pSubpasses[i].pNext);
+                    const VkSubpassDescriptionDepthStencilResolve *pDepthStencilResolve =
+                        lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolve>(rpci->pSubpasses[i].pNext);
                     if (device_extensions.vk_khr_depth_stencil_resolve && pDepthStencilResolve != nullptr) {
                         skip |= MatchUsage(1, pDepthStencilResolve->pDepthStencilResolveAttachment, pCreateInfo,
                                            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-flags-03203");
@@ -7483,8 +7483,8 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                 if (device_extensions.vk_khr_multiview) {
                     if ((rpci->subpassCount > 0) && (rpci->pSubpasses[0].viewMask != 0)) {
                         for (uint32_t i = 0; i < rpci->subpassCount; ++i) {
-                            const VkSubpassDescriptionDepthStencilResolveKHR *pDepthStencilResolve =
-                                lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolveKHR>(rpci->pSubpasses[i].pNext);
+                            const VkSubpassDescriptionDepthStencilResolve *pDepthStencilResolve =
+                                lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolve>(rpci->pSubpasses[i].pNext);
                             uint32_t view_bits = rpci->pSubpasses[i].viewMask;
                             uint32_t highest_view_bit = 0;
 
@@ -7736,7 +7736,7 @@ bool CoreChecks::CheckDependencyExists(const uint32_t subpass, const VkImageLayo
     return result;
 }
 
-bool CoreChecks::CheckPreserved(const VkRenderPassCreateInfo2KHR *pCreateInfo, const int index, const uint32_t attachment,
+bool CoreChecks::CheckPreserved(const VkRenderPassCreateInfo2 *pCreateInfo, const int index, const uint32_t attachment,
                                 const std::vector<DAGNode> &subpass_to_node, int depth, bool &skip) const {
     const DAGNode &node = subpass_to_node[index];
     // If this node writes to the attachment return true as next nodes need to preserve the attachment.
@@ -7908,7 +7908,7 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
     return skip;
 }
 
-bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2KHR *pCreateInfo) const {
+bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2 *pCreateInfo) const {
     bool skip = false;
     const char *vuid;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
@@ -7991,7 +7991,7 @@ bool CoreChecks::ValidateAttachmentIndex(RenderPassCreateVersion rp_version, uin
                                          const char *type) const {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
-    const char *const function_name = use_rp2 ? "vkCreateRenderPass2KHR()" : "vkCreateRenderPass()";
+    const char *const function_name = use_rp2 ? "vkCreateRenderPass2()" : "vkCreateRenderPass()";
 
     if (attachment >= attachment_count && attachment != VK_ATTACHMENT_UNUSED) {
         const char *vuid =
@@ -8037,7 +8037,7 @@ bool CoreChecks::AddAttachmentUse(RenderPassCreateVersion rp_version, uint32_t s
     auto &uses = attachment_uses[attachment];
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
     const char *vuid;
-    const char *const function_name = use_rp2 ? "vkCreateRenderPass2KHR()" : "vkCreateRenderPass()";
+    const char *const function_name = use_rp2 ? "vkCreateRenderPass2()" : "vkCreateRenderPass()";
 
     if (uses & new_use) {
         if (attachment_layouts[attachment] != new_layout) {
@@ -8062,11 +8062,11 @@ bool CoreChecks::AddAttachmentUse(RenderPassCreateVersion rp_version, uint32_t s
 }
 
 bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_version,
-                                                   const VkRenderPassCreateInfo2KHR *pCreateInfo) const {
+                                                   const VkRenderPassCreateInfo2 *pCreateInfo) const {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
     const char *vuid;
-    const char *const function_name = use_rp2 ? "vkCreateRenderPass2KHR()" : "vkCreateRenderPass()";
+    const char *const function_name = use_rp2 ? "vkCreateRenderPass2()" : "vkCreateRenderPass()";
 
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
         const VkSubpassDescription2KHR &subpass = pCreateInfo->pSubpasses[i];
@@ -8288,11 +8288,11 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
 }
 
 bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersion rp_version,
-                                          const VkRenderPassCreateInfo2KHR *pCreateInfo) const {
+                                          const VkRenderPassCreateInfo2 *pCreateInfo) const {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
     const char *vuid;
-    const char *const function_name = use_rp2 ? "vkCreateRenderPass2KHR()" : "vkCreateRenderPass()";
+    const char *const function_name = use_rp2 ? "vkCreateRenderPass2()" : "vkCreateRenderPass()";
 
     // TODO: As part of wrapping up the mem_tracker/core_validation merge the following routine should be consolidated with
     //       ValidateLayouts.
@@ -8479,15 +8479,15 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
 }
 
 static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
-                                        const VkPhysicalDeviceDepthStencilResolvePropertiesKHR &depth_stencil_resolve_props,
-                                        const VkRenderPassCreateInfo2KHR *pCreateInfo) {
+                                        const VkPhysicalDeviceDepthStencilResolveProperties &depth_stencil_resolve_props,
+                                        const VkRenderPassCreateInfo2 *pCreateInfo) {
     bool skip = false;
 
-    // If the pNext list of VkSubpassDescription2KHR includes a VkSubpassDescriptionDepthStencilResolveKHR structure,
+    // If the pNext list of VkSubpassDescription2 includes a VkSubpassDescriptionDepthStencilResolve structure,
     // then that structure describes depth/stencil resolve operations for the subpass.
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; i++) {
         const VkSubpassDescription2KHR &subpass = pCreateInfo->pSubpasses[i];
-        const auto *resolve = lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolveKHR>(subpass.pNext);
+        const auto *resolve = lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolve>(subpass.pNext);
 
         if (resolve == nullptr) {
             continue;
@@ -8507,7 +8507,7 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
             subpass.pDepthStencilAttachment->attachment == VK_ATTACHMENT_UNUSED) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03177",
-                            "vkCreateRenderPass2KHR(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolveKHR "
+                            "vkCreateRenderPass2KHR(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                             "structure with resolve attachment %u, but pDepthStencilAttachment=VK_ATTACHMENT_UNUSED.",
                             i, resolve->pDepthStencilResolveAttachment->attachment);
         }
@@ -8516,7 +8516,7 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
             resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE_KHR) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178",
-                            "vkCreateRenderPass2KHR(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolveKHR "
+                            "vkCreateRenderPass2KHR(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                             "structure with resolve attachment %u, but both depth and stencil resolve modes are "
                             "VK_RESOLVE_MODE_NONE_KHR.",
                             i, resolve->pDepthStencilResolveAttachment->attachment);
@@ -8527,7 +8527,7 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
             skip |= log_msg(
                 report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                 "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03179",
-                "vkCreateRenderPass2KHR(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolveKHR "
+                "vkCreateRenderPass2(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                 "structure with resolve attachment %u. However pDepthStencilAttachment has sample count=VK_SAMPLE_COUNT_1_BIT.",
                 i, resolve->pDepthStencilResolveAttachment->attachment);
         }
@@ -8536,7 +8536,7 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
             pCreateInfo->pAttachments[resolve->pDepthStencilResolveAttachment->attachment].samples != VK_SAMPLE_COUNT_1_BIT) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03180",
-                            "vkCreateRenderPass2KHR(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolveKHR "
+                            "vkCreateRenderPass2(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                             "structure with resolve attachment %u which has sample count=VK_SAMPLE_COUNT_1_BIT.",
                             i, resolve->pDepthStencilResolveAttachment->attachment);
         }
@@ -8555,7 +8555,7 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03181",
-                        "vkCreateRenderPass2KHR(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolveKHR "
+                        "vkCreateRenderPass2(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                         "structure with resolve attachment %u which has a depth component (size %u). The depth component "
                         "of pDepthStencilAttachment must have the same number of bits (currently %u) and the same numerical type.",
                         i, resolve->pDepthStencilResolveAttachment->attachment,
@@ -8569,7 +8569,7 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03182",
-                        "vkCreateRenderPass2KHR(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolveKHR "
+                        "vkCreateRenderPass2(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                         "structure with resolve attachment %u which has a stencil component (size %u). The stencil component "
                         "of pDepthStencilAttachment must have the same number of bits (currently %u) and the same numerical type.",
                         i, resolve->pDepthStencilResolveAttachment->attachment,
@@ -8580,7 +8580,7 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
               resolve->depthResolveMode & depth_stencil_resolve_props.supportedDepthResolveModes)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkSubpassDescriptionDepthStencilResolve-depthResolveMode-03183",
-                            "vkCreateRenderPass2KHR(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolveKHR "
+                            "vkCreateRenderPass2(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                             "structure with invalid depthResolveMode=%u.",
                             i, resolve->depthResolveMode);
         }
@@ -8589,7 +8589,7 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
               resolve->stencilResolveMode & depth_stencil_resolve_props.supportedStencilResolveModes)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkSubpassDescriptionDepthStencilResolve-stencilResolveMode-03184",
-                            "vkCreateRenderPass2KHR(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolveKHR "
+                            "vkCreateRenderPass2(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                             "structure with invalid stencilResolveMode=%u.",
                             i, resolve->stencilResolveMode);
         }
@@ -8600,7 +8600,7 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
             !(resolve->depthResolveMode == resolve->stencilResolveMode)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03185",
-                            "vkCreateRenderPass2KHR(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolveKHR "
+                            "vkCreateRenderPass2(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                             "structure. The values of depthResolveMode (%u) and stencilResolveMode (%u) must be identical.",
                             i, resolve->depthResolveMode, resolve->stencilResolveMode);
         }
@@ -8612,7 +8612,7 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
               resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE_KHR)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03186",
-                            "vkCreateRenderPass2KHR(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolveKHR "
+                            "vkCreateRenderPass2(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                             "structure. The values of depthResolveMode (%u) and stencilResolveMode (%u) must be identical, or "
                             "one of them must be %u.",
                             i, resolve->depthResolveMode, resolve->stencilResolveMode, VK_RESOLVE_MODE_NONE_KHR);
@@ -8622,8 +8622,8 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
-                                                     const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const {
+bool CoreChecks::ValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
+                                           const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const {
     bool skip = false;
 
     if (device_extensions.vk_khr_depth_stencil_resolve) {
@@ -8634,6 +8634,16 @@ bool CoreChecks::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRe
     skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_2, create_info_2.ptr());
 
     return skip;
+}
+
+bool CoreChecks::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
+                                                     const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const {
+    return ValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass);
+}
+
+bool CoreChecks::PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
+                                                  const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const {
+    return ValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass);
 }
 
 bool CoreChecks::ValidatePrimaryCommandBuffer(const CMD_BUFFER_STATE *pCB, char const *cmd_name, const char *error_code) const {
@@ -8860,7 +8870,7 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
     const char *vuid;
-    const char *const function_name = use_rp2 ? "vkCmdBeginRenderPass2KHR()" : "vkCmdBeginRenderPass()";
+    const char *const function_name = use_rp2 ? "vkCmdBeginRenderPass2()" : "vkCmdBeginRenderPass()";
 
     if (render_pass_state) {
         uint32_t clear_op_size = 0;  // Make sure pClearValues is at least as large as last LOAD_OP_CLEAR
@@ -8972,6 +8982,12 @@ bool CoreChecks::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBu
     return skip;
 }
 
+bool CoreChecks::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
+                                                    const VkSubpassBeginInfoKHR *pSubpassBeginInfo) const {
+    bool skip = ValidateCmdBeginRenderPass(commandBuffer, RENDER_PASS_VERSION_2, pRenderPassBegin);
+    return skip;
+}
+
 void CoreChecks::RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                  const VkSubpassContents contents) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
@@ -9001,7 +9017,7 @@ bool CoreChecks::ValidateCmdNextSubpass(RenderPassCreateVersion rp_version, VkCo
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
     const char *vuid;
-    const char *const function_name = use_rp2 ? "vkCmdNextSubpass2KHR()" : "vkCmdNextSubpass()";
+    const char *const function_name = use_rp2 ? "vkCmdNextSubpass2()" : "vkCmdNextSubpass()";
 
     vuid = use_rp2 ? "VUID-vkCmdNextSubpass2-bufferlevel" : "VUID-vkCmdNextSubpass-bufferlevel";
     skip |= ValidatePrimaryCommandBuffer(cb_state, function_name, vuid);
@@ -9032,6 +9048,11 @@ bool CoreChecks::PreCallValidateCmdNextSubpass2KHR(VkCommandBuffer commandBuffer
     return ValidateCmdNextSubpass(RENDER_PASS_VERSION_2, commandBuffer);
 }
 
+bool CoreChecks::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfoKHR *pSubpassBeginInfo,
+                                                const VkSubpassEndInfoKHR *pSubpassEndInfo) const {
+    return ValidateCmdNextSubpass(RENDER_PASS_VERSION_2, commandBuffer);
+}
+
 void CoreChecks::RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     TransitionSubpassLayouts(cb_state, cb_state->activeRenderPass, cb_state->activeSubpass,
@@ -9046,6 +9067,12 @@ void CoreChecks::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkS
 void CoreChecks::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfoKHR *pSubpassBeginInfo,
                                                   const VkSubpassEndInfoKHR *pSubpassEndInfo) {
     StateTracker::PostCallRecordCmdNextSubpass2KHR(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
+    RecordCmdNextSubpassLayouts(commandBuffer, pSubpassBeginInfo->contents);
+}
+
+void CoreChecks::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfoKHR *pSubpassBeginInfo,
+                                               const VkSubpassEndInfoKHR *pSubpassEndInfo) {
+    StateTracker::PostCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
     RecordCmdNextSubpassLayouts(commandBuffer, pSubpassBeginInfo->contents);
 }
 
@@ -9091,6 +9118,11 @@ bool CoreChecks::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandBuff
     return skip;
 }
 
+bool CoreChecks::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR *pSubpassEndInfo) const {
+    bool skip = ValidateCmdEndRenderPass(RENDER_PASS_VERSION_2, commandBuffer);
+    return skip;
+}
+
 void CoreChecks::RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     FRAMEBUFFER_STATE *framebuffer = GetFramebufferState(cb_state->activeFramebuffer);
@@ -9107,6 +9139,11 @@ void CoreChecks::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffe
     // Record the end at the CoreLevel to ensure StateTracker cleanup doesn't step on anything we need.
     RecordCmdEndRenderPassLayouts(commandBuffer);
     StateTracker::PostCallRecordCmdEndRenderPass2KHR(commandBuffer, pSubpassEndInfo);
+}
+
+void CoreChecks::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR *pSubpassEndInfo) {
+    RecordCmdEndRenderPassLayouts(commandBuffer);
+    StateTracker::PostCallRecordCmdEndRenderPass2(commandBuffer, pSubpassEndInfo);
 }
 
 bool CoreChecks::ValidateFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BUFFER_STATE *pCB, VkCommandBuffer secondaryBuffer,
@@ -10997,20 +11034,24 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddressKHR(VkDevice device, const
 
     const auto buffer_state = GetBufferState(pInfo->buffer);
     if (buffer_state) {
-        if (!(buffer_state->createInfo.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR)) {
-            skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkGetBufferDeviceAddressEXT()",
+        if (!(buffer_state->createInfo.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT)) {
+            skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkGetBufferDeviceAddress()",
                                                   "VUID-VkBufferDeviceAddressInfo-buffer-02600");
         }
 
-        skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, true,
-                                         "VUID-VkBufferDeviceAddressInfo-buffer-02601", "vkGetBufferDeviceAddressEXT()",
-                                         "VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT");
+        skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, true,
+                                         "VUID-VkBufferDeviceAddressInfo-buffer-02601", "vkGetBufferDeviceAddress()",
+                                         "VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT");
     }
 
     return skip;
 }
 
 bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT *pInfo) const {
+    return PreCallValidateGetBufferDeviceAddressKHR(device, (const VkBufferDeviceAddressInfoKHR *)pInfo);
+}
+
+bool CoreChecks::PreCallValidateGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo) const {
     return PreCallValidateGetBufferDeviceAddressKHR(device, (const VkBufferDeviceAddressInfoKHR *)pInfo);
 }
 
@@ -11030,6 +11071,10 @@ bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureAddressKHR(VkDevice device
                         "bufferDeviceAddressMultiDevice feature must: be enabled.");
     }
     return skip;
+}
+
+bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo) const {
+    return PreCallValidateGetBufferOpaqueCaptureAddressKHR(device, static_cast<const VkBufferDeviceAddressInfoKHR *>(pInfo));
 }
 
 bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(
@@ -11055,11 +11100,17 @@ bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(
         if (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
                             HandleToUint64(pInfo->memory), "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336",
-                            "memory must have been allocated with VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR.");
+                            "memory must have been allocated with VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT.");
         }
     }
 
     return skip;
+}
+
+bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice device,
+                                                                    const VkDeviceMemoryOpaqueCaptureAddressInfo *pInfo) const {
+    return PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(
+        device, static_cast<const VkDeviceMemoryOpaqueCaptureAddressInfoKHR *>(pInfo));
 }
 
 bool CoreChecks::ValidateQueryRange(VkDevice device, VkQueryPool queryPool, uint32_t totalCount, uint32_t firstQuery,
@@ -11081,8 +11132,7 @@ bool CoreChecks::ValidateQueryRange(VkDevice device, VkQueryPool queryPool, uint
     return skip;
 }
 
-bool CoreChecks::PreCallValidateResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
-                                                  uint32_t queryCount) const {
+bool CoreChecks::ValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) const {
     if (disabled.query_validation) return false;
 
     bool skip = false;
@@ -11099,6 +11149,16 @@ bool CoreChecks::PreCallValidateResetQueryPoolEXT(VkDevice device, VkQueryPool q
     }
 
     return skip;
+}
+
+bool CoreChecks::PreCallValidateResetQueryPoolEXT(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
+                                                  uint32_t queryCount) const {
+    return ValidateResetQueryPool(device, queryPool, firstQuery, queryCount);
+}
+
+bool CoreChecks::PreCallValidateResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
+                                               uint32_t queryCount) const {
+    return ValidateResetQueryPool(device, queryPool, firstQuery, queryCount);
 }
 
 VkResult CoreChecks::CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT *pCreateInfo,
@@ -11167,16 +11227,23 @@ bool CoreChecks::PreCallValidateCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffe
     return ValidateCmdSetDeviceMask(commandBuffer, deviceMask, "vkSetDeviceMaskKHR()");
 }
 
-bool CoreChecks::PreCallValidateGetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore semaphore, uint64_t *pValue) const {
+bool CoreChecks::ValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t *pValue) const {
     bool skip = false;
     const auto *pSemaphore = GetSemaphoreState(semaphore);
     if (pSemaphore && pSemaphore->type != VK_SEMAPHORE_TYPE_TIMELINE_KHR) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
                         HandleToUint64(semaphore), "VUID-vkGetSemaphoreCounterValue-semaphore-03255",
-                        "vkGetSemaphoreCounterValueKHR: semaphore %s must be of VK_SEMAPHORE_TYPE_TIMELINE_KHR type",
+                        "vkGetSemaphoreCounterValue: semaphore %s must be of VK_SEMAPHORE_TYPE_TIMELINE type",
                         report_data->FormatHandle(semaphore).c_str());
     }
     return skip;
+}
+
+bool CoreChecks::PreCallValidateGetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore semaphore, uint64_t *pValue) const {
+    return ValidateGetSemaphoreCounterValue(device, semaphore, pValue);
+}
+bool CoreChecks::PreCallValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t *pValue) const {
+    return ValidateGetSemaphoreCounterValue(device, semaphore, pValue);
 }
 bool CoreChecks::ValidateQueryPoolStride(const std::string &vuid_not_64, const std::string &vuid_64, const VkDeviceSize stride,
                                          const char *parameter_name, const uint64_t parameter_value,

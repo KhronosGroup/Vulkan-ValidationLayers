@@ -3414,16 +3414,27 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
         }
 
         if (flags) {
-            const auto *bda_features =
-                lvl_find_in_chain<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(device_createinfo_pnext);
-            if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR) &&
-                (!bda_features || !bda_features->bufferDeviceAddressCaptureReplay)) {
+            VkBool32 capture_replay = false;
+            VkBool32 buffer_device_address = false;
+            const auto *vulkan_12_features = lvl_find_in_chain<VkPhysicalDeviceVulkan12Features>(device_createinfo_pnext);
+            if (vulkan_12_features) {
+                capture_replay = vulkan_12_features->bufferDeviceAddressCaptureReplay;
+                buffer_device_address = vulkan_12_features->bufferDeviceAddress;
+            } else {
+                const auto *bda_features =
+                    lvl_find_in_chain<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(device_createinfo_pnext);
+                if (bda_features) {
+                    capture_replay = bda_features->bufferDeviceAddressCaptureReplay;
+                    buffer_device_address = bda_features->bufferDeviceAddress;
+                }
+            }
+            if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR) && !capture_replay) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                 "VUID-VkMemoryAllocateInfo-flags-03330",
                                 "If VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR is set, "
                                 "bufferDeviceAddressCaptureReplay must be enabled.");
             }
-            if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR) && (!bda_features || !bda_features->bufferDeviceAddress)) {
+            if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR) && !buffer_device_address) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                                 "VUID-VkMemoryAllocateInfo-flags-03331",
                                 "If VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR is set, bufferDeviceAddress must be enabled.");
