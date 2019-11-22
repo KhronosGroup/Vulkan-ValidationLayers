@@ -81,11 +81,15 @@ bool ImageSubresourceLayoutMap::SetSubresourceRangeLayout(const CMD_BUFFER_STATE
             layouts_.current.overwrite_range(lower, std::make_pair(*range_gen, layout));
             updated = true;
             // We insert only into gaps (this is a write once semantic), and if the range
-            // isn't already contiguous, i.e. has no gaps.
+            // isn't already contiguous, i.e. has no gaps. If current is contiguous, we know initial is too, but
+            // we also have to check for the case where a discontiguous current has contiguous intitial information
             if (!contiguous) {
-                // Note: Can't use "lower" as the hint here, because it's the lower_bound of the *current* map only
-                layouts_.initial.insert_range(std::make_pair(*range_gen, expected_layout), NoSplit());
-                initial_state = UpdateInitialLayoutState(*range_gen, initial_state, cb_state, nullptr);
+                auto initial_lower = layouts_.initial.lower_bound(*range_gen);
+                bool update_needed = !layouts_.initial.is_contiguous(*range_gen, initial_lower);
+                if (update_needed) {
+                    layouts_.initial.insert_range(initial_lower, std::make_pair(*range_gen, expected_layout), NoSplit());
+                    initial_state = UpdateInitialLayoutState(*range_gen, initial_state, cb_state, nullptr);
+                }
             }
         }
     }

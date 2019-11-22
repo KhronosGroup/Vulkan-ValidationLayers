@@ -439,6 +439,7 @@ class range_map {
             // if current doesn't cover the rest of the key range, check to see that the next is extant and abuts
             if (pos->first.end < range.end) {
                 auto next = pos;
+                ++next;
                 contiguous = (next != that->impl_end()) && pos->first.is_prior_to(next->first);
             }
         }
