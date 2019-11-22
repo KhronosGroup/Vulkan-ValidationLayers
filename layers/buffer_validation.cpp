@@ -3591,7 +3591,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
     bool skip = false;
     const char *vuid;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
-    const char *const function_name = use_rp2 ? "vkCreateRenderPass2KHR()" : "vkCreateRenderPass()";
+    const char *const function_name = use_rp2 ? "vkCreateRenderPass2()" : "vkCreateRenderPass()";
 
     for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
         VkFormat format = pCreateInfo->pAttachments[i].format;
