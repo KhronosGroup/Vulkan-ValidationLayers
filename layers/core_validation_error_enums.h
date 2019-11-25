@@ -36,7 +36,6 @@
 // clang-format off
 
 static const char DECORATE_UNUSED *kVUID_Core_MemTrack_FenceState = "UNASSIGNED-CoreValidation-MemTrack-FenceState";
-static const char DECORATE_UNUSED *kVUID_Core_MemTrack_FreedMemRef = "UNASSIGNED-CoreValidation-MemTrack-FreedMemRef";
 static const char DECORATE_UNUSED *kVUID_Core_MemTrack_InvalidMap = "UNASSIGNED-CoreValidation-MemTrack-InvalidMap";
 static const char DECORATE_UNUSED *kVUID_Core_MemTrack_InvalidState = "UNASSIGNED-CoreValidation-MemTrack-InvalidState";
 static const char DECORATE_UNUSED *kVUID_Core_MemTrack_InvalidUsageFlag = "UNASSIGNED-CoreValidation-MemTrack-InvalidUsageFlag";
@@ -52,6 +51,7 @@ static const char DECORATE_UNUSED *kVUID_Core_MemTrack_RebindObject = "UNASSIGNE
 //static const char DECORATE_UNUSED *kVUID_Core_MemTrack_ObjNotBound = "UNASSIGNED-CoreValidation-MemTrack-ObjNotBound";
 //static const char DECORATE_UNUSED *kVUID_Core_MemTrack_ResetCBWhileInFlight = "UNASSIGNED-CoreValidation-MemTrack-ResetCBWhileInFlight";
 //static const char DECORATE_UNUSED *kVUID_Core_MemTrack_InvalidAliasing = "UNASSIGNED-CoreValidation-MemTrack-InvalidAliasing";
+//static const char DECORATE_UNUSED *kVUID_Core_MemTrack_FreedMemRef = "UNASSIGNED-CoreValidation-MemTrack-FreedMemRef";
 
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_ClearCmdBeforeDraw = "UNASSIGNED-CoreValidation-DrawState-ClearCmdBeforeDraw";
 static const char DECORATE_UNUSED *kVUID_Core_DrawState_CommandBufferSingleSubmitViolation = "UNASSIGNED-CoreValidation-DrawState-CommandBufferSingleSubmitViolation";
