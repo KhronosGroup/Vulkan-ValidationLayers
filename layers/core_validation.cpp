@@ -2849,11 +2849,6 @@ bool CoreChecks::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory mem, 
     bool skip = false;
     if (mem_info) {
         skip |= ValidateObjectNotInUse(mem_info, obj_struct, "vkFreeMemory", "VUID-vkFreeMemory-memory-00677");
-        for (const auto &obj : mem_info->obj_bindings) {
-            log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, get_debug_report_enum[obj.type], obj.handle,
-                    kVUID_Core_MemTrack_FreedMemRef, "%s still has a reference to %s.", report_data->FormatHandle(obj).c_str(),
-                    report_data->FormatHandle(mem_info->mem).c_str());
-        }
     }
     return skip;
 }
