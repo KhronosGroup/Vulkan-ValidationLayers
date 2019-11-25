@@ -18,9 +18,13 @@
  * John Zulauf <jzulauf@lunarg.com>
  *
  */
+#ifdef SPARSE_CONTAINER_UNIT_TEST
+#include "image_layout_map.h"
+#else
 #include "core_validation_types.h"
 #include "chassis.h"
 #include "descriptor_sets.h"
+#endif
 
 namespace image_layout_map {
 // Storage for the static state
