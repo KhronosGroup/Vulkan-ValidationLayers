@@ -25,16 +25,18 @@
 #include <functional>
 #include <memory>
 #include <vector>
-#include "vulkan/vulkan.h"
 
 #include "range_vector.h"
 #include "subresource_adapter.h"
+#ifndef SPARSE_CONTAINER_UNIT_TEST
+#include "vulkan/vulkan.h"
 #include "vk_layer_logging.h"
 
 // Forward declarations...
 struct CMD_BUFFER_STATE;
 class IMAGE_STATE;
 class IMAGE_VIEW_STATE;
+#endif
 
 namespace image_layout_map {
 const static VkImageLayout kInvalidLayout = VK_IMAGE_LAYOUT_MAX_ENUM;
