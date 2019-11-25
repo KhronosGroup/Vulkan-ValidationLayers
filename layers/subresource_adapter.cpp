@@ -60,15 +60,19 @@ uint32_t RangeEncoder::LowerBoundImpl2(VkImageAspectFlags aspect_mask) const {
     return 1;
 }
 uint32_t RangeEncoder::LowerBoundWithStartImpl2(VkImageAspectFlags aspect_mask, uint32_t start) const {
-    if (start == 0) {
-        if (aspect_mask & aspect_bits_[0]) {
-            return 0;
-        }
-    } else {
-        assert(start == 1);
-        if (aspect_mask & aspect_bits_[1]) {
-            return 1;
-        }
+    switch (start) {
+        case 0:
+            if (aspect_mask & aspect_bits_[0]) {
+                return 0;
+            }
+            // no break
+        case 1:
+            if (aspect_mask & aspect_bits_[1]) {
+                return 1;
+            }
+            break;
+        default:
+            break;
     }
     return limits_.aspect_index;
 }
@@ -85,19 +89,24 @@ uint32_t RangeEncoder::LowerBoundImpl3(VkImageAspectFlags aspect_mask) const {
 }
 
 uint32_t RangeEncoder::LowerBoundWithStartImpl3(VkImageAspectFlags aspect_mask, uint32_t start) const {
-    if (start == 0) {
-        if (aspect_mask & aspect_bits_[0]) {
-            return 0;
-        }
-    } else if (start == 1) {
-        if ((aspect_mask & aspect_bits_[1])) {
-            return 1;
-        }
-    } else {
-        assert(start == 2);
-        if ((aspect_mask & aspect_bits_[2])) {
-            return 2;
-        }
+    switch (start) {
+        case 0:
+            if (aspect_mask & aspect_bits_[0]) {
+                return 0;
+            }
+            // no break
+        case 1:
+            if ((aspect_mask & aspect_bits_[1])) {
+                return 1;
+            }
+            // no break
+        case 2:
+            if ((aspect_mask & aspect_bits_[2])) {
+                return 2;
+            }
+            break;
+        default:
+            break;
     }
     return limits_.aspect_index;
 }

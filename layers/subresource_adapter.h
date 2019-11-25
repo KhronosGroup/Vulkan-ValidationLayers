@@ -25,9 +25,12 @@
 
 #include <algorithm>
 #include <array>
-#include "vulkan/vulkan.h"
-
 #include "range_vector.h"
+#ifndef SPARSE_CONTAINER_UNIT_TEST
+#include "vulkan/vulkan.h"
+#else
+#include "vk_snippets.h"
+#endif
 
 namespace subresource_adapter {
 
