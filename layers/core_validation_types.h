@@ -190,6 +190,7 @@ struct DESCRIPTOR_POOL_STATE : BASE_NODE {
 // Generic memory binding struct to track objects bound to objects
 struct MEM_BINDING {
     VkDeviceMemory mem;
+    std::shared_ptr<DEVICE_MEMORY_STATE> mem_state;
     VkDeviceSize offset;
     VkDeviceSize size;
 };
@@ -234,6 +235,7 @@ class BINDABLE : public BASE_NODE {
     std::unordered_set<MEM_BINDING> sparse_bindings;
 
     small_unordered_set<VkDeviceMemory, 1> bound_memory_set_;
+    small_unordered_set<DEVICE_MEMORY_STATE *, 1> bound_memory_state_set_;
 
     BINDABLE()
         : sparse(false),
@@ -249,10 +251,16 @@ class BINDABLE : public BASE_NODE {
     void UpdateBoundMemorySet() {
         bound_memory_set_.clear();
         if (!sparse) {
-            bound_memory_set_.insert(binding.mem);
+            auto pair = bound_memory_set_.insert(binding.mem);
+            if (pair.second) {
+                bound_memory_state_set_.insert(binding.mem_state.get());
+            }
         } else {
             for (auto sb : sparse_bindings) {
-                bound_memory_set_.insert(sb.mem);
+                auto pair = bound_memory_set_.insert(sb.mem);
+                if (pair.second) {
+                    bound_memory_state_set_.insert(sb.mem_state.get());
+                }
             }
         }
     }
@@ -260,6 +268,7 @@ class BINDABLE : public BASE_NODE {
     // Return unordered set of memory objects that are bound
     // Instead of creating a set from scratch each query, return the cached one
     const small_unordered_set<VkDeviceMemory, 1> &GetBoundMemory() const { return bound_memory_set_; }
+    const small_unordered_set<DEVICE_MEMORY_STATE *, 1> &GetBoundMemoryState() const { return bound_memory_state_set_; }
 };
 
 class BUFFER_STATE : public BINDABLE {
