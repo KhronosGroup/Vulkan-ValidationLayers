@@ -84,6 +84,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateRenderPassCompatibility(const char* type1_string, const RENDER_PASS_STATE* rp1_state, const char* type2_string,
                                          const RENDER_PASS_STATE* rp2_state, const char* caller, const char* error_code) const;
     bool ReportInvalidCommandBuffer(const CMD_BUFFER_STATE* cb_state, const char* call_source) const;
+    bool ReportInvalidCommandBufferRelatedObjs(const CMD_BUFFER_STATE* cb_state, const char* call_source) const;
     bool ValidateQueueFamilyIndex(const PHYSICAL_DEVICE_STATE* pd_state, uint32_t requested_queue_family, const char* err_code,
                                   const char* cmd_name, const char* queue_family_var_name) const;
     bool ValidateDeviceQueueCreateInfos(const PHYSICAL_DEVICE_STATE* pd_state, uint32_t info_count,

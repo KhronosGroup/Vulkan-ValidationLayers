@@ -1527,6 +1527,11 @@ typedef std::map<QueryObject, QueryState> QueryMap;
 typedef std::map<QueryObjectPass, QueryState> QueryPassMap;
 typedef std::unordered_map<VkEvent, VkPipelineStageFlags> EventToStageMap;
 
+struct VulkanTypedHandleDestoryed {
+    VulkanTypedHandle handle;
+    bool destroyed;
+};
+
 // Cmd Buffer Wrapper Struct - TODO : This desperately needs its own class
 struct CMD_BUFFER_STATE : public BASE_NODE {
     VkCommandBuffer commandBuffer;
@@ -1572,7 +1577,7 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     // Unified data structs to track objects bound to this command buffer as well as object
     //  dependencies that have been broken : either destroyed objects, or updated descriptor sets
     std::vector<VulkanTypedHandle> object_bindings;
-    std::vector<VulkanTypedHandle> broken_bindings;
+    std::vector<VulkanTypedHandleDestoryed> broken_bindings;
 
     QFOTransferBarrierSets<VkBufferMemoryBarrier> qfo_transfer_buffer_barriers;
     QFOTransferBarrierSets<VkImageMemoryBarrier> qfo_transfer_image_barriers;

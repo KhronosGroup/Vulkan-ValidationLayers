@@ -961,7 +961,7 @@ class ValidationStateTracker : public ValidationObject {
     void FreeCommandBufferStates(COMMAND_POOL_STATE* pool_state, const uint32_t command_buffer_count,
                                  const VkCommandBuffer* command_buffers);
     void FreeDescriptorSet(cvdescriptorset::DescriptorSet* descriptor_set);
-    BASE_NODE* GetStateStructPtrFromObject(const VulkanTypedHandle& object_struct);
+    BASE_NODE* GetStateStructPtrFromObject(const VulkanTypedHandle& object_struct) const;
     void IncrementBoundObjects(CMD_BUFFER_STATE const* cb_node);
     void IncrementResources(CMD_BUFFER_STATE* cb_node);
     void InsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, DEVICE_MEMORY_STATE* mem_info,
@@ -972,6 +972,7 @@ class ValidationStateTracker : public ValidationObject {
                                 VkMemoryRequirements mem_reqs, bool is_linear);
     void InsertMemoryRange(const VulkanTypedHandle& typed_handle, DEVICE_MEMORY_STATE* mem_info, VkDeviceSize memoryOffset,
                            VkMemoryRequirements memRequirements, bool is_linear);
+    void AddRelatedObjInBrokenBindings(std::vector<VulkanTypedHandleDestoryed>& broken_bindings, const VulkanTypedHandle& obj);
     void InvalidateCommandBuffers(small_unordered_map<CMD_BUFFER_STATE*, int, 8>& cb_nodes, const VulkanTypedHandle& obj,
                                   bool unlink = true);
     void InvalidateLinkedCommandBuffers(std::unordered_set<CMD_BUFFER_STATE*>& cb_nodes, const VulkanTypedHandle& obj);

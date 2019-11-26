@@ -1595,17 +1595,103 @@ static char const *GetCauseStr(VulkanTypedHandle obj) {
     return "destroyed";
 }
 
+static bool PrintInvalidCommandBuffer(const debug_report_data *report_data, const CMD_BUFFER_STATE *cb_state,
+                                      const char *call_source, VulkanTypedHandle obj) {
+    const char *cause_str = GetCauseStr(obj);
+    string VUID;
+    string_sprintf(&VUID, "%s-%s", kVUID_Core_DrawState_InvalidCommandBuffer, object_string[obj.type]);
+    return log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                   HandleToUint64(cb_state->commandBuffer), VUID.c_str(),
+                   "You are adding %s to %s that is invalid because bound %s was %s.", call_source,
+                   report_data->FormatHandle(cb_state->commandBuffer).c_str(), report_data->FormatHandle(obj).c_str(), cause_str);
+}
+
 bool CoreChecks::ReportInvalidCommandBuffer(const CMD_BUFFER_STATE *cb_state, const char *call_source) const {
     bool skip = false;
-    for (auto obj : cb_state->broken_bindings) {
-        const char *cause_str = GetCauseStr(obj);
-        string VUID;
-        string_sprintf(&VUID, "%s-%s", kVUID_Core_DrawState_InvalidCommandBuffer, object_string[obj.type]);
-        skip |=
-            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                    HandleToUint64(cb_state->commandBuffer), VUID.c_str(),
-                    "You are adding %s to %s that is invalid because bound %s was %s.", call_source,
-                    report_data->FormatHandle(cb_state->commandBuffer).c_str(), report_data->FormatHandle(obj).c_str(), cause_str);
+    for (auto &binding : cb_state->broken_bindings) {
+        if (binding.destroyed) {
+            skip |= PrintInvalidCommandBuffer(report_data, cb_state, call_source, binding.handle);
+        } else {
+            auto base_obj = GetStateStructPtrFromObject(binding.handle);
+            if (!base_obj) {
+                skip |= PrintInvalidCommandBuffer(report_data, cb_state, call_source, binding.handle);
+            }
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::ReportInvalidCommandBufferRelatedObjs(const CMD_BUFFER_STATE *cb_state, const char *call_source) const {
+    bool skip = false;
+    BUFFER_VIEW_STATE *buffer_view_state = nullptr;
+    BUFFER_STATE *buffer_state = nullptr;
+    IMAGE_VIEW_STATE *image_view_state = nullptr;
+    IMAGE_STATE *image_state = nullptr;
+
+    for (auto &obj : cb_state->object_bindings) {
+        switch (obj.type) {
+            case kVulkanObjectTypeBufferView:
+                buffer_view_state = (BUFFER_VIEW_STATE *)GetStateStructPtrFromObject(obj);
+                if (buffer_view_state && buffer_view_state->buffer_state) {
+                    if (buffer_view_state->buffer_state->destroyed) {
+                        skip |= PrintInvalidCommandBuffer(
+                            report_data, cb_state, call_source,
+                            VulkanTypedHandle(buffer_view_state->buffer_state->buffer, kVulkanObjectTypeBuffer));
+                    }
+                    for (auto mem_state_binding : buffer_view_state->buffer_state->GetBoundMemoryState()) {
+                        if (mem_state_binding->destroyed) {
+                            skip |=
+                                PrintInvalidCommandBuffer(report_data, cb_state, call_source,
+                                                          VulkanTypedHandle(mem_state_binding->mem, kVulkanObjectTypeDeviceMemory));
+                        }
+                    }
+                }
+                break;
+            case kVulkanObjectTypeBuffer:
+                buffer_state = (BUFFER_STATE *)GetStateStructPtrFromObject(obj);
+                if (buffer_state) {
+                    for (auto mem_state_binding : buffer_state->GetBoundMemoryState()) {
+                        if (mem_state_binding->destroyed) {
+                            skip |=
+                                PrintInvalidCommandBuffer(report_data, cb_state, call_source,
+                                                          VulkanTypedHandle(mem_state_binding->mem, kVulkanObjectTypeDeviceMemory));
+                        }
+                    }
+                }
+                break;
+            case kVulkanObjectTypeImageView:
+                image_view_state = (IMAGE_VIEW_STATE *)GetStateStructPtrFromObject(obj);
+                if (image_view_state && image_view_state->image_state &&
+                    image_view_state->image_state->create_from_swapchain == VK_NULL_HANDLE) {
+                    if (image_view_state->image_state->destroyed) {
+                        skip |= PrintInvalidCommandBuffer(
+                            report_data, cb_state, call_source,
+                            VulkanTypedHandle(image_view_state->image_state->image, kVulkanObjectTypeImage));
+                    }
+                    for (auto mem_state_binding : image_view_state->image_state->GetBoundMemoryState()) {
+                        if (mem_state_binding->destroyed) {
+                            skip |=
+                                PrintInvalidCommandBuffer(report_data, cb_state, call_source,
+                                                          VulkanTypedHandle(mem_state_binding->mem, kVulkanObjectTypeDeviceMemory));
+                        }
+                    }
+                }
+                break;
+            case kVulkanObjectTypeImage:
+                image_state = (IMAGE_STATE *)GetStateStructPtrFromObject(obj);
+                if (image_state && image_state->create_from_swapchain == VK_NULL_HANDLE) {
+                    for (auto mem_state_binding : image_state->GetBoundMemoryState()) {
+                        if (mem_state_binding->destroyed) {
+                            skip |=
+                                PrintInvalidCommandBuffer(report_data, cb_state, call_source,
+                                                          VulkanTypedHandle(mem_state_binding->mem, kVulkanObjectTypeDeviceMemory));
+                        }
+                    }
+                }
+                break;
+            default:
+                break;
+        }
     }
     return skip;
 }
@@ -1617,20 +1703,29 @@ static const std::array<const char *, CMD_RANGE_SIZE> must_be_recording_list = {
 // Validate the given command being added to the specified cmd buffer, flagging errors if CB is not in the recording state or if
 // there's an issue with the Cmd ordering
 bool CoreChecks::ValidateCmd(const CMD_BUFFER_STATE *cb_state, const CMD_TYPE cmd, const char *caller_name) const {
+    bool skip = false;
     switch (cb_state->state) {
         case CB_RECORDING:
-            return ValidateCmdSubpassState(cb_state, cmd);
+            skip |= ValidateCmdSubpassState(cb_state, cmd);
+            skip |= ReportInvalidCommandBufferRelatedObjs(cb_state, caller_name);
+            return skip;
 
         case CB_INVALID_COMPLETE:
         case CB_INVALID_INCOMPLETE:
-            return ReportInvalidCommandBuffer(cb_state, caller_name);
+            skip |= ReportInvalidCommandBuffer(cb_state, caller_name);
+            skip |= ReportInvalidCommandBufferRelatedObjs(cb_state, caller_name);
+            return skip;
+
+        case CB_RECORDED:
+            skip |= ReportInvalidCommandBufferRelatedObjs(cb_state, caller_name);
 
         default:
             assert(cmd != CMD_NONE);
             const auto error = must_be_recording_list[cmd];
-            return log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                           HandleToUint64(cb_state->commandBuffer), error,
-                           "You must call vkBeginCommandBuffer() before this call to %s.", caller_name);
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(cb_state->commandBuffer), error,
+                            "You must call vkBeginCommandBuffer() before this call to %s.", caller_name);
+            return skip;
     }
 }
 
@@ -1945,6 +2040,7 @@ bool CoreChecks::ValidateCommandBufferState(const CMD_BUFFER_STATE *cb_state, co
         case CB_INVALID_INCOMPLETE:
         case CB_INVALID_COMPLETE:
             skip |= ReportInvalidCommandBuffer(cb_state, call_source);
+            skip |= ReportInvalidCommandBufferRelatedObjs(cb_state, call_source);
             break;
 
         case CB_NEW:
@@ -1955,10 +2051,15 @@ bool CoreChecks::ValidateCommandBufferState(const CMD_BUFFER_STATE *cb_state, co
             break;
 
         case CB_RECORDING:
+            skip |= ReportInvalidCommandBufferRelatedObjs(cb_state, call_source);
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                             HandleToUint64(cb_state->commandBuffer), kVUID_Core_DrawState_NoEndCommandBuffer,
                             "You must call vkEndCommandBuffer() on %s before this call to %s!",
                             report_data->FormatHandle(cb_state->commandBuffer).c_str(), call_source);
+            break;
+
+        case CB_RECORDED:
+            skip |= ReportInvalidCommandBufferRelatedObjs(cb_state, call_source);
             break;
 
         default: /* recorded */
