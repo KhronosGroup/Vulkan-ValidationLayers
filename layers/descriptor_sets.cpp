@@ -1563,7 +1563,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
 
         struct ExtensionLayout {
             VkImageLayout layout;
-            bool DeviceExtensions::*extension;
+            ExtEnabled DeviceExtensions::*extension;
         };
 
         const static std::array<ExtensionLayout, 3> extended_layouts{

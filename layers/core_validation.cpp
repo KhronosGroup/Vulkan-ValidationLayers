@@ -3858,9 +3858,9 @@ bool CoreChecks::PreCallValidateCreateDescriptorSetLayout(VkDevice device, const
                                                           const VkAllocationCallbacks *pAllocator,
                                                           VkDescriptorSetLayout *pSetLayout) const {
     return cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
-        report_data, pCreateInfo, device_extensions.vk_khr_push_descriptor, phys_dev_ext_props.max_push_descriptors,
-        device_extensions.vk_ext_descriptor_indexing, &enabled_features.descriptor_indexing, &enabled_features.inline_uniform_block,
-        &phys_dev_ext_props.inline_uniform_block_props, &device_extensions);
+        report_data, pCreateInfo, IsExtEnabled(device_extensions.vk_khr_push_descriptor), phys_dev_ext_props.max_push_descriptors,
+        IsExtEnabled(device_extensions.vk_ext_descriptor_indexing), &enabled_features.descriptor_indexing,
+        &enabled_features.inline_uniform_block, &phys_dev_ext_props.inline_uniform_block_props, &device_extensions);
 }
 
 // Used by CreatePipelineLayout and CmdPushConstants.
@@ -6182,7 +6182,7 @@ class ValidatorState {
           sharing_mode_(sharing_mode),
           val_codes_(barrier_handle.type == kVulkanObjectTypeImage ? image_error_codes : buffer_error_codes),
           limit_(static_cast<uint32_t>(device_data->physical_device_state->queue_family_properties.size())),
-          mem_ext_(device_data->device_extensions.vk_khr_external_memory) {}
+          mem_ext_(IsExtEnabled(device_data->device_extensions.vk_khr_external_memory)) {}
 
     // Log the messages using boilerplate from object state, and Vu specific information from the template arg
     // One and two family versions, in the single family version, Vu holds the name of the passed parameter

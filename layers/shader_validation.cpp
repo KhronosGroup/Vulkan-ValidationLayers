@@ -1568,7 +1568,7 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
     struct CapabilityInfo {
         char const *name;
         FeaturePointer feature;
-        bool DeviceExtensions::*extension;
+        ExtEnabled DeviceExtensions::*extension;
     };
 
     // clang-format off
@@ -1679,7 +1679,8 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
                         skip |= RequireFeature(report_data, it->second.feature.IsEnabled(enabled_features), it->second.name);
                     }
                     if (it->second.extension) {
-                        skip |= RequireExtension(report_data, device_extensions.*(it->second.extension), it->second.name);
+                        skip |= RequireExtension(report_data, IsExtEnabled((device_extensions.*(it->second.extension))),
+                                                 it->second.name);
                     }
                 }
             } else if (1 < n) {  // key occurs multiple times, at least one must be enabled

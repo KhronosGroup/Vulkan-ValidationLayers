@@ -553,6 +553,17 @@ class HelperFileOutputGenerator(OutputGenerator):
             '#include <vulkan/vulkan.h>',
             '',
             '#define VK_VERSION_1_1_NAME "VK_VERSION_1_1"',
+            '',
+            'enum ExtEnabled : unsigned char {',
+            '    kNotEnabled,',
+            '    kEnabledByCreateinfo,',
+            '    kEnabledByApiLevel,',
+            '};',
+            '',
+            'static bool IsExtEnabled(ExtEnabled feature) {',
+            '    if (feature == kNotEnabled) return false;',
+            '    return true;',
+            '};',
             '']
 
         def guarded(ifdef, value):
@@ -592,8 +603,8 @@ class HelperFileOutputGenerator(OutputGenerator):
 
             # Output the data member list
             struct  = [struct_decl]
-            struct.extend([ '    bool vk_feature_version_1_1{false};'])
-            struct.extend([ '    bool %s{false};' % field_name[ext_name] for ext_name, info in extension_items])
+            struct.extend([ '    ExtEnabled vk_feature_version_1_1{kNotEnabled};'])
+            struct.extend([ '    ExtEnabled %s{kNotEnabled};' % field_name[ext_name] for ext_name, info in extension_items])
 
             # Construct the extension information map -- mapping name to data member (field), and required extensions
             # The map is contained within a static function member for portability reasons.
@@ -604,13 +615,13 @@ class HelperFileOutputGenerator(OutputGenerator):
             struct.extend([
                 '',
                 '    struct %s {' % req_type,
-                '        const bool %s::* enabled;' % struct_type,
+                '        const ExtEnabled %s::* enabled;' % struct_type,
                 '        const char *name;',
                 '    };',
                 '    typedef std::vector<%s> %s;' % (req_type, req_vec_type),
                 '    struct %s {' % info_type,
-                '       %s(bool %s::* state_, const %s requires_): state(state_), requires(requires_) {}' % ( info_type, struct_type, req_vec_type),
-                '       bool %s::* state;' % struct_type,
+                '       %s(ExtEnabled %s::* state_, const %s requires_): state(state_), requires(requires_) {}' % ( info_type, struct_type, req_vec_type),
+                '       ExtEnabled %s::* state;' % struct_type,
                 '       %s requires;' % req_vec_type,
                 '    };',
                 '',
@@ -665,26 +676,29 @@ class HelperFileOutputGenerator(OutputGenerator):
                 '',
                 '        static const std::vector<const char *> V_1_1_promoted_%s_apis = {' % type.lower() ])
             struct.extend(['            %s_EXTENSION_NAME,' % ext_name.upper() for ext_name in promoted_ext_list])
-            struct.extend(['            "VK_VERSION_1_1",'])
             struct.extend([
                 '        };',
                 '',
                 '        // Initialize struct data, robust to invalid pCreateInfo',
+                '        uint32_t api_version = NormalizeApiVersion(requested_api_version);',
+                '        if (api_version >= VK_API_VERSION_1_1) {',
+                '            auto info = get_info("VK_VERSION_1_1");',
+                '            if (info.state) this->*(info.state) = kEnabledByCreateinfo;',
+                '            for (auto promoted_ext : V_1_1_promoted_%s_apis) {' % type.lower(),
+                '                info = get_info(promoted_ext);',
+                '                assert(info.state);',
+                '                if (info.state) this->*(info.state) = kEnabledByApiLevel;',
+                '            }',
+                '        }',
+                '        // CreateInfo takes precedence over promoted',
                 '        if (pCreateInfo->ppEnabledExtensionNames) {',
                 '            for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {',
                 '                if (!pCreateInfo->ppEnabledExtensionNames[i]) continue;',
                 '                auto info = get_info(pCreateInfo->ppEnabledExtensionNames[i]);',
-                '                if(info.state) this->*(info.state) = true;',
+                '                if (info.state) this->*(info.state) = kEnabledByCreateinfo;',
                 '            }',
                 '        }',
-                '        uint32_t api_version = NormalizeApiVersion(requested_api_version);',
-                '        if (api_version >= VK_API_VERSION_1_1) {',
-                '            for (auto promoted_ext : V_1_1_promoted_%s_apis) {' % type.lower(),
-                '                auto info = get_info(promoted_ext);',
-                '                assert(info.state);',
-                '                if (info.state) this->*(info.state) = true;',
-                '            }',
-                '        }',
+
                 '        return api_version;',
                 '    }',
                 '};'])

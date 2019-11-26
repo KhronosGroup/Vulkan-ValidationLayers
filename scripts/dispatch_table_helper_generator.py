@@ -240,7 +240,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         ext_fcn += '    if (has_ext != api_extension_map.end()) {\n'
         ext_fcn += '        // Was the extension for this API enabled in the CreateDevice call?\n'
         ext_fcn += '        auto info = device_extension_info->get_info(has_ext->second.c_str());\n'
-        ext_fcn += '        if ((!info.state) || (device_extension_info->*(info.state) != true)) {\n'
+        ext_fcn += '        if ((!info.state) || (device_extension_info->*(info.state) != kEnabledByCreateinfo)) {\n'
         ext_fcn += '            return false;\n'
         ext_fcn += '        }\n'
         ext_fcn += '    }\n'

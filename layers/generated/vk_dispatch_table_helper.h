@@ -399,7 +399,7 @@ static inline bool ApiParentExtensionEnabled(const std::string api_name, const D
     if (has_ext != api_extension_map.end()) {
         // Was the extension for this API enabled in the CreateDevice call?
         auto info = device_extension_info->get_info(has_ext->second.c_str());
-        if ((!info.state) || (device_extension_info->*(info.state) != true)) {
+        if ((!info.state) || (device_extension_info->*(info.state) != kEnabledByCreateinfo)) {
             return false;
         }
     }
