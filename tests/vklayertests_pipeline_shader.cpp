@@ -6813,7 +6813,6 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroups) {
 TEST_F(VkLayerTest, PipelineStageConditionalRenderingWithWrongQueue) {
     TEST_DESCRIPTION("Run CmdPipelineBarrier with VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT and wrong VkQueueFlagBits");
     ASSERT_NO_FATAL_FAILURE(Init());
-    // m_device->m_queue = m_device->dma_queues()[0]->handle();
     uint32_t only_transfer_queueFamilyIndex = UINT32_MAX;
 
     const auto q_props = vk_testing::PhysicalDevice(gpu()).queue_properties();
