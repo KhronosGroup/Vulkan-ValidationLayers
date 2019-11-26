@@ -7805,6 +7805,46 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrNullPtr) {
     }
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, GetDevProcAddrExtensions) {
+    TEST_DESCRIPTION("Call GetDeviceProcAddr with and without extension enabled");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s GetDevProcAddrExtensions requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    m_errorMonitor->ExpectSuccess();
+    auto vkTrimCommandPool = vk::GetDeviceProcAddr(m_device->device(), "vkTrimCommandPool");
+    auto vkTrimCommandPoolKHR = vk::GetDeviceProcAddr(m_device->device(), "vkTrimCommandPoolKHR");
+    if (nullptr == vkTrimCommandPool) m_errorMonitor->SetError("Unexpected null pointer");
+    if (nullptr != vkTrimCommandPoolKHR) m_errorMonitor->SetError("Didn't receive expected null pointer");
+
+    const char *const extension = {VK_KHR_MAINTENANCE1_EXTENSION_NAME};
+    const float q_priority[] = {1.0f};
+    VkDeviceQueueCreateInfo queue_ci = {};
+    queue_ci.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queue_ci.queueFamilyIndex = 0;
+    queue_ci.queueCount = 1;
+    queue_ci.pQueuePriorities = q_priority;
+
+    VkDeviceCreateInfo device_ci = {};
+    device_ci.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    device_ci.enabledExtensionCount = 1;
+    device_ci.ppEnabledExtensionNames = &extension;
+    device_ci.queueCreateInfoCount = 1;
+    device_ci.pQueueCreateInfos = &queue_ci;
+
+    VkDevice device;
+    vk::CreateDevice(gpu(), &device_ci, NULL, &device);
+
+    vkTrimCommandPoolKHR = vk::GetDeviceProcAddr(device, "vkTrimCommandPoolKHR");
+    if (nullptr == vkTrimCommandPoolKHR) m_errorMonitor->SetError("Unexpected null pointer");
+    m_errorMonitor->VerifyNotFound();
+    vk::DestroyDevice(device, nullptr);
+}
 #endif
 
 TEST_F(VkPositiveLayerTest, CmdCopySwapchainImage) {
