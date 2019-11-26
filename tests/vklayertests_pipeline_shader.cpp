@@ -6813,22 +6813,21 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroups) {
 TEST_F(VkLayerTest, PipelineStageConditionalRenderingWithWrongQueue) {
     TEST_DESCRIPTION("Run CmdPipelineBarrier with VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT and wrong VkQueueFlagBits");
     ASSERT_NO_FATAL_FAILURE(Init());
-    // m_device->m_queue = m_device->dma_queues()[0]->handle();
-    uint32_t only_transfer_queueFamilyIndex = UINT32_MAX;
+    uint32_t not_graphics_compute_queueFamilyIndex = UINT32_MAX;
 
     const auto q_props = vk_testing::PhysicalDevice(gpu()).queue_properties();
     ASSERT_TRUE(q_props.size() > 0);
     ASSERT_TRUE(q_props[0].queueCount > 0);
 
     for (uint32_t i = 0; i < (uint32_t)q_props.size(); i++) {
-        if (q_props[i].queueFlags == VK_QUEUE_TRANSFER_BIT) {
-            only_transfer_queueFamilyIndex = i;
+        if (!(q_props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT || q_props[i].queueFlags & VK_QUEUE_COMPUTE_BIT)) {
+            not_graphics_compute_queueFamilyIndex = i;
             break;
         }
     }
 
-    if (only_transfer_queueFamilyIndex == UINT32_MAX) {
-        printf("%s Only VK_QUEUE_TRANSFER_BIT Queue is not supported.\n", kSkipPrefix);
+    if (not_graphics_compute_queueFamilyIndex == UINT32_MAX) {
+        printf("%s Not VK_QUEUE_GRAPHICS_BIT & VK_QUEUE_COMPUTE_BIT Queue is not supported.\n", kSkipPrefix);
         return;
     }
 
@@ -6863,7 +6862,7 @@ TEST_F(VkLayerTest, PipelineStageConditionalRenderingWithWrongQueue) {
     VkFramebuffer fb;
     vk::CreateFramebuffer(m_device->device(), &fbci, nullptr, &fb);
 
-    VkCommandPoolObj commandPool(m_device, only_transfer_queueFamilyIndex);
+    VkCommandPoolObj commandPool(m_device, not_graphics_compute_queueFamilyIndex);
     VkCommandBufferObj commandBuffer(m_device, &commandPool);
 
     commandBuffer.begin();
