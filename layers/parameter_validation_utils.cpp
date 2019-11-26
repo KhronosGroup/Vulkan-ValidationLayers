@@ -90,10 +90,11 @@ bool StatelessValidation::validate_instance_extensions(const VkInstanceCreateInf
 }
 
 template <typename ExtensionState>
-bool extension_state_by_name(const ExtensionState &extensions, const char *extension_name) {
-    if (!extension_name) return false;  // null strings specify nothing
+ExtEnabled extension_state_by_name(const ExtensionState &extensions, const char *extension_name) {
+    if (!extension_name) return kNotEnabled;  // null strings specify nothing
     auto info = ExtensionState::get_info(extension_name);
-    bool state = info.state ? extensions.*(info.state) : false;  // unknown extensions can't be enabled in extension struct
+    ExtEnabled state =
+        info.state ? extensions.*(info.state) : kNotEnabled;  // unknown extensions can't be enabled in extension struct
     return state;
 }
 
@@ -212,8 +213,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
     }
 
     {
-        bool maint1 = extension_state_by_name(device_extensions, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
-        bool negative_viewport = extension_state_by_name(device_extensions, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME);
+        bool maint1 = IsExtEnabled(extension_state_by_name(device_extensions, VK_KHR_MAINTENANCE1_EXTENSION_NAME));
+        bool negative_viewport =
+            IsExtEnabled(extension_state_by_name(device_extensions, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME));
         if (maint1 && negative_viewport) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-00374",
@@ -2854,7 +2856,7 @@ bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, c
         const auto *present_regions = lvl_find_in_chain<VkPresentRegionsKHR>(pPresentInfo->pNext);
         if (present_regions) {
             // TODO: This and all other pNext extension dependencies should be added to code-generation
-            skip |= require_device_extension(device_extensions.vk_khr_incremental_present, "vkQueuePresentKHR",
+            skip |= require_device_extension(IsExtEnabled(device_extensions.vk_khr_incremental_present), "vkQueuePresentKHR",
                                              VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME);
             if (present_regions->swapchainCount != pPresentInfo->swapchainCount) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,

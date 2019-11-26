@@ -1651,7 +1651,7 @@ bool GpuAssisted::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, 
     // Call the optimizer to instrument the shader.
     // Use the unique_shader_module_id as a shader ID so we can look up its handle later in the shader_map.
     // If descriptor indexing is enabled, enable length checks and updated descriptor checks
-    const bool descriptor_indexing = device_extensions.vk_ext_descriptor_indexing;
+    const bool descriptor_indexing = IsExtEnabled(device_extensions.vk_ext_descriptor_indexing);
     using namespace spvtools;
     spv_target_env target_env = SPV_ENV_VULKAN_1_1;
     Optimizer optimizer(target_env);

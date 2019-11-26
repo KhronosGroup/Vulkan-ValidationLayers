@@ -2314,7 +2314,7 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const VkImage
         }
 
         // Source checks that apply only to compressed images (or to _422 images if ycbcr enabled)
-        bool ext_ycbcr = device_extensions.vk_khr_sampler_ycbcr_conversion;
+        bool ext_ycbcr = IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion);
         if (FormatIsCompressed(src_state->createInfo.format) ||
             (ext_ycbcr && FormatIsSinglePlane_422(src_state->createInfo.format))) {
             const VkExtent3D block_size = FormatTexelBlockExtent(src_state->createInfo.format);
@@ -4506,7 +4506,7 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
 
 bool CoreChecks::ValidateCreateImageViewSubresourceRange(const IMAGE_STATE *image_state, bool is_imageview_2d_type,
                                                          const VkImageSubresourceRange &subresourceRange) const {
-    bool is_khr_maintenance1 = device_extensions.vk_khr_maintenance1;
+    bool is_khr_maintenance1 = IsExtEnabled(device_extensions.vk_khr_maintenance1);
     bool is_image_slicable = image_state->createInfo.imageType == VK_IMAGE_TYPE_3D &&
                              (image_state->createInfo.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR);
     bool is_3D_to_2D_map = is_khr_maintenance1 && is_image_slicable && is_imageview_2d_type;
