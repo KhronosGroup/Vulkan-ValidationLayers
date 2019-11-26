@@ -187,9 +187,55 @@ struct DESCRIPTOR_POOL_STATE : BASE_NODE {
     }
 };
 
+struct MemRange {
+    VkDeviceSize offset = 0;
+    VkDeviceSize size = 0;
+};
+
+// Data struct for tracking memory object
+struct DEVICE_MEMORY_STATE : public BASE_NODE {
+    void *object;  // Dispatchable object used to create this memory (device of swapchain)
+    VkDeviceMemory mem;
+    VkMemoryAllocateInfo alloc_info;
+    bool is_dedicated;
+    VkBuffer dedicated_buffer;
+    VkImage dedicated_image;
+    bool is_export;
+    VkExternalMemoryHandleTypeFlags export_handle_type_flags;
+    std::unordered_set<VulkanTypedHandle> obj_bindings;  // objects bound to this memory
+    // Convenience vectors of handles to speed up iterating over objects independently
+    std::unordered_set<VkImage> bound_images;
+    // TODO: Convert the two sets to the correct types.
+    std::unordered_set<uint64_t> bound_buffers;
+    std::unordered_set<uint64_t> bound_acceleration_structures;
+
+    MemRange mapped_range;
+    void *shadow_copy_base;    // Base of layer's allocation for guard band, data, and alignment space
+    void *shadow_copy;         // Pointer to start of guard-band data before mapped region
+    uint64_t shadow_pad_size;  // Size of the guard-band data before and after actual data. It MUST be a
+                               // multiple of limits.minMemoryMapAlignment
+    void *p_driver_data;       // Pointer to application's actual memory
+
+    DEVICE_MEMORY_STATE(void *disp_object, const VkDeviceMemory in_mem, const VkMemoryAllocateInfo *p_alloc_info)
+        : object(disp_object),
+          mem(in_mem),
+          alloc_info(*p_alloc_info),
+          is_dedicated(false),
+          dedicated_buffer(VK_NULL_HANDLE),
+          dedicated_image(VK_NULL_HANDLE),
+          is_export(false),
+          export_handle_type_flags(0),
+          mapped_range{},
+          shadow_copy_base(0),
+          shadow_copy(0),
+          shadow_pad_size(0),
+          p_driver_data(0){};
+};
+
 // Generic memory binding struct to track objects bound to objects
 struct MEM_BINDING {
     VkDeviceMemory mem;
+    std::shared_ptr<DEVICE_MEMORY_STATE> mem_state;
     VkDeviceSize offset;
     VkDeviceSize size;
 };
@@ -234,6 +280,7 @@ class BINDABLE : public BASE_NODE {
     std::unordered_set<MEM_BINDING> sparse_bindings;
 
     small_unordered_set<VkDeviceMemory, 1> bound_memory_set_;
+    small_unordered_set<DEVICE_MEMORY_STATE *, 1> bound_memory_state_set_;
 
     BINDABLE()
         : sparse(false),
@@ -249,10 +296,16 @@ class BINDABLE : public BASE_NODE {
     void UpdateBoundMemorySet() {
         bound_memory_set_.clear();
         if (!sparse) {
-            bound_memory_set_.insert(binding.mem);
+            auto pair = bound_memory_set_.insert(binding.mem);
+            if (pair.second) {
+                bound_memory_state_set_.insert(binding.mem_state.get());
+            }
         } else {
             for (auto sb : sparse_bindings) {
-                bound_memory_set_.insert(sb.mem);
+                auto pair = bound_memory_set_.insert(sb.mem);
+                if (pair.second) {
+                    bound_memory_state_set_.insert(sb.mem_state.get());
+                }
             }
         }
     }
@@ -260,6 +313,7 @@ class BINDABLE : public BASE_NODE {
     // Return unordered set of memory objects that are bound
     // Instead of creating a set from scratch each query, return the cached one
     const small_unordered_set<VkDeviceMemory, 1> &GetBoundMemory() const { return bound_memory_set_; }
+    const small_unordered_set<DEVICE_MEMORY_STATE *, 1> &GetBoundMemoryState() const { return bound_memory_state_set_; }
 };
 
 class BUFFER_STATE : public BINDABLE {
@@ -428,51 +482,6 @@ class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
           build_scratch_memory_requirements_checked{},
           update_scratch_memory_requirements_checked{} {}
     ACCELERATION_STRUCTURE_STATE(const ACCELERATION_STRUCTURE_STATE &rh_obj) = delete;
-};
-
-struct MemRange {
-    VkDeviceSize offset = 0;
-    VkDeviceSize size = 0;
-};
-
-// Data struct for tracking memory object
-struct DEVICE_MEMORY_STATE : public BASE_NODE {
-    void *object;  // Dispatchable object used to create this memory (device of swapchain)
-    VkDeviceMemory mem;
-    VkMemoryAllocateInfo alloc_info;
-    bool is_dedicated;
-    VkBuffer dedicated_buffer;
-    VkImage dedicated_image;
-    bool is_export;
-    VkExternalMemoryHandleTypeFlags export_handle_type_flags;
-    std::unordered_set<VulkanTypedHandle> obj_bindings;  // objects bound to this memory
-    // Convenience vectors of handles to speed up iterating over objects independently
-    std::unordered_set<VkImage> bound_images;
-    // TODO: Convert the two sets to the correct types.
-    std::unordered_set<uint64_t> bound_buffers;
-    std::unordered_set<uint64_t> bound_acceleration_structures;
-
-    MemRange mapped_range;
-    void *shadow_copy_base;    // Base of layer's allocation for guard band, data, and alignment space
-    void *shadow_copy;         // Pointer to start of guard-band data before mapped region
-    uint64_t shadow_pad_size;  // Size of the guard-band data before and after actual data. It MUST be a
-                               // multiple of limits.minMemoryMapAlignment
-    void *p_driver_data;       // Pointer to application's actual memory
-
-    DEVICE_MEMORY_STATE(void *disp_object, const VkDeviceMemory in_mem, const VkMemoryAllocateInfo *p_alloc_info)
-        : object(disp_object),
-          mem(in_mem),
-          alloc_info(*p_alloc_info),
-          is_dedicated(false),
-          dedicated_buffer(VK_NULL_HANDLE),
-          dedicated_image(VK_NULL_HANDLE),
-          is_export(false),
-          export_handle_type_flags(0),
-          mapped_range{},
-          shadow_copy_base(0),
-          shadow_copy(0),
-          shadow_pad_size(0),
-          p_driver_data(0){};
 };
 
 struct SWAPCHAIN_IMAGE {

@@ -755,11 +755,11 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                         *error = error_str.str();
                         return false;
                     } else if (!buffer_node->sparse) {
-                        for (auto mem_binding : buffer_node->GetBoundMemory()) {
-                            if (!GetDevMemState(mem_binding)) {
+                        for (auto mem_state_binding : buffer_node->GetBoundMemoryState()) {
+                            if (!mem_state_binding) {
                                 std::stringstream error_str;
                                 error_str << "Descriptor in binding #" << binding << " index " << index << " uses buffer " << buffer
-                                          << " that references invalid memory " << mem_binding << ".";
+                                          << " that references invalid memory " << mem_state_binding->mem << ".";
                                 *error = error_str.str();
                                 return false;
                             }
