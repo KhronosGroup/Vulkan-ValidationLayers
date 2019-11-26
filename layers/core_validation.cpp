@@ -314,7 +314,7 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHand
         }
         const DEVICE_MEMORY_STATE *mem_info = ValidationStateTracker::GetDevMemState(mem);
         if (mem_info) {
-            const DEVICE_MEMORY_STATE *prev_binding = ValidationStateTracker::GetDevMemState(mem_binding->binding.mem);
+            const DEVICE_MEMORY_STATE *prev_binding = mem_binding->binding.mem_state.get();
             if (prev_binding) {
                 const char *error_code = "VUID-vkBindImageMemory-image-01044";
                 if (typed_handle.type == kVulkanObjectTypeBuffer) {
