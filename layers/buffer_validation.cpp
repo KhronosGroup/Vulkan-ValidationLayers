@@ -391,7 +391,7 @@ void CoreChecks::SetImageInitialLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_ST
 }
 
 // Set image layout for all slices of an image view
-void CoreChecks::SetImageViewLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_VIEW_STATE &view_state, VkImageLayout layout) {
+void CoreChecks::SetImageViewLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_VIEW_STATE &view_state, VkImageLayout layout, VkImageLayout layoutStencil) {
     IMAGE_STATE *image_state = view_state.image_state.get();
 
     VkImageSubresourceRange sub_range = view_state.normalized_subresource_range;
@@ -402,7 +402,14 @@ void CoreChecks::SetImageViewLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_VIEW_
         sub_range.layerCount = image_state->createInfo.extent.depth;
     }
 
-    SetImageLayout(cb_node, *image_state, sub_range, layout);
+    if (sub_range.aspectMask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) && layoutStencil != kInvalidLayout) {
+        sub_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        SetImageLayout(cb_node, *image_state, sub_range, layout);
+        sub_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+        SetImageLayout(cb_node, *image_state, sub_range, layoutStencil);
+    } else {
+        SetImageLayout(cb_node, *image_state, sub_range, layout);
+    }
 }
 
 bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPassCreateVersion rp_version, VkImageLayout layout,
@@ -650,7 +657,14 @@ void CoreChecks::TransitionAttachmentRefLayout(CMD_BUFFER_STATE *pCB, FRAMEBUFFE
     if (ref.attachment != VK_ATTACHMENT_UNUSED) {
         auto image_view = GetAttachmentImageViewState(pFramebuffer, ref.attachment);
         if (image_view) {
-            SetImageViewLayout(pCB, *image_view, ref.layout);
+            VkImageLayout stencil_layout = kInvalidLayout;
+            const auto *attachment_reference_stencil_layout =
+                lvl_find_in_chain<VkAttachmentReferenceStencilLayoutKHR>(ref.pNext);
+            if (attachment_reference_stencil_layout) {
+                stencil_layout = attachment_reference_stencil_layout->stencilLayout;
+            }
+            
+            SetImageViewLayout(pCB, *image_view, ref.layout, stencil_layout);
         }
     }
 }
@@ -683,7 +697,14 @@ void CoreChecks::TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE *cb_state, co
     for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
         auto view_state = GetAttachmentImageViewState(framebuffer_state, i);
         if (view_state) {
-            SetImageViewLayout(cb_state, *view_state, rpci->pAttachments[i].initialLayout);
+            VkImageLayout stencil_layout = kInvalidLayout;
+            const auto *attachment_description_stencil_layout =
+                lvl_find_in_chain<VkAttachmentDescriptionStencilLayoutKHR>(rpci->pAttachments[i].pNext);
+            if (attachment_description_stencil_layout) {
+                stencil_layout = attachment_description_stencil_layout->stencilInitialLayout;
+            }
+
+            SetImageViewLayout(cb_state, *view_state, rpci->pAttachments[i].initialLayout, stencil_layout);
         }
     }
     // Now transition for first subpass (index 0)
@@ -1255,7 +1276,14 @@ void CoreChecks::TransitionFinalSubpassLayouts(CMD_BUFFER_STATE *pCB, const VkRe
         for (uint32_t i = 0; i < pRenderPassInfo->attachmentCount; ++i) {
             auto view_state = GetAttachmentImageViewState(framebuffer_state, i);
             if (view_state) {
-                SetImageViewLayout(pCB, *view_state, pRenderPassInfo->pAttachments[i].finalLayout);
+                VkImageLayout stencil_layout = kInvalidLayout;
+                const auto *attachment_description_stencil_layout =
+                    lvl_find_in_chain<VkAttachmentDescriptionStencilLayoutKHR>(pRenderPassInfo->pAttachments[i].pNext);
+                if (attachment_description_stencil_layout) {
+                    stencil_layout = attachment_description_stencil_layout->stencilFinalLayout;
+                }
+
+                SetImageViewLayout(pCB, *view_state, pRenderPassInfo->pAttachments[i].finalLayout, stencil_layout);
             }
         }
     }

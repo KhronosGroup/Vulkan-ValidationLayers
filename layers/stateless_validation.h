@@ -894,10 +894,12 @@ class StatelessValidation : public ValidationObject {
         const char *vuid;
         const auto *separate_depth_stencil_layouts_features =
             lvl_find_in_chain<VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR>(physical_device_features2.pNext);
-        const auto *attachment_description_stencil_layout =
-            lvl_find_in_chain<VkAttachmentDescriptionStencilLayoutKHR>(pCreateInfo->pNext);
 
         for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
+            const auto *attachment_description_stencil_layout = (use_rp2) ?
+                lvl_find_in_chain<VkAttachmentDescriptionStencilLayoutKHR>(reinterpret_cast<VkAttachmentDescription2KHR const *>(&pCreateInfo->pAttachments[i])->pNext) :
+                0;
+
             if (pCreateInfo->pAttachments[i].format == VK_FORMAT_UNDEFINED) {
                 std::stringstream ss;
                 ss << (use_rp2 ? "vkCreateRenderPass2KHR" : "vkCreateRenderPass") << ": pCreateInfo->pAttachments[" << i
