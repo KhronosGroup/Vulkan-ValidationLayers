@@ -30,6 +30,24 @@ namespace image_layout_map {
 // Storage for the static state
 const ImageSubresourceLayoutMap::ConstIterator ImageSubresourceLayoutMap::end_iterator = ImageSubresourceLayoutMap::ConstIterator();
 
+using InitialLayoutStates = ImageSubresourceLayoutMap::InitialLayoutStates;
+
+template <typename StatesMap>
+static InitialLayoutState* UpdateInitialLayoutStateImpl(StatesMap* initial_layout_state_map, InitialLayoutStates* states_storage,
+                                                        const IndexRange& range, InitialLayoutState* initial_state,
+                                                        const CMD_BUFFER_STATE& cb_state, const IMAGE_VIEW_STATE* view_state) {
+    auto& initial_layout_states = *states_storage;
+    if (!initial_state) {
+        // Allocate on demand...  initial_layout_states_ holds ownership as a unique_ptr, while
+        // each subresource has a non-owning copy of the plain pointer.
+        initial_state = new InitialLayoutState(cb_state, view_state);
+        initial_layout_states.emplace_back(initial_state);
+    }
+    assert(initial_state);
+    sparse_container::update_range_value(*initial_layout_state_map, range, initial_state, WritePolicy::prefer_dest);
+    return initial_state;
+}
+
 InitialLayoutState::InitialLayoutState(const CMD_BUFFER_STATE& cb_state_, const IMAGE_VIEW_STATE* view_state_)
     : image_view(VK_NULL_HANDLE), aspect_mask(0), label(cb_state_.debug_label) {
     if (view_state_) {
@@ -45,79 +63,102 @@ bool ImageSubresourceLayoutMap::SubresourceLayout::operator==(const ImageSubreso
 ImageSubresourceLayoutMap::ImageSubresourceLayoutMap(const IMAGE_STATE& image_state)
     : encoder_(image_state.full_range),
       image_state_(image_state),
-      layouts_(),
+      layouts_(encoder_.SubresourceCount()),
       current_layout_view_(layouts_.current, encoder_),
       initial_layout_view_(layouts_.initial, encoder_),
       initial_layout_states_(),
-      initial_layout_state_map_() {}
+      initial_layout_state_map_(encoder_.SubresourceCount()) {}
 
 ImageSubresourceLayoutMap::ConstIterator ImageSubresourceLayoutMap::Begin(bool always_get_initial) const {
     return Find(image_state_.full_range, /* skip_invalid */ true, always_get_initial);
 }
+
+// Use the unwrapped maps from the BothMap in the actual implementation
+template <typename LayoutMap, typename InitialStateMap>
+static bool SetSubresourceRangeLayoutImpl(LayoutMap* current_layouts, LayoutMap* initial_layouts,
+                                          InitialStateMap* initial_state_map, InitialLayoutStates* initial_layout_states,
+                                          RangeGenerator* range_gen_arg, const CMD_BUFFER_STATE& cb_state, VkImageLayout layout,
+                                          VkImageLayout expected_layout) {
+    bool updated = false;
+    auto& range_gen = *range_gen_arg;
+    InitialLayoutState* initial_state = nullptr;
+    // Empty range are the range tombstones
+    for (; range_gen->non_empty(); ++range_gen) {
+        // In order to track whether we've changed anything, we'll do this in a slightly convoluted way...
+        // We'll traverse the range looking for values different from ours, then overwrite the range.
+        bool updated_current =
+            sparse_container::update_range_value(*current_layouts, *range_gen, layout, WritePolicy::prefer_source);
+        if (updated_current) {
+            updated = true;
+            bool updated_init =
+                sparse_container::update_range_value(*initial_layouts, *range_gen, expected_layout, WritePolicy::prefer_dest);
+            if (updated_init) {
+                initial_state = UpdateInitialLayoutStateImpl(initial_state_map, initial_layout_states, *range_gen, initial_state,
+                                                             cb_state, nullptr);
+            }
+        }
+    }
+    return updated;
+}
+
 bool ImageSubresourceLayoutMap::SetSubresourceRangeLayout(const CMD_BUFFER_STATE& cb_state, const VkImageSubresourceRange& range,
                                                           VkImageLayout layout, VkImageLayout expected_layout) {
-    bool updated = false;
     if (expected_layout == kInvalidLayout) {
         // Set the initial layout to the set layout as we had no other layout to reference
         expected_layout = layout;
     }
     if (!InRange(range)) return false;  // Don't even try to track bogus subreources
 
-    InitialLayoutState* initial_state = nullptr;
     RangeGenerator range_gen(encoder_, range);
-    // Empty range are the range tombstones
+    if (layouts_.initial.SmallMode()) {
+        return SetSubresourceRangeLayoutImpl(&layouts_.current.GetSmallMap(), &layouts_.initial.GetSmallMap(),
+                                             &initial_layout_state_map_.GetSmallMap(), &initial_layout_states_, &range_gen,
+                                             cb_state, layout, expected_layout);
+    } else {
+        assert(!layouts_.initial.Tristate());
+        return SetSubresourceRangeLayoutImpl(&layouts_.current.GetBigMap(), &layouts_.initial.GetBigMap(),
+                                             &initial_layout_state_map_.GetBigMap(), &initial_layout_states_, &range_gen, cb_state,
+                                             layout, expected_layout);
+    }
+}
+
+// Use the unwrapped maps from the BothMap in the actual implementation
+template <typename LayoutMap, typename InitialStateMap>
+static bool SetSubresourceRangeInitialLayoutImpl(LayoutMap* initial_layouts, InitialStateMap* initial_state_map,
+                                                 InitialLayoutStates* initial_layout_states, RangeGenerator* range_gen_arg,
+                                                 const CMD_BUFFER_STATE& cb_state, VkImageLayout layout,
+                                                 const IMAGE_VIEW_STATE* view_state) {
+    bool updated = false;
+    InitialLayoutState* initial_state = nullptr;
+    auto& range_gen = *range_gen_arg;
+
     for (; range_gen->non_empty(); ++range_gen) {
-        // In order to track whether we've changed anything, we'll do this in a slightly convoluted way...
-        // We'll traverse the range looking for values different from ours, then overwrite the range.
-        auto lower = layouts_.current.lower_bound(*range_gen);
-        bool all_same = false;
-        bool contiguous = false;
-        if (layouts_.current.is_contiguous(*range_gen, lower)) {
-            // The whole range is set to a value, see if assigning to it will change anything...
-            all_same = true;
-            contiguous = true;
-            for (auto pos = lower; (pos != layouts_.current.end()) && pos->first.intersects(*range_gen) && all_same; ++pos) {
-                all_same = pos->second == layout;
-            }
-        }
-        if (!all_same) {
-            // We only need to try setting anything, if we changed any of the layout values above
-            layouts_.current.overwrite_range(lower, std::make_pair(*range_gen, layout));
+        bool updated_range = sparse_container::update_range_value(*initial_layouts, *range_gen, layout, WritePolicy::prefer_dest);
+        if (updated_range) {
+            initial_state = UpdateInitialLayoutStateImpl(initial_state_map, initial_layout_states, *range_gen, initial_state,
+                                                         cb_state, view_state);
             updated = true;
-            // We insert only into gaps (this is a write once semantic), and if the range
-            // isn't already contiguous, i.e. has no gaps. If current is contiguous, we know initial is too, but
-            // we also have to check for the case where a discontiguous current has contiguous intitial information
-            if (!contiguous) {
-                auto initial_lower = layouts_.initial.lower_bound(*range_gen);
-                bool update_needed = !layouts_.initial.is_contiguous(*range_gen, initial_lower);
-                if (update_needed) {
-                    layouts_.initial.insert_range(initial_lower, std::make_pair(*range_gen, expected_layout), NoSplit());
-                    initial_state = UpdateInitialLayoutState(*range_gen, initial_state, cb_state, nullptr);
-                }
-            }
         }
     }
     return updated;
 }
+
+// Unwrap the BothMaps entry here as this is a performance hotspot.
 bool ImageSubresourceLayoutMap::SetSubresourceRangeInitialLayout(const CMD_BUFFER_STATE& cb_state,
                                                                  const VkImageSubresourceRange& range, VkImageLayout layout,
                                                                  const IMAGE_VIEW_STATE* view_state) {
-    bool updated = false;
     if (!InRange(range)) return false;  // Don't even try to track bogus subreources
 
-    InitialLayoutState* initial_state = nullptr;
     RangeGenerator range_gen(encoder_, range);
-
-    for (; range_gen->non_empty(); ++range_gen) {
-        auto lower = layouts_.initial.lower_bound(*range_gen);
-        bool update_needed = !layouts_.initial.is_contiguous(*range_gen, lower);
-        if (update_needed) {
-            layouts_.initial.insert_range(lower, std::make_pair(*range_gen, layout), NoSplit());
-            initial_state = UpdateInitialLayoutState(*range_gen, initial_state, cb_state, view_state);
-            updated = true;
-        }
+    assert(layouts_.initial.GetMode() == initial_layout_state_map_.GetMode());
+    if (layouts_.initial.SmallMode()) {
+        return SetSubresourceRangeInitialLayoutImpl(&layouts_.initial.GetSmallMap(), &initial_layout_state_map_.GetSmallMap(),
+                                                    &initial_layout_states_, &range_gen, cb_state, layout, view_state);
+    } else {
+        assert(!layouts_.initial.Tristate());
+        return SetSubresourceRangeInitialLayoutImpl(&layouts_.initial.GetBigMap(), &initial_layout_state_map_.GetBigMap(),
+                                                    &initial_layout_states_, &range_gen, cb_state, layout, view_state);
     }
-    return updated;
 }
 
 static VkImageLayout FindInMap(IndexType index, const ImageSubresourceLayoutMap::RangeMap& map) {
@@ -165,7 +206,7 @@ uintptr_t ImageSubresourceLayoutMap::CompatibilityKey() const {
 }
 
 bool ImageSubresourceLayoutMap::UpdateFrom(const ImageSubresourceLayoutMap& other) {
-    using Arbiter = sparse_container::splice_precedence;
+    using Arbiter = sparse_container::value_precedence;
 
     using sparse_container::range;
     // Must be from matching images for the reinterpret cast to be valid
@@ -182,19 +223,6 @@ bool ImageSubresourceLayoutMap::UpdateFrom(const ImageSubresourceLayoutMap& othe
     sparse_container::splice(&initial_layout_state_map_, other.initial_layout_state_map_, Arbiter::prefer_dest);
 
     return updated;
-}
-InitialLayoutState* ImageSubresourceLayoutMap::UpdateInitialLayoutState(const IndexRange& range, InitialLayoutState* initial_state,
-                                                                        const CMD_BUFFER_STATE& cb_state,
-                                                                        const IMAGE_VIEW_STATE* view_state) {
-    if (!initial_state) {
-        // Allocate on demand...  initial_layout_states_ holds ownership as a unique_ptr, while
-        // each subresource has a non-owning copy of the plain pointer.
-        initial_state = new InitialLayoutState(cb_state, view_state);
-        initial_layout_states_.emplace_back(initial_state);
-    }
-    assert(initial_state);
-    initial_layout_state_map_.insert_range(std::make_pair(range, initial_state), NoSplit());
-    return initial_state;
 }
 
 // Loop over the given range calling the callback, primarily for

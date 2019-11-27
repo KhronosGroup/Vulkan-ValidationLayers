@@ -41,8 +41,14 @@ class IMAGE_VIEW_STATE;
 namespace image_layout_map {
 const static VkImageLayout kInvalidLayout = VK_IMAGE_LAYOUT_MAX_ENUM;
 
+// Common types for this namespace
 using IndexType = subresource_adapter::IndexType;
 using IndexRange = sparse_container::range<IndexType>;
+using Encoder = subresource_adapter::RangeEncoder;
+using NoSplit = sparse_container::insert_range_no_split_bounds;
+using RangeGenerator = subresource_adapter::RangeGenerator;
+using SubresourceGenerator = subresource_adapter::SubresourceGenerator;
+using WritePolicy = subresource_adapter::WritePolicy;
 
 struct InitialLayoutState {
     VkImageView image_view;          // For relaxed matching rule evaluation, else VK_NULL_HANDLE
@@ -85,16 +91,13 @@ class ImageSubresourceLayoutMap {
         bool operator!=(const SubresourceRangeLayout& rhs) const { return !(*this == rhs); }
     };
 
-    using RangeMap = sparse_container::range_map<IndexType, VkImageLayout>;
+    using RangeMap = subresource_adapter::BothRangeMap<VkImageLayout, 16>;
     using MapView = subresource_adapter::ConstMapView<RangeMap>;
     template <typename MapA, typename MapB>
     using ParallelIterator = sparse_container::parallel_iterator<MapA, MapB>;
-    using NoSplit = RangeMap::insert_range_no_split_bounds;
     using LayoutMap = RangeMap;
     using InitialLayoutMap = RangeMap;
-    using Encoder = subresource_adapter::RangeEncoder;
-    using RangeGenerator = subresource_adapter::RangeGenerator;
-    using SubresourceGenerator = subresource_adapter::SubresourceGenerator;
+    using InitialLayoutStates = std::vector<std::unique_ptr<InitialLayoutState>>;
 
     class ConstIterator {
       public:
@@ -164,7 +167,7 @@ class ImageSubresourceLayoutMap {
     struct LayoutMaps {
         LayoutMap current;
         InitialLayoutMap initial;
-        LayoutMaps() : current(), initial() {}
+        LayoutMaps(typename LayoutMap::index_type size) : current(size), initial(size) {}
     };
 
   protected:
@@ -180,11 +183,21 @@ class ImageSubresourceLayoutMap {
     bool InRange(const VkImageSubresource& subres) const { return encoder_.InRange(subres); }
     bool InRange(const VkImageSubresourceRange& range) const { return encoder_.InRange(range); }
 
-    InitialLayoutState* UpdateInitialLayoutState(const IndexRange& range, InitialLayoutState* initial_state,
-                                                 const CMD_BUFFER_STATE& cb_state, const IMAGE_VIEW_STATE* view_state);
-    typedef std::vector<std::unique_ptr<InitialLayoutState>> InitialLayoutStates;
+    inline InitialLayoutState* UpdateInitialLayoutState(const IndexRange& range, InitialLayoutState* initial_state,
+                                                        const CMD_BUFFER_STATE& cb_state, const IMAGE_VIEW_STATE* view_state) {
+        if (!initial_state) {
+            // Allocate on demand...  initial_layout_states_ holds ownership as a unique_ptr, while
+            // each subresource has a non-owning copy of the plain pointer.
+            initial_state = new InitialLayoutState(cb_state, view_state);
+            initial_layout_states_.emplace_back(initial_state);
+        }
+        assert(initial_state);
+        sparse_container::update_range_value(initial_layout_state_map_, range, initial_state, WritePolicy::prefer_dest);
+        return initial_state;
+    }
+
     // This map *also* needs "write once" semantics
-    using InitialLayoutStateMap = sparse_container::range_map<IndexType, InitialLayoutState*>;
+    using InitialLayoutStateMap = subresource_adapter::BothRangeMap<InitialLayoutState*, 16>;
 
   private:
     Encoder encoder_;
