@@ -10423,7 +10423,7 @@ bool CoreChecks::ValidateAcquireNextImage(VkDevice device, const CommandVersion 
 
         auto physical_device_state = GetPhysicalDeviceState();
         // TODO: this is technically wrong on many levels, but requires massive cleanup
-        if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRCalled) {
+        if (physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called) {
             const uint32_t acquired_images =
                 static_cast<uint32_t>(std::count_if(swapchain_data->images.begin(), swapchain_data->images.end(),
                                                     [=](SWAPCHAIN_IMAGE image) { return GetImageState(image.image)->acquired; }));
@@ -10714,7 +10714,7 @@ bool CoreChecks::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysi
                                                                          const char *api_name) const {
     bool skip = false;
     const auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
-    if (physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRCalled) {
+    if (physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called) {
         if (planeIndex >= physical_device_state->display_plane_property_count) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
                             HandleToUint64(physicalDevice), "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249",

@@ -3948,7 +3948,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesK
     if (VK_SUCCESS != result) return;
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
-    physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRCalled = true;
+    physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called = true;
     physical_device_state->surfaceCapabilities = *pSurfaceCapabilities;
 }
 
@@ -3958,7 +3958,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
     if (VK_SUCCESS != result) return;
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
-    physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRCalled = true;
+    physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called = true;
     physical_device_state->surfaceCapabilities = pSurfaceCapabilities->surfaceCapabilities;
 }
 
@@ -3968,7 +3968,7 @@ void ValidationStateTracker::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2
                                                                                     VkResult result) {
     auto physical_device_state = GetPhysicalDeviceState(physicalDevice);
     physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRState = QUERY_DETAILS;
-    physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHRCalled = true;
+    physical_device_state->vkGetPhysicalDeviceSurfaceCapabilitiesKHR_called = true;
     physical_device_state->surfaceCapabilities.minImageCount = pSurfaceCapabilities->minImageCount;
     physical_device_state->surfaceCapabilities.maxImageCount = pSurfaceCapabilities->maxImageCount;
     physical_device_state->surfaceCapabilities.currentExtent = pSurfaceCapabilities->currentExtent;
@@ -4248,14 +4248,14 @@ void ValidationStateTracker::RecordGetPhysicalDeviceDisplayPlanePropertiesState(
     if (*pPropertyCount) {
         if (physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState < QUERY_COUNT) {
             physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState = QUERY_COUNT;
-            physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRCalled = true;
+            physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called = true;
         }
         physical_device_state->display_plane_property_count = *pPropertyCount;
     }
     if (pProperties) {
         if (physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState < QUERY_DETAILS) {
             physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRState = QUERY_DETAILS;
-            physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHRCalled = true;
+            physical_device_state->vkGetPhysicalDeviceDisplayPlanePropertiesKHR_called = true;
         }
     }
 }
