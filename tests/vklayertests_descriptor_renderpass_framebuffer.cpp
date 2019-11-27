@@ -2076,7 +2076,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentDescriptionInvalidFinalLayout) {
             attachment_description_stencil_layout.stencilFinalLayout = VK_IMAGE_LAYOUT_GENERAL;
             safe_VkRenderPassCreateInfo2KHR rpci2;
             ConvertVkRenderPassCreateInfoToV2KHR(rpci, &rpci2);
-            rpci2.pNext = &attachment_description_stencil_layout;
+            rpci2.pAttachments[0].pNext = &attachment_description_stencil_layout;
 
             VkImageLayout forbidden_layouts[] = {
                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -2107,7 +2107,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentDescriptionInvalidFinalLayout) {
             TestRenderPass2KHRCreate(m_errorMonitor, m_device->device(), rpci2.ptr(),
                                      "VUID-VkAttachmentDescriptionStencilLayoutKHR-stencilFinalLayout-03310");
 
-            rpci2.pNext = nullptr;
+            rpci2.pAttachments[0].pNext = nullptr;
         }
     } else {
         if (depth_format) {
