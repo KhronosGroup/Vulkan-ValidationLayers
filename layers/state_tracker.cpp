@@ -1133,6 +1133,11 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.timeline_semaphore_features = *timeline_semaphore_features;
     }
 
+    const auto *device_coherent_memory_features = lvl_find_in_chain<VkPhysicalDeviceCoherentMemoryFeaturesAMD>(pCreateInfo->pNext);
+    if (device_coherent_memory_features) {
+        state_tracker->enabled_features.device_coherent_memory_features = *device_coherent_memory_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);
