@@ -1697,6 +1697,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR separate_depth_stencil_layouts_features;
     VkPhysicalDevicePerformanceQueryFeaturesKHR performance_query_features;
     VkPhysicalDeviceTimelineSemaphoreFeaturesKHR timeline_semaphore_features;
+    VkPhysicalDeviceCoherentMemoryFeaturesAMD device_coherent_memory_features;
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };

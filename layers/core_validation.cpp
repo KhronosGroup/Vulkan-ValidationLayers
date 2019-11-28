@@ -2940,6 +2940,38 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
         skip |= ValidateDeviceMaskToZero(chained_flags_struct->deviceMask, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
                                          HandleToUint64(device), "VUID-VkMemoryAllocateFlagsInfo-deviceMask-00676");
     }
+
+    if (pAllocateInfo->memoryTypeIndex >= phys_dev_mem_props.memoryTypeCount) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                        "VUID-vkAllocateMemory-pAllocateInfo-01714",
+                        "vkAllocateMemory: attempting to allocate memory type %u, which is not a valid index. Device only "
+                        "advertises %u memory types.",
+                        pAllocateInfo->memoryTypeIndex, phys_dev_mem_props.memoryTypeCount);
+    } else {
+        if (pAllocateInfo->allocationSize >
+            phys_dev_mem_props.memoryHeaps[phys_dev_mem_props.memoryTypes[pAllocateInfo->memoryTypeIndex].heapIndex].size) {
+            skip |= log_msg(
+                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+                "VUID-vkAllocateMemory-pAllocateInfo-01713",
+                "vkAllocateMemory: attempting to allocate %" PRIu64
+                " bytes from heap %u,"
+                "but size of that heap is only %" PRIu64 " bytes.",
+                pAllocateInfo->allocationSize, phys_dev_mem_props.memoryTypes[pAllocateInfo->memoryTypeIndex].heapIndex,
+                phys_dev_mem_props.memoryHeaps[phys_dev_mem_props.memoryTypes[pAllocateInfo->memoryTypeIndex].heapIndex].size);
+        }
+
+        if (!enabled_features.device_coherent_memory_features.deviceCoherentMemory &&
+            ((phys_dev_mem_props.memoryTypes[pAllocateInfo->memoryTypeIndex].propertyFlags &
+              VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) != 0)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
+                            HandleToUint64(device), "VUID-vkAllocateMemory-deviceCoherentMemory-02790",
+                            "vkAllocateMemory: attempting to allocate memory type %u, which includes the "
+                            "VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD memory property, but the deviceCoherentMemory feature "
+                            "is not enabled.",
+                            pAllocateInfo->memoryTypeIndex);
+        }
+    }
+
     // TODO: VUIDs ending in 00643, 00644, 00646, 00647, 01742, 01743, 01745, 00645, 00648, 01744
     return skip;
 }
