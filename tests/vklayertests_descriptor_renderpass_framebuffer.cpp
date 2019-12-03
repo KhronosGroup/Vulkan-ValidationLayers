@@ -1770,6 +1770,7 @@ TEST_F(VkLayerTest, ImageBarrierSubpassConflict) {
 }
 
 TEST_F(VkLayerTest, RenderPassCreateAttachmentIndexOutOfRange) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     // Check for VK_KHR_get_physical_device_properties2
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -3129,6 +3130,8 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidMixedAttachmentSamplesAMD) {
 
 TEST_F(VkLayerTest, RenderPassBeginInvalidRenderArea) {
     TEST_DESCRIPTION("Generate INVALID_RENDER_AREA error by beginning renderpass with extent outside of framebuffer");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     // Check for VK_KHR_get_physical_device_properties2
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -3394,7 +3397,6 @@ TEST_F(VkLayerTest, RenderPassBeginLayoutsFramebufferImageUsageMismatches) {
     rp_begin.renderPass = rp_invalid;
     const char *initial_layout_vuid_rp1 =
         maintenance2Supported ? "VUID-vkCmdBeginRenderPass-initialLayout-01758" : "VUID-vkCmdBeginRenderPass-initialLayout-00896";
-
     TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &rp_begin, rp2Supported,
                         initial_layout_vuid_rp1, "VUID-vkCmdBeginRenderPass2-initialLayout-03096");
 

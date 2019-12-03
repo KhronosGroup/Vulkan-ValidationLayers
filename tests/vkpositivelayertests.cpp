@@ -7888,6 +7888,77 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrExtensions) {
 }
 #endif
 
+TEST_F(VkPositiveLayerTest, Vulkan12Features) {
+    TEST_DESCRIPTION("Enable feature via Vulkan12features struct");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Vulkan12Struct requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    VkPhysicalDeviceFeatures2 features2 = {};
+    auto bda_features = lvl_init_struct<VkPhysicalDeviceBufferDeviceAddressFeatures>();
+    PFN_vkGetPhysicalDeviceFeatures2 vkGetPhysicalDeviceFeatures2 =
+        (PFN_vkGetPhysicalDeviceFeatures2)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2 != nullptr);
+
+    features2 = lvl_init_struct<VkPhysicalDeviceFeatures2>(&bda_features);
+    vkGetPhysicalDeviceFeatures2(gpu(), &features2);
+
+    if (!bda_features.bufferDeviceAddress) {
+        printf("Buffer Device Address feature not supported, skipping test\n");
+        return;
+    }
+
+    m_errorMonitor->ExpectSuccess();
+    VkPhysicalDeviceVulkan12Features features12 = {};
+    features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+    features12.bufferDeviceAddress = true;
+    features2.pNext = &features12;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
+    uint32_t qfi = 0;
+    VkBufferCreateInfo bci = {};
+    bci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    bci.size = 8;
+    bci.queueFamilyIndexCount = 1;
+    bci.pQueueFamilyIndices = &qfi;
+    VkBuffer buffer;
+    vk::CreateBuffer(m_device->device(), &bci, NULL, &buffer);
+    VkMemoryRequirements buffer_mem_reqs = {};
+    vk::GetBufferMemoryRequirements(m_device->device(), buffer, &buffer_mem_reqs);
+    VkMemoryAllocateInfo buffer_alloc_info = {};
+    buffer_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
+    m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
+    VkMemoryAllocateFlagsInfo alloc_flags = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO};
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    buffer_alloc_info.pNext = &alloc_flags;
+    VkDeviceMemory buffer_mem;
+    VkResult err = vk::AllocateMemory(m_device->device(), &buffer_alloc_info, NULL, &buffer_mem);
+    ASSERT_VK_SUCCESS(err);
+    vk::BindBufferMemory(m_device->device(), buffer, buffer_mem, 0);
+
+    VkBufferDeviceAddressInfo bda_info = {};
+    bda_info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+    bda_info.buffer = buffer;
+    auto vkGetBufferDeviceAddress =
+        (PFN_vkGetBufferDeviceAddress)vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferDeviceAddress");
+    ASSERT_TRUE(vkGetBufferDeviceAddress != nullptr);
+    vkGetBufferDeviceAddress(m_device->device(), &bda_info);
+    m_errorMonitor->VerifyNotFound();
+
+    // Also verify that we don't get the KHR extension address without enabling the KHR extension
+    auto vkGetBufferDeviceAddressKHR =
+        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferDeviceAddressKHR");
+    if (nullptr != vkGetBufferDeviceAddressKHR) m_errorMonitor->SetError("Didn't receive expected null pointer");
+    m_errorMonitor->VerifyNotFound();
+    vk::DestroyBuffer(m_device->device(), buffer, NULL);
+    vk::FreeMemory(m_device->device(), buffer_mem, NULL);
+}
+
 TEST_F(VkPositiveLayerTest, CmdCopySwapchainImage) {
     TEST_DESCRIPTION("Run vkCmdCopyImage with a swapchain image");
 

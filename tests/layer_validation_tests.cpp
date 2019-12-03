@@ -252,6 +252,15 @@ void TestRenderPassCreate(ErrorMonitor *error_monitor, const VkDevice device, co
         err = vkCreateRenderPass2KHR(device, create_info2.ptr(), nullptr, &render_pass);
         if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
         error_monitor->VerifyFound();
+
+        // For api version >= 1.2, try core entrypoint
+        PFN_vkCreateRenderPass2 vkCreateRenderPass2 = (PFN_vkCreateRenderPass2)vk::GetDeviceProcAddr(device, "vkCreateRenderPass2");
+        if (vkCreateRenderPass2) {
+            error_monitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, rp2_vuid);
+            err = vkCreateRenderPass2(device, create_info2.ptr(), nullptr, &render_pass);
+            if (err == VK_SUCCESS) vk::DestroyRenderPass(device, render_pass, nullptr);
+            error_monitor->VerifyFound();
+        }
     }
 }
 
@@ -312,6 +321,17 @@ void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, con
         vkCmdBeginRenderPass2KHR(command_buffer, begin_info, &subpass_begin_info);
         error_monitor->VerifyFound();
         vk::ResetCommandBuffer(command_buffer, 0);
+
+        // For api version >= 1.2, try core entrypoint
+        PFN_vkCmdBeginRenderPass2KHR vkCmdBeginRenderPass2 =
+            (PFN_vkCmdBeginRenderPass2KHR)vk::GetDeviceProcAddr(device, "vkCmdBeginRenderPass2");
+        if (vkCmdBeginRenderPass2) {
+            vk::BeginCommandBuffer(command_buffer, &cmd_begin_info);
+            error_monitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, rp2_vuid);
+            vkCmdBeginRenderPass2(command_buffer, begin_info, &subpass_begin_info);
+            error_monitor->VerifyFound();
+            vk::ResetCommandBuffer(command_buffer, 0);
+        }
     }
 }
 
