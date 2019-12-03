@@ -979,6 +979,8 @@ class ValidationStateTracker : public ValidationObject {
                            VkMemoryRequirements memRequirements, bool is_linear);
     void InvalidateCommandBuffers(small_unordered_map<CMD_BUFFER_STATE*, int, 8>& cb_nodes, const VulkanTypedHandle& obj,
                                   bool unlink = true);
+    void OnInvalidateCommandBuffers(small_unordered_map<CMD_BUFFER_STATE*, int, 8>& cb_nodes, const VulkanTypedHandle& obj,
+                                    bool unlink);
     void InvalidateLinkedCommandBuffers(std::unordered_set<CMD_BUFFER_STATE*>& cb_nodes, const VulkanTypedHandle& obj);
     void PerformAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*, const VkDescriptorSet*,
                                        const cvdescriptorset::AllocateDescriptorSetsData*);
@@ -1098,4 +1100,31 @@ class ValidationStateTracker : public ValidationObject {
             DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
         }
     }
+
+    // What levels the function will run
+    enum RunWithRelatedObjects_Level_bits {
+        RunWithRelatedObjects_Level_1_bit = 0x00000001,  // runs function with main_object.
+        RunWithRelatedObjects_Level_2_bit = 0x00000002,  // runs with next level, such as buffer of bufferview, memory of buffer....
+        RunWithRelatedObjects_Level_3_bit =
+            0x00000004,  // runs with next level, such as memory of bufferview, memory of imageview....
+        RunWithRelatedObjects_Level_MAX = 0x7FFFFFFF,
+
+    };
+
+    struct DateForRunWithRelatedObjects {
+        VulkanTypedHandle main_object;
+        VulkanTypedHandle related_object;
+        RunWithRelatedObjects_Level_bits run_level_flags;
+
+        DateForRunWithRelatedObjects(const VulkanTypedHandle& main_object_,
+                                     RunWithRelatedObjects_Level_bits run_level_flags_ = RunWithRelatedObjects_Level_MAX)
+            : main_object(main_object_), run_level_flags(run_level_flags_) {}
+    };
+
+    void AddCommandBufferBinding(DateForRunWithRelatedObjects& data);
+    void FetchAdd(DateForRunWithRelatedObjects& data);
+    void FetchSub(DateForRunWithRelatedObjects& data);
+
+    void RunWithRelatedObjects(DateForRunWithRelatedObjects& data,
+                               void (ValidationStateTracker::*func)(DateForRunWithRelatedObjects&));
 };
