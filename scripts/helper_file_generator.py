@@ -548,6 +548,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             '#include <utility>',
             '#include <set>',
             '#include <vector>',
+            '#include <cassert>',
             '',
             '#include <vulkan/vulkan.h>',
             '',
