@@ -3082,6 +3082,7 @@ TEST_F(VkLayerTest, HostQueryResetBadFirstQuery) {
     }
 
     m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
 
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)) {
@@ -3113,6 +3114,13 @@ TEST_F(VkLayerTest, HostQueryResetBadFirstQuery) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkResetQueryPool-firstQuery-02666");
     fpvkResetQueryPoolEXT(m_device->device(), query_pool, 1, 0);
     m_errorMonitor->VerifyFound();
+
+    if (m_device->props.apiVersion >= VK_API_VERSION_1_2) {
+        auto fpvkResetQueryPool = (PFN_vkResetQueryPool)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPool");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkResetQueryPool-firstQuery-02666");
+        fpvkResetQueryPool(m_device->device(), query_pool, 1, 0);
+        m_errorMonitor->VerifyFound();
+    }
 
     vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
