@@ -4949,6 +4949,23 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true, "VUID-vkCmdFillBuffer-dstBuffer-00029",
                                      "vkCmdFillBuffer()", "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
     skip |= InsideRenderPass(cb_node, "vkCmdFillBuffer()", "VUID-vkCmdFillBuffer-renderpass");
+
+    if (dstOffset >= buffer_state->createInfo.size) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                        HandleToUint64(dstBuffer), "VUID-vkCmdFillBuffer-dstOffset-00024",
+                        "vkCmdFillBuffer(): dstOffset (0x%" PRIxLEAST64
+                        ") is not less than destination buffer (%s) size (0x%" PRIxLEAST64 ").",
+                        dstOffset, report_data->FormatHandle(dstBuffer).c_str(), buffer_state->createInfo.size);
+    }
+
+    if ((size != VK_WHOLE_SIZE) && (size > (buffer_state->createInfo.size - dstOffset))) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                        HandleToUint64(dstBuffer), "VUID-vkCmdFillBuffer-size-00027",
+                        "vkCmdFillBuffer(): size (0x%" PRIxLEAST64 ") is greater than dstBuffer (%s) size (0x%" PRIxLEAST64
+                        ") minus dstOffset (0x%" PRIxLEAST64 ").",
+                        size, report_data->FormatHandle(dstBuffer).c_str(), buffer_state->createInfo.size, dstOffset);
+    }
+
     return skip;
 }
 
