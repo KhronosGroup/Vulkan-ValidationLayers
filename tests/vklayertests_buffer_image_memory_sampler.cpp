@@ -267,8 +267,8 @@ TEST_F(VkLayerTest, UpdateBufferAlignment) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, FillBufferAlignment) {
-    TEST_DESCRIPTION("Check alignment parameters for vkCmdFillBuffer");
+TEST_F(VkLayerTest, FillBufferAlignmentAndSize) {
+    TEST_DESCRIPTION("Check alignment and size parameters for vkCmdFillBuffer");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -277,6 +277,16 @@ TEST_F(VkLayerTest, FillBufferAlignment) {
     buffer.init_as_dst(*m_device, (VkDeviceSize)20, reqs);
 
     m_commandBuffer->begin();
+
+    // Introduce failure by using dstOffset greater than bufferSize
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdFillBuffer-dstOffset-00024");
+    m_commandBuffer->FillBuffer(buffer.handle(), 40, 4, 0x11111111);
+    m_errorMonitor->VerifyFound();
+
+    // Introduce failure by using size <= buffersize minus dstoffset
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdFillBuffer-size-00027");
+    m_commandBuffer->FillBuffer(buffer.handle(), 16, 12, 0x11111111);
+    m_errorMonitor->VerifyFound();
 
     // Introduce failure by using dstOffset that is not multiple of 4
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, " is not a multiple of 4");
