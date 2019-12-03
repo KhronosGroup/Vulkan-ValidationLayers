@@ -309,6 +309,7 @@ void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer c
 
 // Get the image viewstate for a given framebuffer attachment
 IMAGE_VIEW_STATE *ValidationStateTracker::GetAttachmentImageViewState(FRAMEBUFFER_STATE *framebuffer, uint32_t index) {
+    if (framebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) return nullptr;
     assert(framebuffer && (index < framebuffer->createInfo.attachmentCount));
     const VkImageView &image_view = framebuffer->createInfo.pAttachments[index];
     return GetImageViewState(image_view);
@@ -317,6 +318,7 @@ IMAGE_VIEW_STATE *ValidationStateTracker::GetAttachmentImageViewState(FRAMEBUFFE
 // Get the image viewstate for a given framebuffer attachment
 const IMAGE_VIEW_STATE *ValidationStateTracker::GetAttachmentImageViewState(const FRAMEBUFFER_STATE *framebuffer,
                                                                             uint32_t index) const {
+    if (framebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) return nullptr;
     assert(framebuffer && (index < framebuffer->createInfo.attachmentCount));
     const VkImageView &image_view = framebuffer->createInfo.pAttachments[index];
     return GetImageViewState(image_view);
@@ -2462,7 +2464,8 @@ void ValidationStateTracker::PostCallRecordAllocateCommandBuffers(VkDevice devic
 void ValidationStateTracker::AddFramebufferBinding(CMD_BUFFER_STATE *cb_state, FRAMEBUFFER_STATE *fb_state) {
     AddCommandBufferBinding(fb_state->cb_bindings, VulkanTypedHandle(fb_state->framebuffer, kVulkanObjectTypeFramebuffer, fb_state),
                             cb_state);
-
+    // If imageless fb, skip fb binding
+    if (fb_state->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) return;
     const uint32_t attachmentCount = fb_state->createInfo.attachmentCount;
     for (uint32_t attachment = 0; attachment < attachmentCount; ++attachment) {
         auto view_state = GetAttachmentImageViewState(fb_state, attachment);
