@@ -945,11 +945,11 @@ class ValidationStateTracker : public ValidationObject {
     bool AddCommandBufferMem(small_unordered_map<CMD_BUFFER_STATE*, int, 8>& cb_bindings, VkDeviceMemory obj,
                              CMD_BUFFER_STATE* cb_node);
     bool AddCommandBufferBinding(small_unordered_map<CMD_BUFFER_STATE*, int, 8>& cb_bindings, const VulkanTypedHandle& obj,
-                                 CMD_BUFFER_STATE* cb_node);
+                                 CMD_BUFFER_STATE* cb_node, bool object_bindings = true);
     void AddCommandBufferBindingAccelerationStructure(CMD_BUFFER_STATE*, ACCELERATION_STRUCTURE_STATE*);
-    void AddCommandBufferBindingBuffer(CMD_BUFFER_STATE*, BUFFER_STATE*);
+    void AddCommandBufferBindingBuffer(CMD_BUFFER_STATE*, BUFFER_STATE*, bool object_bindings = true);
     void AddCommandBufferBindingBufferView(CMD_BUFFER_STATE*, BUFFER_VIEW_STATE*);
-    void AddCommandBufferBindingImage(CMD_BUFFER_STATE*, IMAGE_STATE*);
+    void AddCommandBufferBindingImage(CMD_BUFFER_STATE*, IMAGE_STATE*, bool object_bindings = true);
     void AddCommandBufferBindingImageView(CMD_BUFFER_STATE*, IMAGE_VIEW_STATE*);
     void AddCommandBufferBindingSampler(CMD_BUFFER_STATE*, SAMPLER_STATE*);
     void AddMemObjInfo(void* object, const VkDeviceMemory mem, const VkMemoryAllocateInfo* pAllocateInfo);
@@ -1090,6 +1090,53 @@ class ValidationStateTracker : public ValidationObject {
             *ext_prop = lvl_init_struct<ExtProp>();
             auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(ext_prop);
             DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
+        }
+    }
+
+    template <typename OverrideFunc>
+    void RunWithRelatedObjects(VulkanTypedHandle const& object, const OverrideFunc& override_func,
+                               CMD_BUFFER_STATE* cb_node = nullptr) {
+        BASE_NODE* base_obj = GetStateStructPtrFromObject(object);
+        if (base_obj) {
+            override_func(base_obj, cb_node);
+            switch (object.type) {
+                case kVulkanObjectTypeBufferView:
+                    override_func(((BUFFER_VIEW_STATE*)base_obj)->buffer_state.get(), cb_node);
+                    for (auto mem_state_binding : ((BUFFER_VIEW_STATE*)base_obj)->buffer_state->GetBoundMemoryState()) {
+                        if (mem_state_binding) {
+                            override_func(mem_state_binding, cb_node);
+                        }
+                    }
+                    break;
+                case kVulkanObjectTypeBuffer:
+                    for (auto mem_state_binding : ((BUFFER_STATE*)base_obj)->GetBoundMemoryState()) {
+                        if (mem_state_binding) {
+                            override_func(mem_state_binding, cb_node);
+                        }
+                    }
+                    break;
+                case kVulkanObjectTypeImageView:
+                    if (((IMAGE_VIEW_STATE*)base_obj)->image_state->create_from_swapchain == VK_NULL_HANDLE) {
+                        override_func(((IMAGE_VIEW_STATE*)base_obj)->image_state.get(), cb_node);
+                        for (auto mem_state_binding : ((IMAGE_VIEW_STATE*)base_obj)->image_state->GetBoundMemoryState()) {
+                            if (mem_state_binding) {
+                                override_func(mem_state_binding, cb_node);
+                            }
+                        }
+                    }
+                    break;
+                case kVulkanObjectTypeImage:
+                    if (((IMAGE_STATE*)base_obj)->create_from_swapchain == VK_NULL_HANDLE) {
+                        for (auto mem_state_binding : ((IMAGE_STATE*)base_obj)->GetBoundMemoryState()) {
+                            if (mem_state_binding) {
+                                override_func(mem_state_binding, cb_node);
+                            }
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
     }
 };

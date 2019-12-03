@@ -477,7 +477,8 @@ void ValidationStateTracker::AddCommandBufferBindingSampler(CMD_BUFFER_STATE *cb
 }
 
 // Create binding link between given image node and command buffer node
-void ValidationStateTracker::AddCommandBufferBindingImage(CMD_BUFFER_STATE *cb_node, IMAGE_STATE *image_state) {
+void ValidationStateTracker::AddCommandBufferBindingImage(CMD_BUFFER_STATE *cb_node, IMAGE_STATE *image_state,
+                                                          bool object_bindings) {
     if (disabled.command_buffer_state) {
         return;
     }
@@ -485,14 +486,16 @@ void ValidationStateTracker::AddCommandBufferBindingImage(CMD_BUFFER_STATE *cb_n
     if (image_state->create_from_swapchain == VK_NULL_HANDLE) {
         // First update cb binding for image
         if (AddCommandBufferBinding(image_state->cb_bindings,
-                                    VulkanTypedHandle(image_state->image, kVulkanObjectTypeImage, image_state), cb_node)) {
+                                    VulkanTypedHandle(image_state->image, kVulkanObjectTypeImage, image_state), cb_node,
+                                    object_bindings)) {
             // Now update CB binding in MemObj mini CB list
             for (auto mem_state_binding : image_state->GetBoundMemoryState()) {
                 if (mem_state_binding) {
                     // Now update CBInfo's Mem reference list
                     AddCommandBufferBinding(
                         mem_state_binding->cb_bindings,
-                        VulkanTypedHandle(mem_state_binding->mem, kVulkanObjectTypeDeviceMemory, mem_state_binding), cb_node);
+                        VulkanTypedHandle(mem_state_binding->mem, kVulkanObjectTypeDeviceMemory, mem_state_binding), cb_node,
+                        false);
                 }
             }
         }
@@ -511,26 +514,28 @@ void ValidationStateTracker::AddCommandBufferBindingImageView(CMD_BUFFER_STATE *
         auto image_state = view_state->image_state.get();
         // Add bindings for image within imageView
         if (image_state) {
-            AddCommandBufferBindingImage(cb_node, image_state);
+            AddCommandBufferBindingImage(cb_node, image_state, false);
         }
     }
 }
 
 // Create binding link between given buffer node and command buffer node
-void ValidationStateTracker::AddCommandBufferBindingBuffer(CMD_BUFFER_STATE *cb_node, BUFFER_STATE *buffer_state) {
+void ValidationStateTracker::AddCommandBufferBindingBuffer(CMD_BUFFER_STATE *cb_node, BUFFER_STATE *buffer_state,
+                                                           bool object_bindings) {
     if (disabled.command_buffer_state) {
         return;
     }
     // First update cb binding for buffer
     if (AddCommandBufferBinding(buffer_state->cb_bindings,
-                                VulkanTypedHandle(buffer_state->buffer, kVulkanObjectTypeBuffer, buffer_state), cb_node)) {
+                                VulkanTypedHandle(buffer_state->buffer, kVulkanObjectTypeBuffer, buffer_state), cb_node,
+                                object_bindings)) {
         // Now update CB binding in MemObj mini CB list
         for (auto mem_state_binding : buffer_state->GetBoundMemoryState()) {
             if (mem_state_binding) {
                 // Now update CBInfo's Mem reference list
                 AddCommandBufferBinding(mem_state_binding->cb_bindings,
                                         VulkanTypedHandle(mem_state_binding->mem, kVulkanObjectTypeDeviceMemory, mem_state_binding),
-                                        cb_node);
+                                        cb_node, false);
             }
         }
     }
@@ -547,7 +552,7 @@ void ValidationStateTracker::AddCommandBufferBindingBufferView(CMD_BUFFER_STATE 
         auto buffer_state = view_state->buffer_state.get();
         // Add bindings for buffer within bufferView
         if (buffer_state) {
-            AddCommandBufferBindingBuffer(cb_node, buffer_state);
+            AddCommandBufferBindingBuffer(cb_node, buffer_state, false);
         }
     }
 }
@@ -838,7 +843,8 @@ BASE_NODE *ValidationStateTracker::GetStateStructPtrFromObject(const VulkanTyped
 //  Add object_binding to cmd buffer
 //  Add cb_binding to object
 bool ValidationStateTracker::AddCommandBufferBinding(small_unordered_map<CMD_BUFFER_STATE *, int, 8> &cb_bindings,
-                                                     const VulkanTypedHandle &obj, CMD_BUFFER_STATE *cb_node) {
+                                                     const VulkanTypedHandle &obj, CMD_BUFFER_STATE *cb_node,
+                                                     bool object_bindings) {
     if (disabled.command_buffer_state) {
         return false;
     }
@@ -846,17 +852,20 @@ bool ValidationStateTracker::AddCommandBufferBinding(small_unordered_map<CMD_BUF
     // vector, and update cb_bindings[cb_node] with the index of that element of the vector.
     auto inserted = cb_bindings.insert({cb_node, -1});
     if (inserted.second) {
-        cb_node->object_bindings.push_back(obj);
-        inserted.first->second = (int)cb_node->object_bindings.size() - 1;
+        if (object_bindings) {
+            cb_node->object_bindings.push_back(obj);
+            inserted.first->second = (int)cb_node->object_bindings.size() - 1;
+        }
         return true;
     }
     return false;
 }
 
+static void RemoveCmdBufBinding(BASE_NODE *node, CMD_BUFFER_STATE *cb_node) { node->cb_bindings.erase(cb_node); }
+
 // For a given object, if cb_node is in that objects cb_bindings, remove cb_node
 void ValidationStateTracker::RemoveCommandBufferBinding(VulkanTypedHandle const &object, CMD_BUFFER_STATE *cb_node) {
-    BASE_NODE *base_obj = GetStateStructPtrFromObject(object);
-    if (base_obj) base_obj->cb_bindings.erase(cb_node);
+    RunWithRelatedObjects(object, RemoveCmdBufBinding, cb_node);
 }
 
 // Reset the command buffer state
@@ -1205,13 +1214,12 @@ void ValidationStateTracker::PreCallRecordDestroyDevice(VkDevice device, const V
     queueMap.clear();
 }
 
+static void fetch_add(BASE_NODE *node, CMD_BUFFER_STATE *cb_node = nullptr) { node->in_use.fetch_add(1); }
+
 // Loop through bound objects and increment their in_use counts.
 void ValidationStateTracker::IncrementBoundObjects(CMD_BUFFER_STATE const *cb_node) {
     for (auto obj : cb_node->object_bindings) {
-        auto base_obj = GetStateStructPtrFromObject(obj);
-        if (base_obj) {
-            base_obj->in_use.fetch_add(1);
-        }
+        RunWithRelatedObjects(obj, fetch_add);
     }
 }
 
@@ -1231,14 +1239,12 @@ void ValidationStateTracker::IncrementResources(CMD_BUFFER_STATE *cb_node) {
     }
 }
 
+static void fetch_sub(BASE_NODE *node, CMD_BUFFER_STATE *cb_node = nullptr) { node->in_use.fetch_sub(1); }
+
 // Decrement in-use count for objects bound to command buffer
 void ValidationStateTracker::DecrementBoundResources(CMD_BUFFER_STATE const *cb_node) {
-    BASE_NODE *base_obj = nullptr;
     for (auto obj : cb_node->object_bindings) {
-        base_obj = GetStateStructPtrFromObject(obj);
-        if (base_obj) {
-            base_obj->in_use.fetch_sub(1);
-        }
+        RunWithRelatedObjects(obj, fetch_sub);
     }
 }
 
@@ -2099,8 +2105,10 @@ void ValidationStateTracker::InvalidateCommandBuffers(small_unordered_map<CMD_BU
         }
         if (unlink) {
             int index = cb_node_pair.second;
-            assert(cb_node->object_bindings[index] == obj);
-            cb_node->object_bindings[index] = VulkanTypedHandle();
+            if (index > -1) {
+                assert(cb_node->object_bindings[index] == obj);
+                cb_node->object_bindings[index] = VulkanTypedHandle();
+            }
         }
     }
     if (unlink) {
