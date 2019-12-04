@@ -7338,3 +7338,92 @@ TEST_F(VkLayerTest, TransferImageToSwapchainWithInvalidLayoutDeviceGroup) {
     vk::DestroyImage(m_device->device(), peer_image, NULL);
     DestroySwapchain();
 }
+
+TEST_F(VkLayerTest, InvalidMemoryType) {
+    // Attempts to allocate from a memory type that doesn't exist
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkPhysicalDeviceMemoryProperties memory_info;
+    vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkAllocateMemory-pAllocateInfo-01714");
+
+    VkMemoryAllocateInfo mem_alloc = {};
+    mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    mem_alloc.pNext = NULL;
+    mem_alloc.memoryTypeIndex = memory_info.memoryTypeCount;
+    mem_alloc.allocationSize = 4;
+
+    VkDeviceMemory mem;
+    vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, AllocationBeyondHeapSize) {
+    // Attempts to allocate a single piece of memory that's larger than the heap size
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkPhysicalDeviceMemoryProperties memory_info;
+    vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkAllocateMemory-pAllocateInfo-01713");
+
+    VkMemoryAllocateInfo mem_alloc = {};
+    mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    mem_alloc.pNext = NULL;
+    mem_alloc.memoryTypeIndex = 0;
+    mem_alloc.allocationSize = memory_info.memoryHeaps[memory_info.memoryTypes[0].heapIndex].size + 1;
+
+    VkDeviceMemory mem;
+    vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, DeviceCoherentMemoryDisabledAMD) {
+    // Attempts to allocate device coherent memory without enabling the extension/feature
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    if (DeviceIsMockICD() || DeviceSimulation()) {
+        printf("%s MockICD does not support the necessary memory type, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    // Check extension support but do not enable it
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME)) {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
+        return;
+    }
+
+    // Find a memory type that includes the device coherent memory property
+    VkPhysicalDeviceMemoryProperties memory_info;
+    vk::GetPhysicalDeviceMemoryProperties(gpu(), &memory_info);
+    uint32_t deviceCoherentMemoryTypeIndex = memory_info.memoryTypeCount;  // Set to an invalid value just in case
+
+    for (uint32_t i = 0; i < memory_info.memoryTypeCount; ++i) {
+        if ((memory_info.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD) != 0) {
+            deviceCoherentMemoryTypeIndex = i;
+            break;
+        }
+    }
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkAllocateMemory-deviceCoherentMemory-02790");
+
+    VkMemoryAllocateInfo mem_alloc = {};
+    mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    mem_alloc.pNext = NULL;
+    mem_alloc.memoryTypeIndex = deviceCoherentMemoryTypeIndex;
+    mem_alloc.allocationSize = 4;
+
+    VkDeviceMemory mem;
+    vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
+
+    m_errorMonitor->VerifyFound();
+}
