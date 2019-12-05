@@ -4268,21 +4268,13 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
         }
     }
 
-    if ((pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT) &&
+    if ((pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR) &&
         !enabled_features.buffer_address.bufferDeviceAddressCaptureReplay) {
         skip |= log_msg(
             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-            "VUID-VkBufferCreateInfo-flags-02605",
+            "VUID-VkBufferCreateInfo-flags-03338",
             "vkCreateBuffer(): the bufferDeviceAddressCaptureReplay device feature is disabled: Buffers cannot be created with "
             "the VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT set.");
-    }
-
-    if ((pCreateInfo->usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT) &&
-        !enabled_features.buffer_address.bufferDeviceAddress) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        "VUID-VkBufferCreateInfo-usage-02606",
-                        "vkCreateBuffer(): the bufferDeviceAddress device feature is disabled: Buffers cannot be created with "
-                        "the VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT set.");
     }
 
     if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT && pCreateInfo->pQueueFamilyIndices) {

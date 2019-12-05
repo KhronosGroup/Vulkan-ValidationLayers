@@ -1603,6 +1603,15 @@ bool PreCallValidateWaitSemaphoresKHR(
 bool PreCallValidateSignalSemaphoreKHR(
     VkDevice                                    device,
     const VkSemaphoreSignalInfoKHR*             pSignalInfo) const;
+bool PreCallValidateGetBufferDeviceAddressKHR(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfoKHR*         pInfo) const;
+bool PreCallValidateGetBufferOpaqueCaptureAddressKHR(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfoKHR*         pInfo) const;
+bool PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(
+    VkDevice                                    device,
+    const VkDeviceMemoryOpaqueCaptureAddressInfoKHR* pInfo) const;
 bool PreCallValidateGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
     const VkPipelineInfoKHR*                    pPipelineInfo,
@@ -2270,7 +2279,7 @@ void PostCallRecordCreateMetalSurfaceEXT(
 #endif // VK_USE_PLATFORM_METAL_EXT
 bool PreCallValidateGetBufferDeviceAddressEXT(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoEXT*         pInfo) const;
+    const VkBufferDeviceAddressInfoKHR*         pInfo) const;
 bool PreCallValidateGetPhysicalDeviceCooperativeMatrixPropertiesNV(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,

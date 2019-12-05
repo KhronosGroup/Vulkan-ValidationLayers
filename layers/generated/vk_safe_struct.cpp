@@ -16327,6 +16327,276 @@ void safe_VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR::initialize(con
     pNext = SafePnextCopy(src->pNext);
 }
 
+safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR::safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR(const VkPhysicalDeviceBufferDeviceAddressFeaturesKHR* in_struct) :
+    sType(in_struct->sType),
+    bufferDeviceAddress(in_struct->bufferDeviceAddress),
+    bufferDeviceAddressCaptureReplay(in_struct->bufferDeviceAddressCaptureReplay),
+    bufferDeviceAddressMultiDevice(in_struct->bufferDeviceAddressMultiDevice)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR::safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR() :
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR::safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR(const safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR& src)
+{
+    sType = src.sType;
+    bufferDeviceAddress = src.bufferDeviceAddress;
+    bufferDeviceAddressCaptureReplay = src.bufferDeviceAddressCaptureReplay;
+    bufferDeviceAddressMultiDevice = src.bufferDeviceAddressMultiDevice;
+    pNext = SafePnextCopy(src.pNext);
+}
+
+safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR& safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR::operator=(const safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR& src)
+{
+    if (&src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = src.sType;
+    bufferDeviceAddress = src.bufferDeviceAddress;
+    bufferDeviceAddressCaptureReplay = src.bufferDeviceAddressCaptureReplay;
+    bufferDeviceAddressMultiDevice = src.bufferDeviceAddressMultiDevice;
+    pNext = SafePnextCopy(src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR::~safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR::initialize(const VkPhysicalDeviceBufferDeviceAddressFeaturesKHR* in_struct)
+{
+    sType = in_struct->sType;
+    bufferDeviceAddress = in_struct->bufferDeviceAddress;
+    bufferDeviceAddressCaptureReplay = in_struct->bufferDeviceAddressCaptureReplay;
+    bufferDeviceAddressMultiDevice = in_struct->bufferDeviceAddressMultiDevice;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR::initialize(const safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR* src)
+{
+    sType = src->sType;
+    bufferDeviceAddress = src->bufferDeviceAddress;
+    bufferDeviceAddressCaptureReplay = src->bufferDeviceAddressCaptureReplay;
+    bufferDeviceAddressMultiDevice = src->bufferDeviceAddressMultiDevice;
+    pNext = SafePnextCopy(src->pNext);
+}
+
+safe_VkBufferDeviceAddressInfoKHR::safe_VkBufferDeviceAddressInfoKHR(const VkBufferDeviceAddressInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    buffer(in_struct->buffer)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkBufferDeviceAddressInfoKHR::safe_VkBufferDeviceAddressInfoKHR() :
+    pNext(nullptr)
+{}
+
+safe_VkBufferDeviceAddressInfoKHR::safe_VkBufferDeviceAddressInfoKHR(const safe_VkBufferDeviceAddressInfoKHR& src)
+{
+    sType = src.sType;
+    buffer = src.buffer;
+    pNext = SafePnextCopy(src.pNext);
+}
+
+safe_VkBufferDeviceAddressInfoKHR& safe_VkBufferDeviceAddressInfoKHR::operator=(const safe_VkBufferDeviceAddressInfoKHR& src)
+{
+    if (&src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = src.sType;
+    buffer = src.buffer;
+    pNext = SafePnextCopy(src.pNext);
+
+    return *this;
+}
+
+safe_VkBufferDeviceAddressInfoKHR::~safe_VkBufferDeviceAddressInfoKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkBufferDeviceAddressInfoKHR::initialize(const VkBufferDeviceAddressInfoKHR* in_struct)
+{
+    sType = in_struct->sType;
+    buffer = in_struct->buffer;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkBufferDeviceAddressInfoKHR::initialize(const safe_VkBufferDeviceAddressInfoKHR* src)
+{
+    sType = src->sType;
+    buffer = src->buffer;
+    pNext = SafePnextCopy(src->pNext);
+}
+
+safe_VkBufferOpaqueCaptureAddressCreateInfoKHR::safe_VkBufferOpaqueCaptureAddressCreateInfoKHR(const VkBufferOpaqueCaptureAddressCreateInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    opaqueCaptureAddress(in_struct->opaqueCaptureAddress)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkBufferOpaqueCaptureAddressCreateInfoKHR::safe_VkBufferOpaqueCaptureAddressCreateInfoKHR() :
+    pNext(nullptr)
+{}
+
+safe_VkBufferOpaqueCaptureAddressCreateInfoKHR::safe_VkBufferOpaqueCaptureAddressCreateInfoKHR(const safe_VkBufferOpaqueCaptureAddressCreateInfoKHR& src)
+{
+    sType = src.sType;
+    opaqueCaptureAddress = src.opaqueCaptureAddress;
+    pNext = SafePnextCopy(src.pNext);
+}
+
+safe_VkBufferOpaqueCaptureAddressCreateInfoKHR& safe_VkBufferOpaqueCaptureAddressCreateInfoKHR::operator=(const safe_VkBufferOpaqueCaptureAddressCreateInfoKHR& src)
+{
+    if (&src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = src.sType;
+    opaqueCaptureAddress = src.opaqueCaptureAddress;
+    pNext = SafePnextCopy(src.pNext);
+
+    return *this;
+}
+
+safe_VkBufferOpaqueCaptureAddressCreateInfoKHR::~safe_VkBufferOpaqueCaptureAddressCreateInfoKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkBufferOpaqueCaptureAddressCreateInfoKHR::initialize(const VkBufferOpaqueCaptureAddressCreateInfoKHR* in_struct)
+{
+    sType = in_struct->sType;
+    opaqueCaptureAddress = in_struct->opaqueCaptureAddress;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkBufferOpaqueCaptureAddressCreateInfoKHR::initialize(const safe_VkBufferOpaqueCaptureAddressCreateInfoKHR* src)
+{
+    sType = src->sType;
+    opaqueCaptureAddress = src->opaqueCaptureAddress;
+    pNext = SafePnextCopy(src->pNext);
+}
+
+safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR::safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR(const VkMemoryOpaqueCaptureAddressAllocateInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    opaqueCaptureAddress(in_struct->opaqueCaptureAddress)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR::safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR() :
+    pNext(nullptr)
+{}
+
+safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR::safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR(const safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR& src)
+{
+    sType = src.sType;
+    opaqueCaptureAddress = src.opaqueCaptureAddress;
+    pNext = SafePnextCopy(src.pNext);
+}
+
+safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR& safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR::operator=(const safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR& src)
+{
+    if (&src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = src.sType;
+    opaqueCaptureAddress = src.opaqueCaptureAddress;
+    pNext = SafePnextCopy(src.pNext);
+
+    return *this;
+}
+
+safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR::~safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR::initialize(const VkMemoryOpaqueCaptureAddressAllocateInfoKHR* in_struct)
+{
+    sType = in_struct->sType;
+    opaqueCaptureAddress = in_struct->opaqueCaptureAddress;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR::initialize(const safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR* src)
+{
+    sType = src->sType;
+    opaqueCaptureAddress = src->opaqueCaptureAddress;
+    pNext = SafePnextCopy(src->pNext);
+}
+
+safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR::safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR(const VkDeviceMemoryOpaqueCaptureAddressInfoKHR* in_struct) :
+    sType(in_struct->sType),
+    memory(in_struct->memory)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR::safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR() :
+    pNext(nullptr)
+{}
+
+safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR::safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR(const safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR& src)
+{
+    sType = src.sType;
+    memory = src.memory;
+    pNext = SafePnextCopy(src.pNext);
+}
+
+safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR& safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR::operator=(const safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR& src)
+{
+    if (&src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = src.sType;
+    memory = src.memory;
+    pNext = SafePnextCopy(src.pNext);
+
+    return *this;
+}
+
+safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR::~safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR::initialize(const VkDeviceMemoryOpaqueCaptureAddressInfoKHR* in_struct)
+{
+    sType = in_struct->sType;
+    memory = in_struct->memory;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR::initialize(const safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR* src)
+{
+    sType = src->sType;
+    memory = src->memory;
+    pNext = SafePnextCopy(src->pNext);
+}
+
 safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR::safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR(const VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR* in_struct) :
     sType(in_struct->sType),
     pipelineExecutableInfo(in_struct->pipelineExecutableInfo)
@@ -28170,58 +28440,6 @@ void safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT::initialize(const safe_
     pNext = SafePnextCopy(src->pNext);
 }
 
-safe_VkBufferDeviceAddressInfoEXT::safe_VkBufferDeviceAddressInfoEXT(const VkBufferDeviceAddressInfoEXT* in_struct) :
-    sType(in_struct->sType),
-    buffer(in_struct->buffer)
-{
-    pNext = SafePnextCopy(in_struct->pNext);
-}
-
-safe_VkBufferDeviceAddressInfoEXT::safe_VkBufferDeviceAddressInfoEXT() :
-    pNext(nullptr)
-{}
-
-safe_VkBufferDeviceAddressInfoEXT::safe_VkBufferDeviceAddressInfoEXT(const safe_VkBufferDeviceAddressInfoEXT& src)
-{
-    sType = src.sType;
-    buffer = src.buffer;
-    pNext = SafePnextCopy(src.pNext);
-}
-
-safe_VkBufferDeviceAddressInfoEXT& safe_VkBufferDeviceAddressInfoEXT::operator=(const safe_VkBufferDeviceAddressInfoEXT& src)
-{
-    if (&src == this) return *this;
-
-    if (pNext)
-        FreePnextChain(pNext);
-
-    sType = src.sType;
-    buffer = src.buffer;
-    pNext = SafePnextCopy(src.pNext);
-
-    return *this;
-}
-
-safe_VkBufferDeviceAddressInfoEXT::~safe_VkBufferDeviceAddressInfoEXT()
-{
-    if (pNext)
-        FreePnextChain(pNext);
-}
-
-void safe_VkBufferDeviceAddressInfoEXT::initialize(const VkBufferDeviceAddressInfoEXT* in_struct)
-{
-    sType = in_struct->sType;
-    buffer = in_struct->buffer;
-    pNext = SafePnextCopy(in_struct->pNext);
-}
-
-void safe_VkBufferDeviceAddressInfoEXT::initialize(const safe_VkBufferDeviceAddressInfoEXT* src)
-{
-    sType = src->sType;
-    buffer = src->buffer;
-    pNext = SafePnextCopy(src->pNext);
-}
-
 safe_VkBufferDeviceAddressCreateInfoEXT::safe_VkBufferDeviceAddressCreateInfoEXT(const VkBufferDeviceAddressCreateInfoEXT* in_struct) :
     sType(in_struct->sType),
     deviceAddress(in_struct->deviceAddress)
@@ -29876,6 +30094,15 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES_KHR:
             safe_pNext = new safe_VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR(reinterpret_cast<const VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR:
+            safe_pNext = new safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR(reinterpret_cast<const VkPhysicalDeviceBufferDeviceAddressFeaturesKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO_KHR:
+            safe_pNext = new safe_VkBufferOpaqueCaptureAddressCreateInfoKHR(reinterpret_cast<const VkBufferOpaqueCaptureAddressCreateInfoKHR *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO_KHR:
+            safe_pNext = new safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR(reinterpret_cast<const VkMemoryOpaqueCaptureAddressAllocateInfoKHR *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR:
             safe_pNext = new safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR(reinterpret_cast<const VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR *>(pNext));
             break;
@@ -30544,6 +30771,15 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES_KHR:
             delete reinterpret_cast<const safe_VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO_KHR:
+            delete reinterpret_cast<const safe_VkBufferOpaqueCaptureAddressCreateInfoKHR *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO_KHR:
+            delete reinterpret_cast<const safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR:
             delete reinterpret_cast<const safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR *>(header);

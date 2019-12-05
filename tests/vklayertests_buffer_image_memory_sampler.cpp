@@ -6966,7 +6966,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
     buffer_create_info.size = sizeof(uint32_t);
     buffer_create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT;
     buffer_create_info.flags = VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_EXT;
-    CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-flags-02605");
+    CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-flags-03338");
 
     buffer_create_info.flags = 0;
     VkBufferDeviceAddressCreateInfoEXT addr_ci = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_CREATE_INFO_EXT};
@@ -6982,7 +6982,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
     VkBufferDeviceAddressInfoEXT info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_EXT};
     info.buffer = buffer;
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferDeviceAddressInfoEXT-buffer-02600");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferDeviceAddressInfoKHR-buffer-02600");
     vkGetBufferDeviceAddressEXT(m_device->device(), &info);
     m_errorMonitor->VerifyFound();
 
@@ -7034,9 +7034,6 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
 
     VkBufferCreateInfo buffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
     buffer_create_info.size = sizeof(uint32_t);
-    buffer_create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT;
-    CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-usage-02606");
-
     buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     VkBuffer buffer;
     VkResult err = vk::CreateBuffer(m_device->device(), &buffer_create_info, NULL, &buffer);
@@ -7045,9 +7042,10 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
     VkBufferDeviceAddressInfoEXT info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_EXT};
     info.buffer = buffer;
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetBufferDeviceAddressEXT-None-02598");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferDeviceAddressInfoEXT-buffer-02601");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferDeviceAddressInfoEXT-buffer-02600");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkGetBufferDeviceAddressKHR-bufferDeviceAddress-03324");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferDeviceAddressInfoKHR-buffer-02601");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferDeviceAddressInfoKHR-buffer-02600");
     vkGetBufferDeviceAddressEXT(m_device->device(), &info);
     m_errorMonitor->VerifyFound();
 

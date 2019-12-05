@@ -3661,6 +3661,83 @@ struct safe_VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR {
     VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 bufferDeviceAddress;
+    VkBool32 bufferDeviceAddressCaptureReplay;
+    VkBool32 bufferDeviceAddressMultiDevice;
+    safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR(const VkPhysicalDeviceBufferDeviceAddressFeaturesKHR* in_struct);
+    safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR(const safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR& src);
+    safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR& operator=(const safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR& src);
+    safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR();
+    ~safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR();
+    void initialize(const VkPhysicalDeviceBufferDeviceAddressFeaturesKHR* in_struct);
+    void initialize(const safe_VkPhysicalDeviceBufferDeviceAddressFeaturesKHR* src);
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR *ptr() { return reinterpret_cast<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR *>(this); }
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR const *ptr() const { return reinterpret_cast<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR const *>(this); }
+};
+
+struct safe_VkBufferDeviceAddressInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkBuffer buffer;
+    safe_VkBufferDeviceAddressInfoKHR(const VkBufferDeviceAddressInfoKHR* in_struct);
+    safe_VkBufferDeviceAddressInfoKHR(const safe_VkBufferDeviceAddressInfoKHR& src);
+    safe_VkBufferDeviceAddressInfoKHR& operator=(const safe_VkBufferDeviceAddressInfoKHR& src);
+    safe_VkBufferDeviceAddressInfoKHR();
+    ~safe_VkBufferDeviceAddressInfoKHR();
+    void initialize(const VkBufferDeviceAddressInfoKHR* in_struct);
+    void initialize(const safe_VkBufferDeviceAddressInfoKHR* src);
+    VkBufferDeviceAddressInfoKHR *ptr() { return reinterpret_cast<VkBufferDeviceAddressInfoKHR *>(this); }
+    VkBufferDeviceAddressInfoKHR const *ptr() const { return reinterpret_cast<VkBufferDeviceAddressInfoKHR const *>(this); }
+};
+
+struct safe_VkBufferOpaqueCaptureAddressCreateInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    uint64_t opaqueCaptureAddress;
+    safe_VkBufferOpaqueCaptureAddressCreateInfoKHR(const VkBufferOpaqueCaptureAddressCreateInfoKHR* in_struct);
+    safe_VkBufferOpaqueCaptureAddressCreateInfoKHR(const safe_VkBufferOpaqueCaptureAddressCreateInfoKHR& src);
+    safe_VkBufferOpaqueCaptureAddressCreateInfoKHR& operator=(const safe_VkBufferOpaqueCaptureAddressCreateInfoKHR& src);
+    safe_VkBufferOpaqueCaptureAddressCreateInfoKHR();
+    ~safe_VkBufferOpaqueCaptureAddressCreateInfoKHR();
+    void initialize(const VkBufferOpaqueCaptureAddressCreateInfoKHR* in_struct);
+    void initialize(const safe_VkBufferOpaqueCaptureAddressCreateInfoKHR* src);
+    VkBufferOpaqueCaptureAddressCreateInfoKHR *ptr() { return reinterpret_cast<VkBufferOpaqueCaptureAddressCreateInfoKHR *>(this); }
+    VkBufferOpaqueCaptureAddressCreateInfoKHR const *ptr() const { return reinterpret_cast<VkBufferOpaqueCaptureAddressCreateInfoKHR const *>(this); }
+};
+
+struct safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    uint64_t opaqueCaptureAddress;
+    safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR(const VkMemoryOpaqueCaptureAddressAllocateInfoKHR* in_struct);
+    safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR(const safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR& src);
+    safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR& operator=(const safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR& src);
+    safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR();
+    ~safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR();
+    void initialize(const VkMemoryOpaqueCaptureAddressAllocateInfoKHR* in_struct);
+    void initialize(const safe_VkMemoryOpaqueCaptureAddressAllocateInfoKHR* src);
+    VkMemoryOpaqueCaptureAddressAllocateInfoKHR *ptr() { return reinterpret_cast<VkMemoryOpaqueCaptureAddressAllocateInfoKHR *>(this); }
+    VkMemoryOpaqueCaptureAddressAllocateInfoKHR const *ptr() const { return reinterpret_cast<VkMemoryOpaqueCaptureAddressAllocateInfoKHR const *>(this); }
+};
+
+struct safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR {
+    VkStructureType sType;
+    const void* pNext;
+    VkDeviceMemory memory;
+    safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR(const VkDeviceMemoryOpaqueCaptureAddressInfoKHR* in_struct);
+    safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR(const safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR& src);
+    safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR& operator=(const safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR& src);
+    safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR();
+    ~safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR();
+    void initialize(const VkDeviceMemoryOpaqueCaptureAddressInfoKHR* in_struct);
+    void initialize(const safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR* src);
+    VkDeviceMemoryOpaqueCaptureAddressInfoKHR *ptr() { return reinterpret_cast<VkDeviceMemoryOpaqueCaptureAddressInfoKHR *>(this); }
+    VkDeviceMemoryOpaqueCaptureAddressInfoKHR const *ptr() const { return reinterpret_cast<VkDeviceMemoryOpaqueCaptureAddressInfoKHR const *>(this); }
+};
+
 struct safe_VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR {
     VkStructureType sType;
     void* pNext;
@@ -6558,21 +6635,6 @@ struct safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT {
     void initialize(const safe_VkPhysicalDeviceBufferDeviceAddressFeaturesEXT* src);
     VkPhysicalDeviceBufferDeviceAddressFeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceBufferDeviceAddressFeaturesEXT *>(this); }
     VkPhysicalDeviceBufferDeviceAddressFeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceBufferDeviceAddressFeaturesEXT const *>(this); }
-};
-
-struct safe_VkBufferDeviceAddressInfoEXT {
-    VkStructureType sType;
-    const void* pNext;
-    VkBuffer buffer;
-    safe_VkBufferDeviceAddressInfoEXT(const VkBufferDeviceAddressInfoEXT* in_struct);
-    safe_VkBufferDeviceAddressInfoEXT(const safe_VkBufferDeviceAddressInfoEXT& src);
-    safe_VkBufferDeviceAddressInfoEXT& operator=(const safe_VkBufferDeviceAddressInfoEXT& src);
-    safe_VkBufferDeviceAddressInfoEXT();
-    ~safe_VkBufferDeviceAddressInfoEXT();
-    void initialize(const VkBufferDeviceAddressInfoEXT* in_struct);
-    void initialize(const safe_VkBufferDeviceAddressInfoEXT* src);
-    VkBufferDeviceAddressInfoEXT *ptr() { return reinterpret_cast<VkBufferDeviceAddressInfoEXT *>(this); }
-    VkBufferDeviceAddressInfoEXT const *ptr() const { return reinterpret_cast<VkBufferDeviceAddressInfoEXT const *>(this); }
 };
 
 struct safe_VkBufferDeviceAddressCreateInfoEXT {

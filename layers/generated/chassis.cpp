@@ -6570,6 +6570,73 @@ VKAPI_ATTR VkResult VKAPI_CALL SignalSemaphoreKHR(
 
 
 
+VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressKHR(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfoKHR*         pInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetBufferDeviceAddressKHR(device, pInfo);
+        if (skip) return 0;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordGetBufferDeviceAddressKHR(device, pInfo);
+    }
+    VkDeviceAddress result = DispatchGetBufferDeviceAddressKHR(device, pInfo);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordGetBufferDeviceAddressKHR(device, pInfo, result);
+    }
+    return result;
+}
+
+VKAPI_ATTR uint64_t VKAPI_CALL GetBufferOpaqueCaptureAddressKHR(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfoKHR*         pInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetBufferOpaqueCaptureAddressKHR(device, pInfo);
+        if (skip) return 0;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordGetBufferOpaqueCaptureAddressKHR(device, pInfo);
+    }
+    uint64_t result = DispatchGetBufferOpaqueCaptureAddressKHR(device, pInfo);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordGetBufferOpaqueCaptureAddressKHR(device, pInfo);
+    }
+    return result;
+}
+
+VKAPI_ATTR uint64_t VKAPI_CALL GetDeviceMemoryOpaqueCaptureAddressKHR(
+    VkDevice                                    device,
+    const VkDeviceMemoryOpaqueCaptureAddressInfoKHR* pInfo) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(device, pInfo);
+        if (skip) return 0;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR(device, pInfo);
+    }
+    uint64_t result = DispatchGetDeviceMemoryOpaqueCaptureAddressKHR(device, pInfo);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR(device, pInfo);
+    }
+    return result;
+}
+
+
 VKAPI_ATTR VkResult VKAPI_CALL GetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
     const VkPipelineInfoKHR*                    pPipelineInfo,
@@ -9103,7 +9170,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateMetalSurfaceEXT(
 
 VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressEXT(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoEXT*         pInfo) {
+    const VkBufferDeviceAddressInfoKHR*         pInfo) {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     bool skip = false;
     for (auto intercept : layer_data->object_dispatch) {
@@ -9635,6 +9702,9 @@ const std::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkGetSemaphoreCounterValueKHR", {false, (void*)GetSemaphoreCounterValueKHR}},
     {"vkWaitSemaphoresKHR", {false, (void*)WaitSemaphoresKHR}},
     {"vkSignalSemaphoreKHR", {false, (void*)SignalSemaphoreKHR}},
+    {"vkGetBufferDeviceAddressKHR", {false, (void*)GetBufferDeviceAddressKHR}},
+    {"vkGetBufferOpaqueCaptureAddressKHR", {false, (void*)GetBufferOpaqueCaptureAddressKHR}},
+    {"vkGetDeviceMemoryOpaqueCaptureAddressKHR", {false, (void*)GetDeviceMemoryOpaqueCaptureAddressKHR}},
     {"vkGetPipelineExecutablePropertiesKHR", {false, (void*)GetPipelineExecutablePropertiesKHR}},
     {"vkGetPipelineExecutableStatisticsKHR", {false, (void*)GetPipelineExecutableStatisticsKHR}},
     {"vkGetPipelineExecutableInternalRepresentationsKHR", {false, (void*)GetPipelineExecutableInternalRepresentationsKHR}},

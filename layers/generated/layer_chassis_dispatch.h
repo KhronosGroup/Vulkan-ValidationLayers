@@ -1238,6 +1238,15 @@ VkResult DispatchWaitSemaphoresKHR(
 VkResult DispatchSignalSemaphoreKHR(
     VkDevice                                    device,
     const VkSemaphoreSignalInfoKHR*             pSignalInfo);
+VkDeviceAddress DispatchGetBufferDeviceAddressKHR(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfoKHR*         pInfo);
+uint64_t DispatchGetBufferOpaqueCaptureAddressKHR(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfoKHR*         pInfo);
+uint64_t DispatchGetDeviceMemoryOpaqueCaptureAddressKHR(
+    VkDevice                                    device,
+    const VkDeviceMemoryOpaqueCaptureAddressInfoKHR* pInfo);
 VkResult DispatchGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
     const VkPipelineInfoKHR*                    pPipelineInfo,
@@ -1771,7 +1780,7 @@ VkResult DispatchCreateMetalSurfaceEXT(
 #endif // VK_USE_PLATFORM_METAL_EXT
 VkDeviceAddress DispatchGetBufferDeviceAddressEXT(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoEXT*         pInfo);
+    const VkBufferDeviceAddressInfoKHR*         pInfo);
 VkResult DispatchGetPhysicalDeviceCooperativeMatrixPropertiesNV(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,

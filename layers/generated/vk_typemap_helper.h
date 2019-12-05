@@ -1855,6 +1855,51 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_
     typedef VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR Type;
 };
 
+// Map type VkPhysicalDeviceBufferDeviceAddressFeaturesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR
+template <> struct LvlTypeMap<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR> {
+    typedef VkPhysicalDeviceBufferDeviceAddressFeaturesKHR Type;
+};
+
+// Map type VkBufferDeviceAddressInfoKHR to id VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR
+template <> struct LvlTypeMap<VkBufferDeviceAddressInfoKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR> {
+    typedef VkBufferDeviceAddressInfoKHR Type;
+};
+
+// Map type VkBufferOpaqueCaptureAddressCreateInfoKHR to id VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO_KHR
+template <> struct LvlTypeMap<VkBufferOpaqueCaptureAddressCreateInfoKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO_KHR> {
+    typedef VkBufferOpaqueCaptureAddressCreateInfoKHR Type;
+};
+
+// Map type VkMemoryOpaqueCaptureAddressAllocateInfoKHR to id VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO_KHR
+template <> struct LvlTypeMap<VkMemoryOpaqueCaptureAddressAllocateInfoKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO_KHR> {
+    typedef VkMemoryOpaqueCaptureAddressAllocateInfoKHR Type;
+};
+
+// Map type VkDeviceMemoryOpaqueCaptureAddressInfoKHR to id VK_STRUCTURE_TYPE_DEVICE_MEMORY_OPAQUE_CAPTURE_ADDRESS_INFO_KHR
+template <> struct LvlTypeMap<VkDeviceMemoryOpaqueCaptureAddressInfoKHR> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_DEVICE_MEMORY_OPAQUE_CAPTURE_ADDRESS_INFO_KHR;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEVICE_MEMORY_OPAQUE_CAPTURE_ADDRESS_INFO_KHR> {
+    typedef VkDeviceMemoryOpaqueCaptureAddressInfoKHR Type;
+};
+
 // Map type VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR
 template <> struct LvlTypeMap<VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR;
@@ -3379,15 +3424,6 @@ template <> struct LvlTypeMap<VkPhysicalDeviceBufferDeviceAddressFeaturesEXT> {
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_EXT> {
     typedef VkPhysicalDeviceBufferDeviceAddressFeaturesEXT Type;
-};
-
-// Map type VkBufferDeviceAddressInfoEXT to id VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_EXT
-template <> struct LvlTypeMap<VkBufferDeviceAddressInfoEXT> {
-    static const VkStructureType kSType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_EXT;
-};
-
-template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_EXT> {
-    typedef VkBufferDeviceAddressInfoEXT Type;
 };
 
 // Map type VkBufferDeviceAddressCreateInfoEXT to id VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_CREATE_INFO_EXT

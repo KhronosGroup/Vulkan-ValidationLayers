@@ -3547,6 +3547,33 @@ bool ObjectLifetimes::PreCallValidateSignalSemaphoreKHR(
     return skip;
 }
 
+bool ObjectLifetimes::PreCallValidateGetBufferDeviceAddressKHR(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfoKHR*         pInfo) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetBufferDeviceAddressKHR-device-parameter", kVUIDUndefined);
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateGetBufferOpaqueCaptureAddressKHR(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfoKHR*         pInfo) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetBufferOpaqueCaptureAddressKHR-device-parameter", kVUIDUndefined);
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(
+    VkDevice                                    device,
+    const VkDeviceMemoryOpaqueCaptureAddressInfoKHR* pInfo) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetDeviceMemoryOpaqueCaptureAddressKHR-device-parameter", kVUIDUndefined);
+
+    return skip;
+}
+
 bool ObjectLifetimes::PreCallValidateGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
     const VkPipelineInfoKHR*                    pPipelineInfo,
@@ -5082,9 +5109,9 @@ void ObjectLifetimes::PostCallRecordCreateMetalSurfaceEXT(
 
 bool ObjectLifetimes::PreCallValidateGetBufferDeviceAddressEXT(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoEXT*         pInfo) const {
+    const VkBufferDeviceAddressInfoKHR*         pInfo) const {
     bool skip = false;
-    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetBufferDeviceAddressEXT-device-parameter", kVUIDUndefined);
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkGetBufferDeviceAddressKHR-device-parameter", kVUIDUndefined);
 
     return skip;
 }

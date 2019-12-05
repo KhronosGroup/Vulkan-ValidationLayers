@@ -359,6 +359,7 @@ struct DeviceExtensions : public InstanceExtensions {
     bool vk_khr_16bit_storage{false};
     bool vk_khr_8bit_storage{false};
     bool vk_khr_bind_memory_2{false};
+    bool vk_khr_buffer_device_address{false};
     bool vk_khr_create_renderpass_2{false};
     bool vk_khr_dedicated_allocation{false};
     bool vk_khr_depth_stencil_resolve{false};
@@ -599,6 +600,8 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_storage_buffer_storage_class, VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_bind_memory_2, {})),
+            std::make_pair(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_buffer_device_address, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_create_renderpass_2, {{
                            {&DeviceExtensions::vk_khr_multiview, VK_KHR_MULTIVIEW_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_maintenance2, VK_KHR_MAINTENANCE2_EXTENSION_NAME}}})),
@@ -908,6 +911,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_16BIT_STORAGE_EXTENSION_NAME,
     VK_KHR_8BIT_STORAGE_EXTENSION_NAME,
     VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
+    VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
     VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
     VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
     VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,

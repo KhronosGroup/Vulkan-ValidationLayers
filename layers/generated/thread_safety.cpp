@@ -4337,6 +4337,43 @@ void ThreadSafety::PostCallRecordSignalSemaphoreKHR(
     FinishReadObjectParentInstance(device);
 }
 
+void ThreadSafety::PreCallRecordGetBufferDeviceAddressKHR(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfoKHR*         pInfo) {
+    StartReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PostCallRecordGetBufferDeviceAddressKHR(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfoKHR*         pInfo,
+    VkDeviceAddress                             result) {
+    FinishReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PreCallRecordGetBufferOpaqueCaptureAddressKHR(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfoKHR*         pInfo) {
+    StartReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PostCallRecordGetBufferOpaqueCaptureAddressKHR(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfoKHR*         pInfo) {
+    FinishReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PreCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR(
+    VkDevice                                    device,
+    const VkDeviceMemoryOpaqueCaptureAddressInfoKHR* pInfo) {
+    StartReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PostCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR(
+    VkDevice                                    device,
+    const VkDeviceMemoryOpaqueCaptureAddressInfoKHR* pInfo) {
+    FinishReadObjectParentInstance(device);
+}
+
 void ThreadSafety::PreCallRecordGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
     const VkPipelineInfoKHR*                    pPipelineInfo,
@@ -6195,13 +6232,13 @@ void ThreadSafety::PostCallRecordCreateMetalSurfaceEXT(
 
 void ThreadSafety::PreCallRecordGetBufferDeviceAddressEXT(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoEXT*         pInfo) {
+    const VkBufferDeviceAddressInfoKHR*         pInfo) {
     StartReadObjectParentInstance(device);
 }
 
 void ThreadSafety::PostCallRecordGetBufferDeviceAddressEXT(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoEXT*         pInfo,
+    const VkBufferDeviceAddressInfoKHR*         pInfo,
     VkDeviceAddress                             result) {
     FinishReadObjectParentInstance(device);
 }

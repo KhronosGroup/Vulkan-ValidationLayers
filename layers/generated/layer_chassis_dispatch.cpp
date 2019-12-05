@@ -4983,6 +4983,72 @@ VkResult DispatchSignalSemaphoreKHR(
     return result;
 }
 
+VkDeviceAddress DispatchGetBufferDeviceAddressKHR(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfoKHR*         pInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetBufferDeviceAddressKHR(device, pInfo);
+    safe_VkBufferDeviceAddressInfoKHR var_local_pInfo;
+    safe_VkBufferDeviceAddressInfoKHR *local_pInfo = NULL;
+    {
+        if (pInfo) {
+            local_pInfo = &var_local_pInfo;
+            local_pInfo->initialize(pInfo);
+            if (pInfo->buffer) {
+                local_pInfo->buffer = layer_data->Unwrap(pInfo->buffer);
+            }
+        }
+    }
+    VkDeviceAddress result = layer_data->device_dispatch_table.GetBufferDeviceAddressKHR(device, (const VkBufferDeviceAddressInfoKHR*)local_pInfo);
+
+    return result;
+}
+
+uint64_t DispatchGetBufferOpaqueCaptureAddressKHR(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfoKHR*         pInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetBufferOpaqueCaptureAddressKHR(device, pInfo);
+    safe_VkBufferDeviceAddressInfoKHR var_local_pInfo;
+    safe_VkBufferDeviceAddressInfoKHR *local_pInfo = NULL;
+    {
+        if (pInfo) {
+            local_pInfo = &var_local_pInfo;
+            local_pInfo->initialize(pInfo);
+            if (pInfo->buffer) {
+                local_pInfo->buffer = layer_data->Unwrap(pInfo->buffer);
+            }
+        }
+    }
+    uint64_t result = layer_data->device_dispatch_table.GetBufferOpaqueCaptureAddressKHR(device, (const VkBufferDeviceAddressInfoKHR*)local_pInfo);
+
+    return result;
+}
+
+uint64_t DispatchGetDeviceMemoryOpaqueCaptureAddressKHR(
+    VkDevice                                    device,
+    const VkDeviceMemoryOpaqueCaptureAddressInfoKHR* pInfo)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetDeviceMemoryOpaqueCaptureAddressKHR(device, pInfo);
+    safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR var_local_pInfo;
+    safe_VkDeviceMemoryOpaqueCaptureAddressInfoKHR *local_pInfo = NULL;
+    {
+        if (pInfo) {
+            local_pInfo = &var_local_pInfo;
+            local_pInfo->initialize(pInfo);
+            if (pInfo->memory) {
+                local_pInfo->memory = layer_data->Unwrap(pInfo->memory);
+            }
+        }
+    }
+    uint64_t result = layer_data->device_dispatch_table.GetDeviceMemoryOpaqueCaptureAddressKHR(device, (const VkDeviceMemoryOpaqueCaptureAddressInfoKHR*)local_pInfo);
+
+    return result;
+}
+
 VkResult DispatchGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
     const VkPipelineInfoKHR*                    pPipelineInfo,
@@ -6740,12 +6806,12 @@ VkResult DispatchCreateMetalSurfaceEXT(
 
 VkDeviceAddress DispatchGetBufferDeviceAddressEXT(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoEXT*         pInfo)
+    const VkBufferDeviceAddressInfoKHR*         pInfo)
 {
     auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
     if (!wrap_handles) return layer_data->device_dispatch_table.GetBufferDeviceAddressEXT(device, pInfo);
-    safe_VkBufferDeviceAddressInfoEXT var_local_pInfo;
-    safe_VkBufferDeviceAddressInfoEXT *local_pInfo = NULL;
+    safe_VkBufferDeviceAddressInfoKHR var_local_pInfo;
+    safe_VkBufferDeviceAddressInfoKHR *local_pInfo = NULL;
     {
         if (pInfo) {
             local_pInfo = &var_local_pInfo;
@@ -6755,7 +6821,7 @@ VkDeviceAddress DispatchGetBufferDeviceAddressEXT(
             }
         }
     }
-    VkDeviceAddress result = layer_data->device_dispatch_table.GetBufferDeviceAddressEXT(device, (const VkBufferDeviceAddressInfoEXT*)local_pInfo);
+    VkDeviceAddress result = layer_data->device_dispatch_table.GetBufferDeviceAddressEXT(device, (const VkBufferDeviceAddressInfoKHR*)local_pInfo);
 
     return result;
 }

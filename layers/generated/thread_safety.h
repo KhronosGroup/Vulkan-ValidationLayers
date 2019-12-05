@@ -3081,6 +3081,31 @@ void PostCallRecordSignalSemaphoreKHR(
     const VkSemaphoreSignalInfoKHR*             pSignalInfo,
     VkResult                                    result);
 
+void PreCallRecordGetBufferDeviceAddressKHR(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfoKHR*         pInfo);
+
+void PostCallRecordGetBufferDeviceAddressKHR(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfoKHR*         pInfo,
+    VkDeviceAddress                             result);
+
+void PreCallRecordGetBufferOpaqueCaptureAddressKHR(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfoKHR*         pInfo);
+
+void PostCallRecordGetBufferOpaqueCaptureAddressKHR(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfoKHR*         pInfo);
+
+void PreCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR(
+    VkDevice                                    device,
+    const VkDeviceMemoryOpaqueCaptureAddressInfoKHR* pInfo);
+
+void PostCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR(
+    VkDevice                                    device,
+    const VkDeviceMemoryOpaqueCaptureAddressInfoKHR* pInfo);
+
 void PreCallRecordGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
     const VkPipelineInfoKHR*                    pPipelineInfo,
@@ -4289,11 +4314,11 @@ void PostCallRecordCreateMetalSurfaceEXT(
 
 void PreCallRecordGetBufferDeviceAddressEXT(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoEXT*         pInfo);
+    const VkBufferDeviceAddressInfoKHR*         pInfo);
 
 void PostCallRecordGetBufferDeviceAddressEXT(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoEXT*         pInfo,
+    const VkBufferDeviceAddressInfoKHR*         pInfo,
     VkDeviceAddress                             result);
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
