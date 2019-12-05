@@ -895,8 +895,16 @@ class StatelessValidation : public ValidationObject {
         uint32_t max_color_attachments = device_limits.maxColorAttachments;
         bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
         const char *vuid;
-        const auto *separate_depth_stencil_layouts_features =
-            lvl_find_in_chain<VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR>(device_createinfo_pnext);
+        VkBool32 separate_depth_stencil_layouts = false;
+        const auto *vulkan_12_features = lvl_find_in_chain<VkPhysicalDeviceVulkan12Features>(device_createinfo_pnext);
+        if (vulkan_12_features) {
+            separate_depth_stencil_layouts = vulkan_12_features->separateDepthStencilLayouts;
+        } else {
+            const auto *separate_depth_stencil_layouts_features =
+                lvl_find_in_chain<VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR>(device_createinfo_pnext);
+            if (separate_depth_stencil_layouts_features)
+                separate_depth_stencil_layouts = separate_depth_stencil_layouts_features->separateDepthStencilLayouts;
+        }
 
         for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
             const auto *attachment_description_stencil_layout =
@@ -921,7 +929,7 @@ class StatelessValidation : public ValidationObject {
                                 "VK_IMAGE_LAYOUT_PREINITIALIZED.",
                                 i);
             }
-            if (!separate_depth_stencil_layouts_features || !separate_depth_stencil_layouts_features->separateDepthStencilLayouts) {
+            if (!separate_depth_stencil_layouts) {
                 if (pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR ||
                     pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR ||
                     pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR ||
@@ -1127,8 +1135,7 @@ class StatelessValidation : public ValidationObject {
             skip |= ValidateSubpassGraphicsFlags(report_data, pCreateInfo, i, dependency.srcSubpass, dependency.srcStageMask, vuid,
                                                  "src");
 
-            vuid =
-                use_rp2 ? "VUID-VkRenderPassCreateInfo2-pDependencies-03055" : "VUID-VkRenderPassCreateInfo-pDependencies-00838";
+            vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-pDependencies-03055" : "VUID-VkRenderPassCreateInfo-pDependencies-00838";
             skip |= ValidateSubpassGraphicsFlags(report_data, pCreateInfo, i, dependency.dstSubpass, dependency.dstStageMask, vuid,
                                                  "dst");
         }
