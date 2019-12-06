@@ -7383,6 +7383,11 @@ TEST_F(VkLayerTest, DeviceCoherentMemoryDisabledAMD) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
 
+    if (DeviceIsMockICD() || DeviceSimulation()) {
+        printf("%s MockICD does not support the necessary memory type, skipping test\n", kSkipPrefix);
+        return;
+    }
+
     // Check extension support but do not enable it
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME)) {
         printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_AMD_DEVICE_COHERENT_MEMORY_EXTENSION_NAME);
