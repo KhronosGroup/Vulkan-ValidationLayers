@@ -2318,7 +2318,8 @@ PushConstantRangesId GetCanonicalId(const VkPipelineLayoutCreateInfo *info) {
         sorted.insert(info->pPushConstantRanges + i);
     }
 
-    PushConstantRanges ranges(sorted.size());
+    PushConstantRanges ranges;
+    ranges.reserve(sorted.size());
     for (const auto range : sorted) {
         ranges.emplace_back(*range);
     }
