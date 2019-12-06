@@ -279,6 +279,7 @@ class BUFFER_STATE : public BINDABLE {
     VkBuffer buffer;
     VkBufferCreateInfo createInfo;
     VkDeviceAddress deviceAddress;
+    std::vector<VkBufferView> bufferviews;
 
     BUFFER_STATE(VkBuffer buff, const VkBufferCreateInfo *pCreateInfo) : buffer(buff), createInfo(*pCreateInfo) {
         if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
@@ -348,6 +349,7 @@ class IMAGE_STATE : public BINDABLE {
     VkSwapchainKHR create_from_swapchain;
     VkSwapchainKHR bind_swapchain;
     uint32_t bind_swapchain_imageIndex;
+    std::vector<VkImageView> imageviews;
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     uint64_t external_format_android;

@@ -213,6 +213,7 @@ void ValidationStateTracker::PostCallRecordCreateBufferView(VkDevice device, con
     if (result != VK_SUCCESS) return;
     auto buffer_state = GetBufferShared(pCreateInfo->buffer);
     bufferViewMap[*pView] = std::make_shared<BUFFER_VIEW_STATE>(buffer_state, *pView, pCreateInfo);
+    buffer_state->bufferviews.emplace_back(*pView);
 }
 
 void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
@@ -221,6 +222,7 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
     if (result != VK_SUCCESS) return;
     auto image_state = GetImageShared(pCreateInfo->image);
     imageViewMap[*pView] = std::make_shared<IMAGE_VIEW_STATE>(image_state, *pView, pCreateInfo);
+    image_state->imageviews.emplace_back(*pView);
 }
 
 void ValidationStateTracker::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
