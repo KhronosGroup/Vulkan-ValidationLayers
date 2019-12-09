@@ -3435,6 +3435,15 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_CREATE_IN
     typedef VkBufferDeviceAddressCreateInfoEXT Type;
 };
 
+// Map type VkPhysicalDeviceToolPropertiesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceToolPropertiesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES_EXT> {
+    typedef VkPhysicalDeviceToolPropertiesEXT Type;
+};
+
 // Map type VkImageStencilUsageCreateInfoEXT to id VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO_EXT
 template <> struct LvlTypeMap<VkImageStencilUsageCreateInfoEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO_EXT;

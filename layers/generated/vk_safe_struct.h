@@ -6652,6 +6652,25 @@ struct safe_VkBufferDeviceAddressCreateInfoEXT {
     VkBufferDeviceAddressCreateInfoEXT const *ptr() const { return reinterpret_cast<VkBufferDeviceAddressCreateInfoEXT const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceToolPropertiesEXT {
+    VkStructureType sType;
+    void* pNext;
+    char name[VK_MAX_EXTENSION_NAME_SIZE];
+    char version[VK_MAX_EXTENSION_NAME_SIZE];
+    VkToolPurposeFlagsEXT purposes;
+    char description[VK_MAX_DESCRIPTION_SIZE];
+    char layer[VK_MAX_EXTENSION_NAME_SIZE];
+    safe_VkPhysicalDeviceToolPropertiesEXT(const VkPhysicalDeviceToolPropertiesEXT* in_struct);
+    safe_VkPhysicalDeviceToolPropertiesEXT(const safe_VkPhysicalDeviceToolPropertiesEXT& src);
+    safe_VkPhysicalDeviceToolPropertiesEXT& operator=(const safe_VkPhysicalDeviceToolPropertiesEXT& src);
+    safe_VkPhysicalDeviceToolPropertiesEXT();
+    ~safe_VkPhysicalDeviceToolPropertiesEXT();
+    void initialize(const VkPhysicalDeviceToolPropertiesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceToolPropertiesEXT* src);
+    VkPhysicalDeviceToolPropertiesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceToolPropertiesEXT *>(this); }
+    VkPhysicalDeviceToolPropertiesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceToolPropertiesEXT const *>(this); }
+};
+
 struct safe_VkImageStencilUsageCreateInfoEXT {
     VkStructureType sType;
     const void* pNext;

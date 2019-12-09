@@ -3277,7 +3277,7 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
                                                     VkQueryResultFlags flags) const {
     if (disabled.query_validation) return false;
     bool skip = false;
-    skip |= ValidateQueryPoolStride("VUID-vkGetQueryPoolResults-flags-00814", "VUID-vkGetQueryPoolResults-flags-00815", stride,
+    skip |= ValidateQueryPoolStride("VUID-vkGetQueryPoolResults-flags-02827", "VUID-vkGetQueryPoolResults-flags-00815", stride,
                                     "dataSize", dataSize, flags);
     skip |= ValidateGetQueryPoolResultsFlags(queryPool, flags);
     skip |= ValidateGetQueryPoolResultsQueries(queryPool, firstQuery, queryCount);

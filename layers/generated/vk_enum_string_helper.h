@@ -685,6 +685,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES_KHR";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES_KHR:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES_KHR";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_PROPERTIES_EXT:
@@ -5990,6 +5992,45 @@ static inline const char* string_VkPerformanceValueTypeINTEL(VkPerformanceValueT
         default:
             return "Unhandled VkPerformanceValueTypeINTEL";
     }
+}
+
+static inline const char* string_VkToolPurposeFlagBitsEXT(VkToolPurposeFlagBitsEXT input_value)
+{
+    switch ((VkToolPurposeFlagBitsEXT)input_value)
+    {
+        case VK_TOOL_PURPOSE_ADDITIONAL_FEATURES_BIT_EXT:
+            return "VK_TOOL_PURPOSE_ADDITIONAL_FEATURES_BIT_EXT";
+        case VK_TOOL_PURPOSE_DEBUG_MARKERS_BIT_EXT:
+            return "VK_TOOL_PURPOSE_DEBUG_MARKERS_BIT_EXT";
+        case VK_TOOL_PURPOSE_DEBUG_REPORTING_BIT_EXT:
+            return "VK_TOOL_PURPOSE_DEBUG_REPORTING_BIT_EXT";
+        case VK_TOOL_PURPOSE_MODIFYING_FEATURES_BIT_EXT:
+            return "VK_TOOL_PURPOSE_MODIFYING_FEATURES_BIT_EXT";
+        case VK_TOOL_PURPOSE_PROFILING_BIT_EXT:
+            return "VK_TOOL_PURPOSE_PROFILING_BIT_EXT";
+        case VK_TOOL_PURPOSE_TRACING_BIT_EXT:
+            return "VK_TOOL_PURPOSE_TRACING_BIT_EXT";
+        case VK_TOOL_PURPOSE_VALIDATION_BIT_EXT:
+            return "VK_TOOL_PURPOSE_VALIDATION_BIT_EXT";
+        default:
+            return "Unhandled VkToolPurposeFlagBitsEXT";
+    }
+}
+
+static inline std::string string_VkToolPurposeFlagsEXT(VkToolPurposeFlagsEXT input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkToolPurposeFlagBitsEXT(static_cast<VkToolPurposeFlagBitsEXT>(1 << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkToolPurposeFlagBitsEXT(static_cast<VkToolPurposeFlagBitsEXT>(0)));
+    return ret;
 }
 
 static inline const char* string_VkValidationFeatureEnableEXT(VkValidationFeatureEnableEXT input_value)

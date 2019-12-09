@@ -28492,6 +28492,118 @@ void safe_VkBufferDeviceAddressCreateInfoEXT::initialize(const safe_VkBufferDevi
     pNext = SafePnextCopy(src->pNext);
 }
 
+safe_VkPhysicalDeviceToolPropertiesEXT::safe_VkPhysicalDeviceToolPropertiesEXT(const VkPhysicalDeviceToolPropertiesEXT* in_struct) :
+    sType(in_struct->sType),
+    purposes(in_struct->purposes)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
+        name[i] = in_struct->name[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
+        version[i] = in_struct->version[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
+        description[i] = in_struct->description[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
+        layer[i] = in_struct->layer[i];
+    }
+}
+
+safe_VkPhysicalDeviceToolPropertiesEXT::safe_VkPhysicalDeviceToolPropertiesEXT() :
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceToolPropertiesEXT::safe_VkPhysicalDeviceToolPropertiesEXT(const safe_VkPhysicalDeviceToolPropertiesEXT& src)
+{
+    sType = src.sType;
+    purposes = src.purposes;
+    pNext = SafePnextCopy(src.pNext);
+    for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
+        name[i] = src.name[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
+        version[i] = src.version[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
+        description[i] = src.description[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
+        layer[i] = src.layer[i];
+    }
+}
+
+safe_VkPhysicalDeviceToolPropertiesEXT& safe_VkPhysicalDeviceToolPropertiesEXT::operator=(const safe_VkPhysicalDeviceToolPropertiesEXT& src)
+{
+    if (&src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = src.sType;
+    purposes = src.purposes;
+    pNext = SafePnextCopy(src.pNext);
+    for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
+        name[i] = src.name[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
+        version[i] = src.version[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
+        description[i] = src.description[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
+        layer[i] = src.layer[i];
+    }
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceToolPropertiesEXT::~safe_VkPhysicalDeviceToolPropertiesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceToolPropertiesEXT::initialize(const VkPhysicalDeviceToolPropertiesEXT* in_struct)
+{
+    sType = in_struct->sType;
+    purposes = in_struct->purposes;
+    pNext = SafePnextCopy(in_struct->pNext);
+    for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
+        name[i] = in_struct->name[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
+        version[i] = in_struct->version[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
+        description[i] = in_struct->description[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
+        layer[i] = in_struct->layer[i];
+    }
+}
+
+void safe_VkPhysicalDeviceToolPropertiesEXT::initialize(const safe_VkPhysicalDeviceToolPropertiesEXT* src)
+{
+    sType = src->sType;
+    purposes = src->purposes;
+    pNext = SafePnextCopy(src->pNext);
+    for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
+        name[i] = src->name[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
+        version[i] = src->version[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_DESCRIPTION_SIZE; ++i) {
+        description[i] = src->description[i];
+    }
+    for (uint32_t i = 0; i < VK_MAX_EXTENSION_NAME_SIZE; ++i) {
+        layer[i] = src->layer[i];
+    }
+}
+
 safe_VkImageStencilUsageCreateInfoEXT::safe_VkImageStencilUsageCreateInfoEXT(const VkImageStencilUsageCreateInfoEXT* in_struct) :
     sType(in_struct->sType),
     stencilUsage(in_struct->stencilUsage)
