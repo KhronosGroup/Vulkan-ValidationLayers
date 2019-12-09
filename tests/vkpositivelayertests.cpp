@@ -7852,7 +7852,7 @@ TEST_F(VkPositiveLayerTest, CmdCopySwapchainImage) {
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     printf(
-        "%s According to VUID-01631, VkBindImageMemoryInfo-memory should be NULL. But Android will crash if memory is NULL, "
+        "%s According to valid usage, VkBindImageMemoryInfo-memory should be NULL. But Android will crash if memory is NULL, "
         "skipping CmdCopySwapchainImage test\n",
         kSkipPrefix);
     return;
@@ -7950,7 +7950,7 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     printf(
-        "%s According to VUID-01631, VkBindImageMemoryInfo-memory should be NULL. But Android will crash if memory is NULL, "
+        "%s According to valid usage, VkBindImageMemoryInfo-memory should be NULL. But Android will crash if memory is NULL, "
         "skipping test\n",
         kSkipPrefix);
     return;
