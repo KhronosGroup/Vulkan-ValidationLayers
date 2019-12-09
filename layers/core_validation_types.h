@@ -340,6 +340,7 @@ class IMAGE_STATE : public BINDABLE {
     VkSwapchainKHR create_from_swapchain;
     VkSwapchainKHR bind_swapchain;
     uint32_t bind_swapchain_imageIndex;
+    image_layout_map::Encoder range_encoder;
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     uint64_t external_format_android;
@@ -404,7 +405,8 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
   public:
     VkImageView image_view;
     VkImageViewCreateInfo create_info;
-    VkImageSubresourceRange normalized_subresource_range;
+    const VkImageSubresourceRange normalized_subresource_range;
+    const image_layout_map::RangeGenerator range_generator;
     VkSampleCountFlagBits samples;
     unsigned descriptor_format_bits;
     VkSamplerYcbcrConversion samplerConversion;  // Handle of the ycbcr sampler conversion the image was created with, if any

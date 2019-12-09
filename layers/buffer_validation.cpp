@@ -52,6 +52,20 @@ static VkImageSubresourceRange RangeFromLayers(const VkImageSubresourceLayers &s
     return subresource_range;
 }
 
+static VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image_create_info,
+                                                         const VkImageSubresourceRange &range);
+static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &create_info) {
+    const auto format = create_info.format;
+    VkImageSubresourceRange init_range{0, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
+    if (FormatIsColor(format) || FormatIsMultiplane(format)) {
+        init_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;  // Normalization will expand this for multiplane
+    } else {
+        init_range.aspectMask =
+            (FormatHasDepth(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) | (FormatHasStencil(format) ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
+    }
+    return NormalizeSubresourceRange(create_info, init_range);
+}
+
 IMAGE_STATE::IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
     : image(img),
       createInfo(*pCreateInfo),
@@ -65,10 +79,11 @@ IMAGE_STATE::IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
       imported_ahb(false),
       has_ahb_format(false),
       ahb_format(0),
-      full_range{},
+      full_range{MakeImageFullRange(createInfo)},
       create_from_swapchain(VK_NULL_HANDLE),
       bind_swapchain(VK_NULL_HANDLE),
       bind_swapchain_imageIndex(0),
+      range_encoder(full_range),
       sparse_requirements{} {
     if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
         uint32_t *pQueueFamilyIndices = new uint32_t[createInfo.queueFamilyIndexCount];
@@ -81,15 +96,6 @@ IMAGE_STATE::IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
     if (createInfo.flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
         sparse = true;
     }
-    const auto format = createInfo.format;
-    VkImageSubresourceRange init_range{0, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
-    if (FormatIsColor(format) || FormatIsMultiplane(format)) {
-        init_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;  // Normalization will expand this for multiplane
-    } else {
-        init_range.aspectMask =
-            (FormatHasDepth(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) | (FormatHasStencil(format) ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
-    }
-    full_range = NormalizeSubresourceRange(*this, init_range);
 
     auto *externalMemoryInfo = lvl_find_in_chain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
     if (externalMemoryInfo) {
@@ -149,7 +155,8 @@ bool IMAGE_STATE::IsCompatibleAliasing(IMAGE_STATE *other_image_state) {
 IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkImageView iv, const VkImageViewCreateInfo *ci)
     : image_view(iv),
       create_info(*ci),
-      normalized_subresource_range(ci->subresourceRange),
+      normalized_subresource_range(NormalizeSubresourceRange(*im, ci->subresourceRange)),
+      range_generator(im->range_encoder, normalized_subresource_range),
       samplerConversion(VK_NULL_HANDLE),
       image_state(im) {
     auto *conversionInfo = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(create_info.pNext);
@@ -161,7 +168,7 @@ IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkIma
         sub_res_range.layerCount = ResolveRemainingLayers(&sub_res_range, image_state->createInfo.arrayLayers);
 
         // Cache a full normalization (for "full image/whole image" comparisons)
-        normalized_subresource_range = NormalizeSubresourceRange(*image_state, ci->subresourceRange);
+        // normalized_subresource_range = NormalizeSubresourceRange(*image_state, ci->subresourceRange);
         samples = image_state->createInfo.samples;
         descriptor_format_bits = DescriptorRequirementsBitsFromFormat(create_info.format);
     }
@@ -176,8 +183,8 @@ uint32_t FullMipChainLevels(VkExtent3D extent) { return FullMipChainLevels(exten
 
 uint32_t FullMipChainLevels(VkExtent2D extent) { return FullMipChainLevels(extent.height, extent.width); }
 
-VkImageSubresourceRange NormalizeSubresourceRange(const IMAGE_STATE &image_state, const VkImageSubresourceRange &range) {
-    const VkImageCreateInfo &image_create_info = image_state.createInfo;
+static VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image_create_info,
+                                                         const VkImageSubresourceRange &range) {
     VkImageSubresourceRange norm = range;
     norm.levelCount = ResolveRemainingLevels(&range, image_create_info.mipLevels);
 
@@ -200,6 +207,11 @@ VkImageSubresourceRange NormalizeSubresourceRange(const IMAGE_STATE &image_state
         }
     }
     return norm;
+}
+
+VkImageSubresourceRange NormalizeSubresourceRange(const IMAGE_STATE &image_state, const VkImageSubresourceRange &range) {
+    const VkImageCreateInfo &image_create_info = image_state.createInfo;
+    return NormalizeSubresourceRange(image_create_info, range);
 }
 
 template <class OBJECT, class LAYOUT>
@@ -367,7 +379,7 @@ void CoreChecks::SetImageViewInitialLayout(CMD_BUFFER_STATE *cb_node, const IMAG
     }
     IMAGE_STATE *image_state = view_state.image_state.get();
     auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, *image_state);
-    subresource_map->SetSubresourceRangeInitialLayout(*cb_node, view_state.normalized_subresource_range, layout, &view_state);
+    subresource_map->SetSubresourceRangeInitialLayout(*cb_node, layout, view_state);
 }
 
 // Set the initial image layout for a passed non-normalized subresource range
