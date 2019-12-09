@@ -23,7 +23,7 @@ if(WIN32)
 elseif(ANDROID)
     add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR -DVK_USE_PLATFORM_ANDROID_KHX)
 elseif(APPLE)
-    add_definitions(-DVK_USE_PLATFORM_MACOS_MVK)
+    add_definitions(-DVK_USE_PLATFORM_MACOS_MVK -DVK_USE_PLATFORM_METAL_EXT)
     if(CMAKE_GENERATOR MATCHES "^Xcode.*")
         add_custom_target(mk_layer_config_dir ALL
                           COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>)
