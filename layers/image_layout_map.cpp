@@ -33,9 +33,10 @@ const ImageSubresourceLayoutMap::ConstIterator ImageSubresourceLayoutMap::end_it
 using InitialLayoutStates = ImageSubresourceLayoutMap::InitialLayoutStates;
 
 template <typename StatesMap>
-static InitialLayoutState* UpdateInitialLayoutStateImpl(StatesMap* initial_layout_state_map, InitialLayoutStates* states_storage,
-                                                        const IndexRange& range, InitialLayoutState* initial_state,
-                                                        const CMD_BUFFER_STATE& cb_state, const IMAGE_VIEW_STATE* view_state) {
+static inline InitialLayoutState* UpdateInitialLayoutStateImpl(StatesMap* initial_layout_state_map,
+                                                               InitialLayoutStates* states_storage, const IndexRange& range,
+                                                               InitialLayoutState* initial_state, const CMD_BUFFER_STATE& cb_state,
+                                                               const IMAGE_VIEW_STATE* view_state) {
     auto& initial_layout_states = *states_storage;
     if (!initial_state) {
         // Allocate on demand...  initial_layout_states_ holds ownership as a unique_ptr, while
@@ -61,8 +62,8 @@ bool ImageSubresourceLayoutMap::SubresourceLayout::operator==(const ImageSubreso
     return is_equal;
 }
 ImageSubresourceLayoutMap::ImageSubresourceLayoutMap(const IMAGE_STATE& image_state)
-    : encoder_(image_state.full_range),
-      image_state_(image_state),
+    : image_state_(image_state),
+      encoder_(image_state.range_encoder),
       layouts_(encoder_.SubresourceCount()),
       current_layout_view_(layouts_.current, encoder_),
       initial_layout_view_(layouts_.initial, encoder_),
@@ -158,6 +159,21 @@ bool ImageSubresourceLayoutMap::SetSubresourceRangeInitialLayout(const CMD_BUFFE
         assert(!layouts_.initial.Tristate());
         return SetSubresourceRangeInitialLayoutImpl(&layouts_.initial.GetBigMap(), &initial_layout_state_map_.GetBigMap(),
                                                     &initial_layout_states_, &range_gen, cb_state, layout, view_state);
+    }
+}
+
+// Unwrap the BothMaps entry here as this is a performance hotspot.
+bool ImageSubresourceLayoutMap::SetSubresourceRangeInitialLayout(const CMD_BUFFER_STATE& cb_state, VkImageLayout layout,
+                                                                 const IMAGE_VIEW_STATE& view_state) {
+    RangeGenerator range_gen(view_state.range_generator);
+    assert(layouts_.initial.GetMode() == initial_layout_state_map_.GetMode());
+    if (layouts_.initial.SmallMode()) {
+        return SetSubresourceRangeInitialLayoutImpl(&layouts_.initial.GetSmallMap(), &initial_layout_state_map_.GetSmallMap(),
+                                                    &initial_layout_states_, &range_gen, cb_state, layout, &view_state);
+    } else {
+        assert(!layouts_.initial.Tristate());
+        return SetSubresourceRangeInitialLayoutImpl(&layouts_.initial.GetBigMap(), &initial_layout_state_map_.GetBigMap(),
+                                                    &initial_layout_states_, &range_gen, cb_state, layout, &view_state);
     }
 }
 

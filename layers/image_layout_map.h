@@ -151,6 +151,8 @@ class ImageSubresourceLayoutMap {
                                    VkImageLayout expected_layout = kInvalidLayout);
     bool SetSubresourceRangeInitialLayout(const CMD_BUFFER_STATE& cb_state, const VkImageSubresourceRange& range,
                                           VkImageLayout layout, const IMAGE_VIEW_STATE* view_state = nullptr);
+    bool SetSubresourceRangeInitialLayout(const CMD_BUFFER_STATE& cb_state, VkImageLayout layout,
+                                          const IMAGE_VIEW_STATE& view_state);
     bool ForRange(const VkImageSubresourceRange& range, const Callback& callback, bool skip_invalid = true,
                   bool always_get_initial = false) const;
     VkImageLayout GetSubresourceLayout(const VkImageSubresource& subresource) const;
@@ -200,8 +202,8 @@ class ImageSubresourceLayoutMap {
     using InitialLayoutStateMap = subresource_adapter::BothRangeMap<InitialLayoutState*, 16>;
 
   private:
-    Encoder encoder_;
     const IMAGE_STATE& image_state_;
+    const Encoder& encoder_;
     LayoutMaps layouts_;
     MapView current_layout_view_;
     MapView initial_layout_view_;
