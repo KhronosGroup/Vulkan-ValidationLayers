@@ -5237,16 +5237,15 @@ bool CoreChecks::PreCallValidateCmdSetViewportWScalingNV(VkCommandBuffer command
                                                          const VkViewportWScalingNV *pViewportWScalings) const {
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
-    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdmdSetViewportWScalingNV()", VK_QUEUE_GRAPHICS_BIT,
-                                      "VUID-vkCmdmdSetViewportWScalingNV-commandBuffer-cmdpool");
+    bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetViewportWScalingNV()", VK_QUEUE_GRAPHICS_BIT,
+                                      "VUID-vkCmdSetViewportWScalingNV-commandBuffer-cmdpool");
 
-    skip |= ValidateCmd(cb_state, CMD_SETVIEWPORTWSCALINGNV, "vkCmdmdSetViewportWScalingNV()");
+    skip |= ValidateCmd(cb_state, CMD_SETVIEWPORTWSCALINGNV, "vkCmdSetViewportWScalingNV()");
 
     if (cb_state->static_status & CBSTATUS_VIEWPORT_W_SCALING_SET) {
-        skip |=
-            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                    HandleToUint64(commandBuffer), "VUID-vkCmdSetViewportWScalingNV-None-01322",
-                    "vkCmdmdSetViewportWScalingNV(): pipeline was created without VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV flag.");
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdSetViewportWScalingNV-None-01322",
+                        "vkCmdSetViewportWScalingNV(): pipeline was created without VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV flag.");
     }
 
     return skip;
