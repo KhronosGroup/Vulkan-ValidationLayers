@@ -532,36 +532,6 @@ class range_map {
         return end();
     }
 
-#if 0
-    // Hint for this insert range is the *lower* bound of the insert as opposed to the upper_bound used
-    // as a non-range hint
-    template <typename Value, typename Split = insert_range_split_bounds>
-    range<iterator> insert_range(const iterator &lower, Value &&value, const Split &split = Split()) {
-        const key_type &bounds = value.first;
-        // We're not robust to a bad hint, so detect it with extreme prejudice
-        // TODO: Add bad hint test to make this robust...
-        RANGE_ASSERT(lower == lower_bound(bounds));
-        range<ImplIterator> impl_bounds(lower.pos_, lower.pos_);
-
-        if (at_impl_end(impl_bounds.begin) || !bounds.intersects(impl_bounds.begin->first)) {
-            // There is nothing in this range lower bound is above bound
-            // Generate the needed range (and we're done...)
-            impl_bounds.begin = impl_insert(impl_bounds.begin, std::forward<Value>(value));
-        } else {
-            // Splitting from an occupied range, trim and infill (with value) as needed
-            RANGE_ASSERT(impl_bounds.begin->first.intersects(bounds));  // Must construct at the lower boundary of range
-            impl_bounds = infill_and_split(bounds, value.second, impl_bounds.begin, Split::split_boundaries);
-        }
-
-        return range<iterator>(iterator(impl_bounds.begin), iterator(impl_bounds.end));
-    }
-
-    template <typename Value, typename Split = insert_range_split_bounds>
-    range<iterator> insert_range(Value &&value, const Split &split = Split()) {
-        return insert_range(lower_bound(value.first), value, split);
-    }
-#endif
-
     iterator lower_bound(const key_type &key) { return iterator(lower_bound_impl(key)); }
 
     const_iterator lower_bound(const key_type &key) const { return const_iterator(lower_bound_impl(key)); }
@@ -625,39 +595,6 @@ class range_map {
         return iterator(impl_insert);
     }
 
-#if 0
-    iterator merge_adjacent(const range<iterator> &bounds) {
-        if (at_end(bounds.begin)) return bounds.begin;
-
-        auto anchor = bounds.begin;
-        while (anchor != bounds.end) {
-            RANGE_ASSERT(!at_end(anchor));
-            auto current = anchor;
-            auto next = current;
-            ++next;
-            // Walk from anchor to find adjoining ranges that have the same value
-            while (next != bounds.end && next->first.is_subsequent_to(current->first) && next->second == anchor->second) {
-                current = next;
-                ++next;
-            }
-            if (current != anchor) {
-                // the while loop above advanced at least onces, so we have something to merge
-                value_type merged = std::make_pair(key_type(anchor->first.begin, current->first.end), std::move(anchor->second));
-                next = erase(range<iterator>(anchor, next));
-                impl_map_.emplace_hint(next.pos_, merged);
-            }
-            // Reset the anchor for the next merge search
-            anchor = next;
-        }
-        RANGE_ASSERT(anchor == bounds.end);
-        return anchor;
-    }
-
-    iterator merge_adjacent(iterator start) { return merge_adjacent(range<iterator>(start, end())); }
-
-    iterator merge_adjacent() { return merge_adjacent(range<iterator>(begin(), end())); }
-#endif
-
     template <typename SplitOp>
     iterator split(const iterator whole_it, const index_type &index, const SplitOp &split_op) {
         auto split_it = split_impl(whole_it.pos_, index, split_op);
@@ -685,26 +622,6 @@ class range_map {
         auto lower = lower_bound(value.first);
         return overwrite_range(lower, value);
     }
-
-#if 0
-    // Need const_iterator/const and iterator/non-const variants using a common implementation
-    bool is_contiguous(const key_type &key, const const_iterator &lower) const {
-        // We're not robust to a bad lower, so detect it with extreme prejudice
-        // TODO: Add bad test to make this robust...
-        RANGE_ASSERT(lower == lower_bound(key));
-        return is_contiguous_impl(this, lower.pos_);
-    }
-
-    bool is_contiguous(const key_type &key, const iterator &lower) {
-        // We're not robust to a bad lower, so detect it with extreme prejudice
-        // TODO: Add bad lower test to make this robust...
-        RANGE_ASSERT(lower == lower_bound(key));
-        return is_contiguous_impl(this, key, lower.pos_);
-    }
-
-    // we don't need a non-const version of this variant
-    bool is_contiguous(const key_type &key) const { return is_contiguous_impl_(this, key, lower_bound(key).pos_); }
-#endif
 
     bool empty() const { return impl_map_.empty(); }
     size_t size() const { return impl_map_.size(); }
@@ -1421,6 +1338,7 @@ class cached_lower_bound_impl {
 
   private:
     Map *const map_;
+    const iterator end_;
     value_type pos_;
 
     index_type index_;
@@ -1444,7 +1362,7 @@ class cached_lower_bound_impl {
     }
 
     inline iterator lower_bound(const index_type &index) { return map_->lower_bound(key_type(index, index + 1)); }
-    inline bool at_end(const iterator &it) const { return it == map_->end(); }
+    inline bool at_end(const iterator &it) const { return it == end_; }
     inline bool at_end() const { return at_end(lower_bound_); }
 
     bool is_lower_than(const index_type &index, const iterator &it) { return at_end(it) || (index < it->first.end); }
@@ -1521,7 +1439,7 @@ class cached_lower_bound_impl {
     // Allow a hint for a *valid* lower bound for current index
     // TODO: if the fail-over becomes a hot-spot, the hint logic could be far more clever (looking at previous/next...)
     cached_lower_bound_impl &invalidate(const iterator &hint) {
-        if ((hint != map_->end()) && hint->first.includes(index_)) {
+        if ((hint != end_) && hint->first.includes(index_)) {
             auto index = index_;  // by copy set modifies in place
             set_value(index, hint);
         } else {
@@ -1544,9 +1462,15 @@ class cached_lower_bound_impl {
     }
 
     // Default constructed object reports valid (correctly) as false, but otherwise will fail (assert) under nearly any use.
-    cached_lower_bound_impl() : map_(nullptr), pos_(index_, lower_bound_, valid_), index_(0), lower_bound_(), valid_(false) {}
+    cached_lower_bound_impl()
+        : map_(nullptr), end_(), pos_(index_, lower_bound_, valid_), index_(0), lower_bound_(), valid_(false) {}
     cached_lower_bound_impl(Map &map, const index_type &index)
-        : map_(&map), pos_(index_, lower_bound_, valid_), index_(index), lower_bound_(lower_bound(index)), valid_(is_valid()) {}
+        : map_(&map),
+          end_(map.end()),
+          pos_(index_, lower_bound_, valid_),
+          index_(index),
+          lower_bound_(lower_bound(index)),
+          valid_(is_valid()) {}
 };
 
 template <typename CachedLowerBound, typename MappedType = typename CachedLowerBound::mapped_type>
@@ -1751,33 +1675,10 @@ bool update_range_value(Map &map, const Range &range, MapValue &&value, value_pr
         if (pos->valid) {
             if ((precedence == value_precedence::prefer_source) && (pos->lower_bound->second != value)) {
                 // We've found a place where we're changing the value, at this point might as well simply over write the range
-                // and be done with it. (save on later merge operations....
+                // and be done with it. (save on later merge operations....)
                 map.overwrite_range(pos->lower_bound, std::make_pair(range, std::forward<MapValue>(value)));
                 return true;
-#if 0
-                // Pointing to an occupied interval, we are updating the values, and the value differs from the current one
-                auto it = pos->lower_bound;
-                auto start = it->first.begin;
-                if (start < range.begin) {
-                    // if the current interval starts before the range, split and skip the leading section
-                    it = map.split(it, range.begin, split_op_keep_both());
-                    pos.invalidate(it);  // let the cached lower bound know we've change the portion of the map it's pointing to
-                    ++it;
-                    start = it->first.begin;
-                    assert(it->first.begin == range.begin);
-                }
-                auto limit = it->first.end;
-                if (limit > range.end) {
-                    // if the current interval ends beyond the range, split and point
-                    it = map.split(it, range.end, split_op_keep_both());
-                    pos.invalidate(it);  // let the cached lower bound know we've change the portion of the map it's pointing to
-                    limit = it->first.end;
-                    assert(it->first.end == range.end);
-                }
-                updated = true;
-                it->second = value;
-                pos.seek(limit);
-#endif
+
             } else {
                 // "prefer_dest" means don't overwrite existing values, so we'll skip this interval.
                 // Point just past the end of this section,  if it's within the given range, it will get filled next iteration

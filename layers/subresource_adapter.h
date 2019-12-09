@@ -94,6 +94,7 @@ class RangeEncoder {
     // Create the encoder suitable to the full range (aspect mask *must* be canonical)
     RangeEncoder(const VkImageSubresourceRange& full_range)
         : RangeEncoder(full_range, AspectParameters::Get(full_range.aspectMask)) {}
+    RangeEncoder(const RangeEncoder& from);
 
     inline bool InRange(const VkImageSubresource& subres) const {
         bool in_range = (subres.mipLevel < limits_.mipLevel) && (subres.arrayLayer < limits_.arrayLayer) &&
@@ -634,27 +635,6 @@ class BothRangeMap {
         }
     }
 
-#if 0
-    using IteratorRange = sparse_container::range<iterator>;
-    template <typename Value, typename Split = insert_range_split_bounds>
-    inline void insert_range(const iterator& lower, Value&& value, const Split& split = Split()) {
-        assert(!Tristate());
-        if (SmallMode()) {
-            assert(lower.SmallMode());
-            small_map_.insert_range(lower.small_it_, std::forward<Value>(value), split);
-        } else {
-            assert(lower.BigMode());
-            big_map_.insert_range(lower.big_it_, std::forward<Value>(value), split);
-        }
-    }
-
-    using IteratorRange = sparse_container::range<iterator>;
-    template <typename Value, typename Split = insert_range_split_bounds>
-    inline void insert_range(Value&& value, const Split& split = Split()) {
-        insert_range(lower_bound(value.first), std::forward<Value>(value), split);
-    }
-
-#endif
     // TODO -- this is supposed to be a const_iterator, which is constructable from an iterator
     inline void insert(const iterator& hint, const value_type& value) {
         assert(!Tristate());
@@ -692,26 +672,7 @@ class BothRangeMap {
             return const_iterator(big_map_.lower_bound(key));
         }
     }
-#if 0
-    inline bool is_contiguous(const key_type& key, const iterator& lower) {
-        if (SmallMode()) {
-            assert(lower.SmallMode());
-            return small_map_.is_contiguous(key, lower.small_it_);
-        } else {
-            assert(lower.BigMode());
-            return big_map_.is_contiguous(key, lower.big_it_);
-        }
-    }
-    inline bool is_contiguous(const key_type& key, const const_iterator& lower) const {
-        if (SmallMode()) {
-            assert(lower.SmallMode());
-            return small_map_.is_contiguous(key, lower.small_it_);
-        } else {
-            assert(lower.BigMode());
-            return big_map_.is_contiguous(key, lower.big_it_);
-        }
-    }
-#endif
+
     template <typename Value>
     inline iterator overwrite_range(const iterator& lower, Value&& value) {
         if (SmallMode()) {
