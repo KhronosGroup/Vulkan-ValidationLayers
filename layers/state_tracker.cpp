@@ -3884,6 +3884,16 @@ void ValidationStateTracker::PostCallRecordCreateMacOSSurfaceMVK(VkInstance inst
 }
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 
+#ifdef VK_USE_PLATFORM_METAL_EXT
+void ValidationStateTracker::PostCallRecordCreateMetalSurfaceEXT(VkInstance instance,
+                                                                 const VkMetalSurfaceCreateInfoEXT *pCreateInfo,
+                                                                 const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                                 VkResult result) {
+    if (VK_SUCCESS != result) return;
+    RecordVulkanSurface(pSurface);
+}
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 void ValidationStateTracker::PostCallRecordCreateWaylandSurfaceKHR(VkInstance instance,
                                                                    const VkWaylandSurfaceCreateInfoKHR *pCreateInfo,

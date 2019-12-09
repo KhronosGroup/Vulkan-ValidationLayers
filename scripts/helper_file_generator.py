@@ -1042,13 +1042,17 @@ class HelperFileOutputGenerator(OutputGenerator):
                        'VkXcbSurfaceCreateInfoKHR',
                        'VkWaylandSurfaceCreateInfoKHR',
                        'VkAndroidSurfaceCreateInfoKHR',
-                       'VkWin32SurfaceCreateInfoKHR'
+                       'VkWin32SurfaceCreateInfoKHR',
+                       'VkIOSSurfaceCreateInfoMVK',
+                       'VkMacOSSurfaceCreateInfoMVK',
+                       'VkMetalSurfaceCreateInfoEXT'
                        ]
 
         # For abstract types just want to save the pointer away
         # since we cannot make a copy.
         abstract_types = ['AHardwareBuffer',
                           'ANativeWindow',
+                          'CAMetalLayer'
                          ]
         for item in self.structMembers:
             if self.NeedSafeStruct(item) == False:
