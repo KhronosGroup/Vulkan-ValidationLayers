@@ -356,6 +356,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_subgroup_size_control{kNotEnabled};
     ExtEnabled vk_ext_texel_buffer_alignment{kNotEnabled};
     ExtEnabled vk_ext_texture_compression_astc_hdr{kNotEnabled};
+    ExtEnabled vk_ext_tooling_info{kNotEnabled};
     ExtEnabled vk_ext_transform_feedback{kNotEnabled};
     ExtEnabled vk_ext_validation_cache{kNotEnabled};
     ExtEnabled vk_ext_vertex_attribute_divisor{kNotEnabled};
@@ -584,6 +585,7 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_texture_compression_astc_hdr, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
+            std::make_pair(VK_EXT_TOOLING_INFO_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_tooling_info, {})),
             std::make_pair(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_transform_feedback, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_VALIDATION_CACHE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_validation_cache, {})),
@@ -908,6 +910,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME,
     VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME,
     VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME,
+    VK_EXT_TOOLING_INFO_EXTENSION_NAME,
     VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME,
     VK_EXT_VALIDATION_CACHE_EXTENSION_NAME,
     VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME,

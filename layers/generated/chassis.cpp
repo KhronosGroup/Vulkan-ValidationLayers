@@ -9191,6 +9191,30 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL GetBufferDeviceAddressEXT(
 }
 
 
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pToolCount,
+    VkPhysicalDeviceToolPropertiesEXT*          pToolProperties) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordGetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties);
+    }
+    VkResult result = DispatchGetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordGetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties, result);
+    }
+    return result;
+}
+
+
 
 
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesNV(
@@ -9836,6 +9860,7 @@ const std::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkCreateMetalSurfaceEXT", {true, (void*)CreateMetalSurfaceEXT}},
 #endif
     {"vkGetBufferDeviceAddressEXT", {false, (void*)GetBufferDeviceAddressEXT}},
+    {"vkGetPhysicalDeviceToolPropertiesEXT", {true, (void*)GetPhysicalDeviceToolPropertiesEXT}},
     {"vkGetPhysicalDeviceCooperativeMatrixPropertiesNV", {true, (void*)GetPhysicalDeviceCooperativeMatrixPropertiesNV}},
     {"vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV", {true, (void*)GetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV}},
 #ifdef VK_USE_PLATFORM_WIN32_KHR

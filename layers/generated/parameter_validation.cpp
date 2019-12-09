@@ -27,7 +27,7 @@
 
 #include "stateless_validation.h"
 
-const uint32_t GeneratedVulkanHeaderVersion = 129;
+const uint32_t GeneratedVulkanHeaderVersion = 130;
 
 const VkAccessFlags AllVkAccessFlagBits = VK_ACCESS_INDIRECT_COMMAND_READ_BIT|VK_ACCESS_INDEX_READ_BIT|VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT|VK_ACCESS_UNIFORM_READ_BIT|VK_ACCESS_INPUT_ATTACHMENT_READ_BIT|VK_ACCESS_SHADER_READ_BIT|VK_ACCESS_SHADER_WRITE_BIT|VK_ACCESS_COLOR_ATTACHMENT_READ_BIT|VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT|VK_ACCESS_TRANSFER_READ_BIT|VK_ACCESS_TRANSFER_WRITE_BIT|VK_ACCESS_HOST_READ_BIT|VK_ACCESS_HOST_WRITE_BIT|VK_ACCESS_MEMORY_READ_BIT|VK_ACCESS_MEMORY_WRITE_BIT|VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT|VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT|VK_ACCESS_COMMAND_PROCESS_READ_BIT_NVX|VK_ACCESS_COMMAND_PROCESS_WRITE_BIT_NVX|VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT|VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV|VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT;
 const VkAttachmentDescriptionFlags AllVkAttachmentDescriptionFlagBits = VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
@@ -109,6 +109,7 @@ const VkBuildAccelerationStructureFlagsNV AllVkBuildAccelerationStructureFlagBit
 const VkGeometryFlagsNV AllVkGeometryFlagBitsNV = VK_GEOMETRY_OPAQUE_BIT_NV|VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_NV;
 const VkGeometryInstanceFlagsNV AllVkGeometryInstanceFlagBitsNV = VK_GEOMETRY_INSTANCE_TRIANGLE_CULL_DISABLE_BIT_NV|VK_GEOMETRY_INSTANCE_TRIANGLE_FRONT_COUNTERCLOCKWISE_BIT_NV|VK_GEOMETRY_INSTANCE_FORCE_OPAQUE_BIT_NV|VK_GEOMETRY_INSTANCE_FORCE_NO_OPAQUE_BIT_NV;
 const VkPipelineCreationFeedbackFlagsEXT AllVkPipelineCreationFeedbackFlagBitsEXT = VK_PIPELINE_CREATION_FEEDBACK_VALID_BIT_EXT|VK_PIPELINE_CREATION_FEEDBACK_APPLICATION_PIPELINE_CACHE_HIT_BIT_EXT|VK_PIPELINE_CREATION_FEEDBACK_BASE_PIPELINE_ACCELERATION_BIT_EXT;
+const VkToolPurposeFlagsEXT AllVkToolPurposeFlagBitsEXT = VK_TOOL_PURPOSE_VALIDATION_BIT_EXT|VK_TOOL_PURPOSE_PROFILING_BIT_EXT|VK_TOOL_PURPOSE_TRACING_BIT_EXT|VK_TOOL_PURPOSE_ADDITIONAL_FEATURES_BIT_EXT|VK_TOOL_PURPOSE_MODIFYING_FEATURES_BIT_EXT|VK_TOOL_PURPOSE_DEBUG_REPORTING_BIT_EXT|VK_TOOL_PURPOSE_DEBUG_MARKERS_BIT_EXT|VK_TOOL_PURPOSE_DEBUG_REPORTING_BIT_EXT|VK_TOOL_PURPOSE_DEBUG_MARKERS_BIT_EXT;
 
 const std::vector<VkPipelineCacheHeaderVersion> AllVkPipelineCacheHeaderVersionEnums = {VK_PIPELINE_CACHE_HEADER_VERSION_ONE, };
 const std::vector<VkResult> AllVkResultEnums = {VK_SUCCESS, VK_NOT_READY, VK_TIMEOUT, VK_EVENT_SET, VK_EVENT_RESET, VK_INCOMPLETE, VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_DEVICE_LOST, VK_ERROR_MEMORY_MAP_FAILED, VK_ERROR_LAYER_NOT_PRESENT, VK_ERROR_EXTENSION_NOT_PRESENT, VK_ERROR_FEATURE_NOT_PRESENT, VK_ERROR_INCOMPATIBLE_DRIVER, VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_FORMAT_NOT_SUPPORTED, VK_ERROR_FRAGMENTED_POOL, VK_ERROR_OUT_OF_POOL_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE, VK_ERROR_SURFACE_LOST_KHR, VK_ERROR_NATIVE_WINDOW_IN_USE_KHR, VK_SUBOPTIMAL_KHR, VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_INCOMPATIBLE_DISPLAY_KHR, VK_ERROR_VALIDATION_FAILED_EXT, VK_ERROR_INVALID_SHADER_NV, VK_ERROR_OUT_OF_POOL_MEMORY_KHR, VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR, VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT, VK_ERROR_FRAGMENTATION_EXT, VK_ERROR_NOT_PERMITTED_EXT, VK_ERROR_INVALID_DEVICE_ADDRESS_EXT, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR, };
@@ -5212,7 +5213,7 @@ bool StatelessValidation::PreCallValidateGetDeviceQueue2(
     {
         skip |= validate_struct_pnext("vkGetDeviceQueue2", "pQueueInfo->pNext", NULL, pQueueInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDeviceQueueInfo2-pNext-pNext");
 
-        skip |= validate_flags("vkGetDeviceQueue2", "pQueueInfo->flags", "VkDeviceQueueCreateFlagBits", AllVkDeviceQueueCreateFlagBits, pQueueInfo->flags, kRequiredFlags, "VUID-VkDeviceQueueInfo2-flags-parameter", "VUID-VkDeviceQueueInfo2-flags-requiredbitmask");
+        skip |= validate_flags("vkGetDeviceQueue2", "pQueueInfo->flags", "VkDeviceQueueCreateFlagBits", AllVkDeviceQueueCreateFlagBits, pQueueInfo->flags, kOptionalFlags, "VUID-VkDeviceQueueInfo2-flags-parameter");
     }
     skip |= validate_required_pointer("vkGetDeviceQueue2", "pQueue", pQueue, "VUID-vkGetDeviceQueue2-pQueue-parameter");
     return skip;
@@ -7916,6 +7917,13 @@ bool StatelessValidation::PreCallValidateGetPipelineExecutableInternalRepresenta
         skip |= validate_required_handle("vkGetPipelineExecutableInternalRepresentationsKHR", "pExecutableInfo->pipeline", pExecutableInfo->pipeline);
     }
     skip |= validate_struct_type_array("vkGetPipelineExecutableInternalRepresentationsKHR", "pInternalRepresentationCount", "pInternalRepresentations", "VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INTERNAL_REPRESENTATION_KHR", pInternalRepresentationCount, pInternalRepresentations, VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INTERNAL_REPRESENTATION_KHR, true, false, false, "VUID-VkPipelineExecutableInternalRepresentationKHR-sType-sType", "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pInternalRepresentations-parameter", kVUIDUndefined);
+    if (pInternalRepresentations != NULL)
+    {
+        for (uint32_t pInternalRepresentationIndex = 0; pInternalRepresentationIndex < *pInternalRepresentationCount; ++pInternalRepresentationIndex)
+        {
+            // No xml-driven validation
+        }
+    }
     return skip;
 }
 
@@ -10472,6 +10480,24 @@ bool StatelessValidation::PreCallValidateGetBufferDeviceAddressEXT(
         skip |= validate_struct_pnext("vkGetBufferDeviceAddressEXT", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkBufferDeviceAddressInfoKHR-pNext-pNext");
 
         skip |= validate_required_handle("vkGetBufferDeviceAddressEXT", "pInfo->buffer", pInfo->buffer);
+    }
+    return skip;
+}
+
+
+
+bool StatelessValidation::PreCallValidateGetPhysicalDeviceToolPropertiesEXT(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pToolCount,
+    VkPhysicalDeviceToolPropertiesEXT*          pToolProperties) const {
+    bool skip = false;
+    skip |= validate_struct_type_array("vkGetPhysicalDeviceToolPropertiesEXT", "pToolCount", "pToolProperties", "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES_EXT", pToolCount, pToolProperties, VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES_EXT, true, true, false, "VUID-VkPhysicalDeviceToolPropertiesEXT-sType-sType", "VUID-vkGetPhysicalDeviceToolPropertiesEXT-pToolProperties-parameter", "VUID-vkGetPhysicalDeviceToolPropertiesEXT-pToolCount-arraylength");
+    if (pToolProperties != NULL)
+    {
+        for (uint32_t pToolIndex = 0; pToolIndex < *pToolCount; ++pToolIndex)
+        {
+            // No xml-driven validation
+        }
     }
     return skip;
 }

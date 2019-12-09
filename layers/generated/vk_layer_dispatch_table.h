@@ -220,6 +220,9 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkCreateMetalSurfaceEXT CreateMetalSurfaceEXT;
 #endif // VK_USE_PLATFORM_METAL_EXT
 
+    // ---- VK_EXT_tooling_info extension commands
+    PFN_vkGetPhysicalDeviceToolPropertiesEXT GetPhysicalDeviceToolPropertiesEXT;
+
     // ---- VK_NV_cooperative_matrix extension commands
     PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesNV GetPhysicalDeviceCooperativeMatrixPropertiesNV;
 
