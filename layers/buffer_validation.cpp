@@ -4268,8 +4268,20 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
         }
     }
 
+    auto chained_opaqueaddr_struct = lvl_find_in_chain<VkBufferOpaqueCaptureAddressCreateInfoKHR>(pCreateInfo->pNext);
+    if (chained_opaqueaddr_struct) {
+        if (!(pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR) &&
+            chained_opaqueaddr_struct->opaqueCaptureAddress != 0) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkBufferCreateInfo-opaqueCaptureAddress-03337",
+                            "vkCreateBuffer(): Non-zero VkBufferOpaqueCaptureAddressCreateInfoKHR::opaqueCaptureAddress"
+                            "requires VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR.");
+        }
+    }
+
     if ((pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR) &&
-        !enabled_features.buffer_address.bufferDeviceAddressCaptureReplay) {
+        !enabled_features.buffer_device_address.bufferDeviceAddressCaptureReplay &&
+        !enabled_features.buffer_device_address_ext.bufferDeviceAddressCaptureReplay) {
         skip |= log_msg(
             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
             "VUID-VkBufferCreateInfo-flags-03338",

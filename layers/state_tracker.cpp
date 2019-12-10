@@ -1041,9 +1041,14 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.scalar_block_layout_features = *scalar_block_layout_features;
     }
 
-    const auto *buffer_address = lvl_find_in_chain<VkPhysicalDeviceBufferAddressFeaturesEXT>(pCreateInfo->pNext);
-    if (buffer_address) {
-        state_tracker->enabled_features.buffer_address = *buffer_address;
+    const auto *buffer_device_address = lvl_find_in_chain<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(pCreateInfo->pNext);
+    if (buffer_device_address) {
+        state_tracker->enabled_features.buffer_device_address = *buffer_device_address;
+    }
+
+    const auto *buffer_device_address_ext = lvl_find_in_chain<VkPhysicalDeviceBufferDeviceAddressFeaturesEXT>(pCreateInfo->pNext);
+    if (buffer_device_address_ext) {
+        state_tracker->enabled_features.buffer_device_address_ext = *buffer_device_address_ext;
     }
 
     const auto *cooperative_matrix_features = lvl_find_in_chain<VkPhysicalDeviceCooperativeMatrixFeaturesNV>(pCreateInfo->pNext);

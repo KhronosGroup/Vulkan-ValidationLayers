@@ -224,6 +224,17 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         }
     }
 
+    {
+        bool khr_bda = IsExtEnabled(extension_state_by_name(device_extensions, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME));
+        bool ext_bda = IsExtEnabled(extension_state_by_name(device_extensions, VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME));
+        if (khr_bda && ext_bda) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            "VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-03328",
+                            "VkDeviceCreateInfo->ppEnabledExtensionNames must not contain both VK_KHR_buffer_device_address and "
+                            "VK_EXT_buffer_device_address.");
+        }
+    }
+
     if (pCreateInfo->pNext != NULL && pCreateInfo->pEnabledFeatures) {
         // Check for get_physical_device_properties2 struct
         const auto *features2 = lvl_find_in_chain<VkPhysicalDeviceFeatures2KHR>(pCreateInfo->pNext);
@@ -3330,6 +3341,68 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkMemoryPriorityAllocateInfoEXT-priority-02602",
                             "priority (=%f) must be between `0` and `1`, inclusive.", chained_prio_struct->priority);
+        }
+
+        VkMemoryAllocateFlags flags = 0;
+        auto flags_info = lvl_find_in_chain<VkMemoryAllocateFlagsInfo>(pAllocateInfo->pNext);
+        if (flags_info) {
+            flags = flags_info->flags;
+        }
+
+        auto opaque_alloc_info = lvl_find_in_chain<VkMemoryOpaqueCaptureAddressAllocateInfoKHR>(pAllocateInfo->pNext);
+        if (opaque_alloc_info && opaque_alloc_info->opaqueCaptureAddress != 0) {
+            if (!(flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkMemoryAllocateInfo-opaqueCaptureAddress-03329",
+                                "If opaqueCaptureAddress is non-zero, VkMemoryAllocateFlagsInfo::flags must include "
+                                "VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR.");
+            }
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+            auto import_memory_win32_handle = lvl_find_in_chain<VkImportMemoryWin32HandleInfoKHR>(pAllocateInfo->pNext);
+#endif
+            auto import_memory_fd = lvl_find_in_chain<VkImportMemoryFdInfoKHR>(pAllocateInfo->pNext);
+            auto import_memory_host_pointer = lvl_find_in_chain<VkImportMemoryHostPointerInfoEXT>(pAllocateInfo->pNext);
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+            auto import_memory_ahb = lvl_find_in_chain<VkImportAndroidHardwareBufferInfoANDROID>(pAllocateInfo->pNext);
+#endif
+
+            if (import_memory_host_pointer) {
+                skip |= log_msg(
+                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    "VUID-VkMemoryAllocateInfo-pNext-03332",
+                    "If the pNext chain includes a VkImportMemoryHostPointerInfoEXT structure, opaqueCaptureAddress must be zero.");
+            }
+            if (
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+                (import_memory_win32_handle && import_memory_win32_handle->handleType) ||
+#endif
+                (import_memory_fd && import_memory_fd->handleType) ||
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+                (import_memory_ahb && import_memory_ahb->buffer) ||
+#endif
+                (import_memory_host_pointer && import_memory_host_pointer->handleType)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkMemoryAllocateInfo-opaqueCaptureAddress-03333",
+                                "If the parameters define an import operation, opaqueCaptureAddress must be zero.");
+            }
+        }
+
+        if (flags) {
+            const auto *bda_features =
+                lvl_find_in_chain<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(physical_device_features2.pNext);
+            if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR) &&
+                (!bda_features || !bda_features->bufferDeviceAddressCaptureReplay)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkMemoryAllocateInfo-flags-03330",
+                                "If VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR is set, "
+                                "bufferDeviceAddressCaptureReplay must be enabled.");
+            }
+            if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR) && (!bda_features || !bda_features->bufferDeviceAddress)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkMemoryAllocateInfo-flags-03331",
+                                "If VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR is set, bufferDeviceAddress must be enabled.");
+            }
         }
     }
     return skip;

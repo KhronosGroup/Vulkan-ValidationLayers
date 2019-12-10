@@ -3403,6 +3403,17 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                                 report_data->FormatHandle(mem_info->dedicated_buffer).c_str(),
                                 report_data->FormatHandle(buffer).c_str(), memoryOffset);
             }
+
+            auto chained_flags_struct = lvl_find_in_chain<VkMemoryAllocateFlagsInfo>(mem_info->alloc_info.pNext);
+            if (enabled_features.buffer_device_address.bufferDeviceAddress &&
+                (buffer_state->createInfo.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR) &&
+                (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR))) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, buffer_handle,
+                                "VUID-vkBindBufferMemory-bufferDeviceAddress-03339",
+                                "%s: If buffer was created with the VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR bit set, "
+                                "memory must have been allocated with the VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR bit set.",
+                                api_name);
+            }
         }
     }
     return skip;
@@ -10861,16 +10872,18 @@ bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversionKHR(VkDevice device,
     return ValidateCreateSamplerYcbcrConversion("vkCreateSamplerYcbcrConversionKHR()", pCreateInfo);
 }
 
-bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT *pInfo) const {
+bool CoreChecks::PreCallValidateGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfoKHR *pInfo) const {
     bool skip = false;
 
-    if (!enabled_features.buffer_address.bufferDeviceAddress) {
+    if (!enabled_features.buffer_device_address.bufferDeviceAddress &&
+        !enabled_features.buffer_device_address_ext.bufferDeviceAddress) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
                         HandleToUint64(pInfo->buffer), "VUID-vkGetBufferDeviceAddressKHR-bufferDeviceAddress-03324",
                         "The bufferDeviceAddress feature must: be enabled.");
     }
 
-    if (physical_device_count > 1 && !enabled_features.buffer_address.bufferDeviceAddressMultiDevice) {
+    if (physical_device_count > 1 && !enabled_features.buffer_device_address.bufferDeviceAddressMultiDevice &&
+        !enabled_features.buffer_device_address_ext.bufferDeviceAddressMultiDevice) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
                         HandleToUint64(pInfo->buffer), "VUID-vkGetBufferDeviceAddressKHR-device-03325",
                         "If device was created with multiple physical devices, then the "
@@ -10887,6 +10900,58 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const
         skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR, true,
                                          "VUID-VkBufferDeviceAddressInfoKHR-buffer-02601", "vkGetBufferDeviceAddressEXT()",
                                          "VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT *pInfo) const {
+    return PreCallValidateGetBufferDeviceAddressKHR(device, (const VkBufferDeviceAddressInfoKHR *)pInfo);
+}
+
+bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureAddressKHR(VkDevice device, const VkBufferDeviceAddressInfoKHR *pInfo) const {
+    bool skip = false;
+
+    if (!enabled_features.buffer_device_address.bufferDeviceAddress) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                        HandleToUint64(pInfo->buffer), "VUID-vkGetBufferOpaqueCaptureAddressKHR-None-03326",
+                        "The bufferDeviceAddress feature must: be enabled.");
+    }
+
+    if (physical_device_count > 1 && !enabled_features.buffer_device_address.bufferDeviceAddressMultiDevice) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
+                        HandleToUint64(pInfo->buffer), "VUID-vkGetBufferOpaqueCaptureAddressKHR-device-03327",
+                        "If device was created with multiple physical devices, then the "
+                        "bufferDeviceAddressMultiDevice feature must: be enabled.");
+    }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(
+    VkDevice device, const VkDeviceMemoryOpaqueCaptureAddressInfoKHR *pInfo) const {
+    bool skip = false;
+
+    if (!enabled_features.buffer_device_address.bufferDeviceAddress) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
+                        HandleToUint64(pInfo->memory), "VUID-vkGetDeviceMemoryOpaqueCaptureAddressKHR-None-03334",
+                        "The bufferDeviceAddress feature must: be enabled.");
+    }
+
+    if (physical_device_count > 1 && !enabled_features.buffer_device_address.bufferDeviceAddressMultiDevice) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
+                        HandleToUint64(pInfo->memory), "VUID-vkGetDeviceMemoryOpaqueCaptureAddressKHR-device-03335",
+                        "If device was created with multiple physical devices, then the "
+                        "bufferDeviceAddressMultiDevice feature must: be enabled.");
+    }
+
+    const DEVICE_MEMORY_STATE *mem_info = GetDevMemState(pInfo->memory);
+    if (mem_info) {
+        auto chained_flags_struct = lvl_find_in_chain<VkMemoryAllocateFlagsInfo>(mem_info->alloc_info.pNext);
+        if (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT,
+                            HandleToUint64(pInfo->memory), "VUID-VkDeviceMemoryOpaqueCaptureAddressInfoKHR-memory-03336",
+                            "memory must have been allocated with VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR.");
+        }
     }
 
     return skip;
