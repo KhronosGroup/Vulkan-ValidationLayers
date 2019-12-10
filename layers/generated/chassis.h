@@ -71,6 +71,11 @@ struct HashedUint64 {
 extern vl_concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
 
 
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(
+    VkInstance                                  instance,
+    const char*                                 funcName);
+
+
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(
     const VkInstanceCreateInfo*                 pCreateInfo,
