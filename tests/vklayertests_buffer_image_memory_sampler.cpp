@@ -6960,7 +6960,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     PFN_vkGetBufferDeviceAddressEXT vkGetBufferDeviceAddressEXT =
-        (PFN_vkGetBufferDeviceAddressEXT)vk::GetInstanceProcAddr(instance(), "vkGetBufferDeviceAddressEXT");
+        (PFN_vkGetBufferDeviceAddressEXT)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressEXT");
 
     VkBufferCreateInfo buffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
     buffer_create_info.size = sizeof(uint32_t);
@@ -7030,7 +7030,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     PFN_vkGetBufferDeviceAddressEXT vkGetBufferDeviceAddressEXT =
-        (PFN_vkGetBufferDeviceAddressEXT)vk::GetInstanceProcAddr(instance(), "vkGetBufferDeviceAddressEXT");
+        (PFN_vkGetBufferDeviceAddressEXT)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressEXT");
 
     VkBufferCreateInfo buffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
     buffer_create_info.size = sizeof(uint32_t);
@@ -7047,6 +7047,221 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferDeviceAddressInfoKHR-buffer-02601");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferDeviceAddressInfoKHR-buffer-02600");
     vkGetBufferDeviceAddressEXT(m_device->device(), &info);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyBuffer(m_device->device(), buffer, NULL);
+}
+
+TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
+    TEST_DESCRIPTION("Test VK_KHR_buffer_device_address.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    std::array<const char *, 1> required_device_extensions = {{VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME}};
+    for (auto device_extension : required_device_extensions) {
+        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
+            m_device_extension_names.push_back(device_extension);
+        } else {
+            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
+            return;
+        }
+    }
+
+    if (DeviceIsMockICD() || DeviceSimulation()) {
+        printf("%s MockICD does not support this feature, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    // Create a device that enables buffer_device_address
+    auto buffer_device_address_features = lvl_init_struct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&buffer_device_address_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
+        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
+    PFN_vkGetDeviceMemoryOpaqueCaptureAddressKHR vkGetDeviceMemoryOpaqueCaptureAddressKHR =
+        (PFN_vkGetDeviceMemoryOpaqueCaptureAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetDeviceMemoryOpaqueCaptureAddressKHR");
+
+    VkBufferCreateInfo buffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    buffer_create_info.size = sizeof(uint32_t);
+    buffer_create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
+    buffer_create_info.flags = VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR;
+    CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-flags-03338");
+
+    buffer_create_info.flags = 0;
+    VkBufferOpaqueCaptureAddressCreateInfoKHR addr_ci = {VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO_KHR};
+    addr_ci.opaqueCaptureAddress = 1;
+    buffer_create_info.pNext = &addr_ci;
+    CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-opaqueCaptureAddress-03337");
+
+    buffer_create_info.pNext = nullptr;
+    VkBuffer buffer;
+    VkResult err = vk::CreateBuffer(m_device->device(), &buffer_create_info, NULL, &buffer);
+    ASSERT_VK_SUCCESS(err);
+
+    VkBufferDeviceAddressInfoKHR info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR};
+    info.buffer = buffer;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferDeviceAddressInfoKHR-buffer-02600");
+    vkGetBufferDeviceAddressKHR(m_device->device(), &info);
+    m_errorMonitor->VerifyFound();
+
+    VkMemoryRequirements buffer_mem_reqs = {};
+    vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
+    VkMemoryAllocateInfo buffer_alloc_info = {};
+    buffer_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
+    m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
+    VkDeviceMemory buffer_mem;
+    err = vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
+    ASSERT_VK_SUCCESS(err);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkBindBufferMemory-bufferDeviceAddress-03339");
+    vk::BindBufferMemory(m_device->device(), buffer, buffer_mem, 0);
+    m_errorMonitor->VerifyFound();
+
+    VkDeviceMemoryOpaqueCaptureAddressInfoKHR mem_opaque_addr_info = {
+        VK_STRUCTURE_TYPE_DEVICE_MEMORY_OPAQUE_CAPTURE_ADDRESS_INFO_KHR};
+    mem_opaque_addr_info.memory = buffer_mem;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkDeviceMemoryOpaqueCaptureAddressInfoKHR-memory-03336");
+    vkGetDeviceMemoryOpaqueCaptureAddressKHR(m_device->device(), &mem_opaque_addr_info);
+    m_errorMonitor->VerifyFound();
+
+    vk::FreeMemory(m_device->device(), buffer_mem, NULL);
+
+    VkMemoryAllocateFlagsInfo alloc_flags = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO};
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    buffer_alloc_info.pNext = &alloc_flags;
+    err = vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
+
+    mem_opaque_addr_info.memory = buffer_mem;
+    m_errorMonitor->ExpectSuccess();
+    vkGetDeviceMemoryOpaqueCaptureAddressKHR(m_device->device(), &mem_opaque_addr_info);
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->ExpectSuccess();
+    vk::BindBufferMemory(m_device->device(), buffer, buffer_mem, 0);
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->ExpectSuccess();
+    vkGetBufferDeviceAddressKHR(m_device->device(), &info);
+    m_errorMonitor->VerifyNotFound();
+
+    vk::FreeMemory(m_device->device(), buffer_mem, NULL);
+    vk::DestroyBuffer(m_device->device(), buffer, NULL);
+}
+
+TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
+    TEST_DESCRIPTION("Test VK_KHR_buffer_device_address.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    std::array<const char *, 1> required_device_extensions = {{VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME}};
+    for (auto device_extension : required_device_extensions) {
+        if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
+            m_device_extension_names.push_back(device_extension);
+        } else {
+            printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, device_extension);
+            return;
+        }
+    }
+
+    if (DeviceIsMockICD() || DeviceSimulation()) {
+        printf("%s MockICD does not support this feature, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    // Create a device that disables buffer_device_address
+    auto buffer_device_address_features = lvl_init_struct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&buffer_device_address_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    buffer_device_address_features.bufferDeviceAddress = VK_FALSE;
+    buffer_device_address_features.bufferDeviceAddressCaptureReplay = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
+        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
+    PFN_vkGetBufferOpaqueCaptureAddressKHR vkGetBufferOpaqueCaptureAddressKHR =
+        (PFN_vkGetBufferOpaqueCaptureAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferOpaqueCaptureAddressKHR");
+    PFN_vkGetDeviceMemoryOpaqueCaptureAddressKHR vkGetDeviceMemoryOpaqueCaptureAddressKHR =
+        (PFN_vkGetDeviceMemoryOpaqueCaptureAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetDeviceMemoryOpaqueCaptureAddressKHR");
+
+    VkBufferCreateInfo buffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    buffer_create_info.size = sizeof(uint32_t);
+    buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    VkBuffer buffer;
+    VkResult err = vk::CreateBuffer(m_device->device(), &buffer_create_info, NULL, &buffer);
+    ASSERT_VK_SUCCESS(err);
+
+    VkBufferDeviceAddressInfoKHR info = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR};
+    info.buffer = buffer;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-vkGetBufferDeviceAddressKHR-bufferDeviceAddress-03324");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferDeviceAddressInfoKHR-buffer-02601");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferDeviceAddressInfoKHR-buffer-02600");
+    vkGetBufferDeviceAddressKHR(m_device->device(), &info);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetBufferOpaqueCaptureAddressKHR-None-03326");
+    vkGetBufferOpaqueCaptureAddressKHR(m_device->device(), &info);
+    m_errorMonitor->VerifyFound();
+
+    VkMemoryRequirements buffer_mem_reqs = {};
+    vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
+    VkMemoryAllocateInfo buffer_alloc_info = {};
+    buffer_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
+    m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
+    VkDeviceMemory buffer_mem;
+    err = vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
+    ASSERT_VK_SUCCESS(err);
+
+    VkDeviceMemoryOpaqueCaptureAddressInfoKHR mem_opaque_addr_info = {
+        VK_STRUCTURE_TYPE_DEVICE_MEMORY_OPAQUE_CAPTURE_ADDRESS_INFO_KHR};
+    mem_opaque_addr_info.memory = buffer_mem;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetDeviceMemoryOpaqueCaptureAddressKHR-None-03334");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkDeviceMemoryOpaqueCaptureAddressInfoKHR-memory-03336");
+    vkGetDeviceMemoryOpaqueCaptureAddressKHR(m_device->device(), &mem_opaque_addr_info);
+    m_errorMonitor->VerifyFound();
+
+    vk::FreeMemory(m_device->device(), buffer_mem, NULL);
+
+    VkMemoryAllocateFlagsInfo alloc_flags = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO};
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR | VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR;
+    buffer_alloc_info.pNext = &alloc_flags;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkMemoryAllocateInfo-flags-03330");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkMemoryAllocateInfo-flags-03331");
+    err = vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyBuffer(m_device->device(), buffer, NULL);
