@@ -8744,3 +8744,46 @@ TEST_F(VkPositiveLayerTest, PipelineStageConditionalRendering) {
     vk::DestroyRenderPass(m_device->device(), rp, nullptr);
     vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
 }
+
+TEST_F(VkPositiveLayerTest, CreatePipelineOverlappingPushConstantRange) {
+    TEST_DESCRIPTION("Test overlapping push-constant ranges.");
+
+    m_errorMonitor->ExpectSuccess();
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    char const *const vsSource =
+        "#version 450\n"
+        "\n"
+        "layout(push_constant, std430) uniform foo { float x[8]; } constants;\n"
+        "void main(){\n"
+        "   gl_Position = vec4(constants.x[0]);\n"
+        "}\n";
+
+    char const *const fsSource =
+        "#version 450\n"
+        "\n"
+        "layout(push_constant, std430) uniform foo { float x[4]; } constants;\n"
+        "void main(){\n"
+        "}\n";
+
+    VkShaderObj const vs(m_device, vsSource, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj const fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPushConstantRange push_constant_ranges[2]{{VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float) * 8},
+                                                {VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(float) * 4}};
+
+    VkPipelineLayoutCreateInfo const pipeline_layout_info{
+        VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, nullptr, 0, 0, nullptr, 2, push_constant_ranges};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.pipeline_layout_ci_ = pipeline_layout_info;
+    pipe.InitState();
+
+    pipe.CreateGraphicsPipeline();
+
+    m_errorMonitor->VerifyNotFound();
+}
