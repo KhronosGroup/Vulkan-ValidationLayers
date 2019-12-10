@@ -1298,16 +1298,9 @@ static bool ValidatePushConstantBlockAgainstPipeline(debug_report_data const *re
 
                 bool found_range = false;
                 for (auto const &range : *push_constant_ranges) {
-                    if (range.offset <= offset && range.offset + range.size >= offset + size) {
+                    if ((range.offset <= offset) && ((range.offset + range.size) >= (offset + size)) &&
+                        (range.stageFlags & stage)) {
                         found_range = true;
-
-                        if ((range.stageFlags & stage) == 0) {
-                            skip |=
-                                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        kVUID_Core_Shader_PushConstantNotAccessibleFromStage,
-                                        "Push constant range covering variable starting at offset %u not accessible from stage %s",
-                                        offset, string_VkShaderStageFlagBits(stage));
-                        }
 
                         break;
                     }
