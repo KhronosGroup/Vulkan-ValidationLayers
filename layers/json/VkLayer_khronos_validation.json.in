@@ -40,6 +40,12 @@
                          "vkGetValidationCacheDataEXT",
                          "vkMergeValidationCachesEXT"
                         ]
+             },
+             {
+                 "name": "VK_EXT_tooling_info",
+                 "spec_version": "1",
+                 "entrypoints": ["vkGetPhysicalDeviceToolPropertiesEXT"
+                        ]
              }
          ]
     }
