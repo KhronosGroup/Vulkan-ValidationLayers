@@ -362,7 +362,8 @@ class StatelessValidation : public ValidationObject {
             }
         } else {
             skip_call |= validate_struct_type_array(apiName, countName, arrayName, sTypeName, (*count), array, sType,
-                                                    countValueRequired, arrayRequired, stype_vuid, param_vuid, count_required_vuid);
+                                                    countValueRequired && (array != nullptr), arrayRequired, stype_vuid, param_vuid,
+                                                    count_required_vuid);
         }
 
         return skip_call;
