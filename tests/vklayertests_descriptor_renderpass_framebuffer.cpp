@@ -525,11 +525,11 @@ TEST_F(VkLayerTest, GpuBufferDeviceAddressOOB) {
         return;
     }
 
-    supported = supported && DeviceExtensionSupported(gpu(), nullptr, VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
-    m_device_extension_names.push_back(VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    supported = supported && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    m_device_extension_names.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
 
     VkPhysicalDeviceFeatures2KHR features2 = {};
-    auto bda_features = lvl_init_struct<VkPhysicalDeviceBufferDeviceAddressFeaturesEXT>();
+    auto bda_features = lvl_init_struct<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
@@ -564,19 +564,32 @@ TEST_F(VkLayerTest, GpuBufferDeviceAddressOOB) {
     buffer0.init(*m_device, bci, mem_props);
 
     // Make another buffer to write to
-    bci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT;
+    bci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
     bci.size = 64;  // Buffer should be 16*4 = 64 bytes
-    VkBufferObj buffer1;
-    buffer1.init(*m_device, bci, mem_props);
+    VkBuffer buffer1;
+    vk::CreateBuffer(device(), &bci, NULL, &buffer1);
+    VkMemoryRequirements buffer_mem_reqs = {};
+    vk::GetBufferMemoryRequirements(device(), buffer1, &buffer_mem_reqs);
+    VkMemoryAllocateInfo buffer_alloc_info = {};
+    buffer_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
+    m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
+    VkMemoryAllocateFlagsInfo alloc_flags = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO};
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+    buffer_alloc_info.pNext = &alloc_flags;
+    VkDeviceMemory buffer_mem;
+    VkResult err = vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem);
+    ASSERT_VK_SUCCESS(err);
+    vk::BindBufferMemory(m_device->device(), buffer1, buffer_mem, 0);
 
     // Get device address of buffer to write to
-    VkBufferDeviceAddressInfoEXT bda_info = {};
-    bda_info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_EXT;
-    bda_info.buffer = buffer1.handle();
-    auto vkGetBufferDeviceAddressEXT =
-        (PFN_vkGetBufferDeviceAddressEXT)vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferDeviceAddressEXT");
-    ASSERT_TRUE(vkGetBufferDeviceAddressEXT != nullptr);
-    auto pBuffer = vkGetBufferDeviceAddressEXT(m_device->device(), &bda_info);
+    VkBufferDeviceAddressInfoKHR bda_info = {};
+    bda_info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR;
+    bda_info.buffer = buffer1;
+    auto vkGetBufferDeviceAddressKHR =
+        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetBufferDeviceAddressKHR");
+    ASSERT_TRUE(vkGetBufferDeviceAddressKHR != nullptr);
+    auto pBuffer = vkGetBufferDeviceAddressKHR(m_device->device(), &bda_info);
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
 
@@ -624,7 +637,7 @@ TEST_F(VkLayerTest, GpuBufferDeviceAddressOOB) {
     VkPipelineObj pipe(m_device);
     pipe.AddShader(&vs);
     pipe.AddDefaultColorAttachment();
-    VkResult err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
+    err = pipe.CreateVKPipeline(pipeline_layout.handle(), renderPass());
     ASSERT_VK_SUCCESS(err);
 
     VkCommandBufferBeginInfo begin_info = {};
@@ -679,6 +692,8 @@ TEST_F(VkLayerTest, GpuBufferDeviceAddressOOB) {
     err = vk::QueueWaitIdle(m_device->m_queue);
     ASSERT_VK_SUCCESS(err);
     m_errorMonitor->VerifyNotFound();
+    vk::DestroyBuffer(m_device->handle(), buffer1, NULL);
+    vk::FreeMemory(m_device->handle(), buffer_mem, NULL);
 }
 
 TEST_F(VkLayerTest, GpuValidationArrayOOBRayTracingShaders) {
