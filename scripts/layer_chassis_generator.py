@@ -128,6 +128,7 @@ class LayerChassisOutputGenerator(OutputGenerator):
         # Include functions here to be interecpted w/ manually implemented function bodies
         'vkGetDeviceProcAddr',
         'vkGetInstanceProcAddr',
+        'vkGetPhysicalDeviceProcAddr',
         'vkCreateDevice',
         'vkDestroyDevice',
         'vkCreateInstance',
@@ -149,8 +150,6 @@ class LayerChassisOutputGenerator(OutputGenerator):
         'vkDestroyValidationCacheEXT',
         'vkMergeValidationCachesEXT',
         'vkGetValidationCacheDataEXT',
-        # We don't wanna hook this function
-        'vkGetPhysicalDeviceProcAddr',
         ]
 
     alt_ret_codes = [
@@ -243,6 +242,11 @@ struct HashedUint64 {
 };
 
 extern vl_concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> unique_id_mapping;
+
+
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(
+    VkInstance                                  instance,
+    const char*                                 funcName);
 """
 
     inline_custom_header_class_definition = """
@@ -755,6 +759,17 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance
     auto &table = layer_data->instance_dispatch_table;
     if (!table.GetInstanceProcAddr) return nullptr;
     return table.GetInstanceProcAddr(instance, funcName);
+}
+
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance instance, const char *funcName) {
+    const auto &item = name_to_funcptr_map.find(funcName);
+    if (item != name_to_funcptr_map.end()) {
+        return reinterpret_cast<PFN_vkVoidFunction>(item->second.funcptr);
+    }
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
+    auto &table = layer_data->instance_dispatch_table;
+    if (!table.GetPhysicalDeviceProcAddr) return nullptr;
+    return table.GetPhysicalDeviceProcAddr(instance, funcName);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceLayerProperties(uint32_t *pCount, VkLayerProperties *pProperties) {
@@ -1497,6 +1512,11 @@ VK_LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(V
     return vulkan_layer_chassis::GetInstanceProcAddr(instance, funcName);
 }
 
+VK_LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vk_layerGetPhysicalDeviceProcAddr(VkInstance instance,
+                                                                                           const char *funcName) {
+    return vulkan_layer_chassis::GetPhysicalDeviceProcAddr(instance, funcName);
+}
+
 VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface *pVersionStruct) {
     assert(pVersionStruct != NULL);
     assert(pVersionStruct->sType == LAYER_NEGOTIATE_INTERFACE_STRUCT);
@@ -1505,7 +1525,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
     if (pVersionStruct->loaderLayerInterfaceVersion >= 2) {
         pVersionStruct->pfnGetInstanceProcAddr = vkGetInstanceProcAddr;
         pVersionStruct->pfnGetDeviceProcAddr = vkGetDeviceProcAddr;
-        pVersionStruct->pfnGetPhysicalDeviceProcAddr = nullptr;
+        pVersionStruct->pfnGetPhysicalDeviceProcAddr = vk_layerGetPhysicalDeviceProcAddr;
     }
 
     return VK_SUCCESS;
