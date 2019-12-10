@@ -3071,10 +3071,10 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderDescriptorNotAccessible) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, CreatePipelineCheckShaderPushConstantNotAccessible) {
+TEST_F(VkLayerTest, CreatePipelineCheckShaderPushConstantNotDeclared) {
     TEST_DESCRIPTION(
-        "Create a graphics pipeline in which a push constant range containing a push constant block member is not accessible from "
-        "the current shader stage.");
+        "Create a graphics pipeline in which a push constant range containing a push constant block member is not declared in the "
+        "layout.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -3103,9 +3103,8 @@ TEST_F(VkLayerTest, CreatePipelineCheckShaderPushConstantNotAccessible) {
     pipe.InitState();
     pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {}, {push_constant_range});
 
-    m_errorMonitor->SetDesiredFailureMsg(
-        VK_DEBUG_REPORT_ERROR_BIT_EXT,
-        "Push constant range covering variable starting at offset 0 not accessible from stage VK_SHADER_STAGE_VERTEX_BIT");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "Push constant range covering variable starting at offset 0 not declared in layout");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
