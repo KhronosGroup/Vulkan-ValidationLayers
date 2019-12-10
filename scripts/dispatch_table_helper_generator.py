@@ -75,6 +75,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         self.device_extension_list = []       # List of device extension functions
         self.device_stub_list = []            # List of device functions with stubs (promoted or extensions)
         self.extension_type = ''
+
     #
     # Called once at the beginning of each run
     def beginFile(self, genOpts):
@@ -133,13 +134,13 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         ext_enabled_fcn = ''
         device_table = ''
         instance_table = ''
-
         ext_enabled_fcn += self.OutputExtEnabledFunction()
         device_table += self.OutputDispatchTableHelper('device')
         instance_table += self.OutputDispatchTableHelper('instance')
 
         for stub in self.dev_ext_stub_list:
             write(stub, file=self.outFile)
+
         write("\n\n", file=self.outFile)
         write(ext_enabled_fcn, file=self.outFile)
         write("\n", file=self.outFile)

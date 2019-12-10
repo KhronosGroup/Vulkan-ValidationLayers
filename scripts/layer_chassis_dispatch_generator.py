@@ -970,6 +970,23 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
     return result;
 }
 
+VkResult DispatchGetPhysicalDeviceToolPropertiesEXT(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pToolCount,
+    VkPhysicalDeviceToolPropertiesEXT*          pToolProperties)
+{
+    VkResult result = VK_SUCCESS;
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(physicalDevice), layer_data_map);
+    if (layer_data->instance_dispatch_table.GetPhysicalDeviceToolPropertiesEXT == nullptr) {
+        // This layer is the terminator. Set pToolCount to zero.
+        *pToolCount = 0;
+    } else {
+        result = layer_data->instance_dispatch_table.GetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties);
+    }
+
+    return result;
+}
+
 """
     # Separate generated text for source and headers
     ALL_SECTIONS = ['source_file', 'header_file']
@@ -1023,6 +1040,7 @@ VkResult DispatchSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsO
             'vkEnumerateDeviceExtensionProperties',
             'vkEnumerateDeviceLayerProperties',
             'vkEnumerateInstanceVersion',
+            'vkGetPhysicalDeviceToolPropertiesEXT',
             ]
         self.headerVersion = None
         # Internal state - accumulators for different inner block text
