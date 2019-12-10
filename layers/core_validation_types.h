@@ -439,7 +439,7 @@ struct MemRange {
 struct DEVICE_MEMORY_STATE : public BASE_NODE {
     void *object;  // Dispatchable object used to create this memory (device of swapchain)
     VkDeviceMemory mem;
-    VkMemoryAllocateInfo alloc_info;
+    safe_VkMemoryAllocateInfo alloc_info;
     bool is_dedicated;
     VkBuffer dedicated_buffer;
     VkImage dedicated_image;
@@ -462,7 +462,7 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
     DEVICE_MEMORY_STATE(void *disp_object, const VkDeviceMemory in_mem, const VkMemoryAllocateInfo *p_alloc_info)
         : object(disp_object),
           mem(in_mem),
-          alloc_info(*p_alloc_info),
+          alloc_info(p_alloc_info),
           is_dedicated(false),
           dedicated_buffer(VK_NULL_HANDLE),
           dedicated_image(VK_NULL_HANDLE),
@@ -1681,7 +1681,8 @@ struct DeviceFeatures {
     VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vtx_attrib_divisor_features;
     VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR uniform_buffer_standard_layout;
     VkPhysicalDeviceScalarBlockLayoutFeaturesEXT scalar_block_layout_features;
-    VkPhysicalDeviceBufferAddressFeaturesEXT buffer_address;
+    VkPhysicalDeviceBufferDeviceAddressFeaturesKHR buffer_device_address;
+    VkPhysicalDeviceBufferDeviceAddressFeaturesEXT buffer_device_address_ext;
     VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperative_matrix_features;
     VkPhysicalDeviceHostQueryResetFeaturesEXT host_query_reset_features;
     VkPhysicalDeviceComputeShaderDerivativesFeaturesNV compute_shader_derivatives_features;

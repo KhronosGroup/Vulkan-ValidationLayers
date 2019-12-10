@@ -1556,6 +1556,10 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
             : IsEnabled([=](const DeviceFeatures &features) { return features.fragment_shader_interlock_features.*ptr; }) {}
         FeaturePointer(VkBool32 VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT::*ptr)
             : IsEnabled([=](const DeviceFeatures &features) { return features.demote_to_helper_invocation_features.*ptr; }) {}
+        FeaturePointer(VkBool32 VkPhysicalDeviceBufferDeviceAddressFeaturesEXT::*ptr)
+            : IsEnabled([=](const DeviceFeatures &features) { return features.buffer_device_address_ext.*ptr; }) {}
+        FeaturePointer(VkBool32 VkPhysicalDeviceBufferDeviceAddressFeaturesKHR::*ptr)
+            : IsEnabled([=](const DeviceFeatures &features) { return features.buffer_device_address.*ptr; }) {}
     };
 
     struct CapabilityInfo {
@@ -1659,6 +1663,10 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
         {spv::CapabilityFragmentShaderPixelInterlockEXT,        {"VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::fragmentShaderPixelInterlock",        &VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::fragmentShaderPixelInterlock,          &DeviceExtensions::vk_ext_fragment_shader_interlock}},
         {spv::CapabilityFragmentShaderShadingRateInterlockEXT,  {"VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::fragmentShaderShadingRateInterlock",  &VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT::fragmentShaderShadingRateInterlock,    &DeviceExtensions::vk_ext_fragment_shader_interlock}},
         {spv::CapabilityDemoteToHelperInvocationEXT,       {"VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT::shaderDemoteToHelperInvocation",       &VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT::shaderDemoteToHelperInvocation,         &DeviceExtensions::vk_ext_shader_demote_to_helper_invocation}},
+
+        {spv::CapabilityPhysicalStorageBufferAddressesEXT, {"VkPhysicalDeviceBufferDeviceAddressFeaturesEXT::bufferDeviceAddress", &VkPhysicalDeviceBufferDeviceAddressFeaturesEXT::bufferDeviceAddress, &DeviceExtensions::vk_ext_buffer_device_address}},
+        // Should be non-EXT token, but Android SPIRV-Headers are out of date, and the token value is the same anyway
+        {spv::CapabilityPhysicalStorageBufferAddressesEXT, {"VkPhysicalDeviceBufferDeviceAddressFeaturesKHR::bufferDeviceAddress", &VkPhysicalDeviceBufferDeviceAddressFeaturesKHR::bufferDeviceAddress, &DeviceExtensions::vk_khr_buffer_device_address}},
     };
     // clang-format on
 
