@@ -940,3 +940,49 @@ bool ObjectLifetimes::PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device,
 
     return skip;
 }
+
+bool ObjectLifetimes::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device,
+                                                                    const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo,
+                                                                    const VkAllocationCallbacks *pAllocator,
+                                                                    VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate) const {
+    bool skip = false;
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateDescriptorUpdateTemplate-device-parameter",
+                           kVUIDUndefined);
+    if (pCreateInfo) {
+        if (pCreateInfo->templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
+            skip |= ValidateObject(pCreateInfo->descriptorSetLayout, kVulkanObjectTypeDescriptorSetLayout, false,
+                                   "VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00350",
+                                   "VUID-VkDescriptorUpdateTemplateCreateInfo-commonparent");
+        }
+        if (pCreateInfo->templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR) {
+            skip |= ValidateObject(pCreateInfo->pipelineLayout, kVulkanObjectTypePipelineLayout, false,
+                                   "VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00352",
+                                   "VUID-VkDescriptorUpdateTemplateCreateInfo-commonparent");
+        }
+    }
+
+    return skip;
+}
+
+bool ObjectLifetimes::PreCallValidateCreateDescriptorUpdateTemplateKHR(
+    VkDevice device, const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+    VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate) const {
+    return PreCallValidateCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate);
+}
+
+void ObjectLifetimes::PostCallRecordCreateDescriptorUpdateTemplate(VkDevice device,
+                                                                   const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo,
+                                                                   const VkAllocationCallbacks *pAllocator,
+                                                                   VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate,
+                                                                   VkResult result) {
+    if (result != VK_SUCCESS) return;
+    CreateObject(*pDescriptorUpdateTemplate, kVulkanObjectTypeDescriptorUpdateTemplate, pAllocator);
+}
+
+void ObjectLifetimes::PostCallRecordCreateDescriptorUpdateTemplateKHR(VkDevice device,
+                                                                      const VkDescriptorUpdateTemplateCreateInfo *pCreateInfo,
+                                                                      const VkAllocationCallbacks *pAllocator,
+                                                                      VkDescriptorUpdateTemplate *pDescriptorUpdateTemplate,
+                                                                      VkResult result) {
+    return PostCallRecordCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate, result);
+}
