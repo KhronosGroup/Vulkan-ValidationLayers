@@ -349,6 +349,21 @@ class ValidationStateTracker : public ValidationObject {
         return found_it->second;
     };
 
+    // When needing to share ownership, control over constness of access with another object (i.e. adding references while
+    // not modifying the contents of the ValidationStateTracker)
+    template <typename State>
+    typename AccessorTraits<State>::SharedType GetConstCastShared(typename AccessorTraits<State>::HandleType handle) const {
+        using Traits = AccessorTraits<State>;
+        auto map_member = Traits::Map();
+        const typename Traits::MapType& map =
+            (Traits::kInstanceScope && (this->*map_member).size() == 0) ? instance_state->*map_member : this->*map_member;
+
+        const auto found_it = map.find(handle);
+        if (found_it == map.cend()) {
+            return nullptr;
+        }
+        return found_it->second;
+    };
     // Accessors for the VALSTATE... maps
     std::shared_ptr<const cvdescriptorset::DescriptorSetLayout> GetDescriptorSetLayoutShared(VkDescriptorSetLayout dsLayout) const {
         return GetShared<cvdescriptorset::DescriptorSetLayout>(dsLayout);
