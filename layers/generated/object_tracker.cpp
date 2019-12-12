@@ -2248,32 +2248,6 @@ void ObjectLifetimes::PreCallRecordDestroySamplerYcbcrConversion(
 
 }
 
-bool ObjectLifetimes::PreCallValidateCreateDescriptorUpdateTemplate(
-    VkDevice                                    device,
-    const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate) const {
-    bool skip = false;
-    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateDescriptorUpdateTemplate-device-parameter", kVUIDUndefined);
-    if (pCreateInfo) {
-        skip |= ValidateObject(pCreateInfo->descriptorSetLayout, kVulkanObjectTypeDescriptorSetLayout, true, kVUIDUndefined, "VUID-VkDescriptorUpdateTemplateCreateInfo-commonparent");
-        skip |= ValidateObject(pCreateInfo->pipelineLayout, kVulkanObjectTypePipelineLayout, true, kVUIDUndefined, "VUID-VkDescriptorUpdateTemplateCreateInfo-commonparent");
-    }
-
-    return skip;
-}
-
-void ObjectLifetimes::PostCallRecordCreateDescriptorUpdateTemplate(
-    VkDevice                                    device,
-    const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate,
-    VkResult                                    result) {
-    if (result != VK_SUCCESS) return;
-    CreateObject(*pDescriptorUpdateTemplate, kVulkanObjectTypeDescriptorUpdateTemplate, pAllocator);
-
-}
-
 bool ObjectLifetimes::PreCallValidateDestroyDescriptorUpdateTemplate(
     VkDevice                                    device,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
@@ -3080,32 +3054,6 @@ bool ObjectLifetimes::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(
     skip |= ValidateObject(layout, kVulkanObjectTypePipelineLayout, false, "VUID-vkCmdPushDescriptorSetWithTemplateKHR-layout-parameter", "VUID-vkCmdPushDescriptorSetWithTemplateKHR-commonparent");
 
     return skip;
-}
-
-bool ObjectLifetimes::PreCallValidateCreateDescriptorUpdateTemplateKHR(
-    VkDevice                                    device,
-    const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate) const {
-    bool skip = false;
-    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateDescriptorUpdateTemplate-device-parameter", kVUIDUndefined);
-    if (pCreateInfo) {
-        skip |= ValidateObject(pCreateInfo->descriptorSetLayout, kVulkanObjectTypeDescriptorSetLayout, true, kVUIDUndefined, "VUID-VkDescriptorUpdateTemplateCreateInfo-commonparent");
-        skip |= ValidateObject(pCreateInfo->pipelineLayout, kVulkanObjectTypePipelineLayout, true, kVUIDUndefined, "VUID-VkDescriptorUpdateTemplateCreateInfo-commonparent");
-    }
-
-    return skip;
-}
-
-void ObjectLifetimes::PostCallRecordCreateDescriptorUpdateTemplateKHR(
-    VkDevice                                    device,
-    const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate,
-    VkResult                                    result) {
-    if (result != VK_SUCCESS) return;
-    CreateObject(*pDescriptorUpdateTemplate, kVulkanObjectTypeDescriptorUpdateTemplate, pAllocator);
-
 }
 
 bool ObjectLifetimes::PreCallValidateDestroyDescriptorUpdateTemplateKHR(
