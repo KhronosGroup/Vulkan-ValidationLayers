@@ -10244,8 +10244,8 @@ bool CoreChecks::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwapcha
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
                         kVUID_Core_Swapchain_InvalidCount,
-                        "vkGetSwapchainImagesKHR() called with non-NULL pSwapchainImageCount, and with pSwapchainImages set to a "
-                        "value (%d) that is greater than the value (%d) that was returned when pSwapchainImageCount was NULL.",
+                        "vkGetSwapchainImagesKHR() called with non-NULL pSwapchainImages, and with pSwapchainImageCount set to a "
+                        "value (%d) that is greater than the value (%d) that was returned when pSwapchainImages was NULL.",
                         *pSwapchainImageCount, swapchain_state->get_swapchain_image_count);
         }
     }
