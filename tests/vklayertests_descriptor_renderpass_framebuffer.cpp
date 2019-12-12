@@ -7531,6 +7531,7 @@ TEST_F(VkLayerTest, CreateDescriptorUpdateTemplate) {
         (PFN_vkDestroyDescriptorUpdateTemplateKHR)vk::GetDeviceProcAddr(m_device->device(), "vkDestroyDescriptorUpdateTemplateKHR");
     ASSERT_NE(vkDestroyDescriptorUpdateTemplateKHR, nullptr);
 
+    uint64_t badhandle = 0xcadecade;
     VkDescriptorUpdateTemplateEntry entries = {0, 0, 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, sizeof(VkBuffer)};
     VkDescriptorUpdateTemplateCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO;
@@ -7553,8 +7554,22 @@ TEST_F(VkLayerTest, CreateDescriptorUpdateTemplate) {
     // descriptorSetLayout is NULL
     do_test("VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00350");
 
-    // Push descriptor type template
+    // Bad pipelineLayout handle, to be ignored if templatType is DESCRIPTOR_SET
+    {
+        create_info.pipelineLayout = reinterpret_cast<VkPipelineLayout &>(badhandle);
+        create_info.descriptorSetLayout = ds_layout_ub.handle();
+        VkDescriptorUpdateTemplateKHR dut = VK_NULL_HANDLE;
+        m_errorMonitor->ExpectSuccess();
+        if (VK_SUCCESS == vkCreateDescriptorUpdateTemplateKHR(m_device->handle(), &create_info, nullptr, &dut)) {
+            vkDestroyDescriptorUpdateTemplateKHR(m_device->handle(), dut, nullptr);
+        }
+        m_errorMonitor->VerifyNotFound();
+    }
+
     create_info.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS_KHR;
+    // Bad pipelineLayout handle
+    do_test("VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00352");
+
     create_info.pipelineBindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
     create_info.pipelineLayout = pipeline_layout.handle();
     create_info.set = 2;
@@ -7576,6 +7591,21 @@ TEST_F(VkLayerTest, CreateDescriptorUpdateTemplate) {
     // Invalid set #
     create_info.set = 42;
     do_test("VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00353");
+
+    // Bad descriptorSetLayout handle, to be ignored if templateType is PUSH_DESCRIPTORS
+    {
+        create_info.set = 2;
+        create_info.descriptorSetLayout = reinterpret_cast<VkDescriptorSetLayout &>(badhandle);
+        VkDescriptorUpdateTemplateKHR dut = VK_NULL_HANDLE;
+        m_errorMonitor->ExpectSuccess();
+        if (VK_SUCCESS == vkCreateDescriptorUpdateTemplateKHR(m_device->handle(), &create_info, nullptr, &dut)) {
+            vkDestroyDescriptorUpdateTemplateKHR(m_device->handle(), dut, nullptr);
+        }
+        m_errorMonitor->VerifyNotFound();
+    }
+    // Bad descriptorSetLayout handle
+    create_info.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+    do_test("VUID-VkDescriptorUpdateTemplateCreateInfo-templateType-00350");
 }
 
 TEST_F(VkLayerTest, InlineUniformBlockEXT) {
