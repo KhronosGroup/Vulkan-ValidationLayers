@@ -91,6 +91,7 @@ class StatelessValidation : public ValidationObject {
   public:
     VkPhysicalDeviceLimits device_limits = {};
     safe_VkPhysicalDeviceFeatures2 physical_device_features2;
+    void *device_createinfo_pnext;
     const VkPhysicalDeviceFeatures &physical_device_features = physical_device_features2.features;
 
     // Override chassis read/write locks for this validation object
@@ -895,7 +896,7 @@ class StatelessValidation : public ValidationObject {
         bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
         const char *vuid;
         const auto *separate_depth_stencil_layouts_features =
-            lvl_find_in_chain<VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR>(physical_device_features2.pNext);
+            lvl_find_in_chain<VkPhysicalDeviceSeparateDepthStencilLayoutsFeaturesKHR>(device_createinfo_pnext);
 
         for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
             const auto *attachment_description_stencil_layout =

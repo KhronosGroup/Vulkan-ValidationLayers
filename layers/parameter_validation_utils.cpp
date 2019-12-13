@@ -199,7 +199,7 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         tmp_features2_state.features = {};
     }
     // Use pCreateInfo->pNext to get full chain
-    tmp_features2_state.pNext = SafePnextCopy(pCreateInfo->pNext);
+    stateless_validation->device_createinfo_pnext = SafePnextCopy(pCreateInfo->pNext);
     stateless_validation->physical_device_features2 = tmp_features2_state;
 }
 
@@ -1692,7 +1692,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                             }
                         }
                         const auto *line_features =
-                            lvl_find_in_chain<VkPhysicalDeviceLineRasterizationFeaturesEXT>(physical_device_features2.pNext);
+                            lvl_find_in_chain<VkPhysicalDeviceLineRasterizationFeaturesEXT>(device_createinfo_pnext);
                         if (line_state->lineRasterizationMode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_EXT &&
                             (!line_features || !line_features->rectangularLines)) {
                             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -2498,8 +2498,7 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
 
         const auto *conditional_rendering = lvl_find_in_chain<VkCommandBufferInheritanceConditionalRenderingInfoEXT>(pInfo->pNext);
         if (conditional_rendering) {
-            const auto *cr_features =
-                lvl_find_in_chain<VkPhysicalDeviceConditionalRenderingFeaturesEXT>(physical_device_features2.pNext);
+            const auto *cr_features = lvl_find_in_chain<VkPhysicalDeviceConditionalRenderingFeaturesEXT>(device_createinfo_pnext);
             const auto inherited_conditional_rendering = cr_features && cr_features->inheritedConditionalRendering;
             if (!inherited_conditional_rendering && conditional_rendering->conditionalRenderingEnable == VK_TRUE) {
                 skip |= log_msg(
@@ -3416,7 +3415,7 @@ bool StatelessValidation::manual_PreCallValidateAllocateMemory(VkDevice device, 
 
         if (flags) {
             const auto *bda_features =
-                lvl_find_in_chain<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(physical_device_features2.pNext);
+                lvl_find_in_chain<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>(device_createinfo_pnext);
             if ((flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR) &&
                 (!bda_features || !bda_features->bufferDeviceAddressCaptureReplay)) {
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -3736,8 +3735,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuff
                         "vkCmdBindIndexBuffer() indexType must not be VK_INDEX_TYPE_NONE_NV.");
     }
 
-    const auto *index_type_uint8_features =
-        lvl_find_in_chain<VkPhysicalDeviceIndexTypeUint8FeaturesEXT>(physical_device_features2.pNext);
+    const auto *index_type_uint8_features = lvl_find_in_chain<VkPhysicalDeviceIndexTypeUint8FeaturesEXT>(device_createinfo_pnext);
     if (indexType == VK_INDEX_TYPE_UINT8_EXT && !index_type_uint8_features->indexTypeUint8) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                         HandleToUint64(commandBuffer), "VUID-vkCmdBindIndexBuffer-indexType-02765",
@@ -3821,7 +3819,7 @@ bool StatelessValidation::ValidateCreateSamplerYcbcrConversion(VkDevice device,
     bool skip = false;
 
     // Check samplerYcbcrConversion feature is set
-    const auto *ycbcr_features = lvl_find_in_chain<VkPhysicalDeviceSamplerYcbcrConversionFeatures>(physical_device_features2.pNext);
+    const auto *ycbcr_features = lvl_find_in_chain<VkPhysicalDeviceSamplerYcbcrConversionFeatures>(device_createinfo_pnext);
     if ((ycbcr_features == nullptr) || (ycbcr_features->samplerYcbcrConversion == VK_FALSE)) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         "VUID-vkCreateSamplerYcbcrConversion-None-01648", "samplerYcbcrConversion must be enabled to call %s.",
