@@ -38,6 +38,9 @@
 #include <intrin.h>  // For __lzcnt()
 #endif
 
+#define STRINGIFY(s) STRINGIFY_HELPER(s)
+#define STRINGIFY_HELPER(s) #s
+
 #ifdef __cplusplus
 // Traits objects to allow string_join to operate on collections of const char *
 template <typename String>
