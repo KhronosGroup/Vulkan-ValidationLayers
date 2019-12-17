@@ -294,7 +294,10 @@ bool ObjectLifetimes::PreCallValidateDestroyInstance(VkInstance instance, const 
                     report_data->FormatHandle(ObjTrackStateTypedHandle(*pNode)).c_str());
 
         // Throw errors if any device objects belonging to this instance have not been destroyed
-        skip |= ReportUndestroyedDeviceObjects(device, "VUID-vkDestroyDevice-device-00378");
+        auto device_layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+        auto obj_lifetimes_data = reinterpret_cast<ObjectLifetimes *>(
+            device_layer_data->GetValidationObject(device_layer_data->object_dispatch, LayerObjectTypeObjectTracker));
+        skip |= obj_lifetimes_data->ReportUndestroyedDeviceObjects(device, "VUID-vkDestroyDevice-device-00378");
 
         skip |= ValidateDestroyObject(device, kVulkanObjectTypeDevice, pAllocator, "VUID-vkDestroyInstance-instance-00630",
                                       "VUID-vkDestroyInstance-instance-00631");
