@@ -157,16 +157,18 @@ void ConvertVkRenderPassCreateInfoToV2KHR(const VkRenderPassCreateInfo& in_struc
             for (uint32_t iai = 0; iai < in_struct.pSubpasses[si].inputAttachmentCount; ++iai) {
                 if (out_struct->pAttachments && in_struct.pSubpasses[si].pInputAttachments) {
                     const auto& input_attachment = in_struct.pSubpasses[si].pInputAttachments[iai];
-                    const auto format = out_struct->pAttachments[input_attachment.attachment].format;
+                    if (input_attachment.attachment != VK_ATTACHMENT_UNUSED) {
+                        const auto format = out_struct->pAttachments[input_attachment.attachment].format;
 
-                    if (FormatIsColor(format)) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_COLOR_BIT;
-                    if (FormatHasDepth(format)) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_DEPTH_BIT;
-                    if (FormatHasStencil(format)) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_STENCIL_BIT;
-                    if (FormatPlaneCount(format) > 1) {
-                        input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_PLANE_0_BIT;
-                        input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_PLANE_1_BIT;
+                        if (FormatIsColor(format)) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_COLOR_BIT;
+                        if (FormatHasDepth(format)) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_DEPTH_BIT;
+                        if (FormatHasStencil(format)) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_STENCIL_BIT;
+                        if (FormatPlaneCount(format) > 1) {
+                            input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_PLANE_0_BIT;
+                            input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_PLANE_1_BIT;
+                        }
+                        if (FormatPlaneCount(format) > 2) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_PLANE_2_BIT;
                     }
-                    if (FormatPlaneCount(format) > 2) input_attachment_aspect_masks[si][iai] |= VK_IMAGE_ASPECT_PLANE_2_BIT;
                 }
             }
         }
