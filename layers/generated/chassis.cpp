@@ -444,6 +444,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
         local_object_dispatch.emplace_back(gpu_assisted);
     }
     gpu_assisted->container_type = LayerObjectTypeGpuAssisted;
+    gpu_assisted->api_version = api_version;
+    gpu_assisted->report_data = report_data;
 
     // If handle wrapping is disabled via the ValidationFeatures extension, override build flag
     if (local_disables.handle_wrapping) {
