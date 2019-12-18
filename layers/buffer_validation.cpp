@@ -1732,43 +1732,32 @@ bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE *cb_node, const I
                                         const VkImageSubresourceRange &range, VkImageLayout dest_image_layout,
                                         const char *func_name) const {
     bool skip = false;
-
-    if (dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-        if (dest_image_layout == VK_IMAGE_LAYOUT_GENERAL) {
-            if (image_state->createInfo.tiling != VK_IMAGE_TILING_LINEAR) {
-                // LAYOUT_GENERAL is allowed, but may not be performance optimal, flag as perf warning.
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                HandleToUint64(image_state->image), kVUID_Core_DrawState_InvalidImageLayout,
-                                "%s: Layout for cleared image should be TRANSFER_DST_OPTIMAL instead of GENERAL.", func_name);
-            }
-        } else if (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR == dest_image_layout) {
-            if (!device_extensions.vk_khr_shared_presentable_image) {
-                // TODO: Add unique error id when available.
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                                HandleToUint64(image_state->image), 0,
-                                "Must enable VK_KHR_shared_presentable_image extension before creating images with a layout type "
-                                "of VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR.");
-
-            } else {
-                if (image_state->shared_presentable) {
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                        HandleToUint64(image_state->image), 0,
-                        "Layout for shared presentable cleared image is %s but can only be VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR.",
-                        string_VkImageLayout(dest_image_layout));
-                }
-            }
-        } else {
-            const char *error_code = "VUID-vkCmdClearColorImage-imageLayout-00005";
-            if (strcmp(func_name, "vkCmdClearDepthStencilImage()") == 0) {
-                error_code = "VUID-vkCmdClearDepthStencilImage-imageLayout-00012";
-            } else {
-                assert(strcmp(func_name, "vkCmdClearColorImage()") == 0);
-            }
+    if (strcmp(func_name, "vkCmdClearDepthStencilImage()") == 0) {
+        if ((dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) && (dest_image_layout != VK_IMAGE_LAYOUT_GENERAL)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
-                            HandleToUint64(image_state->image), error_code,
+                            HandleToUint64(image_state->image), "VUID-vkCmdClearDepthStencilImage-imageLayout-00012",
                             "%s: Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL or GENERAL.", func_name,
                             string_VkImageLayout(dest_image_layout));
+        }
+
+    } else {
+        assert(strcmp(func_name, "vkCmdClearColorImage()") == 0);
+        if (!device_extensions.vk_khr_shared_presentable_image) {
+            if ((dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) && (dest_image_layout != VK_IMAGE_LAYOUT_GENERAL)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                                HandleToUint64(image_state->image), "VUID-vkCmdClearColorImage-imageLayout-00005",
+                                "%s: Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL or GENERAL.", func_name,
+                                string_VkImageLayout(dest_image_layout));
+            }
+        } else {
+            if ((dest_image_layout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) && (dest_image_layout != VK_IMAGE_LAYOUT_GENERAL) &&
+                (dest_image_layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR)) {
+                skip |= log_msg(
+                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                    HandleToUint64(image_state->image), "VUID-vkCmdClearColorImage-imageLayout-01394",
+                    "%s: Layout for cleared image is %s but can only be TRANSFER_DST_OPTIMAL, SHARED_PRESENT_KHR, or GENERAL.",
+                    func_name, string_VkImageLayout(dest_image_layout));
+            }
         }
     }
 
