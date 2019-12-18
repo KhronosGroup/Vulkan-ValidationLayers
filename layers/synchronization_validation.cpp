@@ -205,8 +205,10 @@ struct ApplyGlobalBarrierFunctor {
 HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index) const {
     HazardResult hazard;
     auto usage = FlagBit(usage_index);
-    if (IsRead(usage) && IsWriteHazard(usage)) {
-        hazard.Set(READ_AFTER_WRITE, write_tag);
+    if (IsRead(usage)) {
+        if (IsWriteHazard(usage)) {
+            hazard.Set(READ_AFTER_WRITE, write_tag);
+        }
     } else {
         // Assume write
         // TODO determine what to do with READ-WRITE usage states if any

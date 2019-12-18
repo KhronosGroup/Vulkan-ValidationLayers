@@ -80,6 +80,9 @@ class ResourceAccessState : public SyncStageAccess {
     void ApplyMemoryAccessBarrier(VkPipelineStageFlags src_stage_mask, SyncStageAccessFlags src_scope,
                                   VkPipelineStageFlags dst_stage_mask, SyncStageAccessFlags dst_scope);
 
+    ResourceAccessState()
+        : write_barriers(~SyncStageAccessFlags(0)), write_dependency_chain(0), last_read_count(0), last_read_stages(0) {}
+
   private:
     bool IsWriteHazard(SyncStageAccessFlagBits usage) const { return 0 != (usage & ~write_barriers); }
     bool IsReadHazard(VkPipelineStageFlagBits stage, const ReadState &read_access) const {
@@ -88,14 +91,15 @@ class ResourceAccessState : public SyncStageAccess {
     // With reads, each must be "safe" relative to it's prior write, so we need only
     // save the most recent write operation (as anything *transitively* unsafe would arleady
     // be included
-    SyncStageAccessFlagBits last_write;  // only the most recent write
-    ResourceUsageTag write_tag;
     SyncStageAccessFlags write_barriers;  // union of applicable barrier masks since last write
     VkPipelineStageFlags write_dependency_chain;  // intiially zero, but accumulating the dstStages of barriers if they chain.
-
-    std::array<ReadState, 8 * sizeof(VkPipelineStageFlags)> last_reads;
     uint32_t last_read_count;
     VkPipelineStageFlags last_read_stages;
+
+    ResourceUsageTag write_tag;
+
+    std::array<ReadState, 8 * sizeof(VkPipelineStageFlags)> last_reads;
+    SyncStageAccessFlagBits last_write;  // only the most recent write
 };
 
 using MemoryAccessRangeMap = sparse_container::range_map<VkDeviceSize, ResourceAccessState>;
