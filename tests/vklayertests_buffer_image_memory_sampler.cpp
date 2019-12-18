@@ -4981,6 +4981,58 @@ TEST_F(VkLayerTest, InvalidStorageImageLayout) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, ClearColorImageInvalidImageLayout) {
+    TEST_DESCRIPTION("Check ClearImage layouts with SHARED_PRESENTABLE_IMAGE extension active.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
+    } else {
+        printf("%s %s is not supported on this platform, skipping test.\n", kSkipPrefix,
+               VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkImageObj dst_image(m_device);
+    const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
+    const int32_t tex_width = 32;
+    const int32_t tex_height = 32;
+
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = NULL;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = tex_format;
+    image_create_info.extent.width = tex_width;
+    image_create_info.extent.height = tex_height;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 4;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.flags = 0;
+
+    dst_image.init(&image_create_info);
+    m_commandBuffer->begin();
+
+    VkClearColorValue color_clear_value = {};
+    VkImageSubresourceRange clear_range;
+    clear_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    clear_range.baseMipLevel = 0;
+    clear_range.baseArrayLayer = 0;
+    clear_range.layerCount = 1;
+    clear_range.levelCount = 1;
+
+    // Fail by using bad layout for color clear (GENERAL, SHARED_PRESENT or TRANSFER_DST are permitted).
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdClearColorImage-imageLayout-01394");
+    m_commandBuffer->ClearColorImage(dst_image.handle(), VK_IMAGE_LAYOUT_UNDEFINED, &color_clear_value, 1, &clear_range);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, CreateImageViewBreaksParameterCompatibilityRequirements) {
     TEST_DESCRIPTION(
         "Attempts to create an Image View with a view type that does not match the image type it is being created from.");
