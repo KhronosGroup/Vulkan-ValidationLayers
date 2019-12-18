@@ -424,7 +424,6 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         data[0] = iter.index;
         buffer0.memory().unmap();
 
-        m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotUpdated");
         vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
         vk::QueueWaitIdle(m_device->m_queue);
         m_errorMonitor->VerifyFound();
@@ -490,7 +489,6 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         data[0] = 5;
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Stage = Compute");
-        m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotUpdated");
         vk::QueueSubmit(c_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
         vk::QueueWaitIdle(m_device->m_queue);
         m_errorMonitor->VerifyFound();
@@ -499,7 +497,6 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         data[0] = 25;
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "Stage = Compute");
-        m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotUpdated");
         vk::QueueSubmit(c_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
         vk::QueueWaitIdle(m_device->m_queue);
         m_errorMonitor->VerifyFound();
@@ -539,7 +536,7 @@ TEST_F(VkLayerTest, GpuBufferDeviceAddressOOB) {
     supported = supported && bda_features.bufferDeviceAddress;
 
     if (!supported) {
-        printf("Buffer Device Address feature not supported, skipping test\n");
+        printf("%s Buffer Device Address feature not supported, skipping test\n", kSkipPrefix);
         return;
     }
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -1538,7 +1535,6 @@ TEST_F(VkLayerTest, GpuValidationArrayOOBRayTracingShaders) {
             mapped_storage_buffer_data[11] = 0;
             storage_buffer.memory().unmap();
 
-            m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-DrawState-DescriptorSetNotUpdated");
             vk::QueueSubmit(ray_tracing_queue, 1, &submit_info, VK_NULL_HANDLE);
             vk::QueueWaitIdle(ray_tracing_queue);
             m_errorMonitor->VerifyFound();
