@@ -176,6 +176,14 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         phys_dev_ext_props.ray_tracing_props = ray_tracing_props;
     }
 
+    if (device_extensions.vk_ext_transform_feedback) {
+        // Get the needed transform feedback limits
+        auto transform_feedback_props = lvl_init_struct<VkPhysicalDeviceTransformFeedbackPropertiesEXT>();
+        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&transform_feedback_props);
+        DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
+        phys_dev_ext_props.transform_feedback_props = transform_feedback_props;
+    }
+
     stateless_validation->phys_dev_ext_props = this->phys_dev_ext_props;
 
     // Save app-enabled features in this device's validation object
@@ -3765,6 +3773,23 @@ bool StatelessValidation::manual_PreCallValidateAcquireNextImage2KHR(VkDevice de
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,
                         HandleToUint64(pAcquireInfo->swapchain), "VUID-VkAcquireNextImageInfoKHR-semaphore-01782",
                         "vkAcquireNextImage2KHR: pAcquireInfo->semaphore and pAcquireInfo->fence are both VK_NULL_HANDLE.");
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
+                                                                            uint32_t firstInstance, VkBuffer counterBuffer,
+                                                                            VkDeviceSize counterBufferOffset,
+                                                                            uint32_t counterOffset, uint32_t vertexStride) const {
+    bool skip = false;
+
+    if ((vertexStride <= 0) || (vertexStride > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride)) {
+        skip |= log_msg(
+            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, HandleToUint64(counterBuffer),
+            "VUID-vkCmdDrawIndirectByteCountEXT-vertexStride-02289",
+            "vkCmdDrawIndirectByteCountEXT: vertexStride (%d) must be between 0 and maxTransformFeedbackBufferDataStride (%d).",
+            vertexStride, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferDataStride);
     }
 
     return skip;

@@ -185,6 +185,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdSetViewportWScalingNV',
             'vkAcquireNextImageKHR',
             'vkAcquireNextImage2KHR',
+            'vkCmdDrawIndirectByteCountEXT',
             ]
 
         # Commands to ignore
