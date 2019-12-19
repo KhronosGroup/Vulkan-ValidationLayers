@@ -568,8 +568,8 @@ class CoreChecks : public ValidationStateTracker {
     void UpdateCmdBufImageLayouts(CMD_BUFFER_STATE* pCB);
 
     template <typename T1>
-    bool VerifyBoundMemoryIsValid(VkDeviceMemory mem, const T1 object, const VulkanTypedHandle& typed_handle, const char* api_name,
-                                  const char* error_code) const;
+    bool VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE* mem_state, const T1 object, const VulkanTypedHandle& typed_handle,
+                                  const char* api_name, const char* error_code) const;
 
     bool ValidateLayoutVsAttachmentDescription(const debug_report_data* report_data, RenderPassCreateVersion rp_version,
                                                const VkImageLayout first_layout, const uint32_t attachment,
