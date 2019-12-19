@@ -8194,6 +8194,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndirectByteCountEXT(
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdDrawIndirectByteCountEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_ext_transform_feedback) skip |= OutputExtensionError("vkCmdDrawIndirectByteCountEXT", VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     skip |= validate_required_handle("vkCmdDrawIndirectByteCountEXT", "counterBuffer", counterBuffer);
+    if (!skip) skip |= manual_PreCallValidateCmdDrawIndirectByteCountEXT(commandBuffer, instanceCount, firstInstance, counterBuffer, counterBufferOffset, counterOffset, vertexStride);
     return skip;
 }
 

@@ -103,6 +103,7 @@ class StatelessValidation : public ValidationObject {
         VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
         VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props;
         VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props;
+        VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
 
@@ -1375,6 +1376,11 @@ class StatelessValidation : public ValidationObject {
 
     bool manual_PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
                                                     uint32_t *pImageIndex) const;
+
+    bool manual_PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
+                                                           uint32_t firstInstance, VkBuffer counterBuffer,
+                                                           VkDeviceSize counterBufferOffset, uint32_t counterOffset,
+                                                           uint32_t vertexStride) const;
 
 #include "parameter_validation.h"
 };  // Class StatelessValidation
