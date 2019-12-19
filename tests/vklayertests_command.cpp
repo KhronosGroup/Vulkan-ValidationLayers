@@ -4446,6 +4446,47 @@ TEST_F(VkLayerTest, DrawIndirect) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkLayerTest, DrawIndirectByteCountEXT) {
+    TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndirectByteCountEXT");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
+    } else {
+        printf("%s VK_EXT_transform_feedback extension not supported, skipping test\n", kSkipPrefix);
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    PFN_vkCmdDrawIndirectByteCountEXT fpvkCmdDrawIndirectByteCountEXT =
+        (PFN_vkCmdDrawIndirectByteCountEXT)vk::GetDeviceProcAddr(device(), "vkCmdDrawIndirectByteCountEXT");
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    VkBufferCreateInfo buffer_create_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    buffer_create_info.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+    buffer_create_info.size = 1024;
+    VkBufferObj counter_buffer;
+    counter_buffer.init(*m_device, buffer_create_info);
+
+    // VUID-vkCmdDrawIndirectByteCountEXT-vertexStride-02289
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirectByteCountEXT-vertexStride-02289");
+    fpvkCmdDrawIndirectByteCountEXT(m_commandBuffer->handle(), 1, 0, counter_buffer.handle(), 0, 1, 0xCADECADE);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, DrawIndirectCountKHR) {
     TEST_DESCRIPTION("Test covered valid usage for vkCmdDrawIndirectCountKHR");
 
