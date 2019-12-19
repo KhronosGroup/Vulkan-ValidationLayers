@@ -997,7 +997,7 @@ class ValidationStateTracker : public ValidationObject {
     void AddMemObjInfo(void* object, const VkDeviceMemory mem, const VkMemoryAllocateInfo* pAllocateInfo);
     void AddFramebufferBinding(CMD_BUFFER_STATE* cb_state, FRAMEBUFFER_STATE* fb_state);
     void ClearMemoryObjectBindings(const VulkanTypedHandle& typed_handle);
-    void ClearMemoryObjectBinding(const VulkanTypedHandle& typed_handle, VkDeviceMemory mem);
+    void ClearMemoryObjectBinding(const VulkanTypedHandle& typed_handle, DEVICE_MEMORY_STATE* mem_info);
     void DecrementBoundResources(CMD_BUFFER_STATE const* cb_node);
     void DeleteDescriptorSetPools();
     void FreeCommandBufferStates(COMMAND_POOL_STATE* pool_state, const uint32_t command_buffer_count,

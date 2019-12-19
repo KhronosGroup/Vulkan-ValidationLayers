@@ -171,11 +171,12 @@ void CoreChecks::IncrementCommandCount(VkCommandBuffer commandBuffer) {
 
 // For given mem object, verify that it is not null or UNBOUND, if it is, report error. Return skip value.
 template <typename T1>
-bool CoreChecks::VerifyBoundMemoryIsValid(VkDeviceMemory mem, const T1 object, const VulkanTypedHandle &typed_handle,
-                                          const char *api_name, const char *error_code) const {
+bool CoreChecks::VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE *mem_state, const T1 object,
+                                          const VulkanTypedHandle &typed_handle, const char *api_name,
+                                          const char *error_code) const {
     bool result = false;
     auto type_name = object_string[typed_handle.type];
-    if (VK_NULL_HANDLE == mem) {
+    if (!mem_state) {
         result =
             LogError(object, error_code, "%s: %s used with no memory bound. Memory should be bound by calling vkBind%sMemory().",
                      api_name, report_data->FormatHandle(typed_handle).c_str(), type_name + 2);
@@ -207,7 +208,7 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, co
                      report_data->FormatHandle(image_state->bind_swapchain).c_str());
         }
     } else if (0 == (static_cast<uint32_t>(image_state->createInfo.flags) & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
-        result = VerifyBoundMemoryIsValid(image_state->binding.mem, image_state->image,
+        result = VerifyBoundMemoryIsValid(image_state->binding.mem_state.get(), image_state->image,
                                           VulkanTypedHandle(image_state->image, kVulkanObjectTypeImage), api_name, error_code);
     }
     return result;
@@ -218,7 +219,7 @@ bool CoreChecks::ValidateMemoryIsBoundToBuffer(const BUFFER_STATE *buffer_state,
                                                const char *error_code) const {
     bool result = false;
     if (0 == (static_cast<uint32_t>(buffer_state->createInfo.flags) & VK_BUFFER_CREATE_SPARSE_BINDING_BIT)) {
-        result = VerifyBoundMemoryIsValid(buffer_state->binding.mem, buffer_state->buffer,
+        result = VerifyBoundMemoryIsValid(buffer_state->binding.mem_state.get(), buffer_state->buffer,
                                           VulkanTypedHandle(buffer_state->buffer, kVulkanObjectTypeBuffer), api_name, error_code);
     }
     return result;
@@ -227,7 +228,7 @@ bool CoreChecks::ValidateMemoryIsBoundToBuffer(const BUFFER_STATE *buffer_state,
 // Check to see if memory was bound to this acceleration structure
 bool CoreChecks::ValidateMemoryIsBoundToAccelerationStructure(const ACCELERATION_STRUCTURE_STATE *as_state, const char *api_name,
                                                               const char *error_code) const {
-    return VerifyBoundMemoryIsValid(as_state->binding.mem, as_state->acceleration_structure,
+    return VerifyBoundMemoryIsValid(as_state->binding.mem_state.get(), as_state->acceleration_structure,
                                     VulkanTypedHandle(as_state->acceleration_structure, kVulkanObjectTypeAccelerationStructureNV),
                                     api_name, error_code);
 }
@@ -7356,7 +7357,7 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
                 if (!image_data_i || !image_data_j) {
                     continue;
                 }
-                if (image_data_i->binding.mem == image_data_j->binding.mem &&
+                if (image_data_i->binding.mem_state == image_data_j->binding.mem_state &&
                     IsRangeOverlapping(image_data_i->binding.offset, image_data_i->binding.size, image_data_j->binding.offset,
                                        image_data_j->binding.size)) {
                     attachments[i].overlapping.emplace_back(j);

@@ -560,8 +560,7 @@ void ValidationStateTracker::AddCommandBufferBindingAccelerationStructure(CMD_BU
 }
 
 // Clear a single object binding from given memory object
-void ValidationStateTracker::ClearMemoryObjectBinding(const VulkanTypedHandle &typed_handle, VkDeviceMemory mem) {
-    DEVICE_MEMORY_STATE *mem_info = GetDevMemState(mem);
+void ValidationStateTracker::ClearMemoryObjectBinding(const VulkanTypedHandle &typed_handle, DEVICE_MEMORY_STATE *mem_info) {
     // This obj is bound to a memory object. Remove the reference to this object in that memory object's list
     if (mem_info) {
         mem_info->obj_bindings.erase(typed_handle);
@@ -575,10 +574,10 @@ void ValidationStateTracker::ClearMemoryObjectBindings(const VulkanTypedHandle &
     BINDABLE *mem_binding = GetObjectMemBinding(typed_handle);
     if (mem_binding) {
         if (!mem_binding->sparse) {
-            ClearMemoryObjectBinding(typed_handle, mem_binding->binding.mem);
+            ClearMemoryObjectBinding(typed_handle, mem_binding->binding.mem_state.get());
         } else {  // Sparse, clear all bindings
             for (auto &sparse_mem_binding : mem_binding->sparse_bindings) {
-                ClearMemoryObjectBinding(typed_handle, sparse_mem_binding.mem);
+                ClearMemoryObjectBinding(typed_handle, sparse_mem_binding.mem_state.get());
             }
         }
     }
@@ -589,13 +588,12 @@ void ValidationStateTracker::ClearMemoryObjectBindings(const VulkanTypedHandle &
 void ValidationStateTracker::SetMemBinding(VkDeviceMemory mem, BINDABLE *mem_binding, VkDeviceSize memory_offset,
                                            const VulkanTypedHandle &typed_handle) {
     assert(mem_binding);
-    mem_binding->binding.mem = mem;
-    mem_binding->binding.offset = memory_offset;
-    mem_binding->binding.size = mem_binding->requirements.size;
 
     if (mem != VK_NULL_HANDLE) {
         mem_binding->binding.mem_state = GetShared<DEVICE_MEMORY_STATE>(mem);
         if (mem_binding->binding.mem_state) {
+            mem_binding->binding.offset = memory_offset;
+            mem_binding->binding.size = mem_binding->requirements.size;
             mem_binding->binding.mem_state->obj_bindings.insert(typed_handle);
             // For image objects, make sure default memory state is correctly set
             // TODO : What's the best/correct way to handle this?
