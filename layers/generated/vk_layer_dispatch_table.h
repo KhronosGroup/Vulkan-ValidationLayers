@@ -382,6 +382,21 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkUpdateDescriptorSetWithTemplate UpdateDescriptorSetWithTemplate;
     PFN_vkGetDescriptorSetLayoutSupport GetDescriptorSetLayoutSupport;
 
+    // ---- Core 1_2 commands
+    PFN_vkCmdDrawIndirectCount CmdDrawIndirectCount;
+    PFN_vkCmdDrawIndexedIndirectCount CmdDrawIndexedIndirectCount;
+    PFN_vkCreateRenderPass2 CreateRenderPass2;
+    PFN_vkCmdBeginRenderPass2 CmdBeginRenderPass2;
+    PFN_vkCmdNextSubpass2 CmdNextSubpass2;
+    PFN_vkCmdEndRenderPass2 CmdEndRenderPass2;
+    PFN_vkResetQueryPool ResetQueryPool;
+    PFN_vkGetSemaphoreCounterValue GetSemaphoreCounterValue;
+    PFN_vkWaitSemaphores WaitSemaphores;
+    PFN_vkSignalSemaphore SignalSemaphore;
+    PFN_vkGetBufferDeviceAddress GetBufferDeviceAddress;
+    PFN_vkGetBufferOpaqueCaptureAddress GetBufferOpaqueCaptureAddress;
+    PFN_vkGetDeviceMemoryOpaqueCaptureAddress GetDeviceMemoryOpaqueCaptureAddress;
+
     // ---- VK_KHR_swapchain extension commands
     PFN_vkCreateSwapchainKHR CreateSwapchainKHR;
     PFN_vkDestroySwapchainKHR DestroySwapchainKHR;

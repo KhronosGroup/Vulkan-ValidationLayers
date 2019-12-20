@@ -3147,6 +3147,228 @@ void ThreadSafety::PostCallRecordGetDescriptorSetLayoutSupport(
     FinishReadObjectParentInstance(device);
 }
 
+void ThreadSafety::PreCallRecordCmdDrawIndirectCount(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkBuffer                                    countBuffer,
+    VkDeviceSize                                countBufferOffset,
+    uint32_t                                    maxDrawCount,
+    uint32_t                                    stride) {
+    StartWriteObject(commandBuffer);
+    StartReadObject(buffer);
+    StartReadObject(countBuffer);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdDrawIndirectCount(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkBuffer                                    countBuffer,
+    VkDeviceSize                                countBufferOffset,
+    uint32_t                                    maxDrawCount,
+    uint32_t                                    stride) {
+    FinishWriteObject(commandBuffer);
+    FinishReadObject(buffer);
+    FinishReadObject(countBuffer);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCmdDrawIndexedIndirectCount(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkBuffer                                    countBuffer,
+    VkDeviceSize                                countBufferOffset,
+    uint32_t                                    maxDrawCount,
+    uint32_t                                    stride) {
+    StartWriteObject(commandBuffer);
+    StartReadObject(buffer);
+    StartReadObject(countBuffer);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdDrawIndexedIndirectCount(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkBuffer                                    countBuffer,
+    VkDeviceSize                                countBufferOffset,
+    uint32_t                                    maxDrawCount,
+    uint32_t                                    stride) {
+    FinishWriteObject(commandBuffer);
+    FinishReadObject(buffer);
+    FinishReadObject(countBuffer);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCreateRenderPass2(
+    VkDevice                                    device,
+    const VkRenderPassCreateInfo2*              pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkRenderPass*                               pRenderPass) {
+    StartReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PostCallRecordCreateRenderPass2(
+    VkDevice                                    device,
+    const VkRenderPassCreateInfo2*              pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkRenderPass*                               pRenderPass,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device);
+    if (result == VK_SUCCESS) {
+        CreateObject(*pRenderPass);
+    }
+}
+
+void ThreadSafety::PreCallRecordCmdBeginRenderPass2(
+    VkCommandBuffer                             commandBuffer,
+    const VkRenderPassBeginInfo*                pRenderPassBegin,
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo) {
+    StartWriteObject(commandBuffer);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdBeginRenderPass2(
+    VkCommandBuffer                             commandBuffer,
+    const VkRenderPassBeginInfo*                pRenderPassBegin,
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo) {
+    FinishWriteObject(commandBuffer);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCmdNextSubpass2(
+    VkCommandBuffer                             commandBuffer,
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo,
+    const VkSubpassEndInfo*                     pSubpassEndInfo) {
+    StartWriteObject(commandBuffer);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdNextSubpass2(
+    VkCommandBuffer                             commandBuffer,
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo,
+    const VkSubpassEndInfo*                     pSubpassEndInfo) {
+    FinishWriteObject(commandBuffer);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCmdEndRenderPass2(
+    VkCommandBuffer                             commandBuffer,
+    const VkSubpassEndInfo*                     pSubpassEndInfo) {
+    StartWriteObject(commandBuffer);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordCmdEndRenderPass2(
+    VkCommandBuffer                             commandBuffer,
+    const VkSubpassEndInfo*                     pSubpassEndInfo) {
+    FinishWriteObject(commandBuffer);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordResetQueryPool(
+    VkDevice                                    device,
+    VkQueryPool                                 queryPool,
+    uint32_t                                    firstQuery,
+    uint32_t                                    queryCount) {
+    StartReadObjectParentInstance(device);
+    StartReadObject(queryPool);
+}
+
+void ThreadSafety::PostCallRecordResetQueryPool(
+    VkDevice                                    device,
+    VkQueryPool                                 queryPool,
+    uint32_t                                    firstQuery,
+    uint32_t                                    queryCount) {
+    FinishReadObjectParentInstance(device);
+    FinishReadObject(queryPool);
+}
+
+void ThreadSafety::PreCallRecordGetSemaphoreCounterValue(
+    VkDevice                                    device,
+    VkSemaphore                                 semaphore,
+    uint64_t*                                   pValue) {
+    StartReadObjectParentInstance(device);
+    StartReadObject(semaphore);
+}
+
+void ThreadSafety::PostCallRecordGetSemaphoreCounterValue(
+    VkDevice                                    device,
+    VkSemaphore                                 semaphore,
+    uint64_t*                                   pValue,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device);
+    FinishReadObject(semaphore);
+}
+
+void ThreadSafety::PreCallRecordWaitSemaphores(
+    VkDevice                                    device,
+    const VkSemaphoreWaitInfo*                  pWaitInfo,
+    uint64_t                                    timeout) {
+    StartReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PostCallRecordWaitSemaphores(
+    VkDevice                                    device,
+    const VkSemaphoreWaitInfo*                  pWaitInfo,
+    uint64_t                                    timeout,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PreCallRecordSignalSemaphore(
+    VkDevice                                    device,
+    const VkSemaphoreSignalInfo*                pSignalInfo) {
+    StartReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PostCallRecordSignalSemaphore(
+    VkDevice                                    device,
+    const VkSemaphoreSignalInfo*                pSignalInfo,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PreCallRecordGetBufferDeviceAddress(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfo*            pInfo) {
+    StartReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PostCallRecordGetBufferDeviceAddress(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfo*            pInfo,
+    VkDeviceAddress                             result) {
+    FinishReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PreCallRecordGetBufferOpaqueCaptureAddress(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfo*            pInfo) {
+    StartReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PostCallRecordGetBufferOpaqueCaptureAddress(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfo*            pInfo) {
+    FinishReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PreCallRecordGetDeviceMemoryOpaqueCaptureAddress(
+    VkDevice                                    device,
+    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {
+    StartReadObjectParentInstance(device);
+}
+
+void ThreadSafety::PostCallRecordGetDeviceMemoryOpaqueCaptureAddress(
+    VkDevice                                    device,
+    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {
+    FinishReadObjectParentInstance(device);
+}
+
 void ThreadSafety::PreCallRecordDestroySurfaceKHR(
     VkInstance                                  instance,
     VkSurfaceKHR                                surface,
@@ -3929,7 +4151,7 @@ void ThreadSafety::PostCallRecordDestroyDescriptorUpdateTemplateKHR(
 
 void ThreadSafety::PreCallRecordCreateRenderPass2KHR(
     VkDevice                                    device,
-    const VkRenderPassCreateInfo2KHR*           pCreateInfo,
+    const VkRenderPassCreateInfo2*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkRenderPass*                               pRenderPass) {
     StartReadObjectParentInstance(device);
@@ -3937,7 +4159,7 @@ void ThreadSafety::PreCallRecordCreateRenderPass2KHR(
 
 void ThreadSafety::PostCallRecordCreateRenderPass2KHR(
     VkDevice                                    device,
-    const VkRenderPassCreateInfo2KHR*           pCreateInfo,
+    const VkRenderPassCreateInfo2*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkRenderPass*                               pRenderPass,
     VkResult                                    result) {
@@ -3950,7 +4172,7 @@ void ThreadSafety::PostCallRecordCreateRenderPass2KHR(
 void ThreadSafety::PreCallRecordCmdBeginRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    const VkSubpassBeginInfoKHR*                pSubpassBeginInfo) {
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo) {
     StartWriteObject(commandBuffer);
     // Host access to commandBuffer must be externally synchronized
 }
@@ -3958,37 +4180,37 @@ void ThreadSafety::PreCallRecordCmdBeginRenderPass2KHR(
 void ThreadSafety::PostCallRecordCmdBeginRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    const VkSubpassBeginInfoKHR*                pSubpassBeginInfo) {
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo) {
     FinishWriteObject(commandBuffer);
     // Host access to commandBuffer must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordCmdNextSubpass2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassBeginInfoKHR*                pSubpassBeginInfo,
-    const VkSubpassEndInfoKHR*                  pSubpassEndInfo) {
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo,
+    const VkSubpassEndInfo*                     pSubpassEndInfo) {
     StartWriteObject(commandBuffer);
     // Host access to commandBuffer must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordCmdNextSubpass2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassBeginInfoKHR*                pSubpassBeginInfo,
-    const VkSubpassEndInfoKHR*                  pSubpassEndInfo) {
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo,
+    const VkSubpassEndInfo*                     pSubpassEndInfo) {
     FinishWriteObject(commandBuffer);
     // Host access to commandBuffer must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordCmdEndRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassEndInfoKHR*                  pSubpassEndInfo) {
+    const VkSubpassEndInfo*                     pSubpassEndInfo) {
     StartWriteObject(commandBuffer);
     // Host access to commandBuffer must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordCmdEndRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassEndInfoKHR*                  pSubpassEndInfo) {
+    const VkSubpassEndInfo*                     pSubpassEndInfo) {
     FinishWriteObject(commandBuffer);
     // Host access to commandBuffer must be externally synchronized
 }
@@ -4311,14 +4533,14 @@ void ThreadSafety::PostCallRecordGetSemaphoreCounterValueKHR(
 
 void ThreadSafety::PreCallRecordWaitSemaphoresKHR(
     VkDevice                                    device,
-    const VkSemaphoreWaitInfoKHR*               pWaitInfo,
+    const VkSemaphoreWaitInfo*                  pWaitInfo,
     uint64_t                                    timeout) {
     StartReadObjectParentInstance(device);
 }
 
 void ThreadSafety::PostCallRecordWaitSemaphoresKHR(
     VkDevice                                    device,
-    const VkSemaphoreWaitInfoKHR*               pWaitInfo,
+    const VkSemaphoreWaitInfo*                  pWaitInfo,
     uint64_t                                    timeout,
     VkResult                                    result) {
     FinishReadObjectParentInstance(device);
@@ -4326,51 +4548,51 @@ void ThreadSafety::PostCallRecordWaitSemaphoresKHR(
 
 void ThreadSafety::PreCallRecordSignalSemaphoreKHR(
     VkDevice                                    device,
-    const VkSemaphoreSignalInfoKHR*             pSignalInfo) {
+    const VkSemaphoreSignalInfo*                pSignalInfo) {
     StartReadObjectParentInstance(device);
 }
 
 void ThreadSafety::PostCallRecordSignalSemaphoreKHR(
     VkDevice                                    device,
-    const VkSemaphoreSignalInfoKHR*             pSignalInfo,
+    const VkSemaphoreSignalInfo*                pSignalInfo,
     VkResult                                    result) {
     FinishReadObjectParentInstance(device);
 }
 
 void ThreadSafety::PreCallRecordGetBufferDeviceAddressKHR(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoKHR*         pInfo) {
+    const VkBufferDeviceAddressInfo*            pInfo) {
     StartReadObjectParentInstance(device);
 }
 
 void ThreadSafety::PostCallRecordGetBufferDeviceAddressKHR(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoKHR*         pInfo,
+    const VkBufferDeviceAddressInfo*            pInfo,
     VkDeviceAddress                             result) {
     FinishReadObjectParentInstance(device);
 }
 
 void ThreadSafety::PreCallRecordGetBufferOpaqueCaptureAddressKHR(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoKHR*         pInfo) {
+    const VkBufferDeviceAddressInfo*            pInfo) {
     StartReadObjectParentInstance(device);
 }
 
 void ThreadSafety::PostCallRecordGetBufferOpaqueCaptureAddressKHR(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoKHR*         pInfo) {
+    const VkBufferDeviceAddressInfo*            pInfo) {
     FinishReadObjectParentInstance(device);
 }
 
 void ThreadSafety::PreCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR(
     VkDevice                                    device,
-    const VkDeviceMemoryOpaqueCaptureAddressInfoKHR* pInfo) {
+    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {
     StartReadObjectParentInstance(device);
 }
 
 void ThreadSafety::PostCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR(
     VkDevice                                    device,
-    const VkDeviceMemoryOpaqueCaptureAddressInfoKHR* pInfo) {
+    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {
     FinishReadObjectParentInstance(device);
 }
 
@@ -6232,13 +6454,13 @@ void ThreadSafety::PostCallRecordCreateMetalSurfaceEXT(
 
 void ThreadSafety::PreCallRecordGetBufferDeviceAddressEXT(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoKHR*         pInfo) {
+    const VkBufferDeviceAddressInfo*            pInfo) {
     StartReadObjectParentInstance(device);
 }
 
 void ThreadSafety::PostCallRecordGetBufferDeviceAddressEXT(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoKHR*         pInfo,
+    const VkBufferDeviceAddressInfo*            pInfo,
     VkDeviceAddress                             result) {
     FinishReadObjectParentInstance(device);
 }

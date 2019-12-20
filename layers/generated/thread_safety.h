@@ -2264,6 +2264,151 @@ void PostCallRecordGetDescriptorSetLayoutSupport(
     const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
     VkDescriptorSetLayoutSupport*               pSupport);
 
+void PreCallRecordCmdDrawIndirectCount(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkBuffer                                    countBuffer,
+    VkDeviceSize                                countBufferOffset,
+    uint32_t                                    maxDrawCount,
+    uint32_t                                    stride);
+
+void PostCallRecordCmdDrawIndirectCount(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkBuffer                                    countBuffer,
+    VkDeviceSize                                countBufferOffset,
+    uint32_t                                    maxDrawCount,
+    uint32_t                                    stride);
+
+void PreCallRecordCmdDrawIndexedIndirectCount(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkBuffer                                    countBuffer,
+    VkDeviceSize                                countBufferOffset,
+    uint32_t                                    maxDrawCount,
+    uint32_t                                    stride);
+
+void PostCallRecordCmdDrawIndexedIndirectCount(
+    VkCommandBuffer                             commandBuffer,
+    VkBuffer                                    buffer,
+    VkDeviceSize                                offset,
+    VkBuffer                                    countBuffer,
+    VkDeviceSize                                countBufferOffset,
+    uint32_t                                    maxDrawCount,
+    uint32_t                                    stride);
+
+void PreCallRecordCreateRenderPass2(
+    VkDevice                                    device,
+    const VkRenderPassCreateInfo2*              pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkRenderPass*                               pRenderPass);
+
+void PostCallRecordCreateRenderPass2(
+    VkDevice                                    device,
+    const VkRenderPassCreateInfo2*              pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkRenderPass*                               pRenderPass,
+    VkResult                                    result);
+
+void PreCallRecordCmdBeginRenderPass2(
+    VkCommandBuffer                             commandBuffer,
+    const VkRenderPassBeginInfo*                pRenderPassBegin,
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo);
+
+void PostCallRecordCmdBeginRenderPass2(
+    VkCommandBuffer                             commandBuffer,
+    const VkRenderPassBeginInfo*                pRenderPassBegin,
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo);
+
+void PreCallRecordCmdNextSubpass2(
+    VkCommandBuffer                             commandBuffer,
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo,
+    const VkSubpassEndInfo*                     pSubpassEndInfo);
+
+void PostCallRecordCmdNextSubpass2(
+    VkCommandBuffer                             commandBuffer,
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo,
+    const VkSubpassEndInfo*                     pSubpassEndInfo);
+
+void PreCallRecordCmdEndRenderPass2(
+    VkCommandBuffer                             commandBuffer,
+    const VkSubpassEndInfo*                     pSubpassEndInfo);
+
+void PostCallRecordCmdEndRenderPass2(
+    VkCommandBuffer                             commandBuffer,
+    const VkSubpassEndInfo*                     pSubpassEndInfo);
+
+void PreCallRecordResetQueryPool(
+    VkDevice                                    device,
+    VkQueryPool                                 queryPool,
+    uint32_t                                    firstQuery,
+    uint32_t                                    queryCount);
+
+void PostCallRecordResetQueryPool(
+    VkDevice                                    device,
+    VkQueryPool                                 queryPool,
+    uint32_t                                    firstQuery,
+    uint32_t                                    queryCount);
+
+void PreCallRecordGetSemaphoreCounterValue(
+    VkDevice                                    device,
+    VkSemaphore                                 semaphore,
+    uint64_t*                                   pValue);
+
+void PostCallRecordGetSemaphoreCounterValue(
+    VkDevice                                    device,
+    VkSemaphore                                 semaphore,
+    uint64_t*                                   pValue,
+    VkResult                                    result);
+
+void PreCallRecordWaitSemaphores(
+    VkDevice                                    device,
+    const VkSemaphoreWaitInfo*                  pWaitInfo,
+    uint64_t                                    timeout);
+
+void PostCallRecordWaitSemaphores(
+    VkDevice                                    device,
+    const VkSemaphoreWaitInfo*                  pWaitInfo,
+    uint64_t                                    timeout,
+    VkResult                                    result);
+
+void PreCallRecordSignalSemaphore(
+    VkDevice                                    device,
+    const VkSemaphoreSignalInfo*                pSignalInfo);
+
+void PostCallRecordSignalSemaphore(
+    VkDevice                                    device,
+    const VkSemaphoreSignalInfo*                pSignalInfo,
+    VkResult                                    result);
+
+void PreCallRecordGetBufferDeviceAddress(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfo*            pInfo);
+
+void PostCallRecordGetBufferDeviceAddress(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfo*            pInfo,
+    VkDeviceAddress                             result);
+
+void PreCallRecordGetBufferOpaqueCaptureAddress(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfo*            pInfo);
+
+void PostCallRecordGetBufferOpaqueCaptureAddress(
+    VkDevice                                    device,
+    const VkBufferDeviceAddressInfo*            pInfo);
+
+void PreCallRecordGetDeviceMemoryOpaqueCaptureAddress(
+    VkDevice                                    device,
+    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo);
+
+void PostCallRecordGetDeviceMemoryOpaqueCaptureAddress(
+    VkDevice                                    device,
+    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo);
+
 void PreCallRecordDestroySurfaceKHR(
     VkInstance                                  instance,
     VkSurfaceKHR                                surface,
@@ -2808,13 +2953,13 @@ void PostCallRecordUpdateDescriptorSetWithTemplateKHR(
 
 void PreCallRecordCreateRenderPass2KHR(
     VkDevice                                    device,
-    const VkRenderPassCreateInfo2KHR*           pCreateInfo,
+    const VkRenderPassCreateInfo2*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkRenderPass*                               pRenderPass);
 
 void PostCallRecordCreateRenderPass2KHR(
     VkDevice                                    device,
-    const VkRenderPassCreateInfo2KHR*           pCreateInfo,
+    const VkRenderPassCreateInfo2*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkRenderPass*                               pRenderPass,
     VkResult                                    result);
@@ -2822,30 +2967,30 @@ void PostCallRecordCreateRenderPass2KHR(
 void PreCallRecordCmdBeginRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    const VkSubpassBeginInfoKHR*                pSubpassBeginInfo);
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo);
 
 void PostCallRecordCmdBeginRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    const VkSubpassBeginInfoKHR*                pSubpassBeginInfo);
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo);
 
 void PreCallRecordCmdNextSubpass2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassBeginInfoKHR*                pSubpassBeginInfo,
-    const VkSubpassEndInfoKHR*                  pSubpassEndInfo);
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo,
+    const VkSubpassEndInfo*                     pSubpassEndInfo);
 
 void PostCallRecordCmdNextSubpass2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassBeginInfoKHR*                pSubpassBeginInfo,
-    const VkSubpassEndInfoKHR*                  pSubpassEndInfo);
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo,
+    const VkSubpassEndInfo*                     pSubpassEndInfo);
 
 void PreCallRecordCmdEndRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassEndInfoKHR*                  pSubpassEndInfo);
+    const VkSubpassEndInfo*                     pSubpassEndInfo);
 
 void PostCallRecordCmdEndRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassEndInfoKHR*                  pSubpassEndInfo);
+    const VkSubpassEndInfo*                     pSubpassEndInfo);
 
 void PreCallRecordGetSwapchainStatusKHR(
     VkDevice                                    device,
@@ -3063,48 +3208,48 @@ void PostCallRecordGetSemaphoreCounterValueKHR(
 
 void PreCallRecordWaitSemaphoresKHR(
     VkDevice                                    device,
-    const VkSemaphoreWaitInfoKHR*               pWaitInfo,
+    const VkSemaphoreWaitInfo*                  pWaitInfo,
     uint64_t                                    timeout);
 
 void PostCallRecordWaitSemaphoresKHR(
     VkDevice                                    device,
-    const VkSemaphoreWaitInfoKHR*               pWaitInfo,
+    const VkSemaphoreWaitInfo*                  pWaitInfo,
     uint64_t                                    timeout,
     VkResult                                    result);
 
 void PreCallRecordSignalSemaphoreKHR(
     VkDevice                                    device,
-    const VkSemaphoreSignalInfoKHR*             pSignalInfo);
+    const VkSemaphoreSignalInfo*                pSignalInfo);
 
 void PostCallRecordSignalSemaphoreKHR(
     VkDevice                                    device,
-    const VkSemaphoreSignalInfoKHR*             pSignalInfo,
+    const VkSemaphoreSignalInfo*                pSignalInfo,
     VkResult                                    result);
 
 void PreCallRecordGetBufferDeviceAddressKHR(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoKHR*         pInfo);
+    const VkBufferDeviceAddressInfo*            pInfo);
 
 void PostCallRecordGetBufferDeviceAddressKHR(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoKHR*         pInfo,
+    const VkBufferDeviceAddressInfo*            pInfo,
     VkDeviceAddress                             result);
 
 void PreCallRecordGetBufferOpaqueCaptureAddressKHR(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoKHR*         pInfo);
+    const VkBufferDeviceAddressInfo*            pInfo);
 
 void PostCallRecordGetBufferOpaqueCaptureAddressKHR(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoKHR*         pInfo);
+    const VkBufferDeviceAddressInfo*            pInfo);
 
 void PreCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR(
     VkDevice                                    device,
-    const VkDeviceMemoryOpaqueCaptureAddressInfoKHR* pInfo);
+    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo);
 
 void PostCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR(
     VkDevice                                    device,
-    const VkDeviceMemoryOpaqueCaptureAddressInfoKHR* pInfo);
+    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo);
 
 void PreCallRecordGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
@@ -4314,11 +4459,11 @@ void PostCallRecordCreateMetalSurfaceEXT(
 
 void PreCallRecordGetBufferDeviceAddressEXT(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoKHR*         pInfo);
+    const VkBufferDeviceAddressInfo*            pInfo);
 
 void PostCallRecordGetBufferDeviceAddressEXT(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfoKHR*         pInfo,
+    const VkBufferDeviceAddressInfo*            pInfo,
     VkDeviceAddress                             result);
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
