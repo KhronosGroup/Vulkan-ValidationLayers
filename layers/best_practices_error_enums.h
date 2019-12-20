@@ -60,5 +60,7 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_BindAccelNV_NoMemReqQuery
     "UNASSIGNED-BestPractices-BindAccelerationStructureMemoryNV-requirements-not-retrieved";
 static const char DECORATE_UNUSED *kVUID_BestPractices_DrawState_VtxIndexOutOfBounds =
     "UNASSIGNED-BestPractices-DrawState-VtxIndexOutOfBounds";
+static const char DECORATE_UNUSED *kVUID_BestPractices_DrawState_ClearCmdBeforeDraw =
+    "UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw";
 
 #endif

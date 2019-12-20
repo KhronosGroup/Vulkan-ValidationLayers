@@ -54,7 +54,7 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTest) {
 
     // Call for full-sized FB Color attachment prior to issuing a Draw
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                         "UNASSIGNED-CoreValidation-DrawState-ClearCmdBeforeDraw");
+                                         "UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw");
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 }

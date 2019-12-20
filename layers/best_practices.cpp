@@ -893,7 +893,7 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
         // This warning should be made more specific. It'd be best to avoid triggering this test if it's a use that must call
         // CmdClearAttachments.
         skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), kVUID_Core_DrawState_ClearCmdBeforeDraw,
+                        HandleToUint64(commandBuffer), kVUID_BestPractices_DrawState_ClearCmdBeforeDraw,
                         "vkCmdClearAttachments() issued on %s prior to any Draw Cmds. It is recommended you "
                         "use RenderPass LOAD_OP_CLEAR on Attachments prior to any Draw.",
                         report_data->FormatHandle(commandBuffer).c_str());
