@@ -480,7 +480,7 @@ void GpuAssisted::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
             "UNASSIGNED-GPU-Assisted Validation. ", "Shaders using descriptor set at index %d. ",
             device_gpu_assisted->desc_set_bind_index);
 
-    device_gpu_assisted->output_buffer_size = sizeof(uint32_t) * (spvtools::kInst2MaxOutCnt + 1);
+    device_gpu_assisted->output_buffer_size = sizeof(uint32_t) * (spvtools::kInstMaxOutCnt + 1);
     VkResult result1 = InitializeVma(physicalDevice, *pDevice, &device_gpu_assisted->vmaAllocator);
     assert(result1 == VK_SUCCESS);
     std::unique_ptr<GpuAssistedDescriptorSetManager> desc_set_manager(new GpuAssistedDescriptorSetManager(device_gpu_assisted));
@@ -1665,7 +1665,7 @@ bool GpuAssisted::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, 
     spv_target_env target_env = SPV_ENV_VULKAN_1_1;
     Optimizer optimizer(target_env);
     optimizer.RegisterPass(
-        CreateInstBindlessCheckPass(desc_set_bind_index, unique_shader_module_id, descriptor_indexing, descriptor_indexing, 2));
+        CreateInstBindlessCheckPass(desc_set_bind_index, unique_shader_module_id, descriptor_indexing, descriptor_indexing));
     optimizer.RegisterPass(CreateAggressiveDCEPass());
     if ((device_extensions.vk_ext_buffer_device_address || device_extensions.vk_khr_buffer_device_address) && shaderInt64)
         optimizer.RegisterPass(CreateInstBuffAddrCheckPass(desc_set_bind_index, unique_shader_module_id));
@@ -1756,23 +1756,23 @@ static void GenerateStageMessage(const uint32_t *debug_record, std::string &msg)
 static void GenerateValidationMessage(const uint32_t *debug_record, std::string &msg, std::string &vuid_msg) {
     using namespace spvtools;
     std::ostringstream strm;
-    switch (debug_record[kInst2ValidationOutError]) {
+    switch (debug_record[kInstValidationOutError]) {
         case kInstErrorBindlessBounds: {
-            strm << "Index of " << debug_record[kInst2BindlessBoundsOutDescIndex] << " used to index descriptor array of length "
-                 << debug_record[kInst2BindlessBoundsOutDescBound] << ". ";
+            strm << "Index of " << debug_record[kInstBindlessBoundsOutDescIndex] << " used to index descriptor array of length "
+                 << debug_record[kInstBindlessBoundsOutDescBound] << ". ";
             vuid_msg = "UNASSIGNED-Descriptor index out of bounds";
         } break;
         case kInstErrorBindlessUninit: {
-            strm << "Descriptor index " << debug_record[kInst2BindlessUninitOutDescIndex] << " is uninitialized. ";
+            strm << "Descriptor index " << debug_record[kInstBindlessUninitOutDescIndex] << " is uninitialized. ";
             vuid_msg = "UNASSIGNED-Descriptor uninitialized";
         } break;
         case kInstErrorBuffAddrUnallocRef: {
-            uint64_t *ptr = (uint64_t *)&debug_record[kInst2BuffAddrUnallocOutDescPtrLo];
+            uint64_t *ptr = (uint64_t *)&debug_record[kInstBuffAddrUnallocOutDescPtrLo];
             strm << "Device address 0x" << std::hex << *ptr << " access out of bounds. ";
             vuid_msg = "UNASSIGNED-Device address out of bounds";
         } break;
         default: {
-            strm << "Internal Error (unexpected error type = " << debug_record[kInst2ValidationOutError] << "). ";
+            strm << "Internal Error (unexpected error type = " << debug_record[kInstValidationOutError] << "). ";
             vuid_msg = "UNASSIGNED-Internal Error";
             assert(false);
         } break;
@@ -2088,7 +2088,7 @@ void GpuAssisted::AnalyzeAndReportError(CMD_BUFFER_STATE *cb_node, VkQueue queue
             filename_message.c_str(), source_message.c_str());
     // The debug record at word kInstCommonOutSize is the number of words in the record
     // written by the shader.  Clear the entire record plus the total_words word at the start.
-    const uint32_t words_to_clear = 1 + std::min(debug_record[kInstCommonOutSize], (uint32_t)kInst2MaxOutCnt);
+    const uint32_t words_to_clear = 1 + std::min(debug_record[kInstCommonOutSize], (uint32_t)kInstMaxOutCnt);
     memset(debug_output_buffer, 0, sizeof(uint32_t) * words_to_clear);
 }
 
