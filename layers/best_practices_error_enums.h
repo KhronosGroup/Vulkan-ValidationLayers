@@ -58,5 +58,7 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_ImageMemReqNotCalled =
     "UNASSIGNED-BestPractices-vkBindImageMemory-requirements-not-retrieved";
 static const char DECORATE_UNUSED *kVUID_BestPractices_BindAccelNV_NoMemReqQuery =
     "UNASSIGNED-BestPractices-BindAccelerationStructureMemoryNV-requirements-not-retrieved";
+static const char DECORATE_UNUSED *kVUID_BestPractices_DrawState_VtxIndexOutOfBounds =
+    "UNASSIGNED-BestPractices-DrawState-VtxIndexOutOfBounds";
 
 #endif
