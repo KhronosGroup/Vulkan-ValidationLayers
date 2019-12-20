@@ -4462,6 +4462,7 @@ TEST_F(VkLayerTest, DrawIndirectByteCountEXT) {
         m_device_extension_names.push_back(VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     } else {
         printf("%s VK_EXT_transform_feedback extension not supported, skipping test\n", kSkipPrefix);
+        return;
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
