@@ -2590,43 +2590,6 @@ TEST_F(VkLayerTest, CmdClearAttachmentTests) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, VtxBufferBadIndex) {
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                         "UNASSIGNED-CoreValidation-DrawState-VtxIndexOutOfBounds");
-
-    ASSERT_NO_FATAL_FAILURE(Init());
-    ASSERT_NO_FATAL_FAILURE(InitViewport());
-    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
-
-    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
-    pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    pipe_ms_state_ci.pNext = NULL;
-    pipe_ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    pipe_ms_state_ci.sampleShadingEnable = 0;
-    pipe_ms_state_ci.minSampleShading = 1.0;
-    pipe_ms_state_ci.pSampleMask = NULL;
-
-    CreatePipelineHelper pipe(*this);
-    pipe.InitInfo();
-    pipe.pipe_ms_state_ci_ = pipe_ms_state_ci;
-    pipe.InitState();
-    pipe.CreateGraphicsPipeline();
-
-    m_commandBuffer->begin();
-    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
-    // Don't care about actual data, just need to get to draw to flag error
-    const float vbo_data[3] = {1.f, 0.f, 1.f};
-    VkConstantBufferObj vbo(m_device, sizeof(vbo_data), (const void *)&vbo_data, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    m_commandBuffer->BindVertexBuffer(&vbo, (VkDeviceSize)0, 1);  // VBO idx 1, but no VBO in PSO
-    m_commandBuffer->Draw(1, 0, 0, 0);
-
-    m_errorMonitor->VerifyFound();
-
-    m_commandBuffer->EndRenderPass();
-    m_commandBuffer->end();
-}
-
 TEST_F(VkLayerTest, InvalidVertexBindingDescriptions) {
     TEST_DESCRIPTION(
         "Attempt to create a graphics pipeline where:"
