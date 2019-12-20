@@ -603,7 +603,8 @@ static void ListBits(std::ostream &s, uint32_t bits) {
 
 // Validate draw-time state related to the PSO
 bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, const CMD_BUFFER_STATE *pCB, CMD_TYPE cmd_type,
-                                               const PIPELINE_STATE *pPipeline, const char *caller) const {
+                                               const PIPELINE_STATE *pPipeline, const char *caller,
+                                               const char *vtx_binding_err_code) const {
     bool skip = false;
     const auto &current_vtx_bfr_binding_info = pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings;
 
@@ -615,7 +616,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 (current_vtx_bfr_binding_info[vertex_binding].buffer == VK_NULL_HANDLE)) {
                 skip |=
                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                            HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_VtxIndexOutOfBounds,
+                            HandleToUint64(pCB->commandBuffer), vtx_binding_err_code,
                             "%s expects that this Command Buffer's vertex binding Index %u should be set via "
                             "vkCmdBindVertexBuffers. This is because VkVertexInputBindingDescription struct at "
                             "index " PRINTF_SIZE_T_SPECIFIER " of pVertexBindingDescriptions has a binding value of %u.",
@@ -835,7 +836,7 @@ static const char *string_VuidNotCompatibleForSet(CMD_TYPE cmd_type) {
 // Validate overall state at the time of a draw call
 bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TYPE cmd_type, const bool indexed,
                                          const VkPipelineBindPoint bind_point, const char *function, const char *pipe_err_code,
-                                         const char *state_err_code) const {
+                                         const char *state_err_code, const char *vtx_binding_err_code) const {
     const auto last_bound_it = cb_node->lastBound.find(bind_point);
     const PIPELINE_STATE *pPipe = nullptr;
     if (last_bound_it != cb_node->lastBound.cend()) {
@@ -950,7 +951,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
 
     // Check general pipeline state that needs to be validated at drawtime
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point)
-        result |= ValidatePipelineDrawtimeState(state, cb_node, cmd_type, pPipe, function);
+        result |= ValidatePipelineDrawtimeState(state, cb_node, cmd_type, pPipe, function, vtx_binding_err_code);
 
     return result;
 }
