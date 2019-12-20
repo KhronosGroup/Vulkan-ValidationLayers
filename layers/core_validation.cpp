@@ -652,15 +652,6 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 }
             }
         }
-    } else {
-        if ((!current_vtx_bfr_binding_info.empty()) && (!pCB->vertex_buffer_used)) {
-            skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_VtxIndexOutOfBounds,
-                        "Vertex buffers are bound to %s but no vertex buffers are attached to %s.",
-                        report_data->FormatHandle(pCB->commandBuffer).c_str(),
-                        report_data->FormatHandle(state.pipeline_state->pipeline).c_str());
-        }
     }
 
     // If Viewport or scissors are dynamic, verify that dynamic count matches PSO count.
