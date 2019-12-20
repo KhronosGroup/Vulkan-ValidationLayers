@@ -399,8 +399,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         if self.header_file:
             # Output declarations and record intercepted procedures
             write('\n'.join(self.declarations), file=self.outFile)
-            # Finish processing in superclass
-            OutputGenerator.endFile(self)
+        # Finish processing in superclass
+        OutputGenerator.endFile(self)
     #
     # Processing at beginning of each feature or extension
     def beginFeature(self, interface, emit):

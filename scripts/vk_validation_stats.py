@@ -193,6 +193,8 @@ class ValidationJSON:
         self.regex_dict[re.compile(r'\\\(\\lceil{\\frac{maxFramebufferWidth}{minFragmentDensityTexelSize_{width}}}\\rceil\\\)')] = "the ceiling of maxFramebufferWidth/minFragmentDensityTexelSize.width"
         self.regex_dict[re.compile(r'\\\(\\lceil\{\\mathit\{rasterizationSamples} \\over 32}\\rceil\\\)')] = "(rasterizationSamples/32)"
         self.regex_dict[re.compile(r'\\\(\\textrm\{codeSize} \\over 4\\\)')] = "(codeSize/4)"
+        self.regex_dict[re.compile('\u2032')] = "'"         # Handle prime
+        self.regex_dict[re.compile('code:"(.*?)"')] = '\\1' # Handle \"
         # Some fancy punctuation chars that break the Android build...
         self.regex_dict[re.compile('&#8594;')] = "->"       # Arrow char
         self.regex_dict[re.compile('&#8217;')] = "'"        # Left-slanting apostrophe to apostrophe
