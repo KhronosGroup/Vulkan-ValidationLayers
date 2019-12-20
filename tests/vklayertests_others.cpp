@@ -3065,7 +3065,7 @@ TEST_F(VkLayerTest, HostQueryResetNotEnabled) {
     query_pool_create_info.queryCount = 1;
     vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkResetQueryPoolEXT-None-02665");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkResetQueryPool-None-02665");
     fpvkResetQueryPoolEXT(m_device->device(), query_pool, 0, 1);
     m_errorMonitor->VerifyFound();
 
@@ -3110,7 +3110,7 @@ TEST_F(VkLayerTest, HostQueryResetBadFirstQuery) {
     query_pool_create_info.queryCount = 1;
     vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkResetQueryPoolEXT-firstQuery-02666");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkResetQueryPool-firstQuery-02666");
     fpvkResetQueryPoolEXT(m_device->device(), query_pool, 1, 0);
     m_errorMonitor->VerifyFound();
 
@@ -3155,7 +3155,7 @@ TEST_F(VkLayerTest, HostQueryResetBadRange) {
     query_pool_create_info.queryCount = 1;
     vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkResetQueryPoolEXT-firstQuery-02667");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkResetQueryPool-firstQuery-02667");
     fpvkResetQueryPoolEXT(m_device->device(), query_pool, 0, 2);
     m_errorMonitor->VerifyFound();
 

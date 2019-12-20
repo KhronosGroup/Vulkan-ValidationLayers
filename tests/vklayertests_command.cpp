@@ -4681,8 +4681,8 @@ TEST_F(VkLayerTest, DrawIndirectCountKHR) {
     VkBufferObj count_buffer;
     count_buffer.init(*m_device, count_buffer_create_info);
 
-    // VUID-vkCmdDrawIndirectCountKHR-buffer-02708
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirectCountKHR-buffer-02708");
+    // VUID-vkCmdDrawIndirectCount-buffer-02708
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirectCount-buffer-02708");
     vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer, 0, count_buffer.handle(), 0, 1,
                               sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
@@ -4697,33 +4697,33 @@ TEST_F(VkLayerTest, DrawIndirectCountKHR) {
     VkBuffer count_buffer_unbound;
     vk::CreateBuffer(m_device->device(), &count_buffer_create_info, nullptr, &count_buffer_unbound);
 
-    // VUID-vkCmdDrawIndirectCountKHR-countBuffer-02714
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirectCountKHR-countBuffer-02714");
+    // VUID-vkCmdDrawIndirectCount-countBuffer-02714
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirectCount-countBuffer-02714");
     vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer, 0, count_buffer_unbound, 0, 1, sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    // VUID-vkCmdDrawIndirectCountKHR-offset-02710
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirectCountKHR-offset-02710");
+    // VUID-vkCmdDrawIndirectCount-offset-02710
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirectCount-offset-02710");
     vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer, 1, count_buffer.handle(), 0, 1,
                               sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    // VUID-vkCmdDrawIndirectCountKHR-countBufferOffset-02716
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirectCountKHR-countBufferOffset-02716");
+    // VUID-vkCmdDrawIndirectCount-countBufferOffset-02716
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirectCount-countBufferOffset-02716");
     vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer, 0, count_buffer.handle(), 1, 1,
                               sizeof(VkDrawIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    // VUID-vkCmdDrawIndirectCountKHR-stride-03110
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirectCountKHR-stride-03110");
+    // VUID-vkCmdDrawIndirectCount-stride-03110
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirectCount-stride-03110");
     vkCmdDrawIndirectCountKHR(m_commandBuffer->handle(), draw_buffer, 0, count_buffer.handle(), 0, 1, 1);
     m_errorMonitor->VerifyFound();
 
     // TODO: These covered VUIDs aren't tested. There is also no test coverage for the core Vulkan 1.0 vk::CmdDraw* equivalent of
     // these:
-    //     VUID-vkCmdDrawIndirectCountKHR-renderPass-02684
-    //     VUID-vkCmdDrawIndirectCountKHR-subpass-02685
-    //     VUID-vkCmdDrawIndirectCountKHR-commandBuffer-02701
+    //     VUID-vkCmdDrawIndirectCount-renderPass-02684
+    //     VUID-vkCmdDrawIndirectCount-subpass-02685
+    //     VUID-vkCmdDrawIndirectCount-commandBuffer-02701
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
@@ -4791,9 +4791,8 @@ TEST_F(VkLayerTest, DrawIndexedIndirectCountKHR) {
     VkBufferObj index_buffer;
     index_buffer.init(*m_device, index_buffer_create_info);
 
-    // VUID-vkCmdDrawIndexedIndirectCountKHR-commandBuffer-02701 (partial - only tests whether the index buffer is bound)
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-vkCmdDrawIndexedIndirectCountKHR-commandBuffer-02701");
+    // VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-02701 (partial - only tests whether the index buffer is bound)
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-02701");
     vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
                                      sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
@@ -4803,8 +4802,8 @@ TEST_F(VkLayerTest, DrawIndexedIndirectCountKHR) {
     VkBuffer draw_buffer_unbound;
     vk::CreateBuffer(m_device->device(), &count_buffer_create_info, nullptr, &draw_buffer_unbound);
 
-    // VUID-vkCmdDrawIndexedIndirectCountKHR-buffer-02708
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexedIndirectCountKHR-buffer-02708");
+    // VUID-vkCmdDrawIndexedIndirectCount-buffer-02708
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexedIndirectCount-buffer-02708");
     vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer_unbound, 0, count_buffer.handle(), 0, 1,
                                      sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
@@ -4812,35 +4811,35 @@ TEST_F(VkLayerTest, DrawIndexedIndirectCountKHR) {
     VkBuffer count_buffer_unbound;
     vk::CreateBuffer(m_device->device(), &count_buffer_create_info, nullptr, &count_buffer_unbound);
 
-    // VUID-vkCmdDrawIndexedIndirectCountKHR-countBuffer-02714
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexedIndirectCountKHR-countBuffer-02714");
+    // VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02714
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02714");
     vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer_unbound, 0, 1,
                                      sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    // VUID-vkCmdDrawIndexedIndirectCountKHR-offset-02710
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexedIndirectCountKHR-offset-02710");
+    // VUID-vkCmdDrawIndexedIndirectCount-offset-02710
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexedIndirectCount-offset-02710");
     vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 1, count_buffer.handle(), 0, 1,
                                      sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    // VUID-vkCmdDrawIndexedIndirectCountKHR-countBufferOffset-02716
+    // VUID-vkCmdDrawIndexedIndirectCount-countBufferOffset-02716
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-vkCmdDrawIndexedIndirectCountKHR-countBufferOffset-02716");
+                                         "VUID-vkCmdDrawIndexedIndirectCount-countBufferOffset-02716");
     vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 1, 1,
                                      sizeof(VkDrawIndexedIndirectCommand));
     m_errorMonitor->VerifyFound();
 
-    // VUID-vkCmdDrawIndexedIndirectCountKHR-stride-03142
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexedIndirectCountKHR-stride-03142");
+    // VUID-vkCmdDrawIndexedIndirectCount-stride-03142
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexedIndirectCount-stride-03142");
     vkCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1, 1);
     m_errorMonitor->VerifyFound();
 
     // TODO: These covered VUIDs aren't tested. There is also no test coverage for the core Vulkan 1.0 vk::CmdDraw* equivalent of
     // these:
-    //     VUID-vkCmdDrawIndexedIndirectCountKHR-renderPass-02684
-    //     VUID-vkCmdDrawIndexedIndirectCountKHR-subpass-02685
-    //     VUID-vkCmdDrawIndexedIndirectCountKHR-commandBuffer-02701 (partial)
+    //     VUID-vkCmdDrawIndexedIndirectCount-renderPass-02684
+    //     VUID-vkCmdDrawIndexedIndirectCount-subpass-02685
+    //     VUID-vkCmdDrawIndexedIndirectCount-commandBuffer-02701 (partial)
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();

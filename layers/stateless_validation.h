@@ -907,15 +907,14 @@ class StatelessValidation : public ValidationObject {
                 std::stringstream ss;
                 ss << (use_rp2 ? "vkCreateRenderPass2KHR" : "vkCreateRenderPass") << ": pCreateInfo->pAttachments[" << i
                    << "].format is VK_FORMAT_UNDEFINED. ";
-                vuid =
-                    use_rp2 ? "VUID-VkAttachmentDescription2KHR-format-parameter" : "VUID-VkAttachmentDescription-format-parameter";
+                vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-parameter" : "VUID-VkAttachmentDescription-format-parameter";
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                                 "%s", ss.str().c_str());
             }
             if (pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_UNDEFINED ||
                 pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
-                vuid = use_rp2 ? "VUID-VkAttachmentDescription2KHR-finalLayout-03061"
-                               : "VUID-VkAttachmentDescription-finalLayout-00843";
+                vuid =
+                    use_rp2 ? "VUID-VkAttachmentDescription2-finalLayout-03061" : "VUID-VkAttachmentDescription-finalLayout-00843";
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                                 "pCreateInfo->pAttachments[%d].finalLayout must not be VK_IMAGE_LAYOUT_UNDEFINED or "
                                 "VK_IMAGE_LAYOUT_PREINITIALIZED.",
@@ -926,7 +925,7 @@ class StatelessValidation : public ValidationObject {
                     pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR ||
                     pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR ||
                     pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR) {
-                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2KHR-separateDepthStencilLayouts-03298"
+                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-03298"
                                    : "VUID-VkAttachmentDescription-separateDepthStencilLayouts-03284";
                     skip |= log_msg(
                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
@@ -939,7 +938,7 @@ class StatelessValidation : public ValidationObject {
                     pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR ||
                     pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR ||
                     pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR) {
-                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2KHR-separateDepthStencilLayouts-03299"
+                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-03299"
                                    : "VUID-VkAttachmentDescription-separateDepthStencilLayouts-03285";
                     skip |= log_msg(
                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
@@ -954,7 +953,7 @@ class StatelessValidation : public ValidationObject {
                     pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR ||
                     pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR ||
                     pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR) {
-                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2KHR-format-03300" : "VUID-VkAttachmentDescription-format-03286";
+                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03300" : "VUID-VkAttachmentDescription-format-03286";
                     skip |= log_msg(
                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                         "pCreateInfo->pAttachments[%d].initialLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, "
@@ -966,7 +965,7 @@ class StatelessValidation : public ValidationObject {
                     pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR ||
                     pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR ||
                     pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR) {
-                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2KHR-format-03301" : "VUID-VkAttachmentDescription-format-03287";
+                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03301" : "VUID-VkAttachmentDescription-format-03287";
                     skip |= log_msg(
                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                         "pCreateInfo->pAttachments[%d].finalLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, "
@@ -981,14 +980,14 @@ class StatelessValidation : public ValidationObject {
                             pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR) {
                             skip |=
                                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        "VUID-VkAttachmentDescription2KHR-format-03302",
+                                        "VUID-VkAttachmentDescription2-format-03302",
                                         "pCreateInfo->pNext must include an instance of VkAttachmentDescriptionStencilLayoutKHR");
                         }
                         if (pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR ||
                             pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR) {
                             skip |=
                                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        "VUID-VkAttachmentDescription2KHR-format-03303",
+                                        "VUID-VkAttachmentDescription2-format-03303",
                                         "pCreateInfo->pNext must include an instance of VkAttachmentDescriptionStencilLayoutKHR");
                         }
                     }
@@ -1021,7 +1020,7 @@ class StatelessValidation : public ValidationObject {
             } else if (FormatIsDepthOnly(pCreateInfo->pAttachments[i].format)) {
                 if (pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR ||
                     pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR) {
-                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2KHR-format-03304" : "VUID-VkAttachmentDescription-format-03290";
+                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03304" : "VUID-VkAttachmentDescription-format-03290";
                     skip |= log_msg(
                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                         "pCreateInfo->pAttachments[%d].initialLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, or"
@@ -1030,7 +1029,7 @@ class StatelessValidation : public ValidationObject {
                 }
                 if (pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR ||
                     pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR) {
-                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2KHR-format-03305" : "VUID-VkAttachmentDescription-format-03291";
+                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03305" : "VUID-VkAttachmentDescription-format-03291";
                     skip |= log_msg(
                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                         "pCreateInfo->pAttachments[%d].finalLayout must not be VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR, or "
@@ -1040,7 +1039,7 @@ class StatelessValidation : public ValidationObject {
             } else if (FormatIsStencilOnly(pCreateInfo->pAttachments[i].format)) {
                 if (pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR ||
                     pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR) {
-                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2KHR-format-03306" : "VUID-VkAttachmentDescription-format-03292";
+                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03306" : "VUID-VkAttachmentDescription-format-03292";
                     skip |= log_msg(
                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                         "pCreateInfo->pAttachments[%d].initialLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, or"
@@ -1049,7 +1048,7 @@ class StatelessValidation : public ValidationObject {
                 }
                 if (pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR ||
                     pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR) {
-                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2KHR-format-03307" : "VUID-VkAttachmentDescription-format-03293";
+                    vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03307" : "VUID-VkAttachmentDescription-format-03293";
                     skip |= log_msg(
                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                         "pCreateInfo->pAttachments[%d].finalLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, or "
@@ -1070,7 +1069,7 @@ class StatelessValidation : public ValidationObject {
                     attachment_description_stencil_layout->stencilInitialLayout ==
                         VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                    "VUID-VkAttachmentDescriptionStencilLayoutKHR-stencilInitialLayout-03308",
+                                    "VUID-VkAttachmentDescriptionStencilLayout-stencilInitialLayout-03308",
                                     "VkAttachmentDescriptionStencilLayoutKHR.stencilInitialLayout must not be "
                                     "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, "
                                     "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR, "
@@ -1089,7 +1088,7 @@ class StatelessValidation : public ValidationObject {
                     attachment_description_stencil_layout->stencilFinalLayout ==
                         VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                    "VUID-VkAttachmentDescriptionStencilLayoutKHR-stencilFinalLayout-03309",
+                                    "VUID-VkAttachmentDescriptionStencilLayout-stencilFinalLayout-03309",
                                     "VkAttachmentDescriptionStencilLayoutKHR.stencilFinalLayout must not be "
                                     "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, "
                                     "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR, "
@@ -1102,7 +1101,7 @@ class StatelessValidation : public ValidationObject {
                     attachment_description_stencil_layout->stencilFinalLayout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
                     skip |= log_msg(
                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        "VUID-VkAttachmentDescriptionStencilLayoutKHR-stencilFinalLayout-03310",
+                        "VUID-VkAttachmentDescriptionStencilLayout-stencilFinalLayout-03310",
                         "VkAttachmentDescriptionStencilLayoutKHR.stencilFinalLayout must not be VK_IMAGE_LAYOUT_UNDEFINED, or "
                         "VK_IMAGE_LAYOUT_PREINITIALIZED.");
                 }
@@ -1111,7 +1110,7 @@ class StatelessValidation : public ValidationObject {
 
         for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
             if (pCreateInfo->pSubpasses[i].colorAttachmentCount > max_color_attachments) {
-                vuid = use_rp2 ? "VUID-VkSubpassDescription2KHR-colorAttachmentCount-03063"
+                vuid = use_rp2 ? "VUID-VkSubpassDescription2-colorAttachmentCount-03063"
                                : "VUID-VkSubpassDescription-colorAttachmentCount-00845";
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                                 "Cannot create a render pass with %d color attachments. Max is %d.",
@@ -1123,13 +1122,12 @@ class StatelessValidation : public ValidationObject {
             const auto &dependency = pCreateInfo->pDependencies[i];
 
             // Spec currently only supports Graphics pipeline in render pass -- so only that pipeline is currently checked
-            vuid =
-                use_rp2 ? "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03054" : "VUID-VkRenderPassCreateInfo-pDependencies-00837";
+            vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-pDependencies-03054" : "VUID-VkRenderPassCreateInfo-pDependencies-00837";
             skip |= ValidateSubpassGraphicsFlags(report_data, pCreateInfo, i, dependency.srcSubpass, dependency.srcStageMask, vuid,
                                                  "src");
 
             vuid =
-                use_rp2 ? "VUID-VkRenderPassCreateInfo2KHR-pDependencies-03055" : "VUID-VkRenderPassCreateInfo-pDependencies-00838";
+                use_rp2 ? "VUID-VkRenderPassCreateInfo2-pDependencies-03055" : "VUID-VkRenderPassCreateInfo-pDependencies-00838";
             skip |= ValidateSubpassGraphicsFlags(report_data, pCreateInfo, i, dependency.dstSubpass, dependency.dstStageMask, vuid,
                                                  "dst");
         }
