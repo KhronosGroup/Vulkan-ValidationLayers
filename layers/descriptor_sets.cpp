@@ -427,7 +427,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
     if (flags_create_info) {
         if (flags_create_info->bindingCount != 0 && flags_create_info->bindingCount != create_info->bindingCount) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfoEXT-bindingCount-03002",
+                            "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-bindingCount-03002",
                             "VkDescriptorSetLayoutCreateInfo::bindingCount (%d) != "
                             "VkDescriptorSetLayoutBindingFlagsCreateInfoEXT::bindingCount (%d)",
                             create_info->bindingCount, flags_create_info->bindingCount);
@@ -447,7 +447,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                     if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER &&
                         !descriptor_indexing_features->descriptorBindingUniformBufferUpdateAfterBind) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfoEXT-"
+                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-"
                                         "descriptorBindingUniformBufferUpdateAfterBind-03005",
                                         "Invalid flags for VkDescriptorSetLayoutBinding entry %" PRIu32, i);
                     }
@@ -456,35 +456,35 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                          binding_info.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) &&
                         !descriptor_indexing_features->descriptorBindingSampledImageUpdateAfterBind) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfoEXT-"
+                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-"
                                         "descriptorBindingSampledImageUpdateAfterBind-03006",
                                         "Invalid flags for VkDescriptorSetLayoutBinding entry %" PRIu32, i);
                     }
                     if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE &&
                         !descriptor_indexing_features->descriptorBindingStorageImageUpdateAfterBind) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfoEXT-"
+                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-"
                                         "descriptorBindingStorageImageUpdateAfterBind-03007",
                                         "Invalid flags for VkDescriptorSetLayoutBinding entry %" PRIu32, i);
                     }
                     if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER &&
                         !descriptor_indexing_features->descriptorBindingStorageBufferUpdateAfterBind) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfoEXT-"
+                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-"
                                         "descriptorBindingStorageBufferUpdateAfterBind-03008",
                                         "Invalid flags for VkDescriptorSetLayoutBinding entry %" PRIu32, i);
                     }
                     if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER &&
                         !descriptor_indexing_features->descriptorBindingUniformTexelBufferUpdateAfterBind) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfoEXT-"
+                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-"
                                         "descriptorBindingUniformTexelBufferUpdateAfterBind-03009",
                                         "Invalid flags for VkDescriptorSetLayoutBinding entry %" PRIu32, i);
                     }
                     if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER &&
                         !descriptor_indexing_features->descriptorBindingStorageTexelBufferUpdateAfterBind) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfoEXT-"
+                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-"
                                         "descriptorBindingStorageTexelBufferUpdateAfterBind-03010",
                                         "Invalid flags for VkDescriptorSetLayoutBinding entry %" PRIu32, i);
                     }
@@ -492,14 +492,14 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                          binding_info.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
                          binding_info.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfoEXT-None-03011",
+                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-None-03011",
                                         "Invalid flags for VkDescriptorSetLayoutBinding entry %" PRIu32, i);
                     }
 
                     if (binding_info.descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT &&
                         !inline_uniform_block_features->descriptorBindingInlineUniformBlockUpdateAfterBind) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfoEXT-"
+                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-"
                                         "descriptorBindingInlineUniformBlockUpdateAfterBind-02211",
                                         "Invalid flags (VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT) for "
                                         "VkDescriptorSetLayoutBinding entry %" PRIu32
@@ -512,7 +512,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                     if (!descriptor_indexing_features->descriptorBindingUpdateUnusedWhilePending) {
                         skip |= log_msg(
                             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfoEXT-descriptorBindingUpdateUnusedWhilePending-03012",
+                            "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingUpdateUnusedWhilePending-03012",
                             "Invalid flags for VkDescriptorSetLayoutBinding entry %" PRIu32, i);
                     }
                 }
@@ -520,7 +520,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                 if (flags_create_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT) {
                     if (!descriptor_indexing_features->descriptorBindingPartiallyBound) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfoEXT-descriptorBindingPartiallyBound-03013",
+                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingPartiallyBound-03013",
                                         "Invalid flags for VkDescriptorSetLayoutBinding entry %" PRIu32, i);
                     }
                 }
@@ -528,20 +528,20 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                 if (flags_create_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT) {
                     if (binding_info.binding != max_binding) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfoEXT-pBindingFlags-03004",
+                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-pBindingFlags-03004",
                                         "Invalid flags for VkDescriptorSetLayoutBinding entry %" PRIu32, i);
                     }
 
                     if (!descriptor_indexing_features->descriptorBindingVariableDescriptorCount) {
                         skip |= log_msg(
                             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfoEXT-descriptorBindingVariableDescriptorCount-03014",
+                            "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-descriptorBindingVariableDescriptorCount-03014",
                             "Invalid flags for VkDescriptorSetLayoutBinding entry %" PRIu32, i);
                     }
                     if ((binding_info.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
                          binding_info.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
                         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfoEXT-pBindingFlags-03015",
+                                        "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-pBindingFlags-03015",
                                         "Invalid flags for VkDescriptorSetLayoutBinding entry %" PRIu32, i);
                     }
                 }
@@ -551,7 +551,7 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
                      (VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT_EXT |
                       VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT))) {
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                    "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfoEXT-flags-03003",
+                                    "VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-flags-03003",
                                     "Invalid flags for VkDescriptorSetLayoutBinding entry %" PRIu32, i);
                 }
             }
@@ -2312,7 +2312,7 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
         if (count_allocate_info->descriptorSetCount != 0 &&
             count_allocate_info->descriptorSetCount != p_alloc_info->descriptorSetCount) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT, 0,
-                            "VUID-VkDescriptorSetVariableDescriptorCountAllocateInfoEXT-descriptorSetCount-03045",
+                            "VUID-VkDescriptorSetVariableDescriptorCountAllocateInfo-descriptorSetCount-03045",
                             "VkDescriptorSetAllocateInfo::descriptorSetCount (%d) != "
                             "VkDescriptorSetVariableDescriptorCountAllocateInfoEXT::descriptorSetCount (%d)",
                             p_alloc_info->descriptorSetCount, count_allocate_info->descriptorSetCount);
@@ -2323,7 +2323,7 @@ bool CoreChecks::ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInf
                 if (count_allocate_info->pDescriptorCounts[i] > layout->GetDescriptorCountFromBinding(layout->GetMaxBinding())) {
                     skip |= log_msg(
                         report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT, 0,
-                        "VUID-VkDescriptorSetVariableDescriptorCountAllocateInfoEXT-pSetLayouts-03046",
+                        "VUID-VkDescriptorSetVariableDescriptorCountAllocateInfo-pSetLayouts-03046",
                         "pDescriptorCounts[%d] = (%d), binding's descriptorCount = (%d)", i,
                         count_allocate_info->pDescriptorCounts[i], layout->GetDescriptorCountFromBinding(layout->GetMaxBinding()));
                 }

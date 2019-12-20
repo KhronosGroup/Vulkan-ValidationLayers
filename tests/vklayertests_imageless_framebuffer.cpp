@@ -301,8 +301,8 @@ TEST_F(VkLayerTest, ImagelessFramebufferRenderPassBeginImageViewMismatchTests) {
     vk::CreateFramebuffer(m_device->device(), &framebufferCreateInfo, nullptr, &framebuffer);
     renderPassBeginInfo.framebuffer = framebuffer;
     TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &renderPassBeginInfo, rp2Supported,
-                        "VUID-VkRenderPassAttachmentBeginInfoKHR-pAttachments-03218",
-                        "VUID-VkRenderPassAttachmentBeginInfoKHR-pAttachments-03218");
+                        "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03218",
+                        "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03218");
     vk::DestroyFramebuffer(m_device->device(), framebuffer, nullptr);
     vk::DestroyImageView(m_device->device(), imageView2, nullptr);
     renderPassAttachmentBeginInfo.pAttachments = &imageView;
@@ -315,8 +315,8 @@ TEST_F(VkLayerTest, ImagelessFramebufferRenderPassBeginImageViewMismatchTests) {
     vk::CreateFramebuffer(m_device->device(), &framebufferCreateInfo, nullptr, &framebuffer);
     renderPassBeginInfo.framebuffer = framebuffer;
     TestRenderPassBegin(m_errorMonitor, m_device->device(), m_commandBuffer->handle(), &renderPassBeginInfo, rp2Supported,
-                        "VUID-VkRenderPassAttachmentBeginInfoKHR-pAttachments-03219",
-                        "VUID-VkRenderPassAttachmentBeginInfoKHR-pAttachments-03219");
+                        "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03219",
+                        "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03219");
     vk::DestroyFramebuffer(m_device->device(), framebuffer, nullptr);
     vk::DestroyImageView(m_device->device(), imageView2, nullptr);
     renderPassAttachmentBeginInfo.pAttachments = &imageView;

@@ -435,7 +435,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
 
     // Check for layouts that mismatch image usages in the framebuffer
     if (layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
-        vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03094" : "VUID-vkCmdBeginRenderPass-initialLayout-00895";
+        vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03094" : "VUID-vkCmdBeginRenderPass-initialLayout-00895";
         skip |=
             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image), vuid,
                     "Layout/usage mismatch for attachment %u in %s"
@@ -447,7 +447,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
 
     if (layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL &&
         !(image_usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT))) {
-        vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03097" : "VUID-vkCmdBeginRenderPass-initialLayout-00897";
+        vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03097" : "VUID-vkCmdBeginRenderPass-initialLayout-00897";
         skip |=
             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image), vuid,
                     "Layout/usage mismatch for attachment %u in %s"
@@ -458,7 +458,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
     }
 
     if (layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT)) {
-        vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03098" : "VUID-vkCmdBeginRenderPass-initialLayout-00898";
+        vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03098" : "VUID-vkCmdBeginRenderPass-initialLayout-00898";
         skip |=
             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image), vuid,
                     "Layout/usage mismatch for attachment %u in %s"
@@ -469,7 +469,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
     }
 
     if (layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
-        vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03099" : "VUID-vkCmdBeginRenderPass-initialLayout-00899";
+        vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03099" : "VUID-vkCmdBeginRenderPass-initialLayout-00899";
         skip |=
             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image), vuid,
                     "Layout/usage mismatch for attachment %u in %s"
@@ -485,7 +485,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
              layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
              layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) &&
             !(image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
-            vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2KHR-initialLayout-03096" : "VUID-vkCmdBeginRenderPass-initialLayout-01758";
+            vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03096" : "VUID-vkCmdBeginRenderPass-initialLayout-01758";
             skip |= log_msg(
                 report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image), vuid,
                 "Layout/usage mismatch for attachment %u in %s"
@@ -3556,7 +3556,7 @@ bool CoreChecks::ValidateLayoutVsAttachmentDescription(const debug_report_data *
                         (first_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL))) {
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        "VUID-VkRenderPassCreateInfo2KHR-pAttachments-02522",
+                        "VUID-VkRenderPassCreateInfo2-pAttachments-02522",
                         "Cannot clear attachment %d with invalid first layout %s.", attachment, string_VkImageLayout(first_layout));
         } else if (!use_rp2 && ((first_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) ||
                                 (first_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL))) {
@@ -3640,7 +3640,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
 
                 case VK_IMAGE_LAYOUT_UNDEFINED:
                 case VK_IMAGE_LAYOUT_PREINITIALIZED:
-                    vuid = use_rp2 ? "VUID-VkAttachmentReference2KHR-layout-03077" : "VUID-VkAttachmentReference-layout-00857";
+                    vuid = use_rp2 ? "VUID-VkAttachmentReference2-layout-03077" : "VUID-VkAttachmentReference-layout-00857";
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                                     "Layout for input attachment reference %u in subpass %u is %s but must be "
                                     "DEPTH_STENCIL_READ_ONLY, SHADER_READ_ONLY_OPTIMAL, or GENERAL.",
@@ -3654,7 +3654,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                     if (!enabled_features.separate_depth_stencil_layouts_features.separateDepthStencilLayouts) {
                         skip |= log_msg(
                             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            "VUID-VkAttachmentReference2KHR-separateDepthStencilLayouts-03313",
+                            "VUID-VkAttachmentReference2-separateDepthStencilLayouts-03313",
                             "Layout for input attachment reference %u in subpass %u is %s but must not be "
                             "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR, "
                             "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR, or VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR.",
@@ -3662,7 +3662,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                     } else if (subpass.pInputAttachments[j].aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
                         skip |= log_msg(
                             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            "VUID-VkAttachmentReference2KHR-attachment-03314",
+                            "VUID-VkAttachmentReference2-attachment-03314",
                             "Layout for input attachment reference %u in subpass %u is %s but must not be "
                             "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR, "
                             "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR, or VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR.",
@@ -3694,7 +3694,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                                     attachment_reference_stencil_layout->stencilLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
                                     skip |=
                                         log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
-                                                0, "VUID-VkAttachmentReferenceStencilLayoutKHR-stencilLayout-03318",
+                                                0, "VUID-VkAttachmentReferenceStencilLayout-stencilLayout-03318",
                                                 "In the attachment reference %u in subpass %u with pNext chain instance "
                                                 "VkAttachmentReferenceStencilLayoutKHR"
                                                 "the stencilLayout member but must not be "
@@ -3712,7 +3712,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                             } else {
                                 skip |=
                                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                            "VUID-VkAttachmentReference2KHR-attachment-03315",
+                                            "VUID-VkAttachmentReference2-attachment-03315",
                                             "When the layout for input attachment reference %u in subpass %u is "
                                             "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR or "
                                             "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR then the pNext chain must include a valid "
@@ -3725,7 +3725,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                             subpass.pInputAttachments[j].layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR) {
                             skip |= log_msg(
                                 report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                "VUID-VkAttachmentReference2KHR-attachment-03315",
+                                "VUID-VkAttachmentReference2-attachment-03315",
                                 "When the aspectMask for input attachment reference %u in subpass %u is VK_IMAGE_ASPECT_DEPTH_BIT "
                                 "then the layout must not be VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR, or "
                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR.",
@@ -3735,7 +3735,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                         if (subpass.pInputAttachments[j].layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR ||
                             subpass.pInputAttachments[j].layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR) {
                             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                            "VUID-VkAttachmentReference2KHR-attachment-03317",
+                                            "VUID-VkAttachmentReference2-attachment-03317",
                                             "When the aspectMask for input attachment reference %u in subpass %u is "
                                             "VK_IMAGE_ASPECT_STENCIL_BIT "
                                             "then the layout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, or "
@@ -3774,7 +3774,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                 }
                 if (!used_as_depth && !used_as_color &&
                     pCreateInfo->pAttachments[attach_index].loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-                    vuid = use_rp2 ? "VUID-VkSubpassDescription2KHR-loadOp-03064" : "VUID-VkSubpassDescription-loadOp-00846";
+                    vuid = use_rp2 ? "VUID-VkSubpassDescription2-loadOp-03064" : "VUID-VkSubpassDescription-loadOp-00846";
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                                     "%s: attachment %u is first used as an input attachment in subpass %u with loadOp=CLEAR.",
                                     function_name, attach_index, attach_index);
@@ -3806,7 +3806,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
 
                 case VK_IMAGE_LAYOUT_UNDEFINED:
                 case VK_IMAGE_LAYOUT_PREINITIALIZED:
-                    vuid = use_rp2 ? "VUID-VkAttachmentReference2KHR-layout-03077" : "VUID-VkAttachmentReference-layout-00857";
+                    vuid = use_rp2 ? "VUID-VkAttachmentReference2-layout-03077" : "VUID-VkAttachmentReference-layout-00857";
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                                     "Layout for color attachment reference %u in subpass %u is %s but should be "
                                     "COLOR_ATTACHMENT_OPTIMAL or GENERAL.",
@@ -3820,7 +3820,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                     if (!enabled_features.separate_depth_stencil_layouts_features.separateDepthStencilLayouts) {
                         skip |= log_msg(
                             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            "VUID-VkAttachmentReference2KHR-separateDepthStencilLayouts-03313",
+                            "VUID-VkAttachmentReference2-separateDepthStencilLayouts-03313",
                             "Layout for color attachment reference %u in subpass %u is %s but must not be "
                             "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR, "
                             "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR, or VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR.",
@@ -3828,7 +3828,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                     } else if (subpass.pColorAttachments[j].aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
                         skip |= log_msg(
                             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            "VUID-VkAttachmentReference2KHR-attachment-03314",
+                            "VUID-VkAttachmentReference2-attachment-03314",
                             "Layout for color attachment reference %u in subpass %u is %s but must not be "
                             "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR, "
                             "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR, or VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR.",
@@ -3860,7 +3860,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                                     attachment_reference_stencil_layout->stencilLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
                                     skip |=
                                         log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
-                                                0, "VUID-VkAttachmentReferenceStencilLayoutKHR-stencilLayout-03318",
+                                                0, "VUID-VkAttachmentReferenceStencilLayout-stencilLayout-03318",
                                                 "In the attachment reference %u in subpass %u with pNext chain instance "
                                                 "VkAttachmentReferenceStencilLayoutKHR"
                                                 "the stencilLayout member but must not be "
@@ -3878,7 +3878,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                             } else {
                                 skip |=
                                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                            "VUID-VkAttachmentReference2KHR-attachment-03315",
+                                            "VUID-VkAttachmentReference2-attachment-03315",
                                             "When the layout for color attachment reference %u in subpass %u is "
                                             "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR or "
                                             "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR then the pNext chain must include a valid "
@@ -3891,7 +3891,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                             subpass.pColorAttachments[j].layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR) {
                             skip |= log_msg(
                                 report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                "VUID-VkAttachmentReference2KHR-attachment-03315",
+                                "VUID-VkAttachmentReference2-attachment-03315",
                                 "When the aspectMask for color attachment reference %u in subpass %u is VK_IMAGE_ASPECT_DEPTH_BIT "
                                 "then the layout must not be VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR, or "
                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR.",
@@ -3901,7 +3901,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                         if (subpass.pColorAttachments[j].layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR ||
                             subpass.pColorAttachments[j].layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR) {
                             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                            "VUID-VkAttachmentReference2KHR-attachment-03317",
+                                            "VUID-VkAttachmentReference2-attachment-03317",
                                             "When the aspectMask for color attachment reference %u in subpass %u is "
                                             "VK_IMAGE_ASPECT_STENCIL_BIT "
                                             "then the layout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, or "
@@ -3921,7 +3921,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
             if (subpass.pResolveAttachments && (subpass.pResolveAttachments[j].attachment != VK_ATTACHMENT_UNUSED) &&
                 (subpass.pResolveAttachments[j].layout == VK_IMAGE_LAYOUT_UNDEFINED ||
                  subpass.pResolveAttachments[j].layout == VK_IMAGE_LAYOUT_PREINITIALIZED)) {
-                vuid = use_rp2 ? "VUID-VkAttachmentReference2KHR-layout-03077" : "VUID-VkAttachmentReference-layout-00857";
+                vuid = use_rp2 ? "VUID-VkAttachmentReference2-layout-03077" : "VUID-VkAttachmentReference-layout-00857";
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                                 "Layout for resolve attachment reference %u in subpass %u is %s but should be "
                                 "COLOR_ATTACHMENT_OPTIMAL or GENERAL.",
@@ -3952,7 +3952,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
 
                 case VK_IMAGE_LAYOUT_UNDEFINED:
                 case VK_IMAGE_LAYOUT_PREINITIALIZED:
-                    vuid = use_rp2 ? "VUID-VkAttachmentReference2KHR-layout-03077" : "VUID-VkAttachmentReference-layout-00857";
+                    vuid = use_rp2 ? "VUID-VkAttachmentReference2-layout-03077" : "VUID-VkAttachmentReference-layout-00857";
                     skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                                     "Layout for depth attachment reference in subpass %u is %s but must be a valid depth/stencil "
                                     "layout or GENERAL.",
@@ -3966,7 +3966,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                     if (!enabled_features.separate_depth_stencil_layouts_features.separateDepthStencilLayouts) {
                         skip |= log_msg(
                             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            "VUID-VkAttachmentReference2KHR-separateDepthStencilLayouts-03313",
+                            "VUID-VkAttachmentReference2-separateDepthStencilLayouts-03313",
                             "Layout for depth attachment reference in subpass %u is %s but must not be "
                             "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR, "
                             "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR, or VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR.",
@@ -3974,7 +3974,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                     } else if (subpass.pDepthStencilAttachment->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
                         skip |= log_msg(
                             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            "VUID-VkAttachmentReference2KHR-attachment-03314",
+                            "VUID-VkAttachmentReference2-attachment-03314",
                             "Layout for depth attachment reference in subpass %u is %s but must not be "
                             "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR, "
                             "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR, or VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR.",
@@ -4006,7 +4006,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                                     attachment_reference_stencil_layout->stencilLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
                                     skip |=
                                         log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
-                                                0, "VUID-VkAttachmentReferenceStencilLayoutKHR-stencilLayout-03318",
+                                                0, "VUID-VkAttachmentReferenceStencilLayout-stencilLayout-03318",
                                                 "In the attachment reference in subpass %u with pNext chain instance "
                                                 "VkAttachmentReferenceStencilLayoutKHR"
                                                 "the stencilLayout member but must not be "
@@ -4024,7 +4024,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                             } else {
                                 skip |=
                                     log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                            "VUID-VkAttachmentReference2KHR-attachment-03315",
+                                            "VUID-VkAttachmentReference2-attachment-03315",
                                             "When the layout for depth attachment reference in subpass %u is "
                                             "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR or "
                                             "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR then the pNext chain must include a valid "
@@ -4037,7 +4037,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                             subpass.pDepthStencilAttachment->layout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR) {
                             skip |= log_msg(
                                 report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                "VUID-VkAttachmentReference2KHR-attachment-03315",
+                                "VUID-VkAttachmentReference2-attachment-03315",
                                 "When the aspectMask for depth attachment reference in subpass %u is VK_IMAGE_ASPECT_DEPTH_BIT "
                                 "then the layout must not be VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR, or "
                                 "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR.",
@@ -4047,7 +4047,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                         if (subpass.pDepthStencilAttachment->layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR ||
                             subpass.pDepthStencilAttachment->layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR) {
                             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                            "VUID-VkAttachmentReference2KHR-attachment-03317",
+                                            "VUID-VkAttachmentReference2-attachment-03317",
                                             "When the aspectMask for depth attachment reference in subpass %u is "
                                             "VK_IMAGE_ASPECT_STENCIL_BIT "
                                             "then the layout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, or "
