@@ -495,6 +495,32 @@ bool BestPractices::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuff
     return skip;
 }
 
+// Generic function to handle validation for all CmdDraw* type functions
+bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* caller) const {
+    bool skip = false;
+    const CMD_BUFFER_STATE* cb_state = GetCBState(cmd_buffer);
+    if (cb_state) {
+        const auto last_bound_it = cb_state->lastBound.find(VK_PIPELINE_BIND_POINT_GRAPHICS);
+        const PIPELINE_STATE* pipeline_state = nullptr;
+        if (last_bound_it != cb_state->lastBound.cend()) {
+            pipeline_state = last_bound_it->second.pipeline_state;
+        }
+        const auto& current_vtx_bfr_binding_info = cb_state->current_vertex_buffer_binding_info.vertex_buffer_bindings;
+        // Verify vertex binding
+        if (pipeline_state->vertex_binding_descriptions_.size() <= 0) {
+            if ((!current_vtx_bfr_binding_info.empty()) && (!cb_state->vertex_buffer_used)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(cb_state->commandBuffer),
+                                kVUID_BestPractices_DrawState_VtxIndexOutOfBounds,
+                                "Vertex buffers are bound to %s but no vertex buffers are attached to %s.",
+                                report_data->FormatHandle(cb_state->commandBuffer).c_str(),
+                                report_data->FormatHandle(pipeline_state->pipeline).c_str());
+            }
+        }
+    }
+    return skip;
+}
+
 bool BestPractices::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
                                            uint32_t firstVertex, uint32_t firstInstance) const {
     bool skip = false;
@@ -503,6 +529,7 @@ bool BestPractices::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32
         skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         kVUID_BestPractices_CmdDraw_InstanceCountZero,
                         "Warning: You are calling vkCmdDraw() with an instanceCount of Zero.");
+        skip |= ValidateCmdDrawType(commandBuffer, "vkCmdDraw()");
     }
 
     return skip;
@@ -517,6 +544,16 @@ bool BestPractices::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer,
                         kVUID_BestPractices_CmdDraw_InstanceCountZero,
                         "Warning: You are calling vkCmdDrawIndexed() with an instanceCount of Zero.");
     }
+    skip |= ValidateCmdDrawType(commandBuffer, "vkCmdDrawIndexed()");
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                  VkDeviceSize offset, VkBuffer countBuffer,
+                                                                  VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                                  uint32_t stride) const {
+    bool skip = ValidateCmdDrawType(commandBuffer, "vkCmdDrawIndexedIndirectCountKHR()");
 
     return skip;
 }
@@ -529,6 +566,7 @@ bool BestPractices::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer
         skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         kVUID_BestPractices_CmdDraw_DrawCountZero,
                         "Warning: You are calling vkCmdDrawIndirect() with a drawCount of Zero.");
+        skip |= ValidateCmdDrawType(commandBuffer, "vkCmdDrawIndirect()");
     }
 
     return skip;
@@ -542,6 +580,7 @@ bool BestPractices::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer comman
         skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                         kVUID_BestPractices_CmdDraw_DrawCountZero,
                         "Warning: You are calling vkCmdDrawIndexedIndirect() with a drawCount of Zero.");
+        skip |= ValidateCmdDrawType(commandBuffer, "vkCmdDrawIndexedIndirect()");
     }
 
     return skip;
