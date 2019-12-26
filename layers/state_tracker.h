@@ -41,6 +41,11 @@
 #include <deque>
 #include <map>
 
+uint32_t ResolveRemainingLevels(const VkImageSubresourceRange* range, uint32_t mip_levels);
+uint32_t ResolveRemainingLayers(const VkImageSubresourceRange* range, uint32_t layers);
+VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo& image_create_info, const VkImageSubresourceRange& range);
+VkImageSubresourceRange NormalizeSubresourceRange(const IMAGE_STATE& image_state, const VkImageSubresourceRange& range);
+
 enum SyncScope {
     kSyncScopeInternal,
     kSyncScopeExternalTemporary,
