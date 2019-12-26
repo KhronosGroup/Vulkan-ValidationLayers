@@ -34,9 +34,4 @@ uint32_t FullMipChainLevels(uint32_t height, uint32_t width = 1, uint32_t depth 
 uint32_t FullMipChainLevels(VkExtent3D);
 uint32_t FullMipChainLevels(VkExtent2D);
 
-uint32_t ResolveRemainingLevels(const VkImageSubresourceRange *range, uint32_t mip_levels);
-
-uint32_t ResolveRemainingLayers(const VkImageSubresourceRange *range, uint32_t layers);
-VkImageSubresourceRange NormalizeSubresourceRange(const IMAGE_STATE &image_state, const VkImageSubresourceRange &range);
-
 #endif  // CORE_VALIDATION_BUFFER_VALIDATION_H_
