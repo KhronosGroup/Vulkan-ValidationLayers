@@ -1093,6 +1093,8 @@ VkImageObj::VkImageObj(VkDeviceObj *dev) {
     m_device = dev;
     m_descriptorImageInfo.imageView = VK_NULL_HANDLE;
     m_descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    m_arrayLayers = 0;
+    m_mipLevels = 0;
 }
 
 // clang-format off
@@ -1116,9 +1118,7 @@ void VkImageObj::ImageMemoryBarrier(VkCommandBufferObj *cmd_buf, VkImageAspectFl
                                     VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages,
                                     uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex) {
     // clang-format on
-    // TODO: Mali device crashing with VK_REMAINING_MIP_LEVELS
-    const VkImageSubresourceRange subresourceRange =
-        subresource_range(aspect, 0, /*VK_REMAINING_MIP_LEVELS*/ 1, 0, 1 /*VK_REMAINING_ARRAY_LAYERS*/);
+    const VkImageSubresourceRange subresourceRange = subresource_range(aspect, 0, m_mipLevels, 0, m_arrayLayers);
     VkImageMemoryBarrier barrier;
     barrier = image_memory_barrier(output_mask, input_mask, Layout(), image_layout, subresourceRange, srcQueueFamilyIndex,
                                    dstQueueFamilyIndex);
@@ -1261,14 +1261,41 @@ bool VkImageObj::IsCompatible(const VkImageUsageFlags usages, const VkFormatFeat
 
     return true;
 }
+VkImageCreateInfo VkImageObj::ImageCreateInfo2D(uint32_t const width, uint32_t const height, uint32_t const mipLevels,
+                                                uint32_t const layers, VkFormat const format, VkFlags const usage,
+                                                VkImageTiling const requested_tiling, const std::vector<uint32_t> *queue_families) {
+    VkImageCreateInfo imageCreateInfo = vk_testing::Image::create_info();
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageCreateInfo.format = format;
+    imageCreateInfo.extent.width = width;
+    imageCreateInfo.extent.height = height;
+    imageCreateInfo.mipLevels = mipLevels;
+    imageCreateInfo.arrayLayers = layers;
+    imageCreateInfo.tiling = requested_tiling;  // This will be touched up below...
+    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
+    // Automatically set sharing mode etc. based on queue family information
+    if (queue_families && (queue_families->size() > 1)) {
+        imageCreateInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
+        imageCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(queue_families->size());
+        imageCreateInfo.pQueueFamilyIndices = queue_families->data();
+    }
+    imageCreateInfo.usage = usage;
+    return imageCreateInfo;
+}
 void VkImageObj::InitNoLayout(uint32_t const width, uint32_t const height, uint32_t const mipLevels, VkFormat const format,
                               VkFlags const usage, VkImageTiling const requested_tiling, VkMemoryPropertyFlags const reqs,
                               const std::vector<uint32_t> *queue_families, bool memory) {
+    InitNoLayout(ImageCreateInfo2D(width, height, mipLevels, 1, format, usage, requested_tiling, queue_families), reqs, memory);
+}
+void VkImageObj::InitNoLayout(const VkImageCreateInfo &create_info, VkMemoryPropertyFlags const reqs, bool memory) {
     VkFormatProperties image_fmt;
+    // Touch up create info for tiling compatiblity...
+    auto usage = create_info.usage;
+    VkImageTiling requested_tiling = create_info.tiling;
     VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
 
-    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), format, &image_fmt);
+    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), create_info.format, &image_fmt);
 
     if (requested_tiling == VK_IMAGE_TILING_LINEAR) {
         if (IsCompatible(usage, image_fmt.linearTilingFeatures)) {
@@ -1288,24 +1315,13 @@ void VkImageObj::InitNoLayout(uint32_t const width, uint32_t const height, uint3
                << ", supported optimal features: " << image_fmt.optimalTilingFeatures;
     }
 
-    VkImageCreateInfo imageCreateInfo = vk_testing::Image::create_info();
-    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageCreateInfo.format = format;
-    imageCreateInfo.extent.width = width;
-    imageCreateInfo.extent.height = height;
-    imageCreateInfo.mipLevels = mipLevels;
+    VkImageCreateInfo imageCreateInfo = create_info;
     imageCreateInfo.tiling = tiling;
-    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    // Automatically set sharing mode etc. based on queue family information
-    if (queue_families && (queue_families->size() > 1)) {
-        imageCreateInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-        imageCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(queue_families->size());
-        imageCreateInfo.pQueueFamilyIndices = queue_families->data();
-    }
+    m_mipLevels = imageCreateInfo.mipLevels;
+    m_arrayLayers = imageCreateInfo.arrayLayers;
 
     Layout(imageCreateInfo.initialLayout);
-    imageCreateInfo.usage = usage;
     if (memory)
         vk_testing::Image::init(*m_device, imageCreateInfo, reqs);
     else
@@ -1315,11 +1331,16 @@ void VkImageObj::InitNoLayout(uint32_t const width, uint32_t const height, uint3
 void VkImageObj::Init(uint32_t const width, uint32_t const height, uint32_t const mipLevels, VkFormat const format,
                       VkFlags const usage, VkImageTiling const requested_tiling, VkMemoryPropertyFlags const reqs,
                       const std::vector<uint32_t> *queue_families, bool memory) {
-    InitNoLayout(width, height, mipLevels, format, usage, requested_tiling, reqs, queue_families, memory);
+    Init(ImageCreateInfo2D(width, height, mipLevels, 1, format, usage, requested_tiling, queue_families), reqs, memory);
+}
+
+void VkImageObj::Init(const VkImageCreateInfo &create_info, VkMemoryPropertyFlags const reqs, bool memory) {
+    InitNoLayout(create_info, reqs, memory);
 
     if (!initialized() || !memory) return;  // We don't have a valid handle from early stage init, and thus SetLayout will fail
 
     VkImageLayout newLayout;
+    const auto usage = create_info.usage;
     if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
         newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     else if (usage & VK_IMAGE_USAGE_SAMPLED_BIT)
@@ -1328,6 +1349,7 @@ void VkImageObj::Init(uint32_t const width, uint32_t const height, uint32_t cons
         newLayout = m_descriptorImageInfo.imageLayout;
 
     VkImageAspectFlags image_aspect = 0;
+    const auto format = create_info.format;
     if (FormatIsDepthAndStencil(format)) {
         image_aspect = VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
     } else if (FormatIsDepthOnly(format)) {
@@ -1363,6 +1385,8 @@ void VkImageObj::init(const VkImageCreateInfo *create_info) {
     Layout(create_info->initialLayout);
 
     vk_testing::Image::init(*m_device, *create_info, 0);
+    m_mipLevels = create_info->mipLevels;
+    m_arrayLayers = create_info->arrayLayers;
 
     VkImageAspectFlags image_aspect = 0;
     if (FormatIsDepthAndStencil(create_info->format)) {
