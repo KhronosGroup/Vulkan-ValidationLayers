@@ -49,8 +49,6 @@ static VkImageSubresourceRange RangeFromLayers(const VkImageSubresourceLayers &s
     return subresource_range;
 }
 
-static VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image_create_info,
-                                                         const VkImageSubresourceRange &range);
 static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &create_info) {
     const auto format = create_info.format;
     VkImageSubresourceRange init_range{0, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
@@ -179,37 +177,6 @@ uint32_t FullMipChainLevels(uint32_t height, uint32_t width, uint32_t depth) {
 uint32_t FullMipChainLevels(VkExtent3D extent) { return FullMipChainLevels(extent.height, extent.width, extent.depth); }
 
 uint32_t FullMipChainLevels(VkExtent2D extent) { return FullMipChainLevels(extent.height, extent.width); }
-
-static VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image_create_info,
-                                                         const VkImageSubresourceRange &range) {
-    VkImageSubresourceRange norm = range;
-    norm.levelCount = ResolveRemainingLevels(&range, image_create_info.mipLevels);
-
-    // Special case for 3D images with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR flag bit, where <extent.depth> and
-    // <arrayLayers> can potentially alias.
-    uint32_t layer_limit = (0 != (image_create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR))
-                               ? image_create_info.extent.depth
-                               : image_create_info.arrayLayers;
-    norm.layerCount = ResolveRemainingLayers(&range, layer_limit);
-
-    // For multiplanar formats, IMAGE_ASPECT_COLOR is equivalent to adding the aspect of the individual planes
-    VkImageAspectFlags &aspect_mask = norm.aspectMask;
-    if (FormatIsMultiplane(image_create_info.format)) {
-        if (aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) {
-            aspect_mask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
-            aspect_mask |= (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT);
-            if (FormatPlaneCount(image_create_info.format) > 2) {
-                aspect_mask |= VK_IMAGE_ASPECT_PLANE_2_BIT;
-            }
-        }
-    }
-    return norm;
-}
-
-VkImageSubresourceRange NormalizeSubresourceRange(const IMAGE_STATE &image_state, const VkImageSubresourceRange &range) {
-    const VkImageCreateInfo &image_create_info = image_state.createInfo;
-    return NormalizeSubresourceRange(image_create_info, range);
-}
 
 bool CoreChecks::FindLayouts(VkImage image, std::vector<VkImageLayout> &layouts) const {
     auto image_state = GetImageState(image);
@@ -1881,24 +1848,6 @@ bool CoreChecks::ValidateImageAttributes(const IMAGE_STATE *image_state, const V
                      param_name, report_data->FormatHandle(image).c_str());
     }
     return skip;
-}
-
-uint32_t ResolveRemainingLevels(const VkImageSubresourceRange *range, uint32_t mip_levels) {
-    // Return correct number of mip levels taking into account VK_REMAINING_MIP_LEVELS
-    uint32_t mip_level_count = range->levelCount;
-    if (range->levelCount == VK_REMAINING_MIP_LEVELS) {
-        mip_level_count = mip_levels - range->baseMipLevel;
-    }
-    return mip_level_count;
-}
-
-uint32_t ResolveRemainingLayers(const VkImageSubresourceRange *range, uint32_t layers) {
-    // Return correct number of layers taking into account VK_REMAINING_ARRAY_LAYERS
-    uint32_t array_layer_count = range->layerCount;
-    if (range->layerCount == VK_REMAINING_ARRAY_LAYERS) {
-        array_layer_count = layers - range->baseArrayLayer;
-    }
-    return array_layer_count;
 }
 
 bool CoreChecks::VerifyClearImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *image_state,
