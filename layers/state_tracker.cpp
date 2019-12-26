@@ -52,6 +52,55 @@ void ValidationStateTracker::InitDeviceValidationObject(bool add_obj, Validation
     }
 }
 
+uint32_t ResolveRemainingLevels(const VkImageSubresourceRange *range, uint32_t mip_levels) {
+    // Return correct number of mip levels taking into account VK_REMAINING_MIP_LEVELS
+    uint32_t mip_level_count = range->levelCount;
+    if (range->levelCount == VK_REMAINING_MIP_LEVELS) {
+        mip_level_count = mip_levels - range->baseMipLevel;
+    }
+    return mip_level_count;
+}
+
+uint32_t ResolveRemainingLayers(const VkImageSubresourceRange *range, uint32_t layers) {
+    // Return correct number of layers taking into account VK_REMAINING_ARRAY_LAYERS
+    uint32_t array_layer_count = range->layerCount;
+    if (range->layerCount == VK_REMAINING_ARRAY_LAYERS) {
+        array_layer_count = layers - range->baseArrayLayer;
+    }
+    return array_layer_count;
+}
+
+VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image_create_info,
+                                                  const VkImageSubresourceRange &range) {
+    VkImageSubresourceRange norm = range;
+    norm.levelCount = ResolveRemainingLevels(&range, image_create_info.mipLevels);
+
+    // Special case for 3D images with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR flag bit, where <extent.depth> and
+    // <arrayLayers> can potentially alias.
+    uint32_t layer_limit = (0 != (image_create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR))
+                               ? image_create_info.extent.depth
+                               : image_create_info.arrayLayers;
+    norm.layerCount = ResolveRemainingLayers(&range, layer_limit);
+
+    // For multiplanar formats, IMAGE_ASPECT_COLOR is equivalent to adding the aspect of the individual planes
+    VkImageAspectFlags &aspect_mask = norm.aspectMask;
+    if (FormatIsMultiplane(image_create_info.format)) {
+        if (aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) {
+            aspect_mask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
+            aspect_mask |= (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT);
+            if (FormatPlaneCount(image_create_info.format) > 2) {
+                aspect_mask |= VK_IMAGE_ASPECT_PLANE_2_BIT;
+            }
+        }
+    }
+    return norm;
+}
+
+VkImageSubresourceRange NormalizeSubresourceRange(const IMAGE_STATE &image_state, const VkImageSubresourceRange &range) {
+    const VkImageCreateInfo &image_create_info = image_state.createInfo;
+    return NormalizeSubresourceRange(image_create_info, range);
+}
+
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 // Android-specific validation that uses types defined only with VK_USE_PLATFORM_ANDROID_KHR
 // This could also move into a seperate core_validation_android.cpp file... ?
