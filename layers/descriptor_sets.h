@@ -509,6 +509,31 @@ class AccelerationStructureDescriptor : public Descriptor {
     void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override {}
 };
 
+union AnyDescriptor {
+    SamplerDescriptor sampler;
+    ImageSamplerDescriptor image_sampler;
+    ImageDescriptor image;
+    TexelDescriptor texel;
+    BufferDescriptor buffer;
+    InlineUniformDescriptor inline_uniform;
+    AccelerationStructureDescriptor accelerator_structure;
+    ~AnyDescriptor() = delete;
+};
+
+struct alignas(alignof(AnyDescriptor)) DescriptorBackingStore {
+    uint8_t data[sizeof(AnyDescriptor)];
+
+    SamplerDescriptor *Sampler() { return &(reinterpret_cast<AnyDescriptor *>(this)->sampler); }
+    ImageSamplerDescriptor *ImageSampler() { return &(reinterpret_cast<AnyDescriptor *>(this)->image_sampler); }
+    ImageDescriptor *Image() { return &(reinterpret_cast<AnyDescriptor *>(this)->image); }
+    TexelDescriptor *Texel() { return &(reinterpret_cast<AnyDescriptor *>(this)->texel); }
+    BufferDescriptor *Buffer() { return &(reinterpret_cast<AnyDescriptor *>(this)->buffer); }
+    InlineUniformDescriptor *InlineUniform() { return &(reinterpret_cast<AnyDescriptor *>(this)->inline_uniform); }
+    AccelerationStructureDescriptor *AccelerationStructure() {
+        return &(reinterpret_cast<AnyDescriptor *>(this)->accelerator_structure);
+    }
+};
+
 // Structs to contain common elements that need to be shared between Validate* and Perform* calls below
 struct AllocateDescriptorSetsData {
     std::map<uint32_t, uint32_t> required_descriptors_by_type;
@@ -640,6 +665,11 @@ class DescriptorSet : public BASE_NODE {
 
     const std::vector<safe_VkWriteDescriptorSet> &GetWrites() const { return push_descriptor_set_writes; }
 
+    // Given that we are providing placement new allocation for descriptors, the deleter needs to *only* call the destructor
+    struct DescriptorDeleter {
+        void operator()(Descriptor *desc) { desc->~Descriptor(); }
+    };
+
   private:
     // Private helper to set all bound cmd buffers to INVALID state
     void InvalidateBoundCmdBuffers(ValidationStateTracker *state_data);
@@ -647,7 +677,10 @@ class DescriptorSet : public BASE_NODE {
     VkDescriptorSet set_;
     DESCRIPTOR_POOL_STATE *pool_state_;
     const std::shared_ptr<DescriptorSetLayout const> p_layout_;
-    std::vector<std::unique_ptr<Descriptor>> descriptors_;
+    // NOTE: the the backing store for the descriptors must be declared *before* it so it will be destructed *after* it
+    // "Destructors for nonstatic member objects are called in the reverse order in which they appear in the class declaration."
+    std::vector<DescriptorBackingStore> descriptor_store_;
+    std::vector<std::unique_ptr<Descriptor, DescriptorDeleter>> descriptors_;
     const StateTracker *state_data_;
     uint32_t variable_count_;
     uint64_t change_count_;
