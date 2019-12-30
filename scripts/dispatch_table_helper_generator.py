@@ -1,9 +1,9 @@
 #!/usr/bin/python3 -i
 #
-# Copyright (c) 2015-2019 The Khronos Group Inc.
-# Copyright (c) 2015-2019 Valve Corporation
-# Copyright (c) 2015-2019 LunarG, Inc.
-# Copyright (c) 2015-2019 Google Inc.
+# Copyright (c) 2015-2020 The Khronos Group Inc.
+# Copyright (c) 2015-2022 Valve Corporation
+# Copyright (c) 2015-2020 LunarG, Inc.
+# Copyright (c) 2015-2020 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -73,7 +73,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         self.device_dispatch_list = []        # List of entries for device dispatch list
         self.dev_ext_stub_list = []           # List of stub functions for device extension functions
         self.device_extension_list = []       # List of device extension functions
-        self.device_stub_list = []            # List of device functions with stubs (promoted or extensions)
+        self.stub_list = []                   # List of functions with stubs (promoted or extensions)
         self.extension_type = ''
 
     #
@@ -95,9 +95,9 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         write(file_comment, file=self.outFile)
         # Copyright Notice
         copyright =  '/*\n'
-        copyright += ' * Copyright (c) 2015-2019 The Khronos Group Inc.\n'
-        copyright += ' * Copyright (c) 2015-2019 Valve Corporation\n'
-        copyright += ' * Copyright (c) 2015-2019 LunarG, Inc.\n'
+        copyright += ' * Copyright (c) 2015-2020 The Khronos Group Inc.\n'
+        copyright += ' * Copyright (c) 2015-2020 Valve Corporation\n'
+        copyright += ' * Copyright (c) 2015-2020 LunarG, Inc.\n'
         copyright += ' *\n'
         copyright += ' * Licensed under the Apache License, Version 2.0 (the "License");\n'
         copyright += ' * you may not use this file except in compliance with the License.\n'
@@ -176,37 +176,40 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
     def AddCommandToDispatchList(self, name, handle_type, protect, cmdinfo):
         if handle_type not in self.handle_types:
             return
+        extension = "VK_VERSION" not in self.featureName
+        promoted = not extension and "VK_VERSION_1_0" != self.featureName
+        if promoted or extension:
+            # We want feature written for all promoted entrypoints in addition to extensions
+            self.stub_list.append([name, self.featureName])
+            # Build up stub function
+            return_type = ''
+            decl = self.makeCDecls(cmdinfo.elem)[1]
+            if decl.startswith('typedef VkResult'):
+                return_type = 'return VK_SUCCESS;'
+            elif decl.startswith('typedef VkDeviceAddress'):
+                return_type = 'return 0;'
+            elif decl.startswith('typedef uint32_t'):
+                return_type = 'return 0;'
+            elif decl.startswith('typedef uint64_t'):
+                return_type = 'return 0;'
+            elif decl.startswith('typedef VkBool32'):
+                return_type = 'return VK_FALSE;'
+            pre_decl, decl = decl.split('*PFN_vk')
+            pre_decl = pre_decl.replace('typedef ', '')
+            pre_decl = pre_decl.split(' (')[0]
+            decl = decl.replace(')(', '(')
+            decl = 'static VKAPI_ATTR ' + pre_decl + ' VKAPI_CALL Stub' + decl
+            func_body = ' { ' + return_type + ' };'
+            decl = decl.replace (';', func_body)
+            if self.featureExtraProtect is not None:
+                self.dev_ext_stub_list.append('#ifdef %s' % self.featureExtraProtect)
+            self.dev_ext_stub_list.append(decl)
+            if self.featureExtraProtect is not None:
+                self.dev_ext_stub_list.append('#endif // %s' % self.featureExtraProtect)
         if handle_type != 'VkInstance' and handle_type != 'VkPhysicalDevice' and name != 'vkGetInstanceProcAddr':
             self.device_dispatch_list.append((name, self.featureExtraProtect))
-            extension = "VK_VERSION" not in self.featureName
-            promoted = not extension and "VK_VERSION_1_0" != self.featureName
             if promoted or extension:
-                # We want feature written for all promoted entrypoints, in addition to extensions
-                self.device_stub_list.append([name, self.featureName])
                 self.device_extension_list.append([name, self.featureName])
-                # Build up stub function
-                return_type = ''
-                decl = self.makeCDecls(cmdinfo.elem)[1]
-                if decl.startswith('typedef VkResult'):
-                    return_type = 'return VK_SUCCESS;'
-                elif decl.startswith('typedef VkDeviceAddress'):
-                    return_type = 'return 0;'
-                elif decl.startswith('typedef uint32_t'):
-                    return_type = 'return 0;'
-                elif decl.startswith('typedef uint64_t'):
-                    return_type = 'return 0;'
-                pre_decl, decl = decl.split('*PFN_vk')
-                pre_decl = pre_decl.replace('typedef ', '')
-                pre_decl = pre_decl.split(' (')[0]
-                decl = decl.replace(')(', '(')
-                decl = 'static VKAPI_ATTR ' + pre_decl + ' VKAPI_CALL Stub' + decl
-                func_body = ' { ' + return_type + ' };'
-                decl = decl.replace (';', func_body)
-                if self.featureExtraProtect is not None:
-                    self.dev_ext_stub_list.append('#ifdef %s' % self.featureExtraProtect)
-                self.dev_ext_stub_list.append(decl)
-                if self.featureExtraProtect is not None:
-                    self.dev_ext_stub_list.append('#endif // %s' % self.featureExtraProtect)
         else:
             self.instance_dispatch_list.append((name, self.featureExtraProtect))
         return
@@ -224,7 +227,6 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
     #
     # Output a function that'll determine if an extension is in the enabled list
     def OutputExtEnabledFunction(self):
-        ##extension_functions = dict(self.device_dispatch_list)
         ext_fcn  = ''
         # First, write out our static data structure -- map of all APIs that are part of extensions to their extension.
         ext_fcn += 'const std::unordered_map<std::string, std::string> api_extension_map {\n'
@@ -264,7 +266,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
             table += '    memset(table, 0, sizeof(*table));\n'
             table += '    // Instance function pointers\n'
 
-        stubbed_functions = dict(self.device_stub_list)
+        stubbed_functions = dict(self.stub_list)
         for item in entries:
             # Remove 'vk' from proto name
             base_name = item[0][2:]
@@ -280,7 +282,7 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
                 table += '    table->GetInstanceProcAddr = gpa;\n'
             else:
                 table += '    table->%s = (PFN_%s) gpa(%s, "%s");\n' % (base_name, item[0], table_type, item[0])
-                if 'device' in table_type and item[0] in stubbed_functions:
+                if item[0] in stubbed_functions:
                     stub_check = '    if (table->%s == nullptr) { table->%s = (PFN_%s)Stub%s; }\n' % (base_name, base_name, item[0], base_name)
                     table += stub_check
             if item[1] is not None:
