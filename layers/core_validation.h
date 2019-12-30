@@ -35,9 +35,7 @@ class CoreChecks : public ValidationStateTracker {
     std::unordered_set<uint64_t> ahb_ext_formats_set;
     GlobalQFOTransferBarrierMap<VkImageMemoryBarrier> qfo_release_image_barrier_map;
     GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> qfo_release_buffer_barrier_map;
-    unordered_map<VkImage, std::vector<ImageSubresourcePair>> imageSubresourceMap;
-    using ImageSubresPairLayoutMap = std::unordered_map<ImageSubresourcePair, VkImageLayout>;
-    ImageSubresPairLayoutMap imageLayoutMap;
+    ImageLayoutMap imageLayoutMap;
 
     void IncrementCommandCount(VkCommandBuffer commandBuffer);
 
@@ -66,9 +64,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateMaxTimelineSemaphoreValueDifference(VkQueue queue, VkSemaphore semaphore, const uint64_t semaphoreHandleValue,
                                                      unordered_map<VkSemaphore, std::set<uint64_t>>* timeline_values_arg,
                                                      const char* func_name, const char* vuid) const;
-    bool ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitInfo* submit,
-                                         ImageSubresPairLayoutMap* localImageLayoutMap_arg, QueryMap* local_query_to_state_map,
-                                         std::vector<VkCommandBuffer>* current_cmds_arg) const;
+    bool ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitInfo* submit, ImageLayoutMap* localImageLayoutMap_arg,
+                                         QueryMap* local_query_to_state_map, std::vector<VkCommandBuffer>* current_cmds_arg) const;
     bool ValidateStatus(const CMD_BUFFER_STATE* pNode, CBStatusFlags status_mask, VkFlags msg_flags, const char* fail_msg,
                         const char* msg_code) const;
     bool ValidateDrawStateFlags(const CMD_BUFFER_STATE* pCB, const PIPELINE_STATE* pPipe, bool indexed, const char* msg_code) const;
@@ -227,8 +224,6 @@ class CoreChecks : public ValidationStateTracker {
                                const char* error_code) const;
     bool InsideRenderPass(const CMD_BUFFER_STATE* pCB, const char* apiName, const char* msgCode) const;
     bool OutsideRenderPass(const CMD_BUFFER_STATE* pCB, const char* apiName, const char* msgCode) const;
-
-    static void SetLayout(ImageSubresPairLayoutMap& imageLayoutMap, ImageSubresourcePair imgpair, VkImageLayout layout);
 
     bool ValidateImageSampleCount(const IMAGE_STATE* image_state, VkSampleCountFlagBits sample_count, const char* location,
                                   const std::string& msgCode) const;
@@ -462,18 +457,12 @@ class CoreChecks : public ValidationStateTracker {
                                                 const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
                                                 const VkImageSubresourceRange* pRanges);
 
-    bool FindLayoutVerifyLayout(ImageSubresourcePair imgpair, VkImageLayout& layout, const VkImageAspectFlags aspectMask);
-
-    bool FindGlobalLayout(ImageSubresourcePair imgpair, VkImageLayout& layout);
-
     bool FindLayouts(VkImage image, std::vector<VkImageLayout>& layouts) const;
 
-    bool FindLayout(const ImageSubresPairLayoutMap& imageLayoutMap, ImageSubresourcePair imgpair, VkImageLayout& layout) const;
+    bool FindLayout(const ImageLayoutMap& imageLayoutMap, ImageSubresourcePair imgpair, VkImageLayout& layout) const;
 
-    static bool FindLayout(const ImageSubresPairLayoutMap& imageLayoutMap, ImageSubresourcePair imgpair, VkImageLayout& layout,
+    static bool FindLayout(const ImageLayoutMap& imageLayoutMap, ImageSubresourcePair imgpair, VkImageLayout& layout,
                            const VkImageAspectFlags aspectMask);
-
-    void SetGlobalLayout(ImageSubresourcePair imgpair, const VkImageLayout& layout);
 
     void SetImageViewLayout(CMD_BUFFER_STATE* cb_node, const IMAGE_VIEW_STATE& view_state, VkImageLayout layout,
                             VkImageLayout layoutStencil);
@@ -537,8 +526,8 @@ class CoreChecks : public ValidationStateTracker {
                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions,
                                    VkFilter filter);
 
-    bool ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE* pCB, const ImageSubresPairLayoutMap& globalImageLayoutMap,
-                                    ImageSubresPairLayoutMap* overlayLayoutMap_arg) const;
+    bool ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE* pCB, const ImageLayoutMap& globalImageLayoutMap,
+                                    ImageLayoutMap* overlayLayoutMap_arg) const;
 
     void UpdateCmdBufImageLayouts(CMD_BUFFER_STATE* pCB);
 

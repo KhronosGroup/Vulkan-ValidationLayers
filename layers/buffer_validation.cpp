@@ -214,6 +214,18 @@ VkImageSubresourceRange NormalizeSubresourceRange(const IMAGE_STATE &image_state
     return NormalizeSubresourceRange(image_create_info, range);
 }
 
+VkImageLayout GetImageSubresourceInitialLayout(const ImageLayoutMap &imageLayoutMap, const ImageSubresourcePair &imgpair) {
+    auto imgsubIt = imageLayoutMap.find(imgpair.image);
+    if (imgsubIt == imageLayoutMap.end()) return kInvalidLayout;
+    return imgsubIt->second->GetSubresourceInitialLayout(imgpair.subresource);
+}
+
+VkImageLayout GetImageSubresourceLayout(const ImageLayoutMap &imageLayoutMap, const ImageSubresourcePair &imgpair) {
+    auto imgsubIt = imageLayoutMap.find(imgpair.image);
+    if (imgsubIt == imageLayoutMap.end()) return kInvalidLayout;
+    return imgsubIt->second->GetSubresourceLayout(imgpair.subresource);
+}
+
 template <class OBJECT, class LAYOUT>
 void CoreChecks::SetLayout(OBJECT *pObject, VkImage image, VkImageSubresource range, const LAYOUT &layout) {
     ImageSubresourcePair imgpair = {image, true, range};
@@ -236,96 +248,40 @@ void CoreChecks::SetLayout(OBJECT *pObject, ImageSubresourcePair imgpair, const 
     }
 }
 
-// Set the layout in supplied map
-void CoreChecks::SetLayout(ImageSubresPairLayoutMap &imageLayoutMap, ImageSubresourcePair imgpair, VkImageLayout layout) {
-    auto it = imageLayoutMap.find(imgpair);
-    if (it != imageLayoutMap.end()) {
-        it->second = layout;  // Update
-    } else {
-        imageLayoutMap[imgpair] = layout;  // Insert
-    }
-}
-
-bool CoreChecks::FindLayoutVerifyLayout(ImageSubresourcePair imgpair, VkImageLayout &layout, const VkImageAspectFlags aspectMask) {
-    if (!(imgpair.subresource.aspectMask & aspectMask)) {
-        return false;
-    }
-    VkImageAspectFlags oldAspectMask = imgpair.subresource.aspectMask;
-    imgpair.subresource.aspectMask = aspectMask;
-    auto imgsubIt = imageLayoutMap.find(imgpair);
-    if (imgsubIt == imageLayoutMap.end()) {
-        return false;
-    }
-    if (layout != VK_IMAGE_LAYOUT_MAX_ENUM && layout != imgsubIt->second) {
-        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(imgpair.image),
-                kVUID_Core_DrawState_InvalidLayout,
-                "Cannot query for %s layout when combined aspect mask %d has multiple layout types: %s and %s",
-                report_data->FormatHandle(imgpair.image).c_str(), oldAspectMask, string_VkImageLayout(layout),
-                string_VkImageLayout(imgsubIt->second));
-    }
-    layout = imgsubIt->second;
-    return true;
-}
-
-// Find layout(s) on the global level
-bool CoreChecks::FindGlobalLayout(ImageSubresourcePair imgpair, VkImageLayout &layout) {
-    layout = VK_IMAGE_LAYOUT_MAX_ENUM;
-    FindLayoutVerifyLayout(imgpair, layout, VK_IMAGE_ASPECT_COLOR_BIT);
-    FindLayoutVerifyLayout(imgpair, layout, VK_IMAGE_ASPECT_DEPTH_BIT);
-    FindLayoutVerifyLayout(imgpair, layout, VK_IMAGE_ASPECT_STENCIL_BIT);
-    FindLayoutVerifyLayout(imgpair, layout, VK_IMAGE_ASPECT_METADATA_BIT);
-    if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
-        FindLayoutVerifyLayout(imgpair, layout, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
-        FindLayoutVerifyLayout(imgpair, layout, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
-        FindLayoutVerifyLayout(imgpair, layout, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
-    }
-    if (layout == VK_IMAGE_LAYOUT_MAX_ENUM) {
-        imgpair = {imgpair.image, false, VkImageSubresource()};
-        auto imgsubIt = imageLayoutMap.find(imgpair);
-        if (imgsubIt == imageLayoutMap.end()) return false;
-        layout = imgsubIt->second;
-    }
-    return true;
-}
-
 bool CoreChecks::FindLayouts(VkImage image, std::vector<VkImageLayout> &layouts) const {
-    auto sub_data = imageSubresourceMap.find(image);
-    if (sub_data == imageSubresourceMap.end()) return false;
+    auto imgsubIt = imageLayoutMap.find(image);
+    if (imgsubIt == imageLayoutMap.end()) return false;
     auto image_state = GetImageState(image);
     if (!image_state) return false;
     bool ignoreGlobal = false;
     // TODO: Make this robust for >1 aspect mask. Now it will just say ignore potential errors in this case.
-    if (sub_data->second.size() >= (image_state->createInfo.arrayLayers * image_state->createInfo.mipLevels + 1)) {
+    if (imgsubIt->second->CurrentLayoutSize() >= (image_state->createInfo.arrayLayers * image_state->createInfo.mipLevels + 1)) {
         ignoreGlobal = true;
     }
-    for (auto imgsubpair : sub_data->second) {
-        if (ignoreGlobal && !imgsubpair.hasSubresource) continue;
-        auto img_data = imageLayoutMap.find(imgsubpair);
-        if (img_data != imageLayoutMap.end()) {
-            layouts.push_back(img_data->second);
-        }
+    for (auto imgsubpair : imgsubIt->second->CurrentLayoutView()) {
+        if (ignoreGlobal) continue;
+        layouts.push_back(imgsubpair.it->second);
     }
     return true;
 }
 
-bool CoreChecks::FindLayout(const ImageSubresPairLayoutMap &imageLayoutMap, ImageSubresourcePair imgpair, VkImageLayout &layout,
+bool CoreChecks::FindLayout(const ImageLayoutMap &imageLayoutMap, ImageSubresourcePair imgpair, VkImageLayout &layout,
                             const VkImageAspectFlags aspectMask) {
     if (!(imgpair.subresource.aspectMask & aspectMask)) {
         return false;
     }
     imgpair.subresource.aspectMask = aspectMask;
-    auto imgsubIt = imageLayoutMap.find(imgpair);
-    if (imgsubIt == imageLayoutMap.end()) {
-        return false;
-    }
-    layout = imgsubIt->second;
+    auto layout_ = GetImageSubresourceLayout(imageLayoutMap, imgpair);
+    if (layout_ == kInvalidLayout) return false;
+    layout = layout_;
+
     return true;
 }
 
 // find layout in supplied map
-bool CoreChecks::FindLayout(const ImageSubresPairLayoutMap &imageLayoutMap, ImageSubresourcePair imgpair,
+bool CoreChecks::FindLayout(const ImageLayoutMap &imageLayoutMap, ImageSubresourcePair imgpair,
                             VkImageLayout &layout) const {
-    layout = VK_IMAGE_LAYOUT_MAX_ENUM;
+    layout = kInvalidLayout;
     FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_COLOR_BIT);
     FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_DEPTH_BIT);
     FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_STENCIL_BIT);
@@ -336,29 +292,17 @@ bool CoreChecks::FindLayout(const ImageSubresPairLayoutMap &imageLayoutMap, Imag
         FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
     }
     // Image+subresource not found, look for image handle w/o subresource
-    if (layout == VK_IMAGE_LAYOUT_MAX_ENUM) {
-        imgpair = {imgpair.image, false, VkImageSubresource()};
-        auto imgsubIt = imageLayoutMap.find(imgpair);
-        if (imgsubIt == imageLayoutMap.end()) return false;
-        layout = imgsubIt->second;
+    if (layout == kInvalidLayout) {
+        imgpair = {imgpair.image, false};
+        auto image_state = Get<IMAGE_STATE>(imgpair.image);
+        imgpair.subresource.aspectMask = image_state->full_range.aspectMask;
+        imgpair.subresource.mipLevel = image_state->full_range.baseMipLevel;
+        imgpair.subresource.arrayLayer = image_state->full_range.baseArrayLayer;
+        auto layout_ = GetImageSubresourceInitialLayout(imageLayoutMap, imgpair);
+        if (layout_ == kInvalidLayout) return false;
+        layout = layout_;
     }
     return true;
-}
-
-// Set the layout on the global level
-void CoreChecks::SetGlobalLayout(ImageSubresourcePair imgpair, const VkImageLayout &layout) {
-    VkImage &image = imgpair.image;
-    auto data = imageLayoutMap.find(imgpair);
-    if (data != imageLayoutMap.end()) {
-        data->second = layout;  // Update
-    } else {
-        imageLayoutMap[imgpair] = layout;  // Insert
-    }
-    auto &image_subresources = imageSubresourceMap[image];
-    auto subresource = std::find(image_subresources.begin(), image_subresources.end(), imgpair);
-    if (subresource == image_subresources.end()) {
-        image_subresources.push_back(imgpair);
-    }
 }
 
 // Set image layout for given VkImageSubresourceRange struct
@@ -1654,10 +1598,6 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
     if (VK_SUCCESS != result) return;
 
     StateTracker::PostCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, result);
-
-    ImageSubresourcePair subpair{*pImage, false, VkImageSubresource()};
-    imageSubresourceMap[*pImage].push_back(subpair);
-    imageLayoutMap[subpair] = pCreateInfo->initialLayout;
 }
 
 bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) const {
@@ -1674,13 +1614,7 @@ void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const
     // Clean up validation specific data
     EraseQFOReleaseBarriers<VkImageMemoryBarrier>(image);
 
-    const auto &sub_entry = imageSubresourceMap.find(image);
-    if (sub_entry != imageSubresourceMap.end()) {
-        for (const auto &pair : sub_entry->second) {
-            imageLayoutMap.erase(pair);
-        }
-        imageSubresourceMap.erase(sub_entry);
-    }
+    imageLayoutMap.erase(image);
 
     // Clean up generic image state
     StateTracker::PreCallRecordDestroyImage(device, image, pAllocator);
@@ -3438,11 +3372,11 @@ void CoreChecks::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImag
 }
 
 // This validates that the initial layout specified in the command buffer for the IMAGE is the same as the global IMAGE layout
-bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const ImageSubresPairLayoutMap &globalImageLayoutMap,
-                                            ImageSubresPairLayoutMap *overlayLayoutMap_arg) const {
+bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const ImageLayoutMap &globalImageLayoutMap,
+                                            ImageLayoutMap *overlayLayoutMap_arg) const {
     if (disabled.image_layout_validation) return false;
     bool skip = false;
-    ImageSubresPairLayoutMap &overlayLayoutMap = *overlayLayoutMap_arg;
+    ImageLayoutMap &overlayLayoutMap = *overlayLayoutMap_arg;
     // Iterate over the layout maps for each referenced image
     for (const auto &layout_map_entry : pCB->image_layout_map) {
         const auto image = layout_map_entry.first;
@@ -3481,12 +3415,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const I
         }
 
         // Update all layout set operations (which will be a subset of the initial_layouts
-        for (const auto &pos : subres_map->CurrentLayoutView()) {
-            VkImageLayout layout = pos.it->second;
-            assert(layout != kInvalidLayout);
-            isr_pair.subresource = pos.subresource;
-            SetLayout(overlayLayoutMap, isr_pair, layout);
-        }
+        UpdateImageLayoutMap(*subres_map.get(), overlayLayoutMap);
     }
 
     return skip;
@@ -3497,18 +3426,7 @@ void CoreChecks::UpdateCmdBufImageLayouts(CMD_BUFFER_STATE *pCB) {
         const auto image = layout_map_entry.first;
         const auto *image_state = GetImageState(image);
         if (!image_state) continue;  // Can't set layouts of a dead image
-        const auto &subres_map = layout_map_entry.second;
-        ImageSubresourcePair isr_pair;
-        isr_pair.image = image;
-        isr_pair.hasSubresource = true;
-
-        // Update all layout set operations (which will be a subset of the initial_layouts
-        for (const auto &pos : subres_map->CurrentLayoutView()) {
-            VkImageLayout layout = pos.it->second;
-            assert(layout != kInvalidLayout);
-            isr_pair.subresource = pos.subresource;
-            SetGlobalLayout(isr_pair, layout);
-        }
+        UpdateImageLayoutMap(*layout_map_entry.second.get(), imageLayoutMap);
     }
 }
 
