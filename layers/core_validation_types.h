@@ -1174,11 +1174,6 @@ struct CB_SUBMISSION {
     uint32_t perf_submit_pass;
 };
 
-struct IMAGE_LAYOUT_STATE {
-    VkImageLayout layout;
-    VkFormat format;
-};
-
 struct MT_FB_ATTACHMENT_INFO {
     IMAGE_VIEW_STATE *view_state;
     VkImage image;
