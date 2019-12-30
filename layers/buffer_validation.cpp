@@ -1165,22 +1165,22 @@ void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t mem
         // purposes it doesn't seem important which side performs the layout
         // transition, but it must not be performed twice. We'll arbitrarily
         // choose to perform it as part of the acquire operation.
-        if (IsReleaseOp(cb_state, mem_barrier)) {
-            continue;
-        }
+        //
+        // However, we still need to record initial layout for the "initial layout" validation
+        const bool is_release_op = IsReleaseOp(cb_state, mem_barrier);
 
         auto *image_state = GetImageState(mem_barrier.image);
         if (!image_state) continue;
-        RecordTransitionImageLayout(cb_state, image_state, mem_barrier);
+        RecordTransitionImageLayout(cb_state, image_state, mem_barrier, is_release_op);
         for (const auto &image : image_state->aliasing_images) {
             image_state = GetImageState(image);
-            RecordTransitionImageLayout(cb_state, image_state, mem_barrier);
+            RecordTransitionImageLayout(cb_state, image_state, mem_barrier, is_release_op);
         }
     }
 }
 
 void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const IMAGE_STATE *image_state,
-                                             const VkImageMemoryBarrier &mem_barrier) {
+                                             const VkImageMemoryBarrier &mem_barrier, bool is_release_op) {
     VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, mem_barrier.subresourceRange);
     const auto &image_create_info = image_state->createInfo;
 
@@ -1192,7 +1192,11 @@ void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const I
         normalized_isr.layerCount = image_create_info.extent.depth;  // Treat each depth slice as a layer subresource
     }
 
-    SetImageLayout(cb_state, *image_state, normalized_isr, mem_barrier.newLayout, mem_barrier.oldLayout);
+    if (is_release_op) {
+        SetImageInitialLayout(cb_state, *image_state, normalized_isr, mem_barrier.oldLayout);
+    } else {
+        SetImageLayout(cb_state, *image_state, normalized_isr, mem_barrier.newLayout, mem_barrier.oldLayout);
+    }
 }
 
 bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *image_state,
