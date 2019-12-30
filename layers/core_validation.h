@@ -36,7 +36,7 @@ class CoreChecks : public ValidationStateTracker {
     GlobalQFOTransferBarrierMap<VkImageMemoryBarrier> qfo_release_image_barrier_map;
     GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> qfo_release_buffer_barrier_map;
     unordered_map<VkImage, std::vector<ImageSubresourcePair>> imageSubresourceMap;
-    using ImageSubresPairLayoutMap = std::unordered_map<ImageSubresourcePair, IMAGE_LAYOUT_STATE>;
+    using ImageSubresPairLayoutMap = std::unordered_map<ImageSubresourcePair, VkImageLayout>;
     ImageSubresPairLayoutMap imageLayoutMap;
 
     void IncrementCommandCount(VkCommandBuffer commandBuffer);

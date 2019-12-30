@@ -10223,9 +10223,6 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
         // Initialze image layout tracking data
         auto swapchain_state = GetSwapchainState(swapchain);
         const auto image_vector_size = swapchain_state->images.size();
-        IMAGE_LAYOUT_STATE image_layout_node;
-        image_layout_node.layout = VK_IMAGE_LAYOUT_UNDEFINED;
-        image_layout_node.format = swapchain_state->createInfo.imageFormat;
 
         for (uint32_t i = 0; i < *pSwapchainImageCount; ++i) {
             // This is check makes sure that we don't have an image initialized for this swapchain index, but
@@ -10234,7 +10231,7 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
 
             ImageSubresourcePair subpair = {pSwapchainImages[i], false, VkImageSubresource()};
             imageSubresourceMap[pSwapchainImages[i]].push_back(subpair);
-            imageLayoutMap[subpair] = image_layout_node;
+            imageLayoutMap[subpair] = VK_IMAGE_LAYOUT_UNDEFINED;
         }
     }
 

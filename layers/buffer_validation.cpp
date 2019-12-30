@@ -240,9 +240,9 @@ void CoreChecks::SetLayout(OBJECT *pObject, ImageSubresourcePair imgpair, const 
 void CoreChecks::SetLayout(ImageSubresPairLayoutMap &imageLayoutMap, ImageSubresourcePair imgpair, VkImageLayout layout) {
     auto it = imageLayoutMap.find(imgpair);
     if (it != imageLayoutMap.end()) {
-        it->second.layout = layout;  // Update
+        it->second = layout;  // Update
     } else {
-        imageLayoutMap[imgpair].layout = layout;  // Insert
+        imageLayoutMap[imgpair] = layout;  // Insert
     }
 }
 
@@ -256,14 +256,14 @@ bool CoreChecks::FindLayoutVerifyLayout(ImageSubresourcePair imgpair, VkImageLay
     if (imgsubIt == imageLayoutMap.end()) {
         return false;
     }
-    if (layout != VK_IMAGE_LAYOUT_MAX_ENUM && layout != imgsubIt->second.layout) {
+    if (layout != VK_IMAGE_LAYOUT_MAX_ENUM && layout != imgsubIt->second) {
         log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(imgpair.image),
                 kVUID_Core_DrawState_InvalidLayout,
                 "Cannot query for %s layout when combined aspect mask %d has multiple layout types: %s and %s",
                 report_data->FormatHandle(imgpair.image).c_str(), oldAspectMask, string_VkImageLayout(layout),
-                string_VkImageLayout(imgsubIt->second.layout));
+                string_VkImageLayout(imgsubIt->second));
     }
-    layout = imgsubIt->second.layout;
+    layout = imgsubIt->second;
     return true;
 }
 
@@ -283,7 +283,7 @@ bool CoreChecks::FindGlobalLayout(ImageSubresourcePair imgpair, VkImageLayout &l
         imgpair = {imgpair.image, false, VkImageSubresource()};
         auto imgsubIt = imageLayoutMap.find(imgpair);
         if (imgsubIt == imageLayoutMap.end()) return false;
-        layout = imgsubIt->second.layout;
+        layout = imgsubIt->second;
     }
     return true;
 }
@@ -302,7 +302,7 @@ bool CoreChecks::FindLayouts(VkImage image, std::vector<VkImageLayout> &layouts)
         if (ignoreGlobal && !imgsubpair.hasSubresource) continue;
         auto img_data = imageLayoutMap.find(imgsubpair);
         if (img_data != imageLayoutMap.end()) {
-            layouts.push_back(img_data->second.layout);
+            layouts.push_back(img_data->second);
         }
     }
     return true;
@@ -318,7 +318,7 @@ bool CoreChecks::FindLayout(const ImageSubresPairLayoutMap &imageLayoutMap, Imag
     if (imgsubIt == imageLayoutMap.end()) {
         return false;
     }
-    layout = imgsubIt->second.layout;
+    layout = imgsubIt->second;
     return true;
 }
 
@@ -340,7 +340,7 @@ bool CoreChecks::FindLayout(const ImageSubresPairLayoutMap &imageLayoutMap, Imag
         imgpair = {imgpair.image, false, VkImageSubresource()};
         auto imgsubIt = imageLayoutMap.find(imgpair);
         if (imgsubIt == imageLayoutMap.end()) return false;
-        layout = imgsubIt->second.layout;
+        layout = imgsubIt->second;
     }
     return true;
 }
@@ -350,9 +350,9 @@ void CoreChecks::SetGlobalLayout(ImageSubresourcePair imgpair, const VkImageLayo
     VkImage &image = imgpair.image;
     auto data = imageLayoutMap.find(imgpair);
     if (data != imageLayoutMap.end()) {
-        data->second.layout = layout;  // Update
+        data->second = layout;  // Update
     } else {
-        imageLayoutMap[imgpair].layout = layout;  // Insert
+        imageLayoutMap[imgpair] = layout;  // Insert
     }
     auto &image_subresources = imageSubresourceMap[image];
     auto subresource = std::find(image_subresources.begin(), image_subresources.end(), imgpair);
@@ -1655,12 +1655,9 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
 
     StateTracker::PostCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, result);
 
-    IMAGE_LAYOUT_STATE image_state;
-    image_state.layout = pCreateInfo->initialLayout;
-    image_state.format = pCreateInfo->format;
     ImageSubresourcePair subpair{*pImage, false, VkImageSubresource()};
     imageSubresourceMap[*pImage].push_back(subpair);
-    imageLayoutMap[subpair] = image_state;
+    imageLayoutMap[subpair] = pCreateInfo->initialLayout;
 }
 
 bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) const {
