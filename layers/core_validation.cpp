@@ -163,6 +163,18 @@ ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(CMD_BUFFER_STATE *cb_sta
     return it->second.get();
 }
 
+void UpdateImageLayoutMap(const ImageSubresourceLayoutMap &from_subres_map, ImageLayoutMap &to_image_layout_map) {
+    auto image_state = from_subres_map.GetImageView();
+    auto imgIt = to_image_layout_map.find(image_state->image);
+    if (imgIt == to_image_layout_map.end()) {
+        auto insert_pair = to_image_layout_map.insert(std::make_pair(image_state->image, LayoutMapFactory(*image_state)));
+        assert(insert_pair.second);
+        insert_pair.first->second->UpdateFrom(from_subres_map);
+    } else {
+        imgIt->second->UpdateFrom(from_subres_map);
+    }
+}
+
 // Tracks the number of commands recorded in a command buffer.
 void CoreChecks::IncrementCommandCount(VkCommandBuffer commandBuffer) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
@@ -1672,7 +1684,6 @@ void CoreChecks::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
 
 void CoreChecks::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     if (!device) return;
-    imageSubresourceMap.clear();
     imageLayoutMap.clear();
 
     StateTracker::PreCallRecordDestroyDevice(device, pAllocator);
@@ -2157,14 +2168,13 @@ bool CoreChecks::ValidateMaxTimelineSemaphoreValueDifference(VkQueue queue, VkSe
     return skip;
 }
 
-bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitInfo *submit,
-                                                 ImageSubresPairLayoutMap *localImageLayoutMap_arg,
+bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitInfo *submit, ImageLayoutMap *localImageLayoutMap_arg,
                                                  QueryMap *local_query_to_state_map,
                                                  vector<VkCommandBuffer> *current_cmds_arg) const {
     bool skip = false;
     auto queue_state = GetQueueState(queue);
 
-    ImageSubresPairLayoutMap &localImageLayoutMap = *localImageLayoutMap_arg;
+    ImageLayoutMap &localImageLayoutMap = *localImageLayoutMap_arg;
     vector<VkCommandBuffer> &current_cmds = *current_cmds_arg;
 
     QFOTransferCBScoreboards<VkImageMemoryBarrier> qfo_image_scoreboards;
@@ -2238,7 +2248,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
     unordered_set<VkSemaphore> internal_semaphores;
     unordered_map<VkSemaphore, std::set<uint64_t>> timeline_values;
     vector<VkCommandBuffer> current_cmds;
-    ImageSubresPairLayoutMap localImageLayoutMap;
+    ImageLayoutMap localImageLayoutMap;
     QueryMap local_query_to_state_map;
 
     // Now verify each individual submit
@@ -9756,16 +9766,7 @@ void CoreChecks::PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKH
         auto swapchain_data = GetSwapchainState(swapchain);
         if (swapchain_data) {
             for (const auto &swapchain_image : swapchain_data->images) {
-                auto image_sub = imageSubresourceMap.find(swapchain_image.image);
-                if (image_sub != imageSubresourceMap.end()) {
-                    for (auto imgsubpair : image_sub->second) {
-                        auto image_item = imageLayoutMap.find(imgsubpair);
-                        if (image_item != imageLayoutMap.end()) {
-                            imageLayoutMap.erase(image_item);
-                        }
-                    }
-                    imageSubresourceMap.erase(image_sub);
-                }
+                imageLayoutMap.erase(swapchain_image.image);
                 EraseQFOImageRelaseBarriers(swapchain_image.image);
             }
         }
@@ -9808,13 +9809,8 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
             // This is check makes sure that we don't have an image initialized for this swapchain index, but
             // given that it's StateTracker that stores this information, need to protect against non-extant entries in the vector
             if ((i < image_vector_size) && (swapchain_state->images[i].image != VK_NULL_HANDLE)) continue;
-
-            ImageSubresourcePair subpair = {pSwapchainImages[i], false, VkImageSubresource()};
-            imageSubresourceMap[pSwapchainImages[i]].push_back(subpair);
-            imageLayoutMap[subpair] = VK_IMAGE_LAYOUT_UNDEFINED;
         }
     }
-
     // Now call the base class
     StateTracker::PostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, result);
 }
