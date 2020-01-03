@@ -42,7 +42,7 @@ txt_filename = "validation_error_database.txt"
 csv_filename = "validation_error_database.csv"
 html_filename = "validation_error_database.html"
 header_filename = "vk_validation_error_messages.h"
-vuid_prefixes = ['VUID-', 'UNASSIGNED-']
+vuid_prefixes = ['VUID-', 'UNASSIGNED-', 'kVUID_']
 
 # Hard-coded flags that could be command line args, if we decide that's useful
 # replace KHR vuids with non-KHR during consistency checking
@@ -63,6 +63,12 @@ layer_source_files = [common_codegen.repo_relative(path) for path in [
 ]]
 
 test_source_files = glob.glob(os.path.join(common_codegen.repo_relative('tests'), '*.cpp'))
+
+unassigned_vuid_files = [common_codegen.repo_relative(path) for path in [
+    'layers/stateless_validation.h',
+    'layers/core_validation_error_enums.h',
+    'layers/object_lifetime_validation.h'
+]]
 
 # This needs to be updated as new extensions roll in
 khr_aliases = {
@@ -156,6 +162,7 @@ def printHelp():
     print (" -c                report consistency warnings")
     print (" -todo             report unimplemented VUIDs")
     print (" -vuid <vuid_name> report status of individual VUID <vuid_name>")
+    print (" -unassigned       report unassigned VUIDs")
     print (" -text [filename]  output the error database text to <text_database_filename>,")
     print ("                   defaults to 'validation_error_database.txt'")
     print (" -csv [filename]   output the error database in csv to <csv_database_filename>,")
@@ -233,6 +240,26 @@ class ValidationJSON:
             print("Warning: duplicate VUIDs found in validusage.json")
 
 
+def buildKvuidDict():
+    kvuid_dict = {}
+
+    for uf in unassigned_vuid_files:
+        line_num = 0
+        with open(uf) as f:
+            for line in f:
+                line_num = line_num + 1
+                if True in [line.strip().startswith(comment) for comment in ['//', '/*']]:
+                    continue
+
+                if 'kVUID_' in line:
+                    kvuid_pos = line.find('kVUID_'); assert(kvuid_pos >= 0);
+                    eq_pos = line.find('=', kvuid_pos);
+                    if eq_pos >= 0:
+                        kvuid = line[kvuid_pos:eq_pos].strip(' \t\n;"')
+                        unassigned_str = line[eq_pos+1:].strip(' \t\n;"')
+                        kvuid_dict[kvuid] = unassigned_str
+    return kvuid_dict
+
 class ValidationSource:
     def __init__(self, source_file_list):
         self.source_files = source_file_list
@@ -244,6 +271,9 @@ class ValidationSource:
         self.all_vuids = set()
 
     def parse(self):
+        kvuid_dict = buildKvuidDict()
+
+        # build self.vuid_count_dict
         prepend = None
         for sf in self.source_files:
             line_num = 0
@@ -270,8 +300,9 @@ class ValidationSource:
                         vuid_list = []
                         for str in line_list:
                             if any(prefix in str for prefix in vuid_prefixes):
-                                vuid_list.append(str.strip(',);{}"'))
+                                vuid_list.append(str.strip(',);{}"*'))
                         for vuid in vuid_list:
+                            if vuid.startswith('kVUID_'): vuid = kvuid_dict[vuid]
                             if vuid not in self.vuid_count_dict:
                                 self.vuid_count_dict[vuid] = {}
                                 self.vuid_count_dict[vuid]['count'] = 1
@@ -312,6 +343,8 @@ class ValidationTests:
 
     # Parse test files into internal data struct
     def parse(self):
+        kvuid_dict = buildKvuidDict()
+
         # For each test file, parse test names into set
         grab_next_line = False # handle testname on separate line than wildcard
         testname = ''
@@ -350,7 +383,8 @@ class ValidationTests:
                         line_list = re.split('[\s{}[\]()"]+',line)
                         for sub_str in line_list:
                             if any(prefix in sub_str for prefix in vuid_prefixes):
-                                vuid_str = sub_str.strip(',);:"')
+                                vuid_str = sub_str.strip(',);:"*')
+                                if vuid_str.startswith('kVUID_'): vuid_str = kvuid_dict[vuid_str]
                                 self.vuid_to_tests[vuid_str].add(testname)
                                 #self.test_to_vuids[testname].append(vuid_str)
                                 if (vuid_str.startswith('VUID-')):
@@ -639,6 +673,7 @@ def main(argv):
 
     run_consistency = False
     report_unimplemented = False
+    report_unassigned = False
     get_vuid_status = ''
     txt_out = False
     csv_out = False
@@ -663,6 +698,8 @@ def main(argv):
             i = i + 1
         elif (arg == '-todo'):
             report_unimplemented = True
+        elif (arg == '-unassigned'):
+            report_unassigned = True
         elif (arg == '-text'):
             txt_out = True
             # Set filename if supplied, else use default
@@ -759,7 +796,7 @@ def main(argv):
     # Report status of a single VUID
     if len(get_vuid_status) > 1:
         print("\n\nChecking status of <%s>" % get_vuid_status);
-        if get_vuid_status not in val_json.all_vuids:
+        if get_vuid_status not in val_json.all_vuids and not get_vuid_status.startswith('UNASSIGNED-'):
             print('  Not a valid VUID string.')
         else:
             if get_vuid_status in val_source.explicit_vuids:
@@ -790,6 +827,26 @@ def main(argv):
         ulist.sort()
         for vuid in ulist:
             print("  => %s" % vuid)
+
+    # Report unassigned VUIDs
+    if report_unassigned:
+        # TODO: I do not really want VUIDs created for warnings though here
+        print("\n\n%d checks without a spec VUID:" % len(val_source.unassigned_vuids))
+        ulist = list(val_source.unassigned_vuids)
+        ulist.sort()
+        for vuid in ulist:
+            print("  => %s" % vuid)
+            line_list = val_source.vuid_count_dict[vuid]['file_line']
+            for line in line_list:
+                print('    => %s' % line)
+        print("\n%d tests without a spec VUID:" % len(val_source.unassigned_vuids))
+        ulist = list(val_tests.unassigned_vuids)
+        ulist.sort()
+        for vuid in ulist:
+            print("  => %s" % vuid)
+            test_list = val_tests.vuid_to_tests[vuid]
+            for test in test_list:
+                print('    => %s' % test)
 
     # Consistency tests
     if run_consistency:
