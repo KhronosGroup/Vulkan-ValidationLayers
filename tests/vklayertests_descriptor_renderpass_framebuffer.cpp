@@ -4355,7 +4355,8 @@ TEST_F(VkLayerTest, WriteDescriptorSetIntegrityCheck) {
         "2) When using an array of descriptors in a single WriteDescriptor, the descriptor types and stageflags "
         "must all be the same. "
         "3) Immutable Sampler state must match across descriptors. "
-        "4) That sampled image descriptors have required layouts. ");
+        "4) That sampled image descriptors have required layouts. "
+        "5) That it is prohibited to write to an immutable sampler. ");
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-00324");
 
@@ -4412,8 +4413,7 @@ TEST_F(VkLayerTest, WriteDescriptorSetIntegrityCheck) {
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
-    // 3) The second descriptor has a null_ptr pImmutableSamplers and
-    // the third descriptor contains an immutable sampler
+    // 3) The second descriptor has a null_ptr pImmutableSamplers and the third descriptor contains an immutable sampler
     descriptor_write.dstBinding = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
 
@@ -4425,8 +4425,7 @@ TEST_F(VkLayerTest, WriteDescriptorSetIntegrityCheck) {
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
-    // 4) That sampled image descriptors have required layouts
-    // Create images to update the descriptor with
+    // 4) That sampled image descriptors have required layouts -- create images to update the descriptor with
     VkImageObj image(m_device);
     const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
     image.Init(32, 32, 1, tex_format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
@@ -4441,6 +4440,13 @@ TEST_F(VkLayerTest, WriteDescriptorSetIntegrityCheck) {
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-01403");
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    m_errorMonitor->VerifyFound();
+
+    // 5) Attempt to update an immutable sampler
+    descriptor_write.dstBinding = 2;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-02752");
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
