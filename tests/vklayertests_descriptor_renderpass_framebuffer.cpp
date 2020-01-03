@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2019 The Khronos Group Inc.
- * Copyright (c) 2015-2019 Valve Corporation
- * Copyright (c) 2015-2019 LunarG, Inc.
- * Copyright (c) 2015-2019 Google, Inc.
+ * Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
+ * Copyright (c) 2015-2020 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -6427,12 +6427,22 @@ TEST_F(VkLayerTest, CopyDescriptorUpdateErrors) {
                                          " binding #1 with type VK_DESCRIPTOR_TYPE_SAMPLER. Types do not match.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    VkSampler immutable_sampler;
+    err = vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &immutable_sampler);
+    ASSERT_VK_SUCCESS(err);
+
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                      {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
 
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    OneOffDescriptorSet descriptor_set_2(
+        m_device, {
+                      {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, static_cast<VkSampler *>(&immutable_sampler)},
+                  });
+
     VkSampler sampler;
     err = vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
     ASSERT_VK_SUCCESS(err);
@@ -6482,7 +6492,18 @@ TEST_F(VkLayerTest, CopyDescriptorUpdateErrors) {
 
     m_errorMonitor->VerifyFound();
 
+    // Now perform a copy into an immutable sampler
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkCopyDescriptorSet-dstBinding-02753");
+    copy_ds_update.srcSet = descriptor_set.set_;
+    copy_ds_update.srcBinding = 1;
+    copy_ds_update.dstSet = descriptor_set_2.set_;
+    copy_ds_update.dstBinding = 0;
+    copy_ds_update.descriptorCount = 1;
+    vk::UpdateDescriptorSets(m_device->device(), 0, NULL, 1, &copy_ds_update);
+    m_errorMonitor->VerifyFound();
+
     vk::DestroySampler(m_device->device(), sampler, NULL);
+    vk::DestroySampler(m_device->device(), immutable_sampler, NULL);
 }
 
 TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithRenderPass) {
