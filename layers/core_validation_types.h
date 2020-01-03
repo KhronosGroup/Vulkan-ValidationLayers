@@ -674,36 +674,10 @@ struct CBVertexBufferBindingInfo {
     std::vector<BufferBinding> vertex_buffer_bindings;
 };
 
-struct ImageSubresourcePair {
-    VkImage image;
-    bool hasSubresource;
-    VkImageSubresource subresource;
-};
-
 static inline bool operator==(const VkImageSubresource &lhs, const VkImageSubresource &rhs) {
     bool is_equal = (lhs.aspectMask == rhs.aspectMask) && (lhs.mipLevel == rhs.mipLevel) && (lhs.arrayLayer == rhs.arrayLayer);
     return is_equal;
 }
-inline bool operator==(const ImageSubresourcePair &img1, const ImageSubresourcePair &img2) {
-    if (img1.image != img2.image || img1.hasSubresource != img2.hasSubresource) return false;
-    return !img1.hasSubresource || (img1.subresource == img2.subresource);
-}
-
-namespace std {
-template <>
-struct hash<ImageSubresourcePair> {
-    size_t operator()(ImageSubresourcePair img) const throw() {
-        size_t hashVal = hash<uint64_t>()(reinterpret_cast<uint64_t &>(img.image));
-        hashVal ^= hash<bool>()(img.hasSubresource);
-        if (img.hasSubresource) {
-            hashVal ^= hash<uint32_t>()(reinterpret_cast<uint32_t &>(img.subresource.aspectMask));
-            hashVal ^= hash<uint32_t>()(img.subresource.mipLevel);
-            hashVal ^= hash<uint32_t>()(img.subresource.arrayLayer);
-        }
-        return hashVal;
-    }
-};
-}  // namespace std
 
 // Canonical dictionary for PushConstantRanges
 using PushConstantRangesDict = hash_util::Dictionary<PushConstantRanges>;

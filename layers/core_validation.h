@@ -356,9 +356,10 @@ class CoreChecks : public ValidationStateTracker {
 
     // Buffer Validation Functions
     template <class OBJECT, class LAYOUT>
-    void SetLayout(OBJECT* pObject, VkImage image, VkImageSubresource range, const LAYOUT& layout);
+    void SetLayout(OBJECT* pObject, VkImage image, const VkImageSubresource& subresource, const LAYOUT& layout);
     template <class OBJECT, class LAYOUT>
-    void SetLayout(OBJECT* pObject, ImageSubresourcePair imgpair, const LAYOUT& layout, VkImageAspectFlags aspectMask);
+    void SetLayout(OBJECT* pObject, const VkImage image, VkImageSubresource subresource, const LAYOUT& layout,
+                   VkImageAspectFlags aspectMask);
     // Remove the pending QFO release records from the global set
     // Note that the type of the handle argument constrained to match Barrier type
     // The defaulted BarrierRecord argument allows use to declare the type once, but is not intended to be specified by the caller
@@ -459,10 +460,11 @@ class CoreChecks : public ValidationStateTracker {
 
     bool FindLayouts(VkImage image, std::vector<VkImageLayout>& layouts) const;
 
-    bool FindLayout(const ImageLayoutMap& imageLayoutMap, ImageSubresourcePair imgpair, VkImageLayout& layout) const;
+    bool FindLayout(const ImageLayoutMap& imageLayoutMap, const VkImage image, VkImageSubresource subresource,
+                    VkImageLayout& layout) const;
 
-    static bool FindLayout(const ImageLayoutMap& imageLayoutMap, ImageSubresourcePair imgpair, VkImageLayout& layout,
-                           const VkImageAspectFlags aspectMask);
+    static bool FindLayout(const ImageLayoutMap& imageLayoutMap, const VkImage image, VkImageSubresource subresource,
+                           VkImageLayout& layout, const VkImageAspectFlags aspectMask);
 
     void SetImageViewLayout(CMD_BUFFER_STATE* cb_node, const IMAGE_VIEW_STATE& view_state, VkImageLayout layout,
                             VkImageLayout layoutStencil);

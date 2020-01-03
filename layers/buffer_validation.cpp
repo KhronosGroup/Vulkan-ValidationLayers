@@ -214,37 +214,39 @@ VkImageSubresourceRange NormalizeSubresourceRange(const IMAGE_STATE &image_state
     return NormalizeSubresourceRange(image_create_info, range);
 }
 
-VkImageLayout GetImageSubresourceInitialLayout(const ImageLayoutMap &imageLayoutMap, const ImageSubresourcePair &imgpair) {
-    auto imgsubIt = imageLayoutMap.find(imgpair.image);
+VkImageLayout GetImageSubresourceInitialLayout(const ImageLayoutMap &imageLayoutMap, const VkImage image,
+                                               const VkImageSubresource &subresource) {
+    auto imgsubIt = imageLayoutMap.find(image);
     if (imgsubIt == imageLayoutMap.end()) return kInvalidLayout;
-    return imgsubIt->second->GetSubresourceInitialLayout(imgpair.subresource);
+    return imgsubIt->second->GetSubresourceInitialLayout(subresource);
 }
 
-VkImageLayout GetImageSubresourceLayout(const ImageLayoutMap &imageLayoutMap, const ImageSubresourcePair &imgpair) {
-    auto imgsubIt = imageLayoutMap.find(imgpair.image);
+VkImageLayout GetImageSubresourceLayout(const ImageLayoutMap &imageLayoutMap, const VkImage image,
+                                        const VkImageSubresource &subresource) {
+    auto imgsubIt = imageLayoutMap.find(image);
     if (imgsubIt == imageLayoutMap.end()) return kInvalidLayout;
-    return imgsubIt->second->GetSubresourceLayout(imgpair.subresource);
+    return imgsubIt->second->GetSubresourceLayout(subresource);
 }
 
 template <class OBJECT, class LAYOUT>
-void CoreChecks::SetLayout(OBJECT *pObject, VkImage image, VkImageSubresource range, const LAYOUT &layout) {
-    ImageSubresourcePair imgpair = {image, true, range};
-    SetLayout(pObject, imgpair, layout, VK_IMAGE_ASPECT_COLOR_BIT);
-    SetLayout(pObject, imgpair, layout, VK_IMAGE_ASPECT_DEPTH_BIT);
-    SetLayout(pObject, imgpair, layout, VK_IMAGE_ASPECT_STENCIL_BIT);
-    SetLayout(pObject, imgpair, layout, VK_IMAGE_ASPECT_METADATA_BIT);
+void CoreChecks::SetLayout(OBJECT *pObject, VkImage image, const VkImageSubresource &subresource, const LAYOUT &layout) {
+    SetLayout(pObject, image, subresource, layout, VK_IMAGE_ASPECT_COLOR_BIT);
+    SetLayout(pObject, image, subresource, layout, VK_IMAGE_ASPECT_DEPTH_BIT);
+    SetLayout(pObject, image, subresource, layout, VK_IMAGE_ASPECT_STENCIL_BIT);
+    SetLayout(pObject, image, subresource, layout, VK_IMAGE_ASPECT_METADATA_BIT);
     if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
-        SetLayout(pObject, imgpair, layout, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
-        SetLayout(pObject, imgpair, layout, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
-        SetLayout(pObject, imgpair, layout, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
+        SetLayout(pObject, image, subresource, layout, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
+        SetLayout(pObject, image, subresource, layout, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
+        SetLayout(pObject, image, subresource, layout, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
     }
 }
 
 template <class OBJECT, class LAYOUT>
-void CoreChecks::SetLayout(OBJECT *pObject, ImageSubresourcePair imgpair, const LAYOUT &layout, VkImageAspectFlags aspectMask) {
-    if (imgpair.subresource.aspectMask & aspectMask) {
-        imgpair.subresource.aspectMask = aspectMask;
-        SetLayout(pObject, imgpair, layout);
+void CoreChecks::SetLayout(OBJECT *pObject, const VkImage image, VkImageSubresource subresource, const LAYOUT &layout,
+                           VkImageAspectFlags aspectMask) {
+    if (subresource.aspectMask & aspectMask) {
+        subresource.aspectMask = aspectMask;
+        SetLayout(pObject, image, subresource, layout);
     }
 }
 
@@ -265,13 +267,13 @@ bool CoreChecks::FindLayouts(VkImage image, std::vector<VkImageLayout> &layouts)
     return true;
 }
 
-bool CoreChecks::FindLayout(const ImageLayoutMap &imageLayoutMap, ImageSubresourcePair imgpair, VkImageLayout &layout,
-                            const VkImageAspectFlags aspectMask) {
-    if (!(imgpair.subresource.aspectMask & aspectMask)) {
+bool CoreChecks::FindLayout(const ImageLayoutMap &imageLayoutMap, const VkImage image, VkImageSubresource subresource,
+                            VkImageLayout &layout, const VkImageAspectFlags aspectMask) {
+    if (!(subresource.aspectMask & aspectMask)) {
         return false;
     }
-    imgpair.subresource.aspectMask = aspectMask;
-    auto layout_ = GetImageSubresourceLayout(imageLayoutMap, imgpair);
+    subresource.aspectMask = aspectMask;
+    auto layout_ = GetImageSubresourceLayout(imageLayoutMap, image, subresource);
     if (layout_ == kInvalidLayout) return false;
     layout = layout_;
 
@@ -279,26 +281,25 @@ bool CoreChecks::FindLayout(const ImageLayoutMap &imageLayoutMap, ImageSubresour
 }
 
 // find layout in supplied map
-bool CoreChecks::FindLayout(const ImageLayoutMap &imageLayoutMap, ImageSubresourcePair imgpair,
+bool CoreChecks::FindLayout(const ImageLayoutMap &imageLayoutMap, const VkImage image, VkImageSubresource subresource,
                             VkImageLayout &layout) const {
     layout = kInvalidLayout;
-    FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_COLOR_BIT);
-    FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_DEPTH_BIT);
-    FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_STENCIL_BIT);
-    FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_METADATA_BIT);
+    FindLayout(imageLayoutMap, image, subresource, layout, VK_IMAGE_ASPECT_COLOR_BIT);
+    FindLayout(imageLayoutMap, image, subresource, layout, VK_IMAGE_ASPECT_DEPTH_BIT);
+    FindLayout(imageLayoutMap, image, subresource, layout, VK_IMAGE_ASPECT_STENCIL_BIT);
+    FindLayout(imageLayoutMap, image, subresource, layout, VK_IMAGE_ASPECT_METADATA_BIT);
     if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
-        FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
-        FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
-        FindLayout(imageLayoutMap, imgpair, layout, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
+        FindLayout(imageLayoutMap, image, subresource, layout, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
+        FindLayout(imageLayoutMap, image, subresource, layout, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
+        FindLayout(imageLayoutMap, image, subresource, layout, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
     }
     // Image+subresource not found, look for image handle w/o subresource
     if (layout == kInvalidLayout) {
-        imgpair = {imgpair.image, false};
-        auto image_state = Get<IMAGE_STATE>(imgpair.image);
-        imgpair.subresource.aspectMask = image_state->full_range.aspectMask;
-        imgpair.subresource.mipLevel = image_state->full_range.baseMipLevel;
-        imgpair.subresource.arrayLayer = image_state->full_range.baseArrayLayer;
-        auto layout_ = GetImageSubresourceInitialLayout(imageLayoutMap, imgpair);
+        auto image_state = Get<IMAGE_STATE>(image);
+        subresource.aspectMask = image_state->full_range.aspectMask;
+        subresource.mipLevel = image_state->full_range.baseMipLevel;
+        subresource.arrayLayer = image_state->full_range.baseArrayLayer;
+        auto layout_ = GetImageSubresourceInitialLayout(imageLayoutMap, image, subresource);
         if (layout_ == kInvalidLayout) return false;
         layout = layout_;
     }
@@ -3385,20 +3386,17 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const I
         const auto *image_state = GetImageState(image);
         if (!image_state) continue;  // Can't check layouts of a dead image
         const auto &subres_map = layout_map_entry.second;
-        ImageSubresourcePair isr_pair;
-        isr_pair.image = image;
-        isr_pair.hasSubresource = true;
         // Validate the initial_uses for each subresource referenced
         for (const auto &pos : subres_map->InitialLayoutView()) {
-            isr_pair.subresource = pos.subresource;
             VkImageLayout initial_layout = pos.it->second;  // Point directly into the RangeMap iterated but the view
             VkImageLayout image_layout;
-            if (FindLayout(overlayLayoutMap, isr_pair, image_layout) || FindLayout(globalImageLayoutMap, isr_pair, image_layout)) {
+            if (FindLayout(overlayLayoutMap, image, pos.subresource, image_layout) ||
+                FindLayout(globalImageLayoutMap, image, pos.subresource, image_layout)) {
                 if (initial_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
                     // TODO: Set memory invalid which is in mem_tracker currently
                 } else if (image_layout != initial_layout) {
                     // Need to look up the inital layout *state* to get a bit more information
-                    const auto *initial_layout_state = subres_map->GetSubresourceInitialLayoutState(isr_pair.subresource);
+                    const auto *initial_layout_state = subres_map->GetSubresourceInitialLayoutState(pos.subresource);
                     assert(initial_layout_state);  // There's no way we should have an initial layout without matching state...
                     bool matches = ImageLayoutMatches(initial_layout_state->aspect_mask, image_layout, initial_layout);
                     if (!matches) {
@@ -3408,9 +3406,9 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const I
                             HandleToUint64(pCB->commandBuffer), kVUID_Core_DrawState_InvalidImageLayout,
                             "Submitted command buffer expects %s (subresource: aspectMask 0x%X array layer %u, mip level %u) "
                             "to be in layout %s--instead, current layout is %s.%s",
-                            report_data->FormatHandle(image).c_str(), isr_pair.subresource.aspectMask,
-                            isr_pair.subresource.arrayLayer, isr_pair.subresource.mipLevel, string_VkImageLayout(initial_layout),
-                            string_VkImageLayout(image_layout), formatted_label.c_str());
+                            report_data->FormatHandle(image).c_str(), pos.subresource.aspectMask, pos.subresource.arrayLayer,
+                            pos.subresource.mipLevel, string_VkImageLayout(initial_layout), string_VkImageLayout(image_layout),
+                            formatted_label.c_str());
                     }
                 }
             }
