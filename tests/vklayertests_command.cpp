@@ -823,6 +823,22 @@ TEST_F(VkLayerTest, ExecuteCommandsPrimaryCB) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkLayerTest, ExecuteCommandsToSecondaryCB) {
+    TEST_DESCRIPTION("Attempt vkCmdExecuteCommands to a Secondary command buffer");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkCommandBufferObj main_cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    VkCommandBufferObj secondary_cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary_cb.begin();
+    secondary_cb.end();
+
+    main_cb.begin();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdExecuteCommands-bufferlevel");
+    vk::CmdExecuteCommands(main_cb.handle(), 1, &secondary_cb.handle());
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, InvalidVertexAttributeAlignment) {
     TEST_DESCRIPTION("Check for proper aligment of attribAddress which depends on a bound pipeline and on a bound vertex buffer");
 
