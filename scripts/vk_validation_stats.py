@@ -298,7 +298,7 @@ class ValidationSource:
 
 # Class to parse the validation layer test source and store testnames
 class ValidationTests:
-    def __init__(self, test_file_list, test_group_name=['VkLayerTest', 'VkPositiveLayerTest', 'VkWsiEnabledLayerTest']):
+    def __init__(self, test_file_list, test_group_name=['VkLayerTest', 'VkPositiveLayerTest', 'VkWsiEnabledLayerTest', 'VkBestPracticesLayerTest']):
         self.test_files = test_file_list
         self.test_trigger_txt_list = []
         for tg in test_group_name:
