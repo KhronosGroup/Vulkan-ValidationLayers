@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2019 The Khronos Group Inc.
- * Copyright (c) 2015-2019 Valve Corporation
- * Copyright (c) 2015-2019 LunarG, Inc.
- * Copyright (C) 2015-2019 Google Inc.
+/* Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
+ * Copyright (C) 2015-2020 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1201,7 +1201,9 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
     }
 
     // Update parameters all look good and descriptor updated so verify update contents
-    if (!VerifyCopyUpdateContents(update, src_set, src_type, src_start_idx, func_name, error_code, error_msg)) return false;
+    if (!VerifyCopyUpdateContents(update, src_set, src_type, src_start_idx, dst_set, dst_type, dst_start_idx, func_name, error_code,
+                                  error_msg))
+        return false;
 
     // All checks passed so update is good
     return true;
@@ -2110,9 +2112,10 @@ bool CoreChecks::ValidateBufferUpdate(VkDescriptorBufferInfo const *buffer_info,
     return true;
 }
 // Verify that the contents of the update are ok, but don't perform actual update
-bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, const DescriptorSet *src_set, VkDescriptorType type,
-                                          uint32_t index, const char *func_name, std::string *error_code,
-                                          std::string *error_msg) const {
+bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, const DescriptorSet *src_set,
+                                          VkDescriptorType src_type, uint32_t src_index, const DescriptorSet *dst_set,
+                                          VkDescriptorType dst_type, uint32_t dst_index, const char *func_name,
+                                          std::string *error_code, std::string *error_msg) const {
     // Note : Repurposing some Write update error codes here as specific details aren't called out for copy updates like they are
     // for write updates
     using DescriptorClass = cvdescriptorset::DescriptorClass;
@@ -2123,10 +2126,25 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, con
     using TexelDescriptor = cvdescriptorset::TexelDescriptor;
 
     auto device_data = this;
-    switch (src_set->GetDescriptorFromGlobalIndex(index)->descriptor_class) {
+
+    if (dst_type == VK_DESCRIPTOR_TYPE_SAMPLER) {
+        for (uint32_t di = 0; di < update->descriptorCount; ++di) {
+            const auto dst_desc = dst_set->GetDescriptorFromGlobalIndex(dst_index + di);
+            if (!dst_desc->updated) continue;
+            if (dst_desc->IsImmutableSampler()) {
+                *error_code = "VUID-VkCopyDescriptorSet-dstBinding-02753";
+                std::stringstream error_str;
+                error_str << "Attempted copy update to an immutable sampler descriptor.";
+                *error_msg = error_str.str();
+                return false;
+            }
+        }
+    }
+
+    switch (src_set->GetDescriptorFromGlobalIndex(src_index)->descriptor_class) {
         case DescriptorClass::PlainSampler: {
             for (uint32_t di = 0; di < update->descriptorCount; ++di) {
-                const auto src_desc = src_set->GetDescriptorFromGlobalIndex(index + di);
+                const auto src_desc = src_set->GetDescriptorFromGlobalIndex(src_index + di);
                 if (!src_desc->updated) continue;
                 if (!src_desc->IsImmutableSampler()) {
                     auto update_sampler = static_cast<const SamplerDescriptor *>(src_desc)->GetSampler();
@@ -2145,7 +2163,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, con
         }
         case DescriptorClass::ImageSampler: {
             for (uint32_t di = 0; di < update->descriptorCount; ++di) {
-                const auto src_desc = src_set->GetDescriptorFromGlobalIndex(index + di);
+                const auto src_desc = src_set->GetDescriptorFromGlobalIndex(src_index + di);
                 if (!src_desc->updated) continue;
                 auto img_samp_desc = static_cast<const ImageSamplerDescriptor *>(src_desc);
                 // First validate sampler
@@ -2164,7 +2182,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, con
                 // Validate image
                 auto image_view = img_samp_desc->GetImageView();
                 auto image_layout = img_samp_desc->GetImageLayout();
-                if (!ValidateImageUpdate(image_view, image_layout, type, func_name, error_code, error_msg)) {
+                if (!ValidateImageUpdate(image_view, image_layout, src_type, func_name, error_code, error_msg)) {
                     std::stringstream error_str;
                     error_str << "Attempted copy update to combined image sampler descriptor failed due to: " << error_msg->c_str();
                     *error_msg = error_str.str();
@@ -2175,12 +2193,12 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, con
         }
         case DescriptorClass::Image: {
             for (uint32_t di = 0; di < update->descriptorCount; ++di) {
-                const auto src_desc = src_set->GetDescriptorFromGlobalIndex(index + di);
+                const auto src_desc = src_set->GetDescriptorFromGlobalIndex(src_index + di);
                 if (!src_desc->updated) continue;
                 auto img_desc = static_cast<const ImageDescriptor *>(src_desc);
                 auto image_view = img_desc->GetImageView();
                 auto image_layout = img_desc->GetImageLayout();
-                if (!ValidateImageUpdate(image_view, image_layout, type, func_name, error_code, error_msg)) {
+                if (!ValidateImageUpdate(image_view, image_layout, src_type, func_name, error_code, error_msg)) {
                     std::stringstream error_str;
                     error_str << "Attempted copy update to image descriptor failed due to: " << error_msg->c_str();
                     *error_msg = error_str.str();
@@ -2191,7 +2209,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, con
         }
         case DescriptorClass::TexelBuffer: {
             for (uint32_t di = 0; di < update->descriptorCount; ++di) {
-                const auto src_desc = src_set->GetDescriptorFromGlobalIndex(index + di);
+                const auto src_desc = src_set->GetDescriptorFromGlobalIndex(src_index + di);
                 if (!src_desc->updated) continue;
                 auto buffer_view = static_cast<const TexelDescriptor *>(src_desc)->GetBufferView();
                 auto bv_state = device_data->GetBufferViewState(buffer_view);
@@ -2203,7 +2221,7 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, con
                     return false;
                 }
                 auto buffer = bv_state->create_info.buffer;
-                if (!cvdescriptorset::ValidateBufferUsage(GetBufferState(buffer), type, error_code, error_msg)) {
+                if (!cvdescriptorset::ValidateBufferUsage(GetBufferState(buffer), src_type, error_code, error_msg)) {
                     std::stringstream error_str;
                     error_str << "Attempted copy update to texel buffer descriptor failed due to: " << error_msg->c_str();
                     *error_msg = error_str.str();
@@ -2214,10 +2232,10 @@ bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, con
         }
         case DescriptorClass::GeneralBuffer: {
             for (uint32_t di = 0; di < update->descriptorCount; ++di) {
-                const auto src_desc = src_set->GetDescriptorFromGlobalIndex(index + di);
+                const auto src_desc = src_set->GetDescriptorFromGlobalIndex(src_index + di);
                 if (!src_desc->updated) continue;
                 auto buffer = static_cast<const BufferDescriptor *>(src_desc)->GetBuffer();
-                if (!cvdescriptorset::ValidateBufferUsage(GetBufferState(buffer), type, error_code, error_msg)) {
+                if (!cvdescriptorset::ValidateBufferUsage(GetBufferState(buffer), src_type, error_code, error_msg)) {
                     std::stringstream error_str;
                     error_str << "Attempted copy update to buffer descriptor failed due to: " << error_msg->c_str();
                     *error_msg = error_str.str();
@@ -2575,7 +2593,11 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                         return false;
                     }
                 } else {
-                    // TODO : Warn here
+                    *error_code = "VUID-VkWriteDescriptorSet-descriptorType-02752";
+                    std::stringstream error_str;
+                    error_str << "Attempted write update to an immutable sampler descriptor.";
+                    *error_msg = error_str.str();
+                    return false;
                 }
             }
             break;
