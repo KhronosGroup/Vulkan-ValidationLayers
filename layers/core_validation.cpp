@@ -178,6 +178,17 @@ void UpdateImageLayoutMap(const ImageSubresourceLayoutMap &from_subres_map, Imag
     }
 }
 
+void AddInitialLayoutintoImageLayoutMap(const IMAGE_STATE &image_state, ImageLayoutMap &image_layout_map) {
+    auto imgIt = image_layout_map.find(image_state.image);
+    if (imgIt == image_layout_map.end()) {
+        auto insert_pair = image_layout_map.insert(std::make_pair(image_state.image, LayoutMapFactory(image_state)));
+        assert(insert_pair.second);
+        insert_pair.first->second->SetSubresourceRangeInitialLayout(image_state.full_range, image_state.createInfo.initialLayout);
+    } else {
+        imgIt->second->SetSubresourceRangeInitialLayout(image_state.full_range, image_state.createInfo.initialLayout);
+    }
+}
+
 // Tracks the number of commands recorded in a command buffer.
 void CoreChecks::IncrementCommandCount(VkCommandBuffer commandBuffer) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
@@ -10212,11 +10223,6 @@ bool CoreChecks::PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwapcha
 
 void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
                                                      VkImage *pSwapchainImages, VkResult result) {
-    // Usually we'd call the StateTracker first, but
-    //     a) none of the new state needed below is from the StateTracker
-    //     b) StateTracker *will* update swapchain_state->images which we use to guard against double initialization
-    // so we'll do it in the opposite order -- CoreChecks then StateTracker.
-    //
     // Note, this will get trickier if we start storing image shared pointers in the image layout data, at which point
     // we'll have to reverse the order *back* and find some other scheme to prevent double initialization.
 
@@ -10225,14 +10231,17 @@ void CoreChecks::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchai
         auto swapchain_state = GetSwapchainState(swapchain);
         const auto image_vector_size = swapchain_state->images.size();
 
+        StateTracker::PostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, result);
+
         for (uint32_t i = 0; i < *pSwapchainImageCount; ++i) {
             // This is check makes sure that we don't have an image initialized for this swapchain index, but
             // given that it's StateTracker that stores this information, need to protect against non-extant entries in the vector
             if ((i < image_vector_size) && (swapchain_state->images[i].image != VK_NULL_HANDLE)) continue;
+
+            auto image_state = Get<IMAGE_STATE>(pSwapchainImages[i]);
+            AddInitialLayoutintoImageLayoutMap(*image_state, imageLayoutMap);
         }
     }
-    // Now call the base class
-    StateTracker::PostCallRecordGetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages, result);
 }
 
 bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo) const {

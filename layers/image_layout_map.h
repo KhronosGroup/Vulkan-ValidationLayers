@@ -155,6 +155,7 @@ class ImageSubresourceLayoutMap {
                                           VkImageLayout layout, const IMAGE_VIEW_STATE* view_state = nullptr);
     bool SetSubresourceRangeInitialLayout(const CMD_BUFFER_STATE& cb_state, VkImageLayout layout,
                                           const IMAGE_VIEW_STATE& view_state);
+    bool SetSubresourceRangeInitialLayout(const VkImageSubresourceRange& range, VkImageLayout layout);
     bool ForRange(const VkImageSubresourceRange& range, const Callback& callback, bool skip_invalid = true,
                   bool always_get_initial = false) const;
     VkImageLayout GetSubresourceLayout(const VkImageSubresource& subresource) const;

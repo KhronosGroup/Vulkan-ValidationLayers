@@ -35,13 +35,17 @@ using InitialLayoutStates = ImageSubresourceLayoutMap::InitialLayoutStates;
 template <typename StatesMap>
 static inline InitialLayoutState* UpdateInitialLayoutStateImpl(StatesMap* initial_layout_state_map,
                                                                InitialLayoutStates* states_storage, const IndexRange& range,
-                                                               InitialLayoutState* initial_state, const CMD_BUFFER_STATE& cb_state,
+                                                               InitialLayoutState* initial_state, const CMD_BUFFER_STATE* cb_state,
                                                                const IMAGE_VIEW_STATE* view_state) {
     auto& initial_layout_states = *states_storage;
     if (!initial_state) {
         // Allocate on demand...  initial_layout_states_ holds ownership as a unique_ptr, while
         // each subresource has a non-owning copy of the plain pointer.
-        initial_state = new InitialLayoutState(cb_state, view_state);
+        if (cb_state) {
+            initial_state = new InitialLayoutState(*cb_state, view_state);
+        } else {
+            initial_state = new InitialLayoutState();
+        }
         initial_layout_states.emplace_back(initial_state);
     }
     assert(initial_state);
@@ -95,7 +99,7 @@ static bool SetSubresourceRangeLayoutImpl(LayoutMap* current_layouts, LayoutMap*
                 sparse_container::update_range_value(*initial_layouts, *range_gen, expected_layout, WritePolicy::prefer_dest);
             if (updated_init) {
                 initial_state = UpdateInitialLayoutStateImpl(initial_state_map, initial_layout_states, *range_gen, initial_state,
-                                                             cb_state, nullptr);
+                                                             &cb_state, nullptr);
             }
         }
     }
@@ -127,7 +131,7 @@ bool ImageSubresourceLayoutMap::SetSubresourceRangeLayout(const CMD_BUFFER_STATE
 template <typename LayoutMap, typename InitialStateMap>
 static bool SetSubresourceRangeInitialLayoutImpl(LayoutMap* initial_layouts, InitialStateMap* initial_state_map,
                                                  InitialLayoutStates* initial_layout_states, RangeGenerator* range_gen_arg,
-                                                 const CMD_BUFFER_STATE& cb_state, VkImageLayout layout,
+                                                 const CMD_BUFFER_STATE* cb_state, VkImageLayout layout,
                                                  const IMAGE_VIEW_STATE* view_state) {
     bool updated = false;
     InitialLayoutState* initial_state = nullptr;
@@ -154,11 +158,11 @@ bool ImageSubresourceLayoutMap::SetSubresourceRangeInitialLayout(const CMD_BUFFE
     assert(layouts_.initial.GetMode() == initial_layout_state_map_.GetMode());
     if (layouts_.initial.SmallMode()) {
         return SetSubresourceRangeInitialLayoutImpl(&layouts_.initial.GetSmallMap(), &initial_layout_state_map_.GetSmallMap(),
-                                                    &initial_layout_states_, &range_gen, cb_state, layout, view_state);
+                                                    &initial_layout_states_, &range_gen, &cb_state, layout, view_state);
     } else {
         assert(!layouts_.initial.Tristate());
         return SetSubresourceRangeInitialLayoutImpl(&layouts_.initial.GetBigMap(), &initial_layout_state_map_.GetBigMap(),
-                                                    &initial_layout_states_, &range_gen, cb_state, layout, view_state);
+                                                    &initial_layout_states_, &range_gen, &cb_state, layout, view_state);
     }
 }
 
@@ -169,11 +173,24 @@ bool ImageSubresourceLayoutMap::SetSubresourceRangeInitialLayout(const CMD_BUFFE
     assert(layouts_.initial.GetMode() == initial_layout_state_map_.GetMode());
     if (layouts_.initial.SmallMode()) {
         return SetSubresourceRangeInitialLayoutImpl(&layouts_.initial.GetSmallMap(), &initial_layout_state_map_.GetSmallMap(),
-                                                    &initial_layout_states_, &range_gen, cb_state, layout, &view_state);
+                                                    &initial_layout_states_, &range_gen, &cb_state, layout, &view_state);
     } else {
         assert(!layouts_.initial.Tristate());
         return SetSubresourceRangeInitialLayoutImpl(&layouts_.initial.GetBigMap(), &initial_layout_state_map_.GetBigMap(),
-                                                    &initial_layout_states_, &range_gen, cb_state, layout, &view_state);
+                                                    &initial_layout_states_, &range_gen, &cb_state, layout, &view_state);
+    }
+}
+
+bool ImageSubresourceLayoutMap::SetSubresourceRangeInitialLayout(const VkImageSubresourceRange& range, VkImageLayout layout) {
+    RangeGenerator range_gen(encoder_, range);
+    assert(layouts_.initial.GetMode() == initial_layout_state_map_.GetMode());
+    if (layouts_.initial.SmallMode()) {
+        return SetSubresourceRangeInitialLayoutImpl(&layouts_.initial.GetSmallMap(), &initial_layout_state_map_.GetSmallMap(),
+                                                    &initial_layout_states_, &range_gen, nullptr, layout, nullptr);
+    } else {
+        assert(!layouts_.initial.Tristate());
+        return SetSubresourceRangeInitialLayoutImpl(&layouts_.initial.GetBigMap(), &initial_layout_state_map_.GetBigMap(),
+                                                    &initial_layout_states_, &range_gen, nullptr, layout, nullptr);
     }
 }
 

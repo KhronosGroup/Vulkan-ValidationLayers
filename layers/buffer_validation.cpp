@@ -1598,6 +1598,8 @@ void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateI
     if (VK_SUCCESS != result) return;
 
     StateTracker::PostCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, result);
+    auto image_state = Get<IMAGE_STATE>(*pImage);
+    AddInitialLayoutintoImageLayoutMap(*image_state, imageLayoutMap);
 }
 
 bool CoreChecks::PreCallValidateDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator) const {
