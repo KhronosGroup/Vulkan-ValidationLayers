@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2019 The Khronos Group Inc.
- * Copyright (c) 2015-2019 Valve Corporation
- * Copyright (c) 2015-2019 LunarG, Inc.
- * Copyright (c) 2015-2019 Google, Inc.
+ * Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
+ * Copyright (c) 2015-2020 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -821,6 +821,22 @@ TEST_F(VkLayerTest, ExecuteCommandsPrimaryCB) {
 
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
+}
+
+TEST_F(VkLayerTest, ExecuteCommandsToSecondaryCB) {
+    TEST_DESCRIPTION("Attempt vkCmdExecuteCommands to a Secondary command buffer");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkCommandBufferObj main_cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    VkCommandBufferObj secondary_cb(m_device, m_commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary_cb.begin();
+    secondary_cb.end();
+
+    main_cb.begin();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdExecuteCommands-bufferlevel");
+    vk::CmdExecuteCommands(main_cb.handle(), 1, &secondary_cb.handle());
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, InvalidVertexAttributeAlignment) {
