@@ -1227,5 +1227,6 @@ enum BarrierOperationsType {
 ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(CMD_BUFFER_STATE *cb_state, const IMAGE_STATE &image_state);
 const ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(const CMD_BUFFER_STATE *cb_state, VkImage image);
 void UpdateImageLayoutMap(const ImageSubresourceLayoutMap &from_subres_map, ImageLayoutMap &to_image_layout_map);
+void AddInitialLayoutintoImageLayoutMap(const IMAGE_STATE &image_state, ImageLayoutMap &image_layout_map);
 
 #endif  // CORE_VALIDATION_TYPES_H_
