@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# Copyright (c) 2015-2019 The Khronos Group Inc.
-# Copyright (c) 2015-2019 Valve Corporation
-# Copyright (c) 2015-2019 LunarG, Inc.
-# Copyright (c) 2015-2019 Google Inc.
+# Copyright (c) 2015-2020 The Khronos Group Inc.
+# Copyright (c) 2015-2020 Valve Corporation
+# Copyright (c) 2015-2020 LunarG, Inc.
+# Copyright (c) 2015-2020 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -495,8 +495,8 @@ class OutputDatabase:
 /*
  * Vulkan
  *
- * Copyright (c) 2016-2019 Google Inc.
- * Copyright (c) 2016-2019 LunarG, Inc.
+ * Copyright (c) 2016-2020 Google Inc.
+ * Copyright (c) 2016-2020 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -529,7 +529,12 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
 """
         self.header_postamble = """};
 """
-        self.spec_url = "https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/vkspec.html"
+        # TODO: it might make sense to ask for khr.io short permalink
+        self.spec_url_ext = "https://www.khronos.org/registry/vulkan/specs/1.%s-extensions/html/vkspec.html"
+        self.spec_url_khr = "https://www.khronos.org/registry/vulkan/specs/1.%s-khr-extensions/html/vkspec.html"
+        self.spec_url_core = "https://www.khronos.org/registry/vulkan/specs/1.%s/html/vkspec.html"
+        # TODO: not sure where to point if no compiled spec contains the VUID; maybe specific source file could be generated
+        self.spec_url_default = "https://github.com/KhronosGroup/Vulkan-Docs/tree/master/chapters"
 
     def dump_txt(self, only_unimplemented = False):
         print("\n Dumping database to text file: %s" % txt_filename)
@@ -615,6 +620,81 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
                     hfile.write('<th>%s</th></tr>\n' % db_entry['text'])
             hfile.write('</table>\n</body>\n</html>\n')
 
+    # make list of spec versions containing given VUID
+    @staticmethod
+    def make_vuid_spec_version_list(pattern):
+        assert pattern
+        max_minor_version = 1 # needs to be bumped with new minor versions :/
+
+        version_list = []
+        for v in reversed(range(max_minor_version+1)):
+            version_list.append({"version": v, "ext": True,  "khr" : False})
+            version_list.append({"version": v, "ext": False, "khr" : True})
+            version_list.append({"version": v, "ext": False, "khr" : False})
+
+        if pattern != 'core':
+            # pattern is series of parentheses separated by plus
+            # each parentheses can be prepended by negation (!)
+            # each parentheses contains list of extensions or vk versions separated by either comma or plus
+            version_list_temp = []
+            for version in version_list:
+                resolved_pattern = True
+
+                raw_terms = re.split(r'\)\+', pattern)
+                for raw_term in raw_terms:
+                    negated = raw_term.startswith('!')
+                    term = raw_term.lstrip('!(').rstrip(')')
+                    conjunction = '+' in term
+                    disjunction = ',' in term
+                    assert not (conjunction and disjunction)
+                    if conjunction: features = term.split('+')
+                    elif disjunction: features = term.split(',')
+                    else: features = [term]
+
+                    getVersion = lambda f : int(f.replace('VK_VERSION_1_', '', 1))
+                    isVersion = lambda f : f.startswith('VK_VERSION_') and feature != 'VK_VERSION_1_0' and getVersion(feature) < 1024
+                    isExtension = lambda f : f.startswith('VK_')
+                    isKhr = lambda f : f.startswith('VK_KHR_')
+
+                    assert features
+                    for feature in features:
+                        assert isExtension(feature) or isVersion(feature)
+
+                    if not negated and (conjunction or (not conjunction and not disjunction)): # all defined
+                        resolved_term = True
+                        for feature in features:
+                            # if at least one feature not defined => resolve to False
+                            if isVersion(feature) and getVersion(feature) > version['version']: resolved_term = False
+                            if version['ext'] and not isExtension(feature): resolved_term = False
+                            if version['khr'] and isExtension(feature) and not isKhr(feature): resolved_term = False
+                    elif negated and conjunction: # at least one not defined
+                        resolved_term = False
+                        for feature in features:
+                            # if at least one feature not defined => resolve to True
+                            if isVersion(feature) and getVersion(feature) > version['version']: resolved_term = True
+                            if version['ext'] and not isExtension(feature): resolved_term = True
+                            if version['khr'] and isExtension(feature) and not isKhr(feature): resolved_term = True
+                    elif not negated and disjunction: # at least one defined
+                        resolved_term = False
+                        for feature in features:
+                            # if at least one feature is defined => resolve to True
+                            if isVersion(feature) and getVersion(feature) <= version['version']: resolved_term = True
+                            if version['ext'] and isExtension(feature): resolved_term = True
+                            if version['khr'] and isExtension(feature) and isKhr(feature): resolved_term = True
+                    elif negated and (disjunction or (not conjunction and not disjunction)): # none defined
+                        resolved_term = True
+                        for feature in features:
+                            # if at least one feature is defined => resolve to False
+                            if isVersion(feature) and getVersion(feature) <= version['version']: resolved_term = False
+                            if version['ext'] and isExtension(feature): resolved_term = False
+                            if version['khr'] and isExtension(feature) and isKhr(feature): resolved_term = False
+
+                    resolved_pattern = resolved_pattern and resolved_term
+                if resolved_pattern: version_list_temp.append(version)
+            version_list = version_list_temp
+        return version_list
+
+
     def export_header(self):
         if verbose_mode:
             print("\n Exporting header file to: %s" % header_filename)
@@ -626,12 +706,20 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
             cmd_dict = {}
             for vuid in vuid_list:
                 db_entry = self.vj.vuid_db[vuid][0]
+
+                spec_list = self.make_vuid_spec_version_list(db_entry['ext'])
+
+                if  not spec_list: spec_url = self.spec_url_default
+                elif spec_list[0]['ext']: spec_url = self.spec_url_ext % spec_list[0]['version']
+                elif spec_list[0]['khr']: spec_url = self.spec_url_khr % spec_list[0]['version']
+                else: spec_url = self.spec_url_core % spec_list[0]['version']
+
                 db_text = db_entry['text'].strip(' ')
-                hfile.write('    {"%s", "%s (%s#%s)"},\n' % (vuid, db_text, self.spec_url, vuid))
+                hfile.write('    {"%s", "%s (%s#%s)"},\n' % (vuid, db_text, spec_url, vuid))
                 # For multiply-defined VUIDs, include versions with extension appended
                 if len(self.vj.vuid_db[vuid]) > 1:
-                    for db_entry in self.vj.vuid_db[vuid]:
-                        hfile.write('    {"%s[%s]", "%s (%s#%s)"},\n' % (vuid, db_entry['ext'].strip(' '), db_text, self.spec_url, vuid))
+                    print('Error: Found a duplicate VUID: %s' % vuid)
+                    sys.exit(-1)
                 if 'commandBuffer must be in the recording state' in db_text:
                     cmd_dict[vuid] = db_text 
             hfile.write(self.header_postamble)
