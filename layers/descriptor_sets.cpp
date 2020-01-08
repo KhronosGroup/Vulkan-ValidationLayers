@@ -2540,6 +2540,8 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                 // Validate image
                 auto image_view = update->pImageInfo[di].imageView;
                 auto image_layout = update->pImageInfo[di].imageLayout;
+                auto iv_state = GetImageViewState(image_view);
+                auto image_state = iv_state->image_state.get();
                 if (!ValidateImageUpdate(image_view, image_layout, update->descriptorType, func_name, error_code, error_msg)) {
                     std::stringstream error_str;
                     error_str << "Attempted write update to combined image sampler descriptor failed due to: "
@@ -2551,7 +2553,6 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                     ImageSamplerDescriptor *desc = (ImageSamplerDescriptor *)dest_set->GetDescriptorFromGlobalIndex(index + di);
                     if (desc->IsImmutableSampler()) {
                         auto sampler_state = GetSamplerState(desc->GetSampler());
-                        auto iv_state = GetImageViewState(image_view);
                         if (iv_state && sampler_state) {
                             if (iv_state->samplerConversion != sampler_state->samplerConversion) {
                                 *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01948";
@@ -2564,7 +2565,6 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                             }
                         }
                     } else {
-                        auto iv_state = GetImageViewState(image_view);
                         if (iv_state && (iv_state->samplerConversion != VK_NULL_HANDLE)) {
                             *error_code = "VUID-VkWriteDescriptorSet-descriptorType-02738";
                             std::stringstream error_str;
@@ -2575,6 +2575,29 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                             *error_msg = error_str.str();
                             return false;
                         }
+                    }
+                }
+                if (FormatIsMultiplane(image_state->createInfo.format)) {
+                    // multiplane formats must be created with mutable format bit
+                    if (0 == (image_state->createInfo.flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {
+                        *error_code = "VUID-VkDescriptorImageInfo-sampler-01564";
+                        std::stringstream error_str;
+                        error_str << "image " << HandleToUint64(image_state->image) << " combined image sampler is a multi-planar "
+                                  << "format and was not was not created with the VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT";
+                        *error_msg = error_str.str();
+                        return false;
+                    }
+                    // image view need aspect mask for only the planes supported of format
+                    VkImageAspectFlags legal_aspect_flags = (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT);
+                    legal_aspect_flags |= (FormatPlaneCount(image_state->createInfo.format) == 3) ? VK_IMAGE_ASPECT_PLANE_2_BIT : 0;
+                    if (0 != (iv_state->create_info.subresourceRange.aspectMask & (~legal_aspect_flags))) {
+                        *error_code = "VUID-VkDescriptorImageInfo-sampler-01564";
+                        std::stringstream error_str;
+                        error_str << "image " << HandleToUint64(image_state->image) << " combined image sampler is a multi-planar "
+                                  << "format and " << HandleToUint64(iv_state->image_view) << " aspectMask must only include "
+                                  << string_VkImageAspectFlags(legal_aspect_flags).c_str();
+                        *error_msg = error_str.str();
+                        return false;
                     }
                 }
             }
