@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2019 The Khronos Group Inc.
- * Copyright (c) 2015-2019 Valve Corporation
- * Copyright (c) 2015-2019 LunarG, Inc.
- * Copyright (C) 2015-2019 Google Inc.
+/* Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
+ * Copyright (C) 2015-2020 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -3469,6 +3469,23 @@ bool CoreChecks::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t b
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         sprintf(api_name, "vkBindBufferMemory2KHR() pBindInfos[%u]", i);
         skip |= ValidateBindBufferMemory(pBindInfos[i].buffer, pBindInfos[i].memory, pBindInfos[i].memoryOffset, api_name);
+    }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetImageMemoryRequirements(VkDevice device, VkImage image,
+                                                           VkMemoryRequirements *pMemoryRequirements) const {
+    bool skip = false;
+    const IMAGE_STATE *image_state = GetImageState(image);
+    if (image_state) {
+        // Checks for no disjoint bit
+        if (0 != (image_state->createInfo.flags & VK_IMAGE_CREATE_DISJOINT_BIT)) {
+            skip |= log_msg(
+                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, HandleToUint64(image),
+                "VUID-vkGetImageMemoryRequirements-image-01588",
+                "%s must not have been created with the VK_IMAGE_CREATE_DISJOINT_BIT (need to use vkGetImageMemoryRequirements2).",
+                report_data->FormatHandle(image).c_str());
+        }
     }
     return skip;
 }
@@ -9619,18 +9636,44 @@ bool CoreChecks::ValidateBindImageMemory(const VkBindImageMemoryInfo &bindInfo, 
                                 report_data->FormatHandle(bindInfo.memory).c_str());
             }
         }
+
+        const auto plane_info = lvl_find_in_chain<VkBindImagePlaneMemoryInfo>(bindInfo.pNext);
+        if (plane_info) {
+            // Checks for disjoint bit in image
+            if (0 == (image_state->createInfo.flags & VK_IMAGE_CREATE_DISJOINT_BIT)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
+                                "VUID-VkBindImageMemoryInfo-pNext-01618",
+                                "pNext of VkBindImageMemoryInfo contains VkBindImagePlaneMemoryInfo and %s is not created with "
+                                "VK_IMAGE_CREATE_DISJOINT_BIT.",
+                                report_data->FormatHandle(image_state->image).c_str());
+            }
+        }
     }
     return skip;
 }
 
 bool CoreChecks::PreCallValidateBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory mem,
                                                 VkDeviceSize memoryOffset) const {
+    bool skip = false;
+    const IMAGE_STATE *image_state = GetImageState(image);
+    if (image_state) {
+        // Checks for no disjoint bit
+        if (0 != (image_state->createInfo.flags & VK_IMAGE_CREATE_DISJOINT_BIT)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                            HandleToUint64(image), "VUID-vkBindImageMemory-image-01608",
+                            "%s must not have been created with the VK_IMAGE_CREATE_DISJOINT_BIT (need to use vkBindImageMemory2).",
+                            report_data->FormatHandle(image).c_str());
+        }
+    }
+
     VkBindImageMemoryInfo bindInfo = {};
     bindInfo.sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
+    bindInfo.pNext = nullptr;
     bindInfo.image = image;
     bindInfo.memory = mem;
     bindInfo.memoryOffset = memoryOffset;
-    return ValidateBindImageMemory(bindInfo, "vkBindImageMemory()");
+    skip |= ValidateBindImageMemory(bindInfo, "vkBindImageMemory()");
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoCount,
