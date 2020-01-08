@@ -2579,7 +2579,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                 }
             }
         }
-        // fall through
+        // Fall through
         case VK_DESCRIPTOR_TYPE_SAMPLER: {
             for (uint32_t di = 0; di < update->descriptorCount; ++di) {
                 SamplerDescriptor *desc = (SamplerDescriptor *)dest_set->GetDescriptorFromGlobalIndex(index + di);
@@ -2592,7 +2592,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                         *error_msg = error_str.str();
                         return false;
                     }
-                } else {
+                } else if (update->descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER) {
                     *error_code = "VUID-VkWriteDescriptorSet-descriptorType-02752";
                     std::stringstream error_str;
                     error_str << "Attempted write update to an immutable sampler descriptor.";
