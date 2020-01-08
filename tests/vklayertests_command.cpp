@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2019 The Khronos Group Inc.
- * Copyright (c) 2015-2019 Valve Corporation
- * Copyright (c) 2015-2019 LunarG, Inc.
- * Copyright (c) 2015-2019 Google, Inc.
+ * Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
+ * Copyright (c) 2015-2020 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1465,7 +1465,25 @@ TEST_F(VkLayerTest, CompressedImageMipCopyTests) {
 
 TEST_F(VkLayerTest, ImageBufferCopyTests) {
     TEST_DESCRIPTION("Image to buffer and buffer to image tests");
-    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // Enable KHR multiplane req'd extensions for multi-planar copy tests
+    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+                                                    VK_KHR_GET_MEMORY_REQUIREMENTS_2_SPEC_VERSION);
+    if (mp_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor, nullptr));
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    if (mp_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
 
     // Bail if any dimension of transfer granularity is 0.
     auto index = m_device->graphics_queue_node_index_;
@@ -1477,26 +1495,44 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
         return;
     }
 
+    // All VkImageObj must be defined here as if defined inside below scopes will cause image memory to be deleted when out of scope
+    // and invalidates the entire command buffer. This prevents from having to reset the commmand buffer every scope rgba
     VkImageObj image_64k(m_device);        // 128^2 texels, 64k
     VkImageObj image_16k(m_device);        // 64^2 texels, 16k
+    // depth stencil
     VkImageObj image_16k_depth(m_device);  // 64^2 texels, depth, 16k
     VkImageObj ds_image_4D_1S(m_device);   // 256^2 texels, 512kb (256k depth, 64k stencil, 192k pack)
     VkImageObj ds_image_3D_1S(m_device);   // 256^2 texels, 256kb (192k depth, 64k stencil)
     VkImageObj ds_image_2D(m_device);      // 256^2 texels, 128k (128k depth)
     VkImageObj ds_image_1S(m_device);      // 256^2 texels, 64k (64k stencil)
+    // compression
+    VkImageObj image_16k_4x4comp(m_device);   // 128^2 texels as 32^2 compressed (4x4) blocks, 16k
+    VkImageObj image_NPOT_4x4comp(m_device);  // 130^2 texels as 33^2 compressed (4x4) blocks
+    // multi-planar
+    VkImageObj image_multi_planar(m_device);  // 128^2 texels in plane_0 and 64^2 texels in plane_1
 
-    image_64k.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UINT,
-                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                   VK_IMAGE_TILING_OPTIMAL, 0);
-    image_16k.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UINT,
-                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                   VK_IMAGE_TILING_OPTIMAL, 0);
-    ASSERT_TRUE(image_64k.initialized());
-    ASSERT_TRUE(image_16k.initialized());
+    // Verify R8G8B8A8_UINT format is supported for transfer
+    bool missing_rgba_support = false;
+    VkFormatProperties props = {0, 0, 0};
+    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_R8G8B8A8_UINT, &props);
+    missing_rgba_support |= (props.bufferFeatures == 0 && props.linearTilingFeatures == 0 && props.optimalTilingFeatures == 0);
+    missing_rgba_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT) == 0;
+    missing_rgba_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0;
+
+    if (!missing_rgba_support) {
+        image_64k.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UINT,
+                       VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                       VK_IMAGE_TILING_OPTIMAL, 0);
+        ASSERT_TRUE(image_64k.initialized());
+
+        image_16k.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UINT,
+                       VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                       VK_IMAGE_TILING_OPTIMAL, 0);
+        ASSERT_TRUE(image_16k.initialized());
+    }
 
     // Verify all needed Depth/Stencil formats are supported
     bool missing_ds_support = false;
-    VkFormatProperties props = {0, 0, 0};
     vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_D32_SFLOAT_S8_UINT, &props);
     missing_ds_support |= (props.bufferFeatures == 0 && props.linearTilingFeatures == 0 && props.optimalTilingFeatures == 0);
     missing_ds_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT) == 0;
@@ -1561,179 +1597,186 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
     region.imageExtent = {64, 64, 1};
     region.bufferOffset = 0;
 
-    // attempt copies before putting command buffer in recording state
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyBufferToImage-commandBuffer-recording");
-    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_64k.handle(), image_64k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                             &region);
-    m_errorMonitor->VerifyFound();
+    if (missing_rgba_support) {
+        printf("%s R8G8B8A8_UINT transfer unsupported - skipping RGBA tests.\n", kSkipPrefix);
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyImageToBuffer-commandBuffer-recording");
-    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_64k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_64k.handle(), 1,
-                             &region);
-    m_errorMonitor->VerifyFound();
-
-    // start recording
-    m_commandBuffer->begin();
-
-    // successful copies
-    m_errorMonitor->ExpectSuccess();
-    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
-                             &region);
-    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                             &region);
-    region.imageOffset.x = 16;  // 16k copy, offset requires larger image
-    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_64k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
-                             &region);
-    region.imageExtent.height = 78;  // > 16k copy requires larger buffer & image
-    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_64k.handle(), image_64k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                             &region);
-    region.imageOffset.x = 0;
-    region.imageExtent.height = 64;
-    region.bufferOffset = 256;  // 16k copy with buffer offset, requires larger buffer
-    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_64k.handle(), 1,
-                             &region);
-    m_errorMonitor->VerifyNotFound();
-
-    // image/buffer too small (extent too large) on copy to image
-    region.imageExtent = {65, 64, 1};
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-vkCmdCopyBufferToImage-pRegions-00171");  // buffer too small
-    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_64k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                             &region);
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetUnexpectedError("VUID-VkBufferImageCopy-imageOffset-00197");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-vkCmdCopyBufferToImage-pRegions-00172");  // image too small
-    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_64k.handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                             &region);
-    m_errorMonitor->VerifyFound();
-
-    // image/buffer too small (offset) on copy to image
-    region.imageExtent = {64, 64, 1};
-    region.imageOffset = {0, 4, 0};
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-vkCmdCopyBufferToImage-pRegions-00171");  // buffer too small
-    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_64k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                             &region);
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetUnexpectedError("VUID-VkBufferImageCopy-imageOffset-00197");
-    m_errorMonitor->SetUnexpectedError("VUID-VkBufferImageCopy-imageOffset-00198");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-vkCmdCopyBufferToImage-pRegions-00172");  // image too small
-    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_64k.handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                             &region);
-    m_errorMonitor->VerifyFound();
-
-    // image/buffer too small on copy to buffer
-    region.imageExtent = {64, 64, 1};
-    region.imageOffset = {0, 0, 0};
-    region.bufferOffset = 4;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-vkCmdCopyImageToBuffer-pRegions-00183");  // buffer too small
-    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_64k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
-                             &region);
-    m_errorMonitor->VerifyFound();
-
-    region.imageExtent = {64, 65, 1};
-    region.bufferOffset = 0;
-    m_errorMonitor->SetUnexpectedError("VUID-VkBufferImageCopy-imageOffset-00198");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-vkCmdCopyImageToBuffer-pRegions-00182");  // image too small
-    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_64k.handle(), 1,
-                             &region);
-    m_errorMonitor->VerifyFound();
-
-    // buffer size OK but rowlength causes loose packing
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyImageToBuffer-pRegions-00183");
-    region.imageExtent = {64, 64, 1};
-    region.bufferRowLength = 68;
-    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
-                             &region);
-    m_errorMonitor->VerifyFound();
-
-    // An extent with zero area should produce a warning, but no error
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_ERROR_BIT_EXT, "} has zero area");
-    region.imageExtent.width = 0;
-    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
-                             &region);
-    m_errorMonitor->VerifyFound();
-
-    // aspect bits
-    region.imageExtent = {64, 64, 1};
-    region.bufferRowLength = 0;
-    region.bufferImageHeight = 0;
-    if (!missing_ds_support) {
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "VUID-VkBufferImageCopy-aspectMask-00212");  // more than 1 aspect bit set
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k_depth.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(),
-                                 1, &region);
+        // start recording for future tests
+        m_commandBuffer->begin();
+    } else {
+        // attempt copies before putting command buffer in recording state
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyBufferToImage-commandBuffer-recording");
+        vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_64k.handle(), image_64k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                 &region);
         m_errorMonitor->VerifyFound();
 
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyImageToBuffer-commandBuffer-recording");
+        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_64k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_64k.handle(), 1,
+                                 &region);
+        m_errorMonitor->VerifyFound();
+
+        // start recording
+        m_commandBuffer->begin();
+
+        // successful copies
+        m_errorMonitor->ExpectSuccess();
+        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
+                                 &region);
+        vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                 &region);
+        region.imageOffset.x = 16;  // 16k copy, offset requires larger image
+        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_64k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
+                                 &region);
+        region.imageExtent.height = 78;  // > 16k copy requires larger buffer & image
+        vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_64k.handle(), image_64k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                 &region);
+        region.imageOffset.x = 0;
+        region.imageExtent.height = 64;
+        region.bufferOffset = 256;  // 16k copy with buffer offset, requires larger buffer
+        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_64k.handle(), 1,
+                                 &region);
+        m_errorMonitor->VerifyNotFound();
+
+        // image/buffer too small (extent too large) on copy to image
+        region.imageExtent = {65, 64, 1};
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "VUID-VkBufferImageCopy-aspectMask-00211");  // different mis-matched aspect
+                                             "VUID-vkCmdCopyBufferToImage-pRegions-00171");  // buffer too small
+        vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_64k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                 &region);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetUnexpectedError("VUID-VkBufferImageCopy-imageOffset-00197");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-vkCmdCopyBufferToImage-pRegions-00172");  // image too small
+        vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_64k.handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                 &region);
+        m_errorMonitor->VerifyFound();
+
+        // image/buffer too small (offset) on copy to image
+        region.imageExtent = {64, 64, 1};
+        region.imageOffset = {0, 4, 0};
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-vkCmdCopyBufferToImage-pRegions-00171");  // buffer too small
+        vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_64k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                 &region);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetUnexpectedError("VUID-VkBufferImageCopy-imageOffset-00197");
+        m_errorMonitor->SetUnexpectedError("VUID-VkBufferImageCopy-imageOffset-00198");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-vkCmdCopyBufferToImage-pRegions-00172");  // image too small
+        vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_64k.handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                 &region);
+        m_errorMonitor->VerifyFound();
+
+        // image/buffer too small on copy to buffer
+        region.imageExtent = {64, 64, 1};
+        region.imageOffset = {0, 0, 0};
+        region.bufferOffset = 4;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-vkCmdCopyImageToBuffer-pRegions-00183");  // buffer too small
+        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_64k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
+                                 &region);
+        m_errorMonitor->VerifyFound();
+
+        region.imageExtent = {64, 65, 1};
+        region.bufferOffset = 0;
+        m_errorMonitor->SetUnexpectedError("VUID-VkBufferImageCopy-imageOffset-00198");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-vkCmdCopyImageToBuffer-pRegions-00182");  // image too small
+        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_64k.handle(), 1,
+                                 &region);
+        m_errorMonitor->VerifyFound();
+
+        // buffer size OK but rowlength causes loose packing
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyImageToBuffer-pRegions-00183");
+        region.imageExtent = {64, 64, 1};
+        region.bufferRowLength = 68;
+        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
+                                 &region);
+        m_errorMonitor->VerifyFound();
+
+        // An extent with zero area should produce a warning, but no error
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_ERROR_BIT_EXT, "} has zero area");
+        region.imageExtent.width = 0;
+        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
+                                 &region);
+        m_errorMonitor->VerifyFound();
+
+        // aspect bits
+        region.imageExtent = {64, 64, 1};
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+        if (!missing_ds_support) {
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                 "VUID-VkBufferImageCopy-aspectMask-00212");  // more than 1 aspect bit set
+            region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+            vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k_depth.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                                     buffer_16k.handle(), 1, &region);
+            m_errorMonitor->VerifyFound();
+
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                 "VUID-VkBufferImageCopy-aspectMask-00211");  // different mis-matched aspect
+            region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k_depth.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                                     buffer_16k.handle(), 1, &region);
+            m_errorMonitor->VerifyFound();
+        }
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-VkBufferImageCopy-aspectMask-00211");  // mis-matched aspect
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
+                                 &region);
+        m_errorMonitor->VerifyFound();
         region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k_depth.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(),
-                                 1, &region);
+
+        // Out-of-range mip levels should fail
+        region.imageSubresource.mipLevel = image_16k.create_info().mipLevels + 1;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyImageToBuffer-imageSubresource-01703");
+        m_errorMonitor->SetUnexpectedError("VUID-VkBufferImageCopy-imageOffset-00197");
+        m_errorMonitor->SetUnexpectedError("VUID-VkBufferImageCopy-imageOffset-00198");
+        m_errorMonitor->SetUnexpectedError("VUID-VkBufferImageCopy-imageOffset-00200");
+        m_errorMonitor->SetDesiredFailureMsg(
+            VK_DEBUG_REPORT_ERROR_BIT_EXT,
+            "VUID-vkCmdCopyImageToBuffer-pRegions-00182");  // unavoidable "region exceeds image bounds" for non-existent mip
+        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
+                                 &region);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyBufferToImage-imageSubresource-01701");
+        m_errorMonitor->SetUnexpectedError("VUID-VkBufferImageCopy-imageOffset-00197");
+        m_errorMonitor->SetUnexpectedError("VUID-VkBufferImageCopy-imageOffset-00198");
+        m_errorMonitor->SetUnexpectedError("VUID-VkBufferImageCopy-imageOffset-00200");
+        m_errorMonitor->SetDesiredFailureMsg(
+            VK_DEBUG_REPORT_ERROR_BIT_EXT,
+            "VUID-vkCmdCopyBufferToImage-pRegions-00172");  // unavoidable "region exceeds image bounds" for non-existent mip
+        vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                 &region);
+        m_errorMonitor->VerifyFound();
+        region.imageSubresource.mipLevel = 0;
+
+        // Out-of-range array layers should fail
+        region.imageSubresource.baseArrayLayer = image_16k.create_info().arrayLayers;
+        region.imageSubresource.layerCount = 1;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyImageToBuffer-imageSubresource-01704");
+        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
+                                 &region);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyBufferToImage-imageSubresource-01702");
+        vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                 &region);
+        m_errorMonitor->VerifyFound();
+        region.imageSubresource.baseArrayLayer = 0;
+
+        // Layout mismatch should fail
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00189");
+        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                 buffer_16k.handle(), 1, &region);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyBufferToImage-dstImageLayout-00180");
+        vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_16k.handle(),
+                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
         m_errorMonitor->VerifyFound();
     }
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                         "VUID-VkBufferImageCopy-aspectMask-00211");  // mis-matched aspect
-    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
-                             &region);
-    m_errorMonitor->VerifyFound();
-    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-
-    // Out-of-range mip levels should fail
-    region.imageSubresource.mipLevel = image_16k.create_info().mipLevels + 1;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyImageToBuffer-imageSubresource-01703");
-    m_errorMonitor->SetUnexpectedError("VUID-VkBufferImageCopy-imageOffset-00197");
-    m_errorMonitor->SetUnexpectedError("VUID-VkBufferImageCopy-imageOffset-00198");
-    m_errorMonitor->SetUnexpectedError("VUID-VkBufferImageCopy-imageOffset-00200");
-    m_errorMonitor->SetDesiredFailureMsg(
-        VK_DEBUG_REPORT_ERROR_BIT_EXT,
-        "VUID-vkCmdCopyImageToBuffer-pRegions-00182");  // unavoidable "region exceeds image bounds" for non-existent mip
-    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
-                             &region);
-    m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyBufferToImage-imageSubresource-01701");
-    m_errorMonitor->SetUnexpectedError("VUID-VkBufferImageCopy-imageOffset-00197");
-    m_errorMonitor->SetUnexpectedError("VUID-VkBufferImageCopy-imageOffset-00198");
-    m_errorMonitor->SetUnexpectedError("VUID-VkBufferImageCopy-imageOffset-00200");
-    m_errorMonitor->SetDesiredFailureMsg(
-        VK_DEBUG_REPORT_ERROR_BIT_EXT,
-        "VUID-vkCmdCopyBufferToImage-pRegions-00172");  // unavoidable "region exceeds image bounds" for non-existent mip
-    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                             &region);
-    m_errorMonitor->VerifyFound();
-    region.imageSubresource.mipLevel = 0;
-
-    // Out-of-range array layers should fail
-    region.imageSubresource.baseArrayLayer = image_16k.create_info().arrayLayers;
-    region.imageSubresource.layerCount = 1;
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyImageToBuffer-imageSubresource-01704");
-    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer_16k.handle(), 1,
-                             &region);
-    m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyBufferToImage-imageSubresource-01702");
-    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_16k.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                             &region);
-    m_errorMonitor->VerifyFound();
-    region.imageSubresource.baseArrayLayer = 0;
-
-    // Layout mismatch should fail
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00189");
-    vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                             buffer_16k.handle(), 1, &region);
-    m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyBufferToImage-dstImageLayout-00180");
-    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_16k.handle(),
-                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-    m_errorMonitor->VerifyFound();
 
     // Test Depth/Stencil copies
     if (missing_ds_support) {
@@ -1834,112 +1877,192 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
     }
 
     // Test compressed formats, if supported
+    // Support here requires both feature bit for compression and picked format supports transfer feature bits
     VkPhysicalDeviceFeatures device_features = {};
     ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
     if (!(device_features.textureCompressionBC || device_features.textureCompressionETC2 ||
           device_features.textureCompressionASTC_LDR)) {
         printf("%s No compressed formats supported - block compression tests skipped.\n", kSkipPrefix);
     } else {
-        VkImageObj image_16k_4x4comp(m_device);   // 128^2 texels as 32^2 compressed (4x4) blocks, 16k
-        VkImageObj image_NPOT_4x4comp(m_device);  // 130^2 texels as 33^2 compressed (4x4) blocks
-        if (device_features.textureCompressionBC) {
+        // Verify transfer support for each compression format used blow
+        bool missing_bc_support = false;
+        bool missing_etc_support = false;
+        bool missing_astc_support = false;
+        bool missing_compression_support = false;
+
+        vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_BC3_SRGB_BLOCK, &props);
+        missing_bc_support |= (props.bufferFeatures == 0 && props.linearTilingFeatures == 0 && props.optimalTilingFeatures == 0);
+        missing_bc_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT) == 0;
+        missing_bc_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0;
+
+        vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK, &props);
+        missing_etc_support |= (props.bufferFeatures == 0 && props.linearTilingFeatures == 0 && props.optimalTilingFeatures == 0);
+        missing_etc_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT) == 0;
+        missing_etc_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0;
+
+        vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_ASTC_4x4_UNORM_BLOCK, &props);
+        missing_astc_support |= (props.bufferFeatures == 0 && props.linearTilingFeatures == 0 && props.optimalTilingFeatures == 0);
+        missing_astc_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT) == 0;
+        missing_astc_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0;
+
+        if (device_features.textureCompressionBC && (!missing_bc_support)) {
             image_16k_4x4comp.Init(128, 128, 1, VK_FORMAT_BC3_SRGB_BLOCK, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL,
                                    0);
             image_NPOT_4x4comp.Init(130, 130, 1, VK_FORMAT_BC3_SRGB_BLOCK, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_OPTIMAL,
                                     0);
-        } else if (device_features.textureCompressionETC2) {
+        } else if (device_features.textureCompressionETC2 && (!missing_etc_support)) {
             image_16k_4x4comp.Init(128, 128, 1, VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK, VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                                    VK_IMAGE_TILING_OPTIMAL, 0);
             image_NPOT_4x4comp.Init(130, 130, 1, VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK, VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                                     VK_IMAGE_TILING_OPTIMAL, 0);
-        } else {
+        } else if (device_features.textureCompressionASTC_LDR && (!missing_astc_support)) {
             image_16k_4x4comp.Init(128, 128, 1, VK_FORMAT_ASTC_4x4_UNORM_BLOCK, VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                                    VK_IMAGE_TILING_OPTIMAL, 0);
             image_NPOT_4x4comp.Init(130, 130, 1, VK_FORMAT_ASTC_4x4_UNORM_BLOCK, VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                                     VK_IMAGE_TILING_OPTIMAL, 0);
+        } else {
+            missing_compression_support = true;
         }
-        ASSERT_TRUE(image_16k_4x4comp.initialized());
 
-        // Just fits
-        m_errorMonitor->ExpectSuccess();
-        region.imageExtent = {128, 128, 1};
-        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k_4x4comp.handle(), VK_IMAGE_LAYOUT_GENERAL,
-                                 buffer_16k.handle(), 1, &region);
-        m_errorMonitor->VerifyNotFound();
+        if (missing_compression_support) {
+            printf("%s No compressed formats transfers bits are supported - block compression tests skipped.\n", kSkipPrefix);
+        } else {
+            ASSERT_TRUE(image_16k_4x4comp.initialized());
 
-        // with offset, too big for buffer
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyImageToBuffer-pRegions-00183");
-        region.bufferOffset = 16;
-        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k_4x4comp.handle(), VK_IMAGE_LAYOUT_GENERAL,
-                                 buffer_16k.handle(), 1, &region);
-        m_errorMonitor->VerifyFound();
-        region.bufferOffset = 0;
+            // Just fits
+            m_errorMonitor->ExpectSuccess();
+            region.imageExtent = {128, 128, 1};
+            vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k_4x4comp.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                                     buffer_16k.handle(), 1, &region);
+            m_errorMonitor->VerifyNotFound();
 
-        // extents that are not a multiple of compressed block size
-        m_errorMonitor->SetDesiredFailureMsg(
-            VK_DEBUG_REPORT_ERROR_BIT_EXT,
-            "VUID-VkBufferImageCopy-imageExtent-00207");  // extent width not a multiple of block size
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "VUID-vkCmdCopyImageToBuffer-imageOffset-01794");  // image transfer granularity
-        region.imageExtent.width = 66;
-        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_NPOT_4x4comp.handle(), VK_IMAGE_LAYOUT_GENERAL,
-                                 buffer_16k.handle(), 1, &region);
-        m_errorMonitor->VerifyFound();
-        region.imageExtent.width = 128;
+            // with offset, too big for buffer
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdCopyImageToBuffer-pRegions-00183");
+            region.bufferOffset = 16;
+            vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k_4x4comp.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                                     buffer_16k.handle(), 1, &region);
+            m_errorMonitor->VerifyFound();
+            region.bufferOffset = 0;
 
-        m_errorMonitor->SetDesiredFailureMsg(
-            VK_DEBUG_REPORT_ERROR_BIT_EXT,
-            "VUID-VkBufferImageCopy-imageExtent-00208");  // extent height not a multiple of block size
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "VUID-vkCmdCopyImageToBuffer-imageOffset-01794");  // image transfer granularity
-        region.imageExtent.height = 2;
-        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_NPOT_4x4comp.handle(), VK_IMAGE_LAYOUT_GENERAL,
-                                 buffer_16k.handle(), 1, &region);
-        m_errorMonitor->VerifyFound();
-        region.imageExtent.height = 128;
+            // extents that are not a multiple of compressed block size
+            m_errorMonitor->SetDesiredFailureMsg(
+                VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                "VUID-VkBufferImageCopy-imageExtent-00207");  // extent width not a multiple of block size
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                 "VUID-vkCmdCopyImageToBuffer-imageOffset-01794");  // image transfer granularity
+            region.imageExtent.width = 66;
+            vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_NPOT_4x4comp.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                                     buffer_16k.handle(), 1, &region);
+            m_errorMonitor->VerifyFound();
+            region.imageExtent.width = 128;
 
-        // TODO: All available compressed formats are 2D, with block depth of 1. Unable to provoke VU_01277.
+            m_errorMonitor->SetDesiredFailureMsg(
+                VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                "VUID-VkBufferImageCopy-imageExtent-00208");  // extent height not a multiple of block size
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                 "VUID-vkCmdCopyImageToBuffer-imageOffset-01794");  // image transfer granularity
+            region.imageExtent.height = 2;
+            vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_NPOT_4x4comp.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                                     buffer_16k.handle(), 1, &region);
+            m_errorMonitor->VerifyFound();
+            region.imageExtent.height = 128;
 
-        // non-multiple extents are allowed if at the far edge of a non-block-multiple image - these should pass
-        m_errorMonitor->ExpectSuccess();
-        region.imageExtent.width = 66;
-        region.imageOffset.x = 64;
-        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_NPOT_4x4comp.handle(), VK_IMAGE_LAYOUT_GENERAL,
-                                 buffer_16k.handle(), 1, &region);
-        region.imageExtent.width = 16;
-        region.imageOffset.x = 0;
-        region.imageExtent.height = 2;
-        region.imageOffset.y = 128;
-        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_NPOT_4x4comp.handle(), VK_IMAGE_LAYOUT_GENERAL,
-                                 buffer_16k.handle(), 1, &region);
-        m_errorMonitor->VerifyNotFound();
-        region.imageOffset = {0, 0, 0};
+            // TODO: All available compressed formats are 2D, with block depth of 1. Unable to provoke VU_01277.
 
-        // buffer offset must be a multiple of texel block size (16)
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferImageCopy-bufferOffset-00206");
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferImageCopy-bufferOffset-00193");
-        region.imageExtent = {64, 64, 1};
-        region.bufferOffset = 24;
-        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k_4x4comp.handle(), VK_IMAGE_LAYOUT_GENERAL,
-                                 buffer_16k.handle(), 1, &region);
-        m_errorMonitor->VerifyFound();
+            // non-multiple extents are allowed if at the far edge of a non-block-multiple image - these should pass
+            m_errorMonitor->ExpectSuccess();
+            region.imageExtent.width = 66;
+            region.imageOffset.x = 64;
+            vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_NPOT_4x4comp.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                                     buffer_16k.handle(), 1, &region);
+            region.imageExtent.width = 16;
+            region.imageOffset.x = 0;
+            region.imageExtent.height = 2;
+            region.imageOffset.y = 128;
+            vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_NPOT_4x4comp.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                                     buffer_16k.handle(), 1, &region);
+            m_errorMonitor->VerifyNotFound();
+            region.imageOffset = {0, 0, 0};
 
-        // rowlength not a multiple of block width (4)
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferImageCopy-bufferRowLength-00203");
-        region.bufferOffset = 0;
-        region.bufferRowLength = 130;
-        region.bufferImageHeight = 0;
-        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k_4x4comp.handle(), VK_IMAGE_LAYOUT_GENERAL,
-                                 buffer_64k.handle(), 1, &region);
-        m_errorMonitor->VerifyFound();
+            // buffer offset must be a multiple of texel block size (16)
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferImageCopy-bufferOffset-00206");
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferImageCopy-bufferOffset-00193");
+            region.imageExtent = {64, 64, 1};
+            region.bufferOffset = 24;
+            vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k_4x4comp.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                                     buffer_16k.handle(), 1, &region);
+            m_errorMonitor->VerifyFound();
 
-        // imageheight not a multiple of block height (4)
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferImageCopy-bufferImageHeight-00204");
-        region.bufferRowLength = 0;
-        region.bufferImageHeight = 130;
-        vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k_4x4comp.handle(), VK_IMAGE_LAYOUT_GENERAL,
-                                 buffer_64k.handle(), 1, &region);
-        m_errorMonitor->VerifyFound();
+            // rowlength not a multiple of block width (4)
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferImageCopy-bufferRowLength-00203");
+            region.bufferOffset = 0;
+            region.bufferRowLength = 130;
+            region.bufferImageHeight = 0;
+            vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k_4x4comp.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                                     buffer_64k.handle(), 1, &region);
+            m_errorMonitor->VerifyFound();
+
+            // imageheight not a multiple of block height (4)
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferImageCopy-bufferImageHeight-00204");
+            region.bufferRowLength = 0;
+            region.bufferImageHeight = 130;
+            vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k_4x4comp.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                                     buffer_64k.handle(), 1, &region);
+            m_errorMonitor->VerifyFound();
+        }
+    }
+
+    // Test multi-planar formats, if supported
+    if (!mp_extensions) {
+        printf("%s multi-planar extensions not supported; skipped.\n", kSkipPrefix);
+    } else {
+        // Try to use G8_B8R8_2PLANE_420_UNORM because need 2-plane format for some tests and likely supported due to copy support
+        // being required with samplerYcbcrConversion feature
+        bool missing_mp_support = false;
+        vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, &props);
+        missing_mp_support |= (props.bufferFeatures == 0 && props.linearTilingFeatures == 0 && props.optimalTilingFeatures == 0);
+        missing_mp_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT) == 0;
+        missing_mp_support |= (props.optimalTilingFeatures & VK_FORMAT_FEATURE_TRANSFER_DST_BIT) == 0;
+
+        if (missing_mp_support) {
+            printf("%s VK_FORMAT_G8_B8R8_2PLANE_420_UNORM transfer not supported; skipped.\n", kSkipPrefix);
+        } else {
+            VkBufferImageCopy mp_region = {};
+            mp_region.bufferOffset = 0;
+            mp_region.bufferRowLength = 0;
+            mp_region.bufferImageHeight = 0;
+            mp_region.imageSubresource.mipLevel = 0;
+            mp_region.imageSubresource.baseArrayLayer = 0;
+            mp_region.imageSubresource.layerCount = 1;
+            mp_region.imageOffset = {0, 0, 0};
+            mp_region.imageExtent = {128, 128, 1};
+
+            // YUV420 means 1/2 width and height so plane_0 is 128x128 and plane_1 is 64x64 here
+            image_multi_planar.Init(128, 128, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                                    VK_IMAGE_TILING_OPTIMAL, 0);
+            ASSERT_TRUE(image_multi_planar.initialized());
+
+            // Copies into a mutli-planar image aspect properly
+            m_errorMonitor->ExpectSuccess();
+            mp_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
+            vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_multi_planar.handle(),
+                                     VK_IMAGE_LAYOUT_GENERAL, 1, &mp_region);
+            m_errorMonitor->VerifyNotFound();
+
+            // uses plane_2 without being 3 planar format
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferImageCopy-aspectMask-01560");
+            mp_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT;
+            vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_multi_planar.handle(),
+                                     VK_IMAGE_LAYOUT_GENERAL, 1, &mp_region);
+            m_errorMonitor->VerifyFound();
+
+            // uses single-plane aspect mask
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferImageCopy-aspectMask-01560");
+            mp_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_multi_planar.handle(),
+                                     VK_IMAGE_LAYOUT_GENERAL, 1, &mp_region);
+            m_errorMonitor->VerifyFound();
+        }
     }
 }
 
