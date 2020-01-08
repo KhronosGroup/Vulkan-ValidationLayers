@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2019 The Khronos Group Inc.
- * Copyright (c) 2015-2019 Valve Corporation
- * Copyright (c) 2015-2019 LunarG, Inc.
- * Copyright (c) 2015-2019 Google, Inc.
+ * Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
+ * Copyright (c) 2015-2020 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -7693,4 +7693,65 @@ TEST_F(VkLayerTest, DeviceCoherentMemoryDisabledAMD) {
     vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
 
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, InvalidMemoryRequirements) {
+    TEST_DESCRIPTION("Create invalid requests to image and buffer memory requirments.");
+
+    // Enable KHR YCbCr req'd extensions for Disjoint Bit
+    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+                                                    VK_KHR_GET_MEMORY_REQUIREMENTS_2_SPEC_VERSION);
+    if (mp_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    if (mp_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    if (!mp_extensions) {
+        printf("%s test requires KHR YCbCr extensions, not available.  Skipping.\n", kSkipPrefix);
+    } else {
+        // Need to make sure disjoint is supported for format
+        // Also need to support an arbitrary image usage feature
+        VkFormatProperties format_properties;
+        vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, &format_properties);
+        if (0 == (format_properties.optimalTilingFeatures & (VK_FORMAT_FEATURE_DISJOINT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT))) {
+            printf("%s test requires disjoint/sampled feature bit on format.  Skipping.\n", kSkipPrefix);
+        } else {
+            VkImageCreateInfo image_create_info = {};
+            image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+            image_create_info.pNext = NULL;
+            image_create_info.imageType = VK_IMAGE_TYPE_2D;
+            image_create_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+            image_create_info.extent.width = 64;
+            image_create_info.extent.height = 64;
+            image_create_info.extent.depth = 1;
+            image_create_info.mipLevels = 1;
+            image_create_info.arrayLayers = 1;
+            image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+            image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+            image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+            image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
+
+            VkImage image;
+            VkResult err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+            ASSERT_VK_SUCCESS(err);
+
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetImageMemoryRequirements-image-01588");
+            VkMemoryRequirements memory_requirements;
+            vk::GetImageMemoryRequirements(m_device->device(), image, &memory_requirements);
+            m_errorMonitor->VerifyFound();
+
+            vk::DestroyImage(m_device->device(), image, nullptr);
+        }
+    }
 }
