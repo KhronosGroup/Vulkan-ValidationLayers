@@ -999,7 +999,23 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
     VkResult err;
     bool pass;
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    // Enable KHR YCbCr req'd extensions for Disjoint Bit
+    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (mp_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    if (mp_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
 
     const VkFormat tex_format = VK_FORMAT_R8G8B8A8_UNORM;
     const int32_t tex_width = 256;
@@ -1337,6 +1353,82 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
                 vk::FreeMemory(m_device->device(), sparse_mem, NULL);
             }
             vk::DestroyBuffer(m_device->device(), sparse_buffer, NULL);
+        }
+    }
+
+    // Try to bind an image created with multi-planar formats
+    if (!mp_extensions) {
+        printf("%s test requires KHR YCbCr extensions, not available.  Skipping.\n", kSkipPrefix);
+    } else {
+        // Create aliased function pointers for 1.0 and 1.1 contexts
+        PFN_vkBindImageMemory2KHR vkBindImageMemory2Function = nullptr;
+        PFN_vkGetImageMemoryRequirements2KHR vkGetImageMemoryRequirements2Function = nullptr;
+        if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+            vkBindImageMemory2Function = vk::BindImageMemory2;
+            vkGetImageMemoryRequirements2Function = vk::GetImageMemoryRequirements2;
+        } else {
+            vkBindImageMemory2Function =
+                (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+            vkGetImageMemoryRequirements2Function =
+                (PFN_vkGetImageMemoryRequirements2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR");
+        }
+
+        // Try to bind an image created with Disjoint bit
+        VkFormatProperties format_properties;
+        VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+        vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), mp_format, &format_properties);
+        // Need to make sure disjoint is supported for format
+        // Also need to support an arbitrary image usage feature
+        if (0 == (format_properties.optimalTilingFeatures & (VK_FORMAT_FEATURE_DISJOINT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT))) {
+            printf("%s test requires disjoint/sampled feature bit on format.  Skipping.\n", kSkipPrefix);
+        } else {
+            VkImageCreateInfo image_create_info = {};
+            image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+            image_create_info.pNext = NULL;
+            image_create_info.imageType = VK_IMAGE_TYPE_2D;
+            image_create_info.format = mp_format;
+            image_create_info.extent.width = 64;
+            image_create_info.extent.height = 64;
+            image_create_info.extent.depth = 1;
+            image_create_info.mipLevels = 1;
+            image_create_info.arrayLayers = 1;
+            image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+            image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+            image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+            image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
+
+            VkImage image;
+            VkResult err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+            ASSERT_VK_SUCCESS(err);
+
+            // Get memory requirements for plane 0 of image
+            VkPhysicalDeviceMemoryProperties phys_mem_props;
+            vk::GetPhysicalDeviceMemoryProperties(gpu(), &phys_mem_props);
+
+            VkImagePlaneMemoryRequirementsInfo image_plane_req = {VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO};
+            image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
+
+            VkImageMemoryRequirementsInfo2 mem_req_info2 = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2};
+            mem_req_info2.pNext = &image_plane_req;
+            mem_req_info2.image = image;
+            VkMemoryRequirements2 mem_req2 = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
+            vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
+
+            // Find a valid memory type index to memory to be allocated from
+            VkMemoryAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+            alloc_info.allocationSize = mem_req2.memoryRequirements.size;
+            pass = m_device->phy().set_memory_type(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0);
+            ASSERT_TRUE(pass);
+
+            VkDeviceMemory image_memory;
+            ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &image_memory));
+
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkBindImageMemory-image-01608");
+            vk::BindImageMemory(device(), image, image_memory, 0);
+            m_errorMonitor->VerifyFound();
+
+            vk::FreeMemory(device(), image_memory, NULL);
+            vk::DestroyImage(m_device->device(), image, nullptr);
         }
     }
 }
@@ -7699,8 +7791,7 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
     TEST_DESCRIPTION("Create invalid requests to image and buffer memory requirments.");
 
     // Enable KHR YCbCr req'd extensions for Disjoint Bit
-    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-                                                    VK_KHR_GET_MEMORY_REQUIREMENTS_2_SPEC_VERSION);
+    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (mp_extensions) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
