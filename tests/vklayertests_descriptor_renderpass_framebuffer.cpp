@@ -6178,58 +6178,121 @@ TEST_F(VkLayerTest, DSBufferLimitErrors) {
 }
 
 TEST_F(VkLayerTest, DSAspectBitsErrors) {
-    // TODO : Initially only catching case where DEPTH & STENCIL aspect bits
-    //  are set, but could expand this test to hit more cases.
     TEST_DESCRIPTION("Attempt to update descriptor sets for images that do not have correct aspect bits sets.");
     VkResult err;
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    // Enable KHR multiplane req'd extensions
+    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+                                                    VK_KHR_GET_MEMORY_REQUIREMENTS_2_SPEC_VERSION);
+    if (mp_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    if (mp_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
     if (!depth_format) {
         printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
-        return;
+    } else {
+        OneOffDescriptorSet descriptor_set(m_device, {
+                                                         {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                     });
+
+        // Create an image to be used for invalid updates
+        VkImageObj image_obj(m_device);
+        VkFormatProperties format_props;
+        vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), depth_format, &format_props);
+        if (!image_obj.IsCompatible(VK_IMAGE_USAGE_SAMPLED_BIT, format_props.optimalTilingFeatures)) {
+            printf("%s Depth + Stencil format cannot be sampled with optimalTiling. Skipped.\n", kSkipPrefix);
+        } else {
+            image_obj.Init(64, 64, 1, depth_format, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_TILING_OPTIMAL);
+            ASSERT_TRUE(image_obj.initialized());
+            VkImage image = image_obj.image();
+
+            // Now create view for image
+            VkImageViewCreateInfo image_view_ci = {};
+            image_view_ci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            image_view_ci.image = image;
+            image_view_ci.format = depth_format;
+            image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            image_view_ci.subresourceRange.layerCount = 1;
+            image_view_ci.subresourceRange.baseArrayLayer = 0;
+            image_view_ci.subresourceRange.levelCount = 1;
+            // Setting both depth & stencil aspect bits is illegal for an imageView used
+            // to populate a descriptor set.
+            image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+
+            VkImageView image_view;
+            err = vk::CreateImageView(m_device->device(), &image_view_ci, NULL, &image_view);
+            ASSERT_VK_SUCCESS(err);
+            descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+
+            const char *error_msg = "VUID-VkDescriptorImageInfo-imageView-01976";
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, error_msg);
+            descriptor_set.UpdateDescriptorSets();
+            m_errorMonitor->VerifyFound();
+            vk::DestroyImageView(m_device->device(), image_view, NULL);
+        }
     }
 
-    OneOffDescriptorSet descriptor_set(m_device, {
-                                                     {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                 });
+    if (!mp_extensions) {
+        printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
+    } else {
+        OneOffDescriptorSet descriptor_set(m_device,
+                                           {
+                                               {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           });
 
-    // Create an image to be used for invalid updates
-    VkImageObj image_obj(m_device);
-    VkFormatProperties fmt_props;
-    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), depth_format, &fmt_props);
-    if (!image_obj.IsCompatible(VK_IMAGE_USAGE_SAMPLED_BIT, fmt_props.linearTilingFeatures) &&
-        !image_obj.IsCompatible(VK_IMAGE_USAGE_SAMPLED_BIT, fmt_props.optimalTilingFeatures)) {
-        printf("%s Depth + Stencil format cannot be sampled. Skipped.\n", kSkipPrefix);
-        return;
+        VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;  // commonly supported multi-planar format
+        VkImageObj image_obj(m_device);
+        VkFormatProperties format_props;
+        vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), mp_format, &format_props);
+        if (!image_obj.IsCompatible(VK_IMAGE_USAGE_SAMPLED_BIT, format_props.optimalTilingFeatures)) {
+            printf("%s multi-planar format cannot be sampled for optimalTiling. Skipped.\n", kSkipPrefix);
+        } else {
+            VkImageCreateInfo image_ci = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                                          nullptr,
+                                          VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,  // need for multi-planar
+                                          VK_IMAGE_TYPE_2D,
+                                          mp_format,
+                                          {64, 64, 1},
+                                          1,
+                                          1,
+                                          VK_SAMPLE_COUNT_1_BIT,
+                                          VK_IMAGE_TILING_OPTIMAL,
+                                          VK_IMAGE_USAGE_SAMPLED_BIT,
+                                          VK_SHARING_MODE_EXCLUSIVE,
+                                          0,
+                                          nullptr,
+                                          VK_IMAGE_LAYOUT_UNDEFINED};
+            image_obj.init(&image_ci);
+            ASSERT_TRUE(image_obj.initialized());
+
+            VkImageView image_view = image_obj.targetView(mp_format, VK_IMAGE_ASPECT_COLOR_BIT);
+
+            VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+            VkSampler sampler;
+            err = vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
+            ASSERT_VK_SUCCESS(err);
+
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkDescriptorImageInfo-sampler-01564");
+            descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+            descriptor_set.UpdateDescriptorSets();
+            m_errorMonitor->VerifyFound();
+
+            vk::DestroySampler(m_device->device(), sampler, NULL);
+        }
     }
-    image_obj.Init(64, 64, 1, depth_format, VK_IMAGE_USAGE_SAMPLED_BIT);
-    ASSERT_TRUE(image_obj.initialized());
-    VkImage image = image_obj.image();
-
-    // Now create view for image
-    VkImageViewCreateInfo image_view_ci = {};
-    image_view_ci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    image_view_ci.image = image;
-    image_view_ci.format = depth_format;
-    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    image_view_ci.subresourceRange.layerCount = 1;
-    image_view_ci.subresourceRange.baseArrayLayer = 0;
-    image_view_ci.subresourceRange.levelCount = 1;
-    // Setting both depth & stencil aspect bits is illegal for an imageView used
-    // to populate a descriptor set.
-    image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-
-    VkImageView image_view;
-    err = vk::CreateImageView(m_device->device(), &image_view_ci, NULL, &image_view);
-    ASSERT_VK_SUCCESS(err);
-    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
-
-    const char *error_msg = "VUID-VkDescriptorImageInfo-imageView-01976";
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, error_msg);
-    descriptor_set.UpdateDescriptorSets();
-    m_errorMonitor->VerifyFound();
-    vk::DestroyImageView(m_device->device(), image_view, NULL);
 }
 
 TEST_F(VkLayerTest, DSTypeMismatch) {

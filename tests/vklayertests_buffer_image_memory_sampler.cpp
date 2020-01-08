@@ -6370,7 +6370,7 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
 
     const VkImageCreateInfo ci = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                                   NULL,
-                                  0,
+                                  VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,  // need for multi-planar
                                   VK_IMAGE_TYPE_2D,
                                   VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR,
                                   {128, 128, 1},
@@ -6437,7 +6437,7 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     ivci.subresourceRange.layerCount = 1;
     ivci.subresourceRange.baseMipLevel = 0;
     ivci.subresourceRange.levelCount = 1;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
     vk::CreateImageView(m_device->device(), &ivci, nullptr, &view);
 
     // Use the image and sampler together in a descriptor set
@@ -6930,9 +6930,14 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
+
     // Test requires API 1.1 or (API 1.0 + SamplerYCbCr extension). Request API 1.1
     SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
     // In case we don't have API 1.1+, try enabling the extension directly (and it's dependencies)
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) {
@@ -6942,10 +6947,7 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
         m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
-
+    // Need to enable YCbCr feature
     auto ycbcr_features = lvl_init_struct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();
     auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&ycbcr_features);
     vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
