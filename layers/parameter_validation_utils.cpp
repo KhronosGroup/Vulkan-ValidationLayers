@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2019 The Khronos Group Inc.
- * Copyright (c) 2015-2019 Valve Corporation
- * Copyright (c) 2015-2019 LunarG, Inc.
- * Copyright (C) 2015-2019 Google Inc.
+/* Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
+ * Copyright (C) 2015-2020 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -3793,4 +3793,36 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndirectByteCountEXT(VkCo
     }
 
     return skip;
+}
+
+bool StatelessValidation::ValidateCreateSamplerYcbcrConversion(VkDevice device,
+                                                               const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
+                                                               const VkAllocationCallbacks *pAllocator,
+                                                               VkSamplerYcbcrConversion *pYcbcrConversion,
+                                                               const char *apiName) const {
+    bool skip = false;
+
+    // Check samplerYcbcrConversion feature is set
+    const auto *ycbcr_features = lvl_find_in_chain<VkPhysicalDeviceSamplerYcbcrConversionFeatures>(physical_device_features2.pNext);
+    if ((ycbcr_features == nullptr) || (ycbcr_features->samplerYcbcrConversion == VK_FALSE)) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                        "VUID-vkCreateSamplerYcbcrConversion-None-01648", "samplerYcbcrConversion must be enabled to call %s.",
+                        apiName);
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversion(VkDevice device,
+                                                                             const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
+                                                                             const VkAllocationCallbacks *pAllocator,
+                                                                             VkSamplerYcbcrConversion *pYcbcrConversion) const {
+    return ValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion,
+                                                "vkCreateSamplerYcbcrConversion");
+}
+
+bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversionKHR(
+    VkDevice device, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+    VkSamplerYcbcrConversion *pYcbcrConversion) const {
+    return ValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion,
+                                                "vkCreateSamplerYcbcrConversionKHR");
 }

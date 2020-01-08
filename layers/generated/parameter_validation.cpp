@@ -1,9 +1,9 @@
 /* *** THIS FILE IS GENERATED - DO NOT EDIT! ***
  * See parameter_validation_generator.py for modifications
  *
- * Copyright (c) 2015-2019 The Khronos Group Inc.
- * Copyright (c) 2015-2019 LunarG, Inc.
- * Copyright (C) 2015-2019 Google Inc.
+ * Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 LunarG, Inc.
+ * Copyright (C) 2015-2020 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -5275,6 +5275,7 @@ bool StatelessValidation::PreCallValidateCreateSamplerYcbcrConversion(
         }
     }
     skip |= validate_required_pointer("vkCreateSamplerYcbcrConversion", "pYcbcrConversion", pYcbcrConversion, "VUID-vkCreateSamplerYcbcrConversion-pYcbcrConversion-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion);
     return skip;
 }
 
@@ -7573,6 +7574,7 @@ bool StatelessValidation::PreCallValidateCreateSamplerYcbcrConversionKHR(
         }
     }
     skip |= validate_required_pointer("vkCreateSamplerYcbcrConversionKHR", "pYcbcrConversion", pYcbcrConversion, "VUID-vkCreateSamplerYcbcrConversion-pYcbcrConversion-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateSamplerYcbcrConversionKHR(device, pCreateInfo, pAllocator, pYcbcrConversion);
     return skip;
 }
 
