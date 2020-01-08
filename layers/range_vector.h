@@ -112,6 +112,31 @@ struct range {
     range(const index_type &begin_, const index_type &end_) : begin(begin_), end(end_) {}
 };
 
+template <typename Range>
+class range_view {
+  public:
+    using index_type = typename Range::index_type;
+    class iterator {
+      public:
+        iterator &operator++() {
+            ++current;
+            return *this;
+        }
+        const index_type &operator*() const { return current; }
+        bool operator!=(const iterator &rhs) const { return current != rhs.current; }
+        iterator(index_type value) : current(value) {}
+
+      private:
+        index_type current;
+    };
+    range_view(const Range &range) : range_(range) {}
+    const iterator begin() const { return iterator(range_.begin); }
+    const iterator end() const { return iterator(range_.end); }
+
+  private:
+    const Range &range_;
+};
+
 template <typename Container>
 using const_correct_iterator = decltype(std::declval<Container>().begin());
 
@@ -1493,7 +1518,7 @@ const MappedType &evaluate(const CachedLowerBound &clb, const MappedType &defaul
 // Traverse to range maps over the the same range, but without assumptions of aligned ranges.
 // ++ increments to the next point where on of the two maps changes range, giving a range over which the two
 // maps do not transition ranges
-template <typename MapA, typename MapB, typename KeyType = typename MapA::key_type>
+template <typename MapA, typename MapB = MapA, typename KeyType = typename MapA::key_type>
 class parallel_iterator {
   public:
     using key_type = KeyType;

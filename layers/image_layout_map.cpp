@@ -65,8 +65,6 @@ ImageSubresourceLayoutMap::ImageSubresourceLayoutMap(const IMAGE_STATE& image_st
     : image_state_(image_state),
       encoder_(image_state.range_encoder),
       layouts_(encoder_.SubresourceCount()),
-      current_layout_view_(layouts_.current, encoder_),
-      initial_layout_view_(layouts_.initial, encoder_),
       initial_layout_states_(),
       initial_layout_state_map_(encoder_.SubresourceCount()) {}
 
@@ -206,14 +204,18 @@ ImageSubresourceLayoutMap::Layouts ImageSubresourceLayoutMap::GetSubresourceLayo
     return layouts;
 }
 
-const InitialLayoutState* ImageSubresourceLayoutMap::GetSubresourceInitialLayoutState(const VkImageSubresource subresource) const {
-    if (!InRange(subresource)) return nullptr;
-    const auto index = encoder_.Encode(subresource);
+const InitialLayoutState* ImageSubresourceLayoutMap::GetSubresourceInitialLayoutState(const IndexType index) const {
     const auto found = initial_layout_state_map_.find(index);
     if (found != initial_layout_state_map_.end()) {
         return found->second;
     }
     return nullptr;
+}
+
+const InitialLayoutState* ImageSubresourceLayoutMap::GetSubresourceInitialLayoutState(const VkImageSubresource& subresource) const {
+    if (!InRange(subresource)) return nullptr;
+    const auto index = encoder_.Encode(subresource);
+    return GetSubresourceInitialLayoutState(index);
 }
 
 // TODO: make sure this paranoia check is sufficient and not too much.
@@ -239,60 +241,6 @@ bool ImageSubresourceLayoutMap::UpdateFrom(const ImageSubresourceLayoutMap& othe
     sparse_container::splice(&initial_layout_state_map_, other.initial_layout_state_map_, Arbiter::prefer_dest);
 
     return updated;
-}
-
-// Loop over the given range calling the callback, primarily for
-// validation checks.  By default the initial_value is only looked
-// up if the set value isn't found.
-bool ImageSubresourceLayoutMap::ForRange(const VkImageSubresourceRange& range, const Callback& callback, bool skip_invalid,
-                                         bool always_get_initial) const {
-    if (!InRange(range)) return false;  // Don't even try to process bogus subreources
-
-    RangeGenerator range_gen(encoder_, range);
-    SubresourceGenerator& subres_gen = range_gen.GetSubresourceGenerator();
-    ParallelIterator<const RangeMap, const RangeMap> parallel_it(layouts_.current, layouts_.initial, range_gen->begin);
-
-    bool keep_on = true;
-    IndexType current;
-    for (; range_gen->non_empty(); ++range_gen) {
-        current = range_gen->begin;
-        if (!parallel_it->range.includes(current)) {  // NOTE: empty ranges can't include anything
-            parallel_it.seek(current);
-        }
-        if (parallel_it->range.empty() && skip_invalid) {
-            // We're past the end of mapped data, and we aren't interested, so we're done
-            break;
-        }
-        while (range_gen->includes(current)) {
-            VkImageLayout layout = kInvalidLayout;
-            VkImageLayout initial_layout = kInvalidLayout;
-            IndexType constant_value_bound = range_gen->end;
-            // The generated range can validly traverse past the end of stored data
-            if (!parallel_it->range.empty()) {
-                layout = sparse_container::evaluate(parallel_it->pos_A, kInvalidLayout);
-                if (layout == kInvalidLayout || always_get_initial) {
-                    initial_layout = sparse_container::evaluate(parallel_it->pos_B, kInvalidLayout);
-                }
-                constant_value_bound = std::min(parallel_it->range.end, constant_value_bound);
-            }
-
-            if (!skip_invalid || (layout != kInvalidLayout) || (initial_layout != kInvalidLayout)) {
-                for (; current < constant_value_bound; current++, ++subres_gen) {
-                    keep_on = callback(*subres_gen, layout, initial_layout);
-                    if (!keep_on) return keep_on;  // False value from the callback aborts the range traversal
-                }
-            } else {
-                subres_gen.Seek(constant_value_bound);  // Move the subresource to the end of the skipped range
-                current = constant_value_bound;
-            }
-            // Advance the parallel it if needed and possible
-            if (!parallel_it->range.empty() && !parallel_it->range.includes(current)) {
-                ++parallel_it;
-            }
-        }
-        // ++range_gen will update subres_gen.
-    }
-    return keep_on;
 }
 
 // This is the same constant value range, subreource position advance logic as ForRange above, but suitable for use with

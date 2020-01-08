@@ -163,26 +163,11 @@ ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(CMD_BUFFER_STATE *cb_sta
     return it->second.get();
 }
 
-void UpdateImageLayoutMap(const ImageSubresourceLayoutMap &from_subres_map, ImageLayoutMap &to_image_layout_map) {
-    auto image_state = from_subres_map.GetImageView();
-    auto imgIt = to_image_layout_map.find(image_state->image);
-    if (imgIt == to_image_layout_map.end()) {
-        auto insert_pair = to_image_layout_map.insert(std::make_pair(image_state->image, LayoutMapFactory(*image_state)));
-        assert(insert_pair.second);
-        insert_pair.first->second->UpdateFrom(from_subres_map);
-    } else {
-        imgIt->second->UpdateFrom(from_subres_map);
-    }
-}
-
-void AddInitialLayoutintoImageLayoutMap(const IMAGE_STATE &image_state, ImageLayoutMap &image_layout_map) {
-    auto imgIt = image_layout_map.find(image_state.image);
-    if (imgIt == image_layout_map.end()) {
-        auto insert_pair = image_layout_map.insert(std::make_pair(image_state.image, LayoutMapFactory(image_state)));
-        assert(insert_pair.second);
-        insert_pair.first->second->SetSubresourceRangeInitialLayout(image_state.full_range, image_state.createInfo.initialLayout);
-    } else {
-        imgIt->second->SetSubresourceRangeInitialLayout(image_state.full_range, image_state.createInfo.initialLayout);
+void AddInitialLayoutintoImageLayoutMap(const IMAGE_STATE &image_state, GlobalImageLayoutMap &image_layout_map) {
+    auto *range_map = GetLayoutRangeMap(&image_layout_map, image_state);
+    auto range_gen = subresource_adapter::RangeGenerator(image_state.range_encoder, image_state.full_range);
+    for (; range_gen->non_empty(); ++range_gen) {
+        range_map->insert(range_map->end(), std::make_pair(*range_gen, image_state.createInfo.initialLayout));
     }
 }
 
@@ -2179,13 +2164,13 @@ bool CoreChecks::ValidateMaxTimelineSemaphoreValueDifference(VkQueue queue, VkSe
     return skip;
 }
 
-bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitInfo *submit, ImageLayoutMap *localImageLayoutMap_arg,
-                                                 QueryMap *local_query_to_state_map,
+bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitInfo *submit,
+                                                 GlobalImageLayoutMap *localImageLayoutMap_arg, QueryMap *local_query_to_state_map,
                                                  vector<VkCommandBuffer> *current_cmds_arg) const {
     bool skip = false;
     auto queue_state = GetQueueState(queue);
 
-    ImageLayoutMap &localImageLayoutMap = *localImageLayoutMap_arg;
+    GlobalImageLayoutMap &localImageLayoutMap = *localImageLayoutMap_arg;
     vector<VkCommandBuffer> &current_cmds = *current_cmds_arg;
 
     QFOTransferCBScoreboards<VkImageMemoryBarrier> qfo_image_scoreboards;
@@ -2259,7 +2244,7 @@ bool CoreChecks::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount,
     unordered_set<VkSemaphore> internal_semaphores;
     unordered_map<VkSemaphore, std::set<uint64_t>> timeline_values;
     vector<VkCommandBuffer> current_cmds;
-    ImageLayoutMap localImageLayoutMap;
+    GlobalImageLayoutMap localImageLayoutMap;
     QueryMap local_query_to_state_map;
 
     // Now verify each individual submit

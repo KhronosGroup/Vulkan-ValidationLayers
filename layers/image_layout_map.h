@@ -92,7 +92,6 @@ class ImageSubresourceLayoutMap {
     };
 
     using RangeMap = subresource_adapter::BothRangeMap<VkImageLayout, 16>;
-    using MapView = subresource_adapter::ConstMapView<RangeMap>;
     template <typename MapA, typename MapB>
     using ParallelIterator = sparse_container::parallel_iterator<MapA, MapB>;
     using LayoutMap = RangeMap;
@@ -160,11 +159,12 @@ class ImageSubresourceLayoutMap {
     VkImageLayout GetSubresourceLayout(const VkImageSubresource& subresource) const;
     VkImageLayout GetSubresourceInitialLayout(const VkImageSubresource& subresource) const;
     Layouts GetSubresourceLayouts(const VkImageSubresource& subresource, bool always_get_initial = true) const;
-    const InitialLayoutState* GetSubresourceInitialLayoutState(const VkImageSubresource subresource) const;
+    const InitialLayoutState* GetSubresourceInitialLayoutState(const IndexType index) const;
+    const InitialLayoutState* GetSubresourceInitialLayoutState(const VkImageSubresource& subresource) const;
     bool UpdateFrom(const ImageSubresourceLayoutMap& from);
     uintptr_t CompatibilityKey() const;
-    const MapView& InitialLayoutView() const { return initial_layout_view_; }
-    const MapView& CurrentLayoutView() const { return current_layout_view_; }
+    const InitialLayoutMap& GetInitialLayoutMap() const { return layouts_.initial; }
+    const LayoutMap& GetCurrentLayoutMap() const { return layouts_.current; }
     ImageSubresourceLayoutMap(const IMAGE_STATE& image_state);
     ~ImageSubresourceLayoutMap() {}
     const IMAGE_STATE* GetImageView() const { return &image_state_; };
@@ -208,8 +208,6 @@ class ImageSubresourceLayoutMap {
     const IMAGE_STATE& image_state_;
     const Encoder& encoder_;
     LayoutMaps layouts_;
-    MapView current_layout_view_;
-    MapView initial_layout_view_;
     InitialLayoutStates initial_layout_states_;
     InitialLayoutStateMap initial_layout_state_map_;
 
