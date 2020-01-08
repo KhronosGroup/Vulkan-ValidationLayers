@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2019 The Khronos Group Inc.
- * Copyright (c) 2015-2019 Valve Corporation
- * Copyright (c) 2015-2019 LunarG, Inc.
- * Copyright (C) 2015-2019 Google Inc.
+/* Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
+ * Copyright (C) 2015-2020 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,5 +38,7 @@ uint32_t ResolveRemainingLevels(const VkImageSubresourceRange *range, uint32_t m
 
 uint32_t ResolveRemainingLayers(const VkImageSubresourceRange *range, uint32_t layers);
 VkImageSubresourceRange NormalizeSubresourceRange(const IMAGE_STATE &image_state, const VkImageSubresourceRange &range);
+GlobalImageLayoutRangeMap *GetLayoutRangeMap(GlobalImageLayoutMap *map, const IMAGE_STATE &image_state);
+const GlobalImageLayoutRangeMap *GetLayoutRangeMap(const GlobalImageLayoutMap &map, VkImage image);
 
 #endif  // CORE_VALIDATION_BUFFER_VALIDATION_H_

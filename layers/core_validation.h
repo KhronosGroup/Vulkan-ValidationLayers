@@ -35,7 +35,7 @@ class CoreChecks : public ValidationStateTracker {
     std::unordered_set<uint64_t> ahb_ext_formats_set;
     GlobalQFOTransferBarrierMap<VkImageMemoryBarrier> qfo_release_image_barrier_map;
     GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> qfo_release_buffer_barrier_map;
-    ImageLayoutMap imageLayoutMap;
+    GlobalImageLayoutMap imageLayoutMap;
 
     void IncrementCommandCount(VkCommandBuffer commandBuffer);
 
@@ -64,7 +64,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateMaxTimelineSemaphoreValueDifference(VkQueue queue, VkSemaphore semaphore, const uint64_t semaphoreHandleValue,
                                                      unordered_map<VkSemaphore, std::set<uint64_t>>* timeline_values_arg,
                                                      const char* func_name, const char* vuid) const;
-    bool ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitInfo* submit, ImageLayoutMap* localImageLayoutMap_arg,
+    bool ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitInfo* submit, GlobalImageLayoutMap* localImageLayoutMap_arg,
                                          QueryMap* local_query_to_state_map, std::vector<VkCommandBuffer>* current_cmds_arg) const;
     bool ValidateStatus(const CMD_BUFFER_STATE* pNode, CBStatusFlags status_mask, const char* fail_msg, const char* msg_code) const;
     bool ValidateDrawStateFlags(const CMD_BUFFER_STATE* pCB, const PIPELINE_STATE* pPipe, bool indexed, const char* msg_code) const;
@@ -485,12 +485,6 @@ class CoreChecks : public ValidationStateTracker {
 
     bool FindLayouts(VkImage image, std::vector<VkImageLayout>& layouts) const;
 
-    bool FindLayout(const ImageLayoutMap& imageLayoutMap, const VkImage image, VkImageSubresource subresource,
-                    VkImageLayout& layout) const;
-
-    static bool FindLayout(const ImageLayoutMap& imageLayoutMap, const VkImage image, VkImageSubresource subresource,
-                           VkImageLayout& layout, const VkImageAspectFlags aspectMask);
-
     void SetImageViewLayout(CMD_BUFFER_STATE* cb_node, const IMAGE_VIEW_STATE& view_state, VkImageLayout layout,
                             VkImageLayout layoutStencil);
     void SetImageViewInitialLayout(CMD_BUFFER_STATE* cb_node, const IMAGE_VIEW_STATE& view_state, VkImageLayout layout);
@@ -553,8 +547,8 @@ class CoreChecks : public ValidationStateTracker {
                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions,
                                    VkFilter filter);
 
-    bool ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE* pCB, const ImageLayoutMap& globalImageLayoutMap,
-                                    ImageLayoutMap* overlayLayoutMap_arg) const;
+    bool ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE* pCB, const GlobalImageLayoutMap& globalImageLayoutMap,
+                                    GlobalImageLayoutMap* overlayLayoutMap_arg) const;
 
     void UpdateCmdBufImageLayouts(CMD_BUFFER_STATE* pCB);
 
