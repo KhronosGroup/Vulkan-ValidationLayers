@@ -226,7 +226,10 @@ VkRenderFramework::VkRenderFramework()
       m_depthStencil(NULL),
       m_CreateDebugReportCallback(VK_NULL_HANDLE),
       m_DestroyDebugReportCallback(VK_NULL_HANDLE),
-      m_globalMsgCallback(VK_NULL_HANDLE) {
+      m_globalMsgCallback(VK_NULL_HANDLE),
+      m_CreateDebugUtilsCallback(VK_NULL_HANDLE),
+      m_DestroyDebugUtilsCallback(VK_NULL_HANDLE),
+      m_global_message_callback(VK_NULL_HANDLE) {
     memset(&m_renderPassBeginInfo, 0, sizeof(m_renderPassBeginInfo));
     m_renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 
@@ -369,6 +372,7 @@ bool VkRenderFramework::DeviceIsMockICD() {
 // Some tests may need to be skipped if the devsim layer is in use.
 bool VkRenderFramework::DeviceSimulation() { return m_devsim_layer; }
 
+// Debug Report-based framework initialization
 void VkRenderFramework::InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction, void *userData, void *instance_pnext) {
     // Only enable device profile layer by default if devsim is not enabled
     if (!VkTestFramework::m_devsim_layer && InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api")) {
@@ -451,6 +455,90 @@ void VkRenderFramework::InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction, 
     }
 }
 
+// Debug Utils-based framework initialization
+void VkRenderFramework::InitFramework(PFN_vkDebugUtilsMessengerCallbackEXT debug_function, void *userData, void *instance_pnext) {
+    // Only enable device profile layer by default if devsim is not enabled
+    if (!VkTestFramework::m_devsim_layer && InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api")) {
+        m_instance_layer_names.push_back("VK_LAYER_LUNARG_device_profile_api");
+    }
+
+    // Assert not already initialized
+    ASSERT_EQ((VkInstance)0, inst);
+
+    // Remove any unsupported layer names from list
+    for (auto layer = m_instance_layer_names.begin(); layer != m_instance_layer_names.end();) {
+        if (!InstanceLayerSupported(*layer)) {
+            ADD_FAILURE() << "InitFramework(): Requested layer " << *layer << " was not found. Disabled.";
+            layer = m_instance_layer_names.erase(layer);
+        } else {
+            ++layer;
+        }
+    }
+
+    // Remove any unsupported instance extension names from list
+    for (auto ext = m_instance_extension_names.begin(); ext != m_instance_extension_names.end();) {
+        if (!InstanceExtensionSupported(*ext)) {
+            ADD_FAILURE() << "InitFramework(): Requested extension " << *ext << " was not found. Disabled.";
+            ext = m_instance_extension_names.erase(ext);
+        } else {
+            ++ext;
+        }
+    }
+
+    VkInstanceCreateInfo instInfo = {};
+    instInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    instInfo.pNext = instance_pnext;
+    instInfo.pApplicationInfo = &app_info;
+    instInfo.enabledLayerCount = m_instance_layer_names.size();
+    instInfo.ppEnabledLayerNames = m_instance_layer_names.data();
+    instInfo.enabledExtensionCount = m_instance_extension_names.size();
+    instInfo.ppEnabledExtensionNames = m_instance_extension_names.data();
+
+    VkDebugUtilsMessengerCreateInfoEXT debug_create_info{};
+    if (debug_function) {
+        // Enable create time debug messages
+        debug_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        debug_create_info.messageSeverity =
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+        debug_create_info.messageType =
+            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        debug_create_info.pfnUserCallback = debug_function;
+        debug_create_info.pUserData = userData;
+
+        debug_create_info.pNext = instInfo.pNext;
+        instInfo.pNext = &debug_create_info;
+    }
+
+    VkResult err;
+
+    err = vk::CreateInstance(&instInfo, NULL, &this->inst);
+    ASSERT_VK_SUCCESS(err);
+
+    err = vk::EnumeratePhysicalDevices(inst, &this->gpu_count, NULL);
+    ASSERT_LE(this->gpu_count, ARRAY_SIZE(objs)) << "Too many gpus";
+    ASSERT_VK_SUCCESS(err);
+    err = vk::EnumeratePhysicalDevices(inst, &this->gpu_count, objs);
+    ASSERT_VK_SUCCESS(err);
+    ASSERT_GE(this->gpu_count, (uint32_t)1) << "No GPU available";
+
+    if (debug_function) {
+        m_CreateDebugUtilsCallback =
+            (PFN_vkCreateDebugUtilsMessengerEXT)vk::GetInstanceProcAddr(this->inst, "vkCreateDebugUtilsMessengerEXT");
+        ASSERT_NE(m_CreateDebugUtilsCallback, (PFN_vkCreateDebugUtilsMessengerEXT)NULL)
+            << "Did not get function pointer for CreateDebugUtilsMessengerEXT";
+        if (m_CreateDebugUtilsCallback) {
+            debug_create_info.pNext = nullptr;  // clean up from usage in CreateInstance above
+            err = m_CreateDebugUtilsCallback(this->inst, &debug_create_info, NULL, &m_global_message_callback);
+            ASSERT_VK_SUCCESS(err);
+
+            m_DestroyDebugUtilsCallback =
+                (PFN_vkDestroyDebugUtilsMessengerEXT)vk::GetInstanceProcAddr(this->inst, "vkDestroyDebugUtilsMessengerEXT");
+            ASSERT_NE(m_DestroyDebugUtilsCallback, (PFN_vkDestroyDebugUtilsMessengerEXT)NULL)
+                << "Did not get function pointer for DestroyDebugUtilsMessengerEXT";
+        }
+    }
+}
+
 void VkRenderFramework::ShutdownFramework() {
     // Nothing to shut down without a VkInstance
     if (!this->inst) return;
@@ -466,6 +554,9 @@ void VkRenderFramework::ShutdownFramework() {
 
     if (m_globalMsgCallback) m_DestroyDebugReportCallback(this->inst, m_globalMsgCallback, NULL);
     m_globalMsgCallback = VK_NULL_HANDLE;
+
+    if (m_global_message_callback) m_DestroyDebugUtilsCallback(this->inst, m_global_message_callback, NULL);
+    m_global_message_callback = VK_NULL_HANDLE;
 
     m_renderTargets.clear();
 
