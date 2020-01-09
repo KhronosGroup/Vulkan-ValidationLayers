@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2019 The Khronos Group Inc.
- * Copyright (c) 2015-2019 Valve Corporation
- * Copyright (c) 2015-2019 LunarG, Inc.
- * Copyright (c) 2015-2019 Google, Inc.
+ * Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
+ * Copyright (c) 2015-2020 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -226,8 +226,7 @@ VkRenderFramework::VkRenderFramework()
       m_depthStencil(NULL),
       m_CreateDebugReportCallback(VK_NULL_HANDLE),
       m_DestroyDebugReportCallback(VK_NULL_HANDLE),
-      m_globalMsgCallback(VK_NULL_HANDLE),
-      m_devMsgCallback(VK_NULL_HANDLE) {
+      m_globalMsgCallback(VK_NULL_HANDLE) {
     memset(&m_renderPassBeginInfo, 0, sizeof(m_renderPassBeginInfo));
     m_renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 
@@ -448,9 +447,6 @@ void VkRenderFramework::InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction, 
                 (PFN_vkDestroyDebugReportCallbackEXT)vk::GetInstanceProcAddr(this->inst, "vkDestroyDebugReportCallbackEXT");
             ASSERT_NE(m_DestroyDebugReportCallback, (PFN_vkDestroyDebugReportCallbackEXT)NULL)
                 << "Did not get function pointer for DestroyDebugReportCallback";
-            m_DebugReportMessage = (PFN_vkDebugReportMessageEXT)vk::GetInstanceProcAddr(this->inst, "vkDebugReportMessageEXT");
-            ASSERT_NE(m_DebugReportMessage, (PFN_vkDebugReportMessageEXT)NULL)
-                << "Did not get function pointer for DebugReportMessage";
         }
     }
 }
@@ -470,8 +466,6 @@ void VkRenderFramework::ShutdownFramework() {
 
     if (m_globalMsgCallback) m_DestroyDebugReportCallback(this->inst, m_globalMsgCallback, NULL);
     m_globalMsgCallback = VK_NULL_HANDLE;
-    if (m_devMsgCallback) m_DestroyDebugReportCallback(this->inst, m_devMsgCallback, NULL);
-    m_devMsgCallback = VK_NULL_HANDLE;
 
     m_renderTargets.clear();
 

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2019 The Khronos Group Inc.
- * Copyright (c) 2015-2019 Valve Corporation
- * Copyright (c) 2015-2019 LunarG, Inc.
+ * Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -246,9 +246,7 @@ class VkRenderFramework : public VkTestFramework {
     VkDepthStencilObj *m_depthStencil;
     PFN_vkCreateDebugReportCallbackEXT m_CreateDebugReportCallback;
     PFN_vkDestroyDebugReportCallbackEXT m_DestroyDebugReportCallback;
-    PFN_vkDebugReportMessageEXT m_DebugReportMessage;
     VkDebugReportCallbackEXT m_globalMsgCallback;
-    VkDebugReportCallbackEXT m_devMsgCallback;
 
     std::vector<const char *> m_instance_layer_names;
     std::vector<const char *> m_instance_extension_names;
