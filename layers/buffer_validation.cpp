@@ -563,6 +563,16 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
             auto attachment_initial_layout = pRenderPassInfo->pAttachments[i].initialLayout;
             auto final_layout = pRenderPassInfo->pAttachments[i].finalLayout;
 
+            // Default to expecting stencil in the same layout.
+            auto attachment_stencil_initial_layout = attachment_initial_layout;
+
+            // If a separate layout is specified, look for that.
+            const auto *attachment_description_stencil_layout =
+                lvl_find_in_chain<VkAttachmentDescriptionStencilLayoutKHR>(pRenderPassInfo->pAttachments[i].pNext);
+            if (attachment_description_stencil_layout) {
+                attachment_stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
+            }
+
             // Cast pCB to const because we don't want to create entries that don't exist here (in case the key changes to something
             // in common with the non-const version.)
             const ImageSubresourceLayoutMap *subresource_map =
@@ -571,22 +581,37 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
             if (subresource_map) {  // If no layout information for image yet, will be checked at QueueSubmit time
                 LayoutUseCheckAndMessage layout_check(subresource_map);
                 bool subres_skip = false;
-                auto subresource_cb = [this, i, attachment_initial_layout, &layout_check, &subres_skip](
-                                          const VkImageSubresource &subres, VkImageLayout layout, VkImageLayout initial_layout) {
-                    if (!layout_check.Check(subres, attachment_initial_layout, layout, initial_layout)) {
-                        subres_skip |=
-                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                    kVUID_Core_DrawState_InvalidRenderpass,
-                                    "You cannot start a render pass using attachment %u where the render pass initial layout is %s "
-                                    "and the %s layout of the attachment is %s. The layouts must match, or the render "
-                                    "pass initial layout for the attachment must be VK_IMAGE_LAYOUT_UNDEFINED",
-                                    i, string_VkImageLayout(attachment_initial_layout), layout_check.message,
-                                    string_VkImageLayout(layout_check.layout));
+                auto subresource_cb = [this, i, attachment_initial_layout, attachment_stencil_initial_layout, &layout_check,
+                                       &subres_skip](const VkImageSubresource &subres, VkImageLayout layout,
+                                                     VkImageLayout initial_layout) {
+                    VkImageLayout checkLayout = attachment_initial_layout;
+                    if (subres.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) checkLayout = attachment_stencil_initial_layout;
+
+                    if (!layout_check.Check(subres, checkLayout, layout, initial_layout)) {
+                        subres_skip |= log_msg(
+                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                            kVUID_Core_DrawState_InvalidRenderpass,
+                            "You cannot start a render pass using attachment %u where the render pass initial layout is %s "
+                            "and the %s layout of the attachment is %s. The layouts must match, or the render "
+                            "pass initial layout for the attachment must be VK_IMAGE_LAYOUT_UNDEFINED",
+                            i, string_VkImageLayout(checkLayout), layout_check.message, string_VkImageLayout(layout_check.layout));
                     }
                     return !subres_skip;  // quit checking subresources once we fail once
                 };
 
-                subresource_map->ForRange(view_state->normalized_subresource_range, subresource_cb);
+                VkImageSubresourceRange range = view_state->normalized_subresource_range;
+                if (range.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) {
+                    // Check the depth aspect, if it exists.
+                    if (range.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) {
+                        range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                        subresource_map->ForRange(range, subresource_cb);
+                    }
+
+                    range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+                    subresource_map->ForRange(range, subresource_cb);
+                } else {
+                    subresource_map->ForRange(range, subresource_cb);
+                }
                 skip |= subres_skip;
             }
 
