@@ -135,6 +135,15 @@ VKAPI_ATTR VkBool32 VKAPI_CALL myDbgFunc(VkFlags msgFlags, VkDebugReportObjectTy
     return VK_FALSE;
 }
 
+VKAPI_ATTR VkBool32 VKAPI_CALL LvtDebugUtilsFunc(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType, uint64_t srcObject, size_t location,
+    int32_t msgCode, const char *pLayerPrefix, const char *pMsg, void *pUserData) {
+    ErrorMonitor *errMonitor = (ErrorMonitor *)pUserData;
+    if (msgFlags & errMonitor->GetMessageFlags()) {
+        return errMonitor->CheckForDesiredMsg(pMsg);
+    }
+    return VK_FALSE;
+}
+
 VkPhysicalDevicePushDescriptorPropertiesKHR GetPushDescriptorProperties(VkInstance instance, VkPhysicalDevice gpu) {
     // Find address of extension call and make the call -- assumes needed extensions are enabled.
     PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =

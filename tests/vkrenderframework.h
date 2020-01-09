@@ -184,7 +184,10 @@ class VkRenderFramework : public VkTestFramework {
     void InitRenderTarget(VkImageView *dsBinding);
     void InitRenderTarget(uint32_t targets, VkImageView *dsBinding);
     void DestroyRenderTarget();
+
     void InitFramework(PFN_vkDebugReportCallbackEXT = NULL, void *userData = NULL, void *instance_pnext = NULL);
+
+    void InitFramework(PFN_vkDebugUtilsMessengerCallbackEXT = NULL, void *userData = NULL, void *instance_pnext = NULL);
 
     void ShutdownFramework();
     void GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *features);
@@ -244,9 +247,16 @@ class VkRenderFramework : public VkTestFramework {
     float m_depth_clear_color;
     uint32_t m_stencil_clear_color;
     VkDepthStencilObj *m_depthStencil;
+
+    // Debug Report Data
     PFN_vkCreateDebugReportCallbackEXT m_CreateDebugReportCallback;
     PFN_vkDestroyDebugReportCallbackEXT m_DestroyDebugReportCallback;
     VkDebugReportCallbackEXT m_globalMsgCallback;
+
+    // Debug Utils Data
+    PFN_vkCreateDebugUtilsMessengerEXT m_CreateDebugUtilsCallback;
+    PFN_vkDestroyDebugUtilsMessengerEXT m_DestroyDebugUtilsCallback;
+    VkDebugUtilsMessengerEXT m_global_message_callback;
 
     std::vector<const char *> m_instance_layer_names;
     std::vector<const char *> m_instance_extension_names;
