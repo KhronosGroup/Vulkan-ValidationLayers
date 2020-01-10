@@ -626,73 +626,67 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
         assert pattern
         max_minor_version = 1 # needs to be bumped with new minor versions :/
 
-        version_list = []
-        for v in reversed(range(max_minor_version+1)):
-            version_list.append({"version": v, "ext": True,  "khr" : False})
-            version_list.append({"version": v, "ext": False, "khr" : True})
-            version_list.append({"version": v, "ext": False, "khr" : False})
+        all_editions_list = []
+        for e in reversed(range(max_minor_version+1)):
+            all_editions_list.append({"version": e, "ext": True,  "khr" : False})
+            all_editions_list.append({"version": e, "ext": False, "khr" : True})
+            all_editions_list.append({"version": e, "ext": False, "khr" : False})
 
-        if pattern != 'core':
-            # pattern is series of parentheses separated by plus
-            # each parentheses can be prepended by negation (!)
-            # each parentheses contains list of extensions or vk versions separated by either comma or plus
-            version_list_temp = []
-            for version in version_list:
-                resolved_pattern = True
+        if pattern == 'core':
+            return all_editions_list
 
-                raw_terms = re.split(r'\)\+', pattern)
-                for raw_term in raw_terms:
-                    negated = raw_term.startswith('!')
-                    term = raw_term.lstrip('!(').rstrip(')')
-                    conjunction = '+' in term
-                    disjunction = ',' in term
-                    assert not (conjunction and disjunction)
-                    if conjunction: features = term.split('+')
-                    elif disjunction: features = term.split(',')
-                    else: features = [term]
+        # pattern is series of parentheses separated by plus
+        # each parentheses can be prepended by negation (!)
+        # each parentheses contains list of extensions or vk versions separated by either comma or plus
+        edition_list_out = []
+        for edition in all_editions_list:
+            resolved_pattern = True
 
-                    getVersion = lambda f : int(f.replace('VK_VERSION_1_', '', 1))
-                    isVersion = lambda f : f.startswith('VK_VERSION_') and feature != 'VK_VERSION_1_0' and getVersion(feature) < 1024
-                    isExtension = lambda f : f.startswith('VK_')
-                    isKhr = lambda f : f.startswith('VK_KHR_')
+            raw_terms = re.split(r'\)\+', pattern)
+            for raw_term in raw_terms:
+                negated = raw_term.startswith('!')
+                term = raw_term.lstrip('!(').rstrip(')')
+                conjunction = '+' in term
+                disjunction = ',' in term
+                assert not (conjunction and disjunction)
+                if conjunction: features = term.split('+')
+                elif disjunction: features = term.split(',')
+                else: features = [term]
+                assert features
 
-                    assert features
+                def isDefined(feature, edition):
+                    def getVersion(f): return int(f.replace('VK_VERSION_1_', '', 1))
+                    def isVersion(f): return f.startswith('VK_VERSION_') and feature != 'VK_VERSION_1_0' and getVersion(feature) < 1024
+                    def isExtension(f): return f.startswith('VK_') and not isVersion(f)
+                    def isKhr(f): return f.startswith('VK_KHR_')
+
+                    assert isExtension(feature) or isVersion(feature)
+
+                    if isVersion(feature) and getVersion(feature) <= edition['version']: return True
+                    elif isExtension(feature) and edition['ext']: return True
+                    elif isKhr(feature) and edition['khr']: return True
+                    else: return False
+
+                if not negated and (conjunction or (not conjunction and not disjunction)): # all defined
+                    resolved_term = True
                     for feature in features:
-                        assert isExtension(feature) or isVersion(feature)
+                        if not isDefined(feature, edition): resolved_term = False
+                elif negated and conjunction: # at least one not defined
+                    resolved_term = False
+                    for feature in features:
+                        if not isDefined(feature, edition): resolved_term = True
+                elif not negated and disjunction: # at least one defined
+                    resolved_term = False
+                    for feature in features:
+                        if isDefined(feature, edition): resolved_term = True
+                elif negated and (disjunction or (not conjunction and not disjunction)): # none defined
+                    resolved_term = True
+                    for feature in features:
+                        if isDefined(feature, edition): resolved_term = False
 
-                    if not negated and (conjunction or (not conjunction and not disjunction)): # all defined
-                        resolved_term = True
-                        for feature in features:
-                            # if at least one feature not defined => resolve to False
-                            if isVersion(feature) and getVersion(feature) > version['version']: resolved_term = False
-                            if version['ext'] and not isExtension(feature): resolved_term = False
-                            if version['khr'] and isExtension(feature) and not isKhr(feature): resolved_term = False
-                    elif negated and conjunction: # at least one not defined
-                        resolved_term = False
-                        for feature in features:
-                            # if at least one feature not defined => resolve to True
-                            if isVersion(feature) and getVersion(feature) > version['version']: resolved_term = True
-                            if version['ext'] and not isExtension(feature): resolved_term = True
-                            if version['khr'] and isExtension(feature) and not isKhr(feature): resolved_term = True
-                    elif not negated and disjunction: # at least one defined
-                        resolved_term = False
-                        for feature in features:
-                            # if at least one feature is defined => resolve to True
-                            if isVersion(feature) and getVersion(feature) <= version['version']: resolved_term = True
-                            if version['ext'] and isExtension(feature): resolved_term = True
-                            if version['khr'] and isExtension(feature) and isKhr(feature): resolved_term = True
-                    elif negated and (disjunction or (not conjunction and not disjunction)): # none defined
-                        resolved_term = True
-                        for feature in features:
-                            # if at least one feature is defined => resolve to False
-                            if isVersion(feature) and getVersion(feature) <= version['version']: resolved_term = False
-                            if version['ext'] and isExtension(feature): resolved_term = False
-                            if version['khr'] and isExtension(feature) and isKhr(feature): resolved_term = False
-
-                    resolved_pattern = resolved_pattern and resolved_term
-                if resolved_pattern: version_list_temp.append(version)
-            version_list = version_list_temp
-        return version_list
+                resolved_pattern = resolved_pattern and resolved_term
+            if resolved_pattern: edition_list_out.append(edition)
+        return edition_list_out
 
 
     def export_header(self):
