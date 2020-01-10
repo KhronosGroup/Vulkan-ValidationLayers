@@ -890,7 +890,7 @@ bool CoreChecks::ValidateBarriersToImages(const CMD_BUFFER_STATE *cb_state, uint
             // For a Depth/Stencil image both aspects MUST be set
             if (FormatIsDepthAndStencil(image_create_info.format)) {
                 auto const aspect_mask = img_barrier.subresourceRange.aspectMask;
-                if (enabled_features.separate_depth_stencil_layouts_features.separateDepthStencilLayouts) {
+                if (enabled_features.core12.separateDepthStencilLayouts) {
                     if (!(aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
                         skip |=
                             log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
@@ -3651,7 +3651,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                 case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR:
                 case VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR:
                 case VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR:
-                    if (!enabled_features.separate_depth_stencil_layouts_features.separateDepthStencilLayouts) {
+                    if (!enabled_features.core12.separateDepthStencilLayouts) {
                         skip |= log_msg(
                             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkAttachmentReference2-separateDepthStencilLayouts-03313",
@@ -3817,7 +3817,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                 case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR:
                 case VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR:
                 case VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR:
-                    if (!enabled_features.separate_depth_stencil_layouts_features.separateDepthStencilLayouts) {
+                    if (!enabled_features.core12.separateDepthStencilLayouts) {
                         skip |= log_msg(
                             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkAttachmentReference2-separateDepthStencilLayouts-03313",
@@ -3963,7 +3963,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                 case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR:
                 case VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR:
                 case VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR:
-                    if (!enabled_features.separate_depth_stencil_layouts_features.separateDepthStencilLayouts) {
+                    if (!enabled_features.core12.separateDepthStencilLayouts) {
                         skip |= log_msg(
                             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkAttachmentReference2-separateDepthStencilLayouts-03313",
@@ -4298,8 +4298,7 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
     }
 
     if ((pCreateInfo->flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT_KHR) &&
-        !enabled_features.buffer_device_address.bufferDeviceAddressCaptureReplay &&
-        !enabled_features.buffer_device_address_ext.bufferDeviceAddressCaptureReplay) {
+        !enabled_features.core12.bufferDeviceAddressCaptureReplay) {
         skip |= log_msg(
             report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
             "VUID-VkBufferCreateInfo-flags-03338",

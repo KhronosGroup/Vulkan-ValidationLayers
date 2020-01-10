@@ -982,108 +982,165 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
 
     const auto *vulkan_12_features = lvl_find_in_chain<VkPhysicalDeviceVulkan12Features>(pCreateInfo->pNext);
     if (vulkan_12_features) {
-        state_tracker->enabled_features.eight_bit_storage.storageBuffer8BitAccess = vulkan_12_features->storageBuffer8BitAccess;
-        state_tracker->enabled_features.eight_bit_storage.uniformAndStorageBuffer8BitAccess =
-            vulkan_12_features->uniformAndStorageBuffer8BitAccess;
-        state_tracker->enabled_features.eight_bit_storage.storagePushConstant8 = vulkan_12_features->storagePushConstant8;
-
-        state_tracker->enabled_features.float16_int8.shaderFloat16 = vulkan_12_features->shaderFloat16;
-        state_tracker->enabled_features.float16_int8.shaderInt8 = vulkan_12_features->shaderInt8;
-
-        if (vulkan_12_features->descriptorIndexing) {
-            VkPhysicalDeviceFeatures2 features2 = {};
-            auto di_features = lvl_init_struct<VkPhysicalDeviceDescriptorIndexingFeatures>();
-            features2 = lvl_init_struct<VkPhysicalDeviceFeatures2>(&di_features);
-            DispatchGetPhysicalDeviceFeatures2KHR(gpu, &features2);
-            state_tracker->enabled_features.descriptor_indexing = di_features;
-        }
-        state_tracker->enabled_features.scalar_block_layout_features.scalarBlockLayout = vulkan_12_features->scalarBlockLayout;
-
-        state_tracker->enabled_features.imageless_framebuffer_features.imagelessFramebuffer =
-            vulkan_12_features->imagelessFramebuffer;
-
-        state_tracker->enabled_features.uniform_buffer_standard_layout.uniformBufferStandardLayout =
-            vulkan_12_features->uniformBufferStandardLayout;
-
-        state_tracker->enabled_features.subgroup_extended_types_features.shaderSubgroupExtendedTypes =
-            vulkan_12_features->shaderSubgroupExtendedTypes;
-
-        state_tracker->enabled_features.separate_depth_stencil_layouts_features.separateDepthStencilLayouts =
-            vulkan_12_features->separateDepthStencilLayouts;
-
-        state_tracker->enabled_features.host_query_reset_features.hostQueryReset = vulkan_12_features->hostQueryReset;
-
-        state_tracker->enabled_features.timeline_semaphore_features.timelineSemaphore = vulkan_12_features->timelineSemaphore;
-
-        state_tracker->enabled_features.buffer_device_address.bufferDeviceAddress = vulkan_12_features->bufferDeviceAddress;
-        state_tracker->enabled_features.buffer_device_address.bufferDeviceAddressCaptureReplay =
-            vulkan_12_features->bufferDeviceAddressCaptureReplay;
-        state_tracker->enabled_features.buffer_device_address.bufferDeviceAddressMultiDevice =
-            vulkan_12_features->bufferDeviceAddressMultiDevice;
-
+        state_tracker->enabled_features.core12 = *vulkan_12_features;
     } else {
         // These structs are only allowed in pNext chain if there is no kPhysicalDeviceVulkan12Features
 
         const auto *eight_bit_storage_features = lvl_find_in_chain<VkPhysicalDevice8BitStorageFeatures>(pCreateInfo->pNext);
         if (eight_bit_storage_features) {
-            state_tracker->enabled_features.eight_bit_storage = *eight_bit_storage_features;
+            state_tracker->enabled_features.core12.storageBuffer8BitAccess = eight_bit_storage_features->storageBuffer8BitAccess;
+            state_tracker->enabled_features.core12.uniformAndStorageBuffer8BitAccess =
+                eight_bit_storage_features->uniformAndStorageBuffer8BitAccess;
+            state_tracker->enabled_features.core12.storagePushConstant8 = eight_bit_storage_features->storagePushConstant8;
         }
 
         const auto *float16_int8_features = lvl_find_in_chain<VkPhysicalDeviceShaderFloat16Int8Features>(pCreateInfo->pNext);
         if (float16_int8_features) {
-            state_tracker->enabled_features.float16_int8 = *float16_int8_features;
+            state_tracker->enabled_features.core12.shaderFloat16 = float16_int8_features->shaderFloat16;
+            state_tracker->enabled_features.core12.shaderInt8 = float16_int8_features->shaderInt8;
         }
 
         const auto *descriptor_indexing_features =
             lvl_find_in_chain<VkPhysicalDeviceDescriptorIndexingFeatures>(pCreateInfo->pNext);
         if (descriptor_indexing_features) {
-            state_tracker->enabled_features.descriptor_indexing = *descriptor_indexing_features;
+            state_tracker->enabled_features.core12.shaderInputAttachmentArrayDynamicIndexing =
+                descriptor_indexing_features->shaderInputAttachmentArrayDynamicIndexing;
+            state_tracker->enabled_features.core12.shaderUniformTexelBufferArrayDynamicIndexing =
+                descriptor_indexing_features->shaderUniformTexelBufferArrayDynamicIndexing;
+            state_tracker->enabled_features.core12.shaderStorageTexelBufferArrayDynamicIndexing =
+                descriptor_indexing_features->shaderStorageTexelBufferArrayDynamicIndexing;
+            state_tracker->enabled_features.core12.shaderUniformBufferArrayNonUniformIndexing =
+                descriptor_indexing_features->shaderUniformBufferArrayNonUniformIndexing;
+            state_tracker->enabled_features.core12.shaderSampledImageArrayNonUniformIndexing =
+                descriptor_indexing_features->shaderSampledImageArrayNonUniformIndexing;
+            state_tracker->enabled_features.core12.shaderStorageBufferArrayNonUniformIndexing =
+                descriptor_indexing_features->shaderStorageBufferArrayNonUniformIndexing;
+            state_tracker->enabled_features.core12.shaderStorageImageArrayNonUniformIndexing =
+                descriptor_indexing_features->shaderStorageImageArrayNonUniformIndexing;
+            state_tracker->enabled_features.core12.shaderInputAttachmentArrayNonUniformIndexing =
+                descriptor_indexing_features->shaderInputAttachmentArrayNonUniformIndexing;
+            state_tracker->enabled_features.core12.shaderUniformTexelBufferArrayNonUniformIndexing =
+                descriptor_indexing_features->shaderUniformTexelBufferArrayNonUniformIndexing;
+            state_tracker->enabled_features.core12.shaderStorageTexelBufferArrayNonUniformIndexing =
+                descriptor_indexing_features->shaderStorageTexelBufferArrayNonUniformIndexing;
+            state_tracker->enabled_features.core12.descriptorBindingUniformBufferUpdateAfterBind =
+                descriptor_indexing_features->descriptorBindingUniformBufferUpdateAfterBind;
+            state_tracker->enabled_features.core12.descriptorBindingSampledImageUpdateAfterBind =
+                descriptor_indexing_features->descriptorBindingSampledImageUpdateAfterBind;
+            state_tracker->enabled_features.core12.descriptorBindingStorageImageUpdateAfterBind =
+                descriptor_indexing_features->descriptorBindingStorageImageUpdateAfterBind;
+            state_tracker->enabled_features.core12.descriptorBindingStorageBufferUpdateAfterBind =
+                descriptor_indexing_features->descriptorBindingStorageBufferUpdateAfterBind;
+            state_tracker->enabled_features.core12.descriptorBindingUniformTexelBufferUpdateAfterBind =
+                descriptor_indexing_features->descriptorBindingUniformTexelBufferUpdateAfterBind;
+            state_tracker->enabled_features.core12.descriptorBindingStorageTexelBufferUpdateAfterBind =
+                descriptor_indexing_features->descriptorBindingStorageTexelBufferUpdateAfterBind;
+            state_tracker->enabled_features.core12.descriptorBindingUpdateUnusedWhilePending =
+                descriptor_indexing_features->descriptorBindingUpdateUnusedWhilePending;
+            state_tracker->enabled_features.core12.descriptorBindingPartiallyBound =
+                descriptor_indexing_features->descriptorBindingPartiallyBound;
+            state_tracker->enabled_features.core12.descriptorBindingVariableDescriptorCount =
+                descriptor_indexing_features->descriptorBindingVariableDescriptorCount;
+            state_tracker->enabled_features.core12.runtimeDescriptorArray = descriptor_indexing_features->runtimeDescriptorArray;
         }
 
-        const auto *scalar_block_layout_features =
-            lvl_find_in_chain<VkPhysicalDeviceScalarBlockLayoutFeatures>(pCreateInfo->pNext);
+        const auto *scalar_block_layout_features = lvl_find_in_chain<VkPhysicalDeviceScalarBlockLayoutFeatures>(pCreateInfo->pNext);
         if (scalar_block_layout_features) {
-            state_tracker->enabled_features.scalar_block_layout_features = *scalar_block_layout_features;
+            state_tracker->enabled_features.core12.scalarBlockLayout = scalar_block_layout_features->scalarBlockLayout;
         }
 
         const auto *imageless_framebuffer_features =
             lvl_find_in_chain<VkPhysicalDeviceImagelessFramebufferFeatures>(pCreateInfo->pNext);
         if (imageless_framebuffer_features) {
-            state_tracker->enabled_features.imageless_framebuffer_features = *imageless_framebuffer_features;
+            state_tracker->enabled_features.core12.imagelessFramebuffer = imageless_framebuffer_features->imagelessFramebuffer;
         }
 
         const auto *uniform_buffer_standard_layout_features =
             lvl_find_in_chain<VkPhysicalDeviceUniformBufferStandardLayoutFeatures>(pCreateInfo->pNext);
         if (uniform_buffer_standard_layout_features) {
-            state_tracker->enabled_features.uniform_buffer_standard_layout = *uniform_buffer_standard_layout_features;
+            state_tracker->enabled_features.core12.uniformBufferStandardLayout =
+                uniform_buffer_standard_layout_features->uniformBufferStandardLayout;
         }
 
         const auto *subgroup_extended_types_features =
             lvl_find_in_chain<VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures>(pCreateInfo->pNext);
         if (subgroup_extended_types_features) {
-            state_tracker->enabled_features.subgroup_extended_types_features = *subgroup_extended_types_features;
+            state_tracker->enabled_features.core12.shaderSubgroupExtendedTypes =
+                subgroup_extended_types_features->shaderSubgroupExtendedTypes;
         }
 
         const auto *separate_depth_stencil_layouts_features =
             lvl_find_in_chain<VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures>(pCreateInfo->pNext);
         if (separate_depth_stencil_layouts_features) {
-            state_tracker->enabled_features.separate_depth_stencil_layouts_features = *separate_depth_stencil_layouts_features;
+            state_tracker->enabled_features.core12.separateDepthStencilLayouts =
+                separate_depth_stencil_layouts_features->separateDepthStencilLayouts;
         }
 
         const auto *host_query_reset_features = lvl_find_in_chain<VkPhysicalDeviceHostQueryResetFeatures>(pCreateInfo->pNext);
         if (host_query_reset_features) {
-            state_tracker->enabled_features.host_query_reset_features = *host_query_reset_features;
+            state_tracker->enabled_features.core12.hostQueryReset = host_query_reset_features->hostQueryReset;
         }
 
-        const auto *timeline_semaphore_features =
-            lvl_find_in_chain<VkPhysicalDeviceTimelineSemaphoreFeatures>(pCreateInfo->pNext);
+        const auto *timeline_semaphore_features = lvl_find_in_chain<VkPhysicalDeviceTimelineSemaphoreFeatures>(pCreateInfo->pNext);
         if (timeline_semaphore_features) {
-            state_tracker->enabled_features.timeline_semaphore_features = *timeline_semaphore_features;
+            state_tracker->enabled_features.core12.timelineSemaphore = timeline_semaphore_features->timelineSemaphore;
         }
 
         const auto *buffer_device_address = lvl_find_in_chain<VkPhysicalDeviceBufferDeviceAddressFeatures>(pCreateInfo->pNext);
         if (buffer_device_address) {
-            state_tracker->enabled_features.buffer_device_address = *buffer_device_address;
+            state_tracker->enabled_features.core12.bufferDeviceAddress = buffer_device_address->bufferDeviceAddress;
+            state_tracker->enabled_features.core12.bufferDeviceAddressCaptureReplay =
+                buffer_device_address->bufferDeviceAddressCaptureReplay;
+            state_tracker->enabled_features.core12.bufferDeviceAddressMultiDevice =
+                buffer_device_address->bufferDeviceAddressMultiDevice;
+        }
+    }
+
+    const auto *vulkan_11_features = lvl_find_in_chain<VkPhysicalDeviceVulkan11Features>(pCreateInfo->pNext);
+    if (vulkan_11_features) {
+        state_tracker->enabled_features.core11 = *vulkan_11_features;
+    } else {
+        // These structs are only allowed in pNext chain if there is no kPhysicalDeviceVulkan11Features
+
+        const auto *sixteen_bit_storage_features = lvl_find_in_chain<VkPhysicalDevice16BitStorageFeatures>(pCreateInfo->pNext);
+        if (sixteen_bit_storage_features) {
+            state_tracker->enabled_features.core11.storageBuffer16BitAccess =
+                sixteen_bit_storage_features->storageBuffer16BitAccess;
+            state_tracker->enabled_features.core11.uniformAndStorageBuffer16BitAccess =
+                sixteen_bit_storage_features->uniformAndStorageBuffer16BitAccess;
+            state_tracker->enabled_features.core11.storagePushConstant16 = sixteen_bit_storage_features->storagePushConstant16;
+            state_tracker->enabled_features.core11.storageInputOutput16 = sixteen_bit_storage_features->storageInputOutput16;
+        }
+
+        const auto *multiview_features = lvl_find_in_chain<VkPhysicalDeviceMultiviewFeatures>(pCreateInfo->pNext);
+        if (multiview_features) {
+            state_tracker->enabled_features.core11.multiview = multiview_features->multiview;
+            state_tracker->enabled_features.core11.multiviewGeometryShader = multiview_features->multiviewGeometryShader;
+            state_tracker->enabled_features.core11.multiviewTessellationShader = multiview_features->multiviewTessellationShader;
+        }
+
+        const auto *variable_pointers_features = lvl_find_in_chain<VkPhysicalDeviceVariablePointersFeatures>(pCreateInfo->pNext);
+        if (variable_pointers_features) {
+            state_tracker->enabled_features.core11.variablePointersStorageBuffer =
+                variable_pointers_features->variablePointersStorageBuffer;
+            state_tracker->enabled_features.core11.variablePointers = variable_pointers_features->variablePointers;
+        }
+
+        const auto *protected_memory_features = lvl_find_in_chain<VkPhysicalDeviceProtectedMemoryFeatures>(pCreateInfo->pNext);
+        if (protected_memory_features) {
+            state_tracker->enabled_features.core11.protectedMemory = protected_memory_features->protectedMemory;
+        }
+
+        const auto *ycbcr_conversion_features =
+            lvl_find_in_chain<VkPhysicalDeviceSamplerYcbcrConversionFeatures>(pCreateInfo->pNext);
+        if (ycbcr_conversion_features) {
+            state_tracker->enabled_features.core11.samplerYcbcrConversion = ycbcr_conversion_features->samplerYcbcrConversion;
+        }
+
+        const auto *shader_draw_parameters_features =
+            lvl_find_in_chain<VkPhysicalDeviceShaderDrawParametersFeatures>(pCreateInfo->pNext);
+        if (shader_draw_parameters_features) {
+            state_tracker->enabled_features.core11.shaderDrawParameters = shader_draw_parameters_features->shaderDrawParameters;
         }
     }
 
@@ -1121,10 +1178,14 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     if (vtx_attrib_div_features) {
         state_tracker->enabled_features.vtx_attrib_divisor_features = *vtx_attrib_div_features;
     }
-    
+
     const auto *buffer_device_address_ext = lvl_find_in_chain<VkPhysicalDeviceBufferDeviceAddressFeaturesEXT>(pCreateInfo->pNext);
     if (buffer_device_address_ext) {
-        state_tracker->enabled_features.buffer_device_address_ext = *buffer_device_address_ext;
+        state_tracker->enabled_features.core12.bufferDeviceAddress = buffer_device_address_ext->bufferDeviceAddress;
+        state_tracker->enabled_features.core12.bufferDeviceAddressCaptureReplay =
+            buffer_device_address_ext->bufferDeviceAddressCaptureReplay;
+        state_tracker->enabled_features.core12.bufferDeviceAddressMultiDevice =
+            buffer_device_address_ext->bufferDeviceAddressMultiDevice;
     }
 
     const auto *cooperative_matrix_features = lvl_find_in_chain<VkPhysicalDeviceCooperativeMatrixFeaturesNV>(pCreateInfo->pNext);
@@ -1194,6 +1255,10 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);
+    GetPhysicalDeviceExtProperties(gpu, state_tracker->device_extensions.vk_feature_version_1_2,
+                                   &state_tracker->phys_dev_props_core11);
+    GetPhysicalDeviceExtProperties(gpu, state_tracker->device_extensions.vk_feature_version_1_2,
+                                   &state_tracker->phys_dev_props_core12);
 
     const auto &dev_ext = state_tracker->device_extensions;
     auto *phys_dev_props = &state_tracker->phys_dev_ext_props;
@@ -1205,19 +1270,108 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         phys_dev_props->max_push_descriptors = push_descriptor_prop.maxPushDescriptors;
     }
 
-    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_descriptor_indexing, &phys_dev_props->descriptor_indexing_props);
+    if (!state_tracker->device_extensions.vk_feature_version_1_2 && dev_ext.vk_ext_descriptor_indexing) {
+        VkPhysicalDeviceDescriptorIndexingPropertiesEXT descriptor_indexing_prop;
+        GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_descriptor_indexing, &descriptor_indexing_prop);
+        state_tracker->phys_dev_props_core12.maxUpdateAfterBindDescriptorsInAllPools =
+            descriptor_indexing_prop.maxUpdateAfterBindDescriptorsInAllPools;
+        state_tracker->phys_dev_props_core12.shaderUniformBufferArrayNonUniformIndexingNative =
+            descriptor_indexing_prop.shaderUniformBufferArrayNonUniformIndexingNative;
+        state_tracker->phys_dev_props_core12.shaderSampledImageArrayNonUniformIndexingNative =
+            descriptor_indexing_prop.shaderSampledImageArrayNonUniformIndexingNative;
+        state_tracker->phys_dev_props_core12.shaderStorageBufferArrayNonUniformIndexingNative =
+            descriptor_indexing_prop.shaderStorageBufferArrayNonUniformIndexingNative;
+        state_tracker->phys_dev_props_core12.shaderStorageImageArrayNonUniformIndexingNative =
+            descriptor_indexing_prop.shaderStorageImageArrayNonUniformIndexingNative;
+        state_tracker->phys_dev_props_core12.shaderInputAttachmentArrayNonUniformIndexingNative =
+            descriptor_indexing_prop.shaderInputAttachmentArrayNonUniformIndexingNative;
+        state_tracker->phys_dev_props_core12.robustBufferAccessUpdateAfterBind =
+            descriptor_indexing_prop.robustBufferAccessUpdateAfterBind;
+        state_tracker->phys_dev_props_core12.quadDivergentImplicitLod = descriptor_indexing_prop.quadDivergentImplicitLod;
+        state_tracker->phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindSamplers =
+            descriptor_indexing_prop.maxPerStageDescriptorUpdateAfterBindSamplers;
+        state_tracker->phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindUniformBuffers =
+            descriptor_indexing_prop.maxPerStageDescriptorUpdateAfterBindUniformBuffers;
+        state_tracker->phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindStorageBuffers =
+            descriptor_indexing_prop.maxPerStageDescriptorUpdateAfterBindStorageBuffers;
+        state_tracker->phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindSampledImages =
+            descriptor_indexing_prop.maxPerStageDescriptorUpdateAfterBindSampledImages;
+        state_tracker->phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindStorageImages =
+            descriptor_indexing_prop.maxPerStageDescriptorUpdateAfterBindStorageImages;
+        state_tracker->phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindInputAttachments =
+            descriptor_indexing_prop.maxPerStageDescriptorUpdateAfterBindInputAttachments;
+        state_tracker->phys_dev_props_core12.maxPerStageUpdateAfterBindResources =
+            descriptor_indexing_prop.maxPerStageUpdateAfterBindResources;
+        state_tracker->phys_dev_props_core12.maxDescriptorSetUpdateAfterBindSamplers =
+            descriptor_indexing_prop.maxDescriptorSetUpdateAfterBindSamplers;
+        state_tracker->phys_dev_props_core12.maxDescriptorSetUpdateAfterBindUniformBuffers =
+            descriptor_indexing_prop.maxDescriptorSetUpdateAfterBindUniformBuffers;
+        state_tracker->phys_dev_props_core12.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic =
+            descriptor_indexing_prop.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic;
+        state_tracker->phys_dev_props_core12.maxDescriptorSetUpdateAfterBindStorageBuffers =
+            descriptor_indexing_prop.maxDescriptorSetUpdateAfterBindStorageBuffers;
+        state_tracker->phys_dev_props_core12.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic =
+            descriptor_indexing_prop.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic;
+        state_tracker->phys_dev_props_core12.maxDescriptorSetUpdateAfterBindSampledImages =
+            descriptor_indexing_prop.maxDescriptorSetUpdateAfterBindSampledImages;
+        state_tracker->phys_dev_props_core12.maxDescriptorSetUpdateAfterBindStorageImages =
+            descriptor_indexing_prop.maxDescriptorSetUpdateAfterBindStorageImages;
+        state_tracker->phys_dev_props_core12.maxDescriptorSetUpdateAfterBindInputAttachments =
+            descriptor_indexing_prop.maxDescriptorSetUpdateAfterBindInputAttachments;
+    }
+
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_nv_shading_rate_image, &phys_dev_props->shading_rate_image_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_nv_mesh_shader, &phys_dev_props->mesh_shader_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_inline_uniform_block, &phys_dev_props->inline_uniform_block_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_vertex_attribute_divisor, &phys_dev_props->vtx_attrib_divisor_props);
-    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_depth_stencil_resolve, &phys_dev_props->depth_stencil_resolve_props);
+
+    if (!state_tracker->device_extensions.vk_feature_version_1_2 && dev_ext.vk_khr_depth_stencil_resolve) {
+        VkPhysicalDeviceDepthStencilResolvePropertiesKHR depth_stencil_resolve_props;
+        GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_depth_stencil_resolve, &depth_stencil_resolve_props);
+        state_tracker->phys_dev_props_core12.supportedDepthResolveModes = depth_stencil_resolve_props.supportedDepthResolveModes;
+        state_tracker->phys_dev_props_core12.supportedStencilResolveModes =
+            depth_stencil_resolve_props.supportedStencilResolveModes;
+        state_tracker->phys_dev_props_core12.independentResolveNone = depth_stencil_resolve_props.independentResolveNone;
+        state_tracker->phys_dev_props_core12.independentResolve = depth_stencil_resolve_props.independentResolve;
+    }
+
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_transform_feedback, &phys_dev_props->transform_feedback_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_nv_ray_tracing, &phys_dev_props->ray_tracing_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_texel_buffer_alignment, &phys_dev_props->texel_buffer_alignment_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_fragment_density_map, &phys_dev_props->fragment_density_map_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_performance_query, &phys_dev_props->performance_query_props);
-    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_timeline_semaphore, &phys_dev_props->timeline_semaphore_props);
-    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_shader_float_controls, &phys_dev_props->float_controls_props);
+
+    if (!state_tracker->device_extensions.vk_feature_version_1_2 && dev_ext.vk_khr_timeline_semaphore) {
+        VkPhysicalDeviceTimelineSemaphorePropertiesKHR timeline_semaphore_props;
+        GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_timeline_semaphore, &timeline_semaphore_props);
+        state_tracker->phys_dev_props_core12.maxTimelineSemaphoreValueDifference =
+            timeline_semaphore_props.maxTimelineSemaphoreValueDifference;
+    }
+
+    if (!state_tracker->device_extensions.vk_feature_version_1_2 && dev_ext.vk_khr_shader_float_controls) {
+        VkPhysicalDeviceFloatControlsPropertiesKHR float_controls_props;
+        GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_shader_float_controls, &float_controls_props);
+        state_tracker->phys_dev_props_core12.denormBehaviorIndependence = float_controls_props.denormBehaviorIndependence;
+        state_tracker->phys_dev_props_core12.roundingModeIndependence = float_controls_props.roundingModeIndependence;
+        state_tracker->phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat16 =
+            float_controls_props.shaderSignedZeroInfNanPreserveFloat16;
+        state_tracker->phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat32 =
+            float_controls_props.shaderSignedZeroInfNanPreserveFloat32;
+        state_tracker->phys_dev_props_core12.shaderSignedZeroInfNanPreserveFloat64 =
+            float_controls_props.shaderSignedZeroInfNanPreserveFloat64;
+        state_tracker->phys_dev_props_core12.shaderDenormPreserveFloat16 = float_controls_props.shaderDenormPreserveFloat16;
+        state_tracker->phys_dev_props_core12.shaderDenormPreserveFloat32 = float_controls_props.shaderDenormPreserveFloat32;
+        state_tracker->phys_dev_props_core12.shaderDenormPreserveFloat64 = float_controls_props.shaderDenormPreserveFloat64;
+        state_tracker->phys_dev_props_core12.shaderDenormFlushToZeroFloat16 = float_controls_props.shaderDenormFlushToZeroFloat16;
+        state_tracker->phys_dev_props_core12.shaderDenormFlushToZeroFloat32 = float_controls_props.shaderDenormFlushToZeroFloat32;
+        state_tracker->phys_dev_props_core12.shaderDenormFlushToZeroFloat64 = float_controls_props.shaderDenormFlushToZeroFloat64;
+        state_tracker->phys_dev_props_core12.shaderRoundingModeRTEFloat16 = float_controls_props.shaderRoundingModeRTEFloat16;
+        state_tracker->phys_dev_props_core12.shaderRoundingModeRTEFloat32 = float_controls_props.shaderRoundingModeRTEFloat32;
+        state_tracker->phys_dev_props_core12.shaderRoundingModeRTEFloat64 = float_controls_props.shaderRoundingModeRTEFloat64;
+        state_tracker->phys_dev_props_core12.shaderRoundingModeRTZFloat16 = float_controls_props.shaderRoundingModeRTZFloat16;
+        state_tracker->phys_dev_props_core12.shaderRoundingModeRTZFloat32 = float_controls_props.shaderRoundingModeRTZFloat32;
+        state_tracker->phys_dev_props_core12.shaderRoundingModeRTZFloat64 = float_controls_props.shaderRoundingModeRTZFloat64;
+    }
 
     if (state_tracker->device_extensions.vk_nv_cooperative_matrix) {
         // Get the needed cooperative_matrix properties
@@ -1234,13 +1388,16 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         instance_dispatch_table.GetPhysicalDeviceCooperativeMatrixPropertiesNV(gpu, &numCooperativeMatrixProperties,
                                                                                state_tracker->cooperative_matrix_properties.data());
     }
-    if (state_tracker->api_version >= VK_API_VERSION_1_1) {
+    if (!state_tracker->device_extensions.vk_feature_version_1_2 && state_tracker->api_version >= VK_API_VERSION_1_1) {
         // Get the needed subgroup limits
         auto subgroup_prop = lvl_init_struct<VkPhysicalDeviceSubgroupProperties>();
         auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&subgroup_prop);
         instance_dispatch_table.GetPhysicalDeviceProperties2(gpu, &prop2);
 
-        state_tracker->phys_dev_ext_props.subgroup_props = subgroup_prop;
+        state_tracker->phys_dev_props_core11.subgroupSize = subgroup_prop.subgroupSize;
+        state_tracker->phys_dev_props_core11.subgroupSupportedStages = subgroup_prop.supportedStages;
+        state_tracker->phys_dev_props_core11.subgroupSupportedOperations = subgroup_prop.supportedOperations;
+        state_tracker->phys_dev_props_core11.subgroupQuadOperationsInAllStages = subgroup_prop.quadOperationsInAllStages;
     }
 
     // Store queue family data
@@ -4437,7 +4594,7 @@ void ValidationStateTracker::PostCallRecordDestroySamplerYcbcrConversionKHR(VkDe
 void ValidationStateTracker::RecordResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
                                                   uint32_t queryCount) {
     // Do nothing if the feature is not enabled.
-    if (!enabled_features.host_query_reset_features.hostQueryReset) return;
+    if (!enabled_features.core12.hostQueryReset) return;
 
     // Do nothing if the query pool has been destroyed.
     auto query_pool_state = GetQueryPoolState(queryPool);
