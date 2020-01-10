@@ -378,7 +378,7 @@ bool VerifySetLayoutCompatibility(const debug_report_data *report_data, Descript
 bool ValidateDescriptorSetLayoutCreateInfo(const debug_report_data *report_data, const VkDescriptorSetLayoutCreateInfo *create_info,
                                            const bool push_descriptor_ext, const uint32_t max_push_descriptors,
                                            const bool descriptor_indexing_ext,
-                                           const VkPhysicalDeviceDescriptorIndexingFeaturesEXT *descriptor_indexing_features,
+                                           const VkPhysicalDeviceVulkan12Features *core12_features,
                                            const VkPhysicalDeviceInlineUniformBlockFeaturesEXT *inline_uniform_block_features,
                                            const VkPhysicalDeviceInlineUniformBlockPropertiesEXT *inline_uniform_block_props,
                                            const DeviceExtensions *device_extensions);

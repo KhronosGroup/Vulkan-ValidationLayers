@@ -1670,34 +1670,25 @@ struct DeviceExtensions;
 
 struct DeviceFeatures {
     VkPhysicalDeviceFeatures core;
-    VkPhysicalDeviceDescriptorIndexingFeatures descriptor_indexing;
-    VkPhysicalDevice8BitStorageFeatures eight_bit_storage;
+    VkPhysicalDeviceVulkan11Features core11;
+    VkPhysicalDeviceVulkan12Features core12;
+
     VkPhysicalDeviceExclusiveScissorFeaturesNV exclusive_scissor;
     VkPhysicalDeviceShadingRateImageFeaturesNV shading_rate_image;
     VkPhysicalDeviceMeshShaderFeaturesNV mesh_shader;
     VkPhysicalDeviceInlineUniformBlockFeaturesEXT inline_uniform_block;
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features;
-    VkPhysicalDeviceShaderFloat16Int8Features float16_int8;
     VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vtx_attrib_divisor_features;
-    VkPhysicalDeviceUniformBufferStandardLayoutFeatures uniform_buffer_standard_layout;
-    VkPhysicalDeviceScalarBlockLayoutFeatures scalar_block_layout_features;
-    VkPhysicalDeviceBufferDeviceAddressFeatures buffer_device_address;
-    VkPhysicalDeviceBufferDeviceAddressFeaturesEXT buffer_device_address_ext;
     VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperative_matrix_features;
-    VkPhysicalDeviceHostQueryResetFeatures host_query_reset_features;
     VkPhysicalDeviceComputeShaderDerivativesFeaturesNV compute_shader_derivatives_features;
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features;
     VkPhysicalDeviceShaderImageFootprintFeaturesNV shader_image_footprint_features;
     VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT fragment_shader_interlock_features;
     VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT demote_to_helper_invocation_features;
     VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT texel_buffer_alignment_features;
-    VkPhysicalDeviceImagelessFramebufferFeatures imageless_framebuffer_features;
     VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR pipeline_exe_props_features;
     VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV dedicated_allocation_image_aliasing_features;
-    VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures subgroup_extended_types_features;
-    VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures separate_depth_stencil_layouts_features;
     VkPhysicalDevicePerformanceQueryFeaturesKHR performance_query_features;
-    VkPhysicalDeviceTimelineSemaphoreFeatures timeline_semaphore_features;
     VkPhysicalDeviceCoherentMemoryFeaturesAMD device_coherent_memory_features;
 };
 

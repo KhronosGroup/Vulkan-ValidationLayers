@@ -1102,26 +1102,23 @@ class ValidationStateTracker : public ValidationObject {
     // Device specific data
     VkPhysicalDeviceMemoryProperties phys_dev_mem_props = {};
     VkPhysicalDeviceProperties phys_dev_props = {};
+    VkPhysicalDeviceVulkan11Properties phys_dev_props_core11 = {};
+    VkPhysicalDeviceVulkan12Properties phys_dev_props_core12 = {};
     uint32_t physical_device_count;
 
     // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2KHR::pNext chain
     struct DeviceExtensionProperties {
         uint32_t max_push_descriptors;  // from VkPhysicalDevicePushDescriptorPropertiesKHR::maxPushDescriptors
-        VkPhysicalDeviceDescriptorIndexingPropertiesEXT descriptor_indexing_props;
         VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
         VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props;
         VkPhysicalDeviceInlineUniformBlockPropertiesEXT inline_uniform_block_props;
         VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vtx_attrib_divisor_props;
-        VkPhysicalDeviceDepthStencilResolvePropertiesKHR depth_stencil_resolve_props;
         VkPhysicalDeviceCooperativeMatrixPropertiesNV cooperative_matrix_props;
         VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
-        VkPhysicalDeviceSubgroupProperties subgroup_props;
-        VkPhysicalDeviceFloatControlsPropertiesKHR float_controls_props;
         VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props;
         VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT texel_buffer_alignment_props;
         VkPhysicalDeviceFragmentDensityMapPropertiesEXT fragment_density_map_props;
         VkPhysicalDevicePerformanceQueryPropertiesKHR performance_query_props;
-        VkPhysicalDeviceTimelineSemaphorePropertiesKHR timeline_semaphore_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;
