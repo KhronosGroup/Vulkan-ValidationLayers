@@ -3755,11 +3755,12 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
         " 3. Mismatch framebuffer & renderPass attachment formats\n"
         " 4. Mismatch framebuffer & renderPass attachment #samples\n"
         " 5. Framebuffer attachment w/ non-1 mip-levels\n"
-        " 6. Framebuffer attachment where dimensions don't match\n"
+        " 6. Framebuffer with more than 1 layer with a multiview renderpass\n"
         " 7. Framebuffer attachment where dimensions don't match\n"
-        " 8. Framebuffer attachment w/o identity swizzle\n"
-        " 9. framebuffer dimensions exceed physical device limits\n"
-        "10. null pAttachments\n");
+        " 8. Framebuffer attachment where dimensions don't match\n"
+        " 9. Framebuffer attachment w/o identity swizzle\n"
+        " 10. framebuffer dimensions exceed physical device limits\n"
+        " 11. null pAttachments\n");
 
     // Check for VK_KHR_get_physical_device_properties2
     bool push_physical_device_properties_2_support =
@@ -3781,6 +3782,14 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkFramebufferCreateInfo-attachmentCount-00876");
+
+    bool rp2_supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
+    bool multiviewSupported = rp2_supported || (m_device->props.apiVersion >= VK_API_VERSION_1_1);
+
+    if (!multiviewSupported && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+        multiviewSupported = true;
+    }
 
     // Create a renderPass with a single color attachment
     VkAttachmentReference attach = {};
@@ -4084,6 +4093,38 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
             vk::DestroyFramebuffer(m_device->device(), fb, NULL);
         }
         vk::DestroyImageView(m_device->device(), view, NULL);
+    }
+
+    {
+        if (!multiviewSupported) {
+            printf("%s VK_KHR_Multiview Extension not supported, skipping tests\n", kSkipPrefix);
+        } else {
+            // Test multiview renderpass with more than 1 layer
+            uint32_t viewMasks[] = {0x3u};
+            VkRenderPassMultiviewCreateInfo rpmvci = {
+                VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO, nullptr, 1, viewMasks, 0, nullptr, 0, nullptr};
+
+            VkRenderPassCreateInfo rpci_mv = {
+                VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, &rpmvci, 0, 0, nullptr, 1, &subpass, 0, nullptr};
+
+            VkRenderPass rp_mv;
+            err = vk::CreateRenderPass(m_device->device(), &rpci_mv, NULL, &rp_mv);
+            ASSERT_VK_SUCCESS(err);
+
+            VkFramebufferCreateInfo fb_info_mv = fb_info;
+            fb_info_mv.layers = 2;
+            fb_info_mv.attachmentCount = 0;
+            fb_info_mv.renderPass = rp_mv;
+
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkFramebufferCreateInfo-renderPass-02531");
+            err = vk::CreateFramebuffer(device(), &fb_info_mv, NULL, &fb);
+            m_errorMonitor->VerifyFound();
+            if (err == VK_SUCCESS) {
+                vk::DestroyFramebuffer(m_device->device(), fb, NULL);
+            }
+
+            vk::DestroyRenderPass(m_device->device(), rp_mv, NULL);
+        }
     }
 
     // reset attachment to color attachment
