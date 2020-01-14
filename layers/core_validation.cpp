@@ -7613,6 +7613,22 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-pAttachments-02633");
                 }
             }
+
+            bool bHasNonZeroViewMasks = false;
+            for (uint32_t i = 0; i < rpci->subpassCount; ++i) {
+                if (rpci->pSubpasses[i].viewMask != 0) {
+                    bHasNonZeroViewMasks = true;
+                    break;
+                }
+            }
+
+            if (bHasNonZeroViewMasks && pCreateInfo->layers != 1) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT,
+                                HandleToUint64(pCreateInfo->renderPass), "VUID-VkFramebufferCreateInfo-renderPass-02531",
+                                "vkCreateFramebuffer(): VkFramebufferCreateInfo has #%u layers but "
+                                "renderPass (%s) was specified with non-zero view masks\n",
+                                pCreateInfo->layers, report_data->FormatHandle(pCreateInfo->renderPass).c_str());
+            }
         }
     }
     // Verify FB dimensions are within physical device limits
