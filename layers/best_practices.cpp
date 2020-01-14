@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2019 The Khronos Group Inc.
- * Copyright (c) 2015-2019 Valve Corporation
- * Copyright (c) 2015-2019 LunarG, Inc.
+/* Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -256,6 +256,7 @@ void BestPractices::PostCallRecordAllocateMemory(VkDevice device, const VkMemory
 
 bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory,
                                               const VkAllocationCallbacks* pAllocator) const {
+    if (memory == VK_NULL_HANDLE) return false;
     bool skip = false;
 
     const DEVICE_MEMORY_STATE* mem_info = ValidationStateTracker::GetDevMemState(memory);
