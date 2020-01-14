@@ -2206,6 +2206,24 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
                                 "are VK_FILTER_CUBIC_IMG.");
             }
         }
+
+        const auto *sampler_conversion = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
+        if (sampler_conversion != nullptr) {
+            if ((pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) ||
+                (pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) ||
+                (pCreateInfo->addressModeW != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) ||
+                (pCreateInfo->anisotropyEnable != VK_FALSE) || (pCreateInfo->unnormalizedCoordinates != VK_FALSE)) {
+                skip |= log_msg(
+                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                    "VUID-VkSamplerCreateInfo-addressModeU-01646",
+                    "vkCreateSampler():  SamplerYCbCrConversion is enabled: "
+                    "addressModeU (%s), addressModeV (%s), addressModeW (%s) must be CLAMP_TO_EDGE, and anisotropyEnable (%s) "
+                    "and unnormalizedCoordinates (%s) must be VK_FALSE.",
+                    string_VkSamplerAddressMode(pCreateInfo->addressModeU), string_VkSamplerAddressMode(pCreateInfo->addressModeV),
+                    string_VkSamplerAddressMode(pCreateInfo->addressModeW), pCreateInfo->anisotropyEnable ? "VK_TRUE" : "VK_FALSE",
+                    pCreateInfo->unnormalizedCoordinates ? "VK_TRUE" : "VK_FALSE");
+            }
+        }
     }
 
     return skip;
