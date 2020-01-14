@@ -7798,38 +7798,41 @@ bool CoreChecks::ValidateDependencies(FRAMEBUFFER_STATE const *framebuffer, REND
 
     std::vector<Attachment> attachments(pCreateInfo->attachmentCount);
 
-    // Find overlapping attachments
-    for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
-        for (uint32_t j = i + 1; j < pCreateInfo->attachmentCount; ++j) {
-            VkImageView viewi = pFramebufferInfo->pAttachments[i];
-            VkImageView viewj = pFramebufferInfo->pAttachments[j];
-            if (viewi == viewj) {
-                attachments[i].overlapping.emplace_back(j);
-                attachments[j].overlapping.emplace_back(i);
-                continue;
-            }
-            auto view_state_i = GetImageViewState(viewi);
-            auto view_state_j = GetImageViewState(viewj);
-            if (!view_state_i || !view_state_j) {
-                continue;
-            }
-            auto view_ci_i = view_state_i->create_info;
-            auto view_ci_j = view_state_j->create_info;
-            if (view_ci_i.image == view_ci_j.image && IsRegionOverlapping(view_ci_i.subresourceRange, view_ci_j.subresourceRange)) {
-                attachments[i].overlapping.emplace_back(j);
-                attachments[j].overlapping.emplace_back(i);
-                continue;
-            }
-            auto image_data_i = GetImageState(view_ci_i.image);
-            auto image_data_j = GetImageState(view_ci_j.image);
-            if (!image_data_i || !image_data_j) {
-                continue;
-            }
-            if (image_data_i->binding.mem == image_data_j->binding.mem &&
-                IsRangeOverlapping(image_data_i->binding.offset, image_data_i->binding.size, image_data_j->binding.offset,
-                                   image_data_j->binding.size)) {
-                attachments[i].overlapping.emplace_back(j);
-                attachments[j].overlapping.emplace_back(i);
+    if (!(pFramebufferInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
+        // Find overlapping attachments
+        for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
+            for (uint32_t j = i + 1; j < pCreateInfo->attachmentCount; ++j) {
+                VkImageView viewi = pFramebufferInfo->pAttachments[i];
+                VkImageView viewj = pFramebufferInfo->pAttachments[j];
+                if (viewi == viewj) {
+                    attachments[i].overlapping.emplace_back(j);
+                    attachments[j].overlapping.emplace_back(i);
+                    continue;
+                }
+                auto view_state_i = GetImageViewState(viewi);
+                auto view_state_j = GetImageViewState(viewj);
+                if (!view_state_i || !view_state_j) {
+                    continue;
+                }
+                auto view_ci_i = view_state_i->create_info;
+                auto view_ci_j = view_state_j->create_info;
+                if (view_ci_i.image == view_ci_j.image &&
+                    IsRegionOverlapping(view_ci_i.subresourceRange, view_ci_j.subresourceRange)) {
+                    attachments[i].overlapping.emplace_back(j);
+                    attachments[j].overlapping.emplace_back(i);
+                    continue;
+                }
+                auto image_data_i = GetImageState(view_ci_i.image);
+                auto image_data_j = GetImageState(view_ci_j.image);
+                if (!image_data_i || !image_data_j) {
+                    continue;
+                }
+                if (image_data_i->binding.mem == image_data_j->binding.mem &&
+                    IsRangeOverlapping(image_data_i->binding.offset, image_data_i->binding.size, image_data_j->binding.offset,
+                                       image_data_j->binding.size)) {
+                    attachments[i].overlapping.emplace_back(j);
+                    attachments[j].overlapping.emplace_back(i);
+                }
             }
         }
     }
