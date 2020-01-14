@@ -6576,6 +6576,26 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     err = vk::CreateSampler(m_device->device(), &sci, NULL, &samplers[1]);
     ASSERT_VK_SUCCESS(err);
 
+    VkSampler BadSampler;
+    sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkSamplerCreateInfo-addressModeU-01646");
+    err = vk::CreateSampler(m_device->device(), &sci, NULL, &BadSampler);
+    m_errorMonitor->VerifyFound();
+
+    sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sci.unnormalizedCoordinates = VK_TRUE;
+    sci.minLod = 0.0;
+    sci.maxLod = 0.0;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkSamplerCreateInfo-addressModeU-01646");
+    err = vk::CreateSampler(m_device->device(), &sci, NULL, &BadSampler);
+    m_errorMonitor->VerifyFound();
+
+    sci.unnormalizedCoordinates = VK_FALSE;
+    sci.anisotropyEnable = VK_TRUE;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkSamplerCreateInfo-addressModeU-01646");
+    err = vk::CreateSampler(m_device->device(), &sci, NULL, &BadSampler);
+    m_errorMonitor->VerifyFound();
+
     // Create an image without a Ycbcr conversion
     VkImageObj mpimage(m_device);
     mpimage.init(&ci);
