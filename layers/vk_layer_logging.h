@@ -588,6 +588,43 @@ static inline int vasprintf(char **strp, char const *fmt, va_list ap) {
 }
 #endif
 
+// This must be called with the debug_report_mutex already held
+static inline bool LogMsgLocked(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
+                                uint64_t src_object, const std::string &vuid_text, char *err_msg) {
+    std::string str_plus_spec_text(err_msg ? err_msg : "Allocation failure");
+
+    // Append the spec error text to the error message, unless it's an UNASSIGNED or UNDEFINED vuid
+    if ((vuid_text.find("UNASSIGNED-") == std::string::npos) && (vuid_text.find(kVUIDUndefined) == std::string::npos)) {
+        // Linear search makes no assumptions about the layout of the string table. This is not fast, but it does not need to be at
+        // this point in the error reporting path
+        uint32_t num_vuids = sizeof(vuid_spec_text) / sizeof(vuid_spec_text_pair);
+        const char *spec_text = nullptr;
+        for (uint32_t i = 0; i < num_vuids; i++) {
+            if (0 == strcmp(vuid_text.c_str(), vuid_spec_text[i].vuid)) {
+                spec_text = vuid_spec_text[i].spec_text;
+                break;
+            }
+        }
+
+        if (nullptr == spec_text) {
+            // If this happens, you've hit a VUID string that isn't defined in the spec's json file
+            // Try running 'vk_validation_stats -c' to look for invalid VUID strings in the repo code
+            assert(0);
+        } else {
+            str_plus_spec_text += " The Vulkan spec states: ";
+            str_plus_spec_text += spec_text;
+        }
+    }
+
+    // Append layer prefix with VUID string, pass in recovered legacy numerical VUID
+
+    bool result = debug_log_msg(debug_data, msg_flags, object_type, src_object, 0, "Validation", str_plus_spec_text.c_str(),
+                                vuid_text.c_str());
+
+    free(err_msg);
+    return result;
+}
+
 // Output log message via DEBUG_REPORT. Takes format and variable arg list so that output string is only computed if a message
 // needs to be logged
 #ifndef WIN32
@@ -616,37 +653,7 @@ static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flag
     }
     va_end(argptr);
 
-    std::string str_plus_spec_text(str ? str : "Allocation failure");
-
-    // Append the spec error text to the error message, unless it's an UNASSIGNED or UNDEFINED vuid
-    if ((vuid_text.find("UNASSIGNED-") == std::string::npos) && (vuid_text.find(kVUIDUndefined) == std::string::npos)) {
-        // Linear search makes no assumptions about the layout of the string table. This is not fast, but it does not need to be at
-        // this point in the error reporting path
-        uint32_t num_vuids = sizeof(vuid_spec_text) / sizeof(vuid_spec_text_pair);
-        const char *spec_text = nullptr;
-        for (uint32_t i = 0; i < num_vuids; i++) {
-            if (0 == strcmp(vuid_text.c_str(), vuid_spec_text[i].vuid)) {
-                spec_text = vuid_spec_text[i].spec_text;
-                break;
-            }
-        }
-
-        if (nullptr == spec_text) {
-            // If this happens, you've hit a VUID string that isn't defined in the spec's json file
-            // Try running 'vk_validation_stats -c' to look for invalid VUID strings in the repo code
-            assert(0);
-        } else {
-            str_plus_spec_text += " The Vulkan spec states: ";
-            str_plus_spec_text += spec_text;
-        }
-    }
-
-    // Append layer prefix with VUID string, pass in recovered legacy numerical VUID
-    bool result = debug_log_msg(debug_data, msg_flags, object_type, src_object, 0, "Validation", str_plus_spec_text.c_str(),
-                                vuid_text.c_str());
-
-    free(str);
-    return result;
+    return LogMsgLocked(debug_data, msg_flags, object_type, src_object, vuid_text, str);
 }
 
 static inline VKAPI_ATTR VkBool32 VKAPI_CALL report_log_callback(VkFlags msg_flags, VkDebugReportObjectTypeEXT obj_type,
