@@ -7946,6 +7946,35 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
             vk::GetImageMemoryRequirements(m_device->device(), image, &memory_requirements);
             m_errorMonitor->VerifyFound();
 
+            PFN_vkGetImageMemoryRequirements2KHR vkGetImageMemoryRequirements2Function =
+                (PFN_vkGetImageMemoryRequirements2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR");
+            ASSERT_TRUE(vkGetImageMemoryRequirements2Function != nullptr);
+
+            VkImageMemoryRequirementsInfo2 mem_req_info2 = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2};
+            mem_req_info2.pNext = nullptr;
+            mem_req_info2.image = image;
+            VkMemoryRequirements2 mem_req2 = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
+
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageMemoryRequirementsInfo2-image-01589");
+            vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
+            m_errorMonitor->VerifyFound();
+
+            vk::DestroyImage(m_device->device(), image, nullptr);
+
+            // Recreate image without Disjoint bit
+            image_create_info.flags = 0;
+            err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+            ASSERT_VK_SUCCESS(err);
+
+            VkImagePlaneMemoryRequirementsInfo image_plane_req = {VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO};
+            image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
+            mem_req_info2.pNext = &image_plane_req;
+            mem_req_info2.image = image;
+
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageMemoryRequirementsInfo2-image-01590");
+            vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
+            m_errorMonitor->VerifyFound();
+
             vk::DestroyImage(m_device->device(), image, nullptr);
         }
     }
