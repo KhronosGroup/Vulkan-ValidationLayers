@@ -3495,6 +3495,28 @@ bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirem
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
         skip |= ValidateGetImageMemoryRequirements2ANDROID(pInfo->image);
     }
+
+    const IMAGE_STATE *image_state = GetImageState(pInfo->image);
+    const VkImagePlaneMemoryRequirementsInfo *image_plane_info =
+        lvl_find_in_chain<VkImagePlaneMemoryRequirementsInfo>(pInfo->pNext);
+
+    if ((FormatIsMultiplane(image_state->createInfo.format)) &&
+        (0 != (image_state->createInfo.flags & VK_IMAGE_CREATE_DISJOINT_BIT)) && (image_plane_info == nullptr)) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                        HandleToUint64(pInfo->image), "VUID-VkImageMemoryRequirementsInfo2-image-01589",
+                        "vkGetImageMemoryRequirements2: %s image was created with a multi-planar format (%s) and "
+                        "VK_IMAGE_CREATE_DISJOINT_BIT, but the current pNext doesn't include a "
+                        "VkImagePlaneMemoryRequirementsInfo struct",
+                        report_data->FormatHandle(pInfo->image).c_str(), string_VkFormat(image_state->createInfo.format));
+    }
+
+    if ((0 == (image_state->createInfo.flags & VK_IMAGE_CREATE_DISJOINT_BIT)) && (image_plane_info != nullptr)) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                        HandleToUint64(pInfo->image), "VUID-VkImageMemoryRequirementsInfo2-image-01590",
+                        "vkGetImageMemoryRequirements2: %s image was created not created with VK_IMAGE_CREATE_DISJOINT_BIT,"
+                        "but the current pNext includes a VkImagePlaneMemoryRequirementsInfo struct",
+                        report_data->FormatHandle(pInfo->image).c_str());
+    }
     return skip;
 }
 
