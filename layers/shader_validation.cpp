@@ -2900,15 +2900,16 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
         pStage->pSpecializationInfo->pMapEntries != nullptr && module->has_specialization_constants) {
         // Gather the specialization-constant values.
         auto const &specialization_info = pStage->pSpecializationInfo;
+        auto const &specialization_data = reinterpret_cast<uint8_t const *>(specialization_info->pData);
         std::unordered_map<uint32_t, std::vector<uint32_t>> id_value_map;
         id_value_map.reserve(specialization_info->mapEntryCount);
         for (auto i = 0u; i < specialization_info->mapEntryCount; ++i) {
             auto const &map_entry = specialization_info->pMapEntries[i];
-            assert(map_entry.size % 4 == 0);
 
-            auto const begin = reinterpret_cast<uint32_t const *>(specialization_info->pData) + map_entry.offset / 4;
-            auto const end = begin + map_entry.size / 4;
-            id_value_map.emplace(map_entry.constantID, std::vector<uint32_t>(begin, end));
+            // Expect only scalar types.
+            assert(map_entry.size == 1 || map_entry.size == 2 || map_entry.size == 4 || map_entry.size == 8);
+            auto entry = id_value_map.emplace(map_entry.constantID, std::vector<uint32_t>(map_entry.size > 4 ? 2 : 1));
+            memcpy(entry.first->second.data(), specialization_data + map_entry.offset, map_entry.size);
         }
 
         // Apply the specialization-constant values and revalidate the shader module.
