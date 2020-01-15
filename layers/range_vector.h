@@ -1430,11 +1430,13 @@ class cached_lower_bound_impl {
     }
 
     // invalidate() resets the the lower_bound_ cache, needed after insert/erase/overwrite/split operations
-    cached_lower_bound_impl &invalidate() {
-        index_type index = index_;  // copy as set modifies in place.
+    // Pass index by value in case we are invalidating to index_ and set_value does a modify-in-place on index_
+    cached_lower_bound_impl &invalidate(index_type index) {
         set_value(index, lower_bound(index));
         return *this;
     }
+
+    cached_lower_bound_impl &invalidate() { return invalidate(index_); }
 
     // Allow a hint for a *valid* lower bound for current index
     // TODO: if the fail-over becomes a hot-spot, the hint logic could be far more clever (looking at previous/next...)
@@ -1582,13 +1584,13 @@ class parallel_iterator {
     }
     parallel_iterator &invalidate_A() {
         const index_type index = range_.begin;
-        pos_A_.seek(static_cast<index_type_A>(index));
+        pos_A_.invalidate(static_cast<index_type_A>(index));
         range_ = key_type(index, index + compute_delta());
         return *this;
     }
     parallel_iterator &invalidate_B() {
         const index_type index = range_.begin;
-        pos_B_.seek(static_cast<index_type_B>(index));
+        pos_B_.invalidate(static_cast<index_type_B>(index));
         range_ = key_type(index, index + compute_delta());
         return *this;
     }
