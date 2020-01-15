@@ -1,7 +1,7 @@
 #!/usr/bin/python3 -i
 #
 # Copyright (c) 2015-2020 The Khronos Group Inc.
-# Copyright (c) 2015-2022 Valve Corporation
+# Copyright (c) 2015-2020 Valve Corporation
 # Copyright (c) 2015-2020 LunarG, Inc.
 # Copyright (c) 2015-2020 Google Inc.
 #
