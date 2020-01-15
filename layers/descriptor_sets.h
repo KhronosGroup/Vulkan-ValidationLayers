@@ -376,7 +376,7 @@ class Descriptor {
 //   else return false and update error_msg with description of incompatibility
 bool VerifySetLayoutCompatibility(const debug_report_data *report_data, DescriptorSetLayout const *lh_ds_layout,
                                   DescriptorSetLayout const *rh_ds_layout, std::string *error_msg);
-bool ValidateDescriptorSetLayoutCreateInfo(const debug_report_data *report_data, const VkDescriptorSetLayoutCreateInfo *create_info,
+bool ValidateDescriptorSetLayoutCreateInfo(const ValidationObject *val_obj, const VkDescriptorSetLayoutCreateInfo *create_info,
                                            const bool push_descriptor_ext, const uint32_t max_push_descriptors,
                                            const bool descriptor_indexing_ext,
                                            const VkPhysicalDeviceVulkan12Features *core12_features,
