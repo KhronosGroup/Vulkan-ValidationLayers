@@ -165,7 +165,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         OutputGenerator.beginFeature(self, interface, emit)
         self.featureExtraProtect = GetFeatureProtect(interface)
 
-        if self.featureName == 'VK_VERSION_1_0' or self.featureName == 'VK_VERSION_1_1':
+        if self.featureName == 'VK_VERSION_1_0' or self.featureName == 'VK_VERSION_1_1' or self.featureName == 'VK_VERSION_1_2':
             return
         name = self.featureName
         nameElem = interface[0][1]
