@@ -3356,7 +3356,9 @@ bool CoreChecks::PreCallValidateCreateShaderModule(VkDevice device, const VkShad
         // Use SPIRV-Tools validator to try and catch any issues with the module itself. If specialization constants are present,
         // the default values will be used during validation.
         spv_target_env spirv_environment = SPV_ENV_VULKAN_1_0;
-        if (api_version >= VK_API_VERSION_1_1) {
+        if (api_version >= VK_API_VERSION_1_2) {
+            spirv_environment = SPV_ENV_VULKAN_1_2;
+        } else if (api_version >= VK_API_VERSION_1_1) {
             if (device_extensions.vk_khr_spirv_1_4) {
                 spirv_environment = SPV_ENV_VULKAN_1_1_SPIRV_1_4;
             } else {
