@@ -7369,12 +7369,17 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
     vkGetBufferDeviceAddressKHR(m_device->device(), &info);
     m_errorMonitor->VerifyFound();
 
-    if (m_device->props.apiVersion >= VK_API_VERSION_1_2) {
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
         auto fpGetBufferDeviceAddress = (PFN_vkGetBufferDeviceAddress)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddress");
-        ASSERT_NE(fpGetBufferDeviceAddress, nullptr);
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferDeviceAddressInfo-buffer-02600");
-        fpGetBufferDeviceAddress(m_device->device(), &info);
-        m_errorMonitor->VerifyFound();
+        if (nullptr == fpGetBufferDeviceAddress) {
+            m_errorMonitor->ExpectSuccess();
+            m_errorMonitor->SetError("No ProcAddr for 1.2 core vkGetBufferDeviceAddress");
+            m_errorMonitor->VerifyNotFound();
+        } else {
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferDeviceAddressInfo-buffer-02600");
+            fpGetBufferDeviceAddress(m_device->device(), &info);
+            m_errorMonitor->VerifyFound();
+        }
     }
 
     VkMemoryRequirements buffer_mem_reqs = {};
@@ -7398,14 +7403,19 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
     vkGetDeviceMemoryOpaqueCaptureAddressKHR(m_device->device(), &mem_opaque_addr_info);
     m_errorMonitor->VerifyFound();
 
-    if (m_device->props.apiVersion >= VK_API_VERSION_1_2) {
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
         auto fpGetDeviceMemoryOpaqueCaptureAddress =
             (PFN_vkGetDeviceMemoryOpaqueCaptureAddress)vk::GetDeviceProcAddr(device(), "vkGetDeviceMemoryOpaqueCaptureAddress");
-        ASSERT_NE(fpGetDeviceMemoryOpaqueCaptureAddress, nullptr);
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                             "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336");
-        fpGetDeviceMemoryOpaqueCaptureAddress(m_device->device(), &mem_opaque_addr_info);
-        m_errorMonitor->VerifyFound();
+        if (nullptr == fpGetDeviceMemoryOpaqueCaptureAddress) {
+            m_errorMonitor->ExpectSuccess();
+            m_errorMonitor->SetError("No ProcAddr for 1.2 core vkGetDeviceMemoryOpaqueCaptureAddress");
+            m_errorMonitor->VerifyNotFound();
+        } else {
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                 "VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336");
+            fpGetDeviceMemoryOpaqueCaptureAddress(m_device->device(), &mem_opaque_addr_info);
+            m_errorMonitor->VerifyFound();
+        }
     }
 
     vk::FreeMemory(m_device->device(), buffer_mem, NULL);
@@ -7500,13 +7510,18 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
     vkGetBufferOpaqueCaptureAddressKHR(m_device->device(), &info);
     m_errorMonitor->VerifyFound();
 
-    if (m_device->props.apiVersion >= VK_API_VERSION_1_2) {
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
         auto fpGetBufferOpaqueCaptureAddress =
             (PFN_vkGetBufferOpaqueCaptureAddress)vk::GetDeviceProcAddr(device(), "vkGetBufferOpaqueCaptureAddress");
-        ASSERT_NE(fpGetBufferOpaqueCaptureAddress, nullptr);
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetBufferOpaqueCaptureAddress-None-03326");
-        fpGetBufferOpaqueCaptureAddress(m_device->device(), &info);
-        m_errorMonitor->VerifyFound();
+        if (nullptr == fpGetBufferOpaqueCaptureAddress) {
+            m_errorMonitor->ExpectSuccess();
+            m_errorMonitor->SetError("No ProcAddr for 1.2 core vkGetBufferOpaqueCaptureAddress");
+            m_errorMonitor->VerifyNotFound();
+        } else {
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkGetBufferOpaqueCaptureAddress-None-03326");
+            fpGetBufferOpaqueCaptureAddress(m_device->device(), &info);
+            m_errorMonitor->VerifyFound();
+        }
     }
 
     VkMemoryRequirements buffer_mem_reqs = {};
