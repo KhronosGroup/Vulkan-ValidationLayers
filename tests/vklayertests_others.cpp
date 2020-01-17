@@ -3115,11 +3115,17 @@ TEST_F(VkLayerTest, HostQueryResetBadFirstQuery) {
     fpvkResetQueryPoolEXT(m_device->device(), query_pool, 1, 0);
     m_errorMonitor->VerifyFound();
 
-    if (m_device->props.apiVersion >= VK_API_VERSION_1_2) {
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
         auto fpvkResetQueryPool = (PFN_vkResetQueryPool)vk::GetDeviceProcAddr(m_device->device(), "vkResetQueryPool");
-        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkResetQueryPool-firstQuery-02666");
-        fpvkResetQueryPool(m_device->device(), query_pool, 1, 0);
-        m_errorMonitor->VerifyFound();
+        if (nullptr == fpvkResetQueryPool) {
+            m_errorMonitor->ExpectSuccess();
+            m_errorMonitor->SetError("No ProcAddr for 1.2 core vkResetQueryPool");
+            m_errorMonitor->VerifyNotFound();
+        } else {
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkResetQueryPool-firstQuery-02666");
+            fpvkResetQueryPool(m_device->device(), query_pool, 1, 0);
+            m_errorMonitor->VerifyFound();
+        }
     }
 
     vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);

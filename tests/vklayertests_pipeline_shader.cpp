@@ -1157,15 +1157,19 @@ TEST_F(VkLayerTest, InvalidPipeline) {
         fpCmdDrawIndirectCountKHR(m_commandBuffer->handle(), buffer.handle(), 0, buffer.handle(), 512, 1, 512);
         m_errorMonitor->VerifyFound();
 
-        if (m_device->props.apiVersion >= VK_API_VERSION_1_2) {
+        if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
             auto fpCmdDrawIndirectCount =
                 (PFN_vkCmdDrawIndirectCount)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndirectCount");
-            ASSERT_NE(fpCmdDrawIndirectCount, nullptr);
-
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirectCount-None-02700");
-            // stride must be a multiple of 4 and must be greater than or equal to sizeof(VkDrawIndirectCommand)
-            fpCmdDrawIndirectCount(m_commandBuffer->handle(), buffer.handle(), 0, buffer.handle(), 512, 1, 512);
-            m_errorMonitor->VerifyFound();
+            if (nullptr == fpCmdDrawIndirectCount) {
+                m_errorMonitor->ExpectSuccess();
+                m_errorMonitor->SetError("No ProcAddr for 1.2 core vkCmdDrawIndirectCount");
+                m_errorMonitor->VerifyNotFound();
+            } else {
+                m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndirectCount-None-02700");
+                // stride must be a multiple of 4 and must be greater than or equal to sizeof(VkDrawIndirectCommand)
+                fpCmdDrawIndirectCount(m_commandBuffer->handle(), buffer.handle(), 0, buffer.handle(), 512, 1, 512);
+                m_errorMonitor->VerifyFound();
+            }
         }
 
         auto fpCmdDrawIndexedIndirectCountKHR =
@@ -1176,14 +1180,20 @@ TEST_F(VkLayerTest, InvalidPipeline) {
         fpCmdDrawIndexedIndirectCountKHR(m_commandBuffer->handle(), buffer.handle(), 0, buffer.handle(), 512, 1, 512);
         m_errorMonitor->VerifyFound();
 
-        if (m_device->props.apiVersion >= VK_API_VERSION_1_2) {
+        if (DeviceValidationVersion() >= VK_API_VERSION_1_2) {
             auto fpCmdDrawIndexedIndirectCount =
                 (PFN_vkCmdDrawIndexedIndirectCount)vk::GetDeviceProcAddr(m_device->device(), "vkCmdDrawIndexedIndirectCount");
-            ASSERT_NE(fpCmdDrawIndexedIndirectCount, nullptr);
-            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdDrawIndexedIndirectCount-None-02700");
-            // stride must be a multiple of 4 and must be greater than or equal to sizeof(VkDrawIndexedIndirectCommand)
-            fpCmdDrawIndexedIndirectCount(m_commandBuffer->handle(), buffer.handle(), 0, buffer.handle(), 512, 1, 512);
-            m_errorMonitor->VerifyFound();
+            if (nullptr == fpCmdDrawIndexedIndirectCount) {
+                m_errorMonitor->ExpectSuccess();
+                m_errorMonitor->SetError("No ProcAddr for 1.2 core vkCmdDrawIndirectCount");
+                m_errorMonitor->VerifyNotFound();
+            } else {
+                m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                     "VUID-vkCmdDrawIndexedIndirectCount-None-02700");
+                // stride must be a multiple of 4 and must be greater than or equal to sizeof(VkDrawIndexedIndirectCommand)
+                fpCmdDrawIndexedIndirectCount(m_commandBuffer->handle(), buffer.handle(), 0, buffer.handle(), 512, 1, 512);
+                m_errorMonitor->VerifyFound();
+            }
         }
     }
 
