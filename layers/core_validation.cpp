@@ -8595,8 +8595,7 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
         }
 
         if (valid_resolve_attachment_index && FormatIsDepthAndStencil(pDepthStencilResolveAttachmentFormat) &&
-            core12_props.independentResolve == VK_FALSE &&
-            core12_props.independentResolveNone == VK_FALSE &&
+            core12_props.independentResolve == VK_FALSE && core12_props.independentResolveNone == VK_FALSE &&
             !(resolve->depthResolveMode == resolve->stencilResolveMode)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                             "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03185",
@@ -8606,8 +8605,7 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
         }
 
         if (valid_resolve_attachment_index && FormatIsDepthAndStencil(pDepthStencilResolveAttachmentFormat) &&
-            core12_props.independentResolve == VK_FALSE &&
-            core12_props.independentResolveNone == VK_TRUE &&
+            core12_props.independentResolve == VK_FALSE && core12_props.independentResolveNone == VK_TRUE &&
             !(resolve->depthResolveMode == resolve->stencilResolveMode || resolve->depthResolveMode == VK_RESOLVE_MODE_NONE_KHR ||
               resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE_KHR)) {
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
@@ -11014,7 +11012,8 @@ bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversionKHR(VkDevice device,
     return ValidateCreateSamplerYcbcrConversion("vkCreateSamplerYcbcrConversionKHR()", pCreateInfo);
 }
 
-bool CoreChecks::PreCallValidateGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfoKHR *pInfo) const {
+bool CoreChecks::ValidateGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfoKHR *pInfo,
+                                                const char *apiName) const {
     bool skip = false;
 
     if (!enabled_features.core12.bufferDeviceAddress) {
@@ -11033,12 +11032,11 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddressKHR(VkDevice device, const
     const auto buffer_state = GetBufferState(pInfo->buffer);
     if (buffer_state) {
         if (!(buffer_state->createInfo.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT)) {
-            skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkGetBufferDeviceAddress()",
-                                                  "VUID-VkBufferDeviceAddressInfo-buffer-02600");
+            skip |= ValidateMemoryIsBoundToBuffer(buffer_state, apiName, "VUID-VkBufferDeviceAddressInfo-buffer-02600");
         }
 
         skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, true,
-                                         "VUID-VkBufferDeviceAddressInfo-buffer-02601", "vkGetBufferDeviceAddress()",
+                                         "VUID-VkBufferDeviceAddressInfo-buffer-02601", apiName,
                                          "VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT");
     }
 
@@ -11046,11 +11044,15 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddressKHR(VkDevice device, const
 }
 
 bool CoreChecks::PreCallValidateGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT *pInfo) const {
-    return PreCallValidateGetBufferDeviceAddressKHR(device, (const VkBufferDeviceAddressInfoKHR *)pInfo);
+    return ValidateGetBufferDeviceAddress(device, (const VkBufferDeviceAddressInfoKHR *)pInfo, "GetBufferDeviceAddressEXT");
+}
+
+bool CoreChecks::PreCallValidateGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo *pInfo) const {
+    return ValidateGetBufferDeviceAddress(device, (const VkBufferDeviceAddressInfoKHR *)pInfo, "GetBufferDeviceAddressKHR");
 }
 
 bool CoreChecks::PreCallValidateGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo) const {
-    return PreCallValidateGetBufferDeviceAddressKHR(device, (const VkBufferDeviceAddressInfoKHR *)pInfo);
+    return ValidateGetBufferDeviceAddress(device, (const VkBufferDeviceAddressInfoKHR *)pInfo, "GetBufferDeviceAddress");
 }
 
 bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureAddressKHR(VkDevice device, const VkBufferDeviceAddressInfoKHR *pInfo) const {
@@ -11225,23 +11227,24 @@ bool CoreChecks::PreCallValidateCmdSetDeviceMaskKHR(VkCommandBuffer commandBuffe
     return ValidateCmdSetDeviceMask(commandBuffer, deviceMask, "vkSetDeviceMaskKHR()");
 }
 
-bool CoreChecks::ValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t *pValue) const {
+bool CoreChecks::ValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t *pValue,
+                                                  const char *apiName) const {
     bool skip = false;
     const auto *pSemaphore = GetSemaphoreState(semaphore);
     if (pSemaphore && pSemaphore->type != VK_SEMAPHORE_TYPE_TIMELINE_KHR) {
         skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT,
                         HandleToUint64(semaphore), "VUID-vkGetSemaphoreCounterValue-semaphore-03255",
-                        "vkGetSemaphoreCounterValue: semaphore %s must be of VK_SEMAPHORE_TYPE_TIMELINE type",
+                        "%s: semaphore %s must be of VK_SEMAPHORE_TYPE_TIMELINE type", apiName,
                         report_data->FormatHandle(semaphore).c_str());
     }
     return skip;
 }
 
 bool CoreChecks::PreCallValidateGetSemaphoreCounterValueKHR(VkDevice device, VkSemaphore semaphore, uint64_t *pValue) const {
-    return ValidateGetSemaphoreCounterValue(device, semaphore, pValue);
+    return ValidateGetSemaphoreCounterValue(device, semaphore, pValue, "PreCallValidateGetSemaphoreCounterValueKHR");
 }
 bool CoreChecks::PreCallValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore semaphore, uint64_t *pValue) const {
-    return ValidateGetSemaphoreCounterValue(device, semaphore, pValue);
+    return ValidateGetSemaphoreCounterValue(device, semaphore, pValue, "PreCallValidateGetSemaphoreCounterValue");
 }
 bool CoreChecks::ValidateQueryPoolStride(const std::string &vuid_not_64, const std::string &vuid_64, const VkDeviceSize stride,
                                          const char *parameter_name, const uint64_t parameter_value,
