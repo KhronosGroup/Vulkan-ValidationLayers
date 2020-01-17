@@ -7988,10 +7988,9 @@ bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const
 }
 
 bool CoreChecks::ValidateAttachmentIndex(RenderPassCreateVersion rp_version, uint32_t attachment, uint32_t attachment_count,
-                                         const char *type) const {
+                                         const char *type, const char *function_name) const {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
-    const char *const function_name = use_rp2 ? "vkCreateRenderPass2()" : "vkCreateRenderPass()";
 
     if (attachment >= attachment_count && attachment != VK_ATTACHMENT_UNUSED) {
         const char *vuid =
@@ -8061,12 +8060,11 @@ bool CoreChecks::AddAttachmentUse(RenderPassCreateVersion rp_version, uint32_t s
     return skip;
 }
 
-bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_version,
-                                                   const VkRenderPassCreateInfo2 *pCreateInfo) const {
+bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2 *pCreateInfo,
+                                                   const char *function_name) const {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
     const char *vuid;
-    const char *const function_name = use_rp2 ? "vkCreateRenderPass2()" : "vkCreateRenderPass()";
 
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
         const VkSubpassDescription2KHR &subpass = pCreateInfo->pSubpasses[i];
@@ -8083,7 +8081,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
         for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
             auto const &attachment_ref = subpass.pInputAttachments[j];
             if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
-                skip |= ValidateAttachmentIndex(rp_version, attachment_ref.attachment, pCreateInfo->attachmentCount, "Input");
+                skip |= ValidateAttachmentIndex(rp_version, attachment_ref.attachment, pCreateInfo->attachmentCount, "Input",
+                                                function_name);
 
                 if (attachment_ref.aspectMask & VK_IMAGE_ASPECT_METADATA_BIT) {
                     vuid =
@@ -8139,7 +8138,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
                                 "%s:  Preserve attachment (%d) must not be VK_ATTACHMENT_UNUSED.", function_name, j);
             } else {
-                skip |= ValidateAttachmentIndex(rp_version, attachment, pCreateInfo->attachmentCount, "Preserve");
+                skip |= ValidateAttachmentIndex(rp_version, attachment, pCreateInfo->attachmentCount, "Preserve", function_name);
                 if (attachment < pCreateInfo->attachmentCount) {
                     skip |= AddAttachmentUse(rp_version, i, attachment_uses, attachment_layouts, attachment, ATTACHMENT_PRESERVE,
                                              VkImageLayout(0) /* preserve doesn't have any layout */);
@@ -8153,7 +8152,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
             if (subpass.pResolveAttachments) {
                 auto const &attachment_ref = subpass.pResolveAttachments[j];
                 if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED) {
-                    skip |= ValidateAttachmentIndex(rp_version, attachment_ref.attachment, pCreateInfo->attachmentCount, "Resolve");
+                    skip |= ValidateAttachmentIndex(rp_version, attachment_ref.attachment, pCreateInfo->attachmentCount, "Resolve",
+                                                    function_name);
 
                     if (attachment_ref.attachment < pCreateInfo->attachmentCount) {
                         skip |= AddAttachmentUse(rp_version, i, attachment_uses, attachment_layouts, attachment_ref.attachment,
@@ -8179,7 +8179,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
         if (subpass.pDepthStencilAttachment) {
             if (subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
                 skip |= ValidateAttachmentIndex(rp_version, subpass.pDepthStencilAttachment->attachment,
-                                                pCreateInfo->attachmentCount, "Depth");
+                                                pCreateInfo->attachmentCount, "Depth", function_name);
                 if (subpass.pDepthStencilAttachment->attachment < pCreateInfo->attachmentCount) {
                     skip |= AddAttachmentUse(rp_version, i, attachment_uses, attachment_layouts,
                                              subpass.pDepthStencilAttachment->attachment, ATTACHMENT_DEPTH,
@@ -8191,7 +8191,8 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
         uint32_t last_sample_count_attachment = VK_ATTACHMENT_UNUSED;
         for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
             auto const &attachment_ref = subpass.pColorAttachments[j];
-            skip |= ValidateAttachmentIndex(rp_version, attachment_ref.attachment, pCreateInfo->attachmentCount, "Color");
+            skip |= ValidateAttachmentIndex(rp_version, attachment_ref.attachment, pCreateInfo->attachmentCount, "Color",
+                                            function_name);
             if (attachment_ref.attachment != VK_ATTACHMENT_UNUSED && attachment_ref.attachment < pCreateInfo->attachmentCount) {
                 skip |= AddAttachmentUse(rp_version, i, attachment_uses, attachment_layouts, attachment_ref.attachment,
                                          ATTACHMENT_COLOR, attachment_ref.layout);
@@ -8288,15 +8289,14 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(RenderPassCreateVersion rp_ve
 }
 
 bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersion rp_version,
-                                          const VkRenderPassCreateInfo2 *pCreateInfo) const {
+                                          const VkRenderPassCreateInfo2 *pCreateInfo, const char *function_name) const {
     bool skip = false;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
     const char *vuid;
-    const char *const function_name = use_rp2 ? "vkCreateRenderPass2()" : "vkCreateRenderPass()";
 
     // TODO: As part of wrapping up the mem_tracker/core_validation merge the following routine should be consolidated with
     //       ValidateLayouts.
-    skip |= ValidateRenderpassAttachmentUsage(rp_version, pCreateInfo);
+    skip |= ValidateRenderpassAttachmentUsage(rp_version, pCreateInfo, function_name);
 
     skip |= ValidateRenderPassDAG(rp_version, pCreateInfo);
 
@@ -8384,7 +8384,7 @@ bool CoreChecks::ValidateCreateRenderPass(VkDevice device, RenderPassCreateVersi
         }
     }
     if (!skip) {
-        skip |= ValidateLayouts(rp_version, device, pCreateInfo);
+        skip |= ValidateLayouts(rp_version, device, pCreateInfo, function_name);
     }
     return skip;
 }
@@ -8472,7 +8472,7 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
     if (!skip) {
         safe_VkRenderPassCreateInfo2 create_info_2;
         ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo, &create_info_2);
-        skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_1, create_info_2.ptr());
+        skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_1, create_info_2.ptr(), "ValidateCreateRenderPass()");
     }
 
     return skip;
@@ -8621,7 +8621,8 @@ static bool ValidateDepthStencilResolve(const debug_report_data *report_data,
 }
 
 bool CoreChecks::ValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
-                                           const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const {
+                                           const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
+                                           const char *function_name) const {
     bool skip = false;
 
     if (device_extensions.vk_khr_depth_stencil_resolve) {
@@ -8629,19 +8630,19 @@ bool CoreChecks::ValidateCreateRenderPass2(VkDevice device, const VkRenderPassCr
     }
 
     safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
-    skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_2, create_info_2.ptr());
+    skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_2, create_info_2.ptr(), function_name);
 
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const {
-    return ValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass);
+    return ValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, "CreateRenderPass2KHR()");
 }
 
 bool CoreChecks::PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const {
-    return ValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass);
+    return ValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, "CreateRenderPass2()");
 }
 
 bool CoreChecks::ValidatePrimaryCommandBuffer(const CMD_BUFFER_STATE *pCB, char const *cmd_name, const char *error_code) const {
