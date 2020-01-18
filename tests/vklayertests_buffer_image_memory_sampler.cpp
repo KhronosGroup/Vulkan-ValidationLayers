@@ -1379,7 +1379,8 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
         vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), mp_format, &format_properties);
         // Need to make sure disjoint is supported for format
         // Also need to support an arbitrary image usage feature
-        if (0 == (format_properties.optimalTilingFeatures & (VK_FORMAT_FEATURE_DISJOINT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT))) {
+        if (0 ==
+            (format_properties.optimalTilingFeatures & (VK_FORMAT_FEATURE_DISJOINT_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT))) {
             printf("%s test requires disjoint/sampled feature bit on format.  Skipping.\n", kSkipPrefix);
         } else {
             image_create_info = {};
@@ -1433,7 +1434,7 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
 
         // Bind image with VkBindImagePlaneMemoryInfo without disjoint bit in image
         // Need to support an arbitrary image usage feature for multi-planar format
-        if (0 == (format_properties.optimalTilingFeatures & VK_IMAGE_USAGE_SAMPLED_BIT)) {
+        if (0 == (format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)) {
             printf("%s test requires sampled feature bit on multi-planar format.  Skipping.\n", kSkipPrefix);
         } else {
             image_create_info = {};
@@ -7919,7 +7920,8 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
         // Also need to support an arbitrary image usage feature
         VkFormatProperties format_properties;
         vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, &format_properties);
-        if (0 == (format_properties.optimalTilingFeatures & (VK_FORMAT_FEATURE_DISJOINT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT))) {
+        if (0 ==
+            (format_properties.optimalTilingFeatures & (VK_FORMAT_FEATURE_DISJOINT_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT))) {
             printf("%s test requires disjoint/sampled feature bit on format.  Skipping.\n", kSkipPrefix);
         } else {
             VkImageCreateInfo image_create_info = {};
