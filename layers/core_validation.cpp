@@ -9647,6 +9647,25 @@ bool CoreChecks::ValidateBindImageMemory(const VkBindImageMemoryInfo &bindInfo, 
                                 "VK_IMAGE_CREATE_DISJOINT_BIT.",
                                 report_data->FormatHandle(image_state->image).c_str());
             }
+
+            // Make sure planeAspect is only a single, valid plane
+            uint32_t planes = FormatPlaneCount(image_state->createInfo.format);
+            VkImageAspectFlags aspect = plane_info->planeAspect;
+            if ((2 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
+                                "VUID-VkBindImagePlaneMemoryInfo-planeAspect-02283",
+                                "Image %s VkBindImagePlaneMemoryInfo::planeAspect is %s but can only be VK_IMAGE_ASPECT_PLANE_0_BIT"
+                                "or VK_IMAGE_ASPECT_PLANE_1_BIT.",
+                                report_data->FormatHandle(image_state->image).c_str(), string_VkImageAspectFlags(aspect).c_str());
+            }
+            if ((3 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
+                (aspect != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, image_handle,
+                                "VUID-VkBindImagePlaneMemoryInfo-planeAspect-02283",
+                                "Image %s VkBindImagePlaneMemoryInfo::planeAspect is %s but can only be VK_IMAGE_ASPECT_PLANE_0_BIT"
+                                "or VK_IMAGE_ASPECT_PLANE_1_BIT or VK_IMAGE_ASPECT_PLANE_2_BIT.",
+                                report_data->FormatHandle(image_state->image).c_str(), string_VkImageAspectFlags(aspect).c_str());
+            }
         }
     }
     return skip;
