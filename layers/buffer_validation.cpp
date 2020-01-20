@@ -1874,6 +1874,10 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
                                                     "VUID-vkCmdClearDepthStencilImage-image-01994");
         }
         skip |= InsideRenderPass(cb_node, "vkCmdClearDepthStencilImage()", "VUID-vkCmdClearDepthStencilImage-renderpass");
+
+        bool any_include_aspect_depth_bit = false;
+        bool any_include_aspect_stencil_bit = false;
+
         for (uint32_t i = 0; i < rangeCount; ++i) {
             std::string param_name = "pRanges[" + std::to_string(i) + "]";
             skip |= ValidateCmdClearDepthSubresourceRange(image_state, pRanges[i], param_name.c_str());
@@ -1887,6 +1891,40 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
                 skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
                                 HandleToUint64(commandBuffer), kVUID_Core_DrawState_InvalidImageAspect, str);
             }
+            if ((pRanges[i].aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0) {
+                any_include_aspect_depth_bit = true;
+            }
+            if ((pRanges[i].aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
+                any_include_aspect_stencil_bit = true;
+            }
+        }
+        if (any_include_aspect_stencil_bit) {
+            const auto image_stencil_struct = lvl_find_in_chain<VkImageStencilUsageCreateInfoEXT>(image_state->createInfo.pNext);
+            if (image_stencil_struct != nullptr) {
+                if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0) {
+                    skip |=
+                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
+                                "VUID-vkCmdClearDepthStencilImage-pRanges-02658",
+                                "vkCmdClearDepthStencilImage(): an element of pRanges.aspect includes VK_IMAGE_ASPECT_STENCIL_BIT "
+                                "and image was created with separate stencil usage, VK_IMAGE_USAGE_TRANSFER_DST_BIT must be "
+                                "included in VkImageStencilUsageCreateInfo::stencilUsage used to create image");
+                }
+            } else {
+                if ((image_state->createInfo.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0) {
+                    skip |= log_msg(
+                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
+                        "VUID-vkCmdClearDepthStencilImage-pRanges-02659",
+                        "vkCmdClearDepthStencilImage(): an element of pRanges.aspect includes VK_IMAGE_ASPECT_STENCIL_BIT and "
+                        "image was not created with separate stencil usage, VK_IMAGE_USAGE_TRANSFER_DST_BIT must be included "
+                        "in VkImageCreateInfo::usage used to create image");
+                }
+            }
+        }
+        if (any_include_aspect_depth_bit && (image_state->createInfo.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
+                            "VUID-vkCmdClearDepthStencilImage-pRanges-02660",
+                            "vkCmdClearDepthStencilImage(): an element of pRanges.aspect includes VK_IMAGE_ASPECT_DEPTH_BIT, "
+                            "VK_IMAGE_USAGE_TRANSFER_DST_BIT must be included in VkImageCreateInfo::usage used to create image");
         }
         if (image_state && !FormatIsDepthOrStencil(image_state->createInfo.format)) {
             char const str[] = "vkCmdClearDepthStencilImage called without a depth/stencil image.";
@@ -4626,6 +4664,52 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         // If there's a chained VkImageViewUsageCreateInfo struct, modify image_usage to match
         auto chained_ivuci_struct = lvl_find_in_chain<VkImageViewUsageCreateInfoKHR>(pCreateInfo->pNext);
         if (chained_ivuci_struct) {
+            if (api_version >= VK_API_VERSION_1_1 || device_extensions.vk_khr_maintenance2) {
+                if (!device_extensions.vk_ext_separate_stencil_usage) {
+                    if ((image_usage | chained_ivuci_struct->usage) != image_usage) {
+                        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
+                                        HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-pNext-02661",
+                                        "vkCreateImageView(): pNext chain includes VkImageViewUsageCreateInfo, usage must not "
+                                        "include any bits that were not set in VkImageCreateInfo::usage used to create image");
+                    }
+                } else {
+                    const auto image_stencil_struct =
+                        lvl_find_in_chain<VkImageStencilUsageCreateInfoEXT>(image_state->createInfo.pNext);
+                    if (image_stencil_struct == nullptr) {
+                        if ((image_usage | chained_ivuci_struct->usage) != image_usage) {
+                            skip |= log_msg(
+                                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
+                                HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-pNext-02662",
+                                "vkCreateImageView(): pNext chain includes VkImageViewUsageCreateInfo and image was not created "
+                                "with a VkImageStencilUsageCreateInfo in pNext of vkImageCreateInfo, usage must not include "
+                                "any bits that were not set in VkImageCreateInfo::usage used to create image");
+                        }
+                    } else {
+                        if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) == VK_IMAGE_ASPECT_STENCIL_BIT &&
+                            (image_stencil_struct->stencilUsage | chained_ivuci_struct->usage) !=
+                                image_stencil_struct->stencilUsage) {
+                            skip |= log_msg(
+                                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
+                                HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-pNext-02663",
+                                "vkCreateImageView(): pNext chain includes VkImageViewUsageCreateInfo, image was created with a "
+                                "VkImageStencilUsageCreateInfo in pNext of vkImageCreateInfo, and subResourceRange.aspectMask "
+                                "includes VK_IMAGE_ASPECT_STENCIL_BIT, VkImageViewUsageCreateInfo::usage must not include any "
+                                "bits that were not set in VkImageStencilUsageCreateInfo::stencilUsage used to create image");
+                        }
+                        if ((aspect_mask & ~VK_IMAGE_ASPECT_STENCIL_BIT) != 0 &&
+                            (image_usage | chained_ivuci_struct->usage) != image_usage) {
+                            skip |= log_msg(
+                                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
+                                HandleToUint64(pCreateInfo->image), "VUID-VkImageViewCreateInfo-pNext-02664",
+                                "vkCreateImageView(): pNext chain includes VkImageViewUsageCreateInfo, image was created with a "
+                                "VkImageStencilUsageCreateInfo in pNext of vkImageCreateInfo, and subResourceRange.aspectMask "
+                                "includes bits other than VK_IMAGE_ASPECT_STENCIL_BIT, VkImageViewUsageCreateInfo::usage must not "
+                                "include any bits that were not set in VkImageCreateInfo::usage used to create image");
+                        }
+                    }
+                }
+            }
+
             image_usage = chained_ivuci_struct->usage;
         }
 

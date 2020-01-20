@@ -653,6 +653,93 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                                 "must be greater than 1.");
             }
         }
+
+        const auto image_stencil_struct = lvl_find_in_chain<VkImageStencilUsageCreateInfoEXT>(pCreateInfo->pNext);
+        if (image_stencil_struct != nullptr) {
+            if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0) {
+                VkImageUsageFlags legal_flags = (VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+                // No flags other than the legal attachment bits may be set
+                legal_flags |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
+                if ((image_stencil_struct->stencilUsage & ~legal_flags) != 0) {
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
+                                    "VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539",
+                                    "vkCreateImage(): in pNext chain, VkImageStencilUsageCreateInfo::stencilUsage includes "
+                                    "VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, it must not include bits other than "
+                                    "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT or VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT");
+                }
+            }
+
+            if (FormatIsDepthOrStencil(pCreateInfo->format)) {
+                if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) != 0) {
+                    if (pCreateInfo->extent.width > device_limits.maxFramebufferWidth) {
+                        skip |=
+                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
+                                    "VUID-VkImageCreateInfo-Format-02536",
+                                    "vkCreateImage(): Depth-stencil image contains VkImageStencilUsageCreateInfo structure with "
+                                    "stencilUsage including VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT and image width exceeds device "
+                                    "maxFramebufferWidth");
+                    }
+
+                    if (pCreateInfo->extent.height > device_limits.maxFramebufferHeight) {
+                        skip |=
+                            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
+                                    "VUID-VkImageCreateInfo-format-02537",
+                                    "vkCreateImage(): Depth-stencil image contains VkImageStencilUsageCreateInfo structure with "
+                                    "stencilUsage including VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT and image height exceeds device "
+                                    "maxFramebufferHeight");
+                    }
+                }
+
+                if (!physical_device_features.shaderStorageImageMultisample &&
+                    ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_STORAGE_BIT) != 0) &&
+                    (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT)) {
+                    skip |=
+                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
+                                "VUID-VkImageCreateInfo-format-02538",
+                                "vkCreateImage(): Depth-stencil image contains VkImageStencilUsageCreateInfo structure with "
+                                "stencilUsage including VK_IMAGE_USAGE_STORAGE_BIT and the multisampled storage images feature is "
+                                "not enabled, image samples must be VK_SAMPLE_COUNT_1_BIT");
+                }
+
+                if (((pCreateInfo->usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0) &&
+                    ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0)) {
+                    skip |= log_msg(
+                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
+                        "VUID-VkImageCreateInfo-format-02795",
+                        "vkCreateImage(): Depth-stencil image in which usage includes VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT "
+                        "contains VkImageStencilUsageCreateInfo structure, VkImageStencilUsageCreateInfo::stencilUsage must  "
+                        "also include VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT");
+                } else if (((pCreateInfo->usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) &&
+                           ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0)) {
+                    skip |= log_msg(
+                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
+                        "VUID-VkImageCreateInfo-format-02796",
+                        "vkCreateImage(): Depth-stencil image in which usage does not include "
+                        "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT "
+                        "contains VkImageStencilUsageCreateInfo structure, VkImageStencilUsageCreateInfo::stencilUsage must  "
+                        "also not include VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT");
+                }
+
+                if (((pCreateInfo->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0) &&
+                    ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) == 0)) {
+                    skip |= log_msg(
+                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
+                        "VUID-VkImageCreateInfo-format-02797",
+                        "vkCreateImage(): Depth-stencil image in which usage includes VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT "
+                        "contains VkImageStencilUsageCreateInfo structure, VkImageStencilUsageCreateInfo::stencilUsage must  "
+                        "also include VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT");
+                } else if (((pCreateInfo->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) == 0) &&
+                           ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0)) {
+                    skip |= log_msg(
+                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
+                        "VUID-VkImageCreateInfo-format-02798",
+                        "vkCreateImage(): Depth-stencil image in which usage does not include "
+                        "VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT "
+                        "contains VkImageStencilUsageCreateInfo structure, VkImageStencilUsageCreateInfo::stencilUsage must  "
+                        "also not include VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT");
+                }
+            }
+        }
     }
 
     return skip;
@@ -2690,6 +2777,48 @@ bool StatelessValidation::manual_PreCallValidateCmdClearAttachments(VkCommandBuf
         }
     }
     return skip;
+}
+
+bool StatelessValidation::ValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
+                                                                          const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
+                                                                          VkImageFormatProperties2 *pImageFormatProperties,
+                                                                          const char *apiName) const {
+    bool skip = false;
+
+    if (pImageFormatInfo != nullptr) {
+        const auto image_stencil_struct = lvl_find_in_chain<VkImageStencilUsageCreateInfoEXT>(pImageFormatInfo->pNext);
+        if (image_stencil_struct != nullptr) {
+            if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0) {
+                VkImageUsageFlags legal_flags = (VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+                // No flags other than the legal attachment bits may be set
+                legal_flags |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
+                if ((image_stencil_struct->stencilUsage & ~legal_flags) != 0) {
+                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
+                                    "VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539",
+                                    "%s(): in pNext chain, VkImageStencilUsageCreateInfo::stencilUsage "
+                                    "includes VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, it must not include bits other than "
+                                    "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT or VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT",
+                                    apiName);
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
+    VkImageFormatProperties2 *pImageFormatProperties) const {
+    return ValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties,
+                                                           "vkGetPhysicalDeviceImageFormatProperties2");
+}
+
+bool StatelessValidation::manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
+    VkImageFormatProperties2 *pImageFormatProperties) const {
+    return ValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties,
+                                                           "vkGetPhysicalDeviceImageFormatProperties2KHR");
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage,

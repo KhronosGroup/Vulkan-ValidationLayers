@@ -177,6 +177,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkAllocateMemory',
             'vkCreateAccelerationStructureNV',
             'vkGetAccelerationStructureHandleNV',
+            'vkGetPhysicalDeviceImageFormatProperties2',
+            'vkGetPhysicalDeviceImageFormatProperties2KHR',
             'vkCmdBuildAccelerationStructureNV',
             'vkCreateFramebuffer',
             'vkCmdSetLineStippleEXT',
