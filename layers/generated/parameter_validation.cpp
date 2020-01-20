@@ -5341,6 +5341,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceImageFormatProperties2
     {
         // No xml-driven validation
     }
+    if (!skip) skip |= manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(physicalDevice, pImageFormatInfo, pImageFormatProperties);
     return skip;
 }
 
@@ -6907,6 +6908,7 @@ bool StatelessValidation::PreCallValidateGetPhysicalDeviceImageFormatProperties2
     {
         // No xml-driven validation
     }
+    if (!skip) skip |= manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(physicalDevice, pImageFormatInfo, pImageFormatProperties);
     return skip;
 }
 

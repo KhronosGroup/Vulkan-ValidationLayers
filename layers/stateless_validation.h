@@ -1278,6 +1278,17 @@ class StatelessValidation : public ValidationObject {
                                                    const VkClearAttachment *pAttachments, uint32_t rectCount,
                                                    const VkClearRect *pRects) const;
 
+    bool ValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
+                                                         const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
+                                                         VkImageFormatProperties2 *pImageFormatProperties,
+                                                         const char *apiName) const;
+    bool manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
+                                                                       const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
+                                                                       VkImageFormatProperties2 *pImageFormatProperties) const;
+    bool manual_PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(VkPhysicalDevice physicalDevice,
+                                                                          const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
+                                                                          VkImageFormatProperties2 *pImageFormatProperties) const;
+
     bool manual_PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                             VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                             const VkImageCopy *pRegions) const;
