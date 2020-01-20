@@ -1399,12 +1399,8 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
             image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
 
             VkImage image;
-            err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+            err = vk::CreateImage(device(), &image_create_info, NULL, &image);
             ASSERT_VK_SUCCESS(err);
-
-            // Get memory requirements for plane 0 of image
-            VkPhysicalDeviceMemoryProperties phys_mem_props;
-            vk::GetPhysicalDeviceMemoryProperties(gpu(), &phys_mem_props);
 
             VkImagePlaneMemoryRequirementsInfo image_plane_req = {VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO};
             image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
@@ -1424,12 +1420,29 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
             VkDeviceMemory image_memory;
             ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &image_memory));
 
+            // Bind disjoint with BindImageMemory instead of BindImageMemory2
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkBindImageMemory-image-01608");
             vk::BindImageMemory(device(), image, image_memory, 0);
             m_errorMonitor->VerifyFound();
 
+            VkBindImagePlaneMemoryInfo plane_memory_info = {VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO};
+            ASSERT_TRUE(FormatPlaneCount(mp_format) == 2);
+            plane_memory_info.planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
+
+            VkBindImageMemoryInfo bind_image_info = {VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO};
+            bind_image_info.pNext = &plane_memory_info;
+            bind_image_info.image = image;
+            bind_image_info.memory = image_memory;
+            bind_image_info.memoryOffset = 0;
+
+            // Set invalid planeAspect
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                 "VUID-VkBindImagePlaneMemoryInfo-planeAspect-02283");
+            vkBindImageMemory2Function(device(), 1, &bind_image_info);
+            m_errorMonitor->VerifyFound();
+
             vk::FreeMemory(device(), image_memory, NULL);
-            vk::DestroyImage(m_device->device(), image, nullptr);
+            vk::DestroyImage(device(), image, nullptr);
         }
 
         // Bind image with VkBindImagePlaneMemoryInfo without disjoint bit in image
@@ -1453,12 +1466,8 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
             image_create_info.flags = 0;  // no disjoint bit set
 
             VkImage image;
-            err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+            err = vk::CreateImage(device(), &image_create_info, NULL, &image);
             ASSERT_VK_SUCCESS(err);
-
-            // Get memory requirements for plane 0 of image
-            VkPhysicalDeviceMemoryProperties phys_mem_props;
-            vk::GetPhysicalDeviceMemoryProperties(gpu(), &phys_mem_props);
 
             VkImagePlaneMemoryRequirementsInfo image_plane_req = {VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO};
             image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
@@ -1491,7 +1500,7 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
             m_errorMonitor->VerifyFound();
 
             vk::FreeMemory(device(), image_memory, NULL);
-            vk::DestroyImage(m_device->device(), image, nullptr);
+            vk::DestroyImage(device(), image, nullptr);
         }
     }
 }
