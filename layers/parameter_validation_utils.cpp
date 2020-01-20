@@ -1061,7 +1061,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             // Collect active stages
             uint32_t active_shaders = 0;
             for (uint32_t stages = 0; stages < pCreateInfos[i].stageCount; stages++) {
-                active_shaders |= pCreateInfos[i].pStages->stage;
+                active_shaders |= pCreateInfos[i].pStages[stages].stage;
             }
 
             if ((active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) &&
