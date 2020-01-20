@@ -3728,6 +3728,94 @@ TEST_F(VkLayerTest, ClearColorImageWithBadRange) {
     }
 }
 
+TEST_F(VkLayerTest, ClearDepthStencilWithBadAspect) {
+    TEST_DESCRIPTION("Verify ClearDepth with an invalid VkImageAspectFlags.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    const bool separate_stencil_usage_supported =
+        DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
+    if (separate_stencil_usage_supported) {
+        m_device_extension_names.push_back(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
+    }
+
+    const auto depth_format = FindSupportedDepthStencilFormat(gpu());
+    if (!depth_format) {
+        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = nullptr;
+    image_create_info.flags = 0;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = depth_format;
+    image_create_info.extent = {64, 64, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_create_info.queueFamilyIndexCount = 0;
+    image_create_info.pQueueFamilyIndices = nullptr;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    const VkClearDepthStencilValue clear_value = {};
+    VkImageSubresourceRange range = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+
+    m_commandBuffer->begin();
+
+    if (!separate_stencil_usage_supported) {
+        printf("%s VK_EXT_separate_stencil_usage Extension not supported, skipping part of test\n", kSkipPrefix);
+    } else {
+        VkImageStencilUsageCreateInfoEXT image_stencil_create_info = {};
+        image_stencil_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO_EXT;
+        image_stencil_create_info.pNext = nullptr;
+        image_stencil_create_info.stencilUsage =
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;  // not VK_IMAGE_USAGE_TRANSFER_DST_BIT
+
+        image_create_info.pNext = &image_stencil_create_info;
+
+        VkImageObj image(m_device);
+        image.init(&image_create_info);
+        ASSERT_TRUE(image.initialized());
+
+        // Element of pRanges.aspect includes VK_IMAGE_ASPECT_STENCIL_BIT, and image was created with separate stencil usage,
+        // VK_IMAGE_USAGE_TRANSFER_DST_BIT not included in the VkImageStencilUsageCreateInfo::stencilUsage used to create image
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdClearDepthStencilImage-pRanges-02658");
+        // ... since VK_IMAGE_USAGE_TRANSFER_DST_BIT not included in the VkImageCreateInfo::usage used to create image
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdClearDepthStencilImage-image-00009");
+        vk::CmdClearDepthStencilImage(m_commandBuffer->handle(), image.handle(), image.Layout(), &clear_value, 1, &range);
+        m_errorMonitor->VerifyFound();
+    }
+
+    image_create_info.pNext = nullptr;
+
+    range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+
+    VkImageObj image(m_device);
+    image.init(&image_create_info);
+    ASSERT_TRUE(image.initialized());
+
+    // Element of pRanges.aspect includes VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_USAGE_TRANSFER_DST_BIT not included in the
+    // VkImageCreateInfo::usage used to create image
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdClearDepthStencilImage-pRanges-02659");
+    // Element of pRanges.aspect includes VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_USAGE_TRANSFER_DST_BIT not included in the
+    // VkImageCreateInfo::usage used to create image
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdClearDepthStencilImage-pRanges-02660");
+    // ... since VK_IMAGE_USAGE_TRANSFER_DST_BIT not included in the VkImageCreateInfo::usage used to create image
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdClearDepthStencilImage-image-00009");
+    vk::CmdClearDepthStencilImage(m_commandBuffer->handle(), image.handle(), image.Layout(), &clear_value, 1, &range);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, ClearDepthStencilWithBadRange) {
     TEST_DESCRIPTION("Record clear depth with an invalid VkImageSubresourceRange");
 
@@ -3892,6 +3980,9 @@ TEST_F(VkLayerTest, ClearDepthStencilImageErrors) {
     const VkImageSubresourceRange range = VkImageObj::subresource_range(image_create_info, VK_IMAGE_ASPECT_DEPTH_BIT);
 
     m_commandBuffer->begin();
+    // need to handle since an element of pRanges includes VK_IMAGE_ASPECT_DEPTH_BIT without VkImageCreateInfo::usage having
+    // VK_IMAGE_USAGE_TRANSFER_DST_BIT being set
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdClearDepthStencilImage-pRanges-02660");
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdClearDepthStencilImage-image-00009");
     vk::CmdClearDepthStencilImage(m_commandBuffer->handle(), dst_image_bad_usage.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1,
                                   &range);
@@ -5625,6 +5716,175 @@ TEST_F(VkLayerTest, InvalidImageViewUsageCreateInfo) {
     CreateImageViewTest(*this, &ivci, "VUID-VkImageViewUsageCreateInfo-usage-parameter");
 }
 
+TEST_F(VkLayerTest, CreateImageViewNoSeparateStencilUsage) {
+    TEST_DESCRIPTION("Verify CreateImageView create info for the case VK_EXT_separate_stencil_usage is not supported.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) {
+        printf("%s Test requires API >= 1.1 or KHR_MAINTENANCE2 extension, unavailable - skipped.\n", kSkipPrefix);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    const auto depth_format = FindSupportedDepthStencilFormat(gpu());
+    if (!depth_format) {
+        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    // without VK_EXT_separate_stencil_usage explicitly enabled
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    const VkImageAspectFlags aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
+    const VkImageSubresourceRange range = {aspect, 0, 1, 0, 1};
+
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = nullptr;
+    image_create_info.flags = 0;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = depth_format;
+    image_create_info.extent = {64, 64, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_create_info.queueFamilyIndexCount = 0;
+    image_create_info.pQueueFamilyIndices = nullptr;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImageViewCreateInfo image_view_create_info = {};
+    image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    image_view_create_info.pNext = nullptr;
+    image_view_create_info.flags = 0;
+    image_view_create_info.image = VK_NULL_HANDLE;
+    image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_create_info.format = depth_format;
+    image_view_create_info.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                         VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY};
+    image_view_create_info.subresourceRange = range;
+
+    VkImageViewUsageCreateInfo image_view_usage_create_info = {};
+    image_view_usage_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO;
+    image_view_usage_create_info.pNext = nullptr;
+    image_view_usage_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    image_view_create_info.pNext = &image_view_usage_create_info;
+
+    VkImageObj image(m_device);
+    image.init(&image_create_info);
+    ASSERT_TRUE(image.initialized());
+    image_view_create_info.image = image.handle();
+    image_view_usage_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;  // Extra flag
+
+    // VkImageViewUsageCreateInfo::usage must not include any bits that were not set in VkImageCreateInfo::usage
+    CreateImageViewTest(*this, &image_view_create_info, "VUID-VkImageViewCreateInfo-pNext-02661");
+}
+
+TEST_F(VkLayerTest, CreateImageViewStencilUsageCreateInfo) {
+    TEST_DESCRIPTION("Verify CreateImageView with stencil usage.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) {
+        printf("%s Test requires API >= 1.1 or KHR_MAINTENANCE2 extension, unavailable - skipped.\n", kSkipPrefix);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME)) {
+        printf("%s VK_EXT_separate_stencil_usage Extension not supported, skipping tests\n", kSkipPrefix);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
+
+    const auto depth_format = FindSupportedDepthStencilFormat(gpu());
+    if (!depth_format) {
+        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    const VkImageAspectFlags aspect = VK_IMAGE_ASPECT_STENCIL_BIT;
+    const VkImageSubresourceRange range = {aspect, 0, 1, 0, 1};
+
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = nullptr;
+    image_create_info.flags = 0;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = depth_format;
+    image_create_info.extent = {64, 64, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_create_info.queueFamilyIndexCount = 0;
+    image_create_info.pQueueFamilyIndices = nullptr;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImageViewCreateInfo image_view_create_info = {};
+    image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    image_view_create_info.pNext = nullptr;
+    image_view_create_info.flags = 0;
+    image_view_create_info.image = VK_NULL_HANDLE;
+    image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_create_info.format = depth_format;
+    image_view_create_info.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                         VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY};
+    image_view_create_info.subresourceRange = range;
+
+    VkImageViewUsageCreateInfo image_view_usage_create_info = {};
+    image_view_usage_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO;
+    image_view_usage_create_info.pNext = nullptr;
+    image_view_usage_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    image_view_create_info.pNext = &image_view_usage_create_info;
+
+    VkImageObj image(m_device);
+    image.init(&image_create_info);
+    ASSERT_TRUE(image.initialized());
+    image_view_create_info.image = image.handle();
+
+    image_view_usage_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;  // Extra flag
+
+    // VkImageViewUsageCreateInfo::usage must not include any bits that were not set in VkImageCreateInfo::usage
+    CreateImageViewTest(*this, &image_view_create_info, "VUID-VkImageViewCreateInfo-pNext-02662");
+
+    VkImageStencilUsageCreateInfoEXT image_stencil_create_info = {};
+    image_stencil_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO_EXT;
+    image_stencil_create_info.pNext = nullptr;
+    image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    image_create_info.pNext = &image_stencil_create_info;
+
+    image_view_usage_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;  // Extra flag
+    image_view_create_info.subresourceRange.aspectMask =
+        VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;  // Flag other than VK_IMAGE_ASPECT_STENCIL_BIT
+
+    VkImageObj image2(m_device);
+    image2.init(&image_create_info);
+    ASSERT_TRUE(image2.initialized());
+    image_view_create_info.image = image2.handle();
+
+    VkImageView view = VK_NULL_HANDLE;
+    // VkImageViewUsageCreateInfo::usage must not include any bits that were not set in
+    // VkImageStencilUsageCreateInfo::stencilUsage
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageViewCreateInfo-pNext-02663");
+    // VkImageViewUsageCreateInfo::usage must not include any bits that were not set in VkImageCreateInfo::usage
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageViewCreateInfo-pNext-02664");
+    VkResult err = vk::CreateImageView(m_device->device(), &image_view_create_info, nullptr, &view);
+    m_errorMonitor->VerifyFound();
+    if (VK_SUCCESS == err) {
+        vk::DestroyImageView(m_device->device(), view, nullptr);
+    }
+}
+
 TEST_F(VkLayerTest, CreateImageViewNoMemoryBoundToImage) {
     VkResult err;
 
@@ -7093,6 +7353,140 @@ TEST_F(VkLayerTest, CornerSampledImageNV) {
     image_create_info.extent = {8, 8, 1};
     image_create_info.mipLevels = 4;  // 3 = ceil(log2(8))
     CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-mipLevels-00958");
+}
+
+TEST_F(VkLayerTest, ImageStencilCreate) {
+    TEST_DESCRIPTION("Verify ImageStencil create info.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required instance extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    VkPhysicalDeviceFeatures device_features = {};
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
+    device_features.shaderStorageImageMultisample = VK_FALSE;  // Force multisampled storage images off
+
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME)) {
+        printf("%s VK_EXT_separate_stencil_usage Extension not supported, skipping tests\n", kSkipPrefix);
+        return;
+    }
+    m_device_extension_names.push_back(VK_EXT_SEPARATE_STENCIL_USAGE_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitState(&device_features));
+
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = nullptr;
+    image_create_info.flags = 0;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent = {64, 64, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_create_info.queueFamilyIndexCount = 0;
+    image_create_info.pQueueFamilyIndices = nullptr;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImageStencilUsageCreateInfoEXT image_stencil_create_info = {};
+    image_stencil_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO_EXT;
+    image_stencil_create_info.pNext = nullptr;
+    image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_STORAGE_BIT;
+
+    image_create_info.pNext = &image_stencil_create_info;
+
+    VkPhysicalDeviceImageFormatInfo2 image_format_info2 = {};
+    image_format_info2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2;
+    image_format_info2.pNext = &image_stencil_create_info;
+    image_format_info2.format = image_create_info.format;
+    image_format_info2.type = image_create_info.imageType;
+    image_format_info2.tiling = image_create_info.tiling;
+    image_format_info2.usage = image_create_info.usage;
+    image_format_info2.flags = image_create_info.flags;
+
+    VkImageFormatProperties2 image_format_properties2 = {};
+    image_format_properties2.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2;
+    image_format_properties2.pNext = nullptr;
+    image_format_properties2.imageFormatProperties = {};
+
+    // when including VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, must not include bits other than
+    // VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT or VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT
+    image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539");
+    vk::GetPhysicalDeviceImageFormatProperties2(m_device->phy().handle(), &image_format_info2, &image_format_properties2);
+    m_errorMonitor->VerifyFound();
+    // test vkCreateImage as well for this case
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539");
+
+    const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
+
+    if (dev_limits.maxFramebufferWidth != UINT32_MAX) {
+        // depth-stencil format image with VkImageStencilUsageCreateInfo with
+        // VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT set cannot have image width exceeding device maximum
+        image_create_info.format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+        image_create_info.extent = {dev_limits.maxFramebufferWidth + 1, 64, 1};
+        image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-Format-02536");
+    } else {
+        printf("%s VkPhysicalDeviceLimits::maxFramebufferWidth is already UINT32_MAX; skipping part of test.\n", kSkipPrefix);
+    }
+
+    if (dev_limits.maxFramebufferHeight != UINT32_MAX) {
+        // depth-stencil format image with VkImageStencilUsageCreateInfo with
+        // VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT set cannot have image height exceeding device maximum
+        image_create_info.format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+        image_create_info.extent = {64, dev_limits.maxFramebufferHeight + 1, 1};
+        image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02537");
+    } else {
+        printf("%s VkPhysicalDeviceLimits::maxFramebufferHeight is already UINT32_MAX; skipping part of test.\n", kSkipPrefix);
+    }
+
+    // depth-stencil format image with VkImageStencilUsageCreateInfo with
+    // VK_IMAGE_USAGE_STORAGE_BIT and the multisampled storage images feature
+    // is not enabled, image samples must be VK_SAMPLE_COUNT_1_BIT
+    image_create_info.format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    image_create_info.extent = {64, 64, 1};
+    image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_STORAGE_BIT;
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02538");
+
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+
+    // depth-stencil format image with VkImageStencilUsageCreateInfo, usage includes
+    // VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, so VkImageStencilUsageCreateInfo::stencilUsage
+    // must also include VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+    image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02795");
+
+    // depth-stencil format image with VkImageStencilUsageCreateInfo, usage does not include
+    // VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, so VkImageStencilUsageCreateInfo::stencilUsage
+    // must also not include VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02796");
+
+    // depth-stencil format image with VkImageStencilUsageCreateInfo, usage includes
+    // VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, so VkImageStencilUsageCreateInfo::stencilUsage
+    // must also include VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+    image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_STORAGE_BIT;
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02797");
+
+    // depth-stencil format image with VkImageStencilUsageCreateInfo, usage does not include
+    // VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, so VkImageStencilUsageCreateInfo::stencilUsage
+    // must also not include VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02798");
 }
 
 TEST_F(VkLayerTest, CreateYCbCrSampler) {
