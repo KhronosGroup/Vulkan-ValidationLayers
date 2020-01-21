@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2019 The Khronos Group Inc.
- * Copyright (c) 2015-2019 Valve Corporation
- * Copyright (c) 2015-2019 LunarG, Inc.
+/* Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -179,11 +179,11 @@ typedef struct _debug_report_data {
     std::unordered_map<VkCommandBuffer, std::unique_ptr<LoggingLabelState>> debugUtilsCmdBufLabels;
     // This mutex is defined as mutable since the normal usage for a debug report object is as 'const'. The mutable keyword allows
     // the layers to continue this pattern, but also allows them to use/change this specific member for synchronization purposes.
-    mutable std::mutex debug_report_mutex;
+    mutable std::mutex debug_output_mutex;
     const void *instance_pnext_chain{};
 
     void DebugReportSetUtilsObjectName(const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
-        std::unique_lock<std::mutex> lock(debug_report_mutex);
+        std::unique_lock<std::mutex> lock(debug_output_mutex);
         if (pNameInfo->pObjectName) {
             debugUtilsObjectNameMap[pNameInfo->objectHandle] = pNameInfo->pObjectName;
         } else {
@@ -192,7 +192,7 @@ typedef struct _debug_report_data {
     }
 
     void DebugReportSetMarkerObjectName(const VkDebugMarkerObjectNameInfoEXT *pNameInfo) {
-        std::unique_lock<std::mutex> lock(debug_report_mutex);
+        std::unique_lock<std::mutex> lock(debug_output_mutex);
         if (pNameInfo->pObjectName) {
             debugObjectNameMap[pNameInfo->object] = pNameInfo->pObjectName;
         } else {
@@ -447,7 +447,7 @@ static inline void DebugAnnotFlagsToReportFlags(VkDebugUtilsMessageSeverityFlagB
 
 static inline void layer_debug_utils_destroy_instance(debug_report_data *debug_data) {
     if (debug_data) {
-        std::unique_lock<std::mutex> lock(debug_data->debug_report_mutex);
+        std::unique_lock<std::mutex> lock(debug_data->debug_output_mutex);
         RemoveAllMessageCallbacks(debug_data, debug_data->debug_callback_list);
         lock.unlock();
         delete (debug_data);
@@ -456,7 +456,7 @@ static inline void layer_debug_utils_destroy_instance(debug_report_data *debug_d
 
 template <typename T>
 static inline void layer_destroy_callback(debug_report_data *debug_data, T callback, const VkAllocationCallbacks *allocator) {
-    std::unique_lock<std::mutex> lock(debug_data->debug_report_mutex);
+    std::unique_lock<std::mutex> lock(debug_data->debug_output_mutex);
     RemoveDebugUtilsCallback(debug_data, debug_data->debug_callback_list, CastToUint64(callback));
 }
 
@@ -464,7 +464,7 @@ template <typename TCreateInfo, typename TCallback>
 static inline void layer_create_callback(DebugCallbackStatusFlags callback_status, debug_report_data *debug_data,
                                          const TCreateInfo *create_info, const VkAllocationCallbacks *allocator,
                                          TCallback *callback) {
-    std::unique_lock<std::mutex> lock(debug_data->debug_report_mutex);
+    std::unique_lock<std::mutex> lock(debug_data->debug_output_mutex);
 
     debug_data->debug_callback_list.emplace_back(VkLayerDbgFunctionState());
     auto &callback_state = debug_data->debug_callback_list.back();
@@ -588,7 +588,7 @@ static inline int vasprintf(char **strp, char const *fmt, va_list ap) {
 }
 #endif
 
-// This must be called with the debug_report_mutex already held
+// This must be called with the debug_output_mutex already held
 static inline bool LogMsgLocked(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
                                 uint64_t src_object, const std::string &vuid_text, char *err_msg) {
     std::string str_plus_spec_text(err_msg ? err_msg : "Allocation failure");
@@ -635,7 +635,7 @@ static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flag
 static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
                            uint64_t src_object, const std::string &vuid_text, const char *format, ...) {
     if (!debug_data) return false;
-    std::unique_lock<std::mutex> lock(debug_data->debug_report_mutex);
+    std::unique_lock<std::mutex> lock(debug_data->debug_output_mutex);
     VkFlags local_severity = 0;
     VkFlags local_type = 0;
     DebugReportFlagsToAnnotFlags(msg_flags, true, &local_severity, &local_type);
@@ -803,7 +803,7 @@ static LoggingLabelState *GetLoggingLabelState(Map *map, typename Map::key_type 
 
 static inline void BeginQueueDebugUtilsLabel(debug_report_data *report_data, VkQueue queue,
                                              const VkDebugUtilsLabelEXT *label_info) {
-    std::unique_lock<std::mutex> lock(report_data->debug_report_mutex);
+    std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
     if (nullptr != label_info && nullptr != label_info->pLabelName) {
         auto *label_state = GetLoggingLabelState(&report_data->debugUtilsQueueLabels, queue, /* insert */ true);
         assert(label_state);
@@ -815,7 +815,7 @@ static inline void BeginQueueDebugUtilsLabel(debug_report_data *report_data, VkQ
 }
 
 static inline void EndQueueDebugUtilsLabel(debug_report_data *report_data, VkQueue queue) {
-    std::unique_lock<std::mutex> lock(report_data->debug_report_mutex);
+    std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
     auto *label_state = GetLoggingLabelState(&report_data->debugUtilsQueueLabels, queue, /* insert */ false);
     if (label_state) {
         // Pop the normal item
@@ -830,7 +830,7 @@ static inline void EndQueueDebugUtilsLabel(debug_report_data *report_data, VkQue
 
 static inline void InsertQueueDebugUtilsLabel(debug_report_data *report_data, VkQueue queue,
                                               const VkDebugUtilsLabelEXT *label_info) {
-    std::unique_lock<std::mutex> lock(report_data->debug_report_mutex);
+    std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
     auto *label_state = GetLoggingLabelState(&report_data->debugUtilsQueueLabels, queue, /* insert */ true);
 
     // TODO: Determine if this is the correct semantics for insert label vs. begin/end, perserving existing semantics for now
@@ -839,7 +839,7 @@ static inline void InsertQueueDebugUtilsLabel(debug_report_data *report_data, Vk
 
 static inline void BeginCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuffer command_buffer,
                                            const VkDebugUtilsLabelEXT *label_info) {
-    std::unique_lock<std::mutex> lock(report_data->debug_report_mutex);
+    std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
     if (nullptr != label_info && nullptr != label_info->pLabelName) {
         auto *label_state = GetLoggingLabelState(&report_data->debugUtilsCmdBufLabels, command_buffer, /* insert */ true);
         assert(label_state);
@@ -851,7 +851,7 @@ static inline void BeginCmdDebugUtilsLabel(debug_report_data *report_data, VkCom
 }
 
 static inline void EndCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuffer command_buffer) {
-    std::unique_lock<std::mutex> lock(report_data->debug_report_mutex);
+    std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
     auto *label_state = GetLoggingLabelState(&report_data->debugUtilsCmdBufLabels, command_buffer, /* insert */ false);
     if (label_state) {
         // Pop the normal item
@@ -866,7 +866,7 @@ static inline void EndCmdDebugUtilsLabel(debug_report_data *report_data, VkComma
 
 static inline void InsertCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuffer command_buffer,
                                             const VkDebugUtilsLabelEXT *label_info) {
-    std::unique_lock<std::mutex> lock(report_data->debug_report_mutex);
+    std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
     auto *label_state = GetLoggingLabelState(&report_data->debugUtilsCmdBufLabels, command_buffer, /* insert */ true);
     assert(label_state);
 
@@ -876,7 +876,7 @@ static inline void InsertCmdDebugUtilsLabel(debug_report_data *report_data, VkCo
 
 // Current tracking beyond a single command buffer scope is incorrect, and even when it is we need to be able to clean up
 static inline void ResetCmdDebugUtilsLabel(debug_report_data *report_data, VkCommandBuffer command_buffer) {
-    std::unique_lock<std::mutex> lock(report_data->debug_report_mutex);
+    std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
     auto *label_state = GetLoggingLabelState(&report_data->debugUtilsCmdBufLabels, command_buffer, /* insert */ false);
     if (label_state) {
         label_state->labels.clear();

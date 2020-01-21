@@ -2619,7 +2619,7 @@ class ValidationObject {
         template <typename HANDLE_T>
         bool LogError(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
 
-            std::unique_lock<std::mutex> lock(report_data->debug_report_mutex);
+            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
             // Avoid logging cost if msg is to be ignored
             if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) ||
                 !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
@@ -2639,7 +2639,7 @@ class ValidationObject {
 
         template <typename HANDLE_T>
         bool LogWarning(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
-            std::unique_lock<std::mutex> lock(report_data->debug_report_mutex);
+            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
             // Avoid logging cost if msg is to be ignored
             if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) ||
                 !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
@@ -2659,7 +2659,7 @@ class ValidationObject {
 
         template <typename HANDLE_T>
         bool LogPerformanceWarning(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
-            std::unique_lock<std::mutex> lock(report_data->debug_report_mutex);
+            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
             // Avoid logging cost if msg is to be ignored
             if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) ||
                 !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)) {
@@ -2679,7 +2679,7 @@ class ValidationObject {
 
         template <typename HANDLE_T>
         bool LogInfo(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
-            std::unique_lock<std::mutex> lock(report_data->debug_report_mutex);
+            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
             // Avoid logging cost if msg is to be ignored
             if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) ||
                 !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
