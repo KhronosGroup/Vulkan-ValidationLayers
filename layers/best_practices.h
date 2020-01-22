@@ -25,6 +25,42 @@
 
 static const uint32_t kMemoryObjectWarningLimit = 250;
 
+static const std::set<std::string> kDeprecatedExtensionNames = {VK_KHR_16BIT_STORAGE_EXTENSION_NAME,
+                                                                VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
+                                                                VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME,
+                                                                VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME,
+                                                                VK_KHR_DEVICE_GROUP_EXTENSION_NAME,
+                                                                VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME,
+                                                                VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME,
+                                                                VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME,
+                                                                VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
+                                                                VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
+                                                                VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
+                                                                VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
+                                                                VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+                                                                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+                                                                VK_KHR_MAINTENANCE1_EXTENSION_NAME,
+                                                                VK_KHR_MAINTENANCE2_EXTENSION_NAME,
+                                                                VK_KHR_MAINTENANCE3_EXTENSION_NAME,
+                                                                VK_KHR_MULTIVIEW_EXTENSION_NAME,
+                                                                VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME,
+                                                                VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME,
+                                                                VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
+                                                                VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME,
+                                                                VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME,
+                                                                VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+                                                                VK_EXT_DEBUG_MARKER_EXTENSION_NAME,
+                                                                VK_EXT_VALIDATION_FLAGS_EXTENSION_NAME,
+                                                                VK_AMD_DRAW_INDIRECT_COUNT_EXTENSION_NAME,
+                                                                VK_AMD_GPU_SHADER_HALF_FLOAT_EXTENSION_NAME,
+                                                                VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME,
+                                                                VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME,
+                                                                VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME,
+                                                                VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
+                                                                VK_NV_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
+                                                                VK_NV_GLSL_SHADER_EXTENSION_NAME,
+                                                                VK_NV_WIN32_KEYED_MUTEX_EXTENSION_NAME};
+
 class BestPractices : public ValidationStateTracker {
   public:
     using StateTracker = ValidationStateTracker;
@@ -141,6 +177,5 @@ class BestPractices : public ValidationStateTracker {
 
   private:
     uint32_t instance_api_version;
-
     uint32_t num_mem_objects = 0;
 };
