@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2019 The Khronos Group Inc.
- * Copyright (c) 2015-2019 Valve Corporation
- * Copyright (c) 2015-2019 LunarG, Inc.
- * Copyright (C) 2015-2019 Google Inc.
+/* Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
+ * Copyright (C) 2015-2020 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,12 @@
 
 static const char DECORATE_UNUSED *kVUID_BestPractices_CreateInstance_ExtensionMismatch =
     "UNASSIGNED-BestPractices-vkCreateInstance-extension-mismatch";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_ExtensionMismatch =
+    "UNASSIGNED-BestPractices-vkCreateDevice-extension-mismatch";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateInstance_DeprecatedExtension =
+    "UNASSIGNED-BestPractices-vkCreateInstance-deprecated-extension";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_DeprecatedExtension =
+    "UNASSIGNED-BestPractices-vkCreateInstance-deprecated-extension";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_API_Mismatch =
     "UNASSIGNED-BestPractices-vkCreateDevice-API-version-mismatch";
 static const char DECORATE_UNUSED *kVUID_BestPractices_SharingModeExclusive =
