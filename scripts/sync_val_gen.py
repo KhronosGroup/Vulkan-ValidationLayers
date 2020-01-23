@@ -21,6 +21,7 @@
 debug_table_parse = False
 debug_in_bit_order = False
 debug_top_level = False
+debug_queue_caps = False
 
 # Snipped from chapters/synchronization.txt -- tage v1.1.123
 snippet_access_types_supported = '''
@@ -139,6 +140,10 @@ def ParseAccessType(table_text):
                 print("stage_column:", stage_column)
             if stage_column.startswith(' N/A'):
                 continue
+            if stage_column.startswith(' None required'):
+                continue
+            stage_column = stage_column.replace(', or ',', ') # Oxford comma
+            stage_column = stage_column.replace(' or ',', ') # !Oxford comma
             stage_column = stage_column.replace(', ',',')
             stage_column = stage_column.rstrip(',')
             stages = stage_column.split(',')
@@ -162,7 +167,7 @@ def CreateStageAccessTable(stage_order, access_stage_table):
     for access, stages in access_stage_table.items():
         for stage in stages:
             stage_access_table[stage].append(access)
-    
+
     return stage_access_table
 
 
@@ -189,11 +194,11 @@ VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
 VK_PIPELINE_STAGE_TRANSFER_BIT
 VK_PIPELINE_STAGE_COMMAND_PROCESS_BIT_NVX
-VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
-VK_PIPELINE_STAGE_HOST_BIT
 VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT
 VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV
 VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV
+VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
+VK_PIPELINE_STAGE_HOST_BIT
 '''
 
 sync_enum_types = ('VkPipelineStageFlagBits', 'VkAccessFlagBits' )
@@ -206,7 +211,7 @@ def InBitOrder(tag, enum_elem):
         name = elem.get('name')
         if not bitpos:
             continue
-    
+
         if name.endswith("MAX_ENUM"):
             break
 
@@ -220,6 +225,56 @@ def InBitOrder(tag, enum_elem):
         in_bit_order.append({'name': entry['name'], 'mask': (1 << bitpos), 'bitpos': bitpos})
 
     return in_bit_order
+
+
+snippet_pipeline_stages_supported = '''
+[[synchronization-pipeline-stages-supported]]
+.Supported pipeline stage flags
+[cols="60%,40%",options="header"]
+|====
+|Pipeline stage flag                                          | Required queue capability flag
+|ename:VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT                      | None required
+|ename:VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT                    | ename:VK_QUEUE_GRAPHICS_BIT or ename:VK_QUEUE_COMPUTE_BIT
+|ename:VK_PIPELINE_STAGE_VERTEX_INPUT_BIT                     | ename:VK_QUEUE_GRAPHICS_BIT
+|ename:VK_PIPELINE_STAGE_VERTEX_SHADER_BIT                    | ename:VK_QUEUE_GRAPHICS_BIT
+|ename:VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT      | ename:VK_QUEUE_GRAPHICS_BIT
+|ename:VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT   | ename:VK_QUEUE_GRAPHICS_BIT
+|ename:VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT                  | ename:VK_QUEUE_GRAPHICS_BIT
+|ename:VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT                  | ename:VK_QUEUE_GRAPHICS_BIT
+|ename:VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT             | ename:VK_QUEUE_GRAPHICS_BIT
+|ename:VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT              | ename:VK_QUEUE_GRAPHICS_BIT
+|ename:VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT          | ename:VK_QUEUE_GRAPHICS_BIT
+|ename:VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT                   | ename:VK_QUEUE_COMPUTE_BIT
+|ename:VK_PIPELINE_STAGE_TRANSFER_BIT                         | ename:VK_QUEUE_GRAPHICS_BIT, ename:VK_QUEUE_COMPUTE_BIT or ename:VK_QUEUE_TRANSFER_BIT
+|ename:VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT                   | None required
+|ename:VK_PIPELINE_STAGE_HOST_BIT                             | None required
+|ename:VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT                     | ename:VK_QUEUE_GRAPHICS_BIT
+|ename:VK_PIPELINE_STAGE_ALL_COMMANDS_BIT                     | None required
+ifdef::VK_EXT_conditional_rendering[]
+|ename:VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT        | ename:VK_QUEUE_GRAPHICS_BIT or ename:VK_QUEUE_COMPUTE_BIT
+endif::VK_EXT_conditional_rendering[]
+ifdef::VK_EXT_transform_feedback[]
+|ename:VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT           | ename:VK_QUEUE_GRAPHICS_BIT
+endif::VK_EXT_transform_feedback[]
+ifdef::VK_NVX_device_generated_commands[]
+|ename:VK_PIPELINE_STAGE_COMMAND_PROCESS_BIT_NVX              | ename:VK_QUEUE_GRAPHICS_BIT or ename:VK_QUEUE_COMPUTE_BIT
+endif::VK_NVX_device_generated_commands[]
+ifdef::VK_NV_shading_rate_image[]
+|ename:VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV            | ename:VK_QUEUE_GRAPHICS_BIT
+endif::VK_NV_shading_rate_image[]
+ifdef::VK_NV_mesh_shader[]
+|ename:VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV                   | ename:VK_QUEUE_GRAPHICS_BIT
+|ename:VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV                   | ename:VK_QUEUE_GRAPHICS_BIT
+endif::VK_NV_mesh_shader[]
+ifdef::VK_NV_ray_tracing[]
+|ename:VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV            | ename:VK_QUEUE_COMPUTE_BIT
+|ename:VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV  | ename:VK_QUEUE_COMPUTE_BIT
+endif::VK_NV_ray_tracing[]
+ifdef::VK_EXT_fragment_density_map[]
+|ename:VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT     | ename:VK_QUEUE_GRAPHICS_BIT
+endif::VK_EXT_fragment_density_map[]
+|====
+'''
 
 def BitSuffixed(name):
     alt_bit = ('_ANDROID', '_EXT', '_IMG', '_KHR', '_NV', '_NVX')
@@ -239,7 +294,7 @@ def CreateStageAccessCombinations(config, stage_order, stage_access_types):
         mini_stage = stage.lstrip()
         if mini_stage.startswith(enum_prefix):
             mini_stage = mini_stage.replace(enum_prefix,"")
-        else: 
+        else:
             mini_stage = mini_stage.replace("VK_PIPELINE_STAGE_", "")
         mini_stage = mini_stage.replace("_BIT", "")
 
@@ -255,11 +310,27 @@ def CreateStageAccessCombinations(config, stage_order, stage_access_types):
                     'stage_access_bit': stage_access_bit,
                     'index': index,
                     'stage': stage,
-                    'mini_stage': mini_stage,
                     'access': access,
-                    'is_read': 'true' if is_read else 'false',
-                    'mini_access': mini_access })
+                    'is_read': 'true' if is_read else 'false' })
             index += 1
+
+    # Add synthetic stage/access
+    synth_stage_access = [ 'IMAGE_LAYOUT_TRANSITION', 'QUEUE_FAMILY_OWNERSHIP_TRANSFER']
+    stage = 'VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM'  # The only invalid values available.
+    access = 'VK_ACCESS_FLAG_BITS_MAX_ENUM'
+    for synth in synth_stage_access :
+        stage_access = enum_prefix + synth
+        stage_access_bit = BitSuffixed(stage_access)
+        is_read = False # both ILT and QFO are R/W operations
+        stage_accesses.append({
+                    'stage_access': stage_access,
+                    'stage_access_string' : '"' + stage_access + '"',
+                    'stage_access_bit': stage_access_bit,
+                    'index': index,
+                    'stage': stage,
+                    'access': access,
+                    'is_read': 'true' if is_read else 'false' })
+        index += 1
 
     return stage_accesses
 
@@ -285,7 +356,7 @@ def StageAccessEnums(stage_accesses, config):
     output.append('};')
     output.append('')
 
-    map_name = var_prefix + 'StageAccessIndexByStageAccessBit' 
+    map_name = var_prefix + 'StageAccessIndexByStageAccessBit'
     output.append('// Map of the StageAccessIndices from the StageAccess Bit')
     output.append('static std::map<{}, {}> {}  = {{'.format(sync_mask_name, ordinal_name, map_name))
     output.extend([ '{}{{ {}, {} }},'.format(indent, e['stage_access_bit'], e['stage_access'])  for e in stage_accesses])
@@ -316,13 +387,14 @@ def StageAccessEnums(stage_accesses, config):
 
     return output
 
-def CrossReferenceTable(table_name, table_desc, key_type, key_vec_base, mask_map, config):
-    mask_type = config['sync_mask_name']
+def UnpackField(map, field='name'):
+    return [ e[field] for e in map ]
+
+def CrossReferenceTable(table_name, table_desc, key_type, mapped_type, key_vec, mask_map, config):
     indent = config['indent']
-    key_vec =  [ e['name'] for e in key_vec_base]
 
     table = ['// ' + table_desc]
-    table.append('static std::map<{}, {}> {} = {{'.format(key_type, mask_type, config['var_prefix'] + table_name))
+    table.append('static std::map<{}, {}> {} = {{'.format(key_type, mapped_type, config['var_prefix'] + table_name))
 
     for mask_key in key_vec:
         mask_vec = mask_map[mask_key]
@@ -374,7 +446,9 @@ def StageAccessCrossReference(sync_enum, stage_access_combinations, config):
     for stage_access_combo in stage_access_combinations:
         combo_bit = stage_access_combo['stage_access_bit']
         stage = stage_access_combo['stage']
+        if stage == 'VK_PIPELINE_STAGE_FLAG_BITS_MAX_ENUM': continue
         access = stage_access_combo['access']
+        if access == 'VK_ACCESS_FLAG_BITS_MAX_ENUM' : continue
         stage_access_mask_stage_map[stage].append(combo_bit)
         stage_access_mask_access_map[access].append(combo_bit)
         stage_access_stage_access_map[stage][access] = stage_access_combo['stage_access']
@@ -382,12 +456,14 @@ def StageAccessCrossReference(sync_enum, stage_access_combinations, config):
     # sas: stage_access masks by stage used to build up SyncMaskTypes from VkPipelineStageFlagBits
     sas_desc = 'Bit order mask of stage_access bit for each stage'
     sas_name = 'StageAccessMaskByStageBit'
-    output.extend(CrossReferenceTable(sas_name, sas_desc, 'VkPipelineStageFlags', stages_in_bit_order, stage_access_mask_stage_map, config))
+    output.extend(CrossReferenceTable(sas_name, sas_desc, 'VkPipelineStageFlags', config['sync_mask_name'],
+                                      UnpackField(stages_in_bit_order), stage_access_mask_stage_map, config))
 
     # saa -- stage_access by access used to build up SyncMaskTypes from VkAccessFlagBits
     saa_name = 'StageAccessMaskByAccessBit'
     saa_desc = 'Bit order mask of stage_access bit for each access'
-    output.extend(CrossReferenceTable(saa_name, saa_desc, 'VkAccessFlags', access_in_bit_order, stage_access_mask_access_map, config))
+    output.extend(CrossReferenceTable(saa_name, saa_desc, 'VkAccessFlags',  config['sync_mask_name'],
+                                      UnpackField(access_in_bit_order), stage_access_mask_access_map, config))
 
     #sasa -- stage access index by stage by access
     sasa_name = 'StageAccessIndexByStageAndAccess'
@@ -406,13 +482,39 @@ def GenerateStaticMask(name, desc, bits, config):
     return output
 
 def ReadWriteMasks(stage_access_combinations, config):
-    read_list = [ e['stage_access_bit'] for e in stage_access_combinations if e['is_read'] is 'true']
-    write_list = [ e['stage_access_bit'] for e in stage_access_combinations if not e['is_read'] is 'true']
+    read_list = [ e['stage_access_bit'] for e in stage_access_combinations if e['is_read']  == 'true']
+    write_list = [ e['stage_access_bit'] for e in stage_access_combinations if not e['is_read']  == 'true']
     output = ['// Constants defining the mask of all read and write stage_access states']
     output.extend(GenerateStaticMask('Read',  'Mask of all read StageAccess bits', read_list, config))
     output.extend(GenerateStaticMask('Write',  'Mask of all write StageAccess bits', write_list, config))
 
     return output
+
+def AllCommandsByQueueCapability(stage_order, stage_queue_table, config):
+    queue_cap_set = set()
+    for stage, queue_flag_list in stage_queue_table.items():
+        for queue_flag in queue_flag_list:
+            queue_cap_set.add(queue_flag)
+
+    queue_caps = sorted(queue_cap_set)
+    queue_flag_map = { queue_flag:list() for queue_flag in queue_caps }
+
+    for stage in stage_order:
+        if stage == 'VK_PIPELINE_STAGE_ALL_COMMANDS_BIT' : continue # this is the one we're skipping
+        if stage == 'VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT' : continue # we'll use the VK_QUEUE_GRAPHICS_BIT to expand this too
+
+        queue_flag_list = stage_queue_table[stage]
+
+        if len(queue_flag_list) == 0:
+            queue_flag_list = queue_caps
+
+        if debug_queue_caps: print(stage, queue_flag_list)
+        for queue_flag in queue_flag_list:
+             queue_flag_map[queue_flag].append(stage)
+
+    name = "AllCommandStagesByQueueFlags"
+    desc = 'Pipeline stages corresponding to VK_PIPELINE_STAGE_ALL_COMMANDS_BIT for each VkQueueFlagBits'
+    return CrossReferenceTable(name, desc, 'VkQueueFlagBits', 'VkPipelineStageFlags', queue_caps, queue_flag_map, config)
 
 def GenSyncTypeHelper(gen) :
     config = {
@@ -437,6 +539,7 @@ def GenSyncTypeHelper(gen) :
         lines.append('// Access types \n//    ' + '\n//    '.join(access_types) +  '\n' * 2)
 
     access_stage_table = ParseAccessType(snippet_access_types_supported)
+    stage_queue_cap_table = ParseAccessType(snippet_pipeline_stages_supported)
     stage_access_table = CreateStageAccessTable(stage_order, access_stage_table)
     stage_access_combinations = CreateStageAccessCombinations(config, stage_order, stage_access_table)
     lines.extend(StageAccessEnums(stage_access_combinations, config))
@@ -444,4 +547,5 @@ def GenSyncTypeHelper(gen) :
     lines.extend(StageAccessCrossReference(gen.sync_enum, stage_access_combinations, config))
     lines.extend(ReadWriteMasks(stage_access_combinations, config))
 
+    lines.extend(AllCommandsByQueueCapability(stage_order, stage_queue_cap_table, config))
     return  '\n'.join(lines)

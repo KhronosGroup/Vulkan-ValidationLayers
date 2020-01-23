@@ -499,6 +499,19 @@ class ValidationStateTracker : public ValidationObject {
     PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState();
     const PHYSICAL_DEVICE_STATE* GetPhysicalDeviceState() const;
 
+    VkQueueFlags GetQueueFlags(const COMMAND_POOL_STATE& cp_state) const {
+        return GetPhysicalDeviceState()->queue_family_properties[cp_state.queueFamilyIndex].queueFlags;
+    }
+
+    VkQueueFlags GetQueueFlags(const CMD_BUFFER_STATE& cb_state) const {
+        VkQueueFlags queue_flags = 0;
+        auto pool = cb_state.command_pool.get();
+        if (pool) {
+            queue_flags = GetQueueFlags(*pool);
+        }
+        return queue_flags;
+    }
+
     using CommandBufferResetCallback = std::function<void(VkCommandBuffer)>;
     std::unique_ptr<CommandBufferResetCallback> command_buffer_reset_callback;
     template <typename Fn>
