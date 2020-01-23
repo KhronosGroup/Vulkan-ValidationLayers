@@ -80,13 +80,6 @@ const uint32_t ExtEnumBaseValue = 1000000000;
 // The value of all VK_xxx_MAX_ENUM tokens
 const uint32_t MaxEnumValue = 0x7FFFFFFF;
 
-// Misc parameters of log_msg that are likely constant per command (or low frequency change)
-struct LogMiscParams {
-    VkDebugReportObjectTypeEXT objectType;
-    uint64_t srcObject;
-    const char *api_name;
-};
-
 class StatelessValidation : public ValidationObject {
   public:
     VkPhysicalDeviceLimits device_limits = {};
@@ -134,15 +127,13 @@ class StatelessValidation : public ValidationObject {
      */
     template <typename T>
     bool ValidateGreaterThan(const T value, const T lower_bound, const ParameterName &parameter_name, const std::string &vuid,
-                             const LogMiscParams &misc) const {
+                             const char *api_name) const {
         bool skip_call = false;
 
         if (value <= lower_bound) {
             std::ostringstream ss;
-            ss << misc.api_name << ": parameter " << parameter_name.get_name() << " (= " << value << ") is greater than "
-               << lower_bound;
-            skip_call |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, misc.objectType, misc.srcObject, vuid, "%s", ss.str().c_str());
+            ss << api_name << ": parameter " << parameter_name.get_name() << " (= " << value << ") is greater than " << lower_bound;
+            skip_call |= LogError(device, vuid, "%s", ss.str().c_str());
         }
 
         return skip_call;
@@ -150,8 +141,8 @@ class StatelessValidation : public ValidationObject {
 
     template <typename T>
     bool ValidateGreaterThanZero(const T value, const ParameterName &parameter_name, const std::string &vuid,
-                                 const LogMiscParams &misc) const {
-        return ValidateGreaterThan(value, T{0}, parameter_name, vuid, misc);
+                                 const char *api_name) const {
+        return ValidateGreaterThan(value, T{0}, parameter_name, vuid, api_name);
     }
     /**
      * Validate a required pointer.
@@ -168,8 +159,8 @@ class StatelessValidation : public ValidationObject {
         bool skip_call = false;
 
         if (value == NULL) {
-            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                                 "%s: required parameter %s specified as NULL.", apiName, parameterName.get_name().c_str());
+            skip_call |=
+                LogError(device, vuid, "%s: required parameter %s specified as NULL.", apiName, parameterName.get_name().c_str());
         }
 
         return skip_call;
@@ -199,16 +190,14 @@ class StatelessValidation : public ValidationObject {
 
         // Count parameters not tagged as optional cannot be 0
         if (countRequired && (count == 0)) {
-            skip_call |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, count_required_vuid,
-                        "%s: parameter %s must be greater than 0.", apiName, countName.get_name().c_str());
+            skip_call |= LogError(device, count_required_vuid, "%s: parameter %s must be greater than 0.", apiName,
+                                  countName.get_name().c_str());
         }
 
         // Array parameters not tagged as optional cannot be NULL, unless the count is 0
         if (arrayRequired && (count != 0) && (*array == NULL)) {
-            skip_call |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, array_required_vuid,
-                        "%s: required parameter %s specified as NULL.", apiName, arrayName.get_name().c_str());
+            skip_call |= LogError(device, array_required_vuid, "%s: required parameter %s specified as NULL.", apiName,
+                                  arrayName.get_name().c_str());
         }
 
         return skip_call;
@@ -241,9 +230,8 @@ class StatelessValidation : public ValidationObject {
 
         if (count == NULL) {
             if (countPtrRequired) {
-                skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                     kVUID_PVError_RequiredParameter, "%s: required parameter %s specified as NULL", apiName,
-                                     countName.get_name().c_str());
+                skip_call |= LogError(device, kVUID_PVError_RequiredParameter, "%s: required parameter %s specified as NULL",
+                                      apiName, countName.get_name().c_str());
             }
         } else {
             skip_call |= validate_array(apiName, countName, arrayName, *array ? (*count) : 0, &array, countValueRequired,
@@ -275,13 +263,12 @@ class StatelessValidation : public ValidationObject {
 
         if (value == NULL) {
             if (required) {
-                skip_call |=
-                    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, struct_vuid,
-                            "%s: required parameter %s specified as NULL", apiName, parameterName.get_name().c_str());
+                skip_call |= LogError(device, struct_vuid, "%s: required parameter %s specified as NULL", apiName,
+                                      parameterName.get_name().c_str());
             }
         } else if (value->sType != sType) {
-            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, stype_vuid,
-                                 "%s: parameter %s->sType must be %s.", apiName, parameterName.get_name().c_str(), sTypeName);
+            skip_call |= LogError(device, stype_vuid, "%s: parameter %s->sType must be %s.", apiName,
+                                  parameterName.get_name().c_str(), sTypeName);
         }
 
         return skip_call;
@@ -319,9 +306,8 @@ class StatelessValidation : public ValidationObject {
             // Verify that all structs in the array have the correct type
             for (uint32_t i = 0; i < count; ++i) {
                 if (array[i].sType != sType) {
-                    skip_call |=
-                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, stype_vuid,
-                                "%s: parameter %s[%d].sType must be %s", apiName, arrayName.get_name().c_str(), i, sTypeName);
+                    skip_call |= LogError(device, stype_vuid, "%s: parameter %s[%d].sType must be %s", apiName,
+                                          arrayName.get_name().c_str(), i, sTypeName);
                 }
             }
         }
@@ -358,9 +344,8 @@ class StatelessValidation : public ValidationObject {
 
         if (count == NULL) {
             if (countPtrRequired) {
-                skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                     kVUID_PVError_RequiredParameter, "%s: required parameter %s specified as NULL", apiName,
-                                     countName.get_name().c_str());
+                skip_call |= LogError(device, kVUID_PVError_RequiredParameter, "%s: required parameter %s specified as NULL",
+                                      apiName, countName.get_name().c_str());
             }
         } else {
             skip_call |= validate_struct_type_array(apiName, countName, arrayName, sTypeName, (*count), array, sType,
@@ -386,9 +371,8 @@ class StatelessValidation : public ValidationObject {
         bool skip_call = false;
 
         if (value == VK_NULL_HANDLE) {
-            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                 kVUID_PVError_RequiredParameter, "%s: required parameter %s specified as VK_NULL_HANDLE", api_name,
-                                 parameter_name.get_name().c_str());
+            skip_call |= LogError(device, kVUID_PVError_RequiredParameter, "%s: required parameter %s specified as VK_NULL_HANDLE",
+                                  api_name, parameter_name.get_name().c_str());
         }
 
         return skip_call;
@@ -427,10 +411,9 @@ class StatelessValidation : public ValidationObject {
             // Verify that no handles in the array are VK_NULL_HANDLE
             for (uint32_t i = 0; i < count; ++i) {
                 if (array[i] == VK_NULL_HANDLE) {
-                    skip_call |=
-                        log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                kVUID_PVError_RequiredParameter, "%s: required parameter %s[%d] specified as VK_NULL_HANDLE",
-                                api_name, array_name.get_name().c_str(), i);
+                    skip_call |= LogError(device, kVUID_PVError_RequiredParameter,
+                                          "%s: required parameter %s[%d] specified as VK_NULL_HANDLE", api_name,
+                                          array_name.get_name().c_str(), i);
                 }
             }
         }
@@ -467,9 +450,9 @@ class StatelessValidation : public ValidationObject {
             // Verify that strings in the array are not NULL
             for (uint32_t i = 0; i < count; ++i) {
                 if (array[i] == NULL) {
-                    skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                         kVUID_PVError_RequiredParameter, "%s: required parameter %s[%d] specified as NULL",
-                                         apiName, arrayName.get_name().c_str(), i);
+                    skip_call |=
+                        LogError(device, kVUID_PVError_RequiredParameter, "%s: required parameter %s[%d] specified as NULL",
+                                 apiName, arrayName.get_name().c_str(), i);
                 }
             }
         }
@@ -520,9 +503,8 @@ class StatelessValidation : public ValidationObject {
             if (allowed_type_count == 0) {
                 std::string message = "%s: value of %s must be NULL. ";
                 message += disclaimer;
-                skip_call |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                                     message.c_str(), api_name, parameter_name.get_name().c_str(), header_version,
-                                     parameter_name.get_name().c_str());
+                skip_call |= LogWarning(device, vuid, message.c_str(), api_name, parameter_name.get_name().c_str(), header_version,
+                                        parameter_name.get_name().c_str());
             } else {
                 const VkStructureType *start = allowed_types;
                 const VkStructureType *end = allowed_types + allowed_type_count;
@@ -537,10 +519,8 @@ class StatelessValidation : public ValidationObject {
                          (current->sType != VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO))) {
                         if (cycle_check.find(current->pNext) != cycle_check.end()) {
                             std::string message = "%s: %s chain contains a cycle -- pNext pointer " PRIx64 " is repeated.";
-                            skip_call |=
-                                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        kVUID_PVError_InvalidStructPNext, message.c_str(), api_name,
-                                        parameter_name.get_name().c_str(), reinterpret_cast<uint64_t>(next));
+                            skip_call |= LogError(device, kVUID_PVError_InvalidStructPNext, message.c_str(), api_name,
+                                                  parameter_name.get_name().c_str(), reinterpret_cast<uint64_t>(next));
                             break;
                         } else {
                             cycle_check.insert(current->pNext);
@@ -549,9 +529,8 @@ class StatelessValidation : public ValidationObject {
                         std::string type_name = string_VkStructureType(current->sType);
                         if (unique_stype_check.find(current->sType) != unique_stype_check.end()) {
                             std::string message = "%s: %s chain contains duplicate structure types: %s appears multiple times.";
-                            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                 VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, kVUID_PVError_InvalidStructPNext,
-                                                 message.c_str(), api_name, parameter_name.get_name().c_str(), type_name.c_str());
+                            skip_call |= LogError(device, kVUID_PVError_InvalidStructPNext, message.c_str(), api_name,
+                                                  parameter_name.get_name().c_str(), type_name.c_str());
                         } else {
                             unique_stype_check.insert(current->sType);
                         }
@@ -562,19 +541,17 @@ class StatelessValidation : public ValidationObject {
                                     "%s: %s chain includes a structure with unknown VkStructureType (%d); Allowed structures are "
                                     "[%s]. ";
                                 message += disclaimer;
-                                skip_call |=
-                                    log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,
-                                            0, vuid, message.c_str(), api_name, parameter_name.get_name().c_str(), current->sType,
-                                            allowed_struct_names, header_version, parameter_name.get_name().c_str());
+                                skip_call |= LogWarning(device, vuid, message.c_str(), api_name, parameter_name.get_name().c_str(),
+                                                        current->sType, allowed_struct_names, header_version,
+                                                        parameter_name.get_name().c_str());
                             } else {
                                 std::string message =
                                     "%s: %s chain includes a structure with unexpected VkStructureType %s; Allowed structures are "
                                     "[%s]. ";
                                 message += disclaimer;
-                                skip_call |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT,
-                                                     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid, message.c_str(), api_name,
-                                                     parameter_name.get_name().c_str(), type_name.c_str(), allowed_struct_names,
-                                                     header_version, parameter_name.get_name().c_str());
+                                skip_call |= LogWarning(device, vuid, message.c_str(), api_name, parameter_name.get_name().c_str(),
+                                                        type_name.c_str(), allowed_struct_names, header_version,
+                                                        parameter_name.get_name().c_str());
                             }
                         }
                         skip_call |= ValidatePnextStructContents(api_name, parameter_name, current);
@@ -601,9 +578,8 @@ class StatelessValidation : public ValidationObject {
         bool skip_call = false;
 
         if ((value != VK_TRUE) && (value != VK_FALSE)) {
-            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                 kVUID_PVError_UnrecognizedValue, "%s: value of %s (%d) is neither VK_TRUE nor VK_FALSE", apiName,
-                                 parameterName.get_name().c_str(), value);
+            skip_call |= LogWarning(device, kVUID_PVError_UnrecognizedValue, "%s: value of %s (%d) is neither VK_TRUE nor VK_FALSE",
+                                    apiName, parameterName.get_name().c_str(), value);
         }
 
         return skip_call;
@@ -633,10 +609,10 @@ class StatelessValidation : public ValidationObject {
 
         if (std::find(valid_values.begin(), valid_values.end(), value) == valid_values.end()) {
             skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                        "%s: value of %s (%d) does not fall within the begin..end range of the core %s enumeration tokens and is "
-                        "not an extension added token.",
-                        apiName, parameterName.get_name().c_str(), value, enumName);
+                LogError(device, vuid,
+                         "%s: value of %s (%d) does not fall within the begin..end range of the core %s enumeration tokens and is "
+                         "not an extension added token.",
+                         apiName, parameterName.get_name().c_str(), value, enumName);
         }
 
         return skip;
@@ -675,11 +651,10 @@ class StatelessValidation : public ValidationObject {
         } else {
             for (uint32_t i = 0; i < count; ++i) {
                 if (std::find(valid_values.begin(), valid_values.end(), array[i]) == valid_values.end()) {
-                    skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                         kVUID_PVError_UnrecognizedValue,
-                                         "%s: value of %s[%d] (%d) does not fall within the begin..end range of the core %s "
-                                         "enumeration tokens and is not an extension added token",
-                                         apiName, arrayName.get_name().c_str(), i, array[i], enumName);
+                    skip_call |= LogError(device, kVUID_PVError_UnrecognizedValue,
+                                          "%s: value of %s[%d] (%d) does not fall within the begin..end range of the core %s "
+                                          "enumeration tokens and is not an extension added token",
+                                          apiName, arrayName.get_name().c_str(), i, array[i], enumName);
                 }
             }
         }
@@ -702,8 +677,7 @@ class StatelessValidation : public ValidationObject {
         bool skip_call = false;
 
         if (value != 0) {
-            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                                 "%s: parameter %s must be 0.", api_name, parameter_name.get_name().c_str());
+            skip_call |= LogError(device, vuid, "%s: parameter %s must be 0.", api_name, parameter_name.get_name().c_str());
         }
 
         return skip_call;
@@ -732,16 +706,14 @@ class StatelessValidation : public ValidationObject {
         bool skip_call = false;
 
         if ((value & ~all_flags) != 0) {
-            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                                 "%s: value of %s contains flag bits that are not recognized members of %s", api_name,
-                                 parameter_name.get_name().c_str(), flag_bits_name);
+            skip_call |= LogError(device, vuid, "%s: value of %s contains flag bits that are not recognized members of %s",
+                                  api_name, parameter_name.get_name().c_str(), flag_bits_name);
         }
 
         const bool required = flag_type == kRequiredFlags || flag_type == kRequiredSingleBit;
         const char *zero_vuid = flag_type == kRequiredFlags ? flags_zero_vuid : vuid;
         if (required && value == 0) {
-            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, zero_vuid,
-                                 "%s: value of %s must not be 0.", api_name, parameter_name.get_name().c_str());
+            skip_call |= LogError(device, zero_vuid, "%s: value of %s must not be 0.", api_name, parameter_name.get_name().c_str());
         }
 
         const auto HasMaxOneBitSet = [](const VkFlags f) {
@@ -752,9 +724,9 @@ class StatelessValidation : public ValidationObject {
 
         const bool is_bits_type = flag_type == kRequiredSingleBit || flag_type == kOptionalSingleBit;
         if (is_bits_type && !HasMaxOneBitSet(value)) {
-            skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                                 "%s: value of %s contains multiple members of %s when only a single value is allowed", api_name,
-                                 parameter_name.get_name().c_str(), flag_bits_name);
+            skip_call |=
+                LogError(device, vuid, "%s: value of %s contains multiple members of %s when only a single value is allowed",
+                         api_name, parameter_name.get_name().c_str(), flag_bits_name);
         }
 
         return skip_call;
@@ -792,15 +764,13 @@ class StatelessValidation : public ValidationObject {
                     // Current XML registry logic for validity generation uses the array parameter's optional tag to determine if
                     // elements in the array are allowed be 0
                     if (array_required) {
-                        skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                             kVUID_PVError_RequiredParameter, "%s: value of %s[%d] must not be 0", api_name,
-                                             array_name.get_name().c_str(), i);
+                        skip_call |= LogError(device, kVUID_PVError_RequiredParameter, "%s: value of %s[%d] must not be 0",
+                                              api_name, array_name.get_name().c_str(), i);
                     }
                 } else if ((array[i] & (~all_flags)) != 0) {
-                    skip_call |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                         kVUID_PVError_UnrecognizedValue,
-                                         "%s: value of %s[%d] contains flag bits that are not recognized members of %s", api_name,
-                                         array_name.get_name().c_str(), i, flag_bits_name);
+                    skip_call |= LogError(device, kVUID_PVError_UnrecognizedValue,
+                                          "%s: value of %s[%d] contains flag bits that are not recognized members of %s", api_name,
+                                          array_name.get_name().c_str(), i, flag_bits_name);
                 }
             }
         }
@@ -832,9 +802,8 @@ class StatelessValidation : public ValidationObject {
         // Report any missing requirements
         if (missing.size()) {
             std::string missing_joined_list = string_join(", ", missing);
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT,
-                            HandleToUint64(instance), vuid, "Missing extension%s required by the %s extension %s: %s.",
-                            ((missing.size() > 1) ? "s" : ""), extension_type, extension_name, missing_joined_list.c_str());
+            skip |= LogError(instance, vuid, "Missing extension%s required by the %s extension %s: %s.",
+                             ((missing.size() > 1) ? "s" : ""), extension_type, extension_name, missing_joined_list.c_str());
         }
         return skip;
     }
@@ -877,11 +846,11 @@ class StatelessValidation : public ValidationObject {
         const bool is_all_graphics_stages = (stages & ~kGraphicsStages) == 0;
         if (IsPipeline(subpass, VK_PIPELINE_BIND_POINT_GRAPHICS) && !is_all_graphics_stages) {
             skip |=
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT, 0, vuid,
-                        "Dependency pDependencies[%" PRIu32
-                        "] specifies a %sStageMask that contains stages (%s) that are not part "
-                        "of the Graphics pipeline, as specified by the %sSubpass (= %" PRIu32 ") in pipelineBindPoint.",
-                        dependency_index, target, string_VkPipelineStageFlags(stages & ~kGraphicsStages).c_str(), target, subpass);
+                LogError(VkRenderPass(0), vuid,
+                         "Dependency pDependencies[%" PRIu32
+                         "] specifies a %sStageMask that contains stages (%s) that are not part "
+                         "of the Graphics pipeline, as specified by the %sSubpass (= %" PRIu32 ") in pipelineBindPoint.",
+                         dependency_index, target, string_VkPipelineStageFlags(stages & ~kGraphicsStages).c_str(), target, subpass);
         }
 
         return skip;
@@ -917,17 +886,16 @@ class StatelessValidation : public ValidationObject {
                 ss << (use_rp2 ? "vkCreateRenderPass2KHR" : "vkCreateRenderPass") << ": pCreateInfo->pAttachments[" << i
                    << "].format is VK_FORMAT_UNDEFINED. ";
                 vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-parameter" : "VUID-VkAttachmentDescription-format-parameter";
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                                "%s", ss.str().c_str());
+                skip |= LogWarning(device, vuid, "%s", ss.str().c_str());
             }
             if (pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_UNDEFINED ||
                 pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
                 vuid =
                     use_rp2 ? "VUID-VkAttachmentDescription2-finalLayout-03061" : "VUID-VkAttachmentDescription-finalLayout-00843";
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                                "pCreateInfo->pAttachments[%d].finalLayout must not be VK_IMAGE_LAYOUT_UNDEFINED or "
-                                "VK_IMAGE_LAYOUT_PREINITIALIZED.",
-                                i);
+                skip |= LogError(device, vuid,
+                                 "pCreateInfo->pAttachments[%d].finalLayout must not be VK_IMAGE_LAYOUT_UNDEFINED or "
+                                 "VK_IMAGE_LAYOUT_PREINITIALIZED.",
+                                 i);
             }
             if (!separate_depth_stencil_layouts) {
                 if (pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR ||
@@ -936,8 +904,8 @@ class StatelessValidation : public ValidationObject {
                     pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR) {
                     vuid = use_rp2 ? "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-03298"
                                    : "VUID-VkAttachmentDescription-separateDepthStencilLayouts-03284";
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
+                    skip |= LogError(
+                        device, vuid,
                         "pCreateInfo->pAttachments[%d].initialLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, "
                         "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR, or "
                         "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR",
@@ -949,8 +917,8 @@ class StatelessValidation : public ValidationObject {
                     pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR) {
                     vuid = use_rp2 ? "VUID-VkAttachmentDescription2-separateDepthStencilLayouts-03299"
                                    : "VUID-VkAttachmentDescription-separateDepthStencilLayouts-03285";
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
+                    skip |= LogError(
+                        device, vuid,
                         "pCreateInfo->pAttachments[%d].finalLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, "
                         "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR, or "
                         "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR",
@@ -963,8 +931,8 @@ class StatelessValidation : public ValidationObject {
                     pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR ||
                     pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR) {
                     vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03300" : "VUID-VkAttachmentDescription-format-03286";
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
+                    skip |= LogError(
+                        device, vuid,
                         "pCreateInfo->pAttachments[%d].initialLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, "
                         "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR, or "
                         "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMA_KHRL",
@@ -975,8 +943,8 @@ class StatelessValidation : public ValidationObject {
                     pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR ||
                     pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR) {
                     vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03301" : "VUID-VkAttachmentDescription-format-03287";
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
+                    skip |= LogError(
+                        device, vuid,
                         "pCreateInfo->pAttachments[%d].finalLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, "
                         "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR, or "
                         "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR",
@@ -988,16 +956,14 @@ class StatelessValidation : public ValidationObject {
                         if (pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR ||
                             pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR) {
                             skip |=
-                                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        "VUID-VkAttachmentDescription2-format-03302",
-                                        "pCreateInfo->pNext must include an instance of VkAttachmentDescriptionStencilLayoutKHR");
+                                LogError(device, "VUID-VkAttachmentDescription2-format-03302",
+                                         "pCreateInfo->pNext must include an instance of VkAttachmentDescriptionStencilLayoutKHR");
                         }
                         if (pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR ||
                             pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR) {
                             skip |=
-                                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                        "VUID-VkAttachmentDescription2-format-03303",
-                                        "pCreateInfo->pNext must include an instance of VkAttachmentDescriptionStencilLayoutKHR");
+                                LogError(device, "VUID-VkAttachmentDescription2-format-03303",
+                                         "pCreateInfo->pNext must include an instance of VkAttachmentDescriptionStencilLayoutKHR");
                         }
                     }
                 } else {
@@ -1005,9 +971,8 @@ class StatelessValidation : public ValidationObject {
                         pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR ||
                         pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR ||
                         pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR) {
-                        skip |= log_msg(
-                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            "VUID-VkAttachmentDescription-format-03288",
+                        skip |= LogError(
+                            device, "VUID-VkAttachmentDescription-format-03288",
                             "pCreateInfo->pAttachments[%d].initialLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, "
                             "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR, or "
                             "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR",
@@ -1017,9 +982,8 @@ class StatelessValidation : public ValidationObject {
                         pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR ||
                         pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR ||
                         pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR) {
-                        skip |= log_msg(
-                            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            "VUID-VkAttachmentDescription-format-03289",
+                        skip |= LogError(
+                            device, "VUID-VkAttachmentDescription-format-03289",
                             "pCreateInfo->pAttachments[%d].finalLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, "
                             "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR, VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR, or "
                             "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR",
@@ -1030,8 +994,8 @@ class StatelessValidation : public ValidationObject {
                 if (pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR ||
                     pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR) {
                     vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03304" : "VUID-VkAttachmentDescription-format-03290";
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
+                    skip |= LogError(
+                        device, vuid,
                         "pCreateInfo->pAttachments[%d].initialLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, or"
                         "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR",
                         i);
@@ -1039,8 +1003,8 @@ class StatelessValidation : public ValidationObject {
                 if (pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR ||
                     pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR) {
                     vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03305" : "VUID-VkAttachmentDescription-format-03291";
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
+                    skip |= LogError(
+                        device, vuid,
                         "pCreateInfo->pAttachments[%d].finalLayout must not be VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL_KHR, or "
                         "VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL_KHR",
                         i);
@@ -1049,8 +1013,8 @@ class StatelessValidation : public ValidationObject {
                 if (pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR ||
                     pCreateInfo->pAttachments[i].initialLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR) {
                     vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03306" : "VUID-VkAttachmentDescription-format-03292";
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
+                    skip |= LogError(
+                        device, vuid,
                         "pCreateInfo->pAttachments[%d].initialLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, or"
                         "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR",
                         i);
@@ -1058,8 +1022,8 @@ class StatelessValidation : public ValidationObject {
                 if (pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR ||
                     pCreateInfo->pAttachments[i].finalLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR) {
                     vuid = use_rp2 ? "VUID-VkAttachmentDescription2-format-03307" : "VUID-VkAttachmentDescription-format-03293";
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
+                    skip |= LogError(
+                        device, vuid,
                         "pCreateInfo->pAttachments[%d].finalLayout must not be VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, or "
                         "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMA_KHRL",
                         i);
@@ -1077,15 +1041,14 @@ class StatelessValidation : public ValidationObject {
                         VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
                     attachment_description_stencil_layout->stencilInitialLayout ==
                         VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                    "VUID-VkAttachmentDescriptionStencilLayout-stencilInitialLayout-03308",
-                                    "VkAttachmentDescriptionStencilLayoutKHR.stencilInitialLayout must not be "
-                                    "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, "
-                                    "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR, "
-                                    "VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, "
-                                    "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
-                                    "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, or "
-                                    "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL.");
+                    skip |= LogError(device, "VUID-VkAttachmentDescriptionStencilLayout-stencilInitialLayout-03308",
+                                     "VkAttachmentDescriptionStencilLayoutKHR.stencilInitialLayout must not be "
+                                     "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, "
+                                     "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR, "
+                                     "VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, "
+                                     "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
+                                     "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, or "
+                                     "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL.");
                 }
                 if (attachment_description_stencil_layout->stencilFinalLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ||
                     attachment_description_stencil_layout->stencilFinalLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR ||
@@ -1096,21 +1059,19 @@ class StatelessValidation : public ValidationObject {
                         VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
                     attachment_description_stencil_layout->stencilFinalLayout ==
                         VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                    "VUID-VkAttachmentDescriptionStencilLayout-stencilFinalLayout-03309",
-                                    "VkAttachmentDescriptionStencilLayoutKHR.stencilFinalLayout must not be "
-                                    "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, "
-                                    "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR, "
-                                    "VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, "
-                                    "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
-                                    "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, or "
-                                    "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL.");
+                    skip |= LogError(device, "VUID-VkAttachmentDescriptionStencilLayout-stencilFinalLayout-03309",
+                                     "VkAttachmentDescriptionStencilLayoutKHR.stencilFinalLayout must not be "
+                                     "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, "
+                                     "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL_KHR, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL_KHR, "
+                                     "VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, "
+                                     "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
+                                     "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, or "
+                                     "VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL.");
                 }
                 if (attachment_description_stencil_layout->stencilFinalLayout == VK_IMAGE_LAYOUT_UNDEFINED ||
                     attachment_description_stencil_layout->stencilFinalLayout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
-                    skip |= log_msg(
-                        report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        "VUID-VkAttachmentDescriptionStencilLayout-stencilFinalLayout-03310",
+                    skip |= LogError(
+                        device, "VUID-VkAttachmentDescriptionStencilLayout-stencilFinalLayout-03310",
                         "VkAttachmentDescriptionStencilLayoutKHR.stencilFinalLayout must not be VK_IMAGE_LAYOUT_UNDEFINED, or "
                         "VK_IMAGE_LAYOUT_PREINITIALIZED.");
                 }
@@ -1121,9 +1082,8 @@ class StatelessValidation : public ValidationObject {
             if (pCreateInfo->pSubpasses[i].colorAttachmentCount > max_color_attachments) {
                 vuid = use_rp2 ? "VUID-VkSubpassDescription2-colorAttachmentCount-03063"
                                : "VUID-VkSubpassDescription-colorAttachmentCount-00845";
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0, vuid,
-                                "Cannot create a render pass with %d color attachments. Max is %d.",
-                                pCreateInfo->pSubpasses[i].colorAttachmentCount, max_color_attachments);
+                skip |= LogError(device, vuid, "Cannot create a render pass with %d color attachments. Max is %d.",
+                                 pCreateInfo->pSubpasses[i].colorAttachmentCount, max_color_attachments);
             }
         }
 
@@ -1182,14 +1142,13 @@ class StatelessValidation : public ValidationObject {
     bool ValidateDeviceQueueFamily(uint32_t queue_family, const char *cmd_name, const char *parameter_name,
                                    const std::string &error_code, bool optional);
 
-    bool ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triangles, VkDebugReportObjectTypeEXT object_type,
-                                     uint64_t object_handle, const char *func_name) const;
-    bool ValidateGeometryAABBNV(const VkGeometryAABBNV &geometry, VkDebugReportObjectTypeEXT object_type, uint64_t object_handle,
+    bool ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triangles, VkAccelerationStructureNV object_handle,
+                                     const char *func_name) const;
+    bool ValidateGeometryAABBNV(const VkGeometryAABBNV &geometry, VkAccelerationStructureNV object_handle,
                                 const char *func_name) const;
-    bool ValidateGeometryNV(const VkGeometryNV &geometry, VkDebugReportObjectTypeEXT object_type, uint64_t object_handle,
-                            const char *func_name) const;
-    bool ValidateAccelerationStructureInfoNV(const VkAccelerationStructureInfoNV &info, VkDebugReportObjectTypeEXT object_type,
-                                             uint64_t object_handle, const char *func_nam) const;
+    bool ValidateGeometryNV(const VkGeometryNV &geometry, VkAccelerationStructureNV object_handle, const char *func_name) const;
+    bool ValidateAccelerationStructureInfoNV(const VkAccelerationStructureInfoNV &info, VkAccelerationStructureNV object_handle,
+                                             const char *func_nam) const;
     bool ValidateCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
                                               const VkAllocationCallbacks *pAllocator, VkSamplerYcbcrConversion *pYcbcrConversion,
                                               const char *apiName) const;
@@ -1225,7 +1184,7 @@ class StatelessValidation : public ValidationObject {
                                            const VkAllocationCallbacks *pAllocator, VkImage *pImage) const;
 
     bool manual_PreCallValidateViewport(const VkViewport &viewport, const char *fn_name, const ParameterName &parameter_name,
-                                        VkDebugReportObjectTypeEXT object_type, uint64_t object) const;
+                                        VkCommandBuffer object) const;
 
     bool manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                        const VkGraphicsPipelineCreateInfo *pCreateInfos,
