@@ -61,6 +61,24 @@ static const char *string_SyncHazard(SyncHazard hazard) {
     return "INVALID HAZARD";
 }
 
+// Expand the pipeline stage without regard to whether the are valid w.r.t. queue or extension
+VkPipelineStageFlags ExpandPipelineStages(VkQueueFlags queue_flags, VkPipelineStageFlags stage_mask) {
+    VkPipelineStageFlags expanded = stage_mask;
+    if (VK_PIPELINE_STAGE_ALL_COMMANDS_BIT & stage_mask) {
+        expanded = expanded & ~VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+        for (const auto &all_commands : syncAllCommandStagesByQueueFlags) {
+            if (all_commands.first & queue_flags) {
+                expanded |= all_commands.second;
+            }
+        }
+    }
+    if (VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT & stage_mask) {
+        expanded = expanded & ~VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+        expanded |= syncAllCommandStagesByQueueFlags.at(VK_QUEUE_GRAPHICS_BIT) & ~VK_PIPELINE_STAGE_HOST_BIT;
+    }
+    return expanded;
+}
+
 static const ResourceAccessRange full_range(std::numeric_limits<VkDeviceSize>::min(), std::numeric_limits<VkDeviceSize>::max());
 static ResourceAccessRange MakeMemoryAccessRange(const BUFFER_STATE &buffer, VkDeviceSize offset, VkDeviceSize size) {
     assert(!buffer.sparse);
@@ -88,6 +106,36 @@ HazardResult DetectHazard(const IMAGE_STATE &image, const ResourceAccessRangeMap
     subresource_adapter::RangeGenerator range_gen(image.range_encoder, subresource_range);
     for (; range_gen->non_empty(); ++range_gen) {
         HazardResult hazard = DetectHazard(accesses, current_usage, *range_gen);
+        if (hazard.hazard) return hazard;
+    }
+    return HazardResult();
+}
+
+HazardResult DetectBarrierHazard(const ResourceAccessRangeMap &accesses, SyncStageAccessIndex current_usage,
+                                 VkPipelineStageFlags src_stage_mask, SyncStageAccessFlags src_scope,
+                                 const ResourceAccessRange &range) {
+    const auto from = accesses.lower_bound(range);
+    const auto to = accesses.upper_bound(range);
+    for (auto pos = from; pos != to; ++pos) {
+        const auto &access_state = pos->second;
+        HazardResult hazard = access_state.DetectBarrierHazard(current_usage, src_stage_mask, src_scope);
+        if (hazard.hazard) return hazard;
+    }
+    return HazardResult();
+}
+
+HazardResult DetectImageBarrierHazard(const ResourceAccessTracker &tracker, const IMAGE_STATE &image,
+                                      VkPipelineStageFlags src_stage_mask, SyncStageAccessFlags src_stage_scope,
+                                      const VkImageMemoryBarrier &barrier) {
+    auto *accesses = tracker.GetImageAccesses(image.image);
+    if (!accesses) return HazardResult();
+
+    auto subresource_range = NormalizeSubresourceRange(image.createInfo, barrier.subresourceRange);
+    subresource_adapter::RangeGenerator range_gen(image.range_encoder, subresource_range);
+    const auto src_scope = SyncStageAccess::AccessScope(src_stage_scope, barrier.srcAccessMask);
+    for (; range_gen->non_empty(); ++range_gen) {
+        HazardResult hazard = DetectBarrierHazard(*accesses, SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION, src_stage_mask,
+                                                  src_scope, *range_gen);
         if (hazard.hazard) return hazard;
     }
     return HazardResult();
@@ -266,6 +314,32 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index)
                     hazard.Set(WRITE_AFTER_READ, last_reads[read_index].tag);
                     break;
                 }
+            }
+        }
+    }
+    return hazard;
+}
+
+HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags src_stage_mask,
+                                                      SyncStageAccessFlags src_scope) const {
+    // Only supporting image layout transitions for now
+    assert(usage_index == SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION);
+    HazardResult hazard;
+    if (last_write) {
+        // If the previous write is *not* in the 1st access scope
+        // *AND* the current barrier is not in the dependency chain
+        // *AND* the there is no prior memory barrier for the previous write in the dependency chain
+        // then the barrier access is unsafe (R/W after W)
+        if (((last_write & src_scope) == 0) && ((src_stage_mask & write_dependency_chain) == 0) && (write_barriers == 0)) {
+            // TODO: Do we need a difference hazard name for this?
+            hazard.Set(WRITE_AFTER_WRITE, write_tag);
+        }
+    } else {
+        // Look at the reads
+        for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
+            if (IsReadHazard(src_stage_mask, last_reads[read_index])) {
+                hazard.Set(WRITE_AFTER_READ, last_reads[read_index].tag);
+                break;
             }
         }
     }
@@ -525,6 +599,28 @@ bool SyncValidator::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuf
                                                       uint32_t imageMemoryBarrierCount,
                                                       const VkImageMemoryBarrier *pImageMemoryBarriers) const {
     bool skip = false;
+    const auto *tracker = GetAccessTracker(commandBuffer);
+    if (!tracker) return skip;
+
+    const auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    assert(cb_state);
+    if (!cb_state) return skip;
+
+    const auto src_stage_mask = ExpandPipelineStages(GetQueueFlags(*cb_state), srcStageMask);
+    auto src_stage_scope = AccessScopeByStage(src_stage_mask);
+    // Validate Image Layout transitions
+    for (uint32_t index = 0; index < imageMemoryBarrierCount; index++) {
+        const auto &barrier = pImageMemoryBarriers[index];
+        if (barrier.newLayout == barrier.oldLayout) continue;  // Only interested in layout transitions at this point.
+        const auto *image_state = Get<IMAGE_STATE>(barrier.image);
+        if (!image_state) continue;
+        const auto hazard = DetectImageBarrierHazard(*tracker, *image_state, src_stage_mask, src_stage_scope, barrier);
+        if (hazard.hazard) {
+            // TODO -- add tag information to log msg when useful.
+            skip |= LogError(barrier.image, string_SyncHazardVUID(hazard.hazard), "Hazard %s for image barrier %" PRIu32 " %s",
+                             string_SyncHazard(hazard.hazard), index, report_data->FormatHandle(barrier.image).c_str());
+        }
+    }
 
     return skip;
 }
@@ -539,16 +635,24 @@ void SyncValidator::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffe
     // Just implement the buffer barrier for now
     auto *tracker = GetAccessTracker(commandBuffer);
     assert(tracker);
-    auto src_stage_scope = AccessScopeByStage(srcStageMask);
-    auto dst_stage_scope = AccessScopeByStage(dstStageMask);
 
-    ApplyBufferBarriers(tracker, srcStageMask, src_stage_scope, dstStageMask, dst_stage_scope, bufferMemoryBarrierCount,
+    const auto cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    assert(cb_state);
+    if (!cb_state) return;
+
+    const auto src_stage_mask = ExpandPipelineStages(GetQueueFlags(*cb_state), srcStageMask);
+    auto src_stage_scope = AccessScopeByStage(src_stage_mask);
+    const auto dst_stage_mask = ExpandPipelineStages(GetQueueFlags(*cb_state), dstStageMask);
+    auto dst_stage_scope = AccessScopeByStage(dst_stage_mask);
+
+    ApplyBufferBarriers(tracker, src_stage_mask, src_stage_scope, dst_stage_mask, dst_stage_scope, bufferMemoryBarrierCount,
                         pBufferMemoryBarriers);
-    ApplyImageBarriers(tracker, srcStageMask, src_stage_scope, dstStageMask, dst_stage_scope, imageMemoryBarrierCount,
+    ApplyImageBarriers(tracker, src_stage_mask, src_stage_scope, dst_stage_mask, dst_stage_scope, imageMemoryBarrierCount,
                        pImageMemoryBarriers);
 
     // Apply these last in-case there operation is a superset of the other two and would clean them up...
-    ApplyGlobalBarriers(tracker, srcStageMask, dstStageMask, src_stage_scope, dst_stage_scope, memoryBarrierCount, pMemoryBarriers);
+    ApplyGlobalBarriers(tracker, src_stage_mask, dst_stage_mask, src_stage_scope, dst_stage_scope, memoryBarrierCount,
+                        pMemoryBarriers);
 }
 
 void SyncValidator::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo,

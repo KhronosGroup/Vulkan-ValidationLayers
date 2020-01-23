@@ -75,6 +75,8 @@ class ResourceAccessState : public SyncStageAccess {
 
   public:
     HazardResult DetectHazard(SyncStageAccessIndex usage_index) const;
+    HazardResult DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags src_stage_mask,
+                                     SyncStageAccessFlags source_scope) const;
     void Update(SyncStageAccessIndex usage_index, const ResourceUsageTag &tag);
     void ApplyExecutionBarrier(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask);
     void ApplyMemoryAccessBarrier(VkPipelineStageFlags src_stage_mask, SyncStageAccessFlags src_scope,
@@ -87,6 +89,9 @@ class ResourceAccessState : public SyncStageAccess {
     bool IsWriteHazard(SyncStageAccessFlagBits usage) const { return 0 != (usage & ~write_barriers); }
     bool IsReadHazard(VkPipelineStageFlagBits stage, const ReadState &read_access) const {
         return 0 != (stage & ~read_access.barriers);
+    }
+    bool IsReadHazard(VkPipelineStageFlags stage_mask, const ReadState &read_access) const {
+        return stage_mask != (stage_mask & read_access.barriers);
     }
     // With reads, each must be "safe" relative to it's prior write, so we need only
     // save the most recent write operation (as anything *transitively* unsafe would arleady
