@@ -1226,15 +1226,6 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                             pCreateInfos[i].pTessellationState->flags,
                             "VUID-VkPipelineTessellationStateCreateInfo-flags-zerobitmask");
 
-                        if (pCreateInfos[i].pTessellationState->sType !=
-                            VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO) {
-                            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                                            "VUID-VkPipelineTessellationStateCreateInfo-sType-sType",
-                                            "vkCreateGraphicsPipelines: parameter pCreateInfos[%d].pTessellationState->sType must "
-                                            "be VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO.",
-                                            i);
-                        }
-
                         if (pCreateInfos[i].pTessellationState->patchControlPoints == 0 ||
                             pCreateInfos[i].pTessellationState->patchControlPoints > device_limits.maxTessellationPatchSize) {
                             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
