@@ -1678,6 +1678,7 @@ bool update_range_value(Map &map, const Range &range, MapValue &&value, value_pr
             if ((precedence == value_precedence::prefer_source) && (pos->lower_bound->second != value)) {
                 // We've found a place where we're changing the value, at this point might as well simply over write the range
                 // and be done with it. (save on later merge operations....)
+                pos.seek(range.begin);
                 map.overwrite_range(pos->lower_bound, std::make_pair(range, std::forward<MapValue>(value)));
                 return true;
 
