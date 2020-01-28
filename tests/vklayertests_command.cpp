@@ -5357,10 +5357,6 @@ TEST_F(VkLayerTest, ViewportWScalingNV) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
     m_errorMonitor->VerifyNotFound();
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdSetViewportWScalingNV-None-01322");
-    vkCmdSetViewportWScalingNV(m_commandBuffer->handle(), 0, vp_count, scale.data());
-    m_errorMonitor->VerifyFound();
-
     // Bind pipeline that has dynamic w-scaling enabled
     m_errorMonitor->ExpectSuccess();
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeDynWScale.handle());
