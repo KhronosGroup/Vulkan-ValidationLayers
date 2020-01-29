@@ -198,7 +198,6 @@ class LayerChassisOutputGenerator(OutputGenerator):
     postcallrecord_loop = "for (auto intercept : layer_data->object_dispatch) {"
 
     inline_custom_header_preamble = """
-#define NOMINMAX
 #include <atomic>
 #include <mutex>
 #include <cinttypes>

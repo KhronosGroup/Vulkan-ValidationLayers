@@ -19,8 +19,6 @@
  * Author: John Zulauf <jzulauf@lunarg.com>
  */
 
-#define NOMINMAX
-
 #include <cmath>
 
 #include "chassis.h"

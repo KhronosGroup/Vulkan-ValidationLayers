@@ -19,8 +19,6 @@
  * Author: Dave Houlton <daveh@lunarg.com>
  */
 
-#define NOMINMAX
-
 #include "shader_validation.h"
 
 #include <cassert>

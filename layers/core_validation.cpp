@@ -35,9 +35,6 @@
  * Author: Shannon McPherson <shannon@lunarg.com>
  */
 
-// Allow use of STL min and max functions in Windows
-#define NOMINMAX
-
 #include <algorithm>
 #include <array>
 #include <assert.h>

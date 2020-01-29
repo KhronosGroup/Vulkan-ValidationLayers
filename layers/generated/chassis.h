@@ -24,7 +24,6 @@
 #pragma once
 
 
-#define NOMINMAX
 #include <atomic>
 #include <mutex>
 #include <cinttypes>
