@@ -376,8 +376,7 @@ VkResult GpuAssisted::InitializeVma(VkPhysicalDevice physical_device, VkDevice d
 // Convenience function for reporting problems with setting up GPU Validation.
 void GpuAssisted::ReportSetupProblem(VkDebugReportObjectTypeEXT object_type, uint64_t object_handle,
                                      const char *const specific_message) const {
-    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, object_type, object_handle, "UNASSIGNED-GPU-Assisted Validation Error. ",
-            "Detail: (%s)", specific_message);
+    LogError(device, "UNASSIGNED-GPU-Assisted Validation Error. ", "Detail: (%s)", specific_message);
 }
 
 void GpuAssisted::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
@@ -451,9 +450,8 @@ void GpuAssisted::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
 
     if ((device_extensions.vk_ext_buffer_device_address || device_extensions.vk_khr_buffer_device_address) &&
         !device_gpu_assisted->enabled_features.core.shaderInt64) {
-        log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                "UNASSIGNED-GPU-Assisted Validation Warning",
-                "shaderInt64 feature is not available.  No buffer device address checking will be attempted");
+        LogWarning(device, "UNASSIGNED-GPU-Assisted Validation Warning",
+                   "shaderInt64 feature is not available.  No buffer device address checking will be attempted");
     }
     device_gpu_assisted->shaderInt64 = device_gpu_assisted->enabled_features.core.shaderInt64;
 
@@ -476,8 +474,7 @@ void GpuAssisted::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
         return;
     }
     device_gpu_assisted->desc_set_bind_index = device_gpu_assisted->adjusted_max_desc_sets - 1;
-    log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-            "UNASSIGNED-GPU-Assisted Validation. ", "Shaders using descriptor set at index %d. ",
+    LogInfo(device, "UNASSIGNED-GPU-Assisted Validation. ", "Shaders using descriptor set at index %d. ",
             device_gpu_assisted->desc_set_bind_index);
 
     device_gpu_assisted->output_buffer_size = sizeof(uint32_t) * (spvtools::kInstMaxOutCnt + 1);
@@ -967,8 +964,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
 
     if (result == VK_SUCCESS) {
         as_validation_state.initialized = true;
-        log_msg(report_data, VK_DEBUG_REPORT_INFORMATION_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT,
-                HandleToUint64(device_gpuav->device), "UNASSIGNED-GPU-Assisted Validation.",
+        LogInfo(device_gpuav->device, "UNASSIGNED-GPU-Assisted Validation.",
                 "Acceleration Structure Building GPU Validation Enabled.");
     } else {
         device_gpuav->aborted = true;
@@ -1246,11 +1242,10 @@ void GpuAssisted::ProcessAccelerationStructureBuildValidationBuffer(VkQueue queu
                 reinterpret_cast<uint32_t *>(&invalid_handle)[0] = mapped_validation_buffer->invalid_handle_bits_0;
                 reinterpret_cast<uint32_t *>(&invalid_handle)[1] = mapped_validation_buffer->invalid_handle_bits_1;
 
-                log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT,
-                        HandleToUint64(as_validation_buffer_info.acceleration_structure), "UNASSIGNED-AccelerationStructure",
-                        "Attempted to build top level acceleration structure using invalid bottom level acceleration structure "
-                        "handle (%" PRIu64 ")",
-                        invalid_handle);
+                LogError(as_validation_buffer_info.acceleration_structure, "UNASSIGNED-AccelerationStructure",
+                         "Attempted to build top level acceleration structure using invalid bottom level acceleration structure "
+                         "handle (%" PRIu64 ")",
+                         invalid_handle);
             }
             vmaUnmapMemory(vmaAllocator, as_validation_buffer_info.validation_buffer_allocation);
         }
@@ -1373,9 +1368,8 @@ void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties(VkPhysicalDevice phy
         if (pPhysicalDeviceProperties->limits.maxBoundDescriptorSets > 1) {
             pPhysicalDeviceProperties->limits.maxBoundDescriptorSets -= 1;
         } else {
-            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
-                    HandleToUint64(physicalDevice), "UNASSIGNED-GPU-Assisted Validation Setup Error.",
-                    "Unable to reserve descriptor binding slot on a device with only one slot.");
+            LogWarning(physicalDevice, "UNASSIGNED-GPU-Assisted Validation Setup Error.",
+                       "Unable to reserve descriptor binding slot on a device with only one slot.");
         }
     }
 }
@@ -1387,9 +1381,8 @@ void GpuAssisted::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice ph
         if (pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets > 1) {
             pPhysicalDeviceProperties2->properties.limits.maxBoundDescriptorSets -= 1;
         } else {
-            log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT,
-                    HandleToUint64(physicalDevice), "UNASSIGNED-GPU-Assisted Validation Setup Error.",
-                    "Unable to reserve descriptor binding slot on a device with only one slot.");
+            LogWarning(physicalDevice, "UNASSIGNED-GPU-Assisted Validation Setup Error.",
+                       "Unable to reserve descriptor binding slot on a device with only one slot.");
         }
     }
 }
@@ -2083,9 +2076,8 @@ void GpuAssisted::AnalyzeAndReportError(CMD_BUFFER_STATE *cb_node, VkQueue queue
     GenerateCommonMessage(report_data, cb_node, debug_record, shader_module_handle, pipeline_handle, pipeline_bind_point,
                           operation_index, common_message);
     GenerateSourceMessages(pgm, debug_record, filename_message, source_message);
-    log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT, HandleToUint64(queue),
-            vuid_msg.c_str(), "%s %s %s %s%s", validation_message.c_str(), common_message.c_str(), stage_message.c_str(),
-            filename_message.c_str(), source_message.c_str());
+    LogError(queue, vuid_msg.c_str(), "%s %s %s %s%s", validation_message.c_str(), common_message.c_str(), stage_message.c_str(),
+             filename_message.c_str(), source_message.c_str());
     // The debug record at word kInstCommonOutSize is the number of words in the record
     // written by the shader.  Clear the entire record plus the total_words word at the start.
     const uint32_t words_to_clear = 1 + std::min(debug_record[kInstCommonOutSize], (uint32_t)kInstMaxOutCnt);
@@ -2401,10 +2393,9 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
                     // blocks
                     if (VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT == desc->GetLayout()->GetTypeFromBinding(binding)) {
                         descriptor_count++;
-                        log_msg(report_data, VK_DEBUG_REPORT_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT,
-                                VK_NULL_HANDLE, "UNASSIGNED-GPU-Assisted Validation Warning",
-                                "VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT descriptors will not be validated by GPU assisted "
-                                "validation");
+                        LogWarning(device, "UNASSIGNED-GPU-Assisted Validation Warning",
+                                   "VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT descriptors will not be validated by GPU assisted "
+                                   "validation");
                     } else if (binding == desc->GetLayout()->GetMaxBinding() && desc->IsVariableDescriptorCount(binding)) {
                         descriptor_count += desc->GetVariableDescriptorCount();
                     } else {
