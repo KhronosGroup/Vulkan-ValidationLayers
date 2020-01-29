@@ -234,9 +234,8 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
     bool skip = false;
 
     if (num_mem_objects + 1 > kMemoryObjectWarningLimit) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        kVUID_BestPractices_AllocateMemory_TooManyObjects,
-                        "Performance Warning: This app has > %" PRIu32 " memory objects.", kMemoryObjectWarningLimit);
+        skip |= LogPerformanceWarning(device, kVUID_BestPractices_AllocateMemory_TooManyObjects,
+                                      "Performance Warning: This app has > %" PRIu32 " memory objects.", kMemoryObjectWarningLimit);
     }
 
     // TODO: Insert get check for GetPhysicalDeviceMemoryProperties once the state is tracked in the StateTracker
@@ -384,11 +383,10 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                                                                      pAllocator, pPipelines, cgpl_state_data);
 
     if ((createInfoCount > 1) && (!pipelineCache)) {
-        skip |=
-            log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                    kVUID_BestPractices_CreatePipelines_MultiplePipelines,
-                    "Performance Warning: This vkCreateGraphicsPipelines call is creating multiple pipelines but is not using a "
-                    "pipeline cache, which may help with performance");
+        skip |= LogPerformanceWarning(
+            device, kVUID_BestPractices_CreatePipelines_MultiplePipelines,
+            "Performance Warning: This vkCreateGraphicsPipelines call is creating multiple pipelines but is not using a "
+            "pipeline cache, which may help with performance");
     }
 
     return skip;
@@ -402,10 +400,10 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
                                                                     pAllocator, pPipelines, ccpl_state_data);
 
     if ((createInfoCount > 1) && (!pipelineCache)) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                        kVUID_BestPractices_CreatePipelines_MultiplePipelines,
-                        "Performance Warning: This vkCreateComputePipelines call is creating multiple pipelines but is not using a "
-                        "pipeline cache, which may help with performance");
+        skip |= LogPerformanceWarning(
+            device, kVUID_BestPractices_CreatePipelines_MultiplePipelines,
+            "Performance Warning: This vkCreateComputePipelines call is creating multiple pipelines but is not using a "
+            "pipeline cache, which may help with performance");
     }
 
     return skip;
@@ -510,12 +508,10 @@ bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* 
         // Verify vertex binding
         if (pipeline_state->vertex_binding_descriptions_.size() <= 0) {
             if ((!current_vtx_bfr_binding_info.empty()) && (!cb_state->vertex_buffer_used)) {
-                skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, HandleToUint64(cb_state->commandBuffer),
-                                kVUID_BestPractices_DrawState_VtxIndexOutOfBounds,
-                                "Vertex buffers are bound to %s but no vertex buffers are attached to %s.",
-                                report_data->FormatHandle(cb_state->commandBuffer).c_str(),
-                                report_data->FormatHandle(pipeline_state->pipeline).c_str());
+                skip |= LogPerformanceWarning(cb_state->commandBuffer, kVUID_BestPractices_DrawState_VtxIndexOutOfBounds,
+                                              "Vertex buffers are bound to %s but no vertex buffers are attached to %s.",
+                                              report_data->FormatHandle(cb_state->commandBuffer).c_str(),
+                                              report_data->FormatHandle(pipeline_state->pipeline).c_str());
             }
         }
     }
@@ -893,11 +889,10 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
         // There are times where app needs to use ClearAttachments (generally when reusing a buffer inside of a render pass)
         // This warning should be made more specific. It'd be best to avoid triggering this test if it's a use that must call
         // CmdClearAttachments.
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), kVUID_BestPractices_DrawState_ClearCmdBeforeDraw,
-                        "vkCmdClearAttachments() issued on %s prior to any Draw Cmds. It is recommended you "
-                        "use RenderPass LOAD_OP_CLEAR on Attachments prior to any Draw.",
-                        report_data->FormatHandle(commandBuffer).c_str());
+        skip |= LogPerformanceWarning(commandBuffer, kVUID_BestPractices_DrawState_ClearCmdBeforeDraw,
+                                      "vkCmdClearAttachments() issued on %s prior to any Draw Cmds. It is recommended you "
+                                      "use RenderPass LOAD_OP_CLEAR on Attachments prior to any Draw.",
+                                      report_data->FormatHandle(commandBuffer).c_str());
     }
 
     return skip;
