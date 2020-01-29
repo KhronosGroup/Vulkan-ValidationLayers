@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2019 The Khronos Group Inc.
- * Copyright (c) 2015-2019 Valve Corporation
- * Copyright (c) 2015-2019 LunarG, Inc.
- * Copyright (C) 2015-2019 Google Inc.
+/* Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
+ * Copyright (C) 2015-2020 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,18 +79,18 @@ class ObjectLifetimes : public ValidationObject {
     // Constructor for object lifetime tracking
     ObjectLifetimes() : num_objects{}, num_total_objects(0) {}
 
-    void InsertObject(object_map_type &map, uint64_t object_handle, VulkanObjectType object_type,
-                      std::shared_ptr<ObjTrackState> pNode) {
+    template <typename T1>
+    void InsertObject(object_map_type &map, T1 object, VulkanObjectType object_type, std::shared_ptr<ObjTrackState> pNode) {
+        uint64_t object_handle = HandleToUint64(object);
         bool inserted = map.insert(object_handle, pNode);
         if (!inserted) {
             // The object should not already exist. If we couldn't add it to the map, there was probably
             // a race condition in the app. Report an error and move on.
-            VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[object_type];
-            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, object_handle, kVUID_ObjectTracker_Info,
-                    "Couldn't insert %s Object 0x%" PRIxLEAST64
-                    ", already existed. This should not happen and may indicate a "
-                    "race condition in the application.",
-                    object_string[object_type], object_handle);
+            LogError(object, kVUID_ObjectTracker_Info,
+                     "Couldn't insert %s Object 0x%" PRIxLEAST64
+                     ", already existed. This should not happen and may indicate a "
+                     "race condition in the application.",
+                     object_string[object_type], object_handle);
         }
     }
 
@@ -129,8 +129,6 @@ class ObjectLifetimes : public ValidationObject {
 
     bool CheckObjectValidity(uint64_t object_handle, VulkanObjectType object_type, bool null_allowed,
                              const char *invalid_handle_code, const char *wrong_device_code) const {
-        VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[object_type];
-
         // Look for object in object map
         if (!object_map[object_type].contains(object_handle)) {
             // If object is an image, also look for it in the swapchain image map
@@ -148,11 +146,12 @@ class ObjectLifetimes : public ValidationObject {
                                          object_lifetime_data->swapchainImageMap.end())) {
                                     // Object found on other device, report an error if object has a device parent error code
                                     if ((wrong_device_code != kVUIDUndefined) && (object_type != kVulkanObjectTypeSurfaceKHR)) {
-                                        return log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, object_handle,
-                                                       wrong_device_code,
-                                                       "Object 0x%" PRIxLEAST64
-                                                       " was not created, allocated or retrieved from the correct device.",
-                                                       object_handle);
+                                        return LogError(instance, wrong_device_code,
+                                                        "Object 0x%" PRIxLEAST64
+                                                        " of type %s"
+                                                        " was not created, allocated or retrieved from the correct device.",
+                                                        object_handle, object_string[object_type]);
+
                                     } else {
                                         return false;
                                     }
@@ -162,8 +161,8 @@ class ObjectLifetimes : public ValidationObject {
                     }
                 }
                 // Report an error if object was not found anywhere
-                return log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, object_handle, invalid_handle_code,
-                               "Invalid %s Object 0x%" PRIxLEAST64 ".", object_string[object_type], object_handle);
+                return LogError(instance, invalid_handle_code, "Invalid %s Object 0x%" PRIxLEAST64 ".", object_string[object_type],
+                                object_handle);
             }
         }
         return false;
@@ -175,13 +174,12 @@ class ObjectLifetimes : public ValidationObject {
         if (null_allowed && (object == VK_NULL_HANDLE)) {
             return false;
         }
-        auto object_handle = HandleToUint64(object);
 
         if (object_type == kVulkanObjectTypeDevice) {
             return ValidateDeviceObject(VulkanTypedHandle(object, object_type), invalid_handle_code, wrong_device_code);
         }
 
-        return CheckObjectValidity(object_handle, object_type, null_allowed, invalid_handle_code, wrong_device_code);
+        return CheckObjectValidity(HandleToUint64(object), object_type, null_allowed, invalid_handle_code, wrong_device_code);
     }
 
     template <typename T1>
@@ -194,7 +192,7 @@ class ObjectLifetimes : public ValidationObject {
             pNewObjNode->status = custom_allocator ? OBJSTATUS_CUSTOM_ALLOCATOR : OBJSTATUS_NONE;
             pNewObjNode->handle = object_handle;
 
-            InsertObject(object_map[object_type], object_handle, object_type, pNewObjNode);
+            InsertObject(object_map[object_type], object, object_type, pNewObjNode);
             num_objects[object_type]++;
             num_total_objects++;
 
@@ -204,8 +202,7 @@ class ObjectLifetimes : public ValidationObject {
         }
     }
 
-    template <typename T1>
-    void DestroyObjectSilently(T1 object, VulkanObjectType object_type) {
+    void DestroyObjectSilently(uint64_t object, VulkanObjectType object_type) {
         auto object_handle = HandleToUint64(object);
         assert(object_handle != VK_NULL_HANDLE);
 
@@ -213,12 +210,11 @@ class ObjectLifetimes : public ValidationObject {
         if (item == object_map[object_type].end()) {
             // We've already checked that the object exists. If we couldn't find and atomically remove it
             // from the map, there must have been a race condition in the app. Report an error and move on.
-            VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[object_type];
-            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, object_handle, kVUID_ObjectTracker_Info,
-                    "Couldn't destroy %s Object 0x%" PRIxLEAST64
-                    ", not found. This should not happen and may indicate a "
-                    "race condition in the application.",
-                    object_string[object_type], object_handle);
+            LogError(device, kVUID_ObjectTracker_Info,
+                     "Couldn't destroy %s Object 0x%" PRIxLEAST64
+                     ", not found. This should not happen and may indicate a race condition in the application.",
+                     object_string[object_type], object_handle);
+
             return;
         }
         assert(num_total_objects > 0);
@@ -234,7 +230,7 @@ class ObjectLifetimes : public ValidationObject {
         auto object_handle = HandleToUint64(object);
         if (object_handle != VK_NULL_HANDLE) {
             if (object_map[object_type].contains(object_handle)) {
-                DestroyObjectSilently(object, object_type);
+                DestroyObjectSilently(object_handle, object_type);
             }
         }
     }
@@ -244,7 +240,6 @@ class ObjectLifetimes : public ValidationObject {
                                const char *expected_custom_allocator_code, const char *expected_default_allocator_code) const {
         auto object_handle = HandleToUint64(object);
         bool custom_allocator = pAllocator != nullptr;
-        VkDebugReportObjectTypeEXT debug_object_type = get_debug_report_enum[object_type];
         bool skip = false;
 
         if ((expected_custom_allocator_code != kVUIDUndefined || expected_default_allocator_code != kVUIDUndefined) &&
@@ -255,17 +250,16 @@ class ObjectLifetimes : public ValidationObject {
                 if (allocated_with_custom && !custom_allocator && expected_custom_allocator_code != kVUIDUndefined) {
                     // This check only verifies that custom allocation callbacks were provided to both Create and Destroy calls,
                     // it cannot verify that these allocation callbacks are compatible with each other.
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, object_handle,
-                                    expected_custom_allocator_code,
-                                    "Custom allocator not specified while destroying %s obj 0x%" PRIxLEAST64
-                                    " but specified at creation.",
-                                    object_string[object_type], object_handle);
+                    skip |= LogError(object, expected_custom_allocator_code,
+                                     "Custom allocator not specified while destroying %s obj 0x%" PRIxLEAST64
+                                     " but specified at creation.",
+                                     object_string[object_type], object_handle);
+
                 } else if (!allocated_with_custom && custom_allocator && expected_default_allocator_code != kVUIDUndefined) {
-                    skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, debug_object_type, object_handle,
-                                    expected_default_allocator_code,
-                                    "Custom allocator specified while destroying %s obj 0x%" PRIxLEAST64
-                                    " but not specified at creation.",
-                                    object_string[object_type], object_handle);
+                    skip |= LogError(object, expected_default_allocator_code,
+                                     "Custom allocator specified while destroying %s obj 0x%" PRIxLEAST64
+                                     " but not specified at creation.",
+                                     object_string[object_type], object_handle);
                 }
             }
         }
