@@ -140,7 +140,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/gene
 
 if(WIN32)
     # Applies to all configurations
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS -DNOMINMAX)
     # Avoid: fatal error C1128: number of sections exceeded object file format limit: compile with /bigobj
     add_compile_options("/bigobj")
     # Allow Windows to use multiprocessor compilation

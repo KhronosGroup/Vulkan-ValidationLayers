@@ -1,8 +1,8 @@
 /*
  *
- * Copyright (c) 2015-2018 The Khronos Group Inc.
- * Copyright (c) 2015-2018 Valve Corporation
- * Copyright (c) 2015-2018 LunarG, Inc.
+ * Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@
 #endif  // _WIN32
 
 #include "vulkan/vk_platform.h"
+// sdk_platform header redefines NOMINMAX
+#undef NOMINMAX
 #include "vulkan/vk_sdk_platform.h"
 
 #if defined(__linux__) || defined(__APPLE__)

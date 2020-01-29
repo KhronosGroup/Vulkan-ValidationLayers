@@ -19,9 +19,6 @@
  *         John Zulauf <jzulauf@lunarg.com>
  */
 
-// Allow use of STL min and max functions in Windows
-#define NOMINMAX
-
 #include "chassis.h"
 #include "core_validation_error_enums.h"
 #include "core_validation.h"

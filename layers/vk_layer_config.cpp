@@ -1,8 +1,8 @@
 /**************************************************************************
  *
- * Copyright 2014-2019 Valve Software
- * Copyright 2015-2019 Google Inc.
- * Copyright 2019 LunarG, Inc.
+ * Copyright 2014-2020 Valve Software
+ * Copyright 2015-2020 Google Inc.
+ * Copyright 2019-2020 LunarG, Inc.
  * All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,6 +33,8 @@
 #include <sys/stat.h>
 
 #include <vulkan/vk_layer.h>
+// sdk_platform header redefines NOMINMAX
+#undef NOMINMAX
 #include <vulkan/vk_sdk_platform.h>
 #include "vk_layer_utils.h"
 

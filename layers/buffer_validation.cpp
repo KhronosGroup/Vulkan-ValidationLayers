@@ -20,9 +20,6 @@
  * Shannon McPherson <shannon@lunarg.com>
  */
 
-// Allow use of STL min and max functions in Windows
-#define NOMINMAX
-
 #include <cmath>
 #include <set>
 #include <sstream>

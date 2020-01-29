@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2019 The Khronos Group Inc.
- * Copyright (c) 2018-2019 Valve Corporation
- * Copyright (c) 2018-2019 LunarG, Inc.
+/* Copyright (c) 2018-2020 The Khronos Group Inc.
+ * Copyright (c) 2018-2020 Valve Corporation
+ * Copyright (c) 2018-2020 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@
  * Author: Tony Barbour <tony@lunarg.com>
  */
 
-// Allow use of STL min and max functions in Windows
-#define NOMINMAX
 // This define indicates to build the VMA routines themselves
 #define VMA_IMPLEMENTATION
 // This define indicates that we will supply Vulkan function pointers at initialization

@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2014-2019 Valve Corporation
-# Copyright (c) 2014-2019 LunarG, Inc.
+# Copyright (c) 2014-2020 Valve Corporation
+# Copyright (c) 2014-2020 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 add_definitions(-DNV_EXTENSIONS -DAMD_EXTENSIONS)
 
 if(WIN32)
-    add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DWIN32_LEAN_AND_MEAN)
+    add_definitions(-DVK_USE_PLATFORM_WIN32_KHR -DWIN32_LEAN_AND_MEAN -DNOMINMAX)
     # Workaround for TR1 deprecation in Visual Studio 15.5 until Google Test is updated
     add_definitions(-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
     # Allow Windows to use multiprocessor compilation
