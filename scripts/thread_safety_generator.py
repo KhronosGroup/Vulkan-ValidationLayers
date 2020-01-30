@@ -252,7 +252,7 @@ class counter {
 public:
     const char *typeName;
     VkDebugReportObjectTypeEXT objectType;
-    debug_report_data **report_data;
+    ValidationObject *object_data;
 
     vl_concurrent_unordered_map<T, std::shared_ptr<ObjectUseData>, 6> object_table;
 
@@ -272,7 +272,7 @@ public:
         if (iter != object_table.end()) {
             return std::move(iter->second);
         } else {
-            log_msg(*report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object), kVUID_Threading_Info,
+            log_msg(object_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object), kVUID_Threading_Info,
                     "Couldn't find %s Object 0x%" PRIxLEAST64
                     ". This should not happen and may indicate a bug in the application.",
                     object_string[objectType], (uint64_t)(object));
@@ -301,7 +301,7 @@ public:
                 assert(prevCount.GetWriteCount() != 0);
                 // There are no readers.  Two writers just collided.
                 if (use_data->thread != tid) {
-                    skip |= log_msg(*report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object),
+                    skip |= log_msg(object_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object),
                         kVUID_Threading_MultipleThreads,
                         "THREADING ERROR : object of type %s is simultaneously used in "
                         "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
@@ -322,7 +322,7 @@ public:
             } else {
                 // There are readers.  This writer collided with them.
                 if (use_data->thread != tid) {
-                    skip |= log_msg(*report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object),
+                    skip |= log_msg(object_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object),
                         kVUID_Threading_MultipleThreads,
                         "THREADING ERROR : object of type %s is simultaneously used in "
                         "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
@@ -374,7 +374,7 @@ public:
             use_data->thread = tid;
         } else if (prevCount.GetWriteCount() > 0 && use_data->thread != tid) {
             // There is a writer of the object.
-            skip |= log_msg(*report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object),
+            skip |= log_msg(object_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object),
                 kVUID_Threading_MultipleThreads,
                 "THREADING ERROR : object of type %s is simultaneously used in "
                 "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
@@ -399,10 +399,10 @@ public:
         }
         use_data->RemoveReader();
     }
-    counter(const char *name = "", VkDebugReportObjectTypeEXT type = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, debug_report_data **rep_data = nullptr) {
-        typeName = name;
+    counter(const char *name = "", VkDebugReportObjectTypeEXT type = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, ValidationObject *val_obj = nullptr) {
+            typeName = name;
         objectType = type;
-        report_data = rep_data;
+        object_data = val_obj;
     }
 
 private:
@@ -464,18 +464,18 @@ COUNTER_CLASS_DEFINITIONS_TEMPLATE
 
     ThreadSafety(ThreadSafety *parent)
         : parent_instance(parent),
-          c_VkCommandBuffer("VkCommandBuffer", VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, &report_data),
-          c_VkDevice("VkDevice", VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, &report_data),
-          c_VkInstance("VkInstance", VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT, &report_data),
-          c_VkQueue("VkQueue", VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT, &report_data),
-          c_VkCommandPoolContents("VkCommandPool", VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT, &report_data),
+          c_VkCommandBuffer("VkCommandBuffer", VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, this),
+          c_VkDevice("VkDevice", VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, this),
+          c_VkInstance("VkInstance", VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT, this),
+          c_VkQueue("VkQueue", VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT, this),
+          c_VkCommandPoolContents("VkCommandPool", VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT, this),
 
 #ifdef DISTINCT_NONDISPATCHABLE_HANDLES
 COUNTER_CLASS_INSTANCES_TEMPLATE
 
 
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
-          c_uint64_t("NON_DISPATCHABLE_HANDLE", VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, &report_data)
+          c_uint64_t("NON_DISPATCHABLE_HANDLE", VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, this)
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
               {};
 
@@ -1393,7 +1393,7 @@ void ThreadSafety::PostCallRecordGetDeviceQueue2(
                 obj_type = self.object_to_debug_report_type[obj]
             else:
                 obj_type = 'VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT'
-            counter_class_instances += '          c_%s("%s", %s, &report_data),\n' % (obj, obj, obj_type)
+            counter_class_instances += '          c_%s("%s", %s, this),\n' % (obj, obj, obj_type)
             if 'VkSurface' in obj or 'VkDebugReportCallback' in obj or 'VkDebugUtilsMessenger' in obj:
                 counter_class_bodies += 'WRAPPER_PARENT_INSTANCE(%s)\n' % obj
             else:
