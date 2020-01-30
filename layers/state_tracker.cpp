@@ -4396,19 +4396,6 @@ void ValidationStateTracker::PostCallRecordAcquireProfilingLockKHR(VkDevice devi
     if (result == VK_SUCCESS) performance_lock_acquired = true;
 }
 
-bool ValidationStateTracker::PreCallValidateReleaseProfilingLockKHR(VkDevice device) const {
-    bool skip = false;
-
-    if (!performance_lock_acquired) {
-        skip |= log_msg(
-            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-            "VUID-vkReleaseProfilingLockKHR-device-03235",
-            "The profiling lock of device must have been held via a previous successful call to vkAcquireProfilingLockKHR.");
-    }
-
-    return skip;
-}
-
 void ValidationStateTracker::PostCallRecordReleaseProfilingLockKHR(VkDevice device) {
     performance_lock_acquired = false;
     for (auto &cmd_buffer : commandBufferMap) {

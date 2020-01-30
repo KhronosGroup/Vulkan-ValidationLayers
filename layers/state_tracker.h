@@ -780,7 +780,6 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll,
                                      uint64_t timeout, VkResult result);
     void PostCallRecordAcquireProfilingLockKHR(VkDevice device, const VkAcquireProfilingLockInfoKHR* pInfo, VkResult result);
-    bool PreCallValidateReleaseProfilingLockKHR(VkDevice device) const;
     void PostCallRecordReleaseProfilingLockKHR(VkDevice device);
 
     // Allocate/Free
