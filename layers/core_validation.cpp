@@ -11206,6 +11206,19 @@ bool CoreChecks::ValidateCmdDrawStrideWithBuffer(VkCommandBuffer commandBuffer, 
     return skip;
 }
 
+bool CoreChecks::PreCallValidateReleaseProfilingLockKHR(VkDevice device) const {
+    bool skip = false;
+
+    if (!performance_lock_acquired) {
+        skip |= log_msg(
+            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
+            "VUID-vkReleaseProfilingLockKHR-device-03235",
+            "The profiling lock of device must have been held via a previous successful call to vkAcquireProfilingLockKHR.");
+    }
+
+    return skip;
+}
+
 void PIPELINE_STATE::initGraphicsPipeline(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                                           std::shared_ptr<const RENDER_PASS_STATE> &&rpstate) {
     reset();
