@@ -95,13 +95,6 @@ enum FORMAT_TYPE {
 
 typedef std::pair<unsigned, unsigned> location_t;
 
-struct shader_stage_attributes {
-    char const *const name;
-    bool arrayed_input;
-    bool arrayed_output;
-    VkShaderStageFlags stage;
-};
-
 static shader_stage_attributes shader_stage_attribs[] = {
     {"vertex shader", false, false, VK_SHADER_STAGE_VERTEX_BIT},
     {"tessellation control shader", true, true, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT},
@@ -887,8 +880,7 @@ static bool IsWritableDescriptorType(SHADER_MODULE_STATE const *module, uint32_t
 }
 
 std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescriptorSlot(
-    debug_report_data const *report_data, SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> const &accessible_ids,
-    bool *has_writable_descriptor) {
+    SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> const &accessible_ids, bool *has_writable_descriptor) {
     std::vector<std::pair<descriptor_slot_t, interface_var>> out;
 
     for (auto id : accessible_ids) {
@@ -917,7 +909,7 @@ std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescr
     return out;
 }
 
-static bool ValidateViConsistency(debug_report_data const *report_data, VkPipelineVertexInputStateCreateInfo const *vi) {
+bool CoreChecks::ValidateViConsistency(VkPipelineVertexInputStateCreateInfo const *vi) const {
     // Walk the binding descriptions, which describe the step rate and stride of each vertex buffer.  Each binding should
     // be specified only once.
     std::unordered_map<uint32_t, VkVertexInputBindingDescription const *> bindings;
@@ -939,8 +931,8 @@ static bool ValidateViConsistency(debug_report_data const *report_data, VkPipeli
     return skip;
 }
 
-static bool ValidateViAgainstVsInputs(debug_report_data const *report_data, VkPipelineVertexInputStateCreateInfo const *vi,
-                                      SHADER_MODULE_STATE const *vs, spirv_inst_iter entrypoint) {
+bool CoreChecks::ValidateViAgainstVsInputs(VkPipelineVertexInputStateCreateInfo const *vi, SHADER_MODULE_STATE const *vs,
+                                           spirv_inst_iter entrypoint) const {
     bool skip = false;
 
     const auto inputs = CollectInterfaceByLocation(vs, entrypoint, spv::StorageClassInput, false);
@@ -996,8 +988,8 @@ static bool ValidateViAgainstVsInputs(debug_report_data const *report_data, VkPi
     return skip;
 }
 
-static bool ValidateFsOutputsAgainstRenderPass(debug_report_data const *report_data, SHADER_MODULE_STATE const *fs,
-                                               spirv_inst_iter entrypoint, PIPELINE_STATE const *pipeline, uint32_t subpass_index) {
+bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *fs, spirv_inst_iter entrypoint,
+                                                    PIPELINE_STATE const *pipeline, uint32_t subpass_index) const {
     bool skip = false;
 
     const auto rpci = pipeline->rp_state->createInfo.ptr();
@@ -1276,10 +1268,9 @@ std::unordered_set<uint32_t> MarkAccessibleIds(SHADER_MODULE_STATE const *src, s
     return ids;
 }
 
-static bool ValidatePushConstantBlockAgainstPipeline(debug_report_data const *report_data,
-                                                     std::vector<VkPushConstantRange> const *push_constant_ranges,
-                                                     SHADER_MODULE_STATE const *src, spirv_inst_iter type,
-                                                     VkShaderStageFlagBits stage) {
+bool CoreChecks::ValidatePushConstantBlockAgainstPipeline(std::vector<VkPushConstantRange> const *push_constant_ranges,
+                                                          SHADER_MODULE_STATE const *src, spirv_inst_iter type,
+                                                          VkShaderStageFlagBits stage) const {
     bool skip = false;
 
     // Strip off ptrs etc
@@ -1316,16 +1307,15 @@ static bool ValidatePushConstantBlockAgainstPipeline(debug_report_data const *re
     return skip;
 }
 
-static bool ValidatePushConstantUsage(debug_report_data const *report_data,
-                                      std::vector<VkPushConstantRange> const *push_constant_ranges, SHADER_MODULE_STATE const *src,
-                                      std::unordered_set<uint32_t> accessible_ids, VkShaderStageFlagBits stage) {
+bool CoreChecks::ValidatePushConstantUsage(std::vector<VkPushConstantRange> const *push_constant_ranges,
+                                           SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> accessible_ids,
+                                           VkShaderStageFlagBits stage) const {
     bool skip = false;
 
     for (auto id : accessible_ids) {
         auto def_insn = src->get_def(id);
         if (def_insn.opcode() == spv::OpVariable && def_insn.word(3) == spv::StorageClassPushConstant) {
-            skip |= ValidatePushConstantBlockAgainstPipeline(report_data, push_constant_ranges, src, src->get_def(def_insn.word(1)),
-                                                             stage);
+            skip |= ValidatePushConstantBlockAgainstPipeline(push_constant_ranges, src, src->get_def(def_insn.word(1)), stage);
         }
     }
 
@@ -1333,7 +1323,7 @@ static bool ValidatePushConstantUsage(debug_report_data const *report_data,
 }
 
 // Validate that data for each specialization entry is fully contained within the buffer.
-static bool ValidateSpecializationOffsets(debug_report_data const *report_data, VkPipelineShaderStageCreateInfo const *info) {
+bool CoreChecks::ValidateSpecializationOffsets(VkPipelineShaderStageCreateInfo const *info) const {
     bool skip = false;
 
     VkSpecializationInfo const *spec = info->pSpecializationInfo;
@@ -1478,7 +1468,7 @@ static std::string string_descriptorTypes(const std::set<uint32_t> &descriptor_t
     return ss.str();
 }
 
-static bool RequirePropertyFlag(debug_report_data const *report_data, VkBool32 check, char const *flag, char const *structure) {
+bool CoreChecks::RequirePropertyFlag(VkBool32 check, char const *flag, char const *structure) const {
     if (!check) {
         if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                     kVUID_Core_Shader_ExceedDeviceLimit, "Shader requires flag %s set in %s but it is not set on the device", flag,
@@ -1490,7 +1480,7 @@ static bool RequirePropertyFlag(debug_report_data const *report_data, VkBool32 c
     return false;
 }
 
-static bool RequireFeature(debug_report_data const *report_data, VkBool32 feature, char const *feature_name) {
+bool CoreChecks::RequireFeature(VkBool32 feature, char const *feature_name) const {
     if (!feature) {
         if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                     kVUID_Core_Shader_FeatureNotEnabled, "Shader requires %s but is not enabled on the device", feature_name)) {
@@ -1501,7 +1491,7 @@ static bool RequireFeature(debug_report_data const *report_data, VkBool32 featur
     return false;
 }
 
-static bool RequireExtension(debug_report_data const *report_data, bool extension, char const *extension_name) {
+bool CoreChecks::RequireExtension(bool extension, char const *extension_name) const {
     if (!extension) {
         if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
                     kVUID_Core_Shader_FeatureNotEnabled, "Shader requires extension %s but is not enabled on the device",
@@ -1665,11 +1655,10 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
                 auto it = capabilities.find(insn.word(1));
                 if (it != capabilities.end()) {
                     if (it->second.feature) {
-                        skip |= RequireFeature(report_data, it->second.feature.IsEnabled(enabled_features), it->second.name);
+                        skip |= RequireFeature(it->second.feature.IsEnabled(enabled_features), it->second.name);
                     }
                     if (it->second.extension) {
-                        skip |= RequireExtension(report_data, IsExtEnabled((device_extensions.*(it->second.extension))),
-                                                 it->second.name);
+                        skip |= RequireExtension(IsExtEnabled((device_extensions.*(it->second.extension))), it->second.name);
                     }
                 }
             } else if (1 < n) {  // key occurs multiple times, at least one must be enabled
@@ -1694,11 +1683,11 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
                 }
                 if (needs_feature) {
                     feature_names += "]";
-                    skip |= RequireFeature(report_data, has_feature, feature_names.c_str());
+                    skip |= RequireFeature(has_feature, feature_names.c_str());
                 }
                 if (needs_ext) {
                     extension_names += "]";
-                    skip |= RequireExtension(report_data, has_ext, extension_names.c_str());
+                    skip |= RequireExtension(has_ext, extension_names.c_str());
                 }
             }
 
@@ -1718,7 +1707,7 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
                     case spv::CapabilityGroupNonUniformClustered:
                     case spv::CapabilityGroupNonUniformQuad:
                     case spv::CapabilityGroupNonUniformPartitionedNV:
-                        RequirePropertyFlag(report_data, supportedStages & stage, string_VkShaderStageFlagBits(stage),
+                        RequirePropertyFlag(supportedStages & stage, string_VkShaderStageFlagBits(stage),
                                             "VkPhysicalDeviceSubgroupProperties::supportedStages");
                         break;
                 }
@@ -1727,47 +1716,43 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
                     default:
                         break;
                     case spv::CapabilityGroupNonUniform:
-                        RequirePropertyFlag(report_data, supportedOperations & VK_SUBGROUP_FEATURE_BASIC_BIT,
-                                            "VK_SUBGROUP_FEATURE_BASIC_BIT",
+                        RequirePropertyFlag(supportedOperations & VK_SUBGROUP_FEATURE_BASIC_BIT, "VK_SUBGROUP_FEATURE_BASIC_BIT",
                                             "VkPhysicalDeviceSubgroupProperties::supportedOperations");
                         break;
                     case spv::CapabilityGroupNonUniformVote:
-                        RequirePropertyFlag(report_data, supportedOperations & VK_SUBGROUP_FEATURE_VOTE_BIT,
-                                            "VK_SUBGROUP_FEATURE_VOTE_BIT",
+                        RequirePropertyFlag(supportedOperations & VK_SUBGROUP_FEATURE_VOTE_BIT, "VK_SUBGROUP_FEATURE_VOTE_BIT",
                                             "VkPhysicalDeviceSubgroupProperties::supportedOperations");
                         break;
                     case spv::CapabilityGroupNonUniformArithmetic:
-                        RequirePropertyFlag(report_data, supportedOperations & VK_SUBGROUP_FEATURE_ARITHMETIC_BIT,
+                        RequirePropertyFlag(supportedOperations & VK_SUBGROUP_FEATURE_ARITHMETIC_BIT,
                                             "VK_SUBGROUP_FEATURE_ARITHMETIC_BIT",
                                             "VkPhysicalDeviceSubgroupProperties::supportedOperations");
                         break;
                     case spv::CapabilityGroupNonUniformBallot:
-                        RequirePropertyFlag(report_data, supportedOperations & VK_SUBGROUP_FEATURE_BALLOT_BIT,
-                                            "VK_SUBGROUP_FEATURE_BALLOT_BIT",
+                        RequirePropertyFlag(supportedOperations & VK_SUBGROUP_FEATURE_BALLOT_BIT, "VK_SUBGROUP_FEATURE_BALLOT_BIT",
                                             "VkPhysicalDeviceSubgroupProperties::supportedOperations");
                         break;
                     case spv::CapabilityGroupNonUniformShuffle:
-                        RequirePropertyFlag(report_data, supportedOperations & VK_SUBGROUP_FEATURE_SHUFFLE_BIT,
+                        RequirePropertyFlag(supportedOperations & VK_SUBGROUP_FEATURE_SHUFFLE_BIT,
                                             "VK_SUBGROUP_FEATURE_SHUFFLE_BIT",
                                             "VkPhysicalDeviceSubgroupProperties::supportedOperations");
                         break;
                     case spv::CapabilityGroupNonUniformShuffleRelative:
-                        RequirePropertyFlag(report_data, supportedOperations & VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT,
+                        RequirePropertyFlag(supportedOperations & VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT,
                                             "VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT",
                                             "VkPhysicalDeviceSubgroupProperties::supportedOperations");
                         break;
                     case spv::CapabilityGroupNonUniformClustered:
-                        RequirePropertyFlag(report_data, supportedOperations & VK_SUBGROUP_FEATURE_CLUSTERED_BIT,
+                        RequirePropertyFlag(supportedOperations & VK_SUBGROUP_FEATURE_CLUSTERED_BIT,
                                             "VK_SUBGROUP_FEATURE_CLUSTERED_BIT",
                                             "VkPhysicalDeviceSubgroupProperties::supportedOperations");
                         break;
                     case spv::CapabilityGroupNonUniformQuad:
-                        RequirePropertyFlag(report_data, supportedOperations & VK_SUBGROUP_FEATURE_QUAD_BIT,
-                                            "VK_SUBGROUP_FEATURE_QUAD_BIT",
+                        RequirePropertyFlag(supportedOperations & VK_SUBGROUP_FEATURE_QUAD_BIT, "VK_SUBGROUP_FEATURE_QUAD_BIT",
                                             "VkPhysicalDeviceSubgroupProperties::supportedOperations");
                         break;
                     case spv::CapabilityGroupNonUniformPartitionedNV:
-                        RequirePropertyFlag(report_data, supportedOperations & VK_SUBGROUP_FEATURE_PARTITIONED_BIT_NV,
+                        RequirePropertyFlag(supportedOperations & VK_SUBGROUP_FEATURE_PARTITIONED_BIT_NV,
                                             "VK_SUBGROUP_FEATURE_PARTITIONED_BIT_NV",
                                             "VkPhysicalDeviceSubgroupProperties::supportedOperations");
                         break;
@@ -1797,11 +1782,10 @@ bool CoreChecks::ValidateShaderStageWritableDescriptor(VkShaderStageFlagBits sta
                  * raytracing, or mesh stages */
                 break;
             case VK_SHADER_STAGE_FRAGMENT_BIT:
-                skip |= RequireFeature(report_data, enabled_features.core.fragmentStoresAndAtomics, "fragmentStoresAndAtomics");
+                skip |= RequireFeature(enabled_features.core.fragmentStoresAndAtomics, "fragmentStoresAndAtomics");
                 break;
             default:
-                skip |= RequireFeature(report_data, enabled_features.core.vertexPipelineStoresAndAtomics,
-                                       "vertexPipelineStoresAndAtomics");
+                skip |= RequireFeature(enabled_features.core.vertexPipelineStoresAndAtomics, "vertexPipelineStoresAndAtomics");
                 break;
         }
     }
@@ -1822,7 +1806,7 @@ bool CoreChecks::ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const *m
             case spv::OpGroupNonUniformQuadBroadcast:
             case spv::OpGroupNonUniformQuadSwap:
                 if ((stage != VK_SHADER_STAGE_FRAGMENT_BIT) && (stage != VK_SHADER_STAGE_COMPUTE_BIT)) {
-                    skip |= RequireFeature(report_data, subgroup_props.subgroupQuadOperationsInAllStages,
+                    skip |= RequireFeature(subgroup_props.subgroupQuadOperationsInAllStages,
                                            "VkPhysicalDeviceSubgroupProperties::quadOperationsInAllStages");
                 }
                 break;
@@ -1873,7 +1857,7 @@ bool CoreChecks::ValidateShaderStageGroupNonUniform(SHADER_MODULE_STATE const *m
 
                     if ((type.opcode() == spv::OpTypeFloat && width == 16) ||
                         (type.opcode() == spv::OpTypeInt && (width == 8 || width == 16 || width == 64))) {
-                        skip |= RequireFeature(report_data, enabled_features.core12.shaderSubgroupExtendedTypes,
+                        skip |= RequireFeature(enabled_features.core12.shaderSubgroupExtendedTypes,
                                                "VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures::shaderSubgroupExtendedTypes");
                     }
                     break;
@@ -2985,9 +2969,8 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     skip |= ValidateShaderStageInputOutputLimits(module, pStage, pipeline, entrypoint);
     skip |= ValidateShaderStageGroupNonUniform(module, pStage->stage);
     skip |= ValidateExecutionModes(module, entrypoint);
-    skip |= ValidateSpecializationOffsets(report_data, pStage);
-    skip |= ValidatePushConstantUsage(report_data, pipeline->pipeline_layout->push_constant_ranges.get(), module, accessible_ids,
-                                      pStage->stage);
+    skip |= ValidateSpecializationOffsets(pStage);
+    skip |= ValidatePushConstantUsage(pipeline->pipeline_layout->push_constant_ranges.get(), module, accessible_ids, pStage->stage);
     if (check_point_size && !pipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable) {
         skip |= ValidatePointListShaderState(pipeline, module, entrypoint, pStage->stage);
     }
@@ -3056,10 +3039,10 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     return skip;
 }
 
-static bool ValidateInterfaceBetweenStages(debug_report_data const *report_data, SHADER_MODULE_STATE const *producer,
-                                           spirv_inst_iter producer_entrypoint, shader_stage_attributes const *producer_stage,
-                                           SHADER_MODULE_STATE const *consumer, spirv_inst_iter consumer_entrypoint,
-                                           shader_stage_attributes const *consumer_stage) {
+bool CoreChecks::ValidateInterfaceBetweenStages(SHADER_MODULE_STATE const *producer, spirv_inst_iter producer_entrypoint,
+                                                shader_stage_attributes const *producer_stage, SHADER_MODULE_STATE const *consumer,
+                                                spirv_inst_iter consumer_entrypoint,
+                                                shader_stage_attributes const *consumer_stage) const {
     bool skip = false;
 
     auto outputs =
@@ -3202,11 +3185,11 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
     auto vi = pCreateInfo->pVertexInputState;
 
     if (vi) {
-        skip |= ValidateViConsistency(report_data, vi);
+        skip |= ValidateViConsistency(vi);
     }
 
     if (shaders[vertex_stage] && shaders[vertex_stage]->has_valid_spirv) {
-        skip |= ValidateViAgainstVsInputs(report_data, vi, shaders[vertex_stage], entrypoints[vertex_stage]);
+        skip |= ValidateViAgainstVsInputs(vi, shaders[vertex_stage], entrypoints[vertex_stage]);
     }
 
     int producer = GetShaderStageId(VK_SHADER_STAGE_VERTEX_BIT);
@@ -3221,9 +3204,8 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
         assert(shaders[producer]);
         if (shaders[consumer]) {
             if (shaders[consumer]->has_valid_spirv && shaders[producer]->has_valid_spirv) {
-                skip |= ValidateInterfaceBetweenStages(report_data, shaders[producer], entrypoints[producer],
-                                                       &shader_stage_attribs[producer], shaders[consumer], entrypoints[consumer],
-                                                       &shader_stage_attribs[consumer]);
+                skip |= ValidateInterfaceBetweenStages(shaders[producer], entrypoints[producer], &shader_stage_attribs[producer],
+                                                       shaders[consumer], entrypoints[consumer], &shader_stage_attribs[consumer]);
             }
 
             producer = consumer;
@@ -3231,7 +3213,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
     }
 
     if (shaders[fragment_stage] && shaders[fragment_stage]->has_valid_spirv) {
-        skip |= ValidateFsOutputsAgainstRenderPass(report_data, shaders[fragment_stage], entrypoints[fragment_stage], pipeline,
+        skip |= ValidateFsOutputsAgainstRenderPass(shaders[fragment_stage], entrypoints[fragment_stage], pipeline,
                                                    pCreateInfo->subpass);
     }
 
