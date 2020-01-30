@@ -78,6 +78,13 @@ struct spirv_inst_iter {
     spirv_inst_iter const &operator*() const { return *this; }
 };
 
+struct shader_stage_attributes {
+    char const *const name;
+    bool arrayed_input;
+    bool arrayed_output;
+    VkShaderStageFlags stage;
+};
+
 struct decoration_set {
     enum {
         location_bit = 1 << 0,
@@ -318,8 +325,7 @@ std::unordered_set<uint32_t> MarkAccessibleIds(SHADER_MODULE_STATE const *src, s
 void ProcessExecutionModes(SHADER_MODULE_STATE const *src, const spirv_inst_iter &entrypoint, PIPELINE_STATE *pipeline);
 
 std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescriptorSlot(
-    debug_report_data const *report_data, SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> const &accessible_ids,
-    bool *has_writable_descriptor);
+    SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> const &accessible_ids, bool *has_writable_descriptor);
 
 uint32_t DescriptorTypeToReqs(SHADER_MODULE_STATE const *module, uint32_t type_id);
 

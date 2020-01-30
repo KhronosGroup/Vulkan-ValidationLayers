@@ -360,6 +360,23 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCooperativeMatrix(SHADER_MODULE_STATE const* src, VkPipelineShaderStageCreateInfo const* pStage,
                                    const PIPELINE_STATE* pipeline) const;
     bool ValidateExecutionModes(SHADER_MODULE_STATE const* src, spirv_inst_iter entrypoint) const;
+    bool ValidateViConsistency(VkPipelineVertexInputStateCreateInfo const* vi) const;
+    bool ValidateViAgainstVsInputs(VkPipelineVertexInputStateCreateInfo const* vi, SHADER_MODULE_STATE const* vs,
+                                   spirv_inst_iter entrypoint) const;
+    bool ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const* fs, spirv_inst_iter entrypoint,
+                                            PIPELINE_STATE const* pipeline, uint32_t subpass_index) const;
+    bool ValidatePushConstantUsage(std::vector<VkPushConstantRange> const* push_constant_ranges, SHADER_MODULE_STATE const* src,
+                                   std::unordered_set<uint32_t> accessible_ids, VkShaderStageFlagBits stage) const;
+    bool ValidatePushConstantBlockAgainstPipeline(std::vector<VkPushConstantRange> const* push_constant_ranges,
+                                                  SHADER_MODULE_STATE const* src, spirv_inst_iter type,
+                                                  VkShaderStageFlagBits stage) const;
+    bool ValidateSpecializationOffsets(VkPipelineShaderStageCreateInfo const* info) const;
+    bool RequirePropertyFlag(VkBool32 check, char const* flag, char const* structure) const;
+    bool RequireFeature(VkBool32 feature, char const* feature_name) const;
+    bool RequireExtension(bool extension, char const* extension_name) const;
+    bool ValidateInterfaceBetweenStages(SHADER_MODULE_STATE const* producer, spirv_inst_iter producer_entrypoint,
+                                        shader_stage_attributes const* producer_stage, SHADER_MODULE_STATE const* consumer,
+                                        spirv_inst_iter consumer_entrypoint, shader_stage_attributes const* consumer_stage) const;
 
     // Buffer Validation Functions
     template <class OBJECT, class LAYOUT>
