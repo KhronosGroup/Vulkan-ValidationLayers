@@ -272,7 +272,7 @@ public:
         if (iter != object_table.end()) {
             return std::move(iter->second);
         } else {
-            log_msg(object_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object), kVUID_Threading_Info,
+            object_data->LogError(object, kVUID_Threading_Info,
                     "Couldn't find %s Object 0x%" PRIxLEAST64
                     ". This should not happen and may indicate a bug in the application.",
                     object_string[objectType], (uint64_t)(object));
@@ -301,8 +301,7 @@ public:
                 assert(prevCount.GetWriteCount() != 0);
                 // There are no readers.  Two writers just collided.
                 if (use_data->thread != tid) {
-                    skip |= log_msg(object_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object),
-                        kVUID_Threading_MultipleThreads,
+                    skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads,
                         "THREADING ERROR : object of type %s is simultaneously used in "
                         "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
                         typeName, (uint64_t)use_data->thread.load(std::memory_order_relaxed), (uint64_t)tid);
@@ -322,8 +321,7 @@ public:
             } else {
                 // There are readers.  This writer collided with them.
                 if (use_data->thread != tid) {
-                    skip |= log_msg(object_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object),
-                        kVUID_Threading_MultipleThreads,
+                    skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads,
                         "THREADING ERROR : object of type %s is simultaneously used in "
                         "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
                         typeName, (uint64_t)use_data->thread.load(std::memory_order_relaxed), (uint64_t)tid);
@@ -374,8 +372,7 @@ public:
             use_data->thread = tid;
         } else if (prevCount.GetWriteCount() > 0 && use_data->thread != tid) {
             // There is a writer of the object.
-            skip |= log_msg(object_data->report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, objectType, (uint64_t)(object),
-                kVUID_Threading_MultipleThreads,
+            skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads,
                 "THREADING ERROR : object of type %s is simultaneously used in "
                 "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
                 typeName, (uint64_t)use_data->thread.load(std::memory_order_relaxed), (uint64_t)tid);
