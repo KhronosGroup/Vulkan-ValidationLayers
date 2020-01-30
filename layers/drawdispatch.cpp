@@ -82,13 +82,12 @@ bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, ui
         }
         VkDeviceSize end_offset = (index_size * ((VkDeviceSize)firstIndex + indexCount)) + index_buffer_binding.offset;
         if (end_offset > index_buffer_binding.size) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT,
-                            HandleToUint64(index_buffer_binding.buffer), "VUID-vkCmdDrawIndexed-indexSize-00463",
-                            "vkCmdDrawIndexed() index size (%d) * (firstIndex (%d) + indexCount (%d)) "
-                            "+ binding offset (%" PRIuLEAST64 ") = an ending offset of %" PRIuLEAST64
-                            " bytes, "
-                            "which is greater than the index buffer size (%" PRIuLEAST64 ").",
-                            index_size, firstIndex, indexCount, index_buffer_binding.offset, end_offset, index_buffer_binding.size);
+            skip |=
+                LogError(index_buffer_binding.buffer, "VUID-vkCmdDrawIndexed-indexSize-00463",
+                         "vkCmdDrawIndexed() index size (%d) * (firstIndex (%d) + indexCount (%d)) "
+                         "+ binding offset (%" PRIuLEAST64 ") = an ending offset of %" PRIuLEAST64
+                         " bytes, which is greater than the index buffer size (%" PRIuLEAST64 ").",
+                         index_size, firstIndex, indexCount, index_buffer_binding.offset, end_offset, index_buffer_binding.size);
         }
     }
     return skip;
@@ -166,16 +165,14 @@ bool CoreChecks::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkB
                                               uint32_t stride, const char *apiName) const {
     bool skip = false;
     if (offset & 3) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawIndirectCount-offset-02710",
-                        "%s() parameter, VkDeviceSize offset (0x%" PRIxLEAST64 "), is not a multiple of 4.", apiName, offset);
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirectCount-offset-02710",
+                         "%s() parameter, VkDeviceSize offset (0x%" PRIxLEAST64 "), is not a multiple of 4.", apiName, offset);
     }
 
     if (countBufferOffset & 3) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawIndirectCount-countBufferOffset-02716",
-                        "%s() parameter, VkDeviceSize countBufferOffset (0x%" PRIxLEAST64 "), is not a multiple of 4.", apiName,
-                        countBufferOffset);
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirectCount-countBufferOffset-02716",
+                         "%s() parameter, VkDeviceSize countBufferOffset (0x%" PRIxLEAST64 "), is not a multiple of 4.", apiName,
+                         countBufferOffset);
     }
     skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndirectCount-stride-03110", stride, apiName,
                                             sizeof(VkDrawIndirectCommand));
@@ -220,18 +217,16 @@ bool CoreChecks::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuff
                                                      uint32_t stride) const {
     bool skip = false;
     if (offset & 3) {
-        skip |= log_msg(
-            report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-            HandleToUint64(commandBuffer), "VUID-vkCmdDrawIndexedIndirectCount-offset-02710",
+        skip |= LogError(
+            commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-offset-02710",
             "vkCmdDrawIndexedIndirectCount() parameter, VkDeviceSize offset (0x%" PRIxLEAST64 "), is not a multiple of 4.", offset);
     }
 
     if (countBufferOffset & 3) {
-        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                        HandleToUint64(commandBuffer), "VUID-vkCmdDrawIndexedIndirectCount-countBufferOffset-02716",
-                        "vkCmdDrawIndexedIndirectCount() parameter, VkDeviceSize countBufferOffset (0x%" PRIxLEAST64
-                        "), is not a multiple of 4.",
-                        countBufferOffset);
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-countBufferOffset-02716",
+                         "vkCmdDrawIndexedIndirectCount() parameter, VkDeviceSize countBufferOffset (0x%" PRIxLEAST64
+                         "), is not a multiple of 4.",
+                         countBufferOffset);
     }
 
     skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-stride-03142", stride,
