@@ -18,10 +18,20 @@
 # limitations under the License.
 #
 # Author: John Zulauf <jzulauf@lunarg.com>
+
+# Script operation controls
 debug_table_parse = False
 debug_in_bit_order = False
 debug_top_level = False
 debug_queue_caps = False
+debug_stage_order_parse = False
+debug_bubble_insert = False
+experimental_ordering = False
+
+# Some DRY constants
+host_stage = 'VK_PIPELINE_STAGE_HOST_BIT'
+top_stage ='VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT'
+bot_stage ='VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT'
 
 # Snipped from chapters/synchronization.txt -- tage v1.1.123
 snippet_access_types_supported = '''
@@ -170,6 +180,279 @@ def CreateStageAccessTable(stage_order, access_stage_table):
 
     return stage_access_table
 
+# Snipped from chapters/synchronization.txt -- tage v1.1.123
+snippet_pipeline_stages_order = '''
+[[synchronization-pipeline-stages-types]]
+The order and set of pipeline stages executed by a given command is
+determined by the command's pipeline type, as described below:
+
+ifndef::VK_NV_mesh_shader[]
+For the graphics pipeline, the following stages occur in this order:
+endif::VK_NV_mesh_shader[]
+ifdef::VK_NV_mesh_shader[]
+For the graphics primitive shading pipeline, the following stages occur in
+this order:
+endif::VK_NV_mesh_shader[]
+
+  * ename:VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+  * ename:VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
+  * ename:VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
+  * ename:VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
+  * ename:VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT
+  * ename:VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT
+  * ename:VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT
+ifdef::VK_EXT_transform_feedback[]
+  * ename:VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT
+endif::VK_EXT_transform_feedback[]
+ifdef::VK_NV_shading_rate_image[]
+  * ename:VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV
+endif::VK_NV_shading_rate_image[]
+  * ename:VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
+  * ename:VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+  * ename:VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
+  * ename:VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+  * ename:VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
+
+ifdef::VK_NV_mesh_shader[]
+For the graphics mesh shading pipeline, the following stages occur in this
+order:
+
+  * ename:VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+  * ename:VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
+  * ename:VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV
+  * ename:VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV
+ifdef::VK_NV_shading_rate_image[]
+  * ename:VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV
+endif::VK_NV_shading_rate_image[]
+  * ename:VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
+  * ename:VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+  * ename:VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
+  * ename:VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+  * ename:VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
+endif::VK_NV_mesh_shader[]
+
+ifdef::VK_EXT_fragment_density_map[]
+For graphics pipeline commands executing in a render pass with a fragment
+density map attachment, the pipeline stage where the fragment density map
+read happens has no particular order relative to the other stages except
+that it happens before ename:VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT.
+
+  * ename:VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT
+endif::VK_EXT_fragment_density_map[]
+
+For the compute pipeline, the following stages occur in this order:
+
+  * ename:VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+  * ename:VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
+  * ename:VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+  * ename:VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
+
+ifdef::VK_EXT_conditional_rendering[]
+The conditional rendering stage is formally part of both the graphics, and
+the compute pipeline.
+The pipeline stage where the predicate read happens has unspecified order
+relative to other stages of these pipelines:
+
+  * ename:VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT
+endif::VK_EXT_conditional_rendering[]
+
+For the transfer pipeline, the following stages occur in this order:
+
+  * ename:VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+  * ename:VK_PIPELINE_STAGE_TRANSFER_BIT
+  * ename:VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
+
+For host operations, only one pipeline stage occurs, so no order is
+guaranteed:
+
+  * ename:VK_PIPELINE_STAGE_HOST_BIT
+
+ifdef::VK_NVX_device_generated_commands[]
+For the command processing pipeline, the following stages occur in this
+order:
+
+  * ename:VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+  * ename:VK_PIPELINE_STAGE_COMMAND_PROCESS_BIT_NVX
+  * ename:VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
+endif::VK_NVX_device_generated_commands[]
+
+ifdef::VK_NV_ray_tracing[]
+For the ray tracing shader pipeline, only one pipeline stage occurs, so no
+order is guaranteed:
+
+  * ename:VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV
+
+For ray tracing acceleration structure operations, only one pipeline stage
+occurs, so no order is guaranteed:
+
+  * ename:VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV
+
+endif::VK_NV_ray_tracing[]
+'''
+
+pipeline_name_labels = {
+    'GRAPHICS': 'For the graphics primitive shading pipeline',
+    'MESH': 'For the graphics mesh shading pipeline',
+    'COMPUTE': 'For the compute pipeline',
+    'TRANSFER': 'For the transfer pipeline',
+    'HOST': 'For host operations, only one pipeline',
+    'COMMAND_PROCESS': 'For the command processing pipeline',
+    'RAY_TRACING_SHADE': 'For the ray tracing shader pipelin',
+    'ACCELERATION_STRUCTURE': 'For ray tracing acceleration structure operations'
+}
+
+def StageOrderListFromSet(stage_order, stage_set):
+    return [ stage for stage in stage_order if stage in stage_set]
+
+def BubbleInsertStages(stage_order, prior, subseq):
+    # Get a fixed list for the order in which we'll add... this is a 'seed' order and will guarantee repeatilbity as it fixes the
+    # order items not sorted relative to each other.  Any seed would do, even alphabetical
+    stage_set = set(prior.keys()).union(set(subseq.keys()))
+
+    #stage_set_ordered = StageOrderListFromSet(stage_order, stage_set)
+    # Come up with a consistent stage order seed that will leave stage types (extension, core, vendor) grouped
+    # Reverse the strings -- a spoonerism of the whole stage string, to put the type first
+    #     spoonerism -- https://en.wikipedia.org/wiki/Spoonerism
+    stage_spooner = list()
+    acme = '_AAAAAA'
+    stage_spooner = sorted([ stage.replace('_BIT', acme)[::-1] for stage in stage_set if stage != host_stage])
+    print('ZZZ BUBBLE spooner\n', '\n '.join(stage_spooner))
+
+    # De-spoonerize
+    stage_set_ordered = [ stage[::-1].replace(acme, '_BIT') for stage in stage_spooner]
+    print('ZZZ BUBBLE de-spooner\n', '\n '.join(stage_set_ordered))
+
+    stage_set_ordered.append(host_stage)
+    stages = [ stage_set_ordered.pop(0) ]
+
+    for stage in stage_set_ordered:
+        if debug_bubble_insert: print('BUBBLE adding stage:', stage)
+        inserted = False;
+        for i in range(len(stages)):
+            if stages[i] in subseq[stage]:
+                stages.insert(i, stage)
+                inserted = True
+                break
+        if not inserted:
+            stages.append(stage)
+        if debug_bubble_insert: print('BUBBLE result:', stages)
+
+    print('BUBBLE\n', '\n '.join(stages))
+    return stages
+
+def ParsePipelineStageOrder(stage_order, stage_order_snippet, config) :
+    pipeline_name = ''
+    stage_lists = {}
+    touchup = set()
+    stage_entry_prefix = '* ename:'
+    all_stages = set()
+    list_started = False
+    # Parse the snippet
+    for line in stage_order_snippet.split('\n'):
+        line = line.strip()
+        if debug_stage_order_parse: print ('STAGE_ORDER', line)
+        if not line:
+            if debug_stage_order_parse: print ('STAGE_ORDER', 'skip empty')
+            if list_started:
+                if debug_stage_order_parse: print ('STAGE_ORDER', 'EOL')
+                pipeline_name = ''
+            continue
+        if line.startswith('For') :
+            if debug_stage_order_parse: print ('STAGE_ORDER', 'new pipeline')
+            for name, label in pipeline_name_labels.items():
+                if line.startswith(label):
+                    pipeline_name = name
+                    stage_lists[name] = list()
+                    list_started = False
+                    break
+            continue
+        if line.startswith(stage_entry_prefix):
+            if debug_stage_order_parse: print ('STAGE_ORDER', 'new entry')
+            list_started = True
+            stage = line.lstrip(stage_entry_prefix)
+            all_stages.add(stage)
+            if pipeline_name:
+                if debug_stage_order_parse: print ('STAGE_ORDER', 'normal entry')
+                stage_lists[pipeline_name].append(stage)
+            else:
+                if debug_stage_order_parse: print ('STAGE_ORDER', 'touchup entry')
+                touchup.add(stage)
+
+    if debug_stage_order_parse:
+        print('STAGE_ORDER', 'PARSED PIPELINES')
+        for pipeline_name, stage_list in stage_lists.items():
+            print(pipeline_name,"|".join(stage_list))
+
+        print('STAGE_ORDER', 'PARSED all_stages')
+        print('all_stages',"|".join(all_stages))
+
+
+    # Create earlier/later maps
+    prior = { stage:set() for stage in all_stages }
+    subseq = { stage:set() for stage in all_stages }
+
+    for pipeline_name, stage_list in stage_lists.items():
+        for i in range(len(stage_list)):
+            prior[stage_list[i]].update(stage_list[:i])
+            subseq[stage_list[i]].update(stage_list[i+1:])
+
+    # Touch up the stages that don't quite parse right
+    touchups_done = set()
+
+    # FDP Stage is only constrained to be before VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
+    fdp_stage = 'VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT'
+    fdp_before = 'VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT'
+    prior[fdp_stage] = set()
+    subseq[fdp_stage] = set([fdp_before])
+    subseq[fdp_stage].update(subseq[fdp_before])
+    for stage in subseq[fdp_stage]:
+        prior[stage].add(fdp_stage)
+
+    touchups_done.add(fdp_stage)
+
+    # The is formatted oddly in the snippet, so just add it here
+    cr_stage ='VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT'
+    prior[cr_stage] = set()
+    subseq[cr_stage] = set()
+
+    touchups_done.add(cr_stage)
+
+    # Make sure top and bottom got added to every prior and subseq (respectively) except for HOST
+    # and the every stage is prior and susequent to bottom and top (respectively) also except for HOST
+    for stage, prior_stages in prior.items():
+        if stage == host_stage: continue
+        prior_stages.add(top_stage)
+        subseq[top_stage].add(stage)
+    for stage, subseq_stages in subseq.items():
+        if stage == host_stage: continue
+        subseq_stages.add(bot_stage)
+        prior[bot_stage].add(stage)
+
+    if experimental_ordering:
+        stage_order = BubbleInsertStages(stage_order, prior, subseq)
+
+    # Convert sets to ordered vectors
+    prior_sets = prior
+    prior = { key:StageOrderListFromSet(stage_order, value) for key, value in prior_sets.items() }
+    subseq_sets = subseq
+    subseq = { key:StageOrderListFromSet(stage_order, value) for key, value in subseq_sets.items() }
+
+    if debug_stage_order_parse:
+        print('STAGE_ORDER PRIOR STAGES')
+        for stage, stage_set in prior.items():
+            print(stage,"|".join(stage_set))
+
+        print('STAGE_ORDER SUBSEQUENT STAGES')
+        for stage, stage_set in subseq.items():
+            print(stage,"|".join(stage_set))
+
+    if touchups_done != touchup:
+        print('STAGE_ORDER Stage order touchups failed')
+        print('STAGE_ORDER touchups_done', touchups_done)
+        print('STAGE_ORDER touchups found', touchup)
+        exit(-1)
+
+    return { 'stages': all_stages, 'stage_lists':stage_lists, 'prior': prior, 'subseq':subseq, 'touchups':touchup }
 
 # Note: there should be a machine readable merged order, but there isn't... so we'll need some built-in consistency checks
 # Pipeline stages in rough order, merge sorted.  When
@@ -516,6 +799,19 @@ def AllCommandsByQueueCapability(stage_order, stage_queue_table, config):
     desc = 'Pipeline stages corresponding to VK_PIPELINE_STAGE_ALL_COMMANDS_BIT for each VkQueueFlagBits'
     return CrossReferenceTable(name, desc, 'VkQueueFlagBits', 'VkPipelineStageFlags', queue_caps, queue_flag_map, config)
 
+def PipelineOrderMaskMap(stage_order, stage_order_map, config):
+    output = list()
+    prior_name = 'LogicallyEarlierStages'
+    prior_desc = 'Masks of logically earlier stage flags for a given stage flag'
+    output.extend(CrossReferenceTable(prior_name, prior_desc, config['vk_stage_bits'], config['vk_stage_flags'], stage_order,
+                                     stage_order_map['prior'], config))
+
+    subseq_name = 'LogicallyLaterStages'
+    subseq_desc = 'Masks of logically later stage flags for a given stage flag'
+    output.extend(CrossReferenceTable(subseq_name, subseq_desc, config['vk_stage_bits'], config['vk_stage_flags'], stage_order,
+                                     stage_order_map['subseq'], config))
+    return output
+
 def GenSyncTypeHelper(gen) :
     config = {
         'var_prefix': 'sync',
@@ -524,7 +820,9 @@ def GenSyncTypeHelper(gen) :
         'indent': '    ',
         'sync_mask_base_type': 'uint64_t',
         'vk_stage_flags': 'VkPipelineStageFlags',
-        'vk_access_flags': 'VkAccessFlags'}
+        'vk_stage_bits': 'VkPipelineStageFlagBits',
+        'vk_access_flags': 'VkAccessFlags',
+        'vk_access_bits': 'VkAccessFlagBits'}
     config['sync_mask_name'] = '{}StageAccessFlags'.format(config['type_prefix'])
     config['ordinal_name'] = '{}StageAccessIndex'.format(config['type_prefix'])
     config['bits_name'] = '{}StageAccessFlagBits'.format(config['type_prefix'])
@@ -538,6 +836,7 @@ def GenSyncTypeHelper(gen) :
     if debug_top_level:
         lines.append('// Access types \n//    ' + '\n//    '.join(access_types) +  '\n' * 2)
 
+    stage_order_map = ParsePipelineStageOrder(stage_order, snippet_pipeline_stages_order, config)
     access_stage_table = ParseAccessType(snippet_access_types_supported)
     stage_queue_cap_table = ParseAccessType(snippet_pipeline_stages_supported)
     stage_access_table = CreateStageAccessTable(stage_order, access_stage_table)
@@ -548,4 +847,5 @@ def GenSyncTypeHelper(gen) :
     lines.extend(ReadWriteMasks(stage_access_combinations, config))
 
     lines.extend(AllCommandsByQueueCapability(stage_order, stage_queue_cap_table, config))
+    lines.extend(PipelineOrderMaskMap(stage_order, stage_order_map, config))
     return  '\n'.join(lines)
