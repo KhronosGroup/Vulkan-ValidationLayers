@@ -325,7 +325,8 @@ struct SAMPLER_STATE : public BASE_NODE {
 class IMAGE_STATE : public BINDABLE {
   public:
     VkImage image;
-    VkImageCreateInfo createInfo;
+    safe_VkImageCreateInfo safe_create_info;
+    VkImageCreateInfo &createInfo;
     bool valid;               // If this is a swapchain image backing memory track valid here as it doesn't have DEVICE_MEMORY_STATE
     bool acquired;            // If this is a swapchain image, has it been acquired by the app.
     bool shared_presentable;  // True for a front-buffered swapchain image
