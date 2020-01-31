@@ -65,7 +65,8 @@ static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &creat
 
 IMAGE_STATE::IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
     : image(img),
-      createInfo(*pCreateInfo),
+      safe_create_info(pCreateInfo),
+      createInfo(*safe_create_info.ptr()),
       valid(false),
       acquired(false),
       shared_presentable(false),
