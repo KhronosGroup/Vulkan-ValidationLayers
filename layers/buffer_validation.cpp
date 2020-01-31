@@ -1605,20 +1605,46 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                             pCreateInfo->arrayLayers, format_limits.maxArrayLayers);
         }
 
-        if (device_extensions.vk_khr_sampler_ycbcr_conversion && FormatRequiresYcbcrConversion(pCreateInfo->format) &&
-            !device_extensions.vk_ext_ycbcr_image_arrays && pCreateInfo->arrayLayers > 1) {
-            skip |= log_msg(
-                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
-                "VUID-VkImageCreateInfo-format-02653",
-                "vkCreateImage(): arrayLayers=%d exceeds the maximum allowed of 1 for formats requiring sampler ycbcr conversion",
-                pCreateInfo->arrayLayers);
-        }
-
         if ((pCreateInfo->samples & format_limits.sampleCounts) == 0) {
             skip |=
                 log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
                         "VUID-VkImageCreateInfo-samples-02258", "vkCreateImage(): samples %s is not supported by format 0x%.8X.",
                         string_VkSampleCountFlagBits(pCreateInfo->samples), format_limits.sampleCounts);
+        }
+    }
+
+    // Tests for "Formats requiring sampler Y’CBCR conversion for VK_IMAGE_ASPECT_COLOR_BIT image views"
+    if (FormatRequiresYcbcrConversion(pCreateInfo->format)) {
+        if (!enabled_features.ycbcr_image_array_features.ycbcrImageArrays && pCreateInfo->arrayLayers != 1) {
+            const char *error_vuid = (device_extensions.vk_ext_ycbcr_image_arrays) ? "VUID-VkImageCreateInfo-format-02653"
+                                                                                   : "VUID-VkImageCreateInfo-format-02564";
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0, error_vuid,
+                            "vkCreateImage(): arrayLayers = %d, but when the ycbcrImagesArrays feature is not enabled and using a "
+                            "YCbCr Conversion format, arrayLayers must be 1",
+                            pCreateInfo->arrayLayers);
+        }
+
+        if (pCreateInfo->mipLevels != 1) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
+                            "VUID-VkImageCreateInfo-format-02561",
+                            "vkCreateImage(): mipLevels = %d, but when using a YCbCr Conversion format, mipLevels must be 1",
+                            pCreateInfo->arrayLayers);
+        }
+
+        if (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) {
+            skip |= log_msg(
+                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
+                "VUID-VkImageCreateInfo-format-02562",
+                "vkCreateImage(): samples = %s, but when using a YCbCr Conversion format, samples must be VK_SAMPLE_COUNT_1_BIT",
+                string_VkSampleCountFlagBits(pCreateInfo->samples));
+        }
+
+        if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) {
+            skip |= log_msg(
+                report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, 0,
+                "VUID-VkImageCreateInfo-format-02563",
+                "vkCreateImage(): imageType = %s, but when using a YCbCr Conversion format, imageType must be VK_IMAGE_TYPE_2D ",
+                string_VkImageType(pCreateInfo->imageType));
         }
     }
 
