@@ -7959,12 +7959,11 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
     vk::DestroyBuffer(m_device->device(), buffer, NULL);
 }
 
-TEST_F(VkLayerTest, CreateImageYcbcrArrayLayers) {
-    TEST_DESCRIPTION("Creating images with out-of-range arrayLayers ");
+TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
+    TEST_DESCRIPTION("Creating images with Ycbcr Formats.");
 
     // Enable KHR multiplane req'd extensions
-    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-                                                    VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_SPEC_VERSION);
+    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 1);
     if (mp_extensions) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
@@ -7983,14 +7982,22 @@ TEST_F(VkLayerTest, CreateImageYcbcrArrayLayers) {
         return;
     }
 
+    bool ycbcr_array_extension = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME);
+    if (ycbcr_array_extension) {
+        m_device_extension_names.push_back(VK_EXT_YCBCR_IMAGE_ARRAYS_EXTENSION_NAME);
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    // Create ycbcr image with unsupported arrayLayers
+    VkFormat mp_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+
+    // Create ycbcr image with all valid values
+    // Each test changes needed values and returns them back after
     VkImageCreateInfo image_create_info = {};
     image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    image_create_info.format = mp_format;
     image_create_info.extent.width = 32;
     image_create_info.extent.height = 32;
     image_create_info.extent.depth = 1;
@@ -7998,6 +8005,7 @@ TEST_F(VkLayerTest, CreateImageYcbcrArrayLayers) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.arrayLayers = 1;
 
     bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), image_create_info, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
     if (!supported) {
@@ -8007,13 +8015,48 @@ TEST_F(VkLayerTest, CreateImageYcbcrArrayLayers) {
 
     VkImageFormatProperties img_limits;
     ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_create_info, &img_limits));
-    if (img_limits.maxArrayLayers == 1) {
-        return;
-    }
-    image_create_info.arrayLayers = img_limits.maxArrayLayers;
 
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02653");
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-format-02653");
+    // invalid arrayLayers
+    if (img_limits.maxArrayLayers == 1) {
+        printf("%s Multiplane image maxArrayLayers is already 1.  Skipping test.\n", kSkipPrefix);
+    } else {
+        image_create_info.arrayLayers = img_limits.maxArrayLayers;
+        const char *error_vuid =
+            (ycbcr_array_extension) ? "VUID-VkImageCreateInfo-format-02653" : "VUID-VkImageCreateInfo-format-02564";
+        CreateImageTest(*this, &image_create_info, error_vuid);
+        image_create_info.arrayLayers = 1;
+    }
+
+    // invalid mipLevels
+    if (img_limits.maxMipLevels == 1) {
+        printf("%s Multiplane image maxMipLevels is already 1.  Skipping test.\n", kSkipPrefix);
+    } else {
+        // needs to be 2
+        // if more then 2 the VU since its larger the (depth^2 + 1)
+        // if up the depth the VU for IMAGE_TYPE_2D and depth != 1 hits
+        image_create_info.mipLevels = 2;
+        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02561");
+        image_create_info.mipLevels = 1;
+    }
+
+    // invalid samples count
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
+    // Might need to add extra validation because implementation probably doesn't support YUV
+    VkImageFormatProperties image_format_props;
+    vk::GetPhysicalDeviceImageFormatProperties(gpu(), mp_format, image_create_info.imageType, image_create_info.tiling,
+                                               image_create_info.usage, image_create_info.flags, &image_format_props);
+    if ((image_format_props.sampleCounts & VK_SAMPLE_COUNT_4_BIT) == 0) {
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCreateInfo-samples-02258");
+    }
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02562");
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+
+    // invalid imageType
+    image_create_info.extent.height = 1;  // to satisfy 1D requriments
+    image_create_info.imageType = VK_IMAGE_TYPE_1D;
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02563");
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.extent.height = 32;
 }
 
 TEST_F(VkLayerTest, BindImageMemorySwapchain) {
