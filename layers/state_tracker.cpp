@@ -1249,6 +1249,11 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.device_coherent_memory_features = *device_coherent_memory_features;
     }
 
+    const auto *ycbcr_image_array_features = lvl_find_in_chain<VkPhysicalDeviceYcbcrImageArraysFeaturesEXT>(pCreateInfo->pNext);
+    if (ycbcr_image_array_features) {
+        state_tracker->enabled_features.ycbcr_image_array_features = *ycbcr_image_array_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);

@@ -1219,6 +1219,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV dedicated_allocation_image_aliasing_features;
     VkPhysicalDevicePerformanceQueryFeaturesKHR performance_query_features;
     VkPhysicalDeviceCoherentMemoryFeaturesAMD device_coherent_memory_features;
+    VkPhysicalDeviceYcbcrImageArraysFeaturesEXT ycbcr_image_array_features;
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
