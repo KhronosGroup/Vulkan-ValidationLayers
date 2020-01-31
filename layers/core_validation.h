@@ -396,11 +396,13 @@ class CoreChecks : public ValidationStateTracker {
                                                           const IMAGE_STATE* dst_img, const VkImageCopy* region, const uint32_t i,
                                                           const char* function) const;
     bool ValidateIdleBuffer(VkBuffer buffer) const;
-    bool ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 strict, const VulkanTypedHandle& typed_handle,
-                            const char* msgCode, char const* func_name, char const* usage_str) const;
+    template <typename T1>
+    bool ValidateUsageFlags(VkFlags actual, VkFlags desired, VkBool32 strict, const T1 object,
+                            const VulkanTypedHandle& typed_handle, const char* msgCode, char const* func_name,
+                            char const* usage_str) const;
     bool ValidateImageSubresourceRange(const uint32_t image_mip_count, const uint32_t image_layer_count,
                                        const VkImageSubresourceRange& subresourceRange, const char* cmd_name,
-                                       const char* param_name, const char* image_layer_count_var_name, const uint64_t image_handle,
+                                       const char* param_name, const char* image_layer_count_var_name, const VkImage image,
                                        SubresourceRangeErrorCodes errorCodes) const;
     void SetImageLayout(CMD_BUFFER_STATE* cb_node, const IMAGE_STATE& image_state,
                         const VkImageSubresourceRange& image_subresource_range, VkImageLayout layout,
@@ -606,6 +608,13 @@ class CoreChecks : public ValidationStateTracker {
 
     bool PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkImageView* pView) const;
+
+    bool ValidateCmdCopyBufferBounds(const BUFFER_STATE* src_buffer_state, const BUFFER_STATE* dst_buffer_state,
+                                     uint32_t regionCount, const VkBufferCopy* pRegions) const;
+    bool ValidateImageBounds(const IMAGE_STATE* image_state, const uint32_t regionCount, const VkBufferImageCopy* pRegions,
+                             const char* func_name, const char* msg_code) const;
+    bool ValidateBufferBounds(const IMAGE_STATE* image_state, const BUFFER_STATE* buff_state, uint32_t regionCount,
+                              const VkBufferImageCopy* pRegions, const char* func_name, const char* msg_code) const;
 
     bool ValidateCopyBufferImageTransferGranularityRequirements(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* img,
                                                                 const VkBufferImageCopy* region, const uint32_t i,
