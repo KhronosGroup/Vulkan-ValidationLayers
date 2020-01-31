@@ -259,6 +259,7 @@ foreach(layer_info, layers) {
     }
     sources = layer_info[1]
     if (is_win) {
+      defines += [ "NOMINMAX" ]
       sources += [ "layers/VkLayer_$name.def" ]
     }
     if (is_linux || is_android) {
