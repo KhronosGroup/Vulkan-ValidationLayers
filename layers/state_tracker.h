@@ -776,6 +776,7 @@ class ValidationStateTracker : public ValidationObject {
     void PreCallRecordSetEvent(VkDevice device, VkEvent event);
     void PostCallRecordWaitForFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkBool32 waitAll,
                                      uint64_t timeout, VkResult result);
+    void PostCallRecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo* pWaitInfo, uint64_t timeout, VkResult result);
     void PostCallRecordAcquireProfilingLockKHR(VkDevice device, const VkAcquireProfilingLockInfoKHR* pInfo, VkResult result);
     void PostCallRecordReleaseProfilingLockKHR(VkDevice device);
 
@@ -1073,6 +1074,7 @@ class ValidationStateTracker : public ValidationObject {
     void RemoveImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE* mem_info);
     void ResetCommandBufferState(const VkCommandBuffer cb);
     void RetireFence(VkFence fence);
+    void RetireTimelineSemaphore(VkSemaphore semaphore, uint64_t until_payload);
     void RetireWorkOnQueue(QUEUE_STATE* pQueue, uint64_t seq);
     static bool SetEventStageMask(VkEvent event, VkPipelineStageFlags stageMask, EventToStageMap* localEventToStageMap);
     void ResetCommandBufferPushConstantDataIfIncompatible(CMD_BUFFER_STATE* cb_state, VkPipelineLayout layout);

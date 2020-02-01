@@ -1472,7 +1472,7 @@ void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq
         }
 
         for (auto &semaphore : submission.signalSemaphores) {
-            auto pSemaphore = GetSemaphoreState(semaphore);
+            auto pSemaphore = GetSemaphoreState(semaphore.semaphore);
             if (pSemaphore) {
                 pSemaphore->in_use.fetch_sub(1);
             }
@@ -1554,7 +1554,7 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
                 // record an empty submission with just the fence, so we can determine
                 // its completion.
                 pQueue->submissions.emplace_back(std::vector<VkCommandBuffer>(), std::vector<SEMAPHORE_WAIT>(),
-                                                 std::vector<VkSemaphore>(), std::vector<VkSemaphore>(), fence, 0);
+                                                 std::vector<SEMAPHORE_SIGNAL>(), std::vector<VkSemaphore>(), fence, 0);
             }
         } else {
             // Retire work up until this fence early, we will not see the wait that corresponds to this signal
@@ -1567,8 +1567,9 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
         std::vector<VkCommandBuffer> cbs;
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         vector<SEMAPHORE_WAIT> semaphore_waits;
-        vector<VkSemaphore> semaphore_signals;
+        vector<SEMAPHORE_SIGNAL> semaphore_signals;
         vector<VkSemaphore> semaphore_externals;
+        const uint64_t next_seq = pQueue->seq + pQueue->submissions.size() + 1;
         auto *timeline_semaphore_submit = lvl_find_in_chain<VkTimelineSemaphoreSubmitInfoKHR>(submit->pNext);
         for (uint32_t i = 0; i < submit->waitSemaphoreCount; ++i) {
             VkSemaphore semaphore = submit->pWaitSemaphores[i];
@@ -1595,18 +1596,21 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
             auto pSemaphore = GetSemaphoreState(semaphore);
             if (pSemaphore) {
                 if (pSemaphore->scope == kSyncScopeInternal) {
+                    SEMAPHORE_SIGNAL signal;
+                    signal.semaphore = semaphore;
+                    signal.seq = next_seq;
                     if (pSemaphore->type == VK_SEMAPHORE_TYPE_BINARY_KHR) {
                         pSemaphore->signaler.first = queue;
-                        pSemaphore->signaler.second = pQueue->seq + pQueue->submissions.size() + 1;
+                        pSemaphore->signaler.second = next_seq;
                         pSemaphore->signaled = true;
                     } else {
-                        pSemaphore->payload = timeline_semaphore_submit->pSignalSemaphoreValues[i];
+                        signal.payload = timeline_semaphore_submit->pSignalSemaphoreValues[i];
                     }
                     pSemaphore->in_use.fetch_add(1);
-                    semaphore_signals.push_back(semaphore);
+                    semaphore_signals.push_back(signal);
                 } else {
                     // Retire work up until this submit early, we will not see the wait that corresponds to this signal
-                    early_retire_seq = std::max(early_retire_seq, pQueue->seq + pQueue->submissions.size() + 1);
+                    early_retire_seq = std::max(early_retire_seq, next_seq);
                 }
             }
         }
@@ -1709,7 +1713,7 @@ void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32
             if (!bindInfoCount) {
                 // No work to do, just dropping a fence in the queue by itself.
                 pQueue->submissions.emplace_back(std::vector<VkCommandBuffer>(), std::vector<SEMAPHORE_WAIT>(),
-                                                 std::vector<VkSemaphore>(), std::vector<VkSemaphore>(), fence, 0);
+                                                 std::vector<SEMAPHORE_SIGNAL>(), std::vector<VkSemaphore>(), fence, 0);
             }
         } else {
             // Retire work up until this fence early, we will not see the wait that corresponds to this signal
@@ -1745,7 +1749,7 @@ void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32
         }
 
         std::vector<SEMAPHORE_WAIT> semaphore_waits;
-        std::vector<VkSemaphore> semaphore_signals;
+        std::vector<SEMAPHORE_SIGNAL> semaphore_signals;
         std::vector<VkSemaphore> semaphore_externals;
         for (uint32_t i = 0; i < bindInfo.waitSemaphoreCount; ++i) {
             VkSemaphore semaphore = bindInfo.pWaitSemaphores[i];
@@ -1776,7 +1780,11 @@ void ValidationStateTracker::PostCallRecordQueueBindSparse(VkQueue queue, uint32
                     pSemaphore->signaler.second = pQueue->seq + pQueue->submissions.size() + 1;
                     pSemaphore->signaled = true;
                     pSemaphore->in_use.fetch_add(1);
-                    semaphore_signals.push_back(semaphore);
+
+                    SEMAPHORE_SIGNAL signal;
+                    signal.semaphore = semaphore;
+                    signal.seq = pSemaphore->signaler.second;
+                    semaphore_signals.push_back(signal);
                 } else {
                     // Retire work up until this submit early, we will not see the wait that corresponds to this signal
                     early_retire_seq = std::max(early_retire_seq, pQueue->seq + pQueue->submissions.size() + 1);
@@ -1867,6 +1875,31 @@ void ValidationStateTracker::PostCallRecordWaitForFences(VkDevice device, uint32
     // NOTE : Alternate case not handled here is when some fences have completed. In
     //  this case for app to guarantee which fences completed it will have to call
     //  vkGetFenceStatus() at which point we'll clean/remove their CBs if complete.
+}
+
+void ValidationStateTracker::RetireTimelineSemaphore(VkSemaphore semaphore, uint64_t until_payload) {
+    auto pSemaphore = GetSemaphoreState(semaphore);
+    if (pSemaphore) {
+        for (auto &pair : queueMap) {
+            QUEUE_STATE &queueState = pair.second;
+            for (const auto &submission : queueState.submissions) {
+                for (const auto &signalSemaphore : submission.signalSemaphores) {
+                    if (signalSemaphore.semaphore == semaphore && signalSemaphore.payload <= until_payload) {
+                        RetireWorkOnQueue(&queueState, signalSemaphore.seq);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void ValidationStateTracker::PostCallRecordWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfo *pWaitInfo, uint64_t timeout,
+                                                          VkResult result) {
+    if (VK_SUCCESS != result) return;
+
+    for (uint32_t i = 0; i < pWaitInfo->semaphoreCount; i++) {
+        RetireTimelineSemaphore(pWaitInfo->pSemaphores[i], pWaitInfo->pValues[i]);
+    }
 }
 
 void ValidationStateTracker::PostCallRecordGetFenceStatus(VkDevice device, VkFence fence, VkResult result) {
