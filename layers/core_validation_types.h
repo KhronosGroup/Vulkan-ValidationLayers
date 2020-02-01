@@ -1135,9 +1135,15 @@ struct SEMAPHORE_WAIT {
     uint64_t seq;
 };
 
+struct SEMAPHORE_SIGNAL {
+    VkSemaphore semaphore;
+    uint64_t payload;
+    uint64_t seq;
+};
+
 struct CB_SUBMISSION {
     CB_SUBMISSION(std::vector<VkCommandBuffer> const &cbs, std::vector<SEMAPHORE_WAIT> const &waitSemaphores,
-                  std::vector<VkSemaphore> const &signalSemaphores, std::vector<VkSemaphore> const &externalSemaphores,
+                  std::vector<SEMAPHORE_SIGNAL> const &signalSemaphores, std::vector<VkSemaphore> const &externalSemaphores,
                   VkFence fence, uint32_t perf_submit_pass)
         : cbs(cbs),
           waitSemaphores(waitSemaphores),
@@ -1148,7 +1154,7 @@ struct CB_SUBMISSION {
 
     std::vector<VkCommandBuffer> cbs;
     std::vector<SEMAPHORE_WAIT> waitSemaphores;
-    std::vector<VkSemaphore> signalSemaphores;
+    std::vector<SEMAPHORE_SIGNAL> signalSemaphores;
     std::vector<VkSemaphore> externalSemaphores;
     VkFence fence;
     uint32_t perf_submit_pass;
