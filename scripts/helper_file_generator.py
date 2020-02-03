@@ -262,32 +262,6 @@ class HelperFileOutputGenerator(OutputGenerator):
             elif elem.tag == 'name':
                 name = noneStr(elem.text)
         return (type, name)
-    # Extract length values from latexmath.  Currently an inflexible solution that looks for specific
-    # patterns that are found in vk.xml.  Will need to be updated when new patterns are introduced.
-    def parseLateXMath(self, source):
-        name = 'ERROR'
-        decoratedName = 'ERROR'
-        if 'mathit' in source:
-            # Matches expressions similar to 'latexmath:[\lceil{\mathit{rasterizationSamples} \over 32}\rceil]'
-            match = re.match(r'latexmath\s*\:\s*\[\s*\\l(\w+)\s*\{\s*\\mathit\s*\{\s*(\w+)\s*\}\s*\\over\s*(\d+)\s*\}\s*\\r(\w+)\s*\]', source)
-            if not match or match.group(1) != match.group(4):
-                raise 'Unrecognized latexmath expression'
-            name = match.group(2)
-            # Need to add 1 for ceiling function; otherwise, the allocated packet
-            # size will be less than needed during capture for some title which use
-            # this in VkPipelineMultisampleStateCreateInfo. based on ceiling function
-            # definition,it is '{0}%{1}?{0}/{1} + 1:{0}/{1}'.format(*match.group(2, 3)),
-            # its value <= '{}/{} + 1'.
-            if match.group(1) == 'ceil':
-                decoratedName = '{}/{} + 1'.format(*match.group(2, 3))
-            else:
-                decoratedName = '{}/{}'.format(*match.group(2, 3))
-        else:
-            # Matches expressions similar to 'latexmath : [dataSize \over 4]'
-            match = re.match(r'latexmath\s*\:\s*\[\s*(\\textrm\{)?(\w+)\}?\s*\\over\s*(\d+)\s*\]', source)
-            name = match.group(2)
-            decoratedName = '{}/{}'.format(*match.group(2, 3))
-        return name, decoratedName
     #
     # Retrieve the value of the len tag
     def getLen(self, param):
@@ -302,8 +276,9 @@ class HelperFileOutputGenerator(OutputGenerator):
             else:
                 result = len
             if 'latexmath' in len:
-                param_type, param_name = self.getTypeNameTuple(param)
-                len_name, result = self.parseLateXMath(len)
+                # Elements with latexmath 'len' also contain a C equivalent 'altlen' attribute
+                # Use indexing operator instead of get() so we fail if the attribute is missing
+                result = param.attrib['altlen']
             # Spec has now notation for len attributes, using :: instead of platform specific pointer symbol
             result = str(result).replace('::', '->')
         return result
@@ -1380,9 +1355,13 @@ class HelperFileOutputGenerator(OutputGenerator):
                                 destruct_txt += '    if (%s)\n' % member.name
                                 destruct_txt += '        delete %s;\n' % member.name
                             else:
+                                # Prepend struct members with struct name
+                                decorated_length = member.len
+                                for other_member in item.members:
+                                    decorated_length = re.sub(r'\b({})\b'.format(other_member.name), r'in_struct->\1', decorated_length)
                                 construct_txt += '    if (in_struct->%s) {\n' % member.name
-                                construct_txt += '        %s = new %s[in_struct->%s];\n' % (member.name, m_type, member.len)
-                                construct_txt += '        memcpy ((void *)%s, (void *)in_struct->%s, sizeof(%s)*in_struct->%s);\n' % (member.name, member.name, m_type, member.len)
+                                construct_txt += '        %s = new %s[%s];\n' % (member.name, m_type, decorated_length)
+                                construct_txt += '        memcpy ((void *)%s, (void *)in_struct->%s, sizeof(%s)*%s);\n' % (member.name, member.name, m_type, decorated_length)
                                 construct_txt += '    }\n'
                                 destruct_txt += '    if (%s)\n' % member.name
                                 destruct_txt += '        delete[] %s;\n' % member.name

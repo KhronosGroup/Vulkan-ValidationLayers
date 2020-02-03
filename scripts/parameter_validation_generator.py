@@ -772,25 +772,6 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 return param
         return None
     #
-    # Extract length values from latexmath.  Currently an inflexible solution that looks for specific
-    # patterns that are found in vk.xml.  Will need to be updated when new patterns are introduced.
-    def parseLateXMath(self, source):
-        name = 'ERROR'
-        decoratedName = 'ERROR'
-        if 'mathit' in source:
-            # Matches expressions similar to 'latexmath:[\lceil{\mathit{rasterizationSamples} \over 32}\rceil]'
-            match = re.match(r'latexmath\s*\:\s*\[\s*\\l(\w+)\s*\{\s*\\mathit\s*\{\s*(\w+)\s*\}\s*\\over\s*(\d+)\s*\}\s*\\r(\w+)\s*\]', source)
-            if not match or match.group(1) != match.group(4):
-                raise 'Unrecognized latexmath expression'
-            name = match.group(2)
-            decoratedName = '{}({}/{})'.format(*match.group(1, 2, 3))
-        else:
-            # Matches expressions similar to 'latexmath : [dataSize \over 4]'
-            match = re.match(r'latexmath\s*\:\s*\[\s*(\\textrm\{)?(\w+)\}?\s*\\over\s*(\d+)\s*\]', source)
-            name = match.group(2)
-            decoratedName = '{}/{}'.format(*match.group(2, 3))
-        return name, decoratedName
-    #
     # Get the length paramater record for the specified parameter name
     def getLenParam(self, params, name):
         lenParam = None
@@ -801,8 +782,15 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                                              isstaticarray=None, isoptional=False, type=None, noautovalidity=False,
                                              len=None, extstructs=None, condition=None, cdecl=None)
             elif 'latexmath' in name:
-                lenName, decoratedName = self.parseLateXMath(name)
-                lenParam = self.getParamByName(params, lenName)
+                # Filter list of params to those whose name appears in the LaTeX markup
+                len_candidates = [p for p in params if re.search(r'\b{}\b'.format(p.name), name)]
+                # 0 or 1 matches are expected, >1 would require a special case and/or explicit validation
+                if len(len_candidates) == 0:
+                    lenParam = None
+                elif len(len_candidates) == 1:
+                    lenParam = len_candidates[0]
+                else:
+                    raise Exception('Cannot determine length parameter for len attribute value {}'.format(name))
             else:
                 lenParam = self.getParamByName(params, name)
         return lenParam
@@ -1147,20 +1135,21 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 if value.len:
                     # The parameter is an array with an explicit count parameter
                     lenParam = self.getLenParam(values, value.len)
-                    lenDisplayName = '{}{}'.format(displayNamePrefix, lenParam.name)
-                    if lenParam.ispointer:
-                        # Count parameters that are pointers are inout
-                        if type(lenParam.isoptional) is list:
-                            if lenParam.isoptional[0]:
-                                cpReq = 'false'
-                            if lenParam.isoptional[1]:
-                                cvReq = 'false'
+                    if lenParam:
+                        lenDisplayName = '{}{}'.format(displayNamePrefix, lenParam.name)
+                        if lenParam.ispointer:
+                            # Count parameters that are pointers are inout
+                            if type(lenParam.isoptional) is list:
+                                if lenParam.isoptional[0]:
+                                    cpReq = 'false'
+                                if lenParam.isoptional[1]:
+                                    cvReq = 'false'
+                            else:
+                                if lenParam.isoptional:
+                                    cpReq = 'false'
                         else:
                             if lenParam.isoptional:
-                                cpReq = 'false'
-                    else:
-                        if lenParam.isoptional:
-                            cvReq = 'false'
+                                cvReq = 'false'
                 #
                 # The parameter will not be processed when tagged as 'noautovalidity'
                 # For the pointer to struct case, the struct pointer will not be validated, but any
