@@ -79,6 +79,29 @@ VkPipelineStageFlags ExpandPipelineStages(VkQueueFlags queue_flags, VkPipelineSt
     return expanded;
 }
 
+VkPipelineStageFlags RelatedPipelineStages(VkPipelineStageFlags stage_mask,
+                                           std::map<VkPipelineStageFlagBits, VkPipelineStageFlags> &map) {
+    VkPipelineStageFlags unscanned = stage_mask;
+    VkPipelineStageFlags related = 0;
+    for (const auto entry : map) {
+        const auto stage = entry.first;
+        if (stage & unscanned) {
+            related = related | entry.second;
+            unscanned = unscanned & ~stage;
+            if (!unscanned) break;
+        }
+    }
+    return related;
+}
+
+VkPipelineStageFlags WithEarlierPipelineStages(VkPipelineStageFlags stage_mask) {
+    return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyEarlierStages);
+}
+
+VkPipelineStageFlags WithLaterPipelineStages(VkPipelineStageFlags stage_mask) {
+    return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyLaterStages);
+}
+
 static const ResourceAccessRange full_range(std::numeric_limits<VkDeviceSize>::min(), std::numeric_limits<VkDeviceSize>::max());
 static ResourceAccessRange MakeMemoryAccessRange(const BUFFER_STATE &buffer, VkDeviceSize offset, VkDeviceSize size) {
     assert(!buffer.sparse);
@@ -112,30 +135,30 @@ HazardResult DetectHazard(const IMAGE_STATE &image, const ResourceAccessRangeMap
 }
 
 HazardResult DetectBarrierHazard(const ResourceAccessRangeMap &accesses, SyncStageAccessIndex current_usage,
-                                 VkPipelineStageFlags src_stage_mask, SyncStageAccessFlags src_scope,
+                                 VkPipelineStageFlags src_exec_scope, SyncStageAccessFlags src_access_scope,
                                  const ResourceAccessRange &range) {
     const auto from = accesses.lower_bound(range);
     const auto to = accesses.upper_bound(range);
     for (auto pos = from; pos != to; ++pos) {
         const auto &access_state = pos->second;
-        HazardResult hazard = access_state.DetectBarrierHazard(current_usage, src_stage_mask, src_scope);
+        HazardResult hazard = access_state.DetectBarrierHazard(current_usage, src_exec_scope, src_access_scope);
         if (hazard.hazard) return hazard;
     }
     return HazardResult();
 }
 
 HazardResult DetectImageBarrierHazard(const ResourceAccessTracker &tracker, const IMAGE_STATE &image,
-                                      VkPipelineStageFlags src_stage_mask, SyncStageAccessFlags src_stage_scope,
+                                      VkPipelineStageFlags src_exec_scope, SyncStageAccessFlags src_stage_accesses,
                                       const VkImageMemoryBarrier &barrier) {
     auto *accesses = tracker.GetImageAccesses(image.image);
     if (!accesses) return HazardResult();
 
     auto subresource_range = NormalizeSubresourceRange(image.createInfo, barrier.subresourceRange);
     subresource_adapter::RangeGenerator range_gen(image.range_encoder, subresource_range);
-    const auto src_scope = SyncStageAccess::AccessScope(src_stage_scope, barrier.srcAccessMask);
+    const auto src_access_scope = SyncStageAccess::AccessScope(src_stage_accesses, barrier.srcAccessMask);
     for (; range_gen->non_empty(); ++range_gen) {
-        HazardResult hazard = DetectBarrierHazard(*accesses, SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION, src_stage_mask,
-                                                  src_scope, *range_gen);
+        HazardResult hazard = DetectBarrierHazard(*accesses, SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION, src_exec_scope,
+                                                  src_access_scope, *range_gen);
         if (hazard.hazard) return hazard;
     }
     return HazardResult();
@@ -229,18 +252,21 @@ struct ApplyMemoryAccessBarrierFunctor {
 
     Iterator operator()(ResourceAccessRangeMap *accesses, Iterator pos) const {
         auto &access_state = pos->second;
-        access_state.ApplyMemoryAccessBarrier(src_stage_mask, src_scope, dst_stage_mask, dst_scope);
+        access_state.ApplyMemoryAccessBarrier(src_exec_scope, src_access_scope, dst_exec_scope, dst_access_scope);
         return pos;
     }
 
-    ApplyMemoryAccessBarrierFunctor(VkPipelineStageFlags src_stage_mask_, SyncStageAccessFlags src_scope_,
-                                    VkPipelineStageFlags dst_stage_mask_, SyncStageAccessFlags dst_scope_)
-        : src_stage_mask(src_stage_mask_), src_scope(src_scope_), dst_stage_mask(dst_stage_mask_), dst_scope(dst_scope_) {}
+    ApplyMemoryAccessBarrierFunctor(VkPipelineStageFlags src_exec_scope_, SyncStageAccessFlags src_access_scope_,
+                                    VkPipelineStageFlags dst_exec_scope_, SyncStageAccessFlags dst_access_scope_)
+        : src_exec_scope(src_exec_scope_),
+          src_access_scope(src_access_scope_),
+          dst_exec_scope(dst_exec_scope_),
+          dst_access_scope(dst_access_scope_) {}
 
-    VkPipelineStageFlags src_stage_mask;
-    SyncStageAccessFlags src_scope;
-    VkPipelineStageFlags dst_stage_mask;
-    SyncStageAccessFlags dst_scope;
+    VkPipelineStageFlags src_exec_scope;
+    SyncStageAccessFlags src_access_scope;
+    VkPipelineStageFlags dst_exec_scope;
+    SyncStageAccessFlags dst_access_scope;
 };
 
 struct ApplyGlobalBarrierFunctor {
@@ -249,7 +275,7 @@ struct ApplyGlobalBarrierFunctor {
 
     Iterator operator()(ResourceAccessRangeMap *accesses, Iterator pos) const {
         auto &access_state = pos->second;
-        access_state.ApplyExecutionBarrier(src_stage_mask, dst_stage_mask);
+        access_state.ApplyExecutionBarrier(src_exec_scope, dst_exec_scope);
 
         for (const auto &functor : barrier_functor) {
             functor(accesses, pos);
@@ -257,21 +283,21 @@ struct ApplyGlobalBarrierFunctor {
         return pos;
     }
 
-    ApplyGlobalBarrierFunctor(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                              SyncStageAccessFlags src_stage_scope, SyncStageAccessFlags dst_stage_scope,
+    ApplyGlobalBarrierFunctor(VkPipelineStageFlags src_exec_scope, VkPipelineStageFlags dst_exec_scope,
+                              SyncStageAccessFlags src_stage_accesses, SyncStageAccessFlags dst_stage_accesses,
                               uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers)
-        : src_stage_mask(srcStageMask), dst_stage_mask(dstStageMask) {
+        : src_exec_scope(src_exec_scope), dst_exec_scope(dst_exec_scope) {
         // Don't want to create this per tracked item, but don't want to loop through all tracked items per barrier...
         barrier_functor.reserve(memoryBarrierCount);
         for (uint32_t barrier_index = 0; barrier_index < memoryBarrierCount; barrier_index++) {
             const auto &barrier = pMemoryBarriers[barrier_index];
-            barrier_functor.emplace_back(srcStageMask, SyncStageAccess::AccessScope(src_stage_scope, barrier.srcAccessMask),
-                                         dstStageMask, SyncStageAccess::AccessScope(dst_stage_scope, barrier.dstAccessMask));
+            barrier_functor.emplace_back(src_exec_scope, SyncStageAccess::AccessScope(src_stage_accesses, barrier.srcAccessMask),
+                                         dst_exec_scope, SyncStageAccess::AccessScope(dst_stage_accesses, barrier.dstAccessMask));
         }
     }
 
-    const VkPipelineStageFlags src_stage_mask;
-    const VkPipelineStageFlags dst_stage_mask;
+    const VkPipelineStageFlags src_exec_scope;
+    const VkPipelineStageFlags dst_exec_scope;
     std::vector<ApplyMemoryAccessBarrierFunctor> barrier_functor;
 };
 
@@ -320,8 +346,8 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index)
     return hazard;
 }
 
-HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags src_stage_mask,
-                                                      SyncStageAccessFlags src_scope) const {
+HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags src_exec_scope,
+                                                      SyncStageAccessFlags src_access_scope) const {
     // Only supporting image layout transitions for now
     assert(usage_index == SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION);
     HazardResult hazard;
@@ -330,15 +356,19 @@ HazardResult ResourceAccessState::DetectBarrierHazard(SyncStageAccessIndex usage
         // *AND* the current barrier is not in the dependency chain
         // *AND* the there is no prior memory barrier for the previous write in the dependency chain
         // then the barrier access is unsafe (R/W after W)
-        if (((last_write & src_scope) == 0) && ((src_stage_mask & write_dependency_chain) == 0) && (write_barriers == 0)) {
+        if (((last_write & src_access_scope) == 0) && ((src_exec_scope & write_dependency_chain) == 0) && (write_barriers == 0)) {
             // TODO: Do we need a difference hazard name for this?
             hazard.Set(WRITE_AFTER_WRITE, write_tag);
         }
     } else {
         // Look at the reads
         for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
-            if (IsReadHazard(src_stage_mask, last_reads[read_index])) {
-                hazard.Set(WRITE_AFTER_READ, last_reads[read_index].tag);
+            const auto &read_access = last_reads[read_index];
+            // If the read stage is not in the src sync sync
+            // *AND* not execution chained with an existing sync barrier (that's the or)
+            // then the barrier access is unsafe (R/W after R)
+            if ((src_exec_scope & (read_access.stage | read_access.barriers)) == 0) {
+                hazard.Set(WRITE_AFTER_READ, read_access.tag);
                 break;
             }
         }
@@ -398,13 +428,13 @@ void ResourceAccessState::ApplyExecutionBarrier(VkPipelineStageFlags srcStageMas
     if (write_dependency_chain & srcStageMask) write_dependency_chain |= dstStageMask;
 }
 
-void ResourceAccessState::ApplyMemoryAccessBarrier(VkPipelineStageFlags src_stage_mask, SyncStageAccessFlags src_scope,
-                                                   VkPipelineStageFlags dst_stage_mask, SyncStageAccessFlags dst_scope) {
+void ResourceAccessState::ApplyMemoryAccessBarrier(VkPipelineStageFlags src_exec_scope, SyncStageAccessFlags src_access_scope,
+                                                   VkPipelineStageFlags dst_exec_scope, SyncStageAccessFlags dst_access_scope) {
     // Assuming we've applied the execution side of this barrier, we update just the write
     // The || implements the "dependency chain" logic for this barrier
-    if ((src_scope & last_write) || (write_dependency_chain & src_stage_mask)) {
-        write_barriers |= dst_scope;
-        write_dependency_chain |= dst_stage_mask;
+    if ((src_access_scope & last_write) || (write_dependency_chain & src_exec_scope)) {
+        write_barriers |= dst_access_scope;
+        write_dependency_chain |= dst_exec_scope;
     }
 }
 
@@ -416,11 +446,11 @@ void SyncValidator::ResetCommandBuffer(VkCommandBuffer command_buffer) {
 }
 
 void SyncValidator::ApplyGlobalBarriers(ResourceAccessTracker *tracker, VkPipelineStageFlags srcStageMask,
-                                        VkPipelineStageFlags dstStageMask, SyncStageAccessFlags src_stage_scope,
-                                        SyncStageAccessFlags dst_stage_scope, uint32_t memoryBarrierCount,
+                                        VkPipelineStageFlags dstStageMask, SyncStageAccessFlags src_access_scope,
+                                        SyncStageAccessFlags dst_access_scope, uint32_t memoryBarrierCount,
                                         const VkMemoryBarrier *pMemoryBarriers) {
     // TODO: Implement this better (maybe some delayed/on-demand integration).
-    ApplyGlobalBarrierFunctor barriers_functor(srcStageMask, dstStageMask, src_stage_scope, dst_stage_scope, memoryBarrierCount,
+    ApplyGlobalBarrierFunctor barriers_functor(srcStageMask, dstStageMask, src_access_scope, dst_access_scope, memoryBarrierCount,
                                                pMemoryBarriers);
     for (auto &mem_access_pair : tracker->GetMemoryAccessMap()) {
         UpdateMemoryAccessState(&mem_access_pair.second, full_range, barriers_functor);
@@ -430,9 +460,9 @@ void SyncValidator::ApplyGlobalBarriers(ResourceAccessTracker *tracker, VkPipeli
     }
 }
 
-void SyncValidator::ApplyBufferBarriers(ResourceAccessTracker *tracker, VkPipelineStageFlags src_stage_mask,
-                                        SyncStageAccessFlags src_stage_scope, VkPipelineStageFlags dst_stage_mask,
-                                        SyncStageAccessFlags dst_stage_scope, uint32_t barrier_count,
+void SyncValidator::ApplyBufferBarriers(ResourceAccessTracker *tracker, VkPipelineStageFlags src_exec_scope,
+                                        SyncStageAccessFlags src_stage_accesses, VkPipelineStageFlags dst_exec_scope,
+                                        SyncStageAccessFlags dst_stage_accesses, uint32_t barrier_count,
                                         const VkBufferMemoryBarrier *barriers) {
     // TODO Implement this at subresource/memory_range accuracy
     for (uint32_t index = 0; index < barrier_count; index++) {
@@ -444,14 +474,14 @@ void SyncValidator::ApplyBufferBarriers(ResourceAccessTracker *tracker, VkPipeli
         ResourceAccessRange range = MakeMemoryAccessRange(*buffer, barrier.offset, barrier.size);
         UpdateMemoryAccessState(
             accesses, range,
-            ApplyMemoryAccessBarrierFunctor(src_stage_mask, AccessScope(src_stage_scope, barrier.srcAccessMask), dst_stage_mask,
-                                            AccessScope(dst_stage_scope, barrier.dstAccessMask)));
+            ApplyMemoryAccessBarrierFunctor(src_exec_scope, AccessScope(src_stage_accesses, barrier.srcAccessMask), dst_exec_scope,
+                                            AccessScope(dst_stage_accesses, barrier.dstAccessMask)));
     }
 }
 
-void SyncValidator::ApplyImageBarriers(ResourceAccessTracker *tracker, VkPipelineStageFlags src_stage_mask,
-                                       SyncStageAccessFlags src_stage_scope, VkPipelineStageFlags dst_stage_mask,
-                                       SyncStageAccessFlags dst_stage_scope, uint32_t barrier_count,
+void SyncValidator::ApplyImageBarriers(ResourceAccessTracker *tracker, VkPipelineStageFlags src_exec_scope,
+                                       SyncStageAccessFlags src_stage_accesses, VkPipelineStageFlags dst_exec_scope,
+                                       SyncStageAccessFlags dst_stage_accesses, uint32_t barrier_count,
                                        const VkImageMemoryBarrier *barriers) {
     for (uint32_t index = 0; index < barrier_count; index++) {
         const auto &barrier = barriers[index];
@@ -461,8 +491,9 @@ void SyncValidator::ApplyImageBarriers(ResourceAccessTracker *tracker, VkPipelin
         if (!accesses) continue;
         auto subresource_range = NormalizeSubresourceRange(image->createInfo, barrier.subresourceRange);
         subresource_adapter::RangeGenerator range_gen(image->range_encoder, subresource_range);
-        const ApplyMemoryAccessBarrierFunctor barrier_action(src_stage_mask, AccessScope(src_stage_scope, barrier.srcAccessMask),
-                                                             dst_stage_mask, AccessScope(dst_stage_scope, barrier.dstAccessMask));
+        const ApplyMemoryAccessBarrierFunctor barrier_action(src_exec_scope, AccessScope(src_stage_accesses, barrier.srcAccessMask),
+                                                             dst_exec_scope,
+                                                             AccessScope(dst_stage_accesses, barrier.dstAccessMask));
         for (; range_gen->non_empty(); ++range_gen) {
             UpdateMemoryAccessState(accesses, *range_gen, barrier_action);
         }
@@ -611,14 +642,15 @@ bool SyncValidator::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuf
     if (!cb_state) return skip;
 
     const auto src_stage_mask = ExpandPipelineStages(GetQueueFlags(*cb_state), srcStageMask);
-    auto src_stage_scope = AccessScopeByStage(src_stage_mask);
+    const auto src_exec_scope = WithEarlierPipelineStages(src_stage_mask);
+    auto src_stage_accesses = AccessScopeByStage(src_stage_mask);
     // Validate Image Layout transitions
     for (uint32_t index = 0; index < imageMemoryBarrierCount; index++) {
         const auto &barrier = pImageMemoryBarriers[index];
         if (barrier.newLayout == barrier.oldLayout) continue;  // Only interested in layout transitions at this point.
         const auto *image_state = Get<IMAGE_STATE>(barrier.image);
         if (!image_state) continue;
-        const auto hazard = DetectImageBarrierHazard(*tracker, *image_state, src_stage_mask, src_stage_scope, barrier);
+        const auto hazard = DetectImageBarrierHazard(*tracker, *image_state, src_exec_scope, src_stage_accesses, barrier);
         if (hazard.hazard) {
             // TODO -- add tag information to log msg when useful.
             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT,
@@ -647,17 +679,18 @@ void SyncValidator::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffe
     if (!cb_state) return;
 
     const auto src_stage_mask = ExpandPipelineStages(GetQueueFlags(*cb_state), srcStageMask);
-    auto src_stage_scope = AccessScopeByStage(src_stage_mask);
+    auto src_stage_accesses = AccessScopeByStage(src_stage_mask);
     const auto dst_stage_mask = ExpandPipelineStages(GetQueueFlags(*cb_state), dstStageMask);
-    auto dst_stage_scope = AccessScopeByStage(dst_stage_mask);
-
-    ApplyBufferBarriers(tracker, src_stage_mask, src_stage_scope, dst_stage_mask, dst_stage_scope, bufferMemoryBarrierCount,
+    auto dst_stage_accesses = AccessScopeByStage(dst_stage_mask);
+    const auto src_exec_scope = WithEarlierPipelineStages(src_stage_mask);
+    const auto dst_exec_scope = WithLaterPipelineStages(dst_stage_mask);
+    ApplyBufferBarriers(tracker, src_exec_scope, src_stage_accesses, dst_exec_scope, dst_stage_accesses, bufferMemoryBarrierCount,
                         pBufferMemoryBarriers);
-    ApplyImageBarriers(tracker, src_stage_mask, src_stage_scope, dst_stage_mask, dst_stage_scope, imageMemoryBarrierCount,
+    ApplyImageBarriers(tracker, src_exec_scope, src_stage_accesses, dst_exec_scope, dst_stage_accesses, imageMemoryBarrierCount,
                        pImageMemoryBarriers);
 
     // Apply these last in-case there operation is a superset of the other two and would clean them up...
-    ApplyGlobalBarriers(tracker, src_stage_mask, dst_stage_mask, src_stage_scope, dst_stage_scope, memoryBarrierCount,
+    ApplyGlobalBarriers(tracker, src_exec_scope, dst_exec_scope, src_stage_accesses, dst_stage_accesses, memoryBarrierCount,
                         pMemoryBarriers);
 }
 
