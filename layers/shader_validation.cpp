@@ -2911,7 +2911,13 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
         }
 
         // Apply the specialization-constant values and revalidate the shader module.
-        spv_target_env const spirv_environment = ((api_version >= VK_API_VERSION_1_1) ? SPV_ENV_VULKAN_1_1 : SPV_ENV_VULKAN_1_0);
+        spv_target_env spirv_environment;
+        if (api_version >= VK_API_VERSION_1_2)
+            spirv_environment = SPV_ENV_VULKAN_1_2;
+        else if (api_version >= VK_API_VERSION_1_1)
+            spirv_environment = SPV_ENV_VULKAN_1_1;
+        else
+            spirv_environment = SPV_ENV_VULKAN_1_0;
         spvtools::Optimizer optimizer(spirv_environment);
         spvtools::MessageConsumer consumer = [&skip, &module, &pStage, this](spv_message_level_t level, const char *source,
                                                                              const spv_position_t &position, const char *message) {
