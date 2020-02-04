@@ -575,8 +575,14 @@ static const VkExtensionProperties device_extensions[] = {
     {VK_EXT_TOOLING_INFO_EXTENSION_NAME, VK_EXT_TOOLING_INFO_SPEC_VERSION}
 };
 
+typedef enum ApiFunctionType {
+    kFuncTypeInst = 0,
+    kFuncTypePdev = 1,
+    kFuncTypeDev = 2
+} ApiFunctionType;
+
 typedef struct {
-    bool is_instance_api;
+    ApiFunctionType function_type;
     void* funcptr;
 } function_data;
 
@@ -822,7 +828,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetDeviceProcAddr(VkDevice device, cons
     }
     const auto &item = name_to_funcptr_map.find(funcName);
     if (item != name_to_funcptr_map.end()) {
-        if (item->second.is_instance_api) {
+        if (item->second.function_type != kFuncTypeDev) {
             return nullptr;
         } else {
             return reinterpret_cast<PFN_vkVoidFunction>(item->second.funcptr);
@@ -847,7 +853,11 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(VkInstance instance, const char *funcName) {
     const auto &item = name_to_funcptr_map.find(funcName);
     if (item != name_to_funcptr_map.end()) {
-        return reinterpret_cast<PFN_vkVoidFunction>(item->second.funcptr);
+        if (item->second.function_type != kFuncTypePdev) {
+            return nullptr;
+        } else {
+            return reinterpret_cast<PFN_vkVoidFunction>(item->second.funcptr);
+        }
     }
     auto layer_data = GetLayerDataPtr(get_dispatch_key(instance), layer_data_map);
     auto &table = layer_data->instance_dispatch_table;
@@ -1827,8 +1837,8 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
     # Command generation
     def genCmd(self, cmdinfo, name, alias):
         ignore_functions = [
-        'vkEnumerateInstanceVersion',
-        ]
+            'vkEnumerateInstanceVersion',
+            ]
 
         if name in ignore_functions:
             return
@@ -1845,18 +1855,27 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
                 self.layer_factory += '#endif\n'
             return
 
-        is_instance = 'false'
         dispatchable_type = cmdinfo.elem.find('param/type').text
-        if dispatchable_type in ["VkPhysicalDevice", "VkInstance"] or name == 'vkCreateInstance':
-            is_instance = 'true'
+        special_case_instance_APIs = [
+            'vkCreateInstance',
+            'vkEnumerateInstanceVersion',
+            'vkEnumerateInstanceLayerProperties',
+            'vkEnumerateInstanceExtensionProperties',
+            ]
+        if dispatchable_type == 'VkInstance' or name in special_case_instance_APIs:
+            function_type = 'kFuncTypeInst'
+        elif dispatchable_type == 'VkPhysicalDevice':
+            function_type = 'kFuncTypePdev'
+        else:
+            function_type = 'kFuncTypeDev'
 
         if name in self.manual_functions:
-            self.intercepts += [ '    {"%s", {%s, (void*)%s}},' % (name, is_instance, name[2:]) ]
+            self.intercepts += [ '    {"%s", {%s, (void*)%s}},' % (name, function_type, name[2:]) ]
             return
         # Record that the function will be intercepted
         if (self.featureExtraProtect != None):
             self.intercepts += [ '#ifdef %s' % self.featureExtraProtect ]
-        self.intercepts += [ '    {"%s", {%s, (void*)%s}},' % (name, is_instance, name[2:]) ]
+        self.intercepts += [ '    {"%s", {%s, (void*)%s}},' % (name, function_type, name[2:]) ]
         if (self.featureExtraProtect != None):
             self.intercepts += [ '#endif' ]
         OutputGenerator.genCmd(self, cmdinfo, name, alias)
