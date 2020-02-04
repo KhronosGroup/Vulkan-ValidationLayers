@@ -5824,6 +5824,7 @@ TEST_F(VkPositiveLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
         m_errorMonitor->SetError("VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT not functioning as expected");
     vk::DestroyInstance(test_inst, NULL);
 
+    auto set_count = properties.limits.maxBoundDescriptorSets;
     // Now be sure that recovery from an unavailable descriptor set works and that uninstrumented shaders are used
     VkDescriptorSetLayoutBinding dsl_binding[2] = {};
     dsl_binding[0].binding = 0;
@@ -5834,19 +5835,19 @@ TEST_F(VkPositiveLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     dsl_binding[1].descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT;
     dsl_binding[1].descriptorCount = 20;
     dsl_binding[1].stageFlags = VK_SHADER_STAGE_ALL;
-    VkDescriptorSetLayout layouts[32];
+    VkDescriptorSetLayout *layouts{new VkDescriptorSetLayout[set_count]{}};
     VkDescriptorSetLayoutCreateInfo dsl_create_info = {};
     dsl_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     dsl_create_info.pNext = layout_createinfo_binding_flags;
     dsl_create_info.pBindings = dsl_binding;
     dsl_create_info.bindingCount = 2;
-    for (int i = 0; i < 32; i++) {
+    for (uint32_t i = 0; i < set_count; i++) {
         vk::CreateDescriptorSetLayout(m_device->handle(), &dsl_create_info, NULL, &layouts[i]);
     }
     VkPipelineLayoutCreateInfo pl_create_info = {};
     VkPipelineLayout pl_layout;
     pl_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pl_create_info.setLayoutCount = 32;
+    pl_create_info.setLayoutCount = set_count;
     pl_create_info.pSetLayouts = layouts;
     vk::CreatePipelineLayout(m_device->handle(), &pl_create_info, NULL, &pl_layout);
     pipeline_info.layout = pl_layout;
@@ -5862,13 +5863,14 @@ TEST_F(VkPositiveLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     vk::DestroyShaderModule(m_device->handle(), shader_module->handle(), NULL);
     vk::DestroyPipelineLayout(m_device->handle(), pl_layout, NULL);
     vk::DestroyPipeline(m_device->handle(), c_pipeline, NULL);
-    for (int i = 0; i < 32; i++) {
+    for (uint32_t i = 0; i < set_count; i++) {
         vk::DestroyDescriptorSetLayout(m_device->handle(), layouts[i], NULL);
     }
     m_errorMonitor->VerifyNotFound();
     data = (uint32_t *)buffer0.memory().map();
     if (*data != test_data) m_errorMonitor->SetError("Pipeline recovery when resources unavailable not functioning as expected");
     buffer0.memory().unmap();
+    delete[] layouts;
 }
 
 TEST_F(VkPositiveLayerTest, Maintenance1Tests) {
