@@ -2545,6 +2545,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                 auto image_layout = update->pImageInfo[di].imageLayout;
                 auto iv_state = GetImageViewState(image_view);
                 auto image_state = iv_state->image_state.get();
+                ImageSamplerDescriptor *desc = (ImageSamplerDescriptor *)dest_set->GetDescriptorFromGlobalIndex(index + di);
                 if (!ValidateImageUpdate(image_view, image_layout, update->descriptorType, func_name, error_code, error_msg)) {
                     std::stringstream error_str;
                     error_str << "Attempted write update to combined image sampler descriptor failed due to: "
@@ -2553,7 +2554,6 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                     return false;
                 }
                 if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
-                    ImageSamplerDescriptor *desc = (ImageSamplerDescriptor *)dest_set->GetDescriptorFromGlobalIndex(index + di);
                     if (desc->IsImmutableSampler()) {
                         auto sampler_state = GetSamplerState(desc->GetSampler());
                         if (iv_state && sampler_state) {
@@ -2580,7 +2580,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                         }
                     }
                 }
-                if (FormatIsMultiplane(image_state->createInfo.format)) {
+                if (!desc->IsImmutableSampler() && FormatIsMultiplane(image_state->createInfo.format)) {
                     // multiplane formats must be created with mutable format bit
                     if (0 == (image_state->createInfo.flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {
                         *error_code = "VUID-VkDescriptorImageInfo-sampler-01564";
