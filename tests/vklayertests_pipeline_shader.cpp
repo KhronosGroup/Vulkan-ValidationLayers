@@ -1190,19 +1190,9 @@ TEST_F(VkLayerTest, InvalidPipeline) {
             } else {
                 m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                                      "VUID-vkCmdDrawIndexedIndirectCount-None-02700");
-                // Stride must be a multiple of 4 and must be greater than or equal to sizeof(VkDrawIndexedIndirectCommand)
+                // stride must be a multiple of 4 and must be greater than or equal to sizeof(VkDrawIndexedIndirectCommand)
                 fpCmdDrawIndexedIndirectCount(m_commandBuffer->handle(), buffer.handle(), 0, buffer.handle(), 512, 1, 512);
                 m_errorMonitor->VerifyFound();
-
-                // Test core 1.2 entrypoint using GetINSTANCEProcAddr()
-                auto fpinstCmdDrawIndexedIndirectCount =
-                    (PFN_vkCmdDrawIndexedIndirectCount)vk::GetInstanceProcAddr(instance(), "vkCmdDrawIndexedIndirectCount");
-                if (nullptr != fpinstCmdDrawIndexedIndirectCount) {
-                    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
-                                                         "VUID-vkCmdDrawIndexedIndirectCount-None-02700");
-                    fpinstCmdDrawIndexedIndirectCount(m_commandBuffer->handle(), buffer.handle(), 0, buffer.handle(), 512, 1, 512);
-                    m_errorMonitor->VerifyFound();
-                }
             }
         }
     }
