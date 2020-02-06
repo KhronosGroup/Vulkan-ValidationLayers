@@ -139,8 +139,6 @@ command_counter_sources = [
 ]
 
 chassis_sources = [
-  "layers/state_tracker.h",
-  "layers/core_validation.h",
   "layers/generated/vk_safe_struct.h",
   "layers/generated/thread_safety.h",
   "layers/generated/chassis.cpp",
