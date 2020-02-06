@@ -368,7 +368,13 @@ class range_map {
         const auto first_begin = current->first.begin;
         if (bounds.begin > first_begin) {
             // Preserve the portion of lower bound excluded from bounds
-            current = split_impl(current, bounds.begin, split_op_keep_lower());
+            if (current->first.end <= bounds.end) {
+                // If current ends within the erased bound we can discard the the upper portion of current
+                current = split_impl(current, bounds.begin, split_op_keep_lower());
+            } else {
+                // Keep the upper portion of current for the later split below
+                current = split_impl(current, bounds.begin, split_op_keep_both());
+            }
             // Exclude the preserved portion
             ++current;
             RANGE_ASSERT(current == lower_bound_impl(bounds));
