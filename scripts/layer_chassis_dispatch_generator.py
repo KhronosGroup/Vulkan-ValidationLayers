@@ -1547,25 +1547,30 @@ VkResult DispatchGetPhysicalDeviceToolPropertiesEXT(
                 # Structs at first level will have an NDO, OR, we need a safe_struct for the pnext chain
                 if self.struct_contains_ndo(member.type) == True or process_pnext:
                     struct_info = self.struct_member_dict[member.type]
-                    # TODO (jbolz): Can this use paramIsPointer?
-                    ispointer = '*' in member.cdecl;
+                    if any(member.ispointer for member in struct_info):
+                        safe_type = 'safe_' + member.type
+                    else:
+                        safe_type = member.type
                     # Struct Array
                     if member.len is not None:
                         # Update struct prefix
                         if first_level_param == True:
                             new_prefix = 'local_%s' % member.name
                             # Declare safe_VarType for struct
-                            decls += '%ssafe_%s *%s = NULL;\n' % (indent, member.type, new_prefix)
+                            decls += '%s%s *%s = NULL;\n' % (indent, safe_type, new_prefix)
                         else:
                             new_prefix = '%s%s' % (prefix, member.name)
                         pre_code += '%s    if (%s%s) {\n' % (indent, prefix, member.name)
                         indent = self.incIndent(indent)
                         if first_level_param == True:
-                            pre_code += '%s    %s = new safe_%s[%s];\n' % (indent, new_prefix, member.type, member.len)
+                            pre_code += '%s    %s = new %s[%s];\n' % (indent, new_prefix, safe_type, member.len)
                         pre_code += '%s    for (uint32_t %s = 0; %s < %s%s; ++%s) {\n' % (indent, index, index, prefix, member.len, index)
                         indent = self.incIndent(indent)
                         if first_level_param == True:
-                            pre_code += '%s    %s[%s].initialize(&%s[%s]);\n' % (indent, new_prefix, index, member.name, index)
+                            if 'safe_' in safe_type:
+                                pre_code += '%s    %s[%s].initialize(&%s[%s]);\n' % (indent, new_prefix, index, member.name, index)
+                            else:
+                                pre_code += '%s    %s[%s] = %s[%s];\n' % (indent, new_prefix, index, member.name, index)
                             if process_pnext:
                                 pre_code += '%s    WrapPnextChainHandles(layer_data, %s[%s].pNext);\n' % (indent, new_prefix, index)
                         local_prefix = '%s[%s].' % (new_prefix, index)
@@ -1581,20 +1586,23 @@ VkResult DispatchGetPhysicalDeviceToolPropertiesEXT(
                         if first_level_param == True:
                             post_code += self.cleanUpLocalDeclarations(indent, prefix, member.name, member.len, index)
                     # Single Struct
-                    elif ispointer:
+                    elif member.ispointer:
                         # Update struct prefix
                         if first_level_param == True:
                             new_prefix = 'local_%s->' % member.name
-                            decls += '%ssafe_%s var_local_%s%s;\n' % (indent, member.type, prefix, member.name)
-                            decls += '%ssafe_%s *local_%s%s = NULL;\n' % (indent, member.type, prefix, member.name)
+                            decls += '%s%s var_local_%s%s;\n' % (indent, safe_type, prefix, member.name)
+                            decls += '%s%s *local_%s%s = NULL;\n' % (indent, safe_type, prefix, member.name)
                         else:
                             new_prefix = '%s%s->' % (prefix, member.name)
                         # Declare safe_VarType for struct
                         pre_code += '%s    if (%s%s) {\n' % (indent, prefix, member.name)
                         indent = self.incIndent(indent)
                         if first_level_param == True:
-                            pre_code += '%s    local_%s%s = &var_local_%s%s;\n' % (indent, prefix, member.name, prefix, member.name);
-                            pre_code += '%s    local_%s%s->initialize(%s);\n' % (indent, prefix, member.name, member.name)
+                            pre_code += '%s    local_%s%s = &var_local_%s%s;\n' % (indent, prefix, member.name, prefix, member.name)
+                            if 'safe_' in safe_type:
+                                pre_code += '%s    local_%s%s->initialize(%s);\n' % (indent, prefix, member.name, member.name)
+                            else:
+                                pre_code += '%s    *local_%s%s = *%s;\n' % (indent, prefix, member.name, member.name)
                         # Process sub-structs in this struct
                         (tmp_decl, tmp_pre, tmp_post) = self.uniquify_members(struct_info, indent, new_prefix, array_index, create_func, destroy_func, destroy_array, False)
                         decls += tmp_decl
