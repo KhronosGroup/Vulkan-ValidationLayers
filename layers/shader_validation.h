@@ -1,6 +1,6 @@
 /* Copyright (c) 2015-2019 The Khronos Group Inc.
  * Copyright (c) 2015-2019 Valve Corporation
- * Copyright (c) 2015-2019 LunarG, Inc.
+ * Copyright (c) 2015-2020 LunarG, Inc.
  * Copyright (C) 2015-2019 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -126,7 +126,7 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
     };
     std::unordered_multimap<std::string, EntryPoint> entry_points;
     bool has_valid_spirv;
-    bool has_specialization_constants;
+    bool has_specialization_constants{false};
     VkShaderModule vk_shader_module;
     uint32_t gpu_validation_shader_id;
 
@@ -183,11 +183,8 @@ struct SHADER_MODULE_STATE : public BASE_NODE {
 
     SHADER_MODULE_STATE(VkShaderModuleCreateInfo const *pCreateInfo, VkShaderModule shaderModule, spv_target_env env,
                         uint32_t unique_shader_id)
-        : words(PreprocessShaderBinary((uint32_t *)pCreateInfo->pCode, pCreateInfo->codeSize, env)),
-          def_index(),
-          has_valid_spirv(true),
-          vk_shader_module(shaderModule),
-          gpu_validation_shader_id(unique_shader_id) {
+        : words(), def_index(), has_valid_spirv(true), vk_shader_module(shaderModule), gpu_validation_shader_id(unique_shader_id) {
+        words = PreprocessShaderBinary((uint32_t *)pCreateInfo->pCode, pCreateInfo->codeSize, env);
         BuildDefIndex();
     }
 
