@@ -168,6 +168,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdDispatch',
             'vkCmdDispatchIndirect',
             'vkCmdDispatchBaseKHR',
+            'vkCmdPushDescriptorSetKHR',
             'vkCmdSetExclusiveScissorNV',
             'vkCmdSetViewportShadingRatePaletteNV',
             'vkCmdSetCoarseSampleOrderNV',
