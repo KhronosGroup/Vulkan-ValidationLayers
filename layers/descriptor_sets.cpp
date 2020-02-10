@@ -645,7 +645,7 @@ cvdescriptorset::DescriptorSet::~DescriptorSet() {}
 
 static std::string StringDescriptorReqViewType(descriptor_req req) {
     std::string result("");
-    for (unsigned i = 0; i <= VK_IMAGE_VIEW_TYPE_END_RANGE; i++) {
+    for (unsigned i = 0; i <= VK_IMAGE_VIEW_TYPE_CUBE_ARRAY; i++) {
         if (req & (1 << i)) {
             if (result.size()) result += ", ";
             result += string_VkImageViewType(VkImageViewType(i));
