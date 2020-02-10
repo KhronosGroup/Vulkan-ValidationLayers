@@ -27,7 +27,15 @@
 #include "synchronization_validation_types.h"
 #include "state_tracker.h"
 
-enum SyncHazard { NONE = 0, READ_AFTER_WRITE, WRITE_AFTER_READ, WRITE_AFTER_WRITE };
+enum SyncHazard {
+    NONE = 0,
+    READ_AFTER_WRITE,
+    WRITE_AFTER_READ,
+    WRITE_AFTER_WRITE,
+    READ_RACING_WRITE,
+    WRITE_RACING_WRITE,
+    WRITE_RACING_READ,
+};
 
 // Useful Utilites for manipulating StageAccess parameters, suitable as base class to save typing
 struct SyncStageAccess {
@@ -75,6 +83,7 @@ class ResourceAccessState : public SyncStageAccess {
 
   public:
     HazardResult DetectHazard(SyncStageAccessIndex usage_index) const;
+    HazardResult DetectAsynchronousHazard(SyncStageAccessIndex usage_index) const;
     HazardResult DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags src_stage_mask,
                                      SyncStageAccessFlags source_scope) const;
     void Update(SyncStageAccessIndex usage_index, const ResourceUsageTag &tag);
