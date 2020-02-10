@@ -5489,6 +5489,7 @@ TEST_F(VkLayerTest, CreateImageViewBreaksParameterCompatibilityRequirements) {
 TEST_F(VkLayerTest, CreateImageViewFormatFeatureMismatch) {
     TEST_DESCRIPTION("Create view with a format that does not have the same features as the image format.");
 
+    // Used to force format to have feature bits to enable test can run on any device
     if (!EnableDeviceProfileLayer()) {
         printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
         return;
@@ -5506,24 +5507,34 @@ TEST_F(VkLayerTest, CreateImageViewFormatFeatureMismatch) {
         return;
     }
 
+    uint32_t feature_count = 5;
     // List of features to be tested
-    VkFormatFeatureFlagBits features[] = {VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT,
-                                          VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT};
-    uint32_t feature_count = 4;
+    VkFormatFeatureFlagBits features[] = {
+        VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT,            // 02274
+        VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT,         // 02652 - only need one of 2 features
+        VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT,            // 02275
+        VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT,         // 02276
+        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT  // 02277
+    };
     // List of usage cases for each feature test
-    VkImageUsageFlags usages[] = {VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_USAGE_STORAGE_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                  VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT};
+    VkImageUsageFlags usages[] = {
+        VK_IMAGE_USAGE_SAMPLED_BIT,                  // 02274
+        VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,         // 02652
+        VK_IMAGE_USAGE_STORAGE_BIT,                  // 02275
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,         // 02276
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT  // 02277
+    };
     // List of errors that will be thrown in order of tests run
+    // Order is done to make sure adjacent format features are different
     std::string optimal_error_codes[] = {
-        "VUID-VkImageViewCreateInfo-usage-02274",
-        "VUID-VkImageViewCreateInfo-usage-02275",
-        "VUID-VkImageViewCreateInfo-usage-02276",
-        "VUID-VkImageViewCreateInfo-usage-02277",
+        "VUID-VkImageViewCreateInfo-usage-02274", "VUID-VkImageViewCreateInfo-usage-02652",
+        "VUID-VkImageViewCreateInfo-usage-02275", "VUID-VkImageViewCreateInfo-usage-02276",
+        "VUID-VkImageViewCreateInfo-usage-02277",  // Needs to be last since needs special format
     };
 
     VkFormatProperties formatProps;
 
-    // First three tests
+    // All but one test in this loop and do last test after for special format case
     uint32_t i = 0;
     for (i = 0; i < (feature_count - 1); i++) {
         // Modify formats to have mismatched features
@@ -6163,43 +6174,63 @@ TEST_F(VkLayerTest, CreateImageViewNoMutableFormatBit) {
 TEST_F(VkLayerTest, CreateImageViewDifferentClass) {
     TEST_DESCRIPTION("Passing bad parameters to CreateImageView");
 
+    VkPhysicalDeviceFeatures device_features = {};
     ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
 
     if (!(m_device->format_properties(VK_FORMAT_R8_UINT).optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)) {
         printf("%s Device does not support R8_UINT as color attachment; skipped", kSkipPrefix);
         return;
     }
 
-    VkImageCreateInfo mutImgInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                                    nullptr,
-                                    VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
-                                    VK_IMAGE_TYPE_2D,
-                                    VK_FORMAT_R8_UINT,
-                                    {128, 128, 1},
-                                    1,
-                                    1,
-                                    VK_SAMPLE_COUNT_1_BIT,
-                                    VK_IMAGE_TILING_OPTIMAL,
-                                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                    VK_SHARING_MODE_EXCLUSIVE,
-                                    0,
-                                    nullptr,
-                                    VK_IMAGE_LAYOUT_UNDEFINED};
+    VkImageCreateInfo imageInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                                   nullptr,
+                                   0,
+                                   VK_IMAGE_TYPE_2D,
+                                   VK_FORMAT_R8_UINT,
+                                   {128, 128, 1},
+                                   1,
+                                   1,
+                                   VK_SAMPLE_COUNT_1_BIT,
+                                   VK_IMAGE_TILING_OPTIMAL,
+                                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                   VK_SHARING_MODE_EXCLUSIVE,
+                                   0,
+                                   nullptr,
+                                   VK_IMAGE_LAYOUT_UNDEFINED};
+
+    imageInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     VkImageObj mutImage(m_device);
-    mutImage.init(&mutImgInfo);
+    mutImage.init(&imageInfo);
     ASSERT_TRUE(mutImage.initialized());
 
     VkImageViewCreateInfo imgViewInfo = {};
     imgViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    imgViewInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
+    imgViewInfo.format = VK_FORMAT_B8G8R8A8_UNORM;  // different than createImage
     imgViewInfo.subresourceRange.layerCount = 1;
     imgViewInfo.subresourceRange.baseMipLevel = 0;
     imgViewInfo.subresourceRange.levelCount = 1;
     imgViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     imgViewInfo.image = mutImage.handle();
 
+    // Create mutable format image that is not compatiable
     CreateImageViewTest(*this, &imgViewInfo, "VUID-VkImageViewCreateInfo-image-01018");
+
+    // Use CUBE_ARRAY without feature enabled
+    if (device_features.imageCubeArray == false) {
+        VkImageCreateInfo cubeImageInfo = imageInfo;
+        cubeImageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+        VkImageObj cubeImage(m_device);
+        cubeImage.init(&cubeImageInfo);
+        ASSERT_TRUE(cubeImage.initialized());
+
+        VkImageViewCreateInfo cubeImgViewInfo = imgViewInfo;
+        cubeImgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+        cubeImgViewInfo.format = VK_FORMAT_R8_UINT;  // compatiable format
+        cubeImgViewInfo.image = cubeImage.handle();
+        CreateImageViewTest(*this, &cubeImgViewInfo, "VUID-VkImageViewCreateInfo-viewType-01004");
+    }
 }
 
 TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
