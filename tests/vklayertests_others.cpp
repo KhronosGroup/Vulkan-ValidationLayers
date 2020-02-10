@@ -7293,3 +7293,57 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreBadValue) {
         vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
     }
 }
+
+TEST_F(VkLayerTest, InvalidExternalSemaphore) {
+    TEST_DESCRIPTION("Import and export invalid external semaphores, no queue sumbits involved.");
+#ifdef _WIN32
+    printf("%s Test doesn't currently support Win32 semaphore, skipping test\n", kSkipPrefix);
+    return;
+#else
+    const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME;
+
+    // Check for external semaphore instance extensions
+    if (InstanceExtensionSupported(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s External semaphore extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    // Check for external semaphore device extensions
+    if (DeviceExtensionSupported(gpu(), nullptr, extension_name)) {
+        m_device_extension_names.push_back(extension_name);
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME);
+    } else {
+        printf("%s External semaphore extension not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // Create a semaphore fpr importing
+    VkSemaphoreCreateInfo semaphore_create_info = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
+    semaphore_create_info.pNext = nullptr;
+    semaphore_create_info.flags = 0;
+    VkSemaphore import_semaphore;
+    VkResult err = vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &import_semaphore);
+    ASSERT_VK_SUCCESS(err);
+
+    int fd = 0;
+    VkImportSemaphoreFdInfoKHR import_semaphore_fd_info = {VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR};
+    import_semaphore_fd_info.pNext = nullptr;
+    import_semaphore_fd_info.semaphore = import_semaphore;
+    import_semaphore_fd_info.flags = VK_SEMAPHORE_IMPORT_TEMPORARY_BIT_KHR;
+    import_semaphore_fd_info.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_D3D12_FENCE_BIT;
+    import_semaphore_fd_info.fd = fd;
+    auto vkImportSemaphoreFdKHR = (PFN_vkImportSemaphoreFdKHR)vk::GetDeviceProcAddr(m_device->device(), "vkImportSemaphoreFdKHR");
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImportSemaphoreFdInfoKHR-handleType-01143");
+    vkImportSemaphoreFdKHR(device(), &import_semaphore_fd_info);
+    m_errorMonitor->VerifyFound();
+
+    // Cleanup
+    vk::DestroySemaphore(device(), import_semaphore, nullptr);
+#endif
+}
