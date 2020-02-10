@@ -191,6 +191,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdDrawIndirectByteCountEXT',
             'vkCreateSamplerYcbcrConversion',
             'vkCreateSamplerYcbcrConversionKHR',
+            'vkImportSemaphoreFdKHR',
             ]
 
         # Commands to ignore
