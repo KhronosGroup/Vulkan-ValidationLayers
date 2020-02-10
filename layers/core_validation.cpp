@@ -10039,8 +10039,15 @@ bool CoreChecks::ValidateCreateSwapchain(const char *func_name, VkSwapchainCreat
     }
     // Validate pCreateInfo->imageUsage against VkSurfaceCapabilitiesKHR::supportedUsageFlags:
     if (pCreateInfo->imageUsage != (pCreateInfo->imageUsage & capabilities.supportedUsageFlags)) {
+        const char *validation_error = "VUID-VkSwapchainCreateInfoKHR-imageUsage-01276";
+        if ((IsExtEnabled(device_extensions.vk_khr_shared_presentable_image) == true) &&
+            ((pCreateInfo->presentMode == VK_PRESENT_MODE_IMMEDIATE_KHR) ||
+             (pCreateInfo->presentMode == VK_PRESENT_MODE_MAILBOX_KHR) || (pCreateInfo->presentMode == VK_PRESENT_MODE_FIFO_KHR) ||
+             (pCreateInfo->presentMode == VK_PRESENT_MODE_FIFO_RELAXED_KHR))) {
+            validation_error = "VUID-VkSwapchainCreateInfoKHR-presentMode-01427";
+        }
         if (log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, HandleToUint64(device),
-                    "VUID-VkSwapchainCreateInfoKHR-imageUsage-01276",
+                    validation_error,
                     "%s called with a non-supported pCreateInfo->imageUsage (i.e. 0x%08x).  Supported flag bits are 0x%08x.",
                     func_name, pCreateInfo->imageUsage, capabilities.supportedUsageFlags))
             return true;
