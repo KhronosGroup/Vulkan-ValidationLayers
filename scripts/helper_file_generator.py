@@ -464,12 +464,12 @@ class HelperFileOutputGenerator(OutputGenerator):
                     else:
                         safe_struct_header += '%s;\n' % member.cdecl
                 safe_struct_header += '    safe_%s(const %s* in_struct%s);\n' % (item.name, item.name, self.custom_construct_params.get(item.name, ''))
-                safe_struct_header += '    safe_%s(const safe_%s& src);\n' % (item.name, item.name)
-                safe_struct_header += '    safe_%s& operator=(const safe_%s& src);\n' % (item.name, item.name)
+                safe_struct_header += '    safe_%s(const safe_%s& copy_src);\n' % (item.name, item.name)
+                safe_struct_header += '    safe_%s& operator=(const safe_%s& copy_src);\n' % (item.name, item.name)
                 safe_struct_header += '    safe_%s();\n' % item.name
                 safe_struct_header += '    ~safe_%s();\n' % item.name
                 safe_struct_header += '    void initialize(const %s* in_struct%s);\n' % (item.name, self.custom_construct_params.get(item.name, ''))
-                safe_struct_header += '    void initialize(const safe_%s* src);\n' % (item.name)
+                safe_struct_header += '    void initialize(const safe_%s* copy_src);\n' % (item.name)
                 safe_struct_header += '    %s *ptr() { return reinterpret_cast<%s *>(this); }\n' % (item.name, item.name)
                 safe_struct_header += '    %s const *ptr() const { return reinterpret_cast<%s const *>(this); }\n' % (item.name, item.name)
                 safe_struct_header += '};\n'
@@ -1235,19 +1235,19 @@ class HelperFileOutputGenerator(OutputGenerator):
             custom_copy_txt = {
                 # VkGraphicsPipelineCreateInfo is special case because it has custom construct parameters
                 'VkGraphicsPipelineCreateInfo' :
-                    '    pNext = SafePnextCopy(src.pNext);\n'
-                    '    if (stageCount && src.pStages) {\n'
+                    '    pNext = SafePnextCopy(copy_src.pNext);\n'
+                    '    if (stageCount && copy_src.pStages) {\n'
                     '        pStages = new safe_VkPipelineShaderStageCreateInfo[stageCount];\n'
                     '        for (uint32_t i = 0; i < stageCount; ++i) {\n'
-                    '            pStages[i].initialize(&src.pStages[i]);\n'
+                    '            pStages[i].initialize(&copy_src.pStages[i]);\n'
                     '        }\n'
                     '    }\n'
-                    '    if (src.pVertexInputState)\n'
-                    '        pVertexInputState = new safe_VkPipelineVertexInputStateCreateInfo(*src.pVertexInputState);\n'
+                    '    if (copy_src.pVertexInputState)\n'
+                    '        pVertexInputState = new safe_VkPipelineVertexInputStateCreateInfo(*copy_src.pVertexInputState);\n'
                     '    else\n'
                     '        pVertexInputState = NULL;\n'
-                    '    if (src.pInputAssemblyState)\n'
-                    '        pInputAssemblyState = new safe_VkPipelineInputAssemblyStateCreateInfo(*src.pInputAssemblyState);\n'
+                    '    if (copy_src.pInputAssemblyState)\n'
+                    '        pInputAssemblyState = new safe_VkPipelineInputAssemblyStateCreateInfo(*copy_src.pInputAssemblyState);\n'
                     '    else\n'
                     '        pInputAssemblyState = NULL;\n'
                     '    bool has_tessellation_stage = false;\n'
@@ -1255,47 +1255,47 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '        for (uint32_t i = 0; i < stageCount && !has_tessellation_stage; ++i)\n'
                     '            if (pStages[i].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || pStages[i].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)\n'
                     '                has_tessellation_stage = true;\n'
-                    '    if (src.pTessellationState && has_tessellation_stage)\n'
-                    '        pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(*src.pTessellationState);\n'
+                    '    if (copy_src.pTessellationState && has_tessellation_stage)\n'
+                    '        pTessellationState = new safe_VkPipelineTessellationStateCreateInfo(*copy_src.pTessellationState);\n'
                     '    else\n'
                     '        pTessellationState = NULL; // original pTessellationState pointer ignored\n'
-                    '    bool has_rasterization = src.pRasterizationState ? !src.pRasterizationState->rasterizerDiscardEnable : false;\n'
-                    '    if (src.pViewportState && has_rasterization) {\n'
-                    '        pViewportState = new safe_VkPipelineViewportStateCreateInfo(*src.pViewportState);\n'
+                    '    bool has_rasterization = copy_src.pRasterizationState ? !copy_src.pRasterizationState->rasterizerDiscardEnable : false;\n'
+                    '    if (copy_src.pViewportState && has_rasterization) {\n'
+                    '        pViewportState = new safe_VkPipelineViewportStateCreateInfo(*copy_src.pViewportState);\n'
                     '    } else\n'
                     '        pViewportState = NULL; // original pViewportState pointer ignored\n'
-                    '    if (src.pRasterizationState)\n'
-                    '        pRasterizationState = new safe_VkPipelineRasterizationStateCreateInfo(*src.pRasterizationState);\n'
+                    '    if (copy_src.pRasterizationState)\n'
+                    '        pRasterizationState = new safe_VkPipelineRasterizationStateCreateInfo(*copy_src.pRasterizationState);\n'
                     '    else\n'
                     '        pRasterizationState = NULL;\n'
-                    '    if (src.pMultisampleState && has_rasterization)\n'
-                    '        pMultisampleState = new safe_VkPipelineMultisampleStateCreateInfo(*src.pMultisampleState);\n'
+                    '    if (copy_src.pMultisampleState && has_rasterization)\n'
+                    '        pMultisampleState = new safe_VkPipelineMultisampleStateCreateInfo(*copy_src.pMultisampleState);\n'
                     '    else\n'
                     '        pMultisampleState = NULL; // original pMultisampleState pointer ignored\n'
-                    '    if (src.pDepthStencilState && has_rasterization)\n'
-                    '        pDepthStencilState = new safe_VkPipelineDepthStencilStateCreateInfo(*src.pDepthStencilState);\n'
+                    '    if (copy_src.pDepthStencilState && has_rasterization)\n'
+                    '        pDepthStencilState = new safe_VkPipelineDepthStencilStateCreateInfo(*copy_src.pDepthStencilState);\n'
                     '    else\n'
                     '        pDepthStencilState = NULL; // original pDepthStencilState pointer ignored\n'
-                    '    if (src.pColorBlendState && has_rasterization)\n'
-                    '        pColorBlendState = new safe_VkPipelineColorBlendStateCreateInfo(*src.pColorBlendState);\n'
+                    '    if (copy_src.pColorBlendState && has_rasterization)\n'
+                    '        pColorBlendState = new safe_VkPipelineColorBlendStateCreateInfo(*copy_src.pColorBlendState);\n'
                     '    else\n'
                     '        pColorBlendState = NULL; // original pColorBlendState pointer ignored\n'
-                    '    if (src.pDynamicState)\n'
-                    '        pDynamicState = new safe_VkPipelineDynamicStateCreateInfo(*src.pDynamicState);\n'
+                    '    if (copy_src.pDynamicState)\n'
+                    '        pDynamicState = new safe_VkPipelineDynamicStateCreateInfo(*copy_src.pDynamicState);\n'
                     '    else\n'
                     '        pDynamicState = NULL;\n',
                  # VkPipelineViewportStateCreateInfo is special case because it has custom construct parameters
                 'VkPipelineViewportStateCreateInfo' :
-                    '    pNext = SafePnextCopy(src.pNext);\n'
-                    '    if (src.pViewports) {\n'
-                    '        pViewports = new VkViewport[src.viewportCount];\n'
-                    '        memcpy ((void *)pViewports, (void *)src.pViewports, sizeof(VkViewport)*src.viewportCount);\n'
+                    '    pNext = SafePnextCopy(copy_src.pNext);\n'
+                    '    if (copy_src.pViewports) {\n'
+                    '        pViewports = new VkViewport[copy_src.viewportCount];\n'
+                    '        memcpy ((void *)pViewports, (void *)copy_src.pViewports, sizeof(VkViewport)*copy_src.viewportCount);\n'
                     '    }\n'
                     '    else\n'
                     '        pViewports = NULL;\n'
-                    '    if (src.pScissors) {\n'
-                    '        pScissors = new VkRect2D[src.scissorCount];\n'
-                    '        memcpy ((void *)pScissors, (void *)src.pScissors, sizeof(VkRect2D)*src.scissorCount);\n'
+                    '    if (copy_src.pScissors) {\n'
+                    '        pScissors = new VkRect2D[copy_src.scissorCount];\n'
+                    '        memcpy ((void *)pScissors, (void *)copy_src.pScissors, sizeof(VkRect2D)*copy_src.scissorCount);\n'
                     '    }\n'
                     '    else\n'
                     '        pScissors = NULL;\n',
@@ -1426,23 +1426,21 @@ class HelperFileOutputGenerator(OutputGenerator):
             if '' != default_init_list:
                 default_init_list = " :%s" % (default_init_list[:-1])
             safe_struct_body.append("\n%s::%s()%s\n{}" % (ss_name, ss_name, default_init_list))
-            # Create slight variation of init and construct txt for copy constructor that takes a src object reference vs. struct ptr
-            copy_construct_init = init_func_txt.replace('in_struct->', 'src.')
-            copy_construct_txt = construct_txt.replace(' (in_struct->', ' (src.')            # Exclude 'if' blocks from next line
-            copy_construct_txt = construct_txt.replace(' (in_struct->', ' (src.')               # Exclude 'if' blocks from next line
-            copy_construct_txt = re.sub('(new \\w+)\\(in_struct->', '\\1(*src.', construct_txt) # Pass object to copy constructors
-            copy_construct_txt = copy_construct_txt.replace('in_struct->', 'src.')              # Modify remaining struct refs for src object
+            # Create slight variation of init and construct txt for copy constructor that takes a copy_src object reference vs. struct ptr
+            copy_construct_init = init_func_txt.replace('in_struct->', 'copy_src.')
+            copy_construct_txt = re.sub('(new \\w+)\\(in_struct->', '\\1(*copy_src.', construct_txt) # Pass object to copy constructors
+            copy_construct_txt = copy_construct_txt.replace('in_struct->', 'copy_src.')              # Modify remaining struct refs for copy_src object
             if item.name in custom_copy_txt:
                 copy_construct_txt = custom_copy_txt[item.name]
-            copy_assign_txt = '    if (&src == this) return *this;\n\n' + destruct_txt + '\n' + copy_construct_init + copy_construct_txt + '\n    return *this;'
-            safe_struct_body.append("\n%s::%s(const %s& src)\n{\n%s%s}" % (ss_name, ss_name, ss_name, copy_construct_init, copy_construct_txt)) # Copy constructor
-            safe_struct_body.append("\n%s& %s::operator=(const %s& src)\n{\n%s\n}" % (ss_name, ss_name, ss_name, copy_assign_txt)) # Copy assignment operator
+            copy_assign_txt = '    if (&copy_src == this) return *this;\n\n' + destruct_txt + '\n' + copy_construct_init + copy_construct_txt + '\n    return *this;'
+            safe_struct_body.append("\n%s::%s(const %s& copy_src)\n{\n%s%s}" % (ss_name, ss_name, ss_name, copy_construct_init, copy_construct_txt)) # Copy constructor
+            safe_struct_body.append("\n%s& %s::operator=(const %s& copy_src)\n{\n%s\n}" % (ss_name, ss_name, ss_name, copy_assign_txt)) # Copy assignment operator
             safe_struct_body.append("\n%s::~%s()\n{\n%s}" % (ss_name, ss_name, destruct_txt))
             safe_struct_body.append("\nvoid %s::initialize(const %s* in_struct%s)\n{\n%s%s}" % (ss_name, item.name, self.custom_construct_params.get(item.name, ''), init_func_txt, construct_txt))
             # Copy initializer uses same txt as copy constructor but has a ptr and not a reference
-            init_copy = copy_construct_init.replace('src.', 'src->')
-            init_construct = copy_construct_txt.replace('src.', 'src->')
-            safe_struct_body.append("\nvoid %s::initialize(const %s* src)\n{\n%s%s}" % (ss_name, ss_name, init_copy, init_construct))
+            init_copy = copy_construct_init.replace('copy_src.', 'copy_src->')
+            init_construct = copy_construct_txt.replace('copy_src.', 'copy_src->')
+            safe_struct_body.append("\nvoid %s::initialize(const %s* copy_src)\n{\n%s%s}" % (ss_name, ss_name, init_copy, init_construct))
             if item.ifdef_protect is not None:
                 safe_struct_body.append("#endif // %s\n" % item.ifdef_protect)
         return "\n".join(safe_struct_body)
