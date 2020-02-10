@@ -24,7 +24,7 @@
 static const char *string_SyncHazardVUID(SyncHazard hazard) {
     switch (hazard) {
         case SyncHazard::NONE:
-            return "SYNC-NONE";
+            return "SYNC-HAZARD-NONE";
             break;
         case SyncHazard::READ_AFTER_WRITE:
             return "SYNC-HAZARD-READ_AFTER_WRITE";
@@ -34,6 +34,15 @@ static const char *string_SyncHazardVUID(SyncHazard hazard) {
             break;
         case SyncHazard::WRITE_AFTER_WRITE:
             return "SYNC-HAZARD-WRITE_AFTER_WRITE";
+            break;
+        case SyncHazard::READ_RACING_WRITE:
+            return "SYNC-HAZARD-READ-RACING-WRITE";
+            break;
+        case SyncHazard::WRITE_RACING_WRITE:
+            return "SYNC-HAZARD-WRITE-RACING-WRITE";
+            break;
+        case SyncHazard::WRITE_RACING_READ:
+            return "SYNC-HAZARD-WRITE-RACING-READ";
             break;
         default:
             assert(0);
@@ -54,6 +63,15 @@ static const char *string_SyncHazard(SyncHazard hazard) {
             break;
         case SyncHazard::WRITE_AFTER_WRITE:
             return "WRITE_AFTER_WRITE";
+            break;
+        case SyncHazard::READ_RACING_WRITE:
+            return "READ_RACING_WRITE";
+            break;
+        case SyncHazard::WRITE_RACING_WRITE:
+            return "WRITE_RACING_WRITE";
+            break;
+        case SyncHazard::WRITE_RACING_READ:
+            return "WRITE_RACING_READ";
             break;
         default:
             assert(0);
@@ -341,6 +359,24 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index)
                     break;
                 }
             }
+        }
+    }
+    return hazard;
+}
+
+// Asynchronous Hazards occur between subpasses with no connection through the DAG
+HazardResult ResourceAccessState::DetectAsynchronousHazard(SyncStageAccessIndex usage_index) const {
+    HazardResult hazard;
+    auto usage = FlagBit(usage_index);
+    if (IsRead(usage)) {
+        if (last_write != 0) {
+            hazard.Set(READ_RACING_WRITE, write_tag);
+        }
+    } else {
+        if (last_write != 0) {
+            hazard.Set(WRITE_RACING_WRITE, write_tag);
+        } else if (last_read_count > 0) {
+            hazard.Set(WRITE_RACING_READ, last_reads[0].tag);
         }
     }
     return hazard;
