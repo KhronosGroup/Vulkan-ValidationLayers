@@ -1240,6 +1240,8 @@ class StatelessValidation : public ValidationObject {
                                                          const VkAllocationCallbacks *pAllocator,
                                                          VkDescriptorSetLayout *pSetLayout) const;
 
+    bool validate_WriteDescriptorSet(const char *vkCallingFunction, const uint32_t descriptorWriteCount,
+                                     const VkWriteDescriptorSet *pDescriptorWrites, const bool validateDstSet = true) const;
     bool manual_PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
                                                     const VkWriteDescriptorSet *pDescriptorWrites, uint32_t descriptorCopyCount,
                                                     const VkCopyDescriptorSet *pDescriptorCopies) const;
@@ -1331,6 +1333,9 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
                                                   uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
                                                   uint32_t groupCountZ) const;
+    bool manual_PreCallValidateCmdPushDescriptorSetKHR(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                       VkPipelineLayout layout, uint32_t set, uint32_t descriptorWriteCount,
+                                                       const VkWriteDescriptorSet *pDescriptorWrites) const;
     bool manual_PreCallValidateCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
                                                         uint32_t exclusiveScissorCount, const VkRect2D *pExclusiveScissors) const;
     bool manual_PreCallValidateCmdSetViewportShadingRatePaletteNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,

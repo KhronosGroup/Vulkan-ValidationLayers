@@ -7304,6 +7304,7 @@ bool StatelessValidation::PreCallValidateCmdPushDescriptorSetKHR(
             skip |= validate_ranged_enum("vkCmdPushDescriptorSetKHR", ParameterName("pDescriptorWrites[%i].descriptorType", ParameterName::IndexVector{ descriptorWriteIndex }), "VkDescriptorType", AllVkDescriptorTypeEnums, pDescriptorWrites[descriptorWriteIndex].descriptorType, "VUID-VkWriteDescriptorSet-descriptorType-parameter");
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdPushDescriptorSetKHR(commandBuffer, pipelineBindPoint, layout, set, descriptorWriteCount, pDescriptorWrites);
     return skip;
 }
 
