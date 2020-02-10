@@ -291,6 +291,7 @@ class DescriptorSetLayout : public BASE_NODE {
 
         VkSampler const *GetImmutableSamplerPtr() const { return layout_->GetImmutableSamplerPtrFromIndex(index_); }
         const IndexRange &GetGlobalIndexRange() const { return layout_->GetGlobalIndexRangeFromIndex(index_); }
+        uint32_t GetIndex() const { return index_; }
         bool AtEnd() const { return index_ == layout_->GetBindingCount(); }
 
         // Return index into dynamic offset array for given binding
