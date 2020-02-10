@@ -231,6 +231,27 @@ TEST_F(VkLayerTest, UnnormalizedCoordinatesEnabled) {
     sampler_info = sampler_info_ref;
 }
 
+TEST_F(VkLayerTest, InvalidSamplerCreateInfo) {
+    TEST_DESCRIPTION("Checks various cases where VkSamplerCreateInfo is invalid");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // reference to reset values between test cases
+    VkSamplerCreateInfo const sampler_info_ref = SafeSaneSamplerCreateInfo();
+    VkSamplerCreateInfo sampler_info = sampler_info_ref;
+
+    // Mix up Lod values
+    sampler_info.minLod = 4.0f;
+    sampler_info.maxLod = 1.0f;
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-maxLod-01973");
+    sampler_info.minLod = sampler_info_ref.minLod;
+    sampler_info.maxLod = sampler_info_ref.maxLod;
+
+    // Larger mipLodBias than max limit
+    sampler_info.mipLodBias = NearestGreater(m_device->phy().properties().limits.maxSamplerLodBias);
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-mipLodBias-01069");
+    sampler_info.mipLodBias = sampler_info_ref.mipLodBias;
+}
+
 TEST_F(VkLayerTest, UpdateBufferAlignment) {
     TEST_DESCRIPTION("Check alignment parameters for vkCmdUpdateBuffer");
     uint32_t updateData[] = {1, 2, 3, 4, 5, 6, 7, 8};
