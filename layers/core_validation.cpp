@@ -10343,8 +10343,11 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                     for (auto layout : layouts) {
                         if ((layout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) && (!device_extensions.vk_khr_shared_presentable_image ||
                                                                             (layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR))) {
+                            const char *validation_error = (device_extensions.vk_khr_shared_presentable_image)
+                                                               ? "VUID-VkPresentInfoKHR-pImageIndices-01430"
+                                                               : "VUID-VkPresentInfoKHR-pImageIndices-01296";
                             skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT,
-                                            HandleToUint64(queue), "VUID-VkPresentInfoKHR-pImageIndices-01296",
+                                            HandleToUint64(queue), validation_error,
                                             "Images passed to present must be in layout VK_IMAGE_LAYOUT_PRESENT_SRC_KHR or "
                                             "VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR but is in %s.",
                                             string_VkImageLayout(layout));
