@@ -3742,6 +3742,24 @@ bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuff
     return skip;
 }
 
+bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                                     uint32_t bindingCount, const VkBuffer *pBuffers,
+                                                                     const VkDeviceSize *pOffsets) const {
+    bool skip = false;
+    if (firstBinding > device_limits.maxVertexInputBindings) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers-firstBinding-00624",
+                         "vkCmdBindVertexBuffers() firstBinding (%u) must be less than maxVertexInputBindings (%u)", firstBinding,
+                         device_limits.maxVertexInputBindings);
+    } else if ((firstBinding + bindingCount) > device_limits.maxVertexInputBindings) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers-firstBinding-00625",
+                         "vkCmdBindVertexBuffers() sum of firstBinding (%u) and bindingCount (%u) must be less than "
+                         "maxVertexInputBindings (%u)",
+                         firstBinding, bindingCount, device_limits.maxVertexInputBindings);
+    }
+
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device,
                                                                            const VkDebugUtilsObjectNameInfoEXT *pNameInfo) const {
     bool skip = false;

@@ -4504,6 +4504,7 @@ bool StatelessValidation::PreCallValidateCmdBindVertexBuffers(
     bool skip = false;
     skip |= validate_handle_array("vkCmdBindVertexBuffers", "bindingCount", "pBuffers", bindingCount, pBuffers, true, true);
     skip |= validate_array("vkCmdBindVertexBuffers", "bindingCount", "pOffsets", bindingCount, &pOffsets, true, true, "VUID-vkCmdBindVertexBuffers-bindingCount-arraylength", "VUID-vkCmdBindVertexBuffers-pOffsets-parameter");
+    if (!skip) skip |= manual_PreCallValidateCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
     return skip;
 }
 
