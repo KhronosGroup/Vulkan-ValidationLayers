@@ -1342,7 +1342,7 @@ TEST_F(VkLayerTest, CmdDispatchExceedLimits) {
 }
 
 TEST_F(VkLayerTest, InvalidPipelineCreateState) {
-    // Attempt to Create Gfx Pipeline w/o a VS
+    TEST_DESCRIPTION("Create Pipelines with invalid state set");
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -1351,6 +1351,7 @@ TEST_F(VkLayerTest, InvalidPipelineCreateState) {
     VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
     VkShaderObj fs(m_device, bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
 
+    // Attempt to Create Gfx Pipeline w/o a VS
     VkPipelineShaderStageCreateInfo shaderStage = fs.GetStageCreateInfo();  // should be: vs.GetStageCreateInfo();
 
     auto set_info = [&](CreatePipelineHelper &helper) { helper.shader_stages_ = {shaderStage}; };
@@ -1367,6 +1368,25 @@ TEST_F(VkLayerTest, InvalidPipelineCreateState) {
 
     CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                       "contains invalid characters or is badly formed");
+
+    // Make sure compute pipeline has a compute shader stage set
+    char const *csSource =
+        "#version 450\n"
+        "layout(local_size_x=1, local_size_y=1, local_size_z=1) in;\n"
+        "void main(){\n"
+        "   if (gl_GlobalInvocationID.x >= 0) { return; }\n"
+        "}\n";
+
+    CreateComputePipelineHelper cs_pipeline(*this);
+    cs_pipeline.InitInfo();
+    cs_pipeline.cs_.reset(new VkShaderObj(m_device, csSource, VK_SHADER_STAGE_COMPUTE_BIT, this));
+    cs_pipeline.InitState();
+    cs_pipeline.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
+    cs_pipeline.LateBindPipelineInfo();
+    cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_VERTEX_BIT;  // override with wrong value
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkComputePipelineCreateInfo-stage-00701");
+    cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, InvalidPipelineSampleRateFeatureDisable) {
