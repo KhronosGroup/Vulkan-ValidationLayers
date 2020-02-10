@@ -4028,3 +4028,20 @@ bool StatelessValidation::manual_PreCallValidateCreateSamplerYcbcrConversionKHR(
     return ValidateCreateSamplerYcbcrConversion(device, pCreateInfo, pAllocator, pYcbcrConversion,
                                                 "vkCreateSamplerYcbcrConversionKHR");
 }
+
+bool StatelessValidation::manual_PreCallValidateImportSemaphoreFdKHR(
+    VkDevice device, const VkImportSemaphoreFdInfoKHR *pImportSemaphoreFdInfo) const {
+    bool skip = false;
+    VkExternalSemaphoreHandleTypeFlags supported_handle_types =
+        VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT | VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
+
+    if (0 == (pImportSemaphoreFdInfo->handleType & supported_handle_types)) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT, 0,
+                        "VUID-VkImportSemaphoreFdInfoKHR-handleType-01143",
+                        "vkImportSemaphoreFdKHR() to semaphore %s handleType %s is not one of the supported handleTypes (%s).",
+                        report_data->FormatHandle(pImportSemaphoreFdInfo->semaphore).c_str(),
+                        string_VkExternalSemaphoreHandleTypeFlagBits(pImportSemaphoreFdInfo->handleType),
+                        string_VkExternalSemaphoreHandleTypeFlags(supported_handle_types).c_str());
+    }
+    return skip;
+}

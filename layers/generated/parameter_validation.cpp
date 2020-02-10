@@ -7255,6 +7255,7 @@ bool StatelessValidation::PreCallValidateImportSemaphoreFdKHR(
 
         skip |= validate_flags("vkImportSemaphoreFdKHR", "pImportSemaphoreFdInfo->handleType", "VkExternalSemaphoreHandleTypeFlagBits", AllVkExternalSemaphoreHandleTypeFlagBits, pImportSemaphoreFdInfo->handleType, kRequiredSingleBit, "VUID-VkImportSemaphoreFdInfoKHR-handleType-parameter", "VUID-VkImportSemaphoreFdInfoKHR-handleType-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateImportSemaphoreFdKHR(device, pImportSemaphoreFdInfo);
     return skip;
 }
 

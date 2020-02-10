@@ -1408,6 +1408,7 @@ class StatelessValidation : public ValidationObject {
                                                                const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
                                                                const VkAllocationCallbacks *pAllocator,
                                                                VkSamplerYcbcrConversion *pYcbcrConversion) const;
-
+    bool manual_PreCallValidateImportSemaphoreFdKHR(VkDevice device,
+                                                    const VkImportSemaphoreFdInfoKHR *pImportSemaphoreFdInfo) const;
 #include "parameter_validation.h"
 };  // Class StatelessValidation
