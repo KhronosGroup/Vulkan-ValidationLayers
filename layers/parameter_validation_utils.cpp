@@ -2925,6 +2925,21 @@ bool StatelessValidation::manual_PreCallValidateCmdBlitImage(VkCommandBuffer com
     return skip;
 }
 
+bool StatelessValidation::manual_PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
+                                                              uint32_t regionCount, const VkBufferCopy *pRegions) const {
+    bool skip = false;
+
+    if (pRegions != nullptr) {
+        for (uint32_t i = 0; i < regionCount; i++) {
+            if (pRegions[i].size == 0) {
+                skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
+                                "VUID-VkBufferCopy-size-01988", "vkCmdCopyBuffer() pRegions[%u].size must be greater than zero", i);
+            }
+        }
+    }
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer,
                                                                      VkImage dstImage, VkImageLayout dstImageLayout,
                                                                      uint32_t regionCount,
