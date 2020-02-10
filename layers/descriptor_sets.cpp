@@ -2511,6 +2511,47 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
             return false;
         }
     }
+    // Verify all bindings update share identical properties across all items
+    if (update->descriptorCount > 0) {
+        // Save first binding information and error if something different is found
+        DescriptorSetLayout::ConstBindingIterator current_binding(dest_layout, update->dstBinding);
+        VkShaderStageFlags stageFlags = current_binding.GetStageFlags();
+        VkDescriptorType descriptorType = current_binding.GetType();
+        bool immutableSamplers = (current_binding.GetImmutableSamplerPtr() == nullptr);
+        ++current_binding;
+
+        // Start at 1 since first binding is used as comparsion value
+        for (uint32_t i = 1; i < update->descriptorCount; i++) {
+            if (current_binding.AtEnd() == true) {
+                break;  // prevents setting error here if bindings don't exist
+            }
+
+            // Check for consistent stageFlags and descriptorType
+            if ((current_binding.GetStageFlags() != stageFlags) || (current_binding.GetType() != descriptorType)) {
+                *error_code = "VUID-VkWriteDescriptorSet-descriptorCount-00317";
+                std::stringstream error_str;
+                error_str << "Attempting write update to " << dest_set->StringifySetAndLayout() << " binding index #"
+                          << current_binding.GetIndex() << " (" << i << " from dstBinding offset)"
+                          << " with a different stageFlag and/or descriptorType from previous bindings."
+                          << " All bindings must have consecutive stageFlag and/or descriptorType across a VkWriteDescriptorSet";
+                *error_msg = error_str.str();
+                return false;
+            }
+            // Check if all immutableSamplers or not
+            if ((current_binding.GetImmutableSamplerPtr() == nullptr) != immutableSamplers) {
+                *error_code = "VUID-VkWriteDescriptorSet-descriptorCount-00318";
+                std::stringstream error_str;
+                error_str << "Attempting write update to " << dest_set->StringifySetAndLayout() << " binding index #"
+                          << current_binding.GetIndex() << " (" << i << " from dstBinding offset)"
+                          << " with a different usage of immutable samplers from previous bindings."
+                          << " All bindings must have all or none usage of immutable samplers across a VkWriteDescriptorSet";
+                *error_msg = error_str.str();
+                return false;
+            }
+            ++current_binding;
+        }
+    }
+
     // Verify consecutive bindings match (if needed)
     if (!VerifyUpdateConsistency(DescriptorSetLayout::ConstBindingIterator(dest_layout, update->dstBinding),
                                  update->dstArrayElement, update->descriptorCount, "write update to", dest_set->GetSet(),
