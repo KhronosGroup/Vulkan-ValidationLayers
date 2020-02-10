@@ -4552,6 +4552,13 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             }
         }
 
+        // Validate feature set if using CUBE_ARRAY
+        if ((view_type == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) && (enabled_features.core.imageCubeArray == false)) {
+            skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-viewType-01004",
+                             "vkCreateImageView(): pCreateInfo->viewType can't be VK_IMAGE_VIEW_TYPE_CUBE_ARRAY without "
+                             "enabling the imageCubeArray feature.");
+        }
+
         // Validate correct image aspect bits for desired formats and format consistency
         skip |= ValidateImageAspectMask(image_state->image, image_format, aspect_mask, "vkCreateImageView()");
 
@@ -4648,6 +4655,12 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-usage-02277",
                              "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
                              "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT.",
+                             string_VkFormat(view_format), string_VkImageTiling(image_tiling));
+        } else if ((image_usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) &&
+                   !(tiling_features & (VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT))) {
+            skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-usage-02652",
+                             "vkCreateImageView(): pCreateInfo->format %s with tiling %s does not support usage that includes "
+                             "VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT or VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.",
                              string_VkFormat(view_format), string_VkImageTiling(image_tiling));
         }
 
