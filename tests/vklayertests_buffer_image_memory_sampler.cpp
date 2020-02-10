@@ -4923,12 +4923,24 @@ TEST_F(VkLayerTest, BadVertexBufferOffset) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    const uint32_t maxVertexInputBindings = m_device->props.limits.maxVertexInputBindings;
     static const float vbo_data[3] = {1.f, 0.f, 1.f};
     VkConstantBufferObj vbo(m_device, sizeof(vbo_data), (const void *)&vbo_data, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     m_commandBuffer->begin();
     m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBindVertexBuffers-pOffsets-00626");
     m_commandBuffer->BindVertexBuffer(&vbo, (VkDeviceSize)(3 * sizeof(float)), 1);  // Offset at the end of the buffer
+    m_errorMonitor->VerifyFound();
+
+    // firstBinding set over limit
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBindVertexBuffers-firstBinding-00624");
+    m_commandBuffer->BindVertexBuffer(&vbo, 0, (maxVertexInputBindings + 1));
+    m_errorMonitor->VerifyFound();
+
+    // sum of firstBinding and bindingCount set over limit
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBindVertexBuffers-firstBinding-00625");
+    m_commandBuffer->BindVertexBuffer(&vbo, 0, (maxVertexInputBindings));  // bindingCount of 1 puts it over limit
     m_errorMonitor->VerifyFound();
 
     m_commandBuffer->EndRenderPass();
