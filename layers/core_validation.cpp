@@ -5569,6 +5569,20 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuff
                             "vkCmdBindVertexBuffers() offset (0x%" PRIxLEAST64 ") is beyond the end of the buffer.", pOffsets[i]);
         }
     }
+
+    if (firstBinding > phys_dev_props.limits.maxVertexInputBindings) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdBindVertexBuffers-firstBinding-00624",
+                        "vkCmdBindVertexBuffers() firstBinding (%u) must be less than maxVertexInputBindings (%u)", firstBinding,
+                        phys_dev_props.limits.maxVertexInputBindings);
+    } else if ((firstBinding + bindingCount) > phys_dev_props.limits.maxVertexInputBindings) {
+        skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                        HandleToUint64(commandBuffer), "VUID-vkCmdBindVertexBuffers-firstBinding-00625",
+                        "vkCmdBindVertexBuffers() sum of firstBinding (%u) and bindingCount (%u) must be less than "
+                        "maxVertexInputBindings (%u)",
+                        firstBinding, bindingCount, phys_dev_props.limits.maxVertexInputBindings);
+    }
+
     return skip;
 }
 
