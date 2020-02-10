@@ -5829,14 +5829,16 @@ TEST_F(VkLayerTest, DSUsageBitsErrors) {
         return;
     }
 
-    std::array<VkDescriptorPoolSize, VK_DESCRIPTOR_TYPE_RANGE_SIZE> ds_type_count;
+    constexpr uint32_t kLocalDescriptorTypeRangeSize = (VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT - VK_DESCRIPTOR_TYPE_SAMPLER + 1);
+
+    std::array<VkDescriptorPoolSize, kLocalDescriptorTypeRangeSize> ds_type_count;
     for (uint32_t i = 0; i < ds_type_count.size(); ++i) {
         ds_type_count[i].type = VkDescriptorType(i);
         ds_type_count[i].descriptorCount = 1;
     }
 
     vk_testing::DescriptorPool ds_pool;
-    ds_pool.init(*m_device, vk_testing::DescriptorPool::create_info(0, VK_DESCRIPTOR_TYPE_RANGE_SIZE, ds_type_count));
+    ds_pool.init(*m_device, vk_testing::DescriptorPool::create_info(0, kLocalDescriptorTypeRangeSize, ds_type_count));
     ASSERT_TRUE(ds_pool.initialized());
 
     std::vector<VkDescriptorSetLayoutBinding> dsl_bindings(1);
@@ -5851,9 +5853,9 @@ TEST_F(VkLayerTest, DSUsageBitsErrors) {
     std::vector<UpDescriptorSet> descriptor_sets;
     using UpDescriptorSetLayout = std::unique_ptr<VkDescriptorSetLayoutObj>;
     std::vector<UpDescriptorSetLayout> ds_layouts;
-    descriptor_sets.reserve(VK_DESCRIPTOR_TYPE_RANGE_SIZE);
-    ds_layouts.reserve(VK_DESCRIPTOR_TYPE_RANGE_SIZE);
-    for (uint32_t i = 0; i < VK_DESCRIPTOR_TYPE_RANGE_SIZE; ++i) {
+    descriptor_sets.reserve(kLocalDescriptorTypeRangeSize);
+    ds_layouts.reserve(kLocalDescriptorTypeRangeSize);
+    for (uint32_t i = 0; i < kLocalDescriptorTypeRangeSize; ++i) {
         dsl_bindings[0].descriptorType = VkDescriptorType(i);
         ds_layouts.push_back(UpDescriptorSetLayout(new VkDescriptorSetLayoutObj(m_device, dsl_bindings)));
         descriptor_sets.push_back(UpDescriptorSet(ds_pool.alloc_sets(*m_device, *ds_layouts.back())));
@@ -5909,7 +5911,7 @@ TEST_F(VkLayerTest, DSUsageBitsErrors) {
         "UNASSIGNED-CoreValidation-DrawState-InvalidImageView"   // INPUT_ATTACHMENT
     };
     // Start loop at 1 as SAMPLER desc type has no usage bit error
-    for (uint32_t i = 1; i < VK_DESCRIPTOR_TYPE_RANGE_SIZE; ++i) {
+    for (uint32_t i = 1; i < kLocalDescriptorTypeRangeSize; ++i) {
         if (VkDescriptorType(i) == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
             // Now check for UNIFORM_TEXEL_BUFFER using storage_texel_buffer_view
             descriptor_write.pTexelBufferView = &storage_texel_buffer_view;

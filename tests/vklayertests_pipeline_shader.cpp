@@ -2743,7 +2743,7 @@ TEST_F(VkLayerTest, ColorBlendInvalidLogicOp) {
 
     const auto set_shading_enable = [](CreatePipelineHelper &helper) {
         helper.cb_ci_.logicOpEnable = VK_TRUE;
-        helper.cb_ci_.logicOp = static_cast<VkLogicOp>(VK_LOGIC_OP_END_RANGE + 1);  // invalid logicOp to be tested
+        helper.cb_ci_.logicOp = static_cast<VkLogicOp>(VK_LOGIC_OP_SET + 1);  // invalid logicOp to be tested
     };
     CreatePipelineHelper::OneshotTest(*this, set_shading_enable, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                       "VUID-VkPipelineColorBlendStateCreateInfo-logicOpEnable-00607");
