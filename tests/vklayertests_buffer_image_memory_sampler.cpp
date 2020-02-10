@@ -68,6 +68,11 @@ TEST_F(VkLayerTest, BufferExtents) {
     vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_two.handle(), buffer_two.handle(), 1, &copy_info);
     m_errorMonitor->VerifyFound();
 
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkBufferCopy-size-01988");
+    copy_info = {256, 256, 0};
+    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_two.handle(), buffer_two.handle(), 1, &copy_info);
+    m_errorMonitor->VerifyFound();
+
     m_commandBuffer->end();
 }
 
