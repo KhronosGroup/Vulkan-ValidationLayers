@@ -222,7 +222,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
         self.commands = []                                # List of CommandData records for all Vulkan commands
         self.structMembers = []                           # List of StructMemberData records for all Vulkan structs
         self.validatedStructs = dict()                    # Map of structs type names to generated validation code for that struct type
-        self.enumRanges = dict()                          # Map of enum name to BEGIN/END range values
+        self.enumRanges = set()                           # Set of enum names
         self.enumValueLists = ''                          # String containing enumerated type map definitions
         self.flags = set()                                # Map of flags typenames
         self.flagBits = dict()                            # Map of flag bits typename to list of values
@@ -611,7 +611,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 expandPrefix = expandName.rsplit(expandSuffix, 1)[0]
             isEnum = ('FLAG_BITS' not in expandPrefix)
             if isEnum:
-                self.enumRanges[groupName] = (expandPrefix + '_BEGIN_RANGE' + expandSuffix, expandPrefix + '_END_RANGE' + expandSuffix)
+                self.enumRanges.add(groupName)
                 # Create definition for a list containing valid enum values for this enumerated type
                 if self.featureExtraProtect is not None:
                     enum_entry = '\n#ifdef %s\n' % self.featureExtraProtect
