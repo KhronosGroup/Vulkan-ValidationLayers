@@ -4593,6 +4593,7 @@ bool StatelessValidation::PreCallValidateCmdCopyBuffer(
             // No xml-driven validation
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
     return skip;
 }
 

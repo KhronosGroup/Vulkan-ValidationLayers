@@ -158,6 +158,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdCopyImage',
             'vkCmdBindIndexBuffer',
             'vkCmdBlitImage',
+            'vkCmdCopyBuffer',
             'vkCmdCopyBufferToImage',
             'vkCmdCopyImageToBuffer',
             'vkCmdUpdateBuffer',
