@@ -2223,6 +2223,14 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
                             "], VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount must equal 1, found %" PRIu32 ".",
                             i, feedback_struct->pipelineStageCreationFeedbackCount);
         }
+
+        // Make sure compute stage is selected
+        if (pCreateInfos[i].stage.stage != VK_SHADER_STAGE_COMPUTE_BIT) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT, 0,
+                            "VUID-VkComputePipelineCreateInfo-stage-00701",
+                            "vkCreateComputePipelines(): the pCreateInfo[%u].stage.stage (%s) is not VK_SHADER_STAGE_COMPUTE_BIT",
+                            i, string_VkShaderStageFlagBits(pCreateInfos[i].stage.stage));
+        }
     }
     return skip;
 }
