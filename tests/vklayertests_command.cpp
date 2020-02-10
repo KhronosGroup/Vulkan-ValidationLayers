@@ -4437,6 +4437,67 @@ TEST_F(VkLayerTest, PushDescriptorSetCmdPushBadArgs) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, PushDescriptorSetCmdBufferOffsetUnaligned) {
+    TEST_DESCRIPTION("Attempt to push a push descriptor set buffer with unaligned offset.");
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto const push_descriptor_prop = GetPushDescriptorProperties(instance(), gpu());
+    if (push_descriptor_prop.maxPushDescriptors < 1) {
+        // Some implementations report an invalid maxPushDescriptors of 0.
+        printf("%s maxPushDescriptors is zero, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    auto const min_alignment = m_device->props.limits.minUniformBufferOffsetAlignment;
+    if (min_alignment == 0) {
+        printf("%s minUniformBufferOffsetAlignment is zero, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
+    const VkDescriptorSetLayoutObj push_ds_layout(m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    ASSERT_TRUE(push_ds_layout.initialized());
+
+    const VkPipelineLayoutObj pipeline_layout(m_device, {&push_ds_layout});
+    ASSERT_TRUE(pipeline_layout.initialized());
+
+    const uint32_t buffer_data[4] = {4, 5, 6, 7};
+    VkConstantBufferObj buffer_obj(m_device, sizeof(buffer_data), &buffer_data, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    ASSERT_TRUE(buffer_obj.initialized());
+
+    // Use an invalid alignment.
+    VkDescriptorBufferInfo buffer_info = {buffer_obj.handle(), min_alignment - 1, VK_WHOLE_SIZE};
+    VkWriteDescriptorSet descriptor_write = vk_testing::Device::write_descriptor_set(
+        vk_testing::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
+
+    PFN_vkCmdPushDescriptorSetKHR vkCmdPushDescriptorSetKHR =
+        (PFN_vkCmdPushDescriptorSetKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR");
+    ASSERT_TRUE(vkCmdPushDescriptorSetKHR != nullptr);
+
+    m_commandBuffer->begin();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkWriteDescriptorSet-descriptorType-00327");
+    vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                              &descriptor_write);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, SetDynScissorParamTests) {
     TEST_DESCRIPTION("Test parameters of vkCmdSetScissor without multiViewport feature");
 
