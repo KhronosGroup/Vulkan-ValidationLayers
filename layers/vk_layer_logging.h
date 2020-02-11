@@ -625,37 +625,6 @@ static inline bool LogMsgLocked(const debug_report_data *debug_data, VkFlags msg
     return result;
 }
 
-// Output log message via DEBUG_REPORT. Takes format and variable arg list so that output string is only computed if a message
-// needs to be logged
-#ifndef WIN32
-static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
-                           uint64_t src_object, const std::string &vuid_text, const char *format, ...)
-    __attribute__((format(printf, 6, 7)));
-#endif
-static inline bool log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
-                           uint64_t src_object, const std::string &vuid_text, const char *format, ...) {
-    if (!debug_data) return false;
-    std::unique_lock<std::mutex> lock(debug_data->debug_output_mutex);
-    VkFlags local_severity = 0;
-    VkFlags local_type = 0;
-    DebugReportFlagsToAnnotFlags(msg_flags, true, &local_severity, &local_type);
-    if (!debug_data || !(debug_data->active_severities & local_severity) || !(debug_data->active_types & local_type)) {
-        // Message is not wanted
-        return false;
-    }
-
-    va_list argptr;
-    va_start(argptr, format);
-    char *str;
-    if (-1 == vasprintf(&str, format, argptr)) {
-        // On failure, glibc vasprintf leaves str undefined
-        str = nullptr;
-    }
-    va_end(argptr);
-
-    return LogMsgLocked(debug_data, msg_flags, object_type, src_object, vuid_text, str);
-}
-
 static inline VKAPI_ATTR VkBool32 VKAPI_CALL report_log_callback(VkFlags msg_flags, VkDebugReportObjectTypeEXT obj_type,
                                                                  uint64_t src_object, size_t location, int32_t msg_code,
                                                                  const char *layer_prefix, const char *message, void *user_data) {
