@@ -1368,6 +1368,14 @@ TEST_F(VkLayerTest, InvalidPipelineCreateState) {
 
     CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                       "contains invalid characters or is badly formed");
+}
+
+TEST_F(VkLayerTest, InvalidPipelineCreateStateBadStageBit) {
+    TEST_DESCRIPTION("Create Pipelines with invalid state set");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
 
     // Make sure compute pipeline has a compute shader stage set
     char const *csSource =
@@ -1388,6 +1396,7 @@ TEST_F(VkLayerTest, InvalidPipelineCreateState) {
     cs_pipeline.CreateComputePipeline(true, false);  // need false to prevent late binding
     m_errorMonitor->VerifyFound();
 }
+
 
 TEST_F(VkLayerTest, InvalidPipelineSampleRateFeatureDisable) {
     // Enable sample shading in pipeline when the feature is disabled.
