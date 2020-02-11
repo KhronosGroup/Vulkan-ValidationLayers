@@ -4342,13 +4342,10 @@ TEST_F(VkLayerTest, InvalidDescriptorSet) {
     // ObjectTracker should catch this.
     // Create a valid cmd buffer
     // call vk::CmdBindDescriptorSets w/ false Descriptor Set
+    ASSERT_NO_FATAL_FAILURE(Init());
 
     uint64_t fake_set_handle = 0xbaad6001;
     VkDescriptorSet bad_set = reinterpret_cast<VkDescriptorSet &>(fake_set_handle);
-
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-parameter");
-
-    ASSERT_NO_FATAL_FAILURE(Init());
 
     VkDescriptorSetLayoutBinding layout_binding = {};
     layout_binding.binding = 0;
@@ -4362,7 +4359,21 @@ TEST_F(VkLayerTest, InvalidDescriptorSet) {
     const VkPipelineLayoutObj pipeline_layout(DeviceObj(), {&descriptor_set_layout});
 
     m_commandBuffer->begin();
+    // Set invalid set
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBindDescriptorSets-pDescriptorSets-parameter");
     vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &bad_set,
+                              0, NULL);
+    m_errorMonitor->VerifyFound();
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                                 });
+    VkDescriptorSet good_set = descriptor_set.set_;
+
+    // Set out of range firstSet and descriptorSetCount sum
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBindDescriptorSets-firstSet-00360");
+    m_errorMonitor->SetUnexpectedError("VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358");
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 2, 1, &good_set,
                               0, NULL);
     m_errorMonitor->VerifyFound();
     m_commandBuffer->end();
