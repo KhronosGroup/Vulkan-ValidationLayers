@@ -19,3 +19,4 @@ This layer performs the following tasks:
 - validation of enumerated type values
 - null pointer conditions
 - stateless valid usage checks
+- checks requiring only static state such as properties or limits
