@@ -6588,7 +6588,7 @@ static QueryResultType GetQueryResultType(QueryState state, VkQueryResultFlags f
                 (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT)) {
                 return QUERYRESULT_SOME_DATA;
             } else {
-                return QUERYRESULT_MAYBE_NO_DATA;
+                return QUERYRESULT_UNKNOWN;
             }
         case QUERYSTATE_AVAILABLE:
             return QUERYRESULT_SOME_DATA;
@@ -6604,7 +6604,7 @@ bool CoreChecks::ValidateCopyQueryPoolResults(const ValidationStateTracker *stat
     for (uint32_t i = 0; i < queryCount; i++) {
         QueryState state = state_data->GetQueryState(localQueryToStateMap, queryPool, firstQuery + i);
         QueryResultType result_type = GetQueryResultType(state, flags);
-        if (result_type != QUERYRESULT_SOME_DATA) {
+        if (result_type != QUERYRESULT_SOME_DATA && result_type != QUERYRESULT_UNKNOWN) {
             skip |= state_data->LogError(
                 commandBuffer, kVUID_Core_DrawState_InvalidQuery,
                 "vkCmdCopyQueryPoolResults(): Requesting a copy from query to buffer on %s query %" PRIu32 ": %s",

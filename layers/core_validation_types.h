@@ -631,7 +631,6 @@ enum QueryState {
 enum QueryResultType {
     QUERYRESULT_UNKNOWN,
     QUERYRESULT_NO_DATA,
-    QUERYRESULT_MAYBE_NO_DATA,
     QUERYRESULT_SOME_DATA,
     QUERYRESULT_WAIT_ON_RESET,
     QUERYRESULT_WAIT_ON_RUNNING,
@@ -642,7 +641,6 @@ inline const char *string_QueryResultType(QueryResultType result_type) {
         case QUERYRESULT_UNKNOWN:
             return "query may be in an unknown state";
         case QUERYRESULT_NO_DATA:
-        case QUERYRESULT_MAYBE_NO_DATA:
             return "query may return no data";
         case QUERYRESULT_SOME_DATA:
             return "query will return some data or availability bit";
