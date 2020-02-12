@@ -47,7 +47,7 @@ VK_LAYER_EXPORT VkStringErrorFlags vk_string_validate(const int max_length, cons
         if (utf8[i] == 0) {
             break;
         } else if (i == max_length) {
-            result = VK_STRING_ERROR_LENGTH;
+            result |= VK_STRING_ERROR_LENGTH;
             break;
         } else if ((utf8[i] >= 0xa) && (utf8[i] < 0x7f)) {
             num_char_bytes = 0;
@@ -58,7 +58,8 @@ VK_LAYER_EXPORT VkStringErrorFlags vk_string_validate(const int max_length, cons
         } else if ((utf8[i] & UTF8_THREE_BYTE_MASK) == UTF8_THREE_BYTE_CODE) {
             num_char_bytes = 3;
         } else {
-            result = VK_STRING_ERROR_BAD_DATA;
+            result |= VK_STRING_ERROR_BAD_DATA;
+            break;
         }
 
         // Validate the following num_char_bytes of data
@@ -69,8 +70,10 @@ VK_LAYER_EXPORT VkStringErrorFlags vk_string_validate(const int max_length, cons
             }
             if ((utf8[i] & UTF8_DATA_BYTE_MASK) != UTF8_DATA_BYTE_CODE) {
                 result |= VK_STRING_ERROR_BAD_DATA;
+                break;
             }
         }
+        if (result != VK_STRING_ERROR_NONE) break;
     }
     return result;
 }
