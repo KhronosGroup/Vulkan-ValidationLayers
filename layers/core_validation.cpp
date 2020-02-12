@@ -5150,11 +5150,10 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
     // firstSet and descriptorSetCount sum must be less than setLayoutCount
     if ((firstSet + setCount) > static_cast<uint32_t>(pipeline_layout->set_layouts.size())) {
         skip |=
-            log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
-                    HandleToUint64(cb_state->commandBuffer), "VUID-vkCmdBindDescriptorSets-firstSet-00360",
-                    "Sum of firstSet (%u) and descriptorSetCount (%u) is greater than VkPipelineLayoutCreateInfo::setLayoutCount "
-                    "(%zu) when pipeline layout was created",
-                    firstSet, setCount, pipeline_layout->set_layouts.size());
+            LogError(cb_state->commandBuffer, "VUID-vkCmdBindDescriptorSets-firstSet-00360",
+                     "Sum of firstSet (%u) and descriptorSetCount (%u) is greater than VkPipelineLayoutCreateInfo::setLayoutCount "
+                     "(%zu) when pipeline layout was created",
+                     firstSet, setCount, pipeline_layout->set_layouts.size());
     }
     return skip;
 }

@@ -2216,17 +2216,16 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
 
         // Check for valid Lod range
         if (pCreateInfo->minLod > pCreateInfo->maxLod) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            "VUID-VkSamplerCreateInfo-maxLod-01973", "vkCreateSampler(): minLod (%f) is greater than maxLod (%f)",
-                            pCreateInfo->minLod, pCreateInfo->maxLod);
+            skip |=
+                LogError(device, "VUID-VkSamplerCreateInfo-maxLod-01973",
+                         "vkCreateSampler(): minLod (%f) is greater than maxLod (%f)", pCreateInfo->minLod, pCreateInfo->maxLod);
         }
 
         // Check mipLodBias to device limit
         if (pCreateInfo->mipLodBias > limits.maxSamplerLodBias) {
-            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, 0,
-                            "VUID-VkSamplerCreateInfo-mipLodBias-01069",
-                            "vkCreateSampler(): mipLodBias (%f) is greater than VkPhysicalDeviceLimits::maxSamplerLodBias (%f)",
-                            pCreateInfo->mipLodBias, limits.maxSamplerLodBias);
+            skip |= LogError(device, "VUID-VkSamplerCreateInfo-mipLodBias-01069",
+                             "vkCreateSampler(): mipLodBias (%f) is greater than VkPhysicalDeviceLimits::maxSamplerLodBias (%f)",
+                             pCreateInfo->mipLodBias, limits.maxSamplerLodBias);
         }
 
         const auto *sampler_conversion = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
@@ -2236,9 +2235,7 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
                 (pCreateInfo->addressModeW != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) ||
                 (pCreateInfo->anisotropyEnable != VK_FALSE) || (pCreateInfo->unnormalizedCoordinates != VK_FALSE)) {
                 skip |= LogError(
-                    device,
-
-                    "VUID-VkSamplerCreateInfo-addressModeU-01646",
+                    device, "VUID-VkSamplerCreateInfo-addressModeU-01646",
                     "vkCreateSampler():  SamplerYCbCrConversion is enabled: "
                     "addressModeU (%s), addressModeV (%s), addressModeW (%s) must be CLAMP_TO_EDGE, and anisotropyEnable (%s) "
                     "and unnormalizedCoordinates (%s) must be VK_FALSE.",
