@@ -1783,6 +1783,7 @@ TEST_F(VkLayerTest, BlitImageFormatTypes) {
     VkFormat f_float = VK_FORMAT_R32_SFLOAT;
     VkFormat f_depth = VK_FORMAT_D32_SFLOAT_S8_UINT;
     VkFormat f_depth2 = VK_FORMAT_D32_SFLOAT;
+    VkFormat f_ycbcr = VK_FORMAT_B16G16R16G16_422_UNORM;
 
     if (!ImageFormatIsSupported(gpu(), f_unsigned, VK_IMAGE_TILING_OPTIMAL) ||
         !ImageFormatIsSupported(gpu(), f_signed, VK_IMAGE_TILING_OPTIMAL) ||
@@ -1892,6 +1893,28 @@ TEST_F(VkLayerTest, BlitImageFormatTypes) {
     vk::CmdBlitImage(m_commandBuffer->handle(), unsigned_image.image(), unsigned_image.Layout(), signed_image.image(),
                      signed_image.Layout(), 1, &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
+
+    if (ImageFormatIsSupported(gpu(), f_ycbcr, VK_IMAGE_TILING_OPTIMAL)) {
+        bool ycbcrsrc = !ImageFormatAndFeaturesSupported(gpu(), f_ycbcr, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_SRC_BIT);
+        bool ycbcrdst = !ImageFormatAndFeaturesSupported(gpu(), f_ycbcr, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_BLIT_DST_BIT);
+
+        VkImageObj ycbcr_image(m_device);
+        ycbcr_image.Init(64, 64, 1, f_ycbcr, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                         VK_IMAGE_TILING_OPTIMAL, 0);
+        ASSERT_TRUE(ycbcr_image.initialized());
+        ycbcr_image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
+        // Src, dst is ycbcr format
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBlitImage-srcImage-01561");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBlitImage-dstImage-01562");
+        if (ycbcrsrc) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-srcImage-01999");
+        if (ycbcrdst) m_errorMonitor->SetUnexpectedError("VUID-vkCmdBlitImage-dstImage-02000");
+        vk::CmdBlitImage(m_commandBuffer->handle(), ycbcr_image.image(), ycbcr_image.Layout(), ycbcr_image.image(),
+                         ycbcr_image.Layout(), 1, &blitRegion, VK_FILTER_NEAREST);
+        m_errorMonitor->VerifyFound();
+    } else {
+        printf("%s Requested ycbcr format not supported - skipping test case.\n", kSkipPrefix);
+    }
 
     // Depth vs any non-identical depth format
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdBlitImage-srcImage-00231");
