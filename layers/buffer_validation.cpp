@@ -3112,6 +3112,20 @@ bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkIm
                                                     "VUID-vkCmdBlitImage-filter-02002");
         }
 
+        if (FormatRequiresYcbcrConversion(src_format)) {
+            skip |= LogError(device, "VUID-vkCmdBlitImage-srcImage-01561",
+                             "vkCmdBlitImage(): srcImage format (%s) must not be one of the formats requiring sampler YCBCR "
+                             "conversion for VK_IMAGE_ASPECT_COLOR_BIT image views",
+                             string_VkFormat(src_format));
+        }
+
+        if (FormatRequiresYcbcrConversion(dst_format)) {
+            skip |= LogError(device, "VUID-vkCmdBlitImage-dstImage-01562",
+                             "vkCmdBlitImage(): dstImage format (%s) must not be one of the formats requiring sampler YCBCR "
+                             "conversion for VK_IMAGE_ASPECT_COLOR_BIT image views",
+                             string_VkFormat(dst_format));
+        }
+
         if ((VK_FILTER_CUBIC_IMG == filter) && (VK_IMAGE_TYPE_3D != src_type)) {
             skip |= LogError(cb_node->commandBuffer, "VUID-vkCmdBlitImage-filter-00237",
                              "vkCmdBlitImage(): source image type must be VK_IMAGE_TYPE_3D when cubic filtering is specified.");
