@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2019 The Khronos Group Inc.
- * Copyright (c) 2015-2019 Valve Corporation
- * Copyright (c) 2015-2019 LunarG, Inc.
+/* Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 #include "vulkan/vulkan.h"
 #include "vk_format_utils.h"
 
@@ -1231,9 +1232,9 @@ struct VULKAN_MULTIPLANE_COMPATIBILITY {
     VULKAN_PER_PLANE_COMPATIBILITY per_plane[VK_MULTIPLANE_FORMAT_MAX_PLANES];
 };
 
-// Source: Vulkan spec Table 45. Plane Format Compatibility Table
+// Source: Vulkan spec Table 47. Plane Format Compatibility Table
 // clang-format off
-const std::map<VkFormat, VULKAN_MULTIPLANE_COMPATIBILITY> vk_multiplane_compatibility_map {
+static const std::map<VkFormat, VULKAN_MULTIPLANE_COMPATIBILITY>vk_multiplane_compatibility_map {
     { VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM,                  { { { 1, 1, VK_FORMAT_R8_UNORM },
                                                                 { 2, 2, VK_FORMAT_R8_UNORM },
                                                                 { 2, 2, VK_FORMAT_R8_UNORM } } } },
@@ -1367,6 +1368,39 @@ VK_LAYER_EXPORT bool FormatSizesAreEqual(VkFormat srcFormat, VkFormat dstFormat,
     }
 }
 
+// Source: Vulkan spec Table 69. Formats requiring sampler YCBCR conversion for VK_IMAGE_ASPECT_COLOR_BIT image views
+const std::set<VkFormat> vk_formats_requiring_ycbcr_conversion{VK_FORMAT_G8B8G8R8_422_UNORM,
+                                                               VK_FORMAT_B8G8R8G8_422_UNORM,
+                                                               VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM,
+                                                               VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
+                                                               VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM,
+                                                               VK_FORMAT_G8_B8R8_2PLANE_422_UNORM,
+                                                               VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM,
+                                                               VK_FORMAT_R10X6G10X6B10X6A10X6_UNORM_4PACK16,
+                                                               VK_FORMAT_G10X6B10X6G10X6R10X6_422_UNORM_4PACK16,
+                                                               VK_FORMAT_B10X6G10X6R10X6G10X6_422_UNORM_4PACK16,
+                                                               VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_420_UNORM_3PACK16,
+                                                               VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16,
+                                                               VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_422_UNORM_3PACK16,
+                                                               VK_FORMAT_G10X6_B10X6R10X6_2PLANE_422_UNORM_3PACK16,
+                                                               VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_444_UNORM_3PACK16,
+                                                               VK_FORMAT_R12X4G12X4B12X4A12X4_UNORM_4PACK16,
+                                                               VK_FORMAT_G12X4B12X4G12X4R12X4_422_UNORM_4PACK16,
+                                                               VK_FORMAT_B12X4G12X4R12X4G12X4_422_UNORM_4PACK16,
+                                                               VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_420_UNORM_3PACK16,
+                                                               VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16,
+                                                               VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_422_UNORM_3PACK16,
+                                                               VK_FORMAT_G12X4_B12X4R12X4_2PLANE_422_UNORM_3PACK16,
+                                                               VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_444_UNORM_3PACK16,
+                                                               VK_FORMAT_G16B16G16R16_422_UNORM,
+                                                               VK_FORMAT_B16G16R16G16_422_UNORM,
+                                                               VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM,
+                                                               VK_FORMAT_G16_B16R16_2PLANE_420_UNORM,
+                                                               VK_FORMAT_G16_B16_R16_3PLANE_422_UNORM,
+                                                               VK_FORMAT_G16_B16R16_2PLANE_422_UNORM,
+                                                               VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM};
+
 VK_LAYER_EXPORT bool FormatRequiresYcbcrConversion(VkFormat format) {
-    return format >= VK_FORMAT_G8B8G8R8_422_UNORM && format <= VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM;
+    auto it = vk_formats_requiring_ycbcr_conversion.find(format);
+    return (it != vk_formats_requiring_ycbcr_conversion.end());
 }
