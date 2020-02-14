@@ -2332,6 +2332,8 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
                                          "VUID-VkImageCopy-srcOffset-00147");  // also z-dim overrun (src)
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          "VUID-VkImageCopy-dstOffset-00153");  // also z-dim overrun (dst)
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkImageCopy-srcImage-01789");  // 2D needs to be 1 pre-Vulkan 1.1
     m_commandBuffer->CopyImage(image_1D.image(), VK_IMAGE_LAYOUT_GENERAL, image_2D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
     m_errorMonitor->VerifyFound();
@@ -2340,6 +2342,8 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
                                          "VUID-VkImageCopy-srcOffset-00147");  // also z-dim overrun (src)
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
                                          "VUID-VkImageCopy-dstOffset-00153");  // also z-dim overrun (dst)
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "VUID-VkImageCopy-srcImage-01789");  // 2D needs to be 1 pre-Vulkan 1.1
     m_commandBuffer->CopyImage(image_2D.image(), VK_IMAGE_LAYOUT_GENERAL, image_1D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
     m_errorMonitor->VerifyFound();
@@ -2373,6 +2377,8 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatch) {
     m_commandBuffer->CopyImage(image_3D.image(), VK_IMAGE_LAYOUT_GENERAL, image_2D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
     m_errorMonitor->VerifyFound();
+    copy_region.srcSubresource.baseArrayLayer = 0;
+
     m_commandBuffer->end();
 }
 
@@ -2442,6 +2448,14 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatchMaintenance1) {
     image_2D_array.init(&ci);
     ASSERT_TRUE(image_2D_array.initialized());
 
+    // second 2D image array
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    ci.extent = {32, 32, 1};
+    ci.arrayLayers = 8;
+    VkImageObj image_2D_array_2(m_device);
+    image_2D_array_2.init(&ci);
+    ASSERT_TRUE(image_2D_array_2.initialized());
+
     m_commandBuffer->begin();
 
     VkImageCopy copy_region;
@@ -2474,7 +2488,35 @@ TEST_F(VkLayerTest, CopyImageTypeExtentMismatchMaintenance1) {
     m_commandBuffer->CopyImage(image_3D.image(), VK_IMAGE_LAYOUT_GENERAL, image_2D_array.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
     m_errorMonitor->VerifyFound();
+    copy_region.dstSubresource.baseArrayLayer = 0;
     copy_region.dstSubresource.layerCount = 1;
+
+    // both 2D and extent.depth not 1
+    // Need two 2D array images to prevent other errors
+    copy_region.extent = {4, 1, 2};
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCopy-srcImage-01790");
+    m_commandBuffer->CopyImage(image_2D_array.image(), VK_IMAGE_LAYOUT_GENERAL, image_2D_array_2.image(), VK_IMAGE_LAYOUT_GENERAL,
+                               1, &copy_region);
+    m_errorMonitor->VerifyFound();
+    copy_region.extent = {32, 1, 1};
+
+    // 2D src / 3D dst and depth not equal to src layerCount
+    copy_region.extent = {4, 1, 2};
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCopy-srcImage-01791");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCopy-extent-00140");
+    m_commandBuffer->CopyImage(image_2D_array.image(), VK_IMAGE_LAYOUT_GENERAL, image_3D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                               &copy_region);
+    m_errorMonitor->VerifyFound();
+    copy_region.extent = {32, 1, 1};
+
+    // 3D src / 2D dst and depth not equal to dst layerCount
+    copy_region.extent = {4, 1, 2};
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCopy-dstImage-01792");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageCopy-extent-00140");
+    m_commandBuffer->CopyImage(image_3D.image(), VK_IMAGE_LAYOUT_GENERAL, image_2D_array.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                               &copy_region);
+    m_errorMonitor->VerifyFound();
+    copy_region.extent = {32, 1, 1};
 
     m_commandBuffer->end();
 }
