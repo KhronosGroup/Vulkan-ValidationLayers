@@ -2730,6 +2730,48 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
                 }
             }
         }
+
+        // Check depth for 2D as post Maintaince 1 requires both while prior only required one to be 2D
+        if (device_extensions.vk_khr_maintenance1) {
+            if (((VK_IMAGE_TYPE_2D == src_image_state->createInfo.imageType) &&
+                 (VK_IMAGE_TYPE_2D == dst_image_state->createInfo.imageType)) &&
+                (src_copy_extent.depth != 1)) {
+                skip |= log_msg(
+                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                    HandleToUint64(command_buffer), "VUID-VkImageCopy-srcImage-01790",
+                    "vkCmdCopyImage(): pRegion[%u] both srcImage and dstImage are 2D and extent.depth is %u and has to be 1", i,
+                    src_copy_extent.depth);
+            }
+        } else {
+            if (((VK_IMAGE_TYPE_2D == src_image_state->createInfo.imageType) ||
+                 (VK_IMAGE_TYPE_2D == dst_image_state->createInfo.imageType)) &&
+                (src_copy_extent.depth != 1)) {
+                skip |= log_msg(
+                    report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                    HandleToUint64(command_buffer), "VUID-VkImageCopy-srcImage-01789",
+                    "vkCmdCopyImage(): pRegion[%u] either srcImage or dstImage is 2D and extent.depth is %u and has to be 1", i,
+                    src_copy_extent.depth);
+            }
+        }
+
+        // Check if 2D with 3D and depth not equal to 2D layerCount
+        if ((VK_IMAGE_TYPE_2D == src_image_state->createInfo.imageType) &&
+            (VK_IMAGE_TYPE_3D == dst_image_state->createInfo.imageType) &&
+            (src_copy_extent.depth != region.srcSubresource.layerCount)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(command_buffer), "VUID-VkImageCopy-srcImage-01791",
+                            "vkCmdCopyImage(): pRegion[%u] srcImage is 2D, dstImage is 3D and extent.depth is %u and has to be "
+                            "srcSubresource.layerCount (%u)",
+                            i, src_copy_extent.depth, region.srcSubresource.layerCount);
+        } else if ((VK_IMAGE_TYPE_3D == src_image_state->createInfo.imageType) &&
+                   (VK_IMAGE_TYPE_2D == dst_image_state->createInfo.imageType) &&
+                   (src_copy_extent.depth != region.dstSubresource.layerCount)) {
+            skip |= log_msg(report_data, VK_DEBUG_REPORT_ERROR_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT,
+                            HandleToUint64(command_buffer), "VUID-VkImageCopy-dstImage-01792",
+                            "vkCmdCopyImage(): pRegion[%u] srcImage is 3D, dstImage is 2D and extent.depth is %u and has to be "
+                            "dstSubresource.layerCount (%u)",
+                            i, src_copy_extent.depth, region.dstSubresource.layerCount);
+        }
     }
 
     // The formats of src_image and dst_image must be compatible. Formats are considered compatible if their texel size in bytes
