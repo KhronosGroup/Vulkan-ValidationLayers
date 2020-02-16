@@ -1746,6 +1746,13 @@ bool CoreChecks::ValidateShaderCapabilities(SHADER_MODULE_STATE const *src, VkSh
                         break;
                 }
             }
+        } else if (insn.opcode() == spv::OpExtension) {
+            std::string extension_name = (char const *)&insn.word(1);
+
+            if (extension_name == "SPV_KHR_non_semantic_info") {
+                skip |= RequireExtension(IsExtEnabled(device_extensions.vk_khr_shader_non_semantic_info),
+                                         VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+            }
         }
     }
 
