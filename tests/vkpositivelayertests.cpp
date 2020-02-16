@@ -1408,6 +1408,46 @@ TEST_F(VkPositiveLayerTest, ShaderScalarBlockLayout) {
     m_errorMonitor->VerifyNotFound();
 }
 
+TEST_F(VkPositiveLayerTest, ShaderNonSemanticInfo) {
+    // This is a positive test, no errors expected
+    // Verifies the ability to use non-semantic extended instruction sets when the extension is enabled
+    TEST_DESCRIPTION("Create a shader that uses SPV_KHR_non_semantic_info.");
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    // Check for the Scalar Block Layout extension and turn it on if it's available
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
+        printf("%s Extension %s not supported, skipping this pass. \n", kSkipPrefix,
+               VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+        return;
+    }
+    m_device_extension_names.push_back(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // compute shader using a non-semantic extended instruction set.
+
+    const std::string spv_source = R"(
+                   OpCapability Shader
+                   OpExtension "SPV_KHR_non_semantic_info"
+   %non_semantic = OpExtInstImport "NonSemantic.Validation.Test"
+                   OpMemoryModel Logical GLSL450
+                   OpEntryPoint GLCompute %main "main"
+                   OpExecutionMode %main LocalSize 1 1 1
+           %void = OpTypeVoid
+              %1 = OpExtInst %void %non_semantic 55 %void
+           %func = OpTypeFunction %void
+           %main = OpFunction %void None %func
+              %2 = OpLabel
+                   OpReturn
+                   OpFunctionEnd
+        )";
+
+    m_errorMonitor->ExpectSuccess();
+    VkShaderObj cs(m_device, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, this);
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkPositiveLayerTest, SpirvGroupDecorations) {
     TEST_DESCRIPTION("Test shader validation support for group decorations.");
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
