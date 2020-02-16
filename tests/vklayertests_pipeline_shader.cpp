@@ -5669,6 +5669,43 @@ TEST_F(VkLayerTest, SubgroupExtendedTypesDisabled) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, NonSemanticInfoEnabled) {
+    TEST_DESCRIPTION("Test VK_KHR_shader_non_semantic_info.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings(0);
+    const VkDescriptorSetLayoutObj dsl(m_device, bindings);
+    const VkPipelineLayoutObj pl(m_device, {&dsl});
+
+    const std::string source = R"(
+                   OpCapability Shader
+                   OpExtension "SPV_KHR_non_semantic_info"
+   %non_semantic = OpExtInstImport "NonSemantic.Validation.Test"
+                   OpMemoryModel Logical GLSL450
+                   OpEntryPoint GLCompute %main "main"
+                   OpExecutionMode %main LocalSize 1 1 1
+           %void = OpTypeVoid
+              %1 = OpExtInst %void %non_semantic 55 %void
+           %func = OpTypeFunction %void
+           %main = OpFunction %void None %func
+              %2 = OpLabel
+                   OpReturn
+                   OpFunctionEnd
+        )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(m_device, source, VK_SHADER_STAGE_COMPUTE_BIT, this));
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {});
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                         "Shader requires extension " VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, GraphicsPipelineStageCreationFeedbackCount) {
     TEST_DESCRIPTION("Test graphics pipeline feedback stage count check.");
 
