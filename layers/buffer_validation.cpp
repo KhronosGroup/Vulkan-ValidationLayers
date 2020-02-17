@@ -76,6 +76,7 @@ IMAGE_STATE::IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
       sparse_metadata_bound(false),
       imported_ahb(false),
       has_ahb_format(false),
+      is_swapchain_image(false),
       ahb_format(0),
       full_range{MakeImageFullRange(createInfo)},
       create_from_swapchain(VK_NULL_HANDLE),
@@ -138,7 +139,9 @@ bool IMAGE_STATE::IsCreateInfoDedicatedAllocationImageAliasingCompatible(const V
 }
 
 bool IMAGE_STATE::IsCompatibleAliasing(IMAGE_STATE *other_image_state) {
-    if (!(createInfo.flags & other_image_state->createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT)) return false;
+    if (!is_swapchain_image && !other_image_state->is_swapchain_image &&
+        !(createInfo.flags & other_image_state->createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT))
+        return false;
     if ((create_from_swapchain == VK_NULL_HANDLE) && binding.mem_state &&
         (binding.mem_state == other_image_state->binding.mem_state) && (binding.offset == other_image_state->binding.offset) &&
         IsCreateInfoEqual(other_image_state->createInfo)) {

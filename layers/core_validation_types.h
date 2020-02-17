@@ -382,6 +382,7 @@ class IMAGE_STATE : public BINDABLE {
     bool sparse_metadata_bound;          // Track if sparse metadata aspect is bound to this image
     bool imported_ahb;                   // True if image was imported from an Android Hardware Buffer
     bool has_ahb_format;                 // True if image was created with an external Android format
+    bool is_swapchain_image;             // True if image is a swapchain image
     uint64_t ahb_format;                 // External Android format, if provided
     VkImageSubresourceRange full_range;  // The normalized ISR for all levels, layers (slices), and aspects
     VkSwapchainKHR create_from_swapchain;
