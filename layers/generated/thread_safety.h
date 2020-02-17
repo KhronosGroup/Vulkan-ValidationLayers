@@ -154,7 +154,7 @@ public:
         }
     }
 
-    void StartWrite(T object) {
+    void StartWrite(T object, const char *api_name) {
         if (object == VK_NULL_HANDLE) {
             return;
         }
@@ -176,8 +176,8 @@ public:
                 // There are no readers.  Two writers just collided.
                 if (use_data->thread != tid) {
                     skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads,
-                        "THREADING ERROR : object of type %s is simultaneously used in "
-                        "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
+                        "THREADING ERROR : %s(): object of type %s is simultaneously used in "
+                        "thread 0x%" PRIx64 " and thread 0x%" PRIx64, api_name,
                         typeName, (uint64_t)use_data->thread.load(std::memory_order_relaxed), (uint64_t)tid);
                     if (skip) {
                         // Wait for thread-safe access to object instead of skipping call.
@@ -196,8 +196,8 @@ public:
                 // There are readers.  This writer collided with them.
                 if (use_data->thread != tid) {
                     skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads,
-                        "THREADING ERROR : object of type %s is simultaneously used in "
-                        "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
+                        "THREADING ERROR : %s(): object of type %s is simultaneously used in "
+                        "thread 0x%" PRIx64 " and thread 0x%" PRIx64, api_name,
                         typeName, (uint64_t)use_data->thread.load(std::memory_order_relaxed), (uint64_t)tid);
                     if (skip) {
                         // Wait for thread-safe access to object instead of skipping call.
@@ -216,7 +216,7 @@ public:
         }
     }
 
-    void FinishWrite(T object) {
+    void FinishWrite(T object, const char *api_name) {
         if (object == VK_NULL_HANDLE) {
             return;
         }
@@ -228,7 +228,7 @@ public:
         use_data->RemoveWriter();
     }
 
-    void StartRead(T object) {
+    void StartRead(T object, const char *api_name) {
         if (object == VK_NULL_HANDLE) {
             return;
         }
@@ -247,8 +247,8 @@ public:
         } else if (prevCount.GetWriteCount() > 0 && use_data->thread != tid) {
             // There is a writer of the object.
             skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads,
-                "THREADING ERROR : object of type %s is simultaneously used in "
-                "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
+                "THREADING ERROR : %s(): object of type %s is simultaneously used in "
+                "thread 0x%" PRIx64 " and thread 0x%" PRIx64, api_name,
                 typeName, (uint64_t)use_data->thread.load(std::memory_order_relaxed), (uint64_t)tid);
             if (skip) {
                 // Wait for thread-safe access to object instead of skipping call.
@@ -259,7 +259,7 @@ public:
             // There are other readers of the object.
         }
     }
-    void FinishRead(T object) {
+    void FinishRead(T object, const char *api_name) {
         if (object == VK_NULL_HANDLE) {
             return;
         }
@@ -416,43 +416,44 @@ public:
               {};
 
 #define WRAPPER(type)                                                \
-    void StartWriteObject(type object) {                             \
-        c_##type.StartWrite(object);                                 \
+    void StartWriteObject(type object, const char *api_name) {       \
+        c_##type.StartWrite(object, api_name);                       \
     }                                                                \
-    void FinishWriteObject(type object) {                            \
-        c_##type.FinishWrite(object);                                \
+    void FinishWriteObject(type object, const char *api_name) {      \
+        c_##type.FinishWrite(object, api_name);                      \
     }                                                                \
-    void StartReadObject(type object) {                              \
-        c_##type.StartRead(object);                                  \
+    void StartReadObject(type object, const char *api_name) {        \
+        c_##type.StartRead(object, api_name);                        \
     }                                                                \
-    void FinishReadObject(type object) {                             \
-        c_##type.FinishRead(object);                                 \
+    void FinishReadObject(type object, const char *api_name) {       \
+        c_##type.FinishRead(object, api_name);                       \
     }                                                                \
     void CreateObject(type object) {                                 \
         c_##type.CreateObject(object);                               \
     }                                                                \
     void DestroyObject(type object) {                                \
         c_##type.DestroyObject(object);                              \
+        c_##type.DestroyObject(object);                              \
     }
 
-#define WRAPPER_PARENT_INSTANCE(type)                                                   \
-    void StartWriteObjectParentInstance(type object) {                                  \
-        (parent_instance ? parent_instance : this)->c_##type.StartWrite(object);        \
-    }                                                                                   \
-    void FinishWriteObjectParentInstance(type object) {                                 \
-        (parent_instance ? parent_instance : this)->c_##type.FinishWrite(object);       \
-    }                                                                                   \
-    void StartReadObjectParentInstance(type object) {                                   \
-        (parent_instance ? parent_instance : this)->c_##type.StartRead(object);         \
-    }                                                                                   \
-    void FinishReadObjectParentInstance(type object) {                                  \
-        (parent_instance ? parent_instance : this)->c_##type.FinishRead(object);        \
-    }                                                                                   \
-    void CreateObjectParentInstance(type object) {                                      \
-        (parent_instance ? parent_instance : this)->c_##type.CreateObject(object);      \
-    }                                                                                   \
-    void DestroyObjectParentInstance(type object) {                                     \
-        (parent_instance ? parent_instance : this)->c_##type.DestroyObject(object);     \
+#define WRAPPER_PARENT_INSTANCE(type)                                                           \
+    void StartWriteObjectParentInstance(type object, const char *api_name) {                    \
+        (parent_instance ? parent_instance : this)->c_##type.StartWrite(object, api_name);      \
+    }                                                                                           \
+    void FinishWriteObjectParentInstance(type object, const char *api_name) {                   \
+        (parent_instance ? parent_instance : this)->c_##type.FinishWrite(object, api_name);     \
+    }                                                                                           \
+    void StartReadObjectParentInstance(type object, const char *api_name) {                     \
+        (parent_instance ? parent_instance : this)->c_##type.StartRead(object, api_name);       \
+    }                                                                                           \
+    void FinishReadObjectParentInstance(type object, const char *api_name) {                    \
+        (parent_instance ? parent_instance : this)->c_##type.FinishRead(object, api_name);      \
+    }                                                                                           \
+    void CreateObjectParentInstance(type object) {                                              \
+        (parent_instance ? parent_instance : this)->c_##type.CreateObject(object);              \
+    }                                                                                           \
+    void DestroyObjectParentInstance(type object) {                                             \
+        (parent_instance ? parent_instance : this)->c_##type.DestroyObject(object);             \
     }
 
 WRAPPER_PARENT_INSTANCE(VkDevice)
@@ -507,43 +508,43 @@ WRAPPER_PARENT_INSTANCE(uint64_t)
     }
 
     // VkCommandBuffer needs check for implicit use of command pool
-    void StartWriteObject(VkCommandBuffer object, bool lockPool = true) {
+    void StartWriteObject(VkCommandBuffer object, const char *api_name, bool lockPool = true) {
         if (lockPool) {
             auto iter = command_pool_map.find(object);
             if (iter != command_pool_map.end()) {
                 VkCommandPool pool = iter->second;
-                StartWriteObject(pool);
+                StartWriteObject(pool, api_name);
             }
         }
-        c_VkCommandBuffer.StartWrite(object);
+        c_VkCommandBuffer.StartWrite(object, api_name);
     }
-    void FinishWriteObject(VkCommandBuffer object, bool lockPool = true) {
-        c_VkCommandBuffer.FinishWrite(object);
+    void FinishWriteObject(VkCommandBuffer object, const char *api_name, bool lockPool = true) {
+        c_VkCommandBuffer.FinishWrite(object, api_name);
         if (lockPool) {
             auto iter = command_pool_map.find(object);
             if (iter != command_pool_map.end()) {
                 VkCommandPool pool = iter->second;
-                FinishWriteObject(pool);
+                FinishWriteObject(pool, api_name);
             }
         }
     }
-    void StartReadObject(VkCommandBuffer object) {
+    void StartReadObject(VkCommandBuffer object, const char *api_name) {
         auto iter = command_pool_map.find(object);
         if (iter != command_pool_map.end()) {
             VkCommandPool pool = iter->second;
             // We set up a read guard against the "Contents" counter to catch conflict vs. vkResetCommandPool and vkDestroyCommandPool
             // while *not* establishing a read guard against the command pool counter itself to avoid false postives for
             // non-externally sync'd command buffers
-            c_VkCommandPoolContents.StartRead(pool);
+            c_VkCommandPoolContents.StartRead(pool, api_name);
         }
-        c_VkCommandBuffer.StartRead(object);
+        c_VkCommandBuffer.StartRead(object, api_name);
     }
-    void FinishReadObject(VkCommandBuffer object) {
-        c_VkCommandBuffer.FinishRead(object);
+    void FinishReadObject(VkCommandBuffer object, const char *api_name) {
+        c_VkCommandBuffer.FinishRead(object, api_name);
         auto iter = command_pool_map.find(object);
         if (iter != command_pool_map.end()) {
             VkCommandPool pool = iter->second;
-            c_VkCommandPoolContents.FinishRead(pool);
+            c_VkCommandPoolContents.FinishRead(pool, api_name);
         }
     } 
 
