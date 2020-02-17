@@ -430,6 +430,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_shader_draw_parameters{kNotEnabled};
     ExtEnabled vk_khr_shader_float16_int8{kNotEnabled};
     ExtEnabled vk_khr_shader_float_controls{kNotEnabled};
+    ExtEnabled vk_khr_shader_non_semantic_info{kNotEnabled};
     ExtEnabled vk_khr_shader_subgroup_extended_types{kNotEnabled};
     ExtEnabled vk_khr_shared_presentable_image{kNotEnabled};
     ExtEnabled vk_khr_spirv_1_4{kNotEnabled};
@@ -714,6 +715,7 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_float_controls, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
+            std::make_pair(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_non_semantic_info, {})),
             std::make_pair(VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shader_subgroup_extended_types, {{
                            {&DeviceExtensions::vk_feature_version_1_1, VK_VERSION_1_1_NAME}}})),
             std::make_pair(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_shared_presentable_image, {{
@@ -1028,6 +1030,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME,
     VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME,
     VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
+    VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME,
     VK_KHR_SHADER_SUBGROUP_EXTENDED_TYPES_EXTENSION_NAME,
     VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME,
     VK_KHR_SPIRV_1_4_EXTENSION_NAME,

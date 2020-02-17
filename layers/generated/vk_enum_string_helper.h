@@ -3676,6 +3676,8 @@ static inline const char* string_VkVendorId(VkVendorId input_value)
 {
     switch ((VkVendorId)input_value)
     {
+        case VK_VENDOR_ID_CODEPLAY:
+            return "VK_VENDOR_ID_CODEPLAY";
         case VK_VENDOR_ID_KAZAN:
             return "VK_VENDOR_ID_KAZAN";
         case VK_VENDOR_ID_VIV:
