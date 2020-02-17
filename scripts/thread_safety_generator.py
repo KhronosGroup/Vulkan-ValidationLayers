@@ -1,4 +1,5 @@
 #!/usr/bin/python3 -i
+#!/usr/bin/python3 -i
 #
 # Copyright (c) 2015-2020 The Khronos Group Inc.
 # Copyright (c) 2015-2020 Valve Corporation
@@ -280,7 +281,7 @@ public:
         }
     }
 
-    void StartWrite(T object) {
+    void StartWrite(T object, const char *api_name) {
         if (object == VK_NULL_HANDLE) {
             return;
         }
@@ -302,8 +303,8 @@ public:
                 // There are no readers.  Two writers just collided.
                 if (use_data->thread != tid) {
                     skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads,
-                        "THREADING ERROR : object of type %s is simultaneously used in "
-                        "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
+                        "THREADING ERROR : %s(): object of type %s is simultaneously used in "
+                        "thread 0x%" PRIx64 " and thread 0x%" PRIx64, api_name,
                         typeName, (uint64_t)use_data->thread.load(std::memory_order_relaxed), (uint64_t)tid);
                     if (skip) {
                         // Wait for thread-safe access to object instead of skipping call.
@@ -322,8 +323,8 @@ public:
                 // There are readers.  This writer collided with them.
                 if (use_data->thread != tid) {
                     skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads,
-                        "THREADING ERROR : object of type %s is simultaneously used in "
-                        "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
+                        "THREADING ERROR : %s(): object of type %s is simultaneously used in "
+                        "thread 0x%" PRIx64 " and thread 0x%" PRIx64, api_name,
                         typeName, (uint64_t)use_data->thread.load(std::memory_order_relaxed), (uint64_t)tid);
                     if (skip) {
                         // Wait for thread-safe access to object instead of skipping call.
@@ -342,7 +343,7 @@ public:
         }
     }
 
-    void FinishWrite(T object) {
+    void FinishWrite(T object, const char *api_name) {
         if (object == VK_NULL_HANDLE) {
             return;
         }
@@ -354,7 +355,7 @@ public:
         use_data->RemoveWriter();
     }
 
-    void StartRead(T object) {
+    void StartRead(T object, const char *api_name) {
         if (object == VK_NULL_HANDLE) {
             return;
         }
@@ -373,8 +374,8 @@ public:
         } else if (prevCount.GetWriteCount() > 0 && use_data->thread != tid) {
             // There is a writer of the object.
             skip |= object_data->LogError(object, kVUID_Threading_MultipleThreads,
-                "THREADING ERROR : object of type %s is simultaneously used in "
-                "thread 0x%" PRIx64 " and thread 0x%" PRIx64,
+                "THREADING ERROR : %s(): object of type %s is simultaneously used in "
+                "thread 0x%" PRIx64 " and thread 0x%" PRIx64, api_name,
                 typeName, (uint64_t)use_data->thread.load(std::memory_order_relaxed), (uint64_t)tid);
             if (skip) {
                 // Wait for thread-safe access to object instead of skipping call.
@@ -385,7 +386,7 @@ public:
             // There are other readers of the object.
         }
     }
-    void FinishRead(T object) {
+    void FinishRead(T object, const char *api_name) {
         if (object == VK_NULL_HANDLE) {
             return;
         }
@@ -477,43 +478,44 @@ COUNTER_CLASS_INSTANCES_TEMPLATE
               {};
 
 #define WRAPPER(type)                                                \\
-    void StartWriteObject(type object) {                             \\
-        c_##type.StartWrite(object);                                 \\
+    void StartWriteObject(type object, const char *api_name) {       \\
+        c_##type.StartWrite(object, api_name);                       \\
     }                                                                \\
-    void FinishWriteObject(type object) {                            \\
-        c_##type.FinishWrite(object);                                \\
+    void FinishWriteObject(type object, const char *api_name) {      \\
+        c_##type.FinishWrite(object, api_name);                      \\
     }                                                                \\
-    void StartReadObject(type object) {                              \\
-        c_##type.StartRead(object);                                  \\
+    void StartReadObject(type object, const char *api_name) {        \\
+        c_##type.StartRead(object, api_name);                        \\
     }                                                                \\
-    void FinishReadObject(type object) {                             \\
-        c_##type.FinishRead(object);                                 \\
+    void FinishReadObject(type object, const char *api_name) {       \\
+        c_##type.FinishRead(object, api_name);                       \\
     }                                                                \\
     void CreateObject(type object) {                                 \\
         c_##type.CreateObject(object);                               \\
     }                                                                \\
     void DestroyObject(type object) {                                \\
         c_##type.DestroyObject(object);                              \\
+        c_##type.DestroyObject(object);                              \\
     }
 
-#define WRAPPER_PARENT_INSTANCE(type)                                                   \\
-    void StartWriteObjectParentInstance(type object) {                                  \\
-        (parent_instance ? parent_instance : this)->c_##type.StartWrite(object);        \\
-    }                                                                                   \\
-    void FinishWriteObjectParentInstance(type object) {                                 \\
-        (parent_instance ? parent_instance : this)->c_##type.FinishWrite(object);       \\
-    }                                                                                   \\
-    void StartReadObjectParentInstance(type object) {                                   \\
-        (parent_instance ? parent_instance : this)->c_##type.StartRead(object);         \\
-    }                                                                                   \\
-    void FinishReadObjectParentInstance(type object) {                                  \\
-        (parent_instance ? parent_instance : this)->c_##type.FinishRead(object);        \\
-    }                                                                                   \\
-    void CreateObjectParentInstance(type object) {                                      \\
-        (parent_instance ? parent_instance : this)->c_##type.CreateObject(object);      \\
-    }                                                                                   \\
-    void DestroyObjectParentInstance(type object) {                                     \\
-        (parent_instance ? parent_instance : this)->c_##type.DestroyObject(object);     \\
+#define WRAPPER_PARENT_INSTANCE(type)                                                           \\
+    void StartWriteObjectParentInstance(type object, const char *api_name) {                    \\
+        (parent_instance ? parent_instance : this)->c_##type.StartWrite(object, api_name);      \\
+    }                                                                                           \\
+    void FinishWriteObjectParentInstance(type object, const char *api_name) {                   \\
+        (parent_instance ? parent_instance : this)->c_##type.FinishWrite(object, api_name);     \\
+    }                                                                                           \\
+    void StartReadObjectParentInstance(type object, const char *api_name) {                     \\
+        (parent_instance ? parent_instance : this)->c_##type.StartRead(object, api_name);       \\
+    }                                                                                           \\
+    void FinishReadObjectParentInstance(type object, const char *api_name) {                    \\
+        (parent_instance ? parent_instance : this)->c_##type.FinishRead(object, api_name);      \\
+    }                                                                                           \\
+    void CreateObjectParentInstance(type object) {                                              \\
+        (parent_instance ? parent_instance : this)->c_##type.CreateObject(object);              \\
+    }                                                                                           \\
+    void DestroyObjectParentInstance(type object) {                                             \\
+        (parent_instance ? parent_instance : this)->c_##type.DestroyObject(object);             \\
     }
 
 WRAPPER_PARENT_INSTANCE(VkDevice)
@@ -535,43 +537,43 @@ WRAPPER_PARENT_INSTANCE(uint64_t)
     }
 
     // VkCommandBuffer needs check for implicit use of command pool
-    void StartWriteObject(VkCommandBuffer object, bool lockPool = true) {
+    void StartWriteObject(VkCommandBuffer object, const char *api_name, bool lockPool = true) {
         if (lockPool) {
             auto iter = command_pool_map.find(object);
             if (iter != command_pool_map.end()) {
                 VkCommandPool pool = iter->second;
-                StartWriteObject(pool);
+                StartWriteObject(pool, api_name);
             }
         }
-        c_VkCommandBuffer.StartWrite(object);
+        c_VkCommandBuffer.StartWrite(object, api_name);
     }
-    void FinishWriteObject(VkCommandBuffer object, bool lockPool = true) {
-        c_VkCommandBuffer.FinishWrite(object);
+    void FinishWriteObject(VkCommandBuffer object, const char *api_name, bool lockPool = true) {
+        c_VkCommandBuffer.FinishWrite(object, api_name);
         if (lockPool) {
             auto iter = command_pool_map.find(object);
             if (iter != command_pool_map.end()) {
                 VkCommandPool pool = iter->second;
-                FinishWriteObject(pool);
+                FinishWriteObject(pool, api_name);
             }
         }
     }
-    void StartReadObject(VkCommandBuffer object) {
+    void StartReadObject(VkCommandBuffer object, const char *api_name) {
         auto iter = command_pool_map.find(object);
         if (iter != command_pool_map.end()) {
             VkCommandPool pool = iter->second;
             // We set up a read guard against the "Contents" counter to catch conflict vs. vkResetCommandPool and vkDestroyCommandPool
             // while *not* establishing a read guard against the command pool counter itself to avoid false postives for
             // non-externally sync'd command buffers
-            c_VkCommandPoolContents.StartRead(pool);
+            c_VkCommandPoolContents.StartRead(pool, api_name);
         }
-        c_VkCommandBuffer.StartRead(object);
+        c_VkCommandBuffer.StartRead(object, api_name);
     }
-    void FinishReadObject(VkCommandBuffer object) {
-        c_VkCommandBuffer.FinishRead(object);
+    void FinishReadObject(VkCommandBuffer object, const char *api_name) {
+        c_VkCommandBuffer.FinishRead(object, api_name);
         auto iter = command_pool_map.find(object);
         if (iter != command_pool_map.end()) {
             VkCommandPool pool = iter->second;
-            c_VkCommandPoolContents.FinishRead(pool);
+            c_VkCommandPoolContents.FinishRead(pool, api_name);
         }
     } """
 
@@ -579,14 +581,14 @@ WRAPPER_PARENT_INSTANCE(uint64_t)
     inline_custom_source_preamble = """
 void ThreadSafety::PreCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pAllocateInfo,
                                                        VkCommandBuffer *pCommandBuffers) {
-    StartReadObjectParentInstance(device);
-    StartWriteObject(pAllocateInfo->commandPool);
+    StartReadObjectParentInstance(device, "vkAllocateCommandBuffers");
+    StartWriteObject(pAllocateInfo->commandPool, "vkAllocateCommandBuffers");
 }
 
 void ThreadSafety::PostCallRecordAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo *pAllocateInfo,
                                                         VkCommandBuffer *pCommandBuffers, VkResult result) {
-    FinishReadObjectParentInstance(device);
-    FinishWriteObject(pAllocateInfo->commandPool);
+    FinishReadObjectParentInstance(device, "vkAllocateCommandBuffers");
+    FinishWriteObject(pAllocateInfo->commandPool, "vkAllocateCommandBuffers");
 
     // Record mapping from command buffer to command pool
     if(pCommandBuffers) {
@@ -606,7 +608,7 @@ void ThreadSafety::PreCallRecordCreateDescriptorSetLayout(
     const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkDescriptorSetLayout*                      pSetLayout) {
-    StartReadObjectParentInstance(device);
+    StartReadObjectParentInstance(device, "vkCreateDescriptorSetLayout");
 }
 
 void ThreadSafety::PostCallRecordCreateDescriptorSetLayout(
@@ -615,7 +617,7 @@ void ThreadSafety::PostCallRecordCreateDescriptorSetLayout(
     const VkAllocationCallbacks*                pAllocator,
     VkDescriptorSetLayout*                      pSetLayout,
     VkResult                                    result) {
-    FinishReadObjectParentInstance(device);
+    FinishReadObjectParentInstance(device, "vkCreateDescriptorSetLayout");
     if (result == VK_SUCCESS) {
         CreateObject(*pSetLayout);
 
@@ -636,15 +638,15 @@ void ThreadSafety::PostCallRecordCreateDescriptorSetLayout(
 
 void ThreadSafety::PreCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
                                                        VkDescriptorSet *pDescriptorSets) {
-    StartReadObjectParentInstance(device);
-    StartWriteObject(pAllocateInfo->descriptorPool);
+    StartReadObjectParentInstance(device, "vkAllocateDescriptorSets");
+    StartWriteObject(pAllocateInfo->descriptorPool, "vkAllocateDescriptorSets");
     // Host access to pAllocateInfo::descriptorPool must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
                                                         VkDescriptorSet *pDescriptorSets, VkResult result) {
-    FinishReadObjectParentInstance(device);
-    FinishWriteObject(pAllocateInfo->descriptorPool);
+    FinishReadObjectParentInstance(device, "vkAllocateDescriptorSets");
+    FinishWriteObject(pAllocateInfo->descriptorPool, "vkAllocateDescriptorSets");
     // Host access to pAllocateInfo::descriptorPool must be externally synchronized
     if (VK_SUCCESS == result) {
         auto lock = write_lock_guard_t(thread_safety_lock);
@@ -668,11 +670,11 @@ void ThreadSafety::PreCallRecordFreeDescriptorSets(
     VkDescriptorPool                            descriptorPool,
     uint32_t                                    descriptorSetCount,
     const VkDescriptorSet*                      pDescriptorSets) {
-    StartReadObjectParentInstance(device);
-    StartWriteObject(descriptorPool);
+    StartReadObjectParentInstance(device, "vkFreeDescriptorSets");
+    StartWriteObject(descriptorPool, "vkFreeDescriptorSets");
     if (pDescriptorSets) {
         for (uint32_t index=0; index < descriptorSetCount; index++) {
-            StartWriteObject(pDescriptorSets[index]);
+            StartWriteObject(pDescriptorSets[index], "vkFreeDescriptorSets");
         }
     }
     // Host access to descriptorPool must be externally synchronized
@@ -685,11 +687,11 @@ void ThreadSafety::PostCallRecordFreeDescriptorSets(
     uint32_t                                    descriptorSetCount,
     const VkDescriptorSet*                      pDescriptorSets,
     VkResult                                    result) {
-    FinishReadObjectParentInstance(device);
-    FinishWriteObject(descriptorPool);
+    FinishReadObjectParentInstance(device, "vkFreeDescriptorSets");
+    FinishWriteObject(descriptorPool, "vkFreeDescriptorSets");
     if (pDescriptorSets) {
         for (uint32_t index=0; index < descriptorSetCount; index++) {
-            FinishWriteObject(pDescriptorSets[index]);
+            FinishWriteObject(pDescriptorSets[index], "vkFreeDescriptorSets");
         }
     }
     // Host access to descriptorPool must be externally synchronized
@@ -709,15 +711,15 @@ void ThreadSafety::PreCallRecordDestroyDescriptorPool(
     VkDevice                                    device,
     VkDescriptorPool                            descriptorPool,
     const VkAllocationCallbacks*                pAllocator) {
-    StartReadObjectParentInstance(device);
-    StartWriteObject(descriptorPool);
+    StartReadObjectParentInstance(device, "vkDestroyDescriptorPool");
+    StartWriteObject(descriptorPool, "vkDestroyDescriptorPool");
     // Host access to descriptorPool must be externally synchronized
     auto lock = read_lock_guard_t(thread_safety_lock);
     auto iterator = pool_descriptor_sets_map.find(descriptorPool);
     // Possible to have no descriptor sets allocated from pool
     if (iterator != pool_descriptor_sets_map.end()) {
         for(auto descriptor_set : pool_descriptor_sets_map[descriptorPool]) {
-            StartWriteObject(descriptor_set);
+            StartWriteObject(descriptor_set, "vkDestroyDescriptorPool");
         }
     }
 }
@@ -726,15 +728,15 @@ void ThreadSafety::PostCallRecordDestroyDescriptorPool(
     VkDevice                                    device,
     VkDescriptorPool                            descriptorPool,
     const VkAllocationCallbacks*                pAllocator) {
-    FinishReadObjectParentInstance(device);
-    FinishWriteObject(descriptorPool);
+    FinishReadObjectParentInstance(device, "vkDestroyDescriptorPool");
+    FinishWriteObject(descriptorPool, "vkDestroyDescriptorPool");
     DestroyObject(descriptorPool);
     // Host access to descriptorPool must be externally synchronized
     {
         auto lock = write_lock_guard_t(thread_safety_lock);
         // remove references to implicitly freed descriptor sets
         for(auto descriptor_set : pool_descriptor_sets_map[descriptorPool]) {
-            FinishWriteObject(descriptor_set);
+            FinishWriteObject(descriptor_set, "vkDestroyDescriptorPool");
             DestroyObject(descriptor_set);
         }
         pool_descriptor_sets_map[descriptorPool].clear();
@@ -746,8 +748,8 @@ void ThreadSafety::PreCallRecordResetDescriptorPool(
     VkDevice                                    device,
     VkDescriptorPool                            descriptorPool,
     VkDescriptorPoolResetFlags                  flags) {
-    StartReadObjectParentInstance(device);
-    StartWriteObject(descriptorPool);
+    StartReadObjectParentInstance(device, "vkResetDescriptorPool");
+    StartWriteObject(descriptorPool, "vkResetDescriptorPool");
     // Host access to descriptorPool must be externally synchronized
     // any sname:VkDescriptorSet objects allocated from pname:descriptorPool must be externally synchronized between host accesses
     auto lock = read_lock_guard_t(thread_safety_lock);
@@ -755,7 +757,7 @@ void ThreadSafety::PreCallRecordResetDescriptorPool(
     // Possible to have no descriptor sets allocated from pool
     if (iterator != pool_descriptor_sets_map.end()) {
         for(auto descriptor_set : pool_descriptor_sets_map[descriptorPool]) {
-            StartWriteObject(descriptor_set);
+            StartWriteObject(descriptor_set, "vkResetDescriptorPool");
         }
     }
 }
@@ -765,15 +767,15 @@ void ThreadSafety::PostCallRecordResetDescriptorPool(
     VkDescriptorPool                            descriptorPool,
     VkDescriptorPoolResetFlags                  flags,
     VkResult                                    result) {
-    FinishReadObjectParentInstance(device);
-    FinishWriteObject(descriptorPool);
+    FinishReadObjectParentInstance(device, "vkResetDescriptorPool");
+    FinishWriteObject(descriptorPool, "vkResetDescriptorPool");
     // Host access to descriptorPool must be externally synchronized
     // any sname:VkDescriptorSet objects allocated from pname:descriptorPool must be externally synchronized between host accesses
     if (VK_SUCCESS == result) {
         // remove references to implicitly freed descriptor sets
         auto lock = write_lock_guard_t(thread_safety_lock);
         for(auto descriptor_set : pool_descriptor_sets_map[descriptorPool]) {
-            FinishWriteObject(descriptor_set);
+            FinishWriteObject(descriptor_set, "vkResetDescriptorPool");
             DestroyObject(descriptor_set);
         }
         pool_descriptor_sets_map[descriptorPool].clear();
@@ -795,15 +797,15 @@ void ThreadSafety::PreCallRecordUpdateDescriptorSets(
     const VkWriteDescriptorSet*                 pDescriptorWrites,
     uint32_t                                    descriptorCopyCount,
     const VkCopyDescriptorSet*                  pDescriptorCopies) {
-    StartReadObjectParentInstance(device);
+    StartReadObjectParentInstance(device, "vkUpdateDescriptorSets");
     if (pDescriptorWrites) {
         for (uint32_t index=0; index < descriptorWriteCount; index++) {
             auto dstSet = pDescriptorWrites[index].dstSet;
             bool update_after_bind = DsUpdateAfterBind(dstSet);
             if (update_after_bind) {
-                StartReadObject(dstSet);
+                StartReadObject(dstSet, "vkUpdateDescriptorSets");
             } else {
-                StartWriteObject(dstSet);
+                StartWriteObject(dstSet, "vkUpdateDescriptorSets");
             }
         }
     }
@@ -812,11 +814,11 @@ void ThreadSafety::PreCallRecordUpdateDescriptorSets(
             auto dstSet = pDescriptorCopies[index].dstSet;
             bool update_after_bind = DsUpdateAfterBind(dstSet);
             if (update_after_bind) {
-                StartReadObject(dstSet);
+                StartReadObject(dstSet, "vkUpdateDescriptorSets");
             } else {
-                StartWriteObject(dstSet);
+                StartWriteObject(dstSet, "vkUpdateDescriptorSets");
             }
-            StartReadObject(pDescriptorCopies[index].srcSet);
+            StartReadObject(pDescriptorCopies[index].srcSet, "vkUpdateDescriptorSets");
         }
     }
     // Host access to pDescriptorWrites[].dstSet must be externally synchronized
@@ -829,15 +831,15 @@ void ThreadSafety::PostCallRecordUpdateDescriptorSets(
     const VkWriteDescriptorSet*                 pDescriptorWrites,
     uint32_t                                    descriptorCopyCount,
     const VkCopyDescriptorSet*                  pDescriptorCopies) {
-    FinishReadObjectParentInstance(device);
+    FinishReadObjectParentInstance(device, "vkUpdateDescriptorSets");
     if (pDescriptorWrites) {
         for (uint32_t index=0; index < descriptorWriteCount; index++) {
             auto dstSet = pDescriptorWrites[index].dstSet;
             bool update_after_bind = DsUpdateAfterBind(dstSet);
             if (update_after_bind) {
-                FinishReadObject(dstSet);
+                FinishReadObject(dstSet, "vkUpdateDescriptorSets");
             } else {
-                FinishWriteObject(dstSet);
+                FinishWriteObject(dstSet, "vkUpdateDescriptorSets");
             }
         }
     }
@@ -846,11 +848,11 @@ void ThreadSafety::PostCallRecordUpdateDescriptorSets(
             auto dstSet = pDescriptorCopies[index].dstSet;
             bool update_after_bind = DsUpdateAfterBind(dstSet);
             if (update_after_bind) {
-                FinishReadObject(dstSet);
+                FinishReadObject(dstSet, "vkUpdateDescriptorSets");
             } else {
-                FinishWriteObject(dstSet);
+                FinishWriteObject(dstSet, "vkUpdateDescriptorSets");
             }
-            FinishReadObject(pDescriptorCopies[index].srcSet);
+            FinishReadObject(pDescriptorCopies[index].srcSet, "vkUpdateDescriptorSets");
         }
     }
     // Host access to pDescriptorWrites[].dstSet must be externally synchronized
@@ -862,14 +864,14 @@ void ThreadSafety::PreCallRecordUpdateDescriptorSetWithTemplate(
     VkDescriptorSet                             descriptorSet,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
     const void*                                 pData) {
-    StartReadObjectParentInstance(device);
-    StartReadObject(descriptorUpdateTemplate);
+    StartReadObjectParentInstance(device, "vkUpdateDescriptorSetWithTemplate");
+    StartReadObject(descriptorUpdateTemplate, "vkUpdateDescriptorSetWithTemplate");
 
     bool update_after_bind = DsUpdateAfterBind(descriptorSet);
     if (update_after_bind) {
-        StartReadObject(descriptorSet);
+        StartReadObject(descriptorSet, "vkUpdateDescriptorSetWithTemplate");
     } else {
-        StartWriteObject(descriptorSet);
+        StartWriteObject(descriptorSet, "vkUpdateDescriptorSetWithTemplate");
     }
     // Host access to descriptorSet must be externally synchronized
 }
@@ -879,14 +881,14 @@ void ThreadSafety::PostCallRecordUpdateDescriptorSetWithTemplate(
     VkDescriptorSet                             descriptorSet,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
     const void*                                 pData) {
-    FinishReadObjectParentInstance(device);
-    FinishReadObject(descriptorUpdateTemplate);
+    FinishReadObjectParentInstance(device, "vkUpdateDescriptorSetWithTemplate");
+    FinishReadObject(descriptorUpdateTemplate, "vkUpdateDescriptorSetWithTemplate");
 
     bool update_after_bind = DsUpdateAfterBind(descriptorSet);
     if (update_after_bind) {
-        FinishReadObject(descriptorSet);
+        FinishReadObject(descriptorSet, "vkUpdateDescriptorSetWithTemplate");
     } else {
-        FinishWriteObject(descriptorSet);
+        FinishWriteObject(descriptorSet, "vkUpdateDescriptorSetWithTemplate");
     }
     // Host access to descriptorSet must be externally synchronized
 }
@@ -896,14 +898,14 @@ void ThreadSafety::PreCallRecordUpdateDescriptorSetWithTemplateKHR(
     VkDescriptorSet                             descriptorSet,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
     const void*                                 pData) {
-    StartReadObjectParentInstance(device);
-    StartReadObject(descriptorUpdateTemplate);
+    StartReadObjectParentInstance(device, "vkUpdateDescriptorSetWithTemplateKHR");
+    StartReadObject(descriptorUpdateTemplate, "vkUpdateDescriptorSetWithTemplateKHR");
 
     bool update_after_bind = DsUpdateAfterBind(descriptorSet);
     if (update_after_bind) {
-        StartReadObject(descriptorSet);
+        StartReadObject(descriptorSet, "vkUpdateDescriptorSetWithTemplateKHR");
     } else {
-        StartWriteObject(descriptorSet);
+        StartWriteObject(descriptorSet, "vkUpdateDescriptorSetWithTemplateKHR");
     }
     // Host access to descriptorSet must be externally synchronized
 }
@@ -913,14 +915,14 @@ void ThreadSafety::PostCallRecordUpdateDescriptorSetWithTemplateKHR(
     VkDescriptorSet                             descriptorSet,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
     const void*                                 pData) {
-    FinishReadObjectParentInstance(device);
-    FinishReadObject(descriptorUpdateTemplate);
+    FinishReadObjectParentInstance(device, "vkUpdateDescriptorSetWithTemplateKHR");
+    FinishReadObject(descriptorUpdateTemplate, "vkUpdateDescriptorSetWithTemplateKHR");
 
     bool update_after_bind = DsUpdateAfterBind(descriptorSet);
     if (update_after_bind) {
-        FinishReadObject(descriptorSet);
+        FinishReadObject(descriptorSet, "vkUpdateDescriptorSetWithTemplateKHR");
     } else {
-        FinishWriteObject(descriptorSet);
+        FinishWriteObject(descriptorSet, "vkUpdateDescriptorSetWithTemplateKHR");
     }
     // Host access to descriptorSet must be externally synchronized
 }
@@ -928,8 +930,8 @@ void ThreadSafety::PostCallRecordUpdateDescriptorSetWithTemplateKHR(
 void ThreadSafety::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
                                                    const VkCommandBuffer *pCommandBuffers) {
     const bool lockCommandPool = false;  // pool is already directly locked
-    StartReadObjectParentInstance(device);
-    StartWriteObject(commandPool);
+    StartReadObjectParentInstance(device, "vkFreeCommandBuffers");
+    StartWriteObject(commandPool, "vkFreeCommandBuffers");
     if(pCommandBuffers) {
         // Even though we're immediately "finishing" below, we still are testing for concurrency with any call in process
         // so this isn't a no-op
@@ -938,8 +940,8 @@ void ThreadSafety::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPoo
         auto lock = write_lock_guard_t(thread_safety_lock);
         auto &pool_command_buffers = pool_command_buffers_map[commandPool];
         for (uint32_t index = 0; index < commandBufferCount; index++) {
-            StartWriteObject(pCommandBuffers[index], lockCommandPool);
-            FinishWriteObject(pCommandBuffers[index], lockCommandPool);
+            StartWriteObject(pCommandBuffers[index], "vkFreeCommandBuffers", lockCommandPool);
+            FinishWriteObject(pCommandBuffers[index], "vkFreeCommandBuffers", lockCommandPool);
             DestroyObject(pCommandBuffers[index]);
             pool_command_buffers.erase(pCommandBuffers[index]);
             command_pool_map.erase(pCommandBuffers[index]);
@@ -949,8 +951,8 @@ void ThreadSafety::PreCallRecordFreeCommandBuffers(VkDevice device, VkCommandPoo
 
 void ThreadSafety::PostCallRecordFreeCommandBuffers(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount,
                                                     const VkCommandBuffer *pCommandBuffers) {
-    FinishReadObjectParentInstance(device);
-    FinishWriteObject(commandPool);
+    FinishReadObjectParentInstance(device, "vkFreeCommandBuffers");
+    FinishWriteObject(commandPool, "vkFreeCommandBuffers");
 }
 
 void ThreadSafety::PreCallRecordCreateCommandPool(
@@ -958,7 +960,7 @@ void ThreadSafety::PreCallRecordCreateCommandPool(
     const VkCommandPoolCreateInfo*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkCommandPool*                              pCommandPool) {
-    StartReadObjectParentInstance(device);
+    StartReadObjectParentInstance(device, "vkCreateCommandPool");
 }
 
 void ThreadSafety::PostCallRecordCreateCommandPool(
@@ -967,7 +969,7 @@ void ThreadSafety::PostCallRecordCreateCommandPool(
     const VkAllocationCallbacks*                pAllocator,
     VkCommandPool*                              pCommandPool,
     VkResult                                    result) {
-    FinishReadObjectParentInstance(device);
+    FinishReadObjectParentInstance(device, "vkCreateCommandPool");
     if (result == VK_SUCCESS) {
         CreateObject(*pCommandPool);
         c_VkCommandPoolContents.CreateObject(*pCommandPool);
@@ -975,25 +977,25 @@ void ThreadSafety::PostCallRecordCreateCommandPool(
 }
 
 void ThreadSafety::PreCallRecordResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags) {
-    StartReadObjectParentInstance(device);
-    StartWriteObject(commandPool);
+    StartReadObjectParentInstance(device, "vkResetCommandPool");
+    StartWriteObject(commandPool, "vkResetCommandPool");
     // Check for any uses of non-externally sync'd command buffers (for example from vkCmdExecuteCommands)
-    c_VkCommandPoolContents.StartWrite(commandPool);
+    c_VkCommandPoolContents.StartWrite(commandPool, "vkResetCommandPool");
     // Host access to commandPool must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordResetCommandPool(VkDevice device, VkCommandPool commandPool, VkCommandPoolResetFlags flags, VkResult result) {
-    FinishReadObjectParentInstance(device);
-    FinishWriteObject(commandPool);
-    c_VkCommandPoolContents.FinishWrite(commandPool);
+    FinishReadObjectParentInstance(device, "vkResetCommandPool");
+    FinishWriteObject(commandPool, "vkResetCommandPool");
+    c_VkCommandPoolContents.FinishWrite(commandPool, "vkResetCommandPool");
     // Host access to commandPool must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks *pAllocator) {
-    StartReadObjectParentInstance(device);
-    StartWriteObject(commandPool);
+    StartReadObjectParentInstance(device, "vkDestroyCommandPool");
+    StartWriteObject(commandPool, "vkDestroyCommandPool");
     // Check for any uses of non-externally sync'd command buffers (for example from vkCmdExecuteCommands)
-    c_VkCommandPoolContents.StartWrite(commandPool);
+    c_VkCommandPoolContents.StartWrite(commandPool, "vkDestroyCommandPool");
     // Host access to commandPool must be externally synchronized
 
     auto lock = write_lock_guard_t(thread_safety_lock);
@@ -1008,10 +1010,10 @@ void ThreadSafety::PreCallRecordDestroyCommandPool(VkDevice device, VkCommandPoo
 }
 
 void ThreadSafety::PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks *pAllocator) {
-    FinishReadObjectParentInstance(device);
-    FinishWriteObject(commandPool);
+    FinishReadObjectParentInstance(device, "vkDestroyCommandPool");
+    FinishWriteObject(commandPool, "vkDestroyCommandPool");
     DestroyObject(commandPool);
-    c_VkCommandPoolContents.FinishWrite(commandPool);
+    c_VkCommandPoolContents.FinishWrite(commandPool, "vkDestroyCommandPool");
     c_VkCommandPoolContents.DestroyObject(commandPool);
 }
 
@@ -1019,14 +1021,14 @@ void ThreadSafety::PostCallRecordDestroyCommandPool(VkDevice device, VkCommandPo
 // pSwapchainImages.
 void ThreadSafety::PreCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
                                                       VkImage *pSwapchainImages) {
-    StartReadObjectParentInstance(device);
-    StartReadObject(swapchain);
+    StartReadObjectParentInstance(device, "vkGetSwapchainImagesKHR");
+    StartReadObject(swapchain, "vkGetSwapchainImagesKHR");
 }
 
 void ThreadSafety::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t *pSwapchainImageCount,
                                                        VkImage *pSwapchainImages, VkResult result) {
-    FinishReadObjectParentInstance(device);
-    FinishReadObject(swapchain);
+    FinishReadObjectParentInstance(device, "vkGetSwapchainImagesKHR");
+    FinishReadObject(swapchain, "vkGetSwapchainImagesKHR");
     if (pSwapchainImages != NULL) {
         auto lock = write_lock_guard_t(thread_safety_lock);
         auto &wrapped_swapchain_image_handles = swapchain_wrapped_image_handle_map[swapchain];
@@ -1041,12 +1043,12 @@ void ThreadSafety::PreCallRecordDestroySwapchainKHR(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     const VkAllocationCallbacks*                pAllocator) {
-    StartReadObjectParentInstance(device);
-    StartWriteObject(swapchain);
+    StartReadObjectParentInstance(device, "vkDestroySwapchainKHR");
+    StartWriteObject(swapchain, "vkDestroySwapchainKHR");
     // Host access to swapchain must be externally synchronized
     auto lock = read_lock_guard_t(thread_safety_lock);
     for (auto &image_handle : swapchain_wrapped_image_handle_map[swapchain]) {
-        StartWriteObject(image_handle);
+        StartWriteObject(image_handle, "vkDestroySwapchainKHR");
     }
 }
 
@@ -1054,13 +1056,13 @@ void ThreadSafety::PostCallRecordDestroySwapchainKHR(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     const VkAllocationCallbacks*                pAllocator) {
-    FinishReadObjectParentInstance(device);
-    FinishWriteObject(swapchain);
+    FinishReadObjectParentInstance(device, "vkDestroySwapchainKHR");
+    FinishWriteObject(swapchain, "vkDestroySwapchainKHR");
     DestroyObject(swapchain);
     // Host access to swapchain must be externally synchronized
     auto lock = write_lock_guard_t(thread_safety_lock);
     for (auto &image_handle : swapchain_wrapped_image_handle_map[swapchain]) {
-        FinishWriteObject(image_handle);
+        FinishWriteObject(image_handle, "vkDestroySwapchainKHR");
         DestroyObject(image_handle);
     }
     swapchain_wrapped_image_handle_map.erase(swapchain);
@@ -1069,14 +1071,14 @@ void ThreadSafety::PostCallRecordDestroySwapchainKHR(
 void ThreadSafety::PreCallRecordDestroyDevice(
     VkDevice                                    device,
     const VkAllocationCallbacks*                pAllocator) {
-    StartWriteObjectParentInstance(device);
+    StartWriteObjectParentInstance(device, "vkDestroyDevice");
     // Host access to device must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordDestroyDevice(
     VkDevice                                    device,
     const VkAllocationCallbacks*                pAllocator) {
-    FinishWriteObjectParentInstance(device);
+    FinishWriteObjectParentInstance(device, "vkDestroyDevice");
     DestroyObjectParentInstance(device);
     // Host access to device must be externally synchronized
     auto lock = write_lock_guard_t(thread_safety_lock);
@@ -1091,7 +1093,7 @@ void ThreadSafety::PreCallRecordGetDeviceQueue(
     uint32_t                                    queueFamilyIndex,
     uint32_t                                    queueIndex,
     VkQueue*                                    pQueue) {
-    StartReadObjectParentInstance(device);
+    StartReadObjectParentInstance(device, "vkGetDeviceQueue");
 }
 
 void ThreadSafety::PostCallRecordGetDeviceQueue(
@@ -1099,7 +1101,7 @@ void ThreadSafety::PostCallRecordGetDeviceQueue(
     uint32_t                                    queueFamilyIndex,
     uint32_t                                    queueIndex,
     VkQueue*                                    pQueue) {
-    FinishReadObjectParentInstance(device);
+    FinishReadObjectParentInstance(device, "vkGetDeviceQueue");
     CreateObject(*pQueue);
     auto lock = write_lock_guard_t(thread_safety_lock);
     device_queues_map[device].insert(*pQueue);
@@ -1109,14 +1111,14 @@ void ThreadSafety::PreCallRecordGetDeviceQueue2(
     VkDevice                                    device,
     const VkDeviceQueueInfo2*                   pQueueInfo,
     VkQueue*                                    pQueue) {
-    StartReadObjectParentInstance(device);
+    StartReadObjectParentInstance(device, "vkGetDeviceQueue2");
 }
 
 void ThreadSafety::PostCallRecordGetDeviceQueue2(
     VkDevice                                    device,
     const VkDeviceQueueInfo2*                   pQueueInfo,
     VkQueue*                                    pQueue) {
-    FinishReadObjectParentInstance(device);
+    FinishReadObjectParentInstance(device, "vkGetDeviceQueue2");
     CreateObject(*pQueue);
     auto lock = write_lock_guard_t(thread_safety_lock);
     device_queues_map[device].insert(*pQueue);
@@ -1214,11 +1216,11 @@ void ThreadSafety::PostCallRecordGetDeviceQueue2(
                     if self.paramIsArray(param):
                         paramdecl += 'if (' + paramname.text + ') {\n'
                         paramdecl += '    for (uint32_t index=0; index < ' + param.attrib.get('len') + '; index++) {\n'
-                        paramdecl += '        ' + functionprefix + 'WriteObject' + self.paramSuffix(param.find('type')) + '(' + paramname.text + '[index]);\n'
+                        paramdecl += '        ' + functionprefix + 'WriteObject' + self.paramSuffix(param.find('type')) + '(' + paramname.text + '[index], "' + name + '");\n'
                         paramdecl += '    }\n'
                         paramdecl += '}\n'
                     else:
-                        paramdecl += functionprefix + 'WriteObject' + self.paramSuffix(param.find('type')) + '(' + paramname.text + ');\n'
+                        paramdecl += functionprefix + 'WriteObject' + self.paramSuffix(param.find('type')) + '(' + paramname.text + ', "' + name + '");\n'
                         if ('Destroy' in name or 'Free' in name) and functionprefix == 'Finish':
                             paramdecl += 'DestroyObject' + self.paramSuffix(param.find('type')) + '(' + paramname.text + ');\n'
                 elif (param.attrib.get('externsync')):
@@ -1250,11 +1252,11 @@ void ThreadSafety::PostCallRecordGetDeviceQueue2(
                                 paramdecl += '            for (uint32_t index2=0; index2 < '+limit+'; index2++) {\n'
                                 element = element.replace('[]','[index2]')
                                 second_indent = '        '
-                                paramdecl += '        ' + second_indent + functionprefix + 'WriteObject' + suffix + '(' + element + ');\n'
+                                paramdecl += '        ' + second_indent + functionprefix + 'WriteObject' + suffix + '(' + element + ', "' + name + '");\n'
                                 paramdecl += '            }\n'
                                 paramdecl += '        }\n'
                             else:
-                                paramdecl += '    ' + second_indent + functionprefix + 'WriteObject' + suffix + '(' + element + ');\n'
+                                paramdecl += '    ' + second_indent + functionprefix + 'WriteObject' + suffix + '(' + element + ', "' + name + '");\n'
                         paramdecl += '    }\n'
                         paramdecl += '}\n'
                     else:
@@ -1266,7 +1268,7 @@ void ThreadSafety::PostCallRecordGetDeviceQueue2(
                             suffix = ''
                             if 'surface' in member:
                                 suffix = 'ParentInstance'
-                            paramdecl += '    ' + functionprefix + 'WriteObject' + suffix + '(' + member + ');\n'
+                            paramdecl += '    ' + functionprefix + 'WriteObject' + suffix + '(' + member + ', "' + name + '");\n'
                 elif self.paramIsPointer(param) and ('Create' in name or 'Allocate' in name) and functionprefix == 'Finish':
                     paramtype = param.find('type')
                     if paramtype is not None:
@@ -1317,13 +1319,13 @@ void ThreadSafety::PostCallRecordGetDeviceQueue2(
                             param_len = str(param.attrib.get('len')).replace("::", "->")
                             paramdecl += 'if (' + paramname.text + ') {\n'
                             paramdecl += '    for (uint32_t index = 0; index < ' + dereference + param_len + '; index++) {\n'
-                            paramdecl += '        ' + functionprefix + 'ReadObject' + self.paramSuffix(param.find('type')) + '(' + paramname.text + '[index]);\n'
+                            paramdecl += '        ' + functionprefix + 'ReadObject' + self.paramSuffix(param.find('type')) + '(' + paramname.text + '[index], "' + name + '");\n'
                             paramdecl += '    }\n'
                             paramdecl += '}\n'
                         elif not self.paramIsPointer(param):
                             # Pointer params are often being created.
                             # They are not being read from.
-                            paramdecl += functionprefix + 'ReadObject' + self.paramSuffix(param.find('type')) + '(' + paramname.text + ');\n'
+                            paramdecl += functionprefix + 'ReadObject' + self.paramSuffix(param.find('type')) + '(' + paramname.text + ', "' + name + '");\n'
         explicitexternsyncparams = cmd.findall("param[@externsync]")
         if (explicitexternsyncparams is not None):
             for param in explicitexternsyncparams:
