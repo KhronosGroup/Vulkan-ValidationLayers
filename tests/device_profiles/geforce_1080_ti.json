@@ -303,13 +303,6 @@
                 "implementationVersion": 1,
                 "layerName": "VK_LAYER_VALVE_steam_overlay",
                 "specVersion": 4194307
-            },
-            {
-                "description": "LunarG Standard Validation Layer",
-                "extensions": [],
-                "implementationVersion": 1,
-                "layerName": "VK_LAYER_LUNARG_standard_validation",
-                "specVersion": 4194377
             }
         ]
     },
