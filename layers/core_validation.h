@@ -378,11 +378,6 @@ class CoreChecks : public ValidationStateTracker {
                                         spirv_inst_iter consumer_entrypoint, shader_stage_attributes const* consumer_stage) const;
 
     // Buffer Validation Functions
-    template <class OBJECT, class LAYOUT>
-    void SetLayout(OBJECT* pObject, VkImage image, const VkImageSubresource& subresource, const LAYOUT& layout);
-    template <class OBJECT, class LAYOUT>
-    void SetLayout(OBJECT* pObject, const VkImage image, VkImageSubresource subresource, const LAYOUT& layout,
-                   VkImageAspectFlags aspectMask);
     // Remove the pending QFO release records from the global set
     // Note that the type of the handle argument constrained to match Barrier type
     // The defaulted BarrierRecord argument allows use to declare the type once, but is not intended to be specified by the caller
