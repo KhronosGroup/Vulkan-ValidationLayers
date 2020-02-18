@@ -573,35 +573,38 @@ struct QueryObject {
     uint32_t query;
     // These next two fields are *not* used in hash or comparison, they are effectively a data payload
     uint32_t index;  // must be zero if !indexed
+    uint32_t perf_pass;
     bool indexed;
     // Command index in the command buffer where the end of the query was
     // recorded (equal to the number of commands in the command buffer before
     // the end of the query).
     uint64_t endCommandIndex;
 
-    QueryObject(VkQueryPool pool_, uint32_t query_) : pool(pool_), query(query_), index(0), indexed(false), endCommandIndex(0) {}
+    QueryObject(VkQueryPool pool_, uint32_t query_)
+        : pool(pool_), query(query_), index(0), perf_pass(0), indexed(false), endCommandIndex(0) {}
     QueryObject(VkQueryPool pool_, uint32_t query_, uint32_t index_)
-        : pool(pool_), query(query_), index(index_), indexed(true), endCommandIndex(0) {}
+        : pool(pool_), query(query_), index(index_), perf_pass(0), indexed(true), endCommandIndex(0) {}
     QueryObject(const QueryObject &obj)
-        : pool(obj.pool), query(obj.query), index(obj.index), indexed(obj.indexed), endCommandIndex(obj.endCommandIndex) {}
-    bool operator<(const QueryObject &rhs) const { return (pool == rhs.pool) ? query < rhs.query : pool < rhs.pool; }
+        : pool(obj.pool),
+          query(obj.query),
+          index(obj.index),
+          perf_pass(obj.perf_pass),
+          indexed(obj.indexed),
+          endCommandIndex(obj.endCommandIndex) {}
+    QueryObject(const QueryObject &obj, uint32_t perf_pass_)
+        : pool(obj.pool),
+          query(obj.query),
+          index(obj.index),
+          perf_pass(perf_pass_),
+          indexed(obj.indexed),
+          endCommandIndex(obj.endCommandIndex) {}
+    bool operator<(const QueryObject &rhs) const {
+        return (pool == rhs.pool) ? ((query == rhs.query) ? (perf_pass < rhs.perf_pass) : (query < rhs.query)) : pool < rhs.pool;
+    }
 };
 
 inline bool operator==(const QueryObject &query1, const QueryObject &query2) {
-    return ((query1.pool == query2.pool) && (query1.query == query2.query));
-}
-
-struct QueryObjectPass {
-    QueryObject obj;
-    uint32_t perf_pass;
-
-    QueryObjectPass(const QueryObject &obj_, uint32_t perf_pass_) : obj(obj_), perf_pass(perf_pass_) {}
-    QueryObjectPass(const QueryObjectPass &obj_) : obj(obj_.obj), perf_pass(obj_.perf_pass) {}
-    bool operator<(const QueryObjectPass &rhs) const { return (obj == rhs.obj) ? perf_pass < rhs.perf_pass : obj < rhs.obj; }
-};
-
-inline bool operator==(const QueryObjectPass &query1, const QueryObjectPass &query2) {
-    return ((query1.obj == query2.obj) && (query1.perf_pass == query2.perf_pass));
+    return ((query1.pool == query2.pool) && (query1.query == query2.query) && (query1.perf_pass == query2.perf_pass));
 }
 
 enum QueryState {
@@ -641,16 +644,11 @@ namespace std {
 template <>
 struct hash<QueryObject> {
     size_t operator()(QueryObject query) const throw() {
-        return hash<uint64_t>()((uint64_t)(query.pool)) ^ hash<uint32_t>()(query.query);
+        return hash<uint64_t>()((uint64_t)(query.pool)) ^
+               hash<uint64_t>()(static_cast<uint64_t>(query.query) | (static_cast<uint64_t>(query.perf_pass) << 32));
     }
 };
 
-template <>
-struct hash<QueryObjectPass> {
-    size_t operator()(QueryObjectPass query) const throw() {
-        return hash<QueryObject>()(query.obj) ^ hash<uint32_t>()(query.perf_pass);
-    }
-};
 }  // namespace std
 
 struct CBVertexBufferBindingInfo {
@@ -1057,7 +1055,6 @@ struct QFOTransferCBScoreboards {
 };
 
 typedef std::map<QueryObject, QueryState> QueryMap;
-typedef std::map<QueryObjectPass, QueryState> QueryPassMap;
 typedef std::unordered_map<VkEvent, VkPipelineStageFlags> EventToStageMap;
 typedef ImageSubresourceLayoutMap::LayoutMap GlobalImageLayoutRangeMap;
 typedef std::unordered_map<VkImage, std::unique_ptr<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
@@ -1134,7 +1131,8 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::vector<
         std::function<bool(const ValidationStateTracker *device_data, bool do_validate, EventToStageMap *localEventToStageMap)>>
         eventUpdates;
-    std::vector<std::function<bool(const ValidationStateTracker *device_data, bool do_validate, QueryMap *localQueryToStateMap)>>
+    std::vector<std::function<bool(const ValidationStateTracker *device_data, bool do_validate, VkQueryPool &firstPerfQueryPool,
+                                   uint32_t perfQueryPass, QueryMap *localQueryToStateMap)>>
         queryUpdates;
     std::unordered_set<cvdescriptorset::DescriptorSet *> validated_descriptor_sets;
     // Contents valid only after an index buffer is bound (CBSTATUS_INDEX_BUFFER_BOUND set)

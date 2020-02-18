@@ -178,16 +178,22 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
                                                                  const char* api_name) const;
     static bool ValidateCopyQueryPoolResults(const ValidationStateTracker* state_data, VkCommandBuffer commandBuffer,
-                                             VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
+                                             VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, uint32_t perfPass,
                                              VkQueryResultFlags flags, QueryMap* localQueryToStateMap);
     static bool VerifyQueryIsReset(const ValidationStateTracker* state_data, VkCommandBuffer commandBuffer, QueryObject query_obj,
-                                   const char* func_name, QueryMap* localQueryToStateMap);
+                                   const char* func_name, VkQueryPool& firstPerfQueryPool, uint32_t perfPass,
+                                   QueryMap* localQueryToStateMap);
+    static bool ValidatePerformanceQuery(const ValidationStateTracker* state_data, VkCommandBuffer commandBuffer,
+                                         QueryObject query_obj, const char* func_name, VkQueryPool& firstPerfQueryPool,
+                                         uint32_t perfPass, QueryMap* localQueryToStateMap);
     bool ValidateImportSemaphore(VkSemaphore semaphore, const char* caller_name) const;
     bool ValidateBeginQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, VkFlags flags, CMD_TYPE cmd,
                             const char* cmd_name, const char* vuid_queue_flags, const char* vuid_queue_feedback,
                             const char* vuid_queue_occlusion, const char* vuid_precise, const char* vuid_query_count) const;
     bool ValidateCmdEndQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, CMD_TYPE cmd, const char* cmd_name,
                              const char* vuid_queue_flags, const char* vuid_active_queries) const;
+    bool ValidateCmdResetQuery(const CMD_BUFFER_STATE* cb_state, VkQueryPool queryPool, uint32_t firstQuery,
+                               uint32_t queryCount) const;
 
     const DrawDispatchVuid& GetDrawDispatchVuid(CMD_TYPE cmd_type) const;
     bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type,

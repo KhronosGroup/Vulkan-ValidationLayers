@@ -1523,18 +1523,14 @@ void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq
                 }
             }
             QueryMap localQueryToStateMap;
+            VkQueryPool first_pool = VK_NULL_HANDLE;
             for (auto &function : cb_node->queryUpdates) {
-                function(nullptr, /*do_validate*/ false, &localQueryToStateMap);
+                function(nullptr, /*do_validate*/ false, first_pool, submission.perf_submit_pass, &localQueryToStateMap);
             }
 
             for (auto queryStatePair : localQueryToStateMap) {
                 if (queryStatePair.second == QUERYSTATE_ENDED) {
                     queryToStateMap[queryStatePair.first] = QUERYSTATE_AVAILABLE;
-
-                    const QUERY_POOL_STATE *qp_state = GetQueryPoolState(queryStatePair.first.pool);
-                    if (qp_state->createInfo.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR)
-                        queryPassToStateMap[QueryObjectPass(queryStatePair.first, submission.perf_submit_pass)] =
-                            QUERYSTATE_AVAILABLE;
                 }
             }
             cb_node->in_use.fetch_sub(1);
@@ -1650,6 +1646,9 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
                 }
             }
         }
+        const auto perf_submit = lvl_find_in_chain<VkPerformanceQuerySubmitInfoKHR>(submit->pNext);
+        uint32_t perf_pass = perf_submit ? perf_submit->counterPassIndex : 0;
+
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
             auto cb_node = GetCBState(submit->pCommandBuffers[i]);
             if (cb_node) {
@@ -1660,16 +1659,17 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
                 }
                 IncrementResources(cb_node);
 
+                VkQueryPool first_pool = VK_NULL_HANDLE;
+                EventToStageMap localEventToStageMap;
                 QueryMap localQueryToStateMap;
                 for (auto &function : cb_node->queryUpdates) {
-                    function(nullptr, /*do_validate*/ false, &localQueryToStateMap);
+                    function(nullptr, /*do_validate*/ false, first_pool, perf_pass, &localQueryToStateMap);
                 }
 
                 for (auto queryStatePair : localQueryToStateMap) {
                     queryToStateMap[queryStatePair.first] = queryStatePair.second;
                 }
 
-                EventToStageMap localEventToStageMap;
                 for (auto &function : cb_node->eventUpdates) {
                     function(nullptr, /*do_validate*/ false, &localEventToStageMap);
                 }
@@ -1680,11 +1680,8 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
             }
         }
 
-        const auto perf_submit = lvl_find_in_chain<VkPerformanceQuerySubmitInfoKHR>(submit->pNext);
-
         pQueue->submissions.emplace_back(cbs, semaphore_waits, semaphore_signals, semaphore_externals,
-                                         submit_idx == submitCount - 1 ? fence : (VkFence)VK_NULL_HANDLE,
-                                         perf_submit ? perf_submit->counterPassIndex : 0);
+                                         submit_idx == submitCount - 1 ? fence : (VkFence)VK_NULL_HANDLE, perf_pass);
     }
 
     if (early_retire_seq) {
@@ -3503,27 +3500,22 @@ bool ValidationStateTracker::SetQueryState(QueryObject object, QueryState value,
     return false;
 }
 
-bool ValidationStateTracker::SetQueryStateMulti(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, QueryState value,
-                                                QueryMap *localQueryToStateMap) {
+bool ValidationStateTracker::SetQueryStateMulti(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, uint32_t perfPass,
+                                                QueryState value, QueryMap *localQueryToStateMap) {
     for (uint32_t i = 0; i < queryCount; i++) {
-        QueryObject object = {queryPool, firstQuery + i};
+        QueryObject object = QueryObject(QueryObject(queryPool, firstQuery + i), perfPass);
         (*localQueryToStateMap)[object] = value;
     }
     return false;
 }
 
-QueryState ValidationStateTracker::GetQueryState(const QueryMap *localQueryToStateMap, VkQueryPool queryPool,
-                                                 uint32_t queryIndex) const {
-    QueryObject query = {queryPool, queryIndex};
+QueryState ValidationStateTracker::GetQueryState(const QueryMap *localQueryToStateMap, VkQueryPool queryPool, uint32_t queryIndex,
+                                                 uint32_t perfPass) const {
+    QueryObject query = QueryObject(QueryObject(queryPool, queryIndex), perfPass);
 
-    const std::array<const decltype(queryToStateMap) *, 2> map_list = {{localQueryToStateMap, &queryToStateMap}};
+    auto iter = localQueryToStateMap->find(query);
+    if (iter != localQueryToStateMap->end()) return iter->second;
 
-    for (const auto map : map_list) {
-        auto query_data = map->find(query);
-        if (query_data != map->end()) {
-            return query_data->second;
-        }
-    }
     return QUERYSTATE_UNKNOWN;
 }
 
@@ -3531,11 +3523,12 @@ void ValidationStateTracker::RecordCmdBeginQuery(CMD_BUFFER_STATE *cb_state, con
     if (disabled.query_validation) return;
     cb_state->activeQueries.insert(query_obj);
     cb_state->startedQueries.insert(query_obj);
-    cb_state->queryUpdates.emplace_back(
-        [query_obj](const ValidationStateTracker *device_data, bool do_validate, QueryMap *localQueryToStateMap) {
-            SetQueryState(query_obj, QUERYSTATE_RUNNING, localQueryToStateMap);
-            return false;
-        });
+    cb_state->queryUpdates.emplace_back([query_obj](const ValidationStateTracker *device_data, bool do_validate,
+                                                    VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
+                                                    QueryMap *localQueryToStateMap) {
+        SetQueryState(QueryObject(query_obj, perfQueryPass), QUERYSTATE_RUNNING, localQueryToStateMap);
+        return false;
+    });
     auto pool_state = GetQueryPoolState(query_obj.pool);
     AddCommandBufferBinding(pool_state->cb_bindings, VulkanTypedHandle(query_obj.pool, kVulkanObjectTypeQueryPool, pool_state),
                             cb_state);
@@ -3552,10 +3545,11 @@ void ValidationStateTracker::PostCallRecordCmdBeginQuery(VkCommandBuffer command
 void ValidationStateTracker::RecordCmdEndQuery(CMD_BUFFER_STATE *cb_state, const QueryObject &query_obj) {
     if (disabled.query_validation) return;
     cb_state->activeQueries.erase(query_obj);
-    cb_state->queryUpdates.emplace_back(
-        [query_obj](const ValidationStateTracker *device_data, bool do_validate, QueryMap *localQueryToStateMap) {
-            return SetQueryState(query_obj, QUERYSTATE_ENDED, localQueryToStateMap);
-        });
+    cb_state->queryUpdates.emplace_back([query_obj](const ValidationStateTracker *device_data, bool do_validate,
+                                                    VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
+                                                    QueryMap *localQueryToStateMap) {
+        return SetQueryState(QueryObject(query_obj, perfQueryPass), QUERYSTATE_ENDED, localQueryToStateMap);
+    });
     auto pool_state = GetQueryPoolState(query_obj.pool);
     AddCommandBufferBinding(pool_state->cb_bindings, VulkanTypedHandle(query_obj.pool, kVulkanObjectTypeQueryPool, pool_state),
                             cb_state);
@@ -3579,8 +3573,10 @@ void ValidationStateTracker::PostCallRecordCmdResetQueryPool(VkCommandBuffer com
     }
 
     cb_state->queryUpdates.emplace_back([queryPool, firstQuery, queryCount](const ValidationStateTracker *device_data,
-                                                                            bool do_validate, QueryMap *localQueryToStateMap) {
-        return SetQueryStateMulti(queryPool, firstQuery, queryCount, QUERYSTATE_RESET, localQueryToStateMap);
+                                                                            bool do_validate, VkQueryPool &firstPerfQueryPool,
+                                                                            uint32_t perfQueryPass,
+                                                                            QueryMap *localQueryToStateMap) {
+        return SetQueryStateMulti(queryPool, firstQuery, queryCount, perfQueryPass, QUERYSTATE_RESET, localQueryToStateMap);
     });
     auto pool_state = GetQueryPoolState(queryPool);
     AddCommandBufferBinding(pool_state->cb_bindings, VulkanTypedHandle(queryPool, kVulkanObjectTypeQueryPool, pool_state),
@@ -3608,10 +3604,11 @@ void ValidationStateTracker::PostCallRecordCmdWriteTimestamp(VkCommandBuffer com
     AddCommandBufferBinding(pool_state->cb_bindings, VulkanTypedHandle(queryPool, kVulkanObjectTypeQueryPool, pool_state),
                             cb_state);
     QueryObject query = {queryPool, slot};
-    cb_state->queryUpdates.emplace_back(
-        [query](const ValidationStateTracker *device_data, bool do_validate, QueryMap *localQueryToStateMap) {
-            return SetQueryState(query, QUERYSTATE_ENDED, localQueryToStateMap);
-        });
+    cb_state->queryUpdates.emplace_back([query](const ValidationStateTracker *device_data, bool do_validate,
+                                                VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
+                                                QueryMap *localQueryToStateMap) {
+        return SetQueryState(QueryObject(query, perfQueryPass), QUERYSTATE_ENDED, localQueryToStateMap);
+    });
 }
 
 void ValidationStateTracker::PostCallRecordCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo *pCreateInfo,
@@ -4744,17 +4741,14 @@ void ValidationStateTracker::RecordResetQueryPool(VkDevice device, VkQueryPool q
 
     // Reset the state of existing entries.
     QueryObject query_obj{queryPool, 0};
-    QueryObjectPass query_pass_obj{query_obj, 0};
     const uint32_t max_query_count = std::min(queryCount, query_pool_state->createInfo.queryCount - firstQuery);
     for (uint32_t i = 0; i < max_query_count; ++i) {
         query_obj.query = firstQuery + i;
-        auto query_it = queryToStateMap.find(query_obj);
-        if (query_it != queryToStateMap.end()) query_it->second = QUERYSTATE_RESET;
+        queryToStateMap[query_obj] = QUERYSTATE_RESET;
         if (query_pool_state->createInfo.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
             for (uint32_t passIndex = 0; passIndex < query_pool_state->n_performance_passes; passIndex++) {
-                query_pass_obj.perf_pass = passIndex;
-                auto query_perf_it = queryPassToStateMap.find(query_pass_obj);
-                if (query_perf_it != queryPassToStateMap.end()) query_perf_it->second = QUERYSTATE_RESET;
+                query_obj.perf_pass = passIndex;
+                queryToStateMap[query_obj] = QUERYSTATE_RESET;
             }
         }
     }
