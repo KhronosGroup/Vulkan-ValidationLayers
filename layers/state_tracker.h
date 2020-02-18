@@ -243,7 +243,6 @@ class ValidationStateTracker : public ValidationObject {
 
     std::unordered_set<VkQueue> queues;  // All queues under given device
     QueryMap queryToStateMap;
-    QueryPassMap queryPassToStateMap;
     unordered_map<VkSamplerYcbcrConversion, uint64_t> ycbcr_conversion_ahb_fmt_map;
 
     // Traits for State function resolution.  Specializations defined in the macro.
@@ -1107,9 +1106,10 @@ class ValidationStateTracker : public ValidationObject {
     void SetMemBinding(VkDeviceMemory mem, BINDABLE* mem_binding, VkDeviceSize memory_offset,
                        const VulkanTypedHandle& typed_handle);
     static bool SetQueryState(QueryObject object, QueryState value, QueryMap* localQueryToStateMap);
-    static bool SetQueryStateMulti(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, QueryState value,
-                                   QueryMap* localQueryToStateMap);
-    QueryState GetQueryState(const QueryMap* localQueryToStateMap, VkQueryPool queryPool, uint32_t queryIndex) const;
+    static bool SetQueryStateMulti(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, uint32_t perfPass,
+                                   QueryState value, QueryMap* localQueryToStateMap);
+    QueryState GetQueryState(const QueryMap* localQueryToStateMap, VkQueryPool queryPool, uint32_t queryIndex,
+                             uint32_t perfPass) const;
     bool SetSparseMemBinding(const VkDeviceMemory mem, const VkDeviceSize mem_offset, const VkDeviceSize mem_size,
                              const VulkanTypedHandle& typed_handle);
     void UpdateBindBufferMemoryState(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset);
