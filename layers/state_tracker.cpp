@@ -1952,9 +1952,9 @@ void ValidationStateTracker::InsertMemoryRange(const VulkanTypedHandle &typed_ha
     if (typed_handle.type == kVulkanObjectTypeImage) {
         mem_info->bound_images.insert(typed_handle.Cast<VkImage>());
     } else if (typed_handle.type == kVulkanObjectTypeBuffer) {
-        mem_info->bound_buffers.insert(typed_handle.handle);
+        mem_info->bound_buffers.insert(typed_handle.Cast<VkBuffer>());
     } else if (typed_handle.type == kVulkanObjectTypeAccelerationStructureNV) {
-        mem_info->bound_acceleration_structures.insert(typed_handle.handle);
+        mem_info->bound_acceleration_structures.insert(typed_handle.Cast<VkAccelerationStructureNV>());
     } else {
         // Unsupported object type
         assert(false);
@@ -1981,9 +1981,9 @@ static void RemoveMemoryRange(const VulkanTypedHandle &typed_handle, DEVICE_MEMO
     if (typed_handle.type == kVulkanObjectTypeImage) {
         mem_info->bound_images.erase(typed_handle.Cast<VkImage>());
     } else if (typed_handle.type == kVulkanObjectTypeBuffer) {
-        mem_info->bound_buffers.erase(typed_handle.handle);
+        mem_info->bound_buffers.erase(typed_handle.Cast<VkBuffer>());
     } else if (typed_handle.type == kVulkanObjectTypeAccelerationStructureNV) {
-        mem_info->bound_acceleration_structures.erase(typed_handle.handle);
+        mem_info->bound_acceleration_structures.erase(typed_handle.Cast<VkAccelerationStructureNV>());
     } else {
         // Unsupported object type
         assert(false);
