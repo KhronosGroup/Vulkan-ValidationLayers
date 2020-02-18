@@ -219,9 +219,6 @@ using std::unordered_map;
 #define VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(handle_type, state_type, map_member) \
     VALSTATETRACK_MAP_AND_TRAITS_IMPL(handle_type, state_type, map_member, true)
 
-// A special memory handle used to flag object as unbound from memory
-static const VkDeviceMemory MEMORY_UNBOUND = VkDeviceMemory(~((uint64_t)(0)) - 1);
-
 static std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> GetDslFromPipelineLayout(
     PIPELINE_LAYOUT_STATE const* layout_data, uint32_t set) {
     std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> dsl = nullptr;

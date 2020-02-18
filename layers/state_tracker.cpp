@@ -1688,7 +1688,6 @@ void ValidationStateTracker::PreCallRecordFreeMemory(VkDevice device, VkDeviceMe
         }
 
         if (bindable_state) {
-            bindable_state->binding.mem = MEMORY_UNBOUND;
             bindable_state->UpdateBoundMemorySet();
         }
     }
