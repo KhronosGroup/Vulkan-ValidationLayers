@@ -1118,6 +1118,7 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::vector<VkEvent> events;
     std::unordered_set<QueryObject> activeQueries;
     std::unordered_set<QueryObject> startedQueries;
+    std::unordered_set<QueryObject> resetQueries;
     CommandBufferImageLayoutMap image_layout_map;
     CBVertexBufferBindingInfo current_vertex_buffer_binding_info;
     bool vertex_buffer_used;  // Track for perf warning to make sure any bound vtx buffer used

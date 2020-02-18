@@ -3573,6 +3573,11 @@ void ValidationStateTracker::PostCallRecordCmdResetQueryPool(VkCommandBuffer com
     if (disabled.query_validation) return;
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
 
+    for (uint32_t slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
+        QueryObject query = {queryPool, slot};
+        cb_state->resetQueries.insert(query);
+    }
+
     cb_state->queryUpdates.emplace_back([queryPool, firstQuery, queryCount](const ValidationStateTracker *device_data,
                                                                             bool do_validate, QueryMap *localQueryToStateMap) {
         return SetQueryStateMulti(queryPool, firstQuery, queryCount, QUERYSTATE_RESET, localQueryToStateMap);
