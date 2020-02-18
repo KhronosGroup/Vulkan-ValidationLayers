@@ -1414,7 +1414,7 @@ TEST_F(VkPositiveLayerTest, ShaderNonSemanticInfo) {
     TEST_DESCRIPTION("Create a shader that uses SPV_KHR_non_semantic_info.");
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
 
-    // Check for the Scalar Block Layout extension and turn it on if it's available
+    // Check for the extension and turn it on if it's available
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
         printf("%s Extension %s not supported, skipping this pass. \n", kSkipPrefix,
                VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);

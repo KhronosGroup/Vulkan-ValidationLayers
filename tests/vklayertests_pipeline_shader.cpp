@@ -5673,6 +5673,13 @@ TEST_F(VkLayerTest, NonSemanticInfoEnabled) {
     TEST_DESCRIPTION("Test VK_KHR_shader_non_semantic_info.");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+
+    if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
+        printf("%s Extension %s not supported, skipping this test. \n", kSkipPrefix,
+               VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+        return;
+    }
+
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     std::vector<VkDescriptorSetLayoutBinding> bindings(0);
