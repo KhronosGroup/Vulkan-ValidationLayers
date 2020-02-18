@@ -179,7 +179,7 @@ bool CoreChecks::VerifyBoundMemoryIsValid(VkDeviceMemory mem, const T1 object, c
         result =
             LogError(object, error_code, "%s: %s used with no memory bound. Memory should be bound by calling vkBind%sMemory().",
                      api_name, report_data->FormatHandle(typed_handle).c_str(), type_name + 2);
-    } else if (MEMORY_UNBOUND == mem) {
+    } else if (mem_state->destroyed) {
         result = LogError(object, error_code,
                           "%s: %s used with no memory bound and previously bound memory was freed. Memory must not be freed "
                           "prior to this operation.",
@@ -264,21 +264,25 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHand
         if (mem_info) {
             const DEVICE_MEMORY_STATE *prev_binding = mem_binding->binding.mem_state.get();
             if (prev_binding) {
-                const char *error_code = "VUID-vkBindImageMemory-image-01044";
-                if (typed_handle.type == kVulkanObjectTypeBuffer) {
-                    error_code = "VUID-vkBindBufferMemory-buffer-01029";
-                } else {
-                    assert(typed_handle.type == kVulkanObjectTypeImage);
-                }
-                skip |= LogError(mem, error_code, "In %s, attempting to bind %s to %s which has already been bound to %s.", apiName,
+                if (!prev_binding->destroyed) {
+                    const char *error_code = "VUID-vkBindImageMemory-image-01044";
+                    if (typed_handle.type == kVulkanObjectTypeBuffer) {
+                        error_code = "VUID-vkBindBufferMemory-buffer-01029";
+                    } else {
+                        assert(typed_handle.type == kVulkanObjectTypeImage);
+                    }
+                    skip |=
+                        LogError(mem, error_code, "In %s, attempting to bind %s to %s which has already been bound to %s.", apiName,
                                  report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(typed_handle).c_str(),
                                  report_data->FormatHandle(prev_binding->mem).c_str());
-            } else if (mem_binding->binding.mem == MEMORY_UNBOUND) {
-                skip |= LogError(mem, kVUID_Core_MemTrack_RebindObject,
+                } else {
+                    skip |=
+                        LogError(mem, kVUID_Core_MemTrack_RebindObject,
                                  "In %s, attempting to bind %s to %s which was previous bound to memory that has "
                                  "since been freed. Memory bindings are immutable in "
                                  "Vulkan so this attempt to bind to new memory is not allowed.",
                                  apiName, report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(typed_handle).c_str());
+                }
             }
         }
     }
