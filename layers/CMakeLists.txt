@@ -74,8 +74,7 @@ if(BUILD_LAYER_SUPPORT_FILES)
 endif()
 
 set(TARGET_NAMES
-    VkLayer_khronos_validation
-    VkLayer_standard_validation)
+    VkLayer_khronos_validation)
 
 if(BUILD_LAYERS)
     # Install the layer json files
