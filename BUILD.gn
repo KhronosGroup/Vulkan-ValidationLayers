@@ -168,7 +168,6 @@ if (!is_android) {
       ":vulkan_clean_old_validation_layer_objects",
     ]
     json_names = [
-      "VkLayer_standard_validation.json",
       "VkLayer_khronos_validation.json",
     ]
     sources = [
