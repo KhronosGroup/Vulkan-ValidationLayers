@@ -212,34 +212,15 @@ VkImageSubresourceRange NormalizeSubresourceRange(const IMAGE_STATE &image_state
     return NormalizeSubresourceRange(image_create_info, range);
 }
 
-template <class OBJECT, class LAYOUT>
-void CoreChecks::SetLayout(OBJECT *pObject, VkImage image, const VkImageSubresource &subresource, const LAYOUT &layout) {
-    SetLayout(pObject, image, subresource, layout, VK_IMAGE_ASPECT_COLOR_BIT);
-    SetLayout(pObject, image, subresource, layout, VK_IMAGE_ASPECT_DEPTH_BIT);
-    SetLayout(pObject, image, subresource, layout, VK_IMAGE_ASPECT_STENCIL_BIT);
-    SetLayout(pObject, image, subresource, layout, VK_IMAGE_ASPECT_METADATA_BIT);
-    if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
-        SetLayout(pObject, image, subresource, layout, VK_IMAGE_ASPECT_PLANE_0_BIT_KHR);
-        SetLayout(pObject, image, subresource, layout, VK_IMAGE_ASPECT_PLANE_1_BIT_KHR);
-        SetLayout(pObject, image, subresource, layout, VK_IMAGE_ASPECT_PLANE_2_BIT_KHR);
-    }
-}
-
-template <class OBJECT, class LAYOUT>
-void CoreChecks::SetLayout(OBJECT *pObject, const VkImage image, VkImageSubresource subresource, const LAYOUT &layout,
-                           VkImageAspectFlags aspectMask) {
-    if (subresource.aspectMask & aspectMask) {
-        subresource.aspectMask = aspectMask;
-        SetLayout(pObject, image, subresource, layout);
-    }
-}
-
 bool CoreChecks::FindLayouts(VkImage image, std::vector<VkImageLayout> &layouts) const {
     auto image_state = GetImageState(image);
     if (!image_state) return false;
 
     const auto *layout_range_map = GetLayoutRangeMap(imageLayoutMap, image);
     if (!layout_range_map) return false;
+    // TODO: FindLayouts function should mutate into a ValidatePresentableLayout with the loop wrapping the LogError
+    //       from the caller. You can then use decode to add the subresource of the range::begin to the error message.
+
     // TODO: what is this test and what is it supposed to do?! -- the logic doesn't match the comment below?!
 
     // TODO: Make this robust for >1 aspect mask. Now it will just say ignore potential errors in this case.
@@ -3358,13 +3339,12 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const G
         sparse_container::parallel_iterator<const ImageSubresourceLayoutMap::LayoutMap> current_layout(*overlay_map, *global_map,
                                                                                                        pos->first.begin);
         while (pos != end) {
-            VkImageLayout initial_layout = pos->second;  // Point directly into the RangeMap iterated but the view
+            VkImageLayout initial_layout = pos->second;
             VkImageLayout image_layout = kInvalidLayout;
-            // current_layout.seek(pos->first.begin);
             if (current_layout->range.empty()) break;  // When we are past the end of data in overlay and global... stop looking
-            if (current_layout->pos_A->valid) {
+            if (current_layout->pos_A->valid) {        // pos_A denotes the overlay map in the parallel iterator
                 image_layout = current_layout->pos_A->lower_bound->second;
-            } else if (current_layout->pos_B->valid) {
+            } else if (current_layout->pos_B->valid) {  // pos_B denotes the global map in the parallel iterator
                 image_layout = current_layout->pos_B->lower_bound->second;
             }
             const auto intersected_range = pos->first & current_layout->range;
@@ -3400,7 +3380,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const G
             }
         }
 
-        // Update all layout set operations (which will be a subset of the initial_layouts
+        // Update all layout set operations (which will be a subset of the initial_layouts)
         sparse_container::splice(overlay_map, subres_map->GetCurrentLayoutMap(), sparse_container::value_precedence::prefer_source);
     }
 
