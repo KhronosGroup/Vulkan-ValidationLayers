@@ -30,6 +30,49 @@ void VkBestPracticesLayerTest::InitBestPracticesFramework() {
     InitFramework(myDbgFunc, m_errorMonitor, &features);
 }
 
+TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtension) {
+    TEST_DESCRIPTION("Create an instance with a deprecated extension.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find %s extension, skipped.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT, "Attempting to enable Deprecated Extension");
+    InitBestPracticesFramework();
+    m_errorMonitor->VerifyFound();
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+        return;
+    }
+
+    VkDevice local_device;
+    VkDeviceCreateInfo dev_info = {};
+    VkDeviceQueueCreateInfo queue_info = {};
+    queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queue_info.pNext = NULL;
+    queue_info.queueFamilyIndex = 0;
+    queue_info.queueCount = 1;
+    queue_info.pQueuePriorities = nullptr;
+    dev_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    dev_info.pNext = nullptr;
+    dev_info.queueCreateInfoCount = 1;
+    dev_info.pQueueCreateInfos = &queue_info;
+    dev_info.enabledLayerCount = 0;
+    dev_info.ppEnabledLayerNames = NULL;
+    dev_info.enabledExtensionCount = m_device_extension_names.size();
+    dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT, "Attempting to enable Deprecated Extension");
+    vk::CreateDevice(this->gpu(), &dev_info, NULL, &local_device);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTest) {
     TEST_DESCRIPTION("Test for validating usage of vkCmdClearAttachments");
 
