@@ -2899,7 +2899,7 @@ TEST_F(VkLayerTest, ThreadUpdateDescriptorCollision) {
     TEST_DESCRIPTION("Two threads updating the same descriptor set, expected to generate a threading error");
     test_platform_thread thread;
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "THREADING ERROR");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "THREADING ERROR : vkUpdateDescriptorSets");
     m_errorMonitor->SetAllowedFailureMsg("THREADING ERROR");  // Ignore any extra threading errors found beyond the first one
 
     ASSERT_NO_FATAL_FAILURE(Init());
