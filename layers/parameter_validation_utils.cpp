@@ -799,8 +799,7 @@ bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewp
 
     // height
     bool height_healthy = true;
-    const bool negative_height_enabled = api_version >= VK_API_VERSION_1_1 || device_extensions.vk_khr_maintenance1 ||
-                                         device_extensions.vk_amd_negative_viewport_height;
+    const bool negative_height_enabled = device_extensions.vk_khr_maintenance1 || device_extensions.vk_amd_negative_viewport_height;
     const auto max_h = device_limits.maxViewportDimensions[1];
 
     if (!negative_height_enabled && !(viewport.height > 0.0f)) {
