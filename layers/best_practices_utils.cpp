@@ -17,7 +17,7 @@
  * Author: Camden Stocker <camden@lunarg.com>
  */
 
-#include "best_practices.h"
+#include "best_practices_validation.h"
 #include "layer_chassis_dispatch.h"
 #include "best_practices_error_enums.h"
 
