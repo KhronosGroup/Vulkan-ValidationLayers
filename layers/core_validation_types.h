@@ -546,12 +546,34 @@ struct DAGNode {
     std::vector<uint32_t> next;
 };
 
+struct SubpassDependencyGraphNode {
+    uint32_t pass;
+    struct Dependency {
+        const VkSubpassDependency2 *dependency;
+        const SubpassDependencyGraphNode *node;
+        Dependency() = default;
+        Dependency(const VkSubpassDependency2 *dependency_, const SubpassDependencyGraphNode *node_)
+            : dependency(dependency_), node(node_) {}
+    };
+    std::vector<Dependency> prev;
+    std::vector<Dependency> next;
+    std::vector<uint32_t> async;  // asynchronous subpasses with a lower subpass index
+
+    const VkSubpassDependency2 *barrier_from_external;
+    const VkSubpassDependency2 *barrier_to_external;
+    std::unique_ptr<VkSubpassDependency2> implicit_barrier_from_external;
+    std::unique_ptr<VkSubpassDependency2> implicit_barrier_to_external;
+};
+
 struct RENDER_PASS_STATE : public BASE_NODE {
     VkRenderPass renderPass;
     safe_VkRenderPassCreateInfo2 createInfo;
     std::vector<std::vector<uint32_t>> self_dependencies;
     std::vector<DAGNode> subpassToNode;
     std::unordered_map<uint32_t, bool> attachment_first_read;
+    std::vector<uint32_t> attachment_first_subpass;
+    std::vector<uint32_t> attachment_last_subpass;
+    std::vector<SubpassDependencyGraphNode> subpass_dependencies;
 
     RENDER_PASS_STATE(VkRenderPassCreateInfo2KHR const *pCreateInfo) : createInfo(pCreateInfo) {}
     RENDER_PASS_STATE(VkRenderPassCreateInfo const *pCreateInfo) {
