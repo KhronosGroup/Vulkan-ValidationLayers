@@ -455,7 +455,8 @@ class HelperFileOutputGenerator(OutputGenerator):
                         member_index = next((i for i, v in enumerate(self.structMembers) if v[0] == member.type), None)
                         if member_index is not None and self.NeedSafeStruct(self.structMembers[member_index]) == True:
                             if member.ispointer:
-                                safe_struct_header += '    safe_%s* %s;\n' % (member.type, member.name)
+                                num_indirections = member.cdecl.count('*')
+                                safe_struct_header += '    safe_%s%s %s;\n' % (member.type, '*' * num_indirections, member.name)
                             else:
                                 safe_struct_header += '    safe_%s %s;\n' % (member.type, member.name)
                             continue
@@ -1237,6 +1238,21 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '            pImmutableSamplers[i] = in_struct->pImmutableSamplers[i];\n'
                     '        }\n'
                     '    }\n',
+                #VkAccelerationStructureBuildGeometryInfoKHR is a special case because geometryArrayOfPointers changes the interpretation of ppGeometries
+                'VkAccelerationStructureBuildGeometryInfoKHR':
+                    '    if (geometryCount && in_struct->ppGeometries) {\n'
+                    '        if (geometryArrayOfPointers) {\n'
+                    '            ppGeometries = new safe_VkAccelerationStructureGeometryKHR *[geometryCount];\n'
+                    '            for (uint32_t i = 0; i < geometryCount; ++i) {\n'
+                    '                ppGeometries[i] = new safe_VkAccelerationStructureGeometryKHR(in_struct->ppGeometries[i]);\n'
+                    '            }\n'
+                    '        } else {\n'
+                    '            ppGeometries = new safe_VkAccelerationStructureGeometryKHR *(new safe_VkAccelerationStructureGeometryKHR[geometryCount]);\n'
+                    '            for (uint32_t i = 0; i < geometryCount; ++i) {\n'
+                    '                (*ppGeometries)[i] = safe_VkAccelerationStructureGeometryKHR(&(*in_struct->ppGeometries)[i]);\n'
+                    '            }\n'
+                    '        }\n'
+                    '    }\n',
             }
 
             custom_copy_txt = {
@@ -1306,11 +1322,40 @@ class HelperFileOutputGenerator(OutputGenerator):
                     '    }\n'
                     '    else\n'
                     '        pScissors = NULL;\n',
+                #VkAccelerationStructureBuildGeometryInfoKHR is a special case because geometryArrayOfPointers changes the interpretation of ppGeometries
+                'VkAccelerationStructureBuildGeometryInfoKHR':
+                    '    if (geometryCount && copy_src.ppGeometries) {\n'
+                    '        if (geometryArrayOfPointers) {\n'
+                    '            ppGeometries = new safe_VkAccelerationStructureGeometryKHR *[geometryCount];\n'
+                    '            for (uint32_t i = 0; i < geometryCount; ++i) {\n'
+                    '                ppGeometries[i] = new safe_VkAccelerationStructureGeometryKHR(*copy_src.ppGeometries[i]);\n'
+                    '            }\n'
+                    '        } else {\n'
+                    '            ppGeometries = new safe_VkAccelerationStructureGeometryKHR *(new safe_VkAccelerationStructureGeometryKHR[geometryCount]);\n'
+                    '            for (uint32_t i = 0; i < geometryCount; ++i) {\n'
+                    '                (*ppGeometries)[i] = safe_VkAccelerationStructureGeometryKHR((*copy_src.ppGeometries)[i]);\n'
+                    '            }\n'
+                    '        }\n'
+                    '    }\n',
             }
 
-            custom_destruct_txt = {'VkShaderModuleCreateInfo' :
-                                   '    if (pCode)\n'
-                                   '        delete[] reinterpret_cast<const uint8_t *>(pCode);\n' }
+            custom_destruct_txt = {
+                'VkShaderModuleCreateInfo' :
+                    '    if (pCode)\n'
+                    '        delete[] reinterpret_cast<const uint8_t *>(pCode);\n',
+                'VkAccelerationStructureBuildGeometryInfoKHR' :
+                    '    if (ppGeometries) {\n'
+                    '        if (geometryArrayOfPointers) {\n'
+                    '            for (uint32_t i = 0; i < geometryCount; ++i) {\n'
+                    '                delete ppGeometries[i];\n'
+                    '            }\n'
+                    '            delete[] ppGeometries;\n'
+                    '        } else {\n'
+                    '            delete[] *ppGeometries;\n'
+                    '            delete ppGeometries;\n'
+                    '        }\n'
+                    '    }\n',
+            }
             copy_pnext = ''
             copy_strings = ''
             for member in item.members:
