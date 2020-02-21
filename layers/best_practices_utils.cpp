@@ -336,9 +336,28 @@ void BestPractices::PostCallRecordAllocateMemory(VkDevice device, const VkMemory
                                                  const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
                                                  VkResult result) {
     ValidationStateTracker::PostCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, result);
+    if (result != VK_SUCCESS) {
+        static std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY,
+                                                    VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_INVALID_EXTERNAL_HANDLE,
+                                                    VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR};
+        static std::vector<VkResult> success_codes = {};
+        ValidateReturnCodes("vkReleaseFullScreenExclusiveModeEXT", result, error_codes, success_codes);
+        return;
+    }
+    num_mem_objects++;
+}
 
-    if (VK_SUCCESS == result) {
-        num_mem_objects++;
+void BestPractices::ValidateReturnCodes(const char* api_name, VkResult result, const std::vector<VkResult>& success_codes,
+                                        const std::vector<VkResult>& error_codes) const {
+    auto error = std::find(error_codes.begin(), error_codes.end(), result);
+    if (error != error_codes.end()) {
+        LogWarning(instance, kVUID_BestPractices_NonSuccess_Result, "%s(): Returned error %s.", api_name, string_VkResult(result));
+        return;
+    }
+    auto success = std::find(success_codes.begin(), success_codes.end(), result);
+    if (success != success_codes.end()) {
+        LogWarning(instance, kVUID_BestPractices_Error_Result, "%s(): Returned non-success return code %s.", api_name,
+                   string_VkResult(result));
     }
 }
 
@@ -1025,7 +1044,13 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
 
 void BestPractices::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
                                                   VkFence fence, VkResult result) {
-    if (result != VK_SUCCESS) return;
+    if (result != VK_SUCCESS) {
+        static std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY,
+                                                    VK_ERROR_DEVICE_LOST};
+        static std::vector<VkResult> success_codes = {};
+        ValidateReturnCodes("vkReleaseFullScreenExclusiveModeEXT", result, error_codes, success_codes);
+        return;
+    }
 
     for (uint32_t bindIdx = 0; bindIdx < bindInfoCount; bindIdx++) {
         const VkBindSparseInfo& bindInfo = pBindInfo[bindIdx];

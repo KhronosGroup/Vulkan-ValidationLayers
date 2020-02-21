@@ -225,6 +225,11 @@ class BestPractices : public ValidationStateTracker {
     bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                             const VkClearAttachment* pAttachments, uint32_t rectCount,
                                             const VkClearRect* pRects) const;
+    void ValidateReturnCodes(const char* api_name, VkResult result, const std::vector<VkResult>& success_codes,
+                             const std::vector<VkResult>& error_codes) const;
+
+// Include code-generated functions
+#include "best_practices.h"
 
   private:
     uint32_t instance_api_version;
