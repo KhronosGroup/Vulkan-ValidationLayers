@@ -88,5 +88,7 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelines_TooManyIn
     "UNASSIGNED-BestPractices-vkCreateGraphicsPipelines-too-many-instanced-vertex-buffers";
 static const char DECORATE_UNUSED *kVUID_BestPractices_ClearAttachments_ClearAfterLoad =
     "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load";
+static const char DECORATE_UNUSED *kVUID_BestPractices_Error_Result = "UNASSIGNED-BestPractices-Error-Result";
+static const char DECORATE_UNUSED *kVUID_BestPractices_NonSuccess_Result = "UNASSIGNED-BestPractices-NonSuccess-Result";
 
 #endif

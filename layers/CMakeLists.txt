@@ -194,6 +194,8 @@ set(STATELESS_VALIDATION_LIBRARY_FILES
 
 set(BEST_PRACTICES_LIBRARY_FILES
     best_practices_utils.cpp
+    generated/best_practices.cpp
+    generated/best_practices.h
     best_practices_validation.h)
 
 set(GPU_ASSISTED_LIBRARY_FILES
