@@ -3916,19 +3916,59 @@ void ValidationStateTracker::RecordRenderPassDAG(RenderPassCreateVersion rp_vers
     subpass_to_node.resize(pCreateInfo->subpassCount);
     auto &self_dependencies = render_pass->self_dependencies;
     self_dependencies.resize(pCreateInfo->subpassCount);
+    auto &subpass_dependencies = render_pass->subpass_dependencies;
+    subpass_dependencies.resize(pCreateInfo->subpassCount);
 
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
         subpass_to_node[i].pass = i;
         self_dependencies[i].clear();
+        subpass_dependencies[i].pass = i;
     }
     for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
         const VkSubpassDependency2KHR &dependency = pCreateInfo->pDependencies[i];
+        const auto srcSubpass = dependency.srcSubpass;
+        const auto dstSubpass = dependency.dstSubpass;
         if ((dependency.srcSubpass != VK_SUBPASS_EXTERNAL) && (dependency.dstSubpass != VK_SUBPASS_EXTERNAL)) {
             if (dependency.srcSubpass == dependency.dstSubpass) {
                 self_dependencies[dependency.srcSubpass].push_back(i);
             } else {
                 subpass_to_node[dependency.dstSubpass].prev.push_back(dependency.srcSubpass);
                 subpass_to_node[dependency.srcSubpass].next.push_back(dependency.dstSubpass);
+            }
+        }
+        if (srcSubpass == VK_SUBPASS_EXTERNAL) {
+            assert(dstSubpass != VK_SUBPASS_EXTERNAL);  // this is invalid per VUID-VkSubpassDependency-srcSubpass-00865
+            subpass_dependencies[dstSubpass].barrier_from_external = &dependency;
+        } else if (dstSubpass == VK_SUBPASS_EXTERNAL) {
+            subpass_dependencies[srcSubpass].barrier_to_external = &dependency;
+        } else if (dependency.srcSubpass != dependency.dstSubpass) {
+            // ignore self dependencies in prev and next
+            subpass_dependencies[srcSubpass].next.emplace_back(&dependency, &subpass_dependencies[dstSubpass]);
+            subpass_dependencies[dstSubpass].prev.emplace_back(&dependency, &subpass_dependencies[srcSubpass]);
+        }
+    }
+
+    //
+    // Determine "asynchrononous" subpassess
+    // syncronization is only interested in asyncronous stages *earlier* that the current one... so we'll only look towards those.
+    // NOTE: This is O(N^3), which we could shrink to O(N^2logN) using sets instead of arrays, but given that N is likely to be
+    // small and the K for |= from the prev is must less than for set, we'll accept the brute force.
+    std::vector<std::vector<bool>> pass_depends(pCreateInfo->subpassCount);
+    for (uint32_t i = 1; i < pCreateInfo->subpassCount; ++i) {
+        auto &depends = pass_depends[i];
+        depends.resize(i);
+        auto &subpass_dep = subpass_dependencies[i];
+        for (const auto &prev : subpass_dep.prev) {
+            const auto prev_pass = prev.node->pass;
+            const auto &prev_depends = pass_depends[prev_pass];
+            for (uint32_t j = 0; j < prev_pass; j++) {
+                depends[j] = depends[j] | prev_depends[j];
+            }
+            depends[prev_pass] = true;
+        }
+        for (uint32_t pass = 0; pass < subpass_dep.pass; pass++) {
+            if (!depends[pass]) {
+                subpass_dep.async.push_back(pass);
             }
         }
     }
@@ -3940,6 +3980,38 @@ static void MarkAttachmentFirstUse(RENDER_PASS_STATE *render_pass, uint32_t inde
     if (!render_pass->attachment_first_read.count(index)) render_pass->attachment_first_read[index] = is_read;
 }
 
+static VkSubpassDependency2 ImplicitDependencyFromExternal(uint32_t subpass) {
+    VkSubpassDependency2 from_external = {VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
+                                          nullptr,
+                                          VK_SUBPASS_EXTERNAL,
+                                          subpass,
+                                          VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                          VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                                          0,
+                                          VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                              VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                              VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                                          0,
+                                          0};
+    return from_external;
+}
+
+static VkSubpassDependency2 ImplicitDependencyToExternal(uint32_t subpass) {
+    VkSubpassDependency2 to_external = {VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
+                                        nullptr,
+                                        subpass,
+                                        VK_SUBPASS_EXTERNAL,
+                                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                                        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                                        VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                                        0,
+                                        0,
+                                        0};
+    return to_external;
+}
+
 void ValidationStateTracker::RecordCreateRenderPassState(RenderPassCreateVersion rp_version,
                                                          std::shared_ptr<RENDER_PASS_STATE> &render_pass,
                                                          VkRenderPass *pRenderPass) {
@@ -3948,21 +4020,65 @@ void ValidationStateTracker::RecordCreateRenderPassState(RenderPassCreateVersion
 
     RecordRenderPassDAG(RENDER_PASS_VERSION_1, create_info, render_pass.get());
 
+    const auto attachment_count = create_info->attachmentCount;
+    auto &first = render_pass->attachment_first_subpass;
+    auto &last = render_pass->attachment_last_subpass;
+    first.resize(attachment_count, VK_SUBPASS_EXTERNAL);
+    last.resize(attachment_count, VK_SUBPASS_EXTERNAL);
+    auto update_first_last = [&first, &last](uint32_t subpass, uint32_t attachment) {
+        if (attachment != VK_ATTACHMENT_UNUSED) {
+            if (first[attachment] == VK_SUBPASS_EXTERNAL) first[attachment] = subpass;
+            last[attachment] = subpass;
+        }
+    };
+
     for (uint32_t i = 0; i < create_info->subpassCount; ++i) {
         const VkSubpassDescription2KHR &subpass = create_info->pSubpasses[i];
         for (uint32_t j = 0; j < subpass.colorAttachmentCount; ++j) {
-            MarkAttachmentFirstUse(render_pass.get(), subpass.pColorAttachments[j].attachment, false);
+            const auto attachment = subpass.pColorAttachments[j].attachment;
+            MarkAttachmentFirstUse(render_pass.get(), attachment, false);
+            update_first_last(i, attachment);
 
             // resolve attachments are considered to be written
             if (subpass.pResolveAttachments) {
-                MarkAttachmentFirstUse(render_pass.get(), subpass.pResolveAttachments[j].attachment, false);
+                const auto resolve_attachment = subpass.pResolveAttachments[j].attachment;
+                MarkAttachmentFirstUse(render_pass.get(), resolve_attachment, false);
+                update_first_last(i, resolve_attachment);
             }
         }
         if (subpass.pDepthStencilAttachment) {
-            MarkAttachmentFirstUse(render_pass.get(), subpass.pDepthStencilAttachment->attachment, false);
+            const auto attachment = subpass.pDepthStencilAttachment->attachment;
+            MarkAttachmentFirstUse(render_pass.get(), attachment, false);
+            update_first_last(i, attachment);
         }
         for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
-            MarkAttachmentFirstUse(render_pass.get(), subpass.pInputAttachments[j].attachment, true);
+            const auto attachment = subpass.pInputAttachments[j].attachment;
+            MarkAttachmentFirstUse(render_pass.get(), attachment, true);
+            update_first_last(i, attachment);
+        }
+    }
+
+    // Add implicit depenedencies
+    for (uint32_t attachment = 0; attachment < attachment_count; attachment++) {
+        const auto first_use = first[attachment];
+        if (first_use != VK_SUBPASS_EXTERNAL) {
+            auto &subpass_dep = render_pass->subpass_dependencies[first_use];
+            if (!subpass_dep.barrier_from_external) {
+                // Add implicit from barrier
+                subpass_dep.implicit_barrier_from_external.reset(
+                    new VkSubpassDependency2(ImplicitDependencyFromExternal(first_use)));
+                subpass_dep.barrier_from_external = subpass_dep.implicit_barrier_from_external.get();
+            }
+        }
+
+        const auto last_use = last[attachment];
+        if (last_use != VK_SUBPASS_EXTERNAL) {
+            auto &subpass_dep = render_pass->subpass_dependencies[last_use];
+            if (!render_pass->subpass_dependencies[last_use].barrier_to_external) {
+                // Add implicit to barrier
+                subpass_dep.implicit_barrier_to_external.reset(new VkSubpassDependency2(ImplicitDependencyToExternal(last_use)));
+                subpass_dep.barrier_to_external = subpass_dep.implicit_barrier_to_external.get();
+            }
         }
     }
 
