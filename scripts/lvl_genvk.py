@@ -645,6 +645,53 @@ def makeGenOpts(args):
             lvt_file_type  = 'function_pointer_source')
         ]
 
+    # Options for best practices code-generated source
+    genOpts['best_practices.cpp'] = [
+          BestPracticesOutputGenerator,
+          BestPracticesOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'best_practices.cpp',
+            directory         = directory,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            protectFeature    = False,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants  = False)
+        ]
+
+    # Options for best_practices code-generated header
+    genOpts['best_practices.h'] = [
+          BestPracticesOutputGenerator,
+          BestPracticesOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'best_practices.h',
+            directory         = directory,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            protectFeature    = False,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants  = False)
+        ]
 
 # Generate a target based on the options in the matching genOpts{} object.
 # This is encapsulated in a function so it can be profiled and/or timed.
@@ -770,6 +817,7 @@ if __name__ == '__main__':
     from layer_chassis_dispatch_generator import LayerChassisDispatchOutputGenerator, LayerChassisDispatchGeneratorOptions
     from lvt_file_generator import LvtFileOutputGenerator, LvtFileOutputGeneratorOptions
     from command_counter_generator import CommandCounterOutputGenerator, CommandCounterOutputGeneratorOptions
+    from best_practices_generator import BestPracticesOutputGenerator, BestPracticesOutputGeneratorOptions
 
     # Temporary workaround for vkconventions python2 compatibility
     import abc; abc.ABC = abc.ABCMeta('ABC', (object,), {})
