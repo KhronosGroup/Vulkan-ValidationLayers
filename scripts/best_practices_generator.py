@@ -90,6 +90,8 @@ class BestPracticesOutputGenerator(OutputGenerator):
             "vkAllocateDescriptorSets",
             "vkCreateRayTracingPipelinesNV",
             ]
+
+        self.extension_info = dict()
     #
     # Separate content for validation source and header files
     def otwrite(self, dest, formatstring):
@@ -156,12 +158,36 @@ class BestPracticesOutputGenerator(OutputGenerator):
                 self.otwrite('both', prot)
             else:
                 self.otwrite('both', '\n')
+            ext_deprecation_data = 'const std::unordered_map<std::string, DeprecationData>  deprecated_extensions = {\n'
+            for ext in sorted(self.extension_info):
+                if "VK_EXT_debug_report" in ext:
+                    ext_deprecation_data += '// ADD BACK AFTER LAYER TESTS SWITCH TO DEBUG_UTILS!   '
+                ext_data = self.extension_info[ext]
+                ext_deprecation_data += '    {"%s", {kExt%s, "%s"}},\n' % (ext, ext_data[0], ext_data[1])
+            ext_deprecation_data += '};\n'
+            self.otwrite('hdr', ext_deprecation_data)
         OutputGenerator.endFile(self)
     #
     # Processing point at beginning of each extension definition
     def beginFeature(self, interface, emit):
         OutputGenerator.beginFeature(self, interface, emit)
         self.featureExtraProtect = GetFeatureProtect(interface)
+        ext_name = interface.attrib.get('name')
+        ext_promoted = (interface.attrib.get('promotedto'))
+        ext_obsoleted = interface.attrib.get('obsoletedby')
+        ext_deprecated = interface.attrib.get('deprecatedby')
+        if ext_promoted is not None:
+           reason = 'Promoted'
+           target = ext_promoted
+        elif ext_obsoleted is not None:
+           reason = 'Obsoleted'
+           target = ext_obsoleted
+        elif ext_deprecated is not None:
+           reason = 'Deprecated'
+           target = ext_deprecated
+        else:
+            return
+        self.extension_info[ext_name] = [reason, target]
     #
     # Retrieve the type and name for a parameter
     def getTypeNameTuple(self, param):
