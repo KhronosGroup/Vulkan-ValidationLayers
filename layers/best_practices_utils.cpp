@@ -37,6 +37,50 @@ std::string BestPractices::GetAPIVersionName(uint32_t version) const {
     return version_name.str();
 }
 
+const char* DepReasonToString(ExtDeprecationReason reason) {
+    switch (reason) {
+        case kExtPromoted:
+            return "promoted to";
+            break;
+        case kExtObsoleted:
+            return "obsoleted by";
+            break;
+        case kExtDeprecated:
+            return "deprecated by";
+            break;
+        default:
+            return "";
+            break;
+    }
+}
+
+bool BestPractices::ValidateDeprecatedExtensions(const char* api_name, const char* extension_name, uint32_t version,
+                                                 const char* vuid) const {
+    bool skip = false;
+    auto dep_info_it = deprecated_extensions.find(extension_name);
+    if (dep_info_it != deprecated_extensions.end()) {
+        auto dep_info = dep_info_it->second;
+        if ((dep_info.target.compare("VK_VERSION_1_1") && (version >= VK_VERSION_1_1)) ||
+            (dep_info.target.compare("VK_VERSION_1_2") && (version >= VK_VERSION_1_2))) {
+            skip |=
+                LogWarning(instance, vuid, "%s(): Attempting to enable deprecated extension %s, but this extension has been %s %s.",
+                           api_name, extension_name, DepReasonToString(dep_info.reason), (dep_info.target).c_str());
+        } else if (!dep_info.target.find("VK_VERSION")) {
+            if (dep_info.target.length() == 0) {
+                skip |= LogWarning(instance, vuid,
+                                   "%s(): Attempting to enable deprecated extension %s, but this extension has been deprecated "
+                                   "without replacement.",
+                                   api_name, extension_name);
+            } else {
+                skip |= LogWarning(instance, vuid,
+                                   "%s(): Attempting to enable deprecated extension %s, but this extension has been %s %s.",
+                                   api_name, extension_name, DepReasonToString(dep_info.reason), (dep_info.target).c_str());
+            }
+        }
+    }
+    return skip;
+}
+
 bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                                   VkInstance* pInstance) const {
     bool skip = false;
@@ -47,12 +91,9 @@ bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pC
                                "vkCreateInstance(): Attempting to enable Device Extension %s at CreateInstance time.",
                                pCreateInfo->ppEnabledExtensionNames[i]);
         }
-
-        if (white_list(pCreateInfo->ppEnabledExtensionNames[i], kDeprecatedExtensionNames)) {
-            skip |= LogWarning(instance, kVUID_BestPractices_CreateInstance_DeprecatedExtension,
-                               "vkCreateInstance(): Attempting to enable Deprecated Extension %s at CreateInstance time.",
-                               pCreateInfo->ppEnabledExtensionNames[i]);
-        }
+        skip |= ValidateDeprecatedExtensions("CreateInstance", pCreateInfo->ppEnabledExtensionNames[i],
+                                             pCreateInfo->pApplicationInfo->apiVersion,
+                                             kVUID_BestPractices_CreateInstance_DeprecatedExtension);
     }
 
     return skip;
@@ -88,11 +129,8 @@ bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice,
                                "vkCreateDevice(): Attempting to enable Instance Extension %s at CreateDevice time.",
                                pCreateInfo->ppEnabledExtensionNames[i]);
         }
-        if (white_list(pCreateInfo->ppEnabledExtensionNames[i], kDeprecatedExtensionNames)) {
-            skip |= LogWarning(instance, kVUID_BestPractices_CreateDevice_DeprecatedExtension,
-                               "vkCreateDevice(): Attempting to enable Deprecated Extension %s at CreateDevice time.",
-                               pCreateInfo->ppEnabledExtensionNames[i]);
-        }
+        skip |= ValidateDeprecatedExtensions("CreateDevice", pCreateInfo->ppEnabledExtensionNames[i], instance_api_version,
+                                             kVUID_BestPractices_CreateDevice_DeprecatedExtension);
     }
 
     auto pd_state = GetPhysicalDeviceState(physicalDevice);

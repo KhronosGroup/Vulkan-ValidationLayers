@@ -37,6 +37,17 @@ static const VkDeviceSize kMinDeviceAllocationSize = 256 * 1024;
 // very large allocation.
 static const VkDeviceSize kMinDedicatedAllocationSize = 1024 * 1024;
 
+typedef enum {
+    kExtPromoted,
+    kExtObsoleted,
+    kExtDeprecated,
+} ExtDeprecationReason;
+
+typedef struct {
+    ExtDeprecationReason reason;
+    std::string target;
+} DeprecationData;
+
 // Add this extension after tests are moved to utils: VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
 static const std::set<std::string> kDeprecatedExtensionNames = {
     VK_KHR_16BIT_STORAGE_EXTENSION_NAME,
@@ -114,6 +125,8 @@ class BestPractices : public ValidationStateTracker {
     std::string GetAPIVersionName(uint32_t version) const;
 
     bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* caller) const;
+
+    bool ValidateDeprecatedExtensions(const char* api_name, const char* extension_name, uint32_t version, const char* vuid) const;
 
     bool PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                        VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
