@@ -546,7 +546,19 @@ WRAPPER_PARENT_INSTANCE(uint64_t)
             VkCommandPool pool = iter->second;
             c_VkCommandPoolContents.FinishRead(pool, api_name);
         }
-    } 
+    }
+
+void PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pPropertyCount,
+    VkDisplayPropertiesKHR*                     pProperties,
+    VkResult                                    result);
+
+void PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(
+    VkPhysicalDevice                            physicalDevice,
+    uint32_t*                                   pPropertyCount,
+    VkDisplayProperties2KHR*                    pProperties,
+    VkResult                                    result);
 
 void PreCallRecordCreateInstance(
     const VkInstanceCreateInfo*                 pCreateInfo,
