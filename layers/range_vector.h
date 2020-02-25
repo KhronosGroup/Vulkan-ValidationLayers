@@ -1528,6 +1528,7 @@ class parallel_iterator {
     using map_type_A = MapA;
     using plain_map_type_A = typename std::remove_const<MapA>::type;  // Allow instatiation with const or non-const Map
     using key_type_A = typename plain_map_type_A::key_type;
+    using mapped_type_A = typename plain_map_type_A::mapped_type;
     using index_type_A = typename plain_map_type_A::index_type;
     using iterator_A = const_correct_iterator<map_type_A>;
     using lower_bound_A = cached_lower_bound_impl<map_type_A>;
@@ -1578,6 +1579,16 @@ class parallel_iterator {
           pos_B_(map_B, static_cast<index_type_B>(index)),
           range_(index, index + compute_delta()),
           pos_(range_, pos_A_, pos_B_) {}
+
+    // This returns map_type by value - might not be what you need
+    mapped_type_A evaluate(const mapped_type_A &default_value) {
+        if (pos_A_->valid) {
+            return pos_A_->lower_bound->second;
+        } else if (pos_B_->valid) {
+            return pos_B_->lower_bound->second;
+        }
+        return default_value;
+    }
 
     // Advance to the next spot one of the two maps changes
     parallel_iterator &operator++() {

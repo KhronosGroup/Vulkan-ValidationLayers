@@ -309,8 +309,8 @@ class CoreChecks : public ValidationStateTracker {
                            std::string* error) const;
     bool ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE* cb_node, const cvdescriptorset::DescriptorSet* descriptor_set,
                                           const std::vector<uint32_t>& dynamic_offsets, uint32_t binding, descriptor_req reqs,
+                                          const GlobalImageLayoutMap* globalImageLayoutMap, GlobalImageLayoutMap* overlayLayoutMap,
                                           const char* caller, std::string* error) const;
-
     // Validate contents of a CopyUpdate
     using DescriptorSet = cvdescriptorset::DescriptorSet;
     bool ValidateCopyUpdate(const VkCopyDescriptorSet* update, const DescriptorSet* dst_set, const DescriptorSet* src_set,
@@ -434,6 +434,16 @@ class CoreChecks : public ValidationStateTracker {
 
     bool VerifyClearImageLayout(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* image_state,
                                 const VkImageSubresourceRange& range, VkImageLayout dest_image_layout, const char* func_name) const;
+
+    bool AdditionalImageLayoutChecks(VkImageLayout explicit_layout, VkImageLayout optimal_layout, VkImageTiling tiling,
+                                     VkCommandBuffer command_buffer, VkImage image, const char* caller, bool shared_presentable,
+                                     const char* layout_invalid_msg_code, bool* error) const;
+
+    bool VerifyImageLayout(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* image_state, const VkImageSubresourceRange& range,
+                           VkImageAspectFlags view_aspect, VkImageLayout explicit_layout, VkImageLayout optimal_layout,
+                           const GlobalImageLayoutMap* global_layout_map, GlobalImageLayoutMap* overlay_layout_map,
+                           const char* caller, const char* layout_invalid_msg_code, const char* layout_mismatch_msg_code,
+                           bool* error) const;
 
     bool VerifyImageLayout(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* image_state, const VkImageSubresourceRange& range,
                            VkImageAspectFlags view_aspect, VkImageLayout explicit_layout, VkImageLayout optimal_layout,

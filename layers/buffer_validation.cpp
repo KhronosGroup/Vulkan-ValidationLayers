@@ -1082,6 +1082,87 @@ void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const I
     }
 }
 
+bool CoreChecks::AdditionalImageLayoutChecks(VkImageLayout explicit_layout, VkImageLayout optimal_layout, VkImageTiling tiling,
+                                             VkCommandBuffer command_buffer, VkImage image, const char *caller,
+                                             bool shared_presentable, const char *layout_invalid_msg_code, bool *error) const {
+    bool skip = false;
+
+    // If optimal_layout is not UNDEFINED, check that layout matches optimal for this case
+    if ((VK_IMAGE_LAYOUT_UNDEFINED != optimal_layout) && (explicit_layout != optimal_layout)) {
+        if (VK_IMAGE_LAYOUT_GENERAL == explicit_layout) {
+            if (tiling != VK_IMAGE_TILING_LINEAR) {
+                // LAYOUT_GENERAL is allowed, but may not be performance optimal, flag as perf warning.
+                skip |= LogPerformanceWarning(command_buffer, kVUID_Core_DrawState_InvalidImageLayout,
+                                              "%s: For optimal performance %s layout should be %s instead of GENERAL.", caller,
+                                              report_data->FormatHandle(image).c_str(), string_VkImageLayout(optimal_layout));
+            }
+        } else if (device_extensions.vk_khr_shared_presentable_image) {
+            if (shared_presentable) {
+                if (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != explicit_layout) {
+                    skip |= LogError(device, layout_invalid_msg_code,
+                                     "Layout for shared presentable image is %s but must be VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR.",
+                                     string_VkImageLayout(optimal_layout));
+                }
+            }
+        } else {
+            *error = true;
+            skip |= LogError(command_buffer, layout_invalid_msg_code,
+                             "%s: Layout for %s is %s but can only be %s or VK_IMAGE_LAYOUT_GENERAL.", caller,
+                             report_data->FormatHandle(image).c_str(), string_VkImageLayout(explicit_layout),
+                             string_VkImageLayout(optimal_layout));
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *image_state,
+                                   const VkImageSubresourceRange &range, VkImageAspectFlags aspect_mask,
+                                   VkImageLayout explicit_layout, VkImageLayout optimal_layout,
+                                   const GlobalImageLayoutMap *global_layout_map, GlobalImageLayoutMap *overlay_layout_map,
+                                   const char *caller, const char *layout_invalid_msg_code, const char *layout_mismatch_msg_code,
+                                   bool *error) const {
+    // Validate image layout at QueueSubmit for UPDATE_AFTER_BIND descriptors
+    if (disabled.image_layout_validation) return false;
+    assert(cb_node);
+    assert(image_state);
+    const auto image = image_state->image;
+    bool skip = false;
+
+    const auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image);
+    const auto *current_layout_map = (subresource_map != nullptr) ? &subresource_map->GetCurrentLayoutMap() : nullptr;
+    // If there are layout transitions in command buffer, we don't know enough to validate
+    if (current_layout_map && current_layout_map->begin() != current_layout_map->end()) return skip;
+
+    auto *overlay_map = GetLayoutRangeMap(overlay_layout_map, *image_state);
+    const auto *global_map = GetLayoutRangeMap(*global_layout_map, image);
+    subresource_adapter::RangeGenerator range_gen(image_state->range_encoder, range);
+    sparse_container::parallel_iterator<const ImageSubresourceLayoutMap::LayoutMap> current_layout(*overlay_map, *global_map, 0);
+    for (; range_gen->non_empty(); ++range_gen) {
+        subresource_adapter::Subresource subresource = range_gen.GetSubresource();
+        auto pos = image_state->range_encoder.Encode(subresource);
+        current_layout.seek(pos);
+
+        if (current_layout->range.empty()) return skip;  // When we are past the end of data in overlay and global... stop looking
+        VkImageLayout image_layout = current_layout.evaluate(kInvalidLayout);
+
+        if (!ImageLayoutMatches(aspect_mask, image_layout, explicit_layout)) {
+            *error = true;
+            std::string formatted_label = FormatDebugLabel(" ", cb_node->debug_label);
+            skip |= LogError(cb_node->commandBuffer, layout_mismatch_msg_code,
+                             "Submitted command buffer expects %s (subresource: aspectMask 0x%X array layer %u, mip level %u) "
+                             "to be in layout %s--instead, current layout is %s.%s",
+                             report_data->FormatHandle(image).c_str(), subresource.aspectMask, subresource.arrayLayer,
+                             subresource.mipLevel, string_VkImageLayout(explicit_layout), string_VkImageLayout(image_layout),
+                             formatted_label.c_str());
+        }
+    }
+
+    skip |= AdditionalImageLayoutChecks(explicit_layout, optimal_layout, image_state->createInfo.tiling, cb_node->commandBuffer,
+                                        image, caller, image_state->shared_presentable, layout_invalid_msg_code, error);
+
+    return skip;
+}
+
 bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *image_state,
                                    const VkImageSubresourceRange &range, VkImageAspectFlags aspect_mask,
                                    VkImageLayout explicit_layout, VkImageLayout optimal_layout, const char *caller,
@@ -1110,31 +1191,9 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_
         skip |= subres_skip;
     }
 
-    // If optimal_layout is not UNDEFINED, check that layout matches optimal for this case
-    if ((VK_IMAGE_LAYOUT_UNDEFINED != optimal_layout) && (explicit_layout != optimal_layout)) {
-        if (VK_IMAGE_LAYOUT_GENERAL == explicit_layout) {
-            if (image_state->createInfo.tiling != VK_IMAGE_TILING_LINEAR) {
-                // LAYOUT_GENERAL is allowed, but may not be performance optimal, flag as perf warning.
-                skip |= LogPerformanceWarning(cb_node->commandBuffer, kVUID_Core_DrawState_InvalidImageLayout,
-                                              "%s: For optimal performance %s layout should be %s instead of GENERAL.", caller,
-                                              report_data->FormatHandle(image).c_str(), string_VkImageLayout(optimal_layout));
-            }
-        } else if (device_extensions.vk_khr_shared_presentable_image) {
-            if (image_state->shared_presentable) {
-                if (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != explicit_layout) {
-                    skip |= LogError(device, layout_invalid_msg_code,
-                                     "Layout for shared presentable image is %s but must be VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR.",
-                                     string_VkImageLayout(optimal_layout));
-                }
-            }
-        } else {
-            *error = true;
-            skip |= LogError(cb_node->commandBuffer, layout_invalid_msg_code,
-                             "%s: Layout for %s is %s but can only be %s or VK_IMAGE_LAYOUT_GENERAL.", caller,
-                             report_data->FormatHandle(image).c_str(), string_VkImageLayout(explicit_layout),
-                             string_VkImageLayout(optimal_layout));
-        }
-    }
+    skip |= AdditionalImageLayoutChecks(explicit_layout, optimal_layout, image_state->createInfo.tiling, cb_node->commandBuffer,
+                                        image, caller, image_state->shared_presentable, layout_invalid_msg_code, error);
+
     return skip;
 }
 bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *image_state,
@@ -3350,13 +3409,9 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const G
                                                                                                        pos->first.begin);
         while (pos != end) {
             VkImageLayout initial_layout = pos->second;
-            VkImageLayout image_layout = kInvalidLayout;
             if (current_layout->range.empty()) break;  // When we are past the end of data in overlay and global... stop looking
-            if (current_layout->pos_A->valid) {        // pos_A denotes the overlay map in the parallel iterator
-                image_layout = current_layout->pos_A->lower_bound->second;
-            } else if (current_layout->pos_B->valid) {  // pos_B denotes the global map in the parallel iterator
-                image_layout = current_layout->pos_B->lower_bound->second;
-            }
+            VkImageLayout image_layout = current_layout.evaluate(kInvalidLayout);
+
             const auto intersected_range = pos->first & current_layout->range;
             if (initial_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 // TODO: Set memory invalid which is in mem_tracker currently

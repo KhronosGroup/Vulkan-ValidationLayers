@@ -697,8 +697,8 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const st
             // or the view could have been destroyed
             continue;
         }
-        if (!ValidateDescriptorSetBindingData(cb_node, descriptor_set, dynamic_offsets, binding, binding_pair.second, caller,
-                                              error))
+        if (!ValidateDescriptorSetBindingData(cb_node, descriptor_set, dynamic_offsets, binding, binding_pair.second, nullptr,
+                                              nullptr, caller, error))
             return false;
     }
     return true;
@@ -706,7 +706,9 @@ bool CoreChecks::ValidateDrawState(const DescriptorSet *descriptor_set, const st
 
 bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_node, const DescriptorSet *descriptor_set,
                                                   const std::vector<uint32_t> &dynamic_offsets, uint32_t binding,
-                                                  descriptor_req reqs, const char *caller, std::string *error) const {
+                                                  descriptor_req reqs, const GlobalImageLayoutMap *globalImageLayoutMap,
+                                                  GlobalImageLayoutMap *overlayLayoutMap, const char *caller,
+                                                  std::string *error) const {
     using DescriptorClass = cvdescriptorset::DescriptorClass;
     using BufferDescriptor = cvdescriptorset::BufferDescriptor;
     using ImageDescriptor = cvdescriptorset::ImageDescriptor;
@@ -842,9 +844,19 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                         // Verify Image Layout
                         // No "invalid layout" VUID required for this call, since the optimal_layout parameter is UNDEFINED.
                         bool hit_error = false;
-                        VerifyImageLayout(cb_node, image_node, image_view_state->normalized_subresource_range,
-                                          image_view_ci.subresourceRange.aspectMask, image_layout, VK_IMAGE_LAYOUT_UNDEFINED,
-                                          caller, kVUIDUndefined, "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
+                        if (globalImageLayoutMap) {
+                            // Update after bind case
+                            VerifyImageLayout(cb_node, image_node, image_view_state->normalized_subresource_range,
+                                              image_view_ci.subresourceRange.aspectMask, image_layout, VK_IMAGE_LAYOUT_UNDEFINED,
+                                              globalImageLayoutMap, overlayLayoutMap, caller, kVUIDUndefined,
+                                              "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
+
+                        } else {
+                            VerifyImageLayout(cb_node, image_node, image_view_state->normalized_subresource_range,
+                                              image_view_ci.subresourceRange.aspectMask, image_layout, VK_IMAGE_LAYOUT_UNDEFINED,
+                                              caller, kVUIDUndefined, "VUID-VkDescriptorImageInfo-imageLayout-00344", &hit_error);
+                        }
+
                         if (hit_error) {
                             *error =
                                 "Image layout specified at vkUpdateDescriptorSet* or vkCmdPushDescriptorSet* time "

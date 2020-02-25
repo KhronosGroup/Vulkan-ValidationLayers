@@ -2188,15 +2188,6 @@ bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitIn
     for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
         const auto *cb_node = GetCBState(submit->pCommandBuffers[i]);
         if (cb_node) {
-            skip |= ValidateCmdBufImageLayouts(cb_node, imageLayoutMap, &overlayLayoutMap);
-            current_cmds.push_back(submit->pCommandBuffers[i]);
-            skip |= ValidatePrimaryCommandBufferState(
-                cb_node, (int)std::count(current_cmds.begin(), current_cmds.end(), submit->pCommandBuffers[i]),
-                &qfo_image_scoreboards, &qfo_buffer_scoreboards);
-            skip |= ValidateQueueFamilyIndices(cb_node, queue);
-            VkQueryPool first_query_pool = VK_NULL_HANDLE;
-            skip |= ValidatePerformanceQueries(cb_node, queue, first_query_pool, perf_submit ? perf_submit->counterPassIndex : 0);
-
             for (auto descriptorSet : cb_node->validate_descriptorsets_in_queuesubmit) {
                 const cvdescriptorset::DescriptorSet *set_node = GetSetNode(descriptorSet.first);
                 if (set_node) {
@@ -2206,7 +2197,7 @@ bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitIn
                             std::vector<uint32_t> dynamicOffsets;
                             // dynamic data isn't allowed in UPDATE_AFTER_BIND, so dynamicOffsets is always empty.
                             if (!ValidateDescriptorSetBindingData(cb_node, set_node, dynamicOffsets, binding.first, binding.second,
-                                                                  "vkQueueSubmit()", &error)) {
+                                                                  &imageLayoutMap, &overlayLayoutMap, "vkQueueSubmit()", &error)) {
                                 skip |= LogError(descriptorSet.first, kVUID_Core_DrawState_DescriptorSetNotUpdated,
                                                  "%s bound the following validation error at %s time: %s",
                                                  report_data->FormatHandle(descriptorSet.first).c_str(), "vkQueueSubmit()",
@@ -2216,6 +2207,15 @@ bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitIn
                     }
                 }
             }
+
+            skip |= ValidateCmdBufImageLayouts(cb_node, imageLayoutMap, &overlayLayoutMap);
+            current_cmds.push_back(submit->pCommandBuffers[i]);
+            skip |= ValidatePrimaryCommandBufferState(
+                cb_node, (int)std::count(current_cmds.begin(), current_cmds.end(), submit->pCommandBuffers[i]),
+                &qfo_image_scoreboards, &qfo_buffer_scoreboards);
+            skip |= ValidateQueueFamilyIndices(cb_node, queue);
+            VkQueryPool first_query_pool = VK_NULL_HANDLE;
+            skip |= ValidatePerformanceQueries(cb_node, queue, first_query_pool, perf_submit ? perf_submit->counterPassIndex : 0);
 
             // Potential early exit here as bad object state may crash in delayed function calls
             if (skip) {
