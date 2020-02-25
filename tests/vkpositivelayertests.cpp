@@ -910,6 +910,42 @@ TEST_F(VkPositiveLayerTest, BasicQuery) {
     vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
 }
 
+TEST_F(VkPositiveLayerTest, ThreadSafetyDisplayObjects) {
+    TEST_DESCRIPTION("Create and use VkDisplayKHR objects with GetPhysicalDeviceDisplayPropertiesKHR in thread-safety.");
+
+    bool mp_extensions =
+        InstanceExtensionSupported(VK_KHR_SURFACE_EXTENSION_NAME) && InstanceExtensionSupported(VK_KHR_DISPLAY_EXTENSION_NAME);
+    if (mp_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+        m_instance_extension_names.push_back(VK_KHR_DISPLAY_EXTENSION_NAME);
+    } else {
+        printf("%s test requires KHR SURFACE and DISPLAY extensions, not available.  Skipping.\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkGetPhysicalDeviceDisplayPropertiesKHR vkGetPhysicalDeviceDisplayPropertiesKHR =
+        (PFN_vkGetPhysicalDeviceDisplayPropertiesKHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceDisplayPropertiesKHR");
+    PFN_vkGetDisplayModePropertiesKHR vkGetDisplayModePropertiesKHR =
+        (PFN_vkGetDisplayModePropertiesKHR)vk::GetInstanceProcAddr(instance(), "vkGetDisplayModePropertiesKHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceDisplayPropertiesKHR != nullptr);
+    ASSERT_TRUE(vkGetDisplayModePropertiesKHR != nullptr);
+
+    m_errorMonitor->ExpectSuccess();
+    uint32_t prop_count = 0;
+    vkGetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, nullptr);
+    if (prop_count != 0) {
+        VkDisplayPropertiesKHR display_props = {};
+        // Create a VkDisplayKHR object
+        vkGetPhysicalDeviceDisplayPropertiesKHR(gpu(), &prop_count, &display_props);
+        // Now use this new object in an API call that thread safety will track
+        prop_count = 0;
+        vkGetDisplayModePropertiesKHR(gpu(), display_props.display, &prop_count, nullptr);
+    }
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkPositiveLayerTest, MultiplaneGetImageSubresourceLayout) {
     TEST_DESCRIPTION("Positive test, query layout of a single plane of a multiplane image. (repro Github #2530)");
 
