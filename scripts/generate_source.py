@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# Copyright (c) 2019 The Khronos Group Inc.
-# Copyright (c) 2019 Valve Corporation
-# Copyright (c) 2019 LunarG, Inc.
-# Copyright (c) 2019 Google Inc.
+# Copyright (c) 2020 The Khronos Group Inc.
+# Copyright (c) 2020 Valve Corporation
+# Copyright (c) 2020 LunarG, Inc.
+# Copyright (c) 2020 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import difflib
 
 import common_codegen
 
@@ -101,17 +102,23 @@ def main(argv):
         repo_files = set(os.listdir(repo_dir))
         files_match = True
         for filename in sorted((temp_files | repo_files) - set(verify_exclude)):
+            temp_filename = os.path.join(temp_dir, filename)
+            repo_filename = os.path.join(repo_dir, filename)
             if filename not in repo_files:
                 print('ERROR: Missing repo file', filename)
                 files_match = False
             elif filename not in temp_files:
                 print('ERROR: Missing generator for', filename)
                 files_match = False
-            elif not filecmp.cmp(os.path.join(temp_dir, filename),
-                               os.path.join(repo_dir, filename),
-                               shallow=False):
+            elif not filecmp.cmp(temp_filename, repo_filename, shallow=False):
                 print('ERROR: Repo files do not match generator output for', filename)
                 files_match = False
+                # print line diff on file mismatch
+                with open(temp_filename) as temp_file, open(repo_filename) as repo_file:
+                    print(''.join(difflib.unified_diff(temp_file.readlines(),
+                                                       repo_file.readlines(),
+                                                       fromfile='temp/' + filename,
+                                                       tofile=  'repo/' + filename)))
 
         # return code for test scripts
         if files_match:
