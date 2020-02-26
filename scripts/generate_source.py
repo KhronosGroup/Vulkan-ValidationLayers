@@ -63,6 +63,8 @@ def main(argv):
                                               "lvt_function_pointers.cpp",
                                               "lvt_function_pointers.h",
                                               "vk_typemap_helper.h",
+                                              "best_practices.h",
+                                              "best_practices.cpp",
                                               "command_counter_helper.cpp",
                                               "command_counter_helper.h"]],
                 [common_codegen.repo_relative('scripts/vk_validation_stats.py'),
