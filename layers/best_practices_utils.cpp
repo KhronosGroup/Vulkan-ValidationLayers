@@ -37,6 +37,53 @@ std::string BestPractices::GetAPIVersionName(uint32_t version) const {
     return version_name.str();
 }
 
+struct VendorSpecificInfo {
+    bool CHECK_ENABLED::*check;
+    std::string name;
+};
+
+const std::map<BPVendorFlagBits, VendorSpecificInfo> vendor_info = {
+    {kBPVendorArm, {&CHECK_ENABLED::vendor_specific_arm, "Arm"}},
+};
+
+bool BestPractices::VendorCheckEnabled(BPVendorFlags vendors) const {
+    for (const auto& vendor : vendor_info) {
+        if (vendors & vendor.first && enabled.*(vendor.second.check)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+const char* VendorSpecificTag(BPVendorFlags vendors) {
+    // Cache built vendor tags in a map
+    static std::unordered_map<BPVendorFlags, std::string> tag_map;
+
+    auto res = tag_map.find(vendors);
+    if (res == tag_map.end()) {
+        // Build the vendor tag string
+        std::stringstream vendor_tag;
+
+        vendor_tag << "[";
+        bool first_vendor = true;
+        for (const auto& vendor : vendor_info) {
+            if (vendors & vendor.first) {
+                if (!first_vendor) {
+                    vendor_tag << ", ";
+                }
+                vendor_tag << vendor.second.name;
+                first_vendor = false;
+            }
+        }
+        vendor_tag << "]";
+
+        tag_map[vendors] = vendor_tag.str();
+        res = tag_map.find(vendors);
+    }
+
+    return res->second.c_str();
+}
+
 const char* DepReasonToString(ExtDeprecationReason reason) {
     switch (reason) {
         case kExtPromoted:
