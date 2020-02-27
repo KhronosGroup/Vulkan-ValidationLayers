@@ -288,6 +288,11 @@ typedef enum ValidationCheckDisables {
     VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION,
 } ValidationCheckDisables;
 
+typedef enum ValidationCheckEnables {
+    VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM,
+    VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL,
+} ValidationCheckEnables;
+
 // CHECK_DISABLED struct is a container for bools that can block validation checks from being performed.
 // These bools are all "false" by default meaning that all checks are enabled. Enum values can be specified
 // via the vk_layer_setting.txt config file or at CreateInstance time via the VK_EXT_validation_features extension
@@ -313,8 +318,10 @@ struct CHECK_ENABLED {
     bool gpu_validation;
     bool gpu_validation_reserve_binding_slot;
     bool best_practices;
+    bool vendor_specific_arm;                       // Vendor-specific validation for Arm platforms
 
     void SetAll(bool value) { std::fill(&gpu_validation, &gpu_validation_reserve_binding_slot + 1, value); }
+    void SetAllVendorSpecific(bool value) { std::fill(&vendor_specific_arm, &vendor_specific_arm + 1, value); }
 };
 
 // Layer chassis validation object base class definition
@@ -644,6 +651,11 @@ static const std::unordered_map<std::string, ValidationCheckDisables> Validation
     {"VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION", VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION},
 };
 
+static const std::unordered_map<std::string, ValidationCheckEnables> ValidationEnableLookup = {
+    {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM},
+    {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL},
+};
+
 // Set the local disable flag for the appropriate VALIDATION_CHECK_DISABLE enum
 void SetValidationDisable(CHECK_DISABLED* disable_data, const ValidationCheckDisables disable_id) {
     switch (disable_id) {
@@ -700,6 +712,19 @@ void SetValidationFeatureDisable(CHECK_DISABLED* disable_data, const VkValidatio
     }
 }
 
+// Set the local enable flag for the appropriate VALIDATION_CHECK_ENABLE enum
+void SetValidationEnable(CHECK_ENABLED* enable_data, const ValidationCheckEnables enable_id) {
+    switch (enable_id) {
+        case VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM:
+            enable_data->vendor_specific_arm = true;
+            break;
+        case VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL:
+            enable_data->SetAllVendorSpecific(true);
+            break;
+        default:
+            assert(true);
+    }
+}
 // Set the local enable flag for a single VK_VALIDATION_FEATURE_ENABLE_* flag
 void SetValidationFeatureEnable(CHECK_ENABLED *enable_data, const VkValidationFeatureEnableEXT feature_enable) {
     switch (feature_enable) {
@@ -761,6 +786,12 @@ void SetLocalEnableSetting(std::string list_of_enables, std::string delimiter, C
             auto result = VkValFeatureEnableLookup.find(token);
             if (result != VkValFeatureEnableLookup.end()) {
                 SetValidationFeatureEnable(enables, result->second);
+            }
+        }
+        else if (token.find("VALIDATION_CHECK_ENABLE_") != std::string::npos) {
+            auto result = ValidationEnableLookup.find(token);
+            if (result != ValidationEnableLookup.end()) {
+                SetValidationEnable(enables, result->second);
             }
         }
         list_of_enables.erase(0, pos + delimiter.length());

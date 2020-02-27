@@ -2540,6 +2540,11 @@ typedef enum ValidationCheckDisables {
     VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION,
 } ValidationCheckDisables;
 
+typedef enum ValidationCheckEnables {
+    VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM,
+    VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL,
+} ValidationCheckEnables;
+
 // CHECK_DISABLED struct is a container for bools that can block validation checks from being performed.
 // These bools are all "false" by default meaning that all checks are enabled. Enum values can be specified
 // via the vk_layer_setting.txt config file or at CreateInstance time via the VK_EXT_validation_features extension
@@ -2565,8 +2570,10 @@ struct CHECK_ENABLED {
     bool gpu_validation;
     bool gpu_validation_reserve_binding_slot;
     bool best_practices;
+    bool vendor_specific_arm;                       // Vendor-specific validation for Arm platforms
 
     void SetAll(bool value) { std::fill(&gpu_validation, &gpu_validation_reserve_binding_slot + 1, value); }
+    void SetAllVendorSpecific(bool value) { std::fill(&vendor_specific_arm, &vendor_specific_arm + 1, value); }
 };
 
 // Layer chassis validation object base class definition

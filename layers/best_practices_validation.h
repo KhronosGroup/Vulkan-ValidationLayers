@@ -48,6 +48,20 @@ typedef struct {
     std::string target;
 } DeprecationData;
 
+typedef enum {
+    kBPVendorArm = 0x00000001,
+} BPVendorFlagBits;
+typedef VkFlags BPVendorFlags;
+
+// How many small indexed drawcalls in a command buffer before a warning is thrown
+static const uint32_t kMaxSmallIndexedDrawcalls = 10;
+
+// How many indices make a small indexed drawcall
+static const int kSmallIndexedDrawcallIndices = 10;
+
+// Maximum sample count for full throughput on Mali GPUs
+static const VkSampleCountFlagBits kMaxEfficientSamplesArm = VK_SAMPLE_COUNT_4_BIT;
+
 class BestPractices : public ValidationStateTracker {
   public:
     using StateTracker = ValidationStateTracker;
@@ -177,4 +191,7 @@ class BestPractices : public ValidationStateTracker {
   private:
     uint32_t instance_api_version;
     uint32_t num_mem_objects = 0;
+
+    // Check that vendor-specific checks are enabled for at least one of the vendors
+    bool VendorCheckEnabled(BPVendorFlags vendors) const;
 };
