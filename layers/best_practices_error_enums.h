@@ -68,5 +68,11 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_DrawState_VtxIndexOutOfBo
     "UNASSIGNED-BestPractices-DrawState-VtxIndexOutOfBounds";
 static const char DECORATE_UNUSED *kVUID_BestPractices_DrawState_ClearCmdBeforeDraw =
     "UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw";
+static const char DECORATE_UNUSED *kVUID_BestPractices_AllocateMemory_SmallAllocation =
+    "UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation";
+static const char DECORATE_UNUSED *kVUID_BestPractices_SmallDedicatedAllocation =
+    "UNASSIGNED-BestPractices-vkBindMemory-small-dedicated-allocation";
+static const char DECORATE_UNUSED *kVUID_BestPractices_NonLazyTransientImage =
+    "UNASSIGNED-BestPractices-vkBindImageMemory-non-lazy-transient-image";
 
 #endif

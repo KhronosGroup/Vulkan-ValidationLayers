@@ -25,6 +25,15 @@
 
 static const uint32_t kMemoryObjectWarningLimit = 250;
 
+// Recommended allocation size for vkAllocateMemory
+static const VkDeviceSize kMinDeviceAllocationSize = 256 * 1024;
+
+// If a buffer or image is allocated and it consumes an entire VkDeviceMemory, it should at least be this large.
+// This is slightly different from minDeviceAllocationSize since the 256K buffer can still be sensibly
+// suballocated from. If we consume an entire allocation with one image or buffer, it should at least be for a
+// very large allocation.
+static const VkDeviceSize kMinDedicatedAllocationSize = 1024 * 1024;
+
 // Add this extension after tests are moved to utils: VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
 static const std::set<std::string> kDeprecatedExtensionNames = {
     VK_KHR_16BIT_STORAGE_EXTENSION_NAME,
@@ -129,12 +138,12 @@ class BestPractices : public ValidationStateTracker {
     void PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                       const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory, VkResult result);
     void PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator);
-    bool ValidateBindBufferMemory(VkBuffer buffer, const char* api_name) const;
+    bool ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, const char* api_name) const;
     bool PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset) const;
     bool PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos) const;
     bool PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount,
                                              const VkBindBufferMemoryInfo* pBindInfos) const;
-    bool ValidateBindImageMemory(VkImage image, const char* api_name) const;
+    bool ValidateBindImageMemory(VkImage image, VkDeviceMemory memory, const char* api_name) const;
     bool PreCallValidateBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset) const;
     bool PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos) const;
     bool PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos) const;
