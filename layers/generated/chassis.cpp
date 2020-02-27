@@ -58,7 +58,7 @@ namespace vulkan_layer_chassis {
 using std::unordered_map;
 
 static const VkLayerProperties global_layer = {
-    OBJECT_LAYER_NAME, VK_LAYER_API_VERSION, 1, "LunarG validation Layer",
+    OBJECT_LAYER_NAME, VK_HEADER_VERSION_COMPLETE, 1, "LunarG validation Layer",
 };
 
 static const VkExtensionProperties instance_extensions[] = {{VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_EXT_DEBUG_REPORT_SPEC_VERSION},
