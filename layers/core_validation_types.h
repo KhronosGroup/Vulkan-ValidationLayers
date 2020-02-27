@@ -1107,6 +1107,9 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
 
     std::vector<uint8_t> push_constant_data;
     PushConstantRangesId push_constant_data_ranges;
+
+    // Used for Best Practices tracking
+    uint32_t small_indexed_draw_call_count;
 };
 
 static inline const QFOTransferBarrierSets<VkImageMemoryBarrier> &GetQFOBarrierSets(
