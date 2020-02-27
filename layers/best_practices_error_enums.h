@@ -68,5 +68,9 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_DrawState_VtxIndexOutOfBo
     "UNASSIGNED-BestPractices-DrawState-VtxIndexOutOfBounds";
 static const char DECORATE_UNUSED *kVUID_BestPractices_DrawState_ClearCmdBeforeDraw =
     "UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateCommandPool_CommandBufferReset =
+    "UNASSIGNED-BestPractices-vkCreateCommandPool-command-buffer-reset";
+static const char DECORATE_UNUSED *kVUID_BestPractices_BeginCommandBuffer_SimultaneousUse =
+    "UNASSIGNED-BestPractices-vkBeginCommandBuffer-simultaneous-use";
 
 #endif
