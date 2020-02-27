@@ -87,7 +87,7 @@ def main():
     vk_version = None
     with open(vk_header_filename) as vk_header_file:
         for line in vk_header_file:
-            if line.startswith('#define VK_HEADER_VERSION'):
+            if line.startswith('#define VK_HEADER_VERSION_COMPLETE'):
                 vk_version = line.split()[-1]
                 break
     if not vk_version:
@@ -119,7 +119,7 @@ def main():
             for line in infile:
                 line = line.replace('@RELATIVE_LAYER_BINARY@',
                                     relative_path_prefix + layer_lib_name)
-                line = line.replace('@VK_VERSION@', '1.1.' + vk_version)
+                line = line.replace('@VK_VERSION@', vk_version)
                 json_out_file.write(line)
 
 if __name__ == '__main__':
