@@ -27,6 +27,13 @@ void VkBestPracticesLayerTest::InitBestPracticesFramework() {
     features.pEnabledValidationFeatures = enables;
     features.pDisabledValidationFeatures = disables;
 
+    // Enable all vendor-specific checks
+#if defined(_WIN32)
+    SetEnvironmentVariable("VK_LAYER_ENABLES", "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL;");
+#else
+    setenv("VK_LAYER_ENABLES", "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL;", true);
+#endif
+
     InitFramework(m_errorMonitor, &features);
 }
 
@@ -273,7 +280,7 @@ TEST_F(VkBestPracticesLayerTest, SimultaneousUse) {
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkBeginCommandBuffer-simultaneous-use");
 
-    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-ArmBestPractices-vkBeginCommandBuffer-one-time-submit");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkBeginCommandBuffer-one-time-submit");
 
     VkCommandBufferBeginInfo cmd_begin_info{};
     cmd_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -498,7 +505,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load");
 
     // On tiled renderers, this can also trigger a warning about LOAD_OP_LOAD causing a readback
-    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-ArmBestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw");
 
     m_commandBuffer->begin();
@@ -516,4 +523,222 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
 
     m_errorMonitor->VerifyFound();
+}
+
+// Tests for Arm-specific best practices
+
+TEST_F(VkArmBestPracticesLayerTest, TooManySamples) {
+    TEST_DESCRIPTION("Test for multisampled images with too many samples");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateImage-too-large-sample-count");
+
+    VkImageCreateInfo image_info{};
+    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_info.extent = {1920, 1080, 1};
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
+    image_info.samples = VK_SAMPLE_COUNT_8_BIT;
+    image_info.arrayLayers = 1;
+    image_info.mipLevels = 1;
+
+    VkImage image = VK_NULL_HANDLE;
+    vk::CreateImage(m_device->device(), &image_info, nullptr, &image);
+
+    m_errorMonitor->VerifyFound();
+
+    if (image) {
+        vk::DestroyImage(m_device->device(), image, nullptr);
+    }
+}
+
+TEST_F(VkArmBestPracticesLayerTest, NonTransientMSImage) {
+    TEST_DESCRIPTION("Test for non-transient multisampled images");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateImage-non-transient-ms-image");
+
+    VkImageCreateInfo image_info{};
+    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_info.extent = {1920, 1080, 1};
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_info.samples = VK_SAMPLE_COUNT_4_BIT;
+    image_info.arrayLayers = 1;
+    image_info.mipLevels = 1;
+
+    VkImage image;
+    vk::CreateImage(m_device->device(), &image_info, nullptr, &image);
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkArmBestPracticesLayerTest, SamplerCreation) {
+    TEST_DESCRIPTION("Test for various checks during sampler creation");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateSampler-different-wrapping-modes");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateSampler-lod-clamping");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateSampler-lod-bias");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateSampler-border-clamp-color");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateSampler-unnormalized-coordinates");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateSampler-anisotropy");
+
+    VkSamplerCreateInfo sampler_info{};
+    sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    sampler_info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+    sampler_info.minLod = 0.0f;
+    sampler_info.maxLod = 4.0f;
+    sampler_info.mipLodBias = 1.0f;
+    sampler_info.unnormalizedCoordinates = VK_TRUE;
+    sampler_info.anisotropyEnable = VK_TRUE;
+    sampler_info.maxAnisotropy = 4.0f;
+
+    VkSampler sampler = VK_NULL_HANDLE;
+    vk::CreateSampler(m_device->device(), &sampler_info, nullptr, &sampler);
+
+    m_errorMonitor->VerifyFound();
+
+    if (sampler) {
+        vk::DestroySampler(m_device->device(), sampler, nullptr);
+    }
+}
+
+TEST_F(VkArmBestPracticesLayerTest, MultisampledBlending) {
+    TEST_DESCRIPTION("Test for multisampled blending");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreatePipelines-multisampled-blending");
+
+    VkAttachmentDescription attachment{};
+    attachment.samples = VK_SAMPLE_COUNT_4_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment.format = VK_FORMAT_R16G16B16A16_SFLOAT;
+
+    VkAttachmentReference color_ref{};
+    color_ref.attachment = 0;
+    color_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass{};
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &color_ref;
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+    VkRenderPassCreateInfo rp_info{};
+    rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    rp_info.attachmentCount = 1;
+    rp_info.pAttachments = &attachment;
+    rp_info.subpassCount = 1;
+    rp_info.pSubpasses = &subpass;
+
+    vk::CreateRenderPass(m_device->device(), &rp_info, nullptr, &m_renderPass);
+    renderPass_info_ = rp_info;
+
+    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
+    pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    pipe_ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
+
+    VkPipelineColorBlendAttachmentState blend_att = {};
+    blend_att.blendEnable = VK_TRUE;
+    blend_att.colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+    VkPipelineColorBlendStateCreateInfo pipe_cb_state_ci = {};
+    pipe_cb_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    pipe_cb_state_ci.attachmentCount = 1;
+    pipe_cb_state_ci.pAttachments = &blend_att;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.pipe_ms_state_ci_ = pipe_ms_state_ci;
+    pipe.cb_ci_ = pipe_cb_state_ci;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkArmBestPracticesLayerTest, AttachmentNeedsReadback) {
+    TEST_DESCRIPTION("Test for attachments that need readback");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    m_clear_via_load_op = false;  // Force LOAD_OP_LOAD
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
+    InitBestPracticesFramework();
+    InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCmdDrawIndexed-many-small-indexed-drawcalls");
+
+    // This test may also trigger other warnings
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkBindMemory-small-dedicated-allocation");
+
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
+    pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    pipe_ms_state_ci.pNext = NULL;
+    pipe_ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    pipe_ms_state_ci.sampleShadingEnable = 0;
+    pipe_ms_state_ci.minSampleShading = 1.0;
+    pipe_ms_state_ci.pSampleMask = NULL;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.pipe_ms_state_ci_ = pipe_ms_state_ci;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    for (int i = 0; i < 10; i++) {
+        m_commandBuffer->DrawIndexed(3, 1, 0, 0, 0);
+    }
+
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
 }
