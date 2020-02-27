@@ -25,6 +25,9 @@
 
 static const uint32_t kMemoryObjectWarningLimit = 250;
 
+// Maximum number of instanced vertex buffers which should be used
+static const uint32_t kMaxInstancedVertexBuffers = 1;
+
 // Recommended allocation size for vkAllocateMemory
 static const VkDeviceSize kMinDeviceAllocationSize = 256 * 1024;
 
@@ -133,6 +136,8 @@ class BestPractices : public ValidationStateTracker {
                                                   const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains) const;
     bool PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass) const;
+    bool PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
+                                          const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer) const;
     bool PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory) const;
     void PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
