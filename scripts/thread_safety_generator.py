@@ -252,7 +252,7 @@ template <typename T>
 class counter {
 public:
     const char *typeName;
-    VkDebugReportObjectTypeEXT objectType;
+    VulkanObjectType object_type;
     ValidationObject *object_data;
 
     vl_concurrent_unordered_map<T, std::shared_ptr<ObjectUseData>, 6> object_table;
@@ -276,7 +276,7 @@ public:
             object_data->LogError(object, kVUID_Threading_Info,
                     "Couldn't find %s Object 0x%" PRIxLEAST64
                     ". This should not happen and may indicate a bug in the application.",
-                    object_string[objectType], (uint64_t)(object));
+                    object_string[object_type], (uint64_t)(object));
             return nullptr;
         }
     }
@@ -397,9 +397,9 @@ public:
         }
         use_data->RemoveReader();
     }
-    counter(const char *name = "", VkDebugReportObjectTypeEXT type = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, ValidationObject *val_obj = nullptr) {
+    counter(const char *name = "", VulkanObjectType type = kVulkanObjectTypeUnknown, ValidationObject *val_obj = nullptr) {
             typeName = name;
-        objectType = type;
+        object_type = type;
         object_data = val_obj;
     }
 
@@ -462,18 +462,18 @@ COUNTER_CLASS_DEFINITIONS_TEMPLATE
 
     ThreadSafety(ThreadSafety *parent)
         : parent_instance(parent),
-          c_VkCommandBuffer("VkCommandBuffer", VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, this),
-          c_VkDevice("VkDevice", VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT, this),
-          c_VkInstance("VkInstance", VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT, this),
-          c_VkQueue("VkQueue", VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT, this),
-          c_VkCommandPoolContents("VkCommandPool", VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT, this),
+          c_VkCommandBuffer("VkCommandBuffer", kVulkanObjectTypeCommandBuffer, this),
+          c_VkDevice("VkDevice", kVulkanObjectTypeDevice, this),
+          c_VkInstance("VkInstance", kVulkanObjectTypeInstance, this),
+          c_VkQueue("VkQueue", kVulkanObjectTypeQueue, this),
+          c_VkCommandPoolContents("VkCommandPool", kVulkanObjectTypeCommandPool, this),
 
 #ifdef DISTINCT_NONDISPATCHABLE_HANDLES
 COUNTER_CLASS_INSTANCES_TEMPLATE
 
 
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
-          c_uint64_t("NON_DISPATCHABLE_HANDLE", VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT, this)
+          c_uint64_t("NON_DISPATCHABLE_HANDLE", kVulkanObjectTypeUnknown, this)
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
               {};
 
@@ -1175,43 +1175,45 @@ void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(
         # Internal state - accumulators for different inner block text
         self.sections = dict([(section, []) for section in self.ALL_SECTIONS])
         self.non_dispatchable_types = set()
-        self.object_to_debug_report_type = {
-            'VkInstance' : 'VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT',
-            'VkPhysicalDevice' : 'VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT',
-            'VkDevice' : 'VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT',
-            'VkQueue' : 'VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT',
-            'VkSemaphore' : 'VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT',
-            'VkCommandBuffer' : 'VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT',
-            'VkFence' : 'VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT',
-            'VkDeviceMemory' : 'VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT',
-            'VkBuffer' : 'VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT',
-            'VkImage' : 'VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT',
-            'VkEvent' : 'VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT',
-            'VkQueryPool' : 'VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT',
-            'VkBufferView' : 'VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_VIEW_EXT',
-            'VkImageView' : 'VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT',
-            'VkShaderModule' : 'VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT',
-            'VkPipelineCache' : 'VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_CACHE_EXT',
-            'VkPipelineLayout' : 'VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT',
-            'VkRenderPass' : 'VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT',
-            'VkPipeline' : 'VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT',
-            'VkDescriptorSetLayout' : 'VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT',
-            'VkSampler' : 'VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_EXT',
-            'VkDescriptorPool' : 'VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT',
-            'VkDescriptorSet' : 'VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT',
-            'VkFramebuffer' : 'VK_DEBUG_REPORT_OBJECT_TYPE_FRAMEBUFFER_EXT',
-            'VkCommandPool' : 'VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT',
-            'VkSurfaceKHR' : 'VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT',
-            'VkSwapchainKHR' : 'VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT',
-            'VkDisplayKHR' : 'VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_KHR_EXT',
-            'VkDisplayModeKHR' : 'VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_MODE_KHR_EXT',
-            'VkObjectTableNVX' : 'VK_DEBUG_REPORT_OBJECT_TYPE_OBJECT_TABLE_NVX_EXT',
-            'VkIndirectCommandsLayoutNVX' : 'VK_DEBUG_REPORT_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NVX_EXT',
-            'VkSamplerYcbcrConversion' : 'VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION_EXT',
-            'VkDescriptorUpdateTemplate' : 'VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_EXT',
-            'VkAccelerationStructureNV' : 'VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_NV_EXT',
-            'VkDebugReportCallbackEXT' : 'VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_EXT',
-            'VkValidationCacheEXT' : 'VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT' }
+        self.object_to_vulkan_object_type = {
+            'VkInstance' : 'kVulkanObjectTypeInstance',
+            'VkPhysicalDevice' : 'kVulkanObjectTypePhysicalDevice',
+            'VkDevice' : 'kVulkanObjectTypeDevice',
+            'VkQueue' : 'kVulkanObjectTypeQueue',
+            'VkSemaphore' : 'kVulkanObjectTypeSemaphore',
+            'VkCommandBuffer' : 'kVulkanObjectTypeCommandBuffer',
+            'VkFence' : 'kVulkanObjectTypeFence',
+            'VkDeviceMemory' : 'kVulkanObjectTypeDeviceMemory',
+            'VkBuffer' : 'kVulkanObjectTypeBuffer',
+            'VkImage' : 'kVulkanObjectTypeImage',
+            'VkEvent' : 'kVulkanObjectTypeEvent',
+            'VkQueryPool' : 'kVulkanObjectTypeQueryPool',
+            'VkBufferView' : 'kVulkanObjectTypeBufferView',
+            'VkImageView' : 'kVulkanObjectTypeImageView',
+            'VkShaderModule' : 'kVulkanObjectTypeShaderModule',
+            'VkPipelineCache' : 'kVulkanObjectTypePipelineCache',
+            'VkPipelineLayout' : 'kVulkanObjectTypePipelineLayout',
+            'VkRenderPass' : 'kVulkanObjectTypeRenderPass',
+            'VkPipeline' : 'kVulkanObjectTypePipeline',
+            'VkDescriptorSetLayout' : 'kVulkanObjectTypeDescriptorSetLayout',
+            'VkSampler' : 'kVulkanObjectTypeSampler',
+            'VkDescriptorPool' : 'kVulkanObjectTypeDescriptorPool',
+            'VkDescriptorSet' : 'kVulkanObjectTypeDescriptorSet',
+            'VkFramebuffer' : 'kVulkanObjectTypeFramebuffer',
+            'VkCommandPool' : 'kVulkanObjectTypeCommandPool',
+            'VkSurfaceKHR' : 'kVulkanObjectTypeSurfaceKHR',
+            'VkSwapchainKHR' : 'kVulkanObjectTypeSwapchainKHR',
+            'VkDisplayKHR' : 'kVulkanObjectTypeDisplayKHR',
+            'VkDisplayModeKHR' : 'kVulkanObjectTypeDisplayModeKHR',
+            'VkObjectTableNVX' : 'kVulkanObjectTypeObjectTableNVX',
+            'VkIndirectCommandsLayoutNVX' : 'kVulkanObjectTypeIndirectCommandsLayoutNVX',
+            'VkSamplerYcbcrConversion' : 'kVulkanObjectTypeSamplerYcbcrConversion',
+            'VkDescriptorUpdateTemplate' : 'kVulkanObjectTypeDescriptorUpdateTemplate',
+            'VkAccelerationStructureNV' : 'kVulkanObjectTypeAccelerationStructureNV',
+            'VkDebugReportCallbackEXT' : 'kVulkanObjectTypeDebugReportCallbackEXT',
+            'VkDebugUtilsMessengerEXT' : 'kVulkanObjectTypeDebugUtilsMessengerEXT',
+            'VkPerformanceConfigurationINTEL' : 'kVulkanObjectTypePerformanceConfigurationINTEL',
+            'VkValidationCacheEXT' : 'kVulkanObjectTypeValidationCacheEXT' }
 
     # Check if the parameter passed in is a pointer to an array
     def paramIsArray(self, param):
@@ -1426,10 +1428,10 @@ void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(
 
         for obj in sorted(self.non_dispatchable_types):
             counter_class_defs += '    counter<%s> c_%s;\n' % (obj, obj)
-            if obj in self.object_to_debug_report_type:
-                obj_type = self.object_to_debug_report_type[obj]
+            if obj in self.object_to_vulkan_object_type:
+                obj_type = self.object_to_vulkan_object_type[obj]
             else:
-                obj_type = 'VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT'
+                obj_type = 'kVulkanObjectTypeUnknown,'
             counter_class_instances += '          c_%s("%s", %s, this),\n' % (obj, obj, obj_type)
             if 'VkSurface' in obj or 'VkDebugReportCallback' in obj or 'VkDebugUtilsMessenger' in obj:
                 counter_class_bodies += 'WRAPPER_PARENT_INSTANCE(%s)\n' % obj
