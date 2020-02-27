@@ -103,11 +103,15 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTest) {
 }
 
 TEST_F(VkBestPracticesLayerTest, VtxBufferBadIndex) {
+    InitBestPracticesFramework();
+    InitState();
+
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                          "UNASSIGNED-BestPractices-DrawState-VtxIndexOutOfBounds");
 
-    InitBestPracticesFramework();
-    InitState();
+    // This test may also trigger other warnings
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkBindMemory-small-dedicated-allocation");
 
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -131,7 +135,7 @@ TEST_F(VkBestPracticesLayerTest, VtxBufferBadIndex) {
     vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
     // Don't care about actual data, just need to get to draw to flag error
     const float vbo_data[3] = {1.f, 0.f, 1.f};
-    VkConstantBufferObj vbo(m_device, sizeof(vbo_data), (const void *)&vbo_data, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VkConstantBufferObj vbo(m_device, sizeof(vbo_data), (const void*)&vbo_data, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     m_commandBuffer->BindVertexBuffer(&vbo, (VkDeviceSize)0, 1);  // VBO idx 1, but no VBO in PSO
     m_commandBuffer->Draw(1, 0, 0, 0);
 
@@ -267,6 +271,72 @@ TEST_F(VkBestPracticesLayerTest, SimultaneousUse) {
     cmd_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     cmd_begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
     vk::BeginCommandBuffer(m_commandBuffer->handle(), &cmd_begin_info);
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkBestPracticesLayerTest, SmallAllocation) {
+    TEST_DESCRIPTION("Test for small memory allocations");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation");
+
+    // Find appropriate memory type for given reqs
+    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    VkPhysicalDeviceMemoryProperties dev_mem_props = m_device->phy().memory_properties();
+
+    uint32_t mem_type_index = 0;
+    for (mem_type_index = 0; mem_type_index < dev_mem_props.memoryTypeCount; ++mem_type_index) {
+        if (mem_props == (mem_props & dev_mem_props.memoryTypes[mem_type_index].propertyFlags)) break;
+    }
+    EXPECT_LT(mem_type_index, dev_mem_props.memoryTypeCount) << "Could not find a suitable memory type.";
+
+    const uint32_t kSmallAllocationSize = 1024;
+
+    VkMemoryAllocateInfo alloc_info{};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.allocationSize = kSmallAllocationSize;
+    alloc_info.memoryTypeIndex = mem_type_index;
+
+    VkDeviceMemory memory;
+    vk::AllocateMemory(m_device->device(), &alloc_info, nullptr, &memory);
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkBestPracticesLayerTest, SmallDedicatedAllocation) {
+    TEST_DESCRIPTION("Test for small dedicated memory allocations");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkBindMemory-small-dedicated-allocation");
+
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation");
+
+    VkImageCreateInfo image_info{};
+    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_info.extent = {64, 64, 1};
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.arrayLayers = 1;
+    image_info.mipLevels = 1;
+
+    // Create a small image with a dedicated allocation
+    VkImageObj image(m_device);
+    image.init_no_mem(*m_device, image_info);
+
+    vk_testing::DeviceMemory mem;
+    mem.init(*m_device, vk_testing::DeviceMemory::get_resource_alloc_info(*m_device, image.memory_requirements(),
+                                                                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+    vk::BindImageMemory(device(), image.handle(), mem.handle(), 0);
 
     m_errorMonitor->VerifyFound();
 }
