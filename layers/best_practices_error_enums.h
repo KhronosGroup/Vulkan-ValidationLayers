@@ -72,5 +72,11 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_CreateCommandPool_Command
     "UNASSIGNED-BestPractices-vkCreateCommandPool-command-buffer-reset";
 static const char DECORATE_UNUSED *kVUID_BestPractices_BeginCommandBuffer_SimultaneousUse =
     "UNASSIGNED-BestPractices-vkBeginCommandBuffer-simultaneous-use";
+static const char DECORATE_UNUSED *kVUID_BestPractices_AllocateMemory_SmallAllocation =
+    "UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation";
+static const char DECORATE_UNUSED *kVUID_BestPractices_SmallDedicatedAllocation =
+    "UNASSIGNED-BestPractices-vkBindMemory-small-dedicated-allocation";
+static const char DECORATE_UNUSED *kVUID_BestPractices_NonLazyTransientImage =
+    "UNASSIGNED-BestPractices-vkBindImageMemory-non-lazy-transient-image";
 
 #endif

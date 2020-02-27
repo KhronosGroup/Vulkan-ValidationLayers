@@ -237,6 +237,15 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
                                       "Performance Warning: This app has > %" PRIu32 " memory objects.", kMemoryObjectWarningLimit);
     }
 
+    if (pAllocateInfo->allocationSize < kMinDeviceAllocationSize) {
+        skip |= LogPerformanceWarning(
+            device, kVUID_BestPractices_AllocateMemory_SmallAllocation,
+            "vkAllocateMemory(): Allocating a VkDeviceMemory of size %llu. This is a very small allocation (current "
+            "threshold is %llu bytes). "
+            "You should make large allocations and sub-allocate from one large VkDeviceMemory.",
+            pAllocateInfo->allocationSize, kMinDeviceAllocationSize);
+    }
+
     // TODO: Insert get check for GetPhysicalDeviceMemoryProperties once the state is tracked in the StateTracker
 
     return skip;
@@ -273,7 +282,7 @@ void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memo
     }
 }
 
-bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, const char* api_name) const {
+bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, const char* api_name) const {
     bool skip = false;
     const BUFFER_STATE* buffer_state = GetBufferState(buffer);
 
@@ -281,6 +290,18 @@ bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, const char* api_na
         skip |= LogWarning(device, kVUID_BestPractices_BufferMemReqNotCalled,
                            "%s: Binding memory to %s but vkGetBufferMemoryRequirements() has not been called on that buffer.",
                            api_name, report_data->FormatHandle(buffer).c_str());
+    }
+
+    const DEVICE_MEMORY_STATE* mem_state = GetDevMemState(memory);
+
+    if (mem_state->alloc_info.allocationSize == buffer_state->createInfo.size &&
+        mem_state->alloc_info.allocationSize < kMinDedicatedAllocationSize) {
+        skip |= LogPerformanceWarning(
+            device, kVUID_BestPractices_SmallDedicatedAllocation,
+            "%s: Trying to bind %s to a memory block which is fully consumed by the buffer. "
+            "The required size of the allocation is %llu, but smaller buffers like this should be sub-allocated from "
+            "larger memory blocks. (Current threshold is %llu bytes.)",
+            api_name, report_data->FormatHandle(buffer).c_str(), mem_state->alloc_info.allocationSize, kMinDedicatedAllocationSize);
     }
 
     return skip;
@@ -291,7 +312,7 @@ bool BestPractices::PreCallValidateBindBufferMemory(VkDevice device, VkBuffer bu
     bool skip = false;
     const char* api_name = "BindBufferMemory()";
 
-    skip |= ValidateBindBufferMemory(buffer, api_name);
+    skip |= ValidateBindBufferMemory(buffer, memory, api_name);
 
     return skip;
 }
@@ -303,7 +324,7 @@ bool BestPractices::PreCallValidateBindBufferMemory2(VkDevice device, uint32_t b
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         sprintf(api_name, "vkBindBufferMemory2() pBindInfos[%u]", i);
-        skip |= ValidateBindBufferMemory(pBindInfos[i].buffer, api_name);
+        skip |= ValidateBindBufferMemory(pBindInfos[i].buffer, pBindInfos[i].memory, api_name);
     }
 
     return skip;
@@ -316,13 +337,13 @@ bool BestPractices::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         sprintf(api_name, "vkBindBufferMemory2KHR() pBindInfos[%u]", i);
-        skip |= ValidateBindBufferMemory(pBindInfos[i].buffer, api_name);
+        skip |= ValidateBindBufferMemory(pBindInfos[i].buffer, pBindInfos[i].memory, api_name);
     }
 
     return skip;
 }
 
-bool BestPractices::ValidateBindImageMemory(VkImage image, const char* api_name) const {
+bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory, const char* api_name) const {
     bool skip = false;
     const IMAGE_STATE* image_state = GetImageState(image);
 
@@ -330,6 +351,48 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, const char* api_name)
         skip |= LogWarning(device, kVUID_BestPractices_ImageMemReqNotCalled,
                            "%s: Binding memory to %s but vkGetImageMemoryRequirements() has not been called on that image.",
                            api_name, report_data->FormatHandle(image).c_str());
+    }
+
+    const DEVICE_MEMORY_STATE* mem_state = GetDevMemState(memory);
+
+    if (mem_state->alloc_info.allocationSize == image_state->requirements.size &&
+        mem_state->alloc_info.allocationSize < kMinDedicatedAllocationSize) {
+        skip |= LogPerformanceWarning(
+            device, kVUID_BestPractices_SmallDedicatedAllocation,
+            "%s: Trying to bind %s to a memory block which is fully consumed by the image. "
+            "The required size of the allocation is %llu, but smaller images like this should be sub-allocated from "
+            "larger memory blocks. (Current threshold is %llu bytes.)",
+            api_name, report_data->FormatHandle(image).c_str(), mem_state->alloc_info.allocationSize, kMinDedicatedAllocationSize);
+    }
+
+    // If we're binding memory to a image which was created as TRANSIENT and the image supports LAZY allocation,
+    // make sure this type is actually used.
+    // This warning will only trigger if this layer is run on a platform that supports LAZILY_ALLOCATED_BIT
+    // (i.e.most tile - based renderers)
+    if (image_state->createInfo.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) {
+        bool supports_lazy = false;
+        uint32_t suggested_type = 0;
+
+        for (uint32_t i = 0; i < phys_dev_mem_props.memoryTypeCount; i++) {
+            if ((1u << i) & image_state->requirements.memoryTypeBits) {
+                if (phys_dev_mem_props.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) {
+                    supports_lazy = true;
+                    suggested_type = i;
+                    break;
+                }
+            }
+        }
+
+        uint32_t allocated_properties = phys_dev_mem_props.memoryTypes[mem_state->alloc_info.memoryTypeIndex].propertyFlags;
+
+        if (supports_lazy && (allocated_properties & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) == 0) {
+            skip |= LogPerformanceWarning(
+                device, kVUID_BestPractices_NonLazyTransientImage,
+                "%s: Attempting to bind memory type % u to VkImage which was created with TRANSIENT_ATTACHMENT_BIT,"
+                "but this memory type is not LAZILY_ALLOCATED_BIT. You should use memory type %u here instead to save "
+                "%llu bytes of physical memory.",
+                api_name, mem_state->alloc_info.memoryTypeIndex, suggested_type, image_state->requirements.size);
+        }
     }
 
     return skip;
@@ -340,7 +403,7 @@ bool BestPractices::PreCallValidateBindImageMemory(VkDevice device, VkImage imag
     bool skip = false;
     const char* api_name = "vkBindImageMemory()";
 
-    skip |= ValidateBindImageMemory(image, api_name);
+    skip |= ValidateBindImageMemory(image, memory, api_name);
 
     return skip;
 }
@@ -352,7 +415,7 @@ bool BestPractices::PreCallValidateBindImageMemory2(VkDevice device, uint32_t bi
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         sprintf(api_name, "vkBindImageMemory2() pBindInfos[%u]", i);
-        skip |= ValidateBindImageMemory(pBindInfos[i].image, api_name);
+        skip |= ValidateBindImageMemory(pBindInfos[i].image, pBindInfos[i].memory, api_name);
     }
 
     return skip;
@@ -365,7 +428,7 @@ bool BestPractices::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t
 
     for (uint32_t i = 0; i < bindInfoCount; i++) {
         sprintf(api_name, "vkBindImageMemory2KHR() pBindInfos[%u]", i);
-        skip |= ValidateBindImageMemory(pBindInfos[i].image, api_name);
+        skip |= ValidateBindImageMemory(pBindInfos[i].image, pBindInfos[i].memory, api_name);
     }
 
     return skip;
