@@ -921,6 +921,9 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
         ResetCmdDebugUtilsLabel(report_data, pCB->commandBuffer);
         pCB->debug_label.Reset();
         pCB->validate_descriptorsets_in_queuesubmit.clear();
+
+        // Best practices info
+        pCB->small_indexed_draw_call_count = 0;
     }
     if (command_buffer_reset_callback) {
         (*command_buffer_reset_callback)(cb);

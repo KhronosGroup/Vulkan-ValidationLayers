@@ -91,4 +91,31 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_ClearAttachments_ClearAft
 static const char DECORATE_UNUSED *kVUID_BestPractices_Error_Result = "UNASSIGNED-BestPractices-Error-Result";
 static const char DECORATE_UNUSED *kVUID_BestPractices_NonSuccess_Result = "UNASSIGNED-BestPractices-NonSuccess-Result";
 
+// Arm-specific best practice
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelines_MultisampledBlending =
+    "UNASSIGNED-BestPractices-vkCreatePipelines-multisampled-blending";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateImage_TooLargeSampleCount =
+    "UNASSIGNED-BestPractices-vkCreateImage-too-large-sample-count";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateImage_NonTransientMSImage =
+    "UNASSIGNED-BestPractices-vkCreateImage-non-transient-ms-image";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateSampler_DifferentWrappingModes =
+    "UNASSIGNED-BestPractices-vkCreateSampler-different-wrapping-modes";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateSampler_LodClamping =
+    "UNASSIGNED-BestPractices-vkCreateSampler-lod-clamping";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateSampler_LodBias = "UNASSIGNED-BestPractices-vkCreateSampler-lod-bias";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateSampler_BorderClampColor =
+    "UNASSIGNED-BestPractices-vkCreateSampler-border-clamp-color";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateSampler_UnnormalizedCoordinates =
+    "UNASSIGNED-BestPractices-vkCreateSampler-unnormalized-coordinates";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateSampler_Anisotropy =
+    "UNASSIGNED-BestPractices-vkCreateSampler-anisotropy";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CmdResolveImage_ResolvingImage =
+    "UNASSIGNED-BestPractices-vkCmdResolveImage-resolving-image";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CmdDrawIndexed_ManySmallIndexedDrawcalls =
+    "UNASSIGNED-BestPractices-vkCmdDrawIndexed-many-small-indexed-drawcalls";
+static const char DECORATE_UNUSED *kVUID_BestPractices_BeginCommandBuffer_OneTimeSubmit =
+    "UNASSIGNED-BestPractices-vkBeginCommandBuffer-one-time-submit";
+static const char DECORATE_UNUSED *kVUID_BestPractices_BeginRenderPass_AttachmentNeedsReadback =
+    "UNASSIGNED-BestPractices-vkCmdBeginRenderPass-attachment-needs-readback";
+
 #endif

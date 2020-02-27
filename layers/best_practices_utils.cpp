@@ -223,6 +223,26 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
                        imageHex.str().c_str(), pCreateInfo->queueFamilyIndexCount);
     }
 
+    if (VendorCheckEnabled(kBPVendorArm)) {
+        if (pCreateInfo->samples > kMaxEfficientSamplesArm) {
+            skip |= LogPerformanceWarning(
+                device, kVUID_BestPractices_CreateImage_TooLargeSampleCount,
+                "%s vkCreateImage(): Trying to create an image with %u samples. "
+                "The hardware revision may not have full throughput for framebuffers with more than %u samples.",
+                VendorSpecificTag(kBPVendorArm), static_cast<uint32_t>(pCreateInfo->samples), kMaxEfficientSamplesArm);
+        }
+
+        if (pCreateInfo->samples > VK_SAMPLE_COUNT_1_BIT && !(pCreateInfo->usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)) {
+            skip |= LogPerformanceWarning(
+                device, kVUID_BestPractices_CreateImage_NonTransientMSImage,
+                "%s vkCreateImage(): Trying to create a multisampled image, but createInfo.usage did not have "
+                "VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. Multisampled images may be resolved on-chip, "
+                "and do not need to be backed by physical storage. "
+                "TRANSIENT_ATTACHMENT allows tiled GPUs to not back the multisampled image with physical memory.",
+                VendorSpecificTag(kBPVendorArm));
+        }
+    }
+
     return skip;
 }
 
@@ -621,6 +641,59 @@ bool BestPractices::PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t
     return skip;
 }
 
+static inline bool FormatHasFullThroughputBlendingArm(VkFormat format) {
+    switch (format) {
+        case VK_FORMAT_B10G11R11_UFLOAT_PACK32:
+        case VK_FORMAT_R16_SFLOAT:
+        case VK_FORMAT_R16G16_SFLOAT:
+        case VK_FORMAT_R16G16B16_SFLOAT:
+        case VK_FORMAT_R16G16B16A16_SFLOAT:
+        case VK_FORMAT_R32_SFLOAT:
+        case VK_FORMAT_R32G32_SFLOAT:
+        case VK_FORMAT_R32G32B32_SFLOAT:
+        case VK_FORMAT_R32G32B32A32_SFLOAT:
+            return false;
+
+        default:
+            return true;
+    }
+}
+
+bool BestPractices::ValidateMultisampledBlendingArm(uint32_t createInfoCount,
+                                                    const VkGraphicsPipelineCreateInfo* pCreateInfos) const {
+    bool skip = false;
+
+    for (uint32_t i = 0; i < createInfoCount; i++) {
+        auto pCreateInfo = &pCreateInfos[i];
+
+        if (!pCreateInfo->pColorBlendState || !pCreateInfo->pMultisampleState ||
+            pCreateInfo->pMultisampleState->rasterizationSamples == VK_SAMPLE_COUNT_1_BIT ||
+            pCreateInfo->pMultisampleState->sampleShadingEnable) {
+            return skip;
+        }
+
+        auto rp_state = GetRenderPassState(pCreateInfo->renderPass);
+        auto& subpass = rp_state->createInfo.pSubpasses[pCreateInfo->subpass];
+
+        for (uint32_t j = 0; j < pCreateInfo->pColorBlendState->attachmentCount; j++) {
+            auto& blend_att = pCreateInfo->pColorBlendState->pAttachments[j];
+            uint32_t att = subpass.pColorAttachments[j].attachment;
+
+            if (att != VK_ATTACHMENT_UNUSED && blend_att.blendEnable && blend_att.colorWriteMask) {
+                if (!FormatHasFullThroughputBlendingArm(rp_state->createInfo.pAttachments[att].format)) {
+                    skip |= LogPerformanceWarning(device, kVUID_BestPractices_CreatePipelines_MultisampledBlending,
+                                                  "%s vkCreateGraphicsPipelines() - createInfo #%u: Pipeline is multisampled and "
+                                                  "color attachment #%u makes use "
+                                                  "of a format which cannot be blended at full throughput when using MSAA.",
+                                                  VendorSpecificTag(kBPVendorArm), i, j);
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                            const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
@@ -653,6 +726,8 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                 "GPU. If using instanced vertex attributes prefer interleaving them in a single buffer.",
                 count, kMaxInstancedVertexBuffers);
         }
+
+        skip |= VendorCheckEnabled(kBPVendorArm) && ValidateMultisampledBlendingArm(createInfoCount, pCreateInfos);
     }
 
     return skip;
@@ -725,6 +800,14 @@ bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuf
                                       "vkBeginCommandBuffer(): VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT is set.");
     }
 
+    if (!(pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)) {
+        skip |= VendorCheckEnabled(kBPVendorArm) &&
+                LogPerformanceWarning(device, kVUID_BestPractices_BeginCommandBuffer_OneTimeSubmit,
+                                      "%s vkBeginCommandBuffer(): VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT is not set. "
+                                      "For best performance on Mali GPUs, consider setting ONE_TIME_SUBMIT by default.",
+                                      VendorSpecificTag(kBPVendorArm));
+    }
+
     return skip;
 }
 
@@ -784,6 +867,96 @@ bool BestPractices::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuff
     return skip;
 }
 
+static inline bool RenderPassUsesAttachmentOnTile(const safe_VkRenderPassCreateInfo2& createInfo, uint32_t attachment) {
+    for (uint32_t subpass = 0; subpass < createInfo.subpassCount; subpass++) {
+        auto& subpassInfo = createInfo.pSubpasses[subpass];
+
+        // If an attachment is ever used as a color attachment,
+        // resolve attachment or depth stencil attachment,
+        // it needs to exist on tile at some point.
+
+        for (uint32_t i = 0; i < subpassInfo.colorAttachmentCount; i++)
+            if (subpassInfo.pColorAttachments[i].attachment == attachment) return true;
+
+        if (subpassInfo.pResolveAttachments) {
+            for (uint32_t i = 0; i < subpassInfo.colorAttachmentCount; i++)
+                if (subpassInfo.pResolveAttachments[i].attachment == attachment) return true;
+        }
+
+        if (subpassInfo.pDepthStencilAttachment && subpassInfo.pDepthStencilAttachment->attachment == attachment) return true;
+    }
+
+    return false;
+}
+
+bool BestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
+                                               const VkRenderPassBeginInfo* pRenderPassBegin) const {
+    bool skip = false;
+
+    if (!pRenderPassBegin) {
+        return skip;
+    }
+
+    auto rp_state = GetRenderPassState(pRenderPassBegin->renderPass);
+    if (rp_state) {
+        // Check if any attachments have LOAD operation on them
+        for (uint32_t att = 0; att < rp_state->createInfo.attachmentCount; att++) {
+            auto& attachment = rp_state->createInfo.pAttachments[att];
+
+            bool attachmentHasReadback = false;
+            if (!FormatHasStencil(attachment.format) && attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
+                attachmentHasReadback = true;
+            }
+
+            if (FormatHasStencil(attachment.format) && attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
+                attachmentHasReadback = true;
+            }
+
+            bool attachmentNeedsReadback = false;
+
+            // Check if the attachment is actually used in any subpass on-tile
+            if (attachmentHasReadback && RenderPassUsesAttachmentOnTile(rp_state->createInfo, att)) {
+                attachmentNeedsReadback = true;
+            }
+
+            // Using LOAD_OP_LOAD is expensive on tiled GPUs, so flag it as a potential improvement
+            if (attachmentNeedsReadback) {
+                skip |= VendorCheckEnabled(kBPVendorArm) &&
+                        LogPerformanceWarning(
+                            device, kVUID_BestPractices_BeginRenderPass_AttachmentNeedsReadback,
+                            "%s Attachment #%u in render pass has begun with VK_ATTACHMENT_LOAD_OP_LOAD.\n"
+                            "Submitting this renderpass will cause the driver to inject a readback of the attachment "
+                            "which will copy in total %u pixels (renderArea = { %d, %d, %u, %u }) to the tile buffer.",
+                            VendorSpecificTag(kBPVendorArm), att,
+                            pRenderPassBegin->renderArea.extent.width * pRenderPassBegin->renderArea.extent.height,
+                            pRenderPassBegin->renderArea.offset.x, pRenderPassBegin->renderArea.offset.y,
+                            pRenderPassBegin->renderArea.extent.width, pRenderPassBegin->renderArea.extent.height);
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                                      VkSubpassContents contents) const {
+    bool skip = ValidateCmdBeginRenderPass(commandBuffer, RENDER_PASS_VERSION_1, pRenderPassBegin);
+    return skip;
+}
+
+bool BestPractices::PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
+                                                          const VkRenderPassBeginInfo* pRenderPassBegin,
+                                                          const VkSubpassBeginInfoKHR* pSubpassBeginInfo) const {
+    bool skip = ValidateCmdBeginRenderPass(commandBuffer, RENDER_PASS_VERSION_2, pRenderPassBegin);
+    return skip;
+}
+
+bool BestPractices::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                                       const VkSubpassBeginInfoKHR* pSubpassBeginInfo) const {
+    bool skip = ValidateCmdBeginRenderPass(commandBuffer, RENDER_PASS_VERSION_2, pRenderPassBegin);
+    return skip;
+}
+
 // Generic function to handle validation for all CmdDraw* type functions
 bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* caller) const {
     bool skip = false;
@@ -831,7 +1004,31 @@ bool BestPractices::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer,
     }
     skip |= ValidateCmdDrawType(commandBuffer, "vkCmdDrawIndexed()");
 
+    // Check if we reached the limit for small indexed draw calls.
+    // Note that we cannot update the draw call count here, so we do it in PreCallRecordCmdDrawIndexed.
+    const CMD_BUFFER_STATE* cmd_state = GetCBState(commandBuffer);
+    if ((indexCount * instanceCount) <= kSmallIndexedDrawcallIndices &&
+        (cmd_state->small_indexed_draw_call_count == kMaxSmallIndexedDrawcalls - 1)) {
+        skip |= VendorCheckEnabled(kBPVendorArm) &&
+                LogPerformanceWarning(device, kVUID_BestPractices_CmdDrawIndexed_ManySmallIndexedDrawcalls,
+                                      "The command buffer contains many small indexed drawcalls "
+                                      "(at least %u drawcalls with less than %u indices each). This may cause pipeline bubbles. "
+                                      "You can try batching drawcalls or instancing when applicable.",
+                                      VendorSpecificTag(kBPVendorArm), kMaxSmallIndexedDrawcalls, kSmallIndexedDrawcallIndices);
+    }
+
     return skip;
+}
+
+void BestPractices::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
+                                                uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) {
+    ValidationStateTracker::PreCallRecordCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset,
+                                                        firstInstance);
+
+    CMD_BUFFER_STATE* cmd_state = GetCBState(commandBuffer);
+    if ((indexCount * instanceCount) <= kSmallIndexedDrawcallIndices) {
+        cmd_state->small_indexed_draw_call_count++;
+    }
 }
 
 bool BestPractices::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
@@ -1229,6 +1426,84 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
                     }
                 }
             }
+        }
+    }
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                                   VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                   const VkImageResolve* pRegions) const {
+    bool skip = false;
+
+    skip |= VendorCheckEnabled(kBPVendorArm) &&
+            LogPerformanceWarning(device, kVUID_BestPractices_CmdResolveImage_ResolvingImage,
+                                  "%s Attempting to use vkCmdResolveImage to resolve a multisampled image. "
+                                  "This is a very slow and extremely bandwidth intensive path. "
+                                  "You should always resolve multisampled images on-tile with pResolveAttachments in VkRenderPass.",
+                                  VendorSpecificTag(kBPVendorArm));
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator, VkSampler* pSampler) const {
+    bool skip = false;
+
+    if (VendorCheckEnabled(kBPVendorArm)) {
+        if ((pCreateInfo->addressModeU != pCreateInfo->addressModeV) || (pCreateInfo->addressModeV != pCreateInfo->addressModeW)) {
+            skip |= LogPerformanceWarning(
+                device, kVUID_BestPractices_CreateSampler_DifferentWrappingModes,
+                "%s Creating a sampler object with wrapping modes which do not match (U = %u, V = %u, W = %u). "
+                "This may cause reduced performance even if only U (1D image) or U/V wrapping modes (2D "
+                "image) are actually used. If you need different wrapping modes, disregard this warning.",
+                VendorSpecificTag(kBPVendorArm));
+        }
+
+        if ((pCreateInfo->minLod != 0.0f) || (pCreateInfo->maxLod < VK_LOD_CLAMP_NONE)) {
+            skip |= LogPerformanceWarning(
+                device, kVUID_BestPractices_CreateSampler_LodClamping,
+                "%s Creating a sampler object with LOD clamping (minLod = %f, maxLod = %f). This may cause reduced performance. "
+                "Instead of clamping LOD in the sampler, consider using an VkImageView which restricts the mip-levels, set minLod "
+                "to 0.0, and maxLod to VK_LOD_CLAMP_NONE.",
+                VendorSpecificTag(kBPVendorArm), pCreateInfo->minLod, pCreateInfo->maxLod);
+        }
+
+        if (pCreateInfo->mipLodBias != 0.0f) {
+            skip |=
+                LogPerformanceWarning(device, kVUID_BestPractices_CreateSampler_LodBias,
+                                      "%s Creating a sampler object with LOD bias != 0.0 (%f). This will lead to less efficient "
+                                      "descriptors being created and may cause reduced performance.",
+                                      VendorSpecificTag(kBPVendorArm), pCreateInfo->mipLodBias);
+        }
+
+        if ((pCreateInfo->addressModeU == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER ||
+             pCreateInfo->addressModeV == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER ||
+             pCreateInfo->addressModeW == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER) &&
+            (pCreateInfo->borderColor != VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK)) {
+            skip |= LogPerformanceWarning(
+                device, kVUID_BestPractices_CreateSampler_BorderClampColor,
+                "%s Creating a sampler object with border clamping and borderColor != VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK. "
+                "This will lead to less efficient descriptors being created and may cause reduced performance. "
+                "If possible, use VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK as the border color.",
+                VendorSpecificTag(kBPVendorArm));
+        }
+
+        if (pCreateInfo->unnormalizedCoordinates) {
+            skip |= LogPerformanceWarning(
+                device, kVUID_BestPractices_CreateSampler_UnnormalizedCoordinates,
+                "%s Creating a sampler object with unnormalized coordinates. This will lead to less efficient "
+                "descriptors being created and may cause reduced performance.",
+                VendorSpecificTag(kBPVendorArm));
+        }
+
+        if (pCreateInfo->anisotropyEnable) {
+            skip |= LogPerformanceWarning(
+                device, kVUID_BestPractices_CreateSampler_Anisotropy,
+                "%s Creating a sampler object with anisotropy. This will lead to less efficient descriptors being created "
+                "and may cause reduced performance.",
+                VendorSpecificTag(kBPVendorArm));
         }
     }
 
