@@ -324,6 +324,243 @@ class RangeGenerator {
     uint32_t aspect_index_ = 0;
 };
 
+class OffsetRangeEncoder;
+
+struct SubresourceOffset : public Subresource {
+    // It doesn't save offset.z. If the z > 1, the z will save in arrayLayer.
+    VkOffset2D offset;
+    SubresourceOffset() : Subresource(), offset() {}
+    SubresourceOffset(const SubresourceOffset& from) = default;
+    SubresourceOffset(const OffsetRangeEncoder& encoder, const VkImageSubresource& subres, const VkOffset3D& offset_);
+    SubresourceOffset(VkImageAspectFlags aspect_mask_, uint32_t mip_level_, uint32_t array_layer_, uint32_t aspect_index_,
+                      const VkOffset3D& offset_)
+        : Subresource(aspect_mask_, mip_level_, array_layer_, aspect_index_), offset({offset_.x, offset_.y}) {
+        if (offset_.z > 1) {
+            arrayLayer = offset_.z;
+        }
+    }
+    SubresourceOffset(VkImageAspectFlagBits aspect_, uint32_t mip_level_, uint32_t array_layer_, uint32_t aspect_index_,
+                      const VkOffset3D& offset_)
+        : SubresourceOffset(static_cast<VkImageAspectFlags>(aspect_), mip_level_, array_layer_, aspect_index_, offset_) {}
+
+    SubresourceOffset& operator=(const Subresource& sub) {
+        Subresource::operator=(sub);
+        return *this;
+    }
+};
+
+class OffsetRangeEncoder : public RangeEncoder {
+  public:
+    // The default constructor for default iterators
+    OffsetRangeEncoder()
+        : full_range_image_extent_(),
+          limits_(),
+          offset_size_(),
+          encode_offset_function_(nullptr),
+          decode_offset_function_(nullptr) {}
+
+    OffsetRangeEncoder(const VkImageSubresourceRange& full_range, const VkExtent3D& full_range_image_extent,
+                       const AspectParameters* param);
+    // Create the encoder suitable to the full range (aspect mask *must* be canonical)
+    OffsetRangeEncoder(const VkImageSubresourceRange& full_range, const VkExtent3D& full_range_image_extent)
+        : OffsetRangeEncoder(full_range, full_range_image_extent, AspectParameters::Get(full_range.aspectMask)) {}
+    OffsetRangeEncoder(const OffsetRangeEncoder& from);
+    inline bool InRange(const VkImageSubresource& subres, const VkOffset3D& offset) const {
+        bool in_range = (subres.mipLevel < limits_.mipLevel) && (subres.arrayLayer < limits_.arrayLayer) &&
+                        (subres.aspectMask & limits_.aspectMask) && (offset.x < limits_.offset.x) && (offset.y < limits_.offset.y);
+        return in_range;
+    }
+    inline bool InRange(const VkImageSubresourceRange& range, const VkOffset3D& offset, const VkExtent3D& extent) const {
+        bool in_range =
+            (range.baseMipLevel < limits_.mipLevel) && ((range.baseMipLevel + range.levelCount) <= limits_.mipLevel) &&
+            (range.baseArrayLayer < limits_.arrayLayer) && ((range.baseArrayLayer + range.layerCount) <= limits_.arrayLayer) &&
+            (range.aspectMask & limits_.aspectMask) && ((offset.x + static_cast<int32_t>(extent.width)) < limits_.offset.x) &&
+            ((offset.y + static_cast<int32_t>(extent.height)) < limits_.offset.y);
+        return in_range;
+    }
+
+    inline SubresourceOffset BeginSubresourceOffset(const VkImageSubresourceRange& range, const VkOffset3D& offset) const {
+        const auto aspect_index = LowerBoundFromMask(range.aspectMask);
+        SubresourceOffset begin(AspectBit(aspect_index), range.baseMipLevel, range.baseArrayLayer, aspect_index, offset);
+        return begin;
+    }
+
+    // Encode running offset part and subresource part.
+    inline IndexType Encode(const SubresourceOffset& pos) const {
+        return (this->*(encode_offset_function_))(pos) + RangeEncoder::Encode(pos);
+    }
+
+    inline IndexType Encode(const VkImageSubresource& subres, const VkOffset3D& offset) const {
+        return Encode(SubresourceOffset(*this, subres, offset));
+    }
+
+    // Decode offset part first, and get subresource part of IndexType, and then decode subresource part.
+    SubresourceOffset Decode(const IndexType& index) const {
+        SubresourceOffset decode = {};
+        IndexType subresouce_index = (this->*decode_offset_function_)(index, decode);
+        decode = RangeEncoder::Decode(subresouce_index);
+        return decode;
+    }
+
+    inline IndexType OffsetXSize() const { return offset_size_.x; }
+    inline IndexType OffsetYSize() const { return offset_size_.y; }
+    inline const SubresourceOffset& Limits() const { return limits_; }
+
+  protected:
+    void PopulateFunctionPointers();
+
+    IndexType Encode1D(const SubresourceOffset& pos) const;
+    IndexType Encode2D(const SubresourceOffset& pos) const;
+
+    // offset_decode is the return of offset part of decode.
+    // The return IndexType is only for Subresource, so it can use the IndexType to decode to get Subresource.
+    IndexType Decode1D(const IndexType& encode, SubresourceOffset& offset_decode) const;
+    IndexType Decode2D(const IndexType& encode, SubresourceOffset& offset_decode) const;
+
+  private:
+    VkExtent3D full_range_image_extent_;
+    SubresourceOffset limits_;
+    // It doesn't save offset_size_.z. If the z > 1, the z will save in limits_.arrayLayer.
+    const VkOffset2D offset_size_;
+    IndexType (OffsetRangeEncoder::*encode_offset_function_)(const SubresourceOffset&) const;
+    IndexType (OffsetRangeEncoder::*decode_offset_function_)(const IndexType& encode, SubresourceOffset& offset_decode) const;
+};
+
+// Designed for use with RangeMap of MappedType
+template <typename Map>
+class ConstMapView {
+  public:
+    using KeyType = typename Map::key_type;
+    using MappedType = typename Map::mapped_type;
+    using MapValueType = typename Map::mapped_type;
+    using MapIterator = typename Map::const_iterator;
+    using CachedLowerBound = typename sparse_container::cached_lower_bound_impl<const Map>;
+
+    struct ValueType {
+        const VkImageSubresource& subresource;
+        MapIterator it;
+        ValueType(const VkImageSubresource& subresource_) : subresource(subresource_), it(){};
+    };
+    class ConstIterator {
+      public:
+        ConstIterator()
+            : view_(nullptr),
+              range_gen_(),
+              cached_it_(),
+              pos_(range_gen_.GetSubresource()),
+              current_index_(),
+              constant_value_bound_() {}
+        ConstIterator& operator++() {
+            Increment();
+            return *this;
+        }
+        const ValueType* operator->() const { return &pos_; }
+        const ValueType& operator*() const { return pos_; }
+        // Only for comparisons to end()
+        // Note: if a fully function == is needed, the AtEnd needs to be maintained, as end_iterator is a static.
+        bool AtEnd() const { return pos_.subresource.aspectMask == 0; }
+        bool operator==(const ConstIterator& other) const { return AtEnd() && other.AtEnd(); };
+        bool operator!=(const ConstIterator& other) const { return AtEnd() != other.AtEnd(); };
+
+      protected:
+        friend ConstMapView;
+        ConstIterator(const ConstMapView& view, const VkImageSubresourceRange& range)
+            : view_(&view),
+              range_gen_(view.GetEncoder(), range),
+              cached_it_(view.GetMap(), range_gen_->begin),
+              pos_(range_gen_.GetSubresource()),
+              current_index_(range_gen_->begin),
+              constant_value_bound_(current_index_) {
+            UpdateRangeAndValue();
+        }
+
+        void Increment() {
+            ++current_index_;
+            ++(range_gen_.GetSubresourceGenerator());
+            if (constant_value_bound_ <= current_index_) {
+                UpdateRangeAndValue();
+            }
+        }
+
+        void ForceEndCondition() { range_gen_.GetSubresource().aspectMask = 0; }
+
+        // Constant value range logice, subreource / lower bound position advance logic
+        // TODO: convert this piece into a template _impl function suitable for const and non-const view iterators
+        void UpdateRangeAndValue() {
+            bool not_found = true;
+            while (range_gen_->non_empty() && not_found) {
+                if (!cached_it_.includes(current_index_)) {
+                    // The result of the seek can be invalid, valid, or end...
+                    cached_it_.seek(current_index_);
+                }
+
+                if (cached_it_->lower_bound == view_->GetMap().end()) {
+                    // We're past the end of mapped data. Set end condtion.
+                    ForceEndCondition();
+                    not_found = false;
+                } else {
+                    // Search within the current range_ for a constant valid constant value interval
+                    // The while condition allows the parallel iterator to advance constant value ranges as needed.
+                    while (range_gen_->includes(current_index_) && not_found) {
+                        if (cached_it_->valid) {
+                            // Our position with in the map is valid so we can update our value
+                            pos_.it = cached_it_->lower_bound;
+                            constant_value_bound_ = std::min(cached_it_->lower_bound->first.end, range_gen_->end);
+                            not_found = false;
+                        } else {
+                            // We're skipping this gap in Map, set the index to the exclusive end and look again
+                            // Note that we ONLY need to Seek the Subresource generator on a skip condition.
+                            current_index_ = std::min(cached_it_->lower_bound->first.begin, range_gen_->end);
+                            constant_value_bound_ = current_index_;
+                            // Move the subresource to the end of the skipped range
+                            range_gen_.GetSubresourceGenerator().Seek(current_index_);
+                            cached_it_.seek(current_index_);
+                        }
+                    }
+
+                    if (not_found) {
+                        // We need to advance the index range to search as the current cached_it_ lies outside it, and there's
+                        // no easy way to seek RangeGen
+                        // ++range_gen will update Subresource.
+                        ++range_gen_;
+                        current_index_ = range_gen_->begin;
+                    }
+                }
+            }
+
+            if (range_gen_->empty()) {
+                ForceEndCondition();
+            }
+        }
+
+      private:
+        const ConstMapView* view_;
+        RangeGenerator range_gen_;
+        CachedLowerBound cached_it_;
+        ValueType pos_;
+        IndexType current_index_;
+        IndexType constant_value_bound_;
+    };
+
+    const Map& GetMap() const { return *map_; }
+    const RangeEncoder& GetEncoder() const { return *encoder_; }
+
+    inline ConstIterator Begin(const VkImageSubresourceRange& range) const { return ConstIterator(*this, range); }
+    inline const ConstIterator& End() const { return end_; }
+
+    // Enable range based for....
+    inline ConstIterator begin() const { return Begin(encoder_->FullRange()); }
+    inline const ConstIterator& end() const { return End(); }
+
+    ConstMapView() : map_(nullptr), encoder_(nullptr), end_() {}
+    ConstMapView(const Map& map, const RangeEncoder& encoder) : map_(&map), encoder_(&encoder), end_() {}
+
+  private:
+    const Map* map_;
+    const RangeEncoder* encoder_;
+    const ConstIterator end_;
+};
+
 // double wrapped map variants.. to avoid needing to templatize on the range map type.  The underlying maps are available for
 // use in performance sensitive places that are *already* templatized (for example update_range_value).
 // In STL style.  Note that N must be < uint8_t max
