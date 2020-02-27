@@ -232,3 +232,41 @@ TEST_F(VkBestPracticesLayerTest, TestDestroyFreeNullHandles) {
 
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkBestPracticesLayerTest, CommandBufferReset) {
+    TEST_DESCRIPTION("Test for validating usage of vkCreateCommandPool with COMMAND_BUFFER_RESET_BIT");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateCommandPool-command-buffer-reset");
+
+    VkCommandPool command_pool;
+    VkCommandPoolCreateInfo pool_create_info{};
+    pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
+    pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    vk::CreateCommandPool(m_device->device(), &pool_create_info, nullptr, &command_pool);
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkBestPracticesLayerTest, SimultaneousUse) {
+    TEST_DESCRIPTION("Test for validating usage of vkBeginCommandBuffer with SIMULTANEOUS_USE");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkBeginCommandBuffer-simultaneous-use");
+
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-ArmBestPractices-vkBeginCommandBuffer-one-time-submit");
+
+    VkCommandBufferBeginInfo cmd_begin_info{};
+    cmd_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    cmd_begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+    vk::BeginCommandBuffer(m_commandBuffer->handle(), &cmd_begin_info);
+
+    m_errorMonitor->VerifyFound();
+}
