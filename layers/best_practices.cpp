@@ -432,6 +432,32 @@ bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
     return skip;
 }
 
+bool BestPractices::PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
+                                                     const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool) const {
+    bool skip = false;
+
+    if (pCreateInfo->flags & VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT) {
+        skip |= LogPerformanceWarning(
+            device, kVUID_BestPractices_CreateCommandPool_CommandBufferReset,
+            "vkCreateCommandPool(): VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT is set. Consider resetting entire "
+            "pool instead.");
+    }
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer,
+                                                      const VkCommandBufferBeginInfo* pBeginInfo) const {
+    bool skip = false;
+
+    if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
+        skip |= LogPerformanceWarning(device, kVUID_BestPractices_BeginCommandBuffer_SimultaneousUse,
+                                      "vkBeginCommandBuffer(): VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT is set.");
+    }
+
+    return skip;
+}
+
 bool BestPractices::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) const {
     bool skip = false;
 
