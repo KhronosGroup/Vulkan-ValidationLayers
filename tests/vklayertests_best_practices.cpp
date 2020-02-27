@@ -340,3 +340,174 @@ TEST_F(VkBestPracticesLayerTest, SmallDedicatedAllocation) {
 
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkBestPracticesLayerTest, MSImageRequiresMemory) {
+    TEST_DESCRIPTION("Test for MS image that requires memory");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateRenderPass-image-requires-memory");
+
+    VkAttachmentDescription attachment{};
+    attachment.samples = VK_SAMPLE_COUNT_4_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderPassCreateInfo rp_info{};
+    rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    rp_info.attachmentCount = 1;
+    rp_info.pAttachments = &attachment;
+
+    VkRenderPass rp;
+    vk::CreateRenderPass(m_device->device(), &rp_info, nullptr, &rp);
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
+    TEST_DESCRIPTION("Test for non-lazy multisampled images");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateFramebuffer-attachment-should-not-be-transient");
+
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkBindMemory-small-dedicated-allocation");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkBindImageMemory-non-lazy-transient-image");
+
+    VkAttachmentDescription attachment{};
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+    VkRenderPassCreateInfo rp_info{};
+    rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    rp_info.attachmentCount = 1;
+    rp_info.pAttachments = &attachment;
+
+    VkRenderPass rp = VK_NULL_HANDLE;
+    vk::CreateRenderPass(m_device->device(), &rp_info, nullptr, &rp);
+
+    VkImageCreateInfo image_info{};
+    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_info.extent = {1920, 1080, 1};
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.arrayLayers = 1;
+    image_info.mipLevels = 1;
+
+    VkImageObj image(m_device);
+    image.init(&image_info);
+
+    VkImageViewCreateInfo iv_info{};
+    iv_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    iv_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    iv_info.image = image.handle();
+    iv_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    iv_info.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    iv_info.components = {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A};
+
+    VkImageView image_view = VK_NULL_HANDLE;
+    vk::CreateImageView(m_device->device(), &iv_info, nullptr, &image_view);
+
+    VkFramebufferCreateInfo fb_info{};
+    fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    fb_info.renderPass = rp;
+    fb_info.layers = 1;
+    fb_info.width = 1920;
+    fb_info.height = 1080;
+    fb_info.attachmentCount = 1;
+    fb_info.pAttachments = &image_view;
+
+    VkFramebuffer fb = VK_NULL_HANDLE;
+    vk::CreateFramebuffer(m_device->device(), &fb_info, nullptr, &fb);
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {
+    TEST_DESCRIPTION("Test for too many instanced vertex buffers");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCreateGraphicsPipelines-too-many-instanced-vertex-buffers");
+
+    // This test may also trigger the small allocation warnings
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkBindMemory-small-dedicated-allocation");
+
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    std::vector<VkVertexInputBindingDescription> bindings(2, VkVertexInputBindingDescription{});
+    std::vector<VkVertexInputAttributeDescription> attributes(2, VkVertexInputAttributeDescription{});
+
+    bindings[0].binding = 0;
+    bindings[0].stride = 4;
+    bindings[0].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+    attributes[0].binding = 0;
+
+    bindings[1].binding = 1;
+    bindings[1].stride = 8;
+    bindings[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+    attributes[1].binding = 1;
+
+    VkPipelineVertexInputStateCreateInfo vi_state_ci{};
+    vi_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vi_state_ci.vertexBindingDescriptionCount = static_cast<uint32_t>(bindings.size());
+    vi_state_ci.pVertexBindingDescriptions = bindings.data();
+    vi_state_ci.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size());
+    vi_state_ci.pVertexAttributeDescriptions = attributes.data();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.vi_ci_ = vi_state_ci;
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
+    TEST_DESCRIPTION("Test for clearing attachments after load");
+
+    InitBestPracticesFramework();
+    InitState();
+
+    m_clear_via_load_op = false;  // Force LOAD_OP_LOAD
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load");
+
+    // On tiled renderers, this can also trigger a warning about LOAD_OP_LOAD causing a readback
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-ArmBestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw");
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    VkClearAttachment color_attachment;
+    color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    color_attachment.clearValue.color.float32[0] = 1.0;
+    color_attachment.clearValue.color.float32[1] = 1.0;
+    color_attachment.clearValue.color.float32[2] = 1.0;
+    color_attachment.clearValue.color.float32[3] = 1.0;
+    color_attachment.colorAttachment = 0;
+    VkClearRect clear_rect = {{{0, 0}, {(uint32_t)m_width, (uint32_t)m_height}}, 0, 1};
+
+    vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
+
+    m_errorMonitor->VerifyFound();
+}
