@@ -78,5 +78,15 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_SmallDedicatedAllocation 
     "UNASSIGNED-BestPractices-vkBindMemory-small-dedicated-allocation";
 static const char DECORATE_UNUSED *kVUID_BestPractices_NonLazyTransientImage =
     "UNASSIGNED-BestPractices-vkBindImageMemory-non-lazy-transient-image";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateRenderPass_ImageRequiresMemory =
+    "UNASSIGNED-BestPractices-vkCreateRenderPass-image-requires-memory";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateFramebuffer_AttachmentShouldBeTransient =
+    "UNASSIGNED-BestPractices-vkCreateFramebuffer-attachment-should-be-transient";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreateFramebuffer_AttachmentShouldNotBeTransient =
+    "UNASSIGNED-BestPractices-vkCreateFramebuffer-attachment-should-not-be-transient";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelines_TooManyInstancedVertexBuffers =
+    "UNASSIGNED-BestPractices-vkCreateGraphicsPipelines-too-many-instanced-vertex-buffers";
+static const char DECORATE_UNUSED *kVUID_BestPractices_ClearAttachments_ClearAfterLoad =
+    "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load";
 
 #endif

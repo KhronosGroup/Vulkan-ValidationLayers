@@ -218,11 +218,92 @@ bool BestPractices::PreCallValidateCreateRenderPass(VkDevice device, const VkRen
                                    "image truely is undefined at the start of the render pass.");
             }
         }
+
+        const auto& attachment = pCreateInfo->pAttachments[i];
+        if (attachment.samples > VK_SAMPLE_COUNT_1_BIT) {
+            bool access_requires_memory =
+                attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD || attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE;
+
+            if (FormatHasStencil(format)) {
+                access_requires_memory |= attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD ||
+                                          attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE;
+            }
+
+            if (access_requires_memory) {
+                skip |= LogPerformanceWarning(
+                    device, kVUID_BestPractices_CreateRenderPass_ImageRequiresMemory,
+                    "Attachment %u in the VkRenderPass is a multisampled image with %u samples, but it uses loadOp/storeOp "
+                    "which requires accessing data from memory. Multisampled images should always be loadOp = CLEAR or DONT_CARE, "
+                    "storeOp = DONT_CARE. This allows the implementation to use lazily allocated memory effectively.",
+                    i, static_cast<uint32_t>(attachment.samples));
+            }
+        }
     }
 
     for (uint32_t dependency = 0; dependency < pCreateInfo->dependencyCount; dependency++) {
         skip |= CheckPipelineStageFlags("vkCreateRenderPass", pCreateInfo->pDependencies[dependency].srcStageMask);
         skip |= CheckPipelineStageFlags("vkCreateRenderPass", pCreateInfo->pDependencies[dependency].dstStageMask);
+    }
+
+    return skip;
+}
+
+bool BestPractices::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
+                                                     const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer) const {
+    bool skip = false;
+
+    // Check for non-transient attachments that should be transient and vice versa
+    auto rp_state = GetRenderPassState(pCreateInfo->renderPass);
+    if (rp_state) {
+        const VkRenderPassCreateInfo2* rpci = rp_state->createInfo.ptr();
+        const VkImageView* image_views = pCreateInfo->pAttachments;
+
+        for (uint32_t i = 0; i < pCreateInfo->attachmentCount; ++i) {
+            auto& attachment = rpci->pAttachments[i];
+            bool attachment_should_be_transient =
+                (attachment.loadOp != VK_ATTACHMENT_LOAD_OP_LOAD && attachment.storeOp != VK_ATTACHMENT_STORE_OP_STORE);
+
+            if (FormatHasStencil(attachment.format)) {
+                attachment_should_be_transient &= (attachment.stencilLoadOp != VK_ATTACHMENT_LOAD_OP_LOAD &&
+                                                   attachment.stencilStoreOp != VK_ATTACHMENT_STORE_OP_STORE);
+            }
+
+            auto view_state = GetImageViewState(image_views[i]);
+            if (view_state) {
+                auto& ivci = view_state->create_info;
+                auto& ici = GetImageState(ivci.image)->createInfo;
+
+                bool image_is_transient = (ici.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0;
+
+                // The check for an image that should not be transient applies to all GPUs
+                if (!attachment_should_be_transient && image_is_transient) {
+                    skip |= LogPerformanceWarning(
+                        device, kVUID_BestPractices_CreateFramebuffer_AttachmentShouldNotBeTransient,
+                        "Attachment %u in VkFramebuffer uses loadOp/storeOps which need to access physical memory, "
+                        "but the image backing the image view has VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. "
+                        "Physical memory will need to be backed lazily to this image, potentially causing stalls.",
+                        i);
+                }
+
+                bool supports_lazy = false;
+                for (uint32_t j = 0; j < phys_dev_mem_props.memoryTypeCount; j++) {
+                    if (phys_dev_mem_props.memoryTypes[j].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) {
+                        supports_lazy = true;
+                    }
+                }
+
+                // The check for an image that should be transient only applies to GPUs supporting
+                // lazily allocated memory
+                if (supports_lazy && attachment_should_be_transient && !image_is_transient) {
+                    skip |= LogPerformanceWarning(
+                        device, kVUID_BestPractices_CreateFramebuffer_AttachmentShouldBeTransient,
+                        "Attachment %u in VkFramebuffer uses loadOp/storeOps which never have to be backed by physical memory, "
+                        "but the image backing the image view does not have VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. "
+                        "You can save physical memory by using transient attachment backed by lazily allocated memory here.",
+                        i);
+                }
+            }
+        }
     }
 
     return skip;
@@ -446,6 +527,26 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
             device, kVUID_BestPractices_CreatePipelines_MultiplePipelines,
             "Performance Warning: This vkCreateGraphicsPipelines call is creating multiple pipelines but is not using a "
             "pipeline cache, which may help with performance");
+    }
+
+    for (uint32_t i = 0; i < createInfoCount; i++) {
+        auto& createInfo = pCreateInfos[i];
+
+        auto& vertexInput = *createInfo.pVertexInputState;
+        uint32_t count = 0;
+        for (uint32_t j = 0; j < vertexInput.vertexBindingDescriptionCount; j++) {
+            if (vertexInput.pVertexBindingDescriptions[j].inputRate == VK_VERTEX_INPUT_RATE_INSTANCE) {
+                count++;
+            }
+        }
+
+        if (count > kMaxInstancedVertexBuffers) {
+            skip |= LogPerformanceWarning(
+                device, kVUID_BestPractices_CreatePipelines_TooManyInstancedVertexBuffers,
+                "The pipeline is using %u instanced vertex buffers (current limit: %u), but this can be inefficient on the "
+                "GPU. If using instanced vertex attributes prefer interleaving them in a single buffer.",
+                count, kMaxInstancedVertexBuffers);
+        }
     }
 
     return skip;
@@ -959,6 +1060,62 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
                                       "vkCmdClearAttachments() issued on %s prior to any Draw Cmds. It is recommended you "
                                       "use RenderPass LOAD_OP_CLEAR on Attachments prior to any Draw.",
                                       report_data->FormatHandle(commandBuffer).c_str());
+    }
+
+    // Check for uses of ClearAttachments along with LOAD_OP_LOAD,
+    // as it can be more efficient to just use LOAD_OP_CLEAR
+    const RENDER_PASS_STATE* rp = cb_node->activeRenderPass;
+    if (rp) {
+        const auto& subpass = rp->createInfo.pSubpasses[cb_node->activeSubpass];
+
+        for (uint32_t i = 0; i < attachmentCount; i++) {
+            auto& attachment = pAttachments[i];
+            if (attachment.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
+                uint32_t color_attachment = attachment.colorAttachment;
+                uint32_t fb_attachment = subpass.pColorAttachments[color_attachment].attachment;
+
+                if (fb_attachment != VK_ATTACHMENT_UNUSED) {
+                    if (rp->createInfo.pAttachments[fb_attachment].loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
+                        skip |= LogPerformanceWarning(
+                            device, kVUID_BestPractices_ClearAttachments_ClearAfterLoad,
+                            "vkCmdClearAttachments() issued on %s for color attachment #%u in this subpass, "
+                            "but LOAD_OP_LOAD was used. If you need to clear the framebuffer, always use LOAD_OP_CLEAR as "
+                            "it is more efficient.",
+                            report_data->FormatHandle(commandBuffer).c_str(), color_attachment);
+                    }
+                }
+            }
+
+            if (subpass.pDepthStencilAttachment && attachment.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) {
+                uint32_t fb_attachment = subpass.pDepthStencilAttachment->attachment;
+
+                if (fb_attachment != VK_ATTACHMENT_UNUSED) {
+                    if (rp->createInfo.pAttachments[fb_attachment].loadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
+                        skip |= LogPerformanceWarning(
+                            device, kVUID_BestPractices_ClearAttachments_ClearAfterLoad,
+                            "vkCmdClearAttachments() issued on %s for the depth attachment in this subpass, "
+                            "but LOAD_OP_LOAD was used. If you need to clear the framebuffer, always use LOAD_OP_CLEAR as "
+                            "it is more efficient.",
+                            report_data->FormatHandle(commandBuffer).c_str());
+                    }
+                }
+            }
+
+            if (subpass.pDepthStencilAttachment && attachment.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) {
+                uint32_t fb_attachment = subpass.pDepthStencilAttachment->attachment;
+
+                if (fb_attachment != VK_ATTACHMENT_UNUSED) {
+                    if (rp->createInfo.pAttachments[fb_attachment].stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD) {
+                        skip |= LogPerformanceWarning(
+                            device, kVUID_BestPractices_ClearAttachments_ClearAfterLoad,
+                            "vkCmdClearAttachments() issued on %s for the stencil attachment in this subpass, "
+                            "but LOAD_OP_LOAD was used. If you need to clear the framebuffer, always use LOAD_OP_CLEAR as "
+                            "it is more efficient.",
+                            report_data->FormatHandle(commandBuffer).c_str());
+                    }
+                }
+            }
+        }
     }
 
     return skip;
