@@ -250,23 +250,23 @@ static inline void DebugReportFlagsToAnnotFlags(VkDebugReportFlagsEXT dr_flags, 
     *da_type = 0;
     // If it's explicitly listed as a performance warning, treat it as a performance message. Otherwise, treat it as a validation
     // issue.
-    if ((dr_flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT) != 0) {
+    if ((dr_flags & kPerformanceWarningBit) != 0) {
         *da_type |= VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         *da_severity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
     }
-    if ((dr_flags & VK_DEBUG_REPORT_DEBUG_BIT_EXT) != 0) {
+    if ((dr_flags & kDebugBit) != 0) {
         *da_type |= VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
         *da_severity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
     }
-    if ((dr_flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT) != 0) {
+    if ((dr_flags & kInformationBit) != 0) {
         *da_type |= VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
         *da_severity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
     }
-    if ((dr_flags & VK_DEBUG_REPORT_WARNING_BIT_EXT) != 0) {
+    if ((dr_flags & kWarningBit) != 0) {
         *da_type |= VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
         *da_severity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
     }
-    if ((dr_flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) != 0) {
+    if ((dr_flags & kErrorBit) != 0) {
         *da_type |= VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
         *da_severity |= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
     }
