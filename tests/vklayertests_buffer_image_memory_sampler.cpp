@@ -3786,6 +3786,70 @@ TEST_F(VkLayerTest, ClearColorImageWithBadRange) {
     }
 }
 
+TEST_F(VkLayerTest, ClearColorImageWithInvalidFormat) {
+    TEST_DESCRIPTION("Record clear color with an invalid image formats");
+
+    // Enable KHR multiplane req'd extensions
+    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 1);
+    if (mp_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    if (mp_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    } else {
+        printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkImageObj mp_image(m_device);
+    VkFormat mp_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = mp_format;
+    image_create_info.extent.width = 32;
+    image_create_info.extent.height = 32;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_create_info.arrayLayers = 1;
+
+    bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), image_create_info, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
+    if (supported == false) {
+        printf("%s Multiplane image format not supported.  Skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    mp_image.init(&image_create_info);
+    m_commandBuffer->begin();
+
+    VkClearColorValue color_clear_value = {};
+    VkImageSubresourceRange clear_range;
+    clear_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    clear_range.baseMipLevel = 0;
+    clear_range.baseArrayLayer = 0;
+    clear_range.layerCount = 1;
+    clear_range.levelCount = 1;
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-vkCmdClearColorImage-image-01545");
+    m_commandBuffer->ClearColorImage(mp_image.handle(), VK_IMAGE_LAYOUT_GENERAL, &color_clear_value, 1, &clear_range);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, ClearDepthStencilWithBadAspect) {
     TEST_DESCRIPTION("Verify ClearDepth with an invalid VkImageAspectFlags.");
 
