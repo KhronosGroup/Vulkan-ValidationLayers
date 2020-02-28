@@ -3455,7 +3455,7 @@ TEST_F(VkPositiveLayerTest, BindSparse) {
         return;
     }
 
-    m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT);
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     VkImage image;
     VkImageCreateInfo image_create_info = {};
@@ -3551,7 +3551,7 @@ TEST_F(VkPositiveLayerTest, BindSparseMetadata) {
         return;
     }
 
-    m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT);
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     // Create a sparse image
     VkImage image;
@@ -5136,7 +5136,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttribComponents) {
         "Test that pipeline validation accepts consuming a vertex attribute through multiple vertex shader inputs, each consuming "
         "a different subset of the components, and that fragment shader-attachment validation tolerates multiple duplicate "
         "location outputs");
-    m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT);
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -6380,7 +6380,7 @@ TEST_F(VkPositiveLayerTest, ExternalFence) {
 TEST_F(VkPositiveLayerTest, ThreadNullFenceCollision) {
     test_platform_thread thread;
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "THREADING ERROR");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "THREADING ERROR");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -6804,7 +6804,7 @@ TEST_F(VkPositiveLayerTest, ExternalMemory) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT);
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     VkMemoryPropertyFlags mem_flags = 0;
     const VkDeviceSize buffer_size = 1024;
@@ -7004,7 +7004,7 @@ TEST_F(VkPositiveLayerTest, GetMemoryRequirements2) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT);
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     // Create a test buffer
     VkBufferObj buffer;
@@ -7088,7 +7088,7 @@ TEST_F(VkPositiveLayerTest, BindMemory2) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT);
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     // Create a test buffer
     VkBufferObj buffer;
@@ -7833,7 +7833,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineFragmentOutputNotConsumedButAlphaToCov
         helper.pipe_ms_state_ci_ = ms_state_ci;
         helper.cb_ci_.attachmentCount = 0;
     };
-    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT, "", true);
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit | kWarningBit, "", true);
 }
 
 TEST_F(VkPositiveLayerTest, CreatePipelineAttachmentUnused) {
@@ -7872,8 +7872,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttachmentUnused) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         helper.gp_ci_.renderPass = render_pass;
     };
-    CreatePipelineHelper::OneshotTest(*this, override_info, VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT, "",
-                                      true);
+    CreatePipelineHelper::OneshotTest(*this, override_info, kErrorBit | kWarningBit, "", true);
 
     vk::DestroyRenderPass(m_device->device(), render_pass, nullptr);
 }
@@ -9266,7 +9265,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt64) {
 
 TEST_F(VkPositiveLayerTest, SubresourceLayout) {
     ASSERT_NO_FATAL_FAILURE(Init());
-    m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT);
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
 
     auto image_ci = vk_testing::Image::create_info();
     image_ci.imageType = VK_IMAGE_TYPE_2D;
