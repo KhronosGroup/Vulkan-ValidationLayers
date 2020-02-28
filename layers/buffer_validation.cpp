@@ -1672,6 +1672,13 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
             skip |= ValidateImageAttributes(image_state, pRanges[i]);
             skip |= VerifyClearImageLayout(cb_node, image_state, pRanges[i], imageLayout, "vkCmdClearColorImage()");
         }
+        // Tests for "Formats requiring sampler Y’CBCR conversion for VK_IMAGE_ASPECT_COLOR_BIT image views"
+        if (FormatRequiresYcbcrConversion(image_state->createInfo.format)) {
+            skip |= LogError(device, "VUID-vkCmdClearColorImage-image-01545",
+                             "vkCmdClearColorImage(): format (%s) must not be one of the formats requiring sampler YCBCR "
+                             "conversion for VK_IMAGE_ASPECT_COLOR_BIT image views",
+                             string_VkFormat(image_state->createInfo.format));
+        }
     }
     return skip;
 }
