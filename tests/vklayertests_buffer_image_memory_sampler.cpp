@@ -8603,6 +8603,27 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
             vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
             m_errorMonitor->VerifyFound();
 
+            // Point to a 3rd plane for a 2-plane format
+            VkImagePlaneMemoryRequirementsInfo image_plane_req = {VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO};
+            image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
+            mem_req_info2.pNext = &image_plane_req;
+            mem_req_info2.image = image;
+
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                 "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02281");
+            vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
+            m_errorMonitor->VerifyFound();
+
+            // Test with a non planar image aspect also
+            image_plane_req.planeAspect = VK_IMAGE_ASPECT_COLOR_BIT;
+            mem_req_info2.pNext = &image_plane_req;
+            mem_req_info2.image = image;
+
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                                 "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02281");
+            vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
+            m_errorMonitor->VerifyFound();
+
             vk::DestroyImage(m_device->device(), image, nullptr);
 
             // Recreate image without Disjoint bit
@@ -8610,12 +8631,29 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
             err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
             ASSERT_VK_SUCCESS(err);
 
-            VkImagePlaneMemoryRequirementsInfo image_plane_req = {VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO};
             image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
             mem_req_info2.pNext = &image_plane_req;
             mem_req_info2.image = image;
 
             m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageMemoryRequirementsInfo2-image-01590");
+            vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
+            m_errorMonitor->VerifyFound();
+
+            vk::DestroyImage(m_device->device(), image, nullptr);
+
+            // Recreate image with single plane format and with Disjoint bit
+            image_create_info.flags = 0;
+            image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+            err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+            ASSERT_VK_SUCCESS(err);
+
+            image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
+            mem_req_info2.pNext = &image_plane_req;
+            mem_req_info2.image = image;
+
+            // Disjoint bit isn't set as likely not even supported by non-planar format
+            m_errorMonitor->SetUnexpectedError("VUID-VkImageMemoryRequirementsInfo2-image-01590");
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkImageMemoryRequirementsInfo2-image-02280");
             vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
             m_errorMonitor->VerifyFound();
 
