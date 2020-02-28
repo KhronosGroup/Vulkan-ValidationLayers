@@ -482,7 +482,7 @@ class StatelessValidation : public ValidationObject {
      */
     bool validate_struct_pnext(const char *api_name, const ParameterName &parameter_name, const char *allowed_struct_names,
                                const void *next, size_t allowed_type_count, const VkStructureType *allowed_types,
-                               uint32_t header_version, const char *vuid) const {
+                               uint32_t header_version, const char *pnext_vuid, const char *stype_vuid) const {
         bool skip_call = false;
 
         // TODO: The valid pNext structure types are not recursive. Each structure has its own list of valid sTypes for pNext.
@@ -503,8 +503,8 @@ class StatelessValidation : public ValidationObject {
             if (allowed_type_count == 0) {
                 std::string message = "%s: value of %s must be NULL. ";
                 message += disclaimer;
-                skip_call |= LogWarning(device, vuid, message.c_str(), api_name, parameter_name.get_name().c_str(), header_version,
-                                        parameter_name.get_name().c_str());
+                skip_call |= LogWarning(device, pnext_vuid, message.c_str(), api_name, parameter_name.get_name().c_str(),
+                                        header_version, parameter_name.get_name().c_str());
             } else {
                 const VkStructureType *start = allowed_types;
                 const VkStructureType *end = allowed_types + allowed_type_count;
@@ -528,9 +528,10 @@ class StatelessValidation : public ValidationObject {
 
                         std::string type_name = string_VkStructureType(current->sType);
                         if (unique_stype_check.find(current->sType) != unique_stype_check.end()) {
+                            // stype_vuid will only be null if there are no listed pNext and will hit disclaimer check
                             std::string message = "%s: %s chain contains duplicate structure types: %s appears multiple times.";
-                            skip_call |= LogError(device, kVUID_PVError_InvalidStructPNext, message.c_str(), api_name,
-                                                  parameter_name.get_name().c_str(), type_name.c_str());
+                            skip_call |= LogError(device, stype_vuid, message.c_str(), api_name, parameter_name.get_name().c_str(),
+                                                  type_name.c_str());
                         } else {
                             unique_stype_check.insert(current->sType);
                         }
@@ -541,17 +542,17 @@ class StatelessValidation : public ValidationObject {
                                     "%s: %s chain includes a structure with unknown VkStructureType (%d); Allowed structures are "
                                     "[%s]. ";
                                 message += disclaimer;
-                                skip_call |= LogWarning(device, vuid, message.c_str(), api_name, parameter_name.get_name().c_str(),
-                                                        current->sType, allowed_struct_names, header_version,
-                                                        parameter_name.get_name().c_str());
+                                skip_call |= LogWarning(device, pnext_vuid, message.c_str(), api_name,
+                                                        parameter_name.get_name().c_str(), current->sType, allowed_struct_names,
+                                                        header_version, parameter_name.get_name().c_str());
                             } else {
                                 std::string message =
                                     "%s: %s chain includes a structure with unexpected VkStructureType %s; Allowed structures are "
                                     "[%s]. ";
                                 message += disclaimer;
-                                skip_call |= LogWarning(device, vuid, message.c_str(), api_name, parameter_name.get_name().c_str(),
-                                                        type_name.c_str(), allowed_struct_names, header_version,
-                                                        parameter_name.get_name().c_str());
+                                skip_call |= LogWarning(device, pnext_vuid, message.c_str(), api_name,
+                                                        parameter_name.get_name().c_str(), type_name.c_str(), allowed_struct_names,
+                                                        header_version, parameter_name.get_name().c_str());
                             }
                         }
                         skip_call |= ValidatePnextStructContents(api_name, parameter_name, current);

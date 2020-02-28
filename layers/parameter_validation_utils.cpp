@@ -1067,7 +1067,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                               pCreateInfos[i].pTessellationState->pNext,
                                               ARRAY_SIZE(allowed_structs_VkPipelineTessellationStateCreateInfo),
                                               allowed_structs_VkPipelineTessellationStateCreateInfo, GeneratedVulkanHeaderVersion,
-                                              "VUID-VkPipelineTessellationStateCreateInfo-pNext-pNext");
+                                              "VUID-VkPipelineTessellationStateCreateInfo-pNext-pNext",
+                                              "VUID-VkPipelineTessellationStateCreateInfo-sType-unique");
 
                 skip |= validate_reserved_flags("vkCreateGraphicsPipelines", "pCreateInfos[i].pTessellationState->flags",
                                                 pCreateInfos[i].pTessellationState->flags,
@@ -1083,7 +1084,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
                 skip |= validate_struct_pnext("vkCreateGraphicsPipelines", "pCreateInfos[i].pInputAssemblyState->pNext", NULL,
                                               pCreateInfos[i].pInputAssemblyState->pNext, 0, NULL, GeneratedVulkanHeaderVersion,
-                                              "VUID-VkPipelineInputAssemblyStateCreateInfo-pNext-pNext");
+                                              "VUID-VkPipelineInputAssemblyStateCreateInfo-pNext-pNext", nullptr);
 
                 skip |= validate_reserved_flags("vkCreateGraphicsPipelines", "pCreateInfos[i].pInputAssemblyState->flags",
                                                 pCreateInfos[i].pInputAssemblyState->flags,
@@ -1114,7 +1115,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                               "VkPipelineVertexInputDivisorStateCreateInfoEXT",
                                               pCreateInfos[i].pVertexInputState->pNext, 1,
                                               allowed_structs_VkPipelineVertexInputStateCreateInfo, GeneratedVulkanHeaderVersion,
-                                              "VUID-VkPipelineVertexInputStateCreateInfo-pNext-pNext");
+                                              "VUID-VkPipelineVertexInputStateCreateInfo-pNext-pNext",
+                                              "VUID-VkPipelineVertexInputStateCreateInfo-sType-unique");
                 skip |= validate_struct_type("vkCreateGraphicsPipelines", "pCreateInfos[i].pVertexInputState",
                                              "VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO", vertex_input_state,
                                              VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, false, kVUIDUndefined,
@@ -1282,7 +1284,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                             "vkCreateGraphicsPipelines",
                             ParameterName("pCreateInfos[%i].pTessellationState->pNext", ParameterName::IndexVector{i}),
                             "VkPipelineTessellationDomainOriginStateCreateInfo", pCreateInfos[i].pTessellationState->pNext, 1,
-                            &allowed_type, GeneratedVulkanHeaderVersion, "VUID-VkGraphicsPipelineCreateInfo-pNext-pNext");
+                            &allowed_type, GeneratedVulkanHeaderVersion, "VUID-VkGraphicsPipelineCreateInfo-pNext-pNext",
+                            "VUID-VkGraphicsPipelineCreateInfo-sType-unique");
 
                         skip |= validate_reserved_flags(
                             "vkCreateGraphicsPipelines",
@@ -1336,8 +1339,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         "VkPipelineViewportExclusiveScissorStateCreateInfoNV, VkPipelineViewportShadingRateImageStateCreateInfoNV, "
                         "VkPipelineViewportCoarseSampleOrderStateCreateInfoNV",
                         viewport_state.pNext, ARRAY_SIZE(allowed_structs_VkPipelineViewportStateCreateInfo),
-                        allowed_structs_VkPipelineViewportStateCreateInfo, 65,
-                        "VUID-VkPipelineViewportStateCreateInfo-pNext-pNext");
+                        allowed_structs_VkPipelineViewportStateCreateInfo, 65, "VUID-VkPipelineViewportStateCreateInfo-pNext-pNext",
+                        "VUID-VkPipelineViewportStateCreateInfo-sType-unique");
 
                     skip |= validate_reserved_flags(
                         "vkCreateGraphicsPipelines",
@@ -1612,7 +1615,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         "vkCreateGraphicsPipelines",
                         ParameterName("pCreateInfos[%i].pMultisampleState->pNext", ParameterName::IndexVector{i}),
                         valid_struct_names, pCreateInfos[i].pMultisampleState->pNext, 3, valid_next_stypes,
-                        GeneratedVulkanHeaderVersion, "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext");
+                        GeneratedVulkanHeaderVersion, "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext",
+                        "VUID-VkPipelineMultisampleStateCreateInfo-sType-unique");
 
                     skip |= validate_reserved_flags(
                         "vkCreateGraphicsPipelines",
@@ -1795,7 +1799,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         "vkCreateGraphicsPipelines",
                         ParameterName("pCreateInfos[%i].pDepthStencilState->pNext", ParameterName::IndexVector{i}), NULL,
                         pCreateInfos[i].pDepthStencilState->pNext, 0, NULL, GeneratedVulkanHeaderVersion,
-                        "VUID-VkPipelineDepthStencilStateCreateInfo-pNext-pNext");
+                        "VUID-VkPipelineDepthStencilStateCreateInfo-pNext-pNext", nullptr);
 
                     skip |= validate_reserved_flags(
                         "vkCreateGraphicsPipelines",
@@ -1901,7 +1905,8 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         "VkPipelineColorBlendAdvancedStateCreateInfoEXT", pCreateInfos[i].pColorBlendState->pNext,
                         ARRAY_SIZE(allowed_structs_VkPipelineColorBlendStateCreateInfo),
                         allowed_structs_VkPipelineColorBlendStateCreateInfo, GeneratedVulkanHeaderVersion,
-                        "VUID-VkPipelineColorBlendStateCreateInfo-pNext-pNext");
+                        "VUID-VkPipelineColorBlendStateCreateInfo-pNext-pNext",
+                        "VUID-VkPipelineColorBlendStateCreateInfo-sType-unique");
 
                     skip |= validate_reserved_flags(
                         "vkCreateGraphicsPipelines",
@@ -2486,7 +2491,8 @@ bool StatelessValidation::manual_PreCallValidateBeginCommandBuffer(VkCommandBuff
         skip |= validate_struct_pnext(
             cmd_name, "pBeginInfo->pInheritanceInfo->pNext", "VkCommandBufferInheritanceConditionalRenderingInfoEXT", pInfo->pNext,
             ARRAY_SIZE(allowed_structs_VkCommandBufferInheritanceInfo), allowed_structs_VkCommandBufferInheritanceInfo,
-            GeneratedVulkanHeaderVersion, "VUID-VkCommandBufferInheritanceInfo-pNext-pNext");
+            GeneratedVulkanHeaderVersion, "VUID-VkCommandBufferInheritanceInfo-pNext-pNext",
+            "VUID-VkCommandBufferInheritanceInfo-sType-unique");
 
         skip |= validate_bool32(cmd_name, "pBeginInfo->pInheritanceInfo->occlusionQueryEnable", pInfo->occlusionQueryEnable);
 
@@ -2943,7 +2949,8 @@ bool StatelessValidation::manual_PreCallValidateQueuePresentKHR(VkQueue queue, c
                                  pPresentInfo->swapchainCount, present_regions->swapchainCount);
             }
             skip |= validate_struct_pnext("QueuePresentKHR", "pCreateInfo->pNext->pNext", NULL, present_regions->pNext, 0, NULL,
-                                          GeneratedVulkanHeaderVersion, "VUID-VkPresentInfoKHR-pNext-pNext");
+                                          GeneratedVulkanHeaderVersion, "VUID-VkPresentInfoKHR-pNext-pNext",
+                                          "VUID-VkPresentInfoKHR-sType-unique");
             skip |= validate_array("QueuePresentKHR", "pCreateInfo->pNext->swapchainCount", "pCreateInfo->pNext->pRegions",
                                    present_regions->swapchainCount, &present_regions->pRegions, true, false, kVUIDUndefined,
                                    kVUIDUndefined);
@@ -3688,7 +3695,8 @@ bool StatelessValidation::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(V
                                       "VkSurfaceFullScreenExclusiveInfoEXT, VkSurfaceFullScreenExclusiveWin32InfoEXT",
                                       pSurfaceInfo->pNext, ARRAY_SIZE(allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR),
                                       allowed_structs_VkPhysicalDeviceSurfaceInfo2KHR, GeneratedVulkanHeaderVersion,
-                                      "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext");
+                                      "VUID-VkPhysicalDeviceSurfaceInfo2KHR-pNext-pNext",
+                                      "VUID-VkPhysicalDeviceSurfaceInfo2KHR-sType-unique");
 
         skip |= validate_required_handle("vkGetDeviceGroupSurfacePresentModes2EXT", "pSurfaceInfo->surface", pSurfaceInfo->surface);
     }
