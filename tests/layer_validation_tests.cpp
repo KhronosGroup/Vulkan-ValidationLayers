@@ -1294,12 +1294,17 @@ void OneOffDescriptorSet::WriteDescriptorBufferView(int blinding, VkBufferView &
     descriptor_writes.emplace_back(descriptor_write);
 }
 
+void OneOffDescriptorSet::ReserveRoomForWrites(unsigned num_writes) {
+    image_infos.reserve(num_writes);
+    descriptor_writes.reserve(num_writes);
+}
+
 void OneOffDescriptorSet::WriteDescriptorImageInfo(int blinding, VkImageView image_view, VkSampler sampler,
-                                                   VkDescriptorType descriptorType) {
+                                                   VkDescriptorType descriptorType, VkImageLayout image_layout) {
     VkDescriptorImageInfo image_info = {};
     image_info.imageView = image_view;
     image_info.sampler = sampler;
-    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_info.imageLayout = image_layout;
     image_infos.emplace_back(image_info);
     size_t index = image_infos.size() - 1;
 
