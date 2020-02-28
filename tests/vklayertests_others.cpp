@@ -544,6 +544,17 @@ TEST_F(VkLayerTest, InvalidStructPNext) {
     memory_alloc_info.pNext = &app_info;
     vk::AllocateMemory(device(), &memory_alloc_info, NULL, &memory);
     m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT,
+                                         " chain includes a structure with unexpected VkStructureType ");
+    // Same concept as above, but unlike vkAllocateMemory where VkMemoryAllocateInfo is a const
+    // in vkGetPhysicalDeviceProperties2, VkPhysicalDeviceProperties2 is not a const
+    VkPhysicalDeviceProperties2 physical_device_properties2 = {};
+    physical_device_properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    physical_device_properties2.pNext = &app_info;
+
+    vk::GetPhysicalDeviceProperties2(gpu(), &physical_device_properties2);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, UnrecognizedValueOutOfRange) {

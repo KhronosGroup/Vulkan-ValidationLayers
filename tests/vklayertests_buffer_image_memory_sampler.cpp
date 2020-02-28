@@ -7152,36 +7152,38 @@ TEST_F(VkLayerTest, InvalidCreateBufferSize) {
 TEST_F(VkLayerTest, DuplicateValidPNextStructures) {
     TEST_DESCRIPTION("Create a pNext chain containing valid structures, but with a duplicate structure type");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
-        m_device_extension_names.push_back(VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME);
-    } else {
-        printf("%s VK_NV_dedicated_allocation extension not supported, skipping test\n", kSkipPrefix);
+
+    // VK_KHR_get_physical_device_properties2 promoted to 1.1
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s VK_KHR_get_physical_device_properties2 requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
         return;
     }
+
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    // Create two pNext structures which by themselves would be valid
-    VkDedicatedAllocationBufferCreateInfoNV dedicated_buffer_create_info = {};
-    VkDedicatedAllocationBufferCreateInfoNV dedicated_buffer_create_info_2 = {};
-    dedicated_buffer_create_info.sType = VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_BUFFER_CREATE_INFO_NV;
-    dedicated_buffer_create_info.pNext = &dedicated_buffer_create_info_2;
-    dedicated_buffer_create_info.dedicatedAllocation = VK_TRUE;
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkPhysicalDeviceProperties2-sType-unique");
+    // in VkPhysicalDeviceProperties2 create a chain of pNext of type A -> B -> A
+    // Also using different instance of struct to not trip the cycle checkings
+    VkPhysicalDeviceProtectedMemoryProperties protected_memory_properties_0 = {};
+    protected_memory_properties_0.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_PROPERTIES;
+    protected_memory_properties_0.pNext = nullptr;
 
-    dedicated_buffer_create_info_2.sType = VK_STRUCTURE_TYPE_DEDICATED_ALLOCATION_BUFFER_CREATE_INFO_NV;
-    dedicated_buffer_create_info_2.pNext = nullptr;
-    dedicated_buffer_create_info_2.dedicatedAllocation = VK_TRUE;
+    VkPhysicalDeviceIDProperties id_properties = {};
+    id_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
+    id_properties.pNext = &protected_memory_properties_0;
 
-    uint32_t queue_family_index = 0;
-    VkBufferCreateInfo buffer_create_info = {};
-    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    buffer_create_info.pNext = &dedicated_buffer_create_info;
-    buffer_create_info.size = 1024;
-    buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    buffer_create_info.queueFamilyIndexCount = 1;
-    buffer_create_info.pQueueFamilyIndices = &queue_family_index;
+    VkPhysicalDeviceProtectedMemoryProperties protected_memory_properties_1 = {};
+    protected_memory_properties_1.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_PROPERTIES;
+    protected_memory_properties_1.pNext = &id_properties;
 
-    CreateBufferTest(*this, &buffer_create_info, "chain contains duplicate structure types");
+    VkPhysicalDeviceProperties2 physical_device_properties2 = {};
+    physical_device_properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    physical_device_properties2.pNext = &protected_memory_properties_1;
+
+    vk::GetPhysicalDeviceProperties2(gpu(), &physical_device_properties2);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkLayerTest, DedicatedAllocation) {
