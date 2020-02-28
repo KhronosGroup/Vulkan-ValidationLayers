@@ -416,8 +416,7 @@ void VkRenderFramework::InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction, 
         // Enable create time debug messages
         memset(&dbgCreateInfo, 0, sizeof(dbgCreateInfo));
         dbgCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-        dbgCreateInfo.flags =
-            VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
+        dbgCreateInfo.flags = kErrorBit | kWarningBit | kPerformanceWarningBit;
         dbgCreateInfo.pfnCallback = dbgFunction;
         dbgCreateInfo.pUserData = userData;
 

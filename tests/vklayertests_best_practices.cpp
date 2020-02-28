@@ -40,7 +40,7 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtension) {
         return;
     }
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT, "Attempting to enable Deprecated Extension");
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "Attempting to enable Deprecated Extension");
     InitBestPracticesFramework();
     m_errorMonitor->VerifyFound();
 
@@ -68,7 +68,7 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtension) {
     dev_info.enabledExtensionCount = m_device_extension_names.size();
     dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_WARNING_BIT_EXT, "Attempting to enable Deprecated Extension");
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "Attempting to enable Deprecated Extension");
     vk::CreateDevice(this->gpu(), &dev_info, NULL, &local_device);
     m_errorMonitor->VerifyFound();
 }
@@ -96,8 +96,7 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTest) {
     VkClearRect clear_rect = {{{0, 0}, {(uint32_t)m_width, (uint32_t)m_height}}, 0, 1};
 
     // Call for full-sized FB Color attachment prior to issuing a Draw
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                         "UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw");
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-DrawState-ClearCmdBeforeDraw");
     vk::CmdClearAttachments(m_commandBuffer->handle(), 1, &color_attachment, 1, &clear_rect);
     m_errorMonitor->VerifyFound();
 }
@@ -106,8 +105,7 @@ TEST_F(VkBestPracticesLayerTest, VtxBufferBadIndex) {
     InitBestPracticesFramework();
     InitState();
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                         "UNASSIGNED-BestPractices-DrawState-VtxIndexOutOfBounds");
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-DrawState-VtxIndexOutOfBounds");
 
     // This test may also trigger other warnings
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation");
@@ -243,7 +241,7 @@ TEST_F(VkBestPracticesLayerTest, CommandBufferReset) {
     InitBestPracticesFramework();
     InitState();
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-vkCreateCommandPool-command-buffer-reset");
 
     VkCommandPool command_pool;
@@ -262,8 +260,7 @@ TEST_F(VkBestPracticesLayerTest, SimultaneousUse) {
     InitBestPracticesFramework();
     InitState();
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                         "UNASSIGNED-BestPractices-vkBeginCommandBuffer-simultaneous-use");
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkBeginCommandBuffer-simultaneous-use");
 
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-ArmBestPractices-vkBeginCommandBuffer-one-time-submit");
 
@@ -281,8 +278,7 @@ TEST_F(VkBestPracticesLayerTest, SmallAllocation) {
     InitBestPracticesFramework();
     InitState();
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                         "UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation");
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation");
 
     // Find appropriate memory type for given reqs
     VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -313,7 +309,7 @@ TEST_F(VkBestPracticesLayerTest, SmallDedicatedAllocation) {
     InitBestPracticesFramework();
     InitState();
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-vkBindMemory-small-dedicated-allocation");
 
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation");
@@ -347,7 +343,7 @@ TEST_F(VkBestPracticesLayerTest, MSImageRequiresMemory) {
     InitBestPracticesFramework();
     InitState();
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-vkCreateRenderPass-image-requires-memory");
 
     VkAttachmentDescription attachment{};
@@ -372,7 +368,7 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
     InitBestPracticesFramework();
     InitState();
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-vkCreateFramebuffer-attachment-should-not-be-transient");
 
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation");
@@ -438,7 +434,7 @@ TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {
     InitBestPracticesFramework();
     InitState();
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-vkCreateGraphicsPipelines-too-many-instanced-vertex-buffers");
 
     // This test may also trigger the small allocation warnings
@@ -488,8 +484,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
     m_clear_via_load_op = false;  // Force LOAD_OP_LOAD
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
-                                         "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load");
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-BestPractices-vkCmdClearAttachments-clear-after-load");
 
     // On tiled renderers, this can also trigger a warning about LOAD_OP_LOAD causing a readback
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-ArmBestPractices-vkCmdBeginRenderPass-attachment-needs-readback");

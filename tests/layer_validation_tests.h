@@ -540,7 +540,7 @@ struct CreateNVRayTracingPipelineHelper {
     // flags, error can be any args accepted by "SetDesiredFailure".
     template <typename Test, typename OverrideFunc, typename Error>
     static void OneshotTest(Test &test, const OverrideFunc &info_override, const std::vector<Error> &errors,
-                            const VkFlags flags = VK_DEBUG_REPORT_ERROR_BIT_EXT) {
+                            const VkFlags flags = kErrorBit) {
         CreateNVRayTracingPipelineHelper helper(test);
         helper.InitInfo();
         info_override(helper);
@@ -552,14 +552,12 @@ struct CreateNVRayTracingPipelineHelper {
     }
 
     template <typename Test, typename OverrideFunc, typename Error>
-    static void OneshotTest(Test &test, const OverrideFunc &info_override, Error error,
-                            const VkFlags flags = VK_DEBUG_REPORT_ERROR_BIT_EXT) {
+    static void OneshotTest(Test &test, const OverrideFunc &info_override, Error error, const VkFlags flags = kErrorBit) {
         OneshotTest(test, info_override, std::vector<Error>(1, error), flags);
     }
 
     template <typename Test, typename OverrideFunc>
-    static void OneshotPositiveTest(Test &test, const OverrideFunc &info_override,
-                                    const VkDebugReportFlagsEXT message_flag_mask = VK_DEBUG_REPORT_ERROR_BIT_EXT) {
+    static void OneshotPositiveTest(Test &test, const OverrideFunc &info_override, const VkFlags message_flag_mask = kErrorBit) {
         CreateNVRayTracingPipelineHelper helper(test);
         helper.InitInfo();
         info_override(helper);
