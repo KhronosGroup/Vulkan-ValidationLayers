@@ -3303,16 +3303,18 @@ bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirem
     }
 
     const IMAGE_STATE *image_state = GetImageState(pInfo->image);
+    const VkFormat image_format = image_state->createInfo.format;
+    const VkImageTiling image_tiling = image_state->createInfo.tiling;
     const VkImagePlaneMemoryRequirementsInfo *image_plane_info =
         lvl_find_in_chain<VkImagePlaneMemoryRequirementsInfo>(pInfo->pNext);
 
-    if ((FormatIsMultiplane(image_state->createInfo.format)) &&
-        (0 != (image_state->createInfo.flags & VK_IMAGE_CREATE_DISJOINT_BIT)) && (image_plane_info == nullptr)) {
+    if ((FormatIsMultiplane(image_format)) && (0 != (image_state->createInfo.flags & VK_IMAGE_CREATE_DISJOINT_BIT)) &&
+        (image_plane_info == nullptr)) {
         skip |= LogError(pInfo->image, "VUID-VkImageMemoryRequirementsInfo2-image-01589",
                          "vkGetImageMemoryRequirements2: %s image was created with a multi-planar format (%s) and "
                          "VK_IMAGE_CREATE_DISJOINT_BIT, but the current pNext doesn't include a "
                          "VkImagePlaneMemoryRequirementsInfo struct",
-                         report_data->FormatHandle(pInfo->image).c_str(), string_VkFormat(image_state->createInfo.format));
+                         report_data->FormatHandle(pInfo->image).c_str(), string_VkFormat(image_format));
     }
 
     if ((0 == (image_state->createInfo.flags & VK_IMAGE_CREATE_DISJOINT_BIT)) && (image_plane_info != nullptr)) {
@@ -3320,6 +3322,38 @@ bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirem
                          "vkGetImageMemoryRequirements2: %s image was created not created with VK_IMAGE_CREATE_DISJOINT_BIT,"
                          "but the current pNext includes a VkImagePlaneMemoryRequirementsInfo struct",
                          report_data->FormatHandle(pInfo->image).c_str());
+    }
+
+    if ((FormatIsMultiplane(image_format) == false) && (image_tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) &&
+        (image_plane_info != nullptr)) {
+        skip |= LogError(pInfo->image, "VUID-VkImageMemoryRequirementsInfo2-image-02280",
+                         "vkGetImageMemoryRequirements2: %s image is a single-plane format (%s) and does not have tiling of "
+                         "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT,"
+                         "but the current pNext includes a VkImagePlaneMemoryRequirementsInfo struct",
+                         report_data->FormatHandle(pInfo->image).c_str(), string_VkFormat(image_format));
+    }
+
+    if (image_plane_info != nullptr) {
+        if ((image_tiling == VK_IMAGE_TILING_LINEAR) || (image_tiling == VK_IMAGE_TILING_OPTIMAL)) {
+            // Make sure planeAspect is only a single, valid plane
+            uint32_t planes = FormatPlaneCount(image_format);
+            VkImageAspectFlags aspect = image_plane_info->planeAspect;
+            if ((2 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
+                skip |= LogError(
+                    pInfo->image, "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02281",
+                    "Image %s VkImagePlaneMemoryRequirementsInfo::planeAspect is %s but can only be VK_IMAGE_ASPECT_PLANE_0_BIT"
+                    "or VK_IMAGE_ASPECT_PLANE_1_BIT.",
+                    report_data->FormatHandle(image_state->image).c_str(), string_VkImageAspectFlags(aspect).c_str());
+            }
+            if ((3 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
+                (aspect != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
+                skip |= LogError(
+                    pInfo->image, "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02281",
+                    "Image %s VkImagePlaneMemoryRequirementsInfo::planeAspect is %s but can only be VK_IMAGE_ASPECT_PLANE_0_BIT"
+                    "or VK_IMAGE_ASPECT_PLANE_1_BIT or VK_IMAGE_ASPECT_PLANE_2_BIT.",
+                    report_data->FormatHandle(image_state->image).c_str(), string_VkImageAspectFlags(aspect).c_str());
+            }
+        }
     }
     return skip;
 }
