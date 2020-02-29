@@ -300,7 +300,9 @@ HazardResult AccessTrackerContext::DetectHazard(const IMAGE_STATE &image, SyncSt
     // TODO: replace the encoder/generator with offset3D/extent3D aware versions
     VkImageSubresourceRange subresource_range = {subresource.aspectMask, subresource.mipLevel, 1, subresource.baseArrayLayer,
                                                  subresource.layerCount};
-    subresource_adapter::RangeGenerator range_gen(image.range_encoder, subresource_range);
+    VkExtent3D subresource_extent = GetImageSubresourceExtent(&image, &subresource);
+    subresource_adapter::OffsetRangeEncoder encoder(image.full_range, subresource_extent);
+    subresource_adapter::OffsetRangeGenerator range_gen(encoder, subresource_range, offset, extent);
     VulkanTypedHandle image_handle(image.image, kVulkanObjectTypeImage);
     for (; range_gen->non_empty(); ++range_gen) {
         HazardResult hazard = DetectHazard(image_handle, current_usage, *range_gen);
@@ -341,13 +343,20 @@ HazardResult DetectImageBarrierHazard(const AccessTrackerContext &context, const
                                       VkPipelineStageFlags src_exec_scope, SyncStageAccessFlags src_stage_accesses,
                                       const VkImageMemoryBarrier &barrier) {
     auto subresource_range = NormalizeSubresourceRange(image.createInfo, barrier.subresourceRange);
-    subresource_adapter::RangeGenerator range_gen(image.range_encoder, subresource_range);
+    VkImageSubresourceLayers subresource_layers = {subresource_range.aspectMask, 0, subresource_range.baseArrayLayer,
+                                                   subresource_range.layerCount};
     const VulkanTypedHandle image_handle(image.image, kVulkanObjectTypeImage);
     const auto src_access_scope = SyncStageAccess::AccessScope(src_stage_accesses, barrier.srcAccessMask);
-    for (; range_gen->non_empty(); ++range_gen) {
-        HazardResult hazard = context.DetectBarrierHazard(image_handle, SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION,
-                                                          src_exec_scope, src_access_scope, *range_gen);
-        if (hazard.hazard) return hazard;
+    for (uint32_t mip_index = subresource_range.baseMipLevel; mip_index < subresource_range.levelCount; mip_index++) {
+        subresource_layers.mipLevel = mip_index;
+        VkExtent3D subresource_extent = GetImageSubresourceExtent(&image, &subresource_layers);
+        subresource_adapter::OffsetRangeEncoder encoder(image.full_range, subresource_extent);
+        subresource_adapter::OffsetRangeGenerator range_gen(encoder, subresource_range, {0, 0}, subresource_extent);
+        for (; range_gen->non_empty(); ++range_gen) {
+            HazardResult hazard = context.DetectBarrierHazard(image_handle, SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION,
+                                                              src_exec_scope, src_access_scope, *range_gen);
+            if (hazard.hazard) return hazard;
+        }
     }
     return HazardResult();
 }
@@ -508,7 +517,9 @@ void AccessTracker::UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessI
     // TODO: replace the encoder/generator with offset3D aware versions
     VkImageSubresourceRange subresource_range = {subresource.aspectMask, subresource.mipLevel, 1, subresource.baseArrayLayer,
                                                  subresource.layerCount};
-    subresource_adapter::RangeGenerator range_gen(image.range_encoder, subresource_range);
+    VkExtent3D subresource_extent = GetImageSubresourceExtent(&image, &subresource);
+    subresource_adapter::OffsetRangeEncoder encoder(image.full_range, subresource_extent);
+    subresource_adapter::OffsetRangeGenerator range_gen(encoder, subresource_range, offset, extent);
     for (; range_gen->non_empty(); ++range_gen) {
         UpdateAccessState(current_usage, *range_gen, tag);
     }
@@ -750,12 +761,20 @@ void SyncValidator::ApplyImageBarriers(AccessTrackerContext *context, VkPipeline
         auto *accesses = &tracker->GetCurrentAccessMap();
 
         auto subresource_range = NormalizeSubresourceRange(image->createInfo, barrier.subresourceRange);
-        subresource_adapter::RangeGenerator range_gen(image->range_encoder, subresource_range);
-        const ApplyMemoryAccessBarrierFunctor barrier_action(src_exec_scope, AccessScope(src_stage_accesses, barrier.srcAccessMask),
-                                                             dst_exec_scope,
-                                                             AccessScope(dst_stage_accesses, barrier.dstAccessMask));
-        for (; range_gen->non_empty(); ++range_gen) {
-            UpdateMemoryAccessState(accesses, *range_gen, barrier_action);
+        VkImageSubresourceLayers subresource_layers = {subresource_range.aspectMask, 0, subresource_range.baseArrayLayer,
+                                                       subresource_range.layerCount};
+        for (uint32_t mip_index = subresource_range.baseMipLevel; mip_index < subresource_range.levelCount; mip_index++) {
+            subresource_layers.mipLevel = mip_index;
+            VkExtent3D subresource_extent = GetImageSubresourceExtent(image, &subresource_layers);
+            subresource_adapter::OffsetRangeEncoder encoder(image->full_range, subresource_extent);
+            subresource_adapter::OffsetRangeGenerator range_gen(encoder, subresource_range, {0, 0}, subresource_extent);
+
+            const ApplyMemoryAccessBarrierFunctor barrier_action(
+                src_exec_scope, AccessScope(src_stage_accesses, barrier.srcAccessMask), dst_exec_scope,
+                AccessScope(dst_stage_accesses, barrier.dstAccessMask));
+            for (; range_gen->non_empty(); ++range_gen) {
+                UpdateMemoryAccessState(accesses, *range_gen, barrier_action);
+            }
         }
     }
 }
@@ -866,6 +885,7 @@ bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
                 skip |= LogError(dstImage, string_SyncHazardVUID(hazard.hazard), "Hazard %s for dstImage %s, region %" PRIu32,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstImage).c_str(), region);
             }
+            if (skip) break;
         }
     }
 
