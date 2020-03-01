@@ -1502,12 +1502,14 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
             if (!(usage & VK_IMAGE_USAGE_SAMPLED_BIT)) {
                 error_usage_bit = "VK_IMAGE_USAGE_SAMPLED_BIT";
+                *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00337";
             }
             break;
         }
         case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE: {
             if (!(usage & VK_IMAGE_USAGE_STORAGE_BIT)) {
                 error_usage_bit = "VK_IMAGE_USAGE_STORAGE_BIT";
+                *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00339";
             } else if (VK_IMAGE_LAYOUT_GENERAL != image_layout) {
                 std::stringstream error_str;
                 // TODO : Need to create custom enum error codes for these cases
@@ -1538,6 +1540,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
         case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT: {
             if (!(usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) {
                 error_usage_bit = "VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT";
+                *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00338";
             }
             break;
         }
