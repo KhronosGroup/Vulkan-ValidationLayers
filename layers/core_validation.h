@@ -342,7 +342,7 @@ class CoreChecks : public ValidationStateTracker {
 
     // Stuff from shader_validation
     bool ValidateGraphicsPipelineShaderState(const PIPELINE_STATE* pPipeline) const;
-    bool ValidateComputePipeline(PIPELINE_STATE* pPipeline) const;
+    bool ValidateComputePipelineShaderState(PIPELINE_STATE* pPipeline) const;
     bool ValidateRayTracingPipelineNV(PIPELINE_STATE* pipeline) const;
     bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule) const;

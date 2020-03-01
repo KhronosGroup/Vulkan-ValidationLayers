@@ -3163,7 +3163,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
     return skip;
 }
 
-bool CoreChecks::ValidateComputePipeline(PIPELINE_STATE *pipeline) const {
+bool CoreChecks::ValidateComputePipelineShaderState(PIPELINE_STATE *pipeline) const {
     const auto &stage = *pipeline->computePipelineCI.stage.ptr();
 
     const SHADER_MODULE_STATE *module = GetShaderModuleState(stage.module);
