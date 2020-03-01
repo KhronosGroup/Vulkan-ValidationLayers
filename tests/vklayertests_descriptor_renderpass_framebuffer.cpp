@@ -5899,16 +5899,16 @@ TEST_F(VkLayerTest, DSUsageBitsErrors) {
     // These error messages align with VkDescriptorType struct
     std::string error_codes[] = {
         "UNASSIGNED-CoreValidation-DrawState-InvalidImageView",  // placeholder, no error for SAMPLER descriptor
-        "UNASSIGNED-CoreValidation-DrawState-InvalidImageView",  // COMBINED_IMAGE_SAMPLER
-        "UNASSIGNED-CoreValidation-DrawState-InvalidImageView",  // SAMPLED_IMAGE
-        "UNASSIGNED-CoreValidation-DrawState-InvalidImageView",  // STORAGE_IMAGE
+        "VUID-VkWriteDescriptorSet-descriptorType-00337",        // COMBINED_IMAGE_SAMPLER
+        "VUID-VkWriteDescriptorSet-descriptorType-00337",        // SAMPLED_IMAGE
+        "VUID-VkWriteDescriptorSet-descriptorType-00339",        // STORAGE_IMAGE
         "VUID-VkWriteDescriptorSet-descriptorType-00334",        // UNIFORM_TEXEL_BUFFER
         "VUID-VkWriteDescriptorSet-descriptorType-00335",        // STORAGE_TEXEL_BUFFER
         "VUID-VkWriteDescriptorSet-descriptorType-00330",        // UNIFORM_BUFFER
         "VUID-VkWriteDescriptorSet-descriptorType-00331",        // STORAGE_BUFFER
         "VUID-VkWriteDescriptorSet-descriptorType-00330",        // UNIFORM_BUFFER_DYNAMIC
         "VUID-VkWriteDescriptorSet-descriptorType-00331",        // STORAGE_BUFFER_DYNAMIC
-        "UNASSIGNED-CoreValidation-DrawState-InvalidImageView"   // INPUT_ATTACHMENT
+        "VUID-VkWriteDescriptorSet-descriptorType-00338"         // INPUT_ATTACHMENT
     };
     // Start loop at 1 as SAMPLER desc type has no usage bit error
     for (uint32_t i = 1; i < kLocalDescriptorTypeRangeSize; ++i) {
