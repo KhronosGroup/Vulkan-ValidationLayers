@@ -858,8 +858,10 @@ bool SyncValidator::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, V
         }
 
         if (dst_image) {
+            VkExtent3D dst_copy_extent =
+                GetAdjustedDestImageExtent(src_image->createInfo.format, dst_image->createInfo.format, copy_region.extent);
             auto hazard = context->DetectHazard(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, copy_region.dstSubresource,
-                                                copy_region.dstOffset, copy_region.extent);
+                                                copy_region.dstOffset, dst_copy_extent);
             if (hazard.hazard) {
                 skip |= LogError(dstImage, string_SyncHazardVUID(hazard.hazard), "Hazard %s for dstImage %s, region %" PRIu32,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(dstImage).c_str(), region);
@@ -890,8 +892,10 @@ void SyncValidator::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkI
                                            copy_region.srcOffset, copy_region.extent, tag);
         }
         if (dst_image) {
+            VkExtent3D dst_copy_extent =
+                GetAdjustedDestImageExtent(src_image->createInfo.format, dst_image->createInfo.format, copy_region.extent);
             dst_tracker->UpdateAccessState(*dst_image, SYNC_TRANSFER_TRANSFER_WRITE, copy_region.dstSubresource,
-                                           copy_region.dstOffset, copy_region.extent, tag);
+                                           copy_region.dstOffset, dst_copy_extent, tag);
         }
     }
 }
