@@ -2021,63 +2021,6 @@ static inline bool IsExtentEqual(const VkExtent3D *extent, const VkExtent3D *oth
     return result;
 }
 
-// For image copies between compressed/uncompressed formats, the extent is provided in source image texels
-// Destination image texel extents must be adjusted by block size for the dest validation checks
-VkExtent3D GetAdjustedDestImageExtent(VkFormat src_format, VkFormat dst_format, VkExtent3D extent) {
-    VkExtent3D adjusted_extent = extent;
-    if ((FormatIsCompressed(src_format) || FormatIsSinglePlane_422(src_format)) &&
-        !(FormatIsCompressed(dst_format) || FormatIsSinglePlane_422(dst_format))) {
-        VkExtent3D block_size = FormatTexelBlockExtent(src_format);
-        adjusted_extent.width /= block_size.width;
-        adjusted_extent.height /= block_size.height;
-        adjusted_extent.depth /= block_size.depth;
-    } else if (!(FormatIsCompressed(src_format) || FormatIsSinglePlane_422(src_format)) &&
-               (FormatIsCompressed(dst_format) || FormatIsSinglePlane_422(dst_format))) {
-        VkExtent3D block_size = FormatTexelBlockExtent(dst_format);
-        adjusted_extent.width *= block_size.width;
-        adjusted_extent.height *= block_size.height;
-        adjusted_extent.depth *= block_size.depth;
-    }
-    return adjusted_extent;
-}
-
-// Returns the effective extent of an image subresource, adjusted for mip level and array depth.
-static inline VkExtent3D GetImageSubresourceExtent(const IMAGE_STATE *img, const VkImageSubresourceLayers *subresource) {
-    const uint32_t mip = subresource->mipLevel;
-
-    // Return zero extent if mip level doesn't exist
-    if (mip >= img->createInfo.mipLevels) {
-        return VkExtent3D{0, 0, 0};
-    }
-
-    // Don't allow mip adjustment to create 0 dim, but pass along a 0 if that's what subresource specified
-    VkExtent3D extent = img->createInfo.extent;
-
-    // If multi-plane, adjust per-plane extent
-    if (FormatIsMultiplane(img->createInfo.format)) {
-        VkExtent2D divisors = FindMultiplaneExtentDivisors(img->createInfo.format, subresource->aspectMask);
-        extent.width /= divisors.width;
-        extent.height /= divisors.height;
-    }
-
-    if (img->createInfo.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) {
-        extent.width = (0 == extent.width ? 0 : std::max(2U, 1 + ((extent.width - 1) >> mip)));
-        extent.height = (0 == extent.height ? 0 : std::max(2U, 1 + ((extent.height - 1) >> mip)));
-        extent.depth = (0 == extent.depth ? 0 : std::max(2U, 1 + ((extent.depth - 1) >> mip)));
-    } else {
-        extent.width = (0 == extent.width ? 0 : std::max(1U, extent.width >> mip));
-        extent.height = (0 == extent.height ? 0 : std::max(1U, extent.height >> mip));
-        extent.depth = (0 == extent.depth ? 0 : std::max(1U, extent.depth >> mip));
-    }
-
-    // Image arrays have an effective z extent that isn't diminished by mip level
-    if (VK_IMAGE_TYPE_3D != img->createInfo.imageType) {
-        extent.depth = img->createInfo.arrayLayers;
-    }
-
-    return extent;
-}
-
 // Test if the extent argument has all dimensions set to 0.
 static inline bool IsExtentAllZeroes(const VkExtent3D *extent) {
     return ((extent->width == 0) && (extent->height == 0) && (extent->depth == 0));
