@@ -381,7 +381,7 @@ class ValidationObject {
             }
             va_end(argptr);
 
-            return LogMsgLocked(report_data, kErrorBit, VkHandleInfo<HANDLE_T>::kDebugReportObjectType,
+            return LogMsgLocked(report_data, kErrorBit, VkHandleInfo<HANDLE_T>::kVkObjectType,
                 HandleToUint64(src_object), vuid_text, str);
         };
 
@@ -401,7 +401,7 @@ class ValidationObject {
             }
             va_end(argptr);
 
-            return LogMsgLocked(report_data, kWarningBit, VkHandleInfo<HANDLE_T>::kDebugReportObjectType,
+            return LogMsgLocked(report_data, kWarningBit, VkHandleInfo<HANDLE_T>::kVkObjectType,
                 HandleToUint64(src_object), vuid_text, str);
         };
 
@@ -421,7 +421,7 @@ class ValidationObject {
             }
             va_end(argptr);
 
-            return LogMsgLocked(report_data, kPerformanceWarningBit, VkHandleInfo<HANDLE_T>::kDebugReportObjectType,
+            return LogMsgLocked(report_data, kPerformanceWarningBit, VkHandleInfo<HANDLE_T>::kVkObjectType,
                 HandleToUint64(src_object), vuid_text, str);
         };
 
@@ -441,7 +441,7 @@ class ValidationObject {
             }
             va_end(argptr);
 
-            return LogMsgLocked(report_data, kInformationBit, VkHandleInfo<HANDLE_T>::kDebugReportObjectType,
+            return LogMsgLocked(report_data, kInformationBit, VkHandleInfo<HANDLE_T>::kVkObjectType,
                 HandleToUint64(src_object), vuid_text, str);
         };
 

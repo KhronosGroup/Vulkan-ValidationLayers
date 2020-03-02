@@ -273,7 +273,7 @@ static inline void DebugReportFlagsToAnnotFlags(VkDebugReportFlagsEXT dr_flags, 
 }
 
 // Forward Declarations
-static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
+static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkObjectType object_type,
                                  uint64_t src_object, size_t location, const char *layer_prefix, const char *message,
                                  const char *text_vuid);
 
@@ -314,7 +314,7 @@ static inline void RemoveAllMessageCallbacks(debug_report_data *debug_data, std:
     callbacks.clear();
 }
 
-static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
+static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkObjectType object_type,
                                  uint64_t src_object, size_t location, const char *layer_prefix, const char *message,
                                  const char *text_vuid) {
     bool bail = false;
@@ -328,7 +328,7 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
     DebugReportFlagsToAnnotFlags(msg_flags, true, &severity, &types);
     object_name_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
     object_name_info.pNext = NULL;
-    object_name_info.objectType = convertDebugReportObjectToCoreObject(object_type);
+    object_name_info.objectType = object_type;
     object_name_info.objectHandle = (uint64_t)(uintptr_t)src_object;
     object_name_info.pObjectName = NULL;
     std::string object_label = {};
@@ -410,7 +410,8 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
                 new_debug_report_message.insert(0, text_vuid);
                 new_debug_report_message.insert(0, " [ ");
             }
-            if (current_callback.debug_report_callback_function_ptr(msg_flags, object_type, src_object, location, 0, layer_prefix,
+            if (current_callback.debug_report_callback_function_ptr(msg_flags, convertCoreObjectToDebugReportObject(object_type),
+                                                                    src_object, location, 0, layer_prefix,
                                                                     new_debug_report_message.c_str(), current_callback.pUserData)) {
                 bail = true;
             }
@@ -589,7 +590,7 @@ static inline int vasprintf(char **strp, char const *fmt, va_list ap) {
 #endif
 
 // This must be called with the debug_output_mutex already held
-static inline bool LogMsgLocked(const debug_report_data *debug_data, VkFlags msg_flags, VkDebugReportObjectTypeEXT object_type,
+static inline bool LogMsgLocked(const debug_report_data *debug_data, VkFlags msg_flags, VkObjectType object_type,
                                 uint64_t src_object, const std::string &vuid_text, char *err_msg) {
     std::string str_plus_spec_text(err_msg ? err_msg : "Allocation failure");
 
