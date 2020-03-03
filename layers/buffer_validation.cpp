@@ -2034,11 +2034,6 @@ static inline bool IsExtentAllZeroes(const VkExtent3D *extent) {
     return ((extent->width == 0) && (extent->height == 0) && (extent->depth == 0));
 }
 
-// Test if the extent argument has any dimensions set to 0.
-static inline bool IsExtentSizeZero(const VkExtent3D *extent) {
-    return ((extent->width == 0) || (extent->height == 0) || (extent->depth == 0));
-}
-
 // Returns the image transfer granularity for a specific image scaled by compressed block size if necessary.
 VkExtent3D CoreChecks::GetScaledItg(const CMD_BUFFER_STATE *cb_node, const IMAGE_STATE *img) const {
     // Default to (0, 0, 0) granularity in case we can't find the real granularity for the physical device.
@@ -5344,39 +5339,11 @@ bool CoreChecks::ValidateBufferBounds(const IMAGE_STATE *image_state, const BUFF
     VkDeviceSize buffer_size = buff_state->createInfo.size;
 
     for (uint32_t i = 0; i < regionCount; i++) {
-        VkExtent3D copy_extent = pRegions[i].imageExtent;
-
-        VkDeviceSize buffer_width = (0 == pRegions[i].bufferRowLength ? copy_extent.width : pRegions[i].bufferRowLength);
-        VkDeviceSize buffer_height = (0 == pRegions[i].bufferImageHeight ? copy_extent.height : pRegions[i].bufferImageHeight);
-        VkDeviceSize unit_size = FormatElementSize(image_state->createInfo.format,
-                                                   pRegions[i].imageSubresource.aspectMask);  // size (bytes) of texel or block
-
-        if (FormatIsCompressed(image_state->createInfo.format) || FormatIsSinglePlane_422(image_state->createInfo.format)) {
-            // Switch to texel block units, rounding up for any partially-used blocks
-            auto block_dim = FormatTexelBlockExtent(image_state->createInfo.format);
-            buffer_width = (buffer_width + block_dim.width - 1) / block_dim.width;
-            buffer_height = (buffer_height + block_dim.height - 1) / block_dim.height;
-
-            copy_extent.width = (copy_extent.width + block_dim.width - 1) / block_dim.width;
-            copy_extent.height = (copy_extent.height + block_dim.height - 1) / block_dim.height;
-            copy_extent.depth = (copy_extent.depth + block_dim.depth - 1) / block_dim.depth;
-        }
-
-        // Either depth or layerCount may be greater than 1 (not both). This is the number of 'slices' to copy
-        uint32_t z_copies = std::max(copy_extent.depth, pRegions[i].imageSubresource.layerCount);
-        if (IsExtentSizeZero(&copy_extent) || (0 == z_copies)) {
-            // TODO: Issue warning here? Already warned in ValidateImageBounds()...
-        } else {
-            // Calculate buffer offset of final copied byte, + 1.
-            VkDeviceSize max_buffer_offset = (z_copies - 1) * buffer_height * buffer_width;      // offset to slice
-            max_buffer_offset += ((copy_extent.height - 1) * buffer_width) + copy_extent.width;  // add row,col
-            max_buffer_offset *= unit_size;                                                      // convert to bytes
-            max_buffer_offset += pRegions[i].bufferOffset;                                       // add initial offset (bytes)
-
-            if (buffer_size < max_buffer_offset) {
-                skip |= LogError(device, msg_code, "%s: pRegion[%d] exceeds buffer size of %" PRIu64 " bytes..", func_name, i,
-                                 buffer_size);
-            }
+        VkDeviceSize max_buffer_offset =
+            GetBufferSizeFromCopyImage(pRegions[i], image_state->createInfo.format) + pRegions[i].bufferOffset;
+        if (buffer_size < max_buffer_offset) {
+            skip |=
+                LogError(device, msg_code, "%s: pRegion[%d] exceeds buffer size of %" PRIu64 " bytes..", func_name, i, buffer_size);
         }
     }
 
