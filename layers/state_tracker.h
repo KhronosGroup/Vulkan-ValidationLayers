@@ -302,6 +302,43 @@ static inline VkExtent3D GetAdjustedDestImageExtent(VkFormat src_format, VkForma
     return adjusted_extent;
 }
 
+// Test if the extent argument has any dimensions set to 0.
+static inline bool IsExtentSizeZero(const VkExtent3D* extent) {
+    return ((extent->width == 0) || (extent->height == 0) || (extent->depth == 0));
+}
+
+static inline VkDeviceSize GetBufferSizeFromCopyImage(const VkBufferImageCopy& region, VkFormat image_format) {
+    VkDeviceSize buffer_size = 0;
+    VkExtent3D copy_extent = region.imageExtent;
+    VkDeviceSize buffer_width = (0 == region.bufferRowLength ? copy_extent.width : region.bufferRowLength);
+    VkDeviceSize buffer_height = (0 == region.bufferImageHeight ? copy_extent.height : region.bufferImageHeight);
+    VkDeviceSize unit_size = FormatElementSize(image_format,
+                                               region.imageSubresource.aspectMask);  // size (bytes) of texel or block
+
+    if (FormatIsCompressed(image_format) || FormatIsSinglePlane_422(image_format)) {
+        // Switch to texel block units, rounding up for any partially-used blocks
+        auto block_dim = FormatTexelBlockExtent(image_format);
+        buffer_width = (buffer_width + block_dim.width - 1) / block_dim.width;
+        buffer_height = (buffer_height + block_dim.height - 1) / block_dim.height;
+
+        copy_extent.width = (copy_extent.width + block_dim.width - 1) / block_dim.width;
+        copy_extent.height = (copy_extent.height + block_dim.height - 1) / block_dim.height;
+        copy_extent.depth = (copy_extent.depth + block_dim.depth - 1) / block_dim.depth;
+    }
+
+    // Either depth or layerCount may be greater than 1 (not both). This is the number of 'slices' to copy
+    uint32_t z_copies = std::max(copy_extent.depth, region.imageSubresource.layerCount);
+    if (IsExtentSizeZero(&copy_extent) || (0 == z_copies)) {
+        // TODO: Issue warning here? Already warned in ValidateImageBounds()...
+    } else {
+        // Calculate buffer offset of final copied byte, + 1.
+        buffer_size = (z_copies - 1) * buffer_height * buffer_width;                   // offset to slice
+        buffer_size += ((copy_extent.height - 1) * buffer_width) + copy_extent.width;  // add row,col
+        buffer_size *= unit_size;                                                      // convert to bytes
+    }
+    return buffer_size;
+}
+
 struct SHADER_MODULE_STATE;
 
 class ValidationStateTracker : public ValidationObject {
