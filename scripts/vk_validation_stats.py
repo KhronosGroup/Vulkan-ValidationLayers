@@ -46,8 +46,6 @@ header_filename = "vk_validation_error_messages.h"
 vuid_prefixes = ['VUID-', 'UNASSIGNED-', 'kVUID_']
 
 # Hard-coded flags that could be command line args, if we decide that's useful
-# replace KHR vuids with non-KHR during consistency checking
-dealias_khr = True
 ignore_unassigned = True # These are not found in layer code unless they appear explicitly (most don't), so produce false positives
 
 layer_source_files = [common_codegen.repo_relative(path) for path in [
@@ -70,76 +68,6 @@ unassigned_vuid_files = [common_codegen.repo_relative(path) for path in [
     'layers/core_validation_error_enums.h',
     'layers/object_lifetime_validation.h'
 ]]
-
-# This needs to be updated as new extensions roll in
-khr_aliases = {
-    'VUID-vkBindBufferMemory2KHR-device-parameter'                                        : 'VUID-vkBindBufferMemory2-device-parameter',
-    'VUID-vkBindBufferMemory2KHR-pBindInfos-parameter'                                    : 'VUID-vkBindBufferMemory2-pBindInfos-parameter',
-    'VUID-vkBindImageMemory2KHR-device-parameter'                                         : 'VUID-vkBindImageMemory2-device-parameter',
-    'VUID-vkBindImageMemory2KHR-pBindInfos-parameter'                                     : 'VUID-vkBindImageMemory2-pBindInfos-parameter',
-    'VUID-vkCmdDispatchBaseKHR-commandBuffer-parameter'                                   : 'VUID-vkCmdDispatchBase-commandBuffer-parameter',
-    'VUID-vkCmdSetDeviceMaskKHR-commandBuffer-parameter'                                  : 'VUID-vkCmdSetDeviceMask-commandBuffer-parameter',
-    'VUID-vkCreateDescriptorUpdateTemplateKHR-device-parameter'                           : 'VUID-vkCreateDescriptorUpdateTemplate-device-parameter',
-    'VUID-vkCreateDescriptorUpdateTemplateKHR-pDescriptorUpdateTemplate-parameter'        : 'VUID-vkCreateDescriptorUpdateTemplate-pDescriptorUpdateTemplate-parameter',
-    'VUID-vkCreateSamplerYcbcrConversionKHR-device-parameter'                             : 'VUID-vkCreateSamplerYcbcrConversion-device-parameter',
-    'VUID-vkCreateSamplerYcbcrConversionKHR-pYcbcrConversion-parameter'                   : 'VUID-vkCreateSamplerYcbcrConversion-pYcbcrConversion-parameter',
-    'VUID-vkDestroyDescriptorUpdateTemplateKHR-descriptorUpdateTemplate-parameter'        : 'VUID-vkDestroyDescriptorUpdateTemplate-descriptorUpdateTemplate-parameter',
-    'VUID-vkDestroyDescriptorUpdateTemplateKHR-descriptorUpdateTemplate-parent'           : 'VUID-vkDestroyDescriptorUpdateTemplate-descriptorUpdateTemplate-parent',
-    'VUID-vkDestroyDescriptorUpdateTemplateKHR-device-parameter'                          : 'VUID-vkDestroyDescriptorUpdateTemplate-device-parameter',
-    'VUID-vkDestroySamplerYcbcrConversionKHR-device-parameter'                            : 'VUID-vkDestroySamplerYcbcrConversion-device-parameter',
-    'VUID-vkDestroySamplerYcbcrConversionKHR-ycbcrConversion-parameter'                   : 'VUID-vkDestroySamplerYcbcrConversion-ycbcrConversion-parameter',
-    'VUID-vkDestroySamplerYcbcrConversionKHR-ycbcrConversion-parent'                      : 'VUID-vkDestroySamplerYcbcrConversion-ycbcrConversion-parent',
-    'VUID-vkEnumeratePhysicalDeviceGroupsKHR-instance-parameter'                          : 'VUID-vkEnumeratePhysicalDeviceGroups-instance-parameter',
-    'VUID-vkEnumeratePhysicalDeviceGroupsKHR-pPhysicalDeviceGroupProperties-parameter'    : 'VUID-vkEnumeratePhysicalDeviceGroups-pPhysicalDeviceGroupProperties-parameter',
-    'VUID-vkGetBufferMemoryRequirements2KHR-device-parameter'                             : 'VUID-vkGetBufferMemoryRequirements2-device-parameter',
-    'VUID-vkGetDescriptorSetLayoutSupportKHR-device-parameter'                            : 'VUID-vkGetDescriptorSetLayoutSupport-device-parameter',
-    'VUID-vkGetDeviceGroupPeerMemoryFeaturesKHR-device-parameter'                         : 'VUID-vkGetDeviceGroupPeerMemoryFeatures-device-parameter',
-    'VUID-vkGetDeviceGroupPeerMemoryFeaturesKHR-pPeerMemoryFeatures-parameter'            : 'VUID-vkGetDeviceGroupPeerMemoryFeatures-pPeerMemoryFeatures-parameter',
-    'VUID-vkGetImageMemoryRequirements2KHR-device-parameter'                              : 'VUID-vkGetImageMemoryRequirements2-device-parameter',
-    'VUID-vkGetImageSparseMemoryRequirements2KHR-device-parameter'                        : 'VUID-vkGetImageSparseMemoryRequirements2-device-parameter',
-    'VUID-vkGetImageSparseMemoryRequirements2KHR-pSparseMemoryRequirements-parameter'     : 'VUID-vkGetImageSparseMemoryRequirements2-pSparseMemoryRequirements-parameter',
-    'VUID-vkGetPhysicalDeviceExternalBufferPropertiesKHR-physicalDevice-parameter'        : 'VUID-vkGetPhysicalDeviceExternalBufferProperties-physicalDevice-parameter',
-    'VUID-vkGetPhysicalDeviceExternalFencePropertiesKHR-physicalDevice-parameter'         : 'VUID-vkGetPhysicalDeviceExternalFenceProperties-physicalDevice-parameter',
-    'VUID-vkGetPhysicalDeviceExternalSemaphorePropertiesKHR-physicalDevice-parameter'     : 'VUID-vkGetPhysicalDeviceExternalSemaphoreProperties-physicalDevice-parameter',
-    'VUID-vkGetPhysicalDeviceFeatures2KHR-physicalDevice-parameter'                       : 'VUID-vkGetPhysicalDeviceFeatures2-physicalDevice-parameter',
-    'VUID-vkGetPhysicalDeviceFormatProperties2KHR-format-parameter'                       : 'VUID-vkGetPhysicalDeviceFormatProperties2-format-parameter',
-    'VUID-vkGetPhysicalDeviceFormatProperties2KHR-physicalDevice-parameter'               : 'VUID-vkGetPhysicalDeviceFormatProperties2-physicalDevice-parameter',
-    'VUID-vkGetPhysicalDeviceImageFormatProperties2KHR-physicalDevice-parameter'          : 'VUID-vkGetPhysicalDeviceImageFormatProperties2-physicalDevice-parameter',
-    'VUID-vkGetPhysicalDeviceMemoryProperties2KHR-physicalDevice-parameter'               : 'VUID-vkGetPhysicalDeviceMemoryProperties2-physicalDevice-parameter',
-    'VUID-vkGetPhysicalDeviceProperties2KHR-physicalDevice-parameter'                     : 'VUID-vkGetPhysicalDeviceProperties2-physicalDevice-parameter',
-    'VUID-vkGetPhysicalDeviceQueueFamilyProperties2KHR-pQueueFamilyProperties-parameter'  : 'VUID-vkGetPhysicalDeviceQueueFamilyProperties2-pQueueFamilyProperties-parameter',
-    'VUID-vkGetPhysicalDeviceSparseImageFormatProperties2KHR-pProperties-parameter'       : 'VUID-vkGetPhysicalDeviceSparseImageFormatProperties2-pProperties-parameter',
-    'VUID-vkGetPhysicalDeviceSparseImageFormatProperties2KHR-physicalDevice-parameter'    : 'VUID-vkGetPhysicalDeviceSparseImageFormatProperties2-physicalDevice-parameter',
-    'VUID-vkTrimCommandPoolKHR-commandPool-parameter'                                     : 'VUID-vkTrimCommandPool-commandPool-parameter',
-    'VUID-vkTrimCommandPoolKHR-commandPool-parent'                                        : 'VUID-vkTrimCommandPool-commandPool-parent',
-    'VUID-vkTrimCommandPoolKHR-device-parameter'                                          : 'VUID-vkTrimCommandPool-device-parameter',
-    'VUID-vkTrimCommandPoolKHR-flags-zerobitmask'                                         : 'VUID-vkTrimCommandPool-flags-zerobitmask',
-    'VUID-vkUpdateDescriptorSetWithTemplateKHR-descriptorSet-parameter'                   : 'VUID-vkUpdateDescriptorSetWithTemplate-descriptorSet-parameter',
-    'VUID-vkUpdateDescriptorSetWithTemplateKHR-descriptorUpdateTemplate-parameter'        : 'VUID-vkUpdateDescriptorSetWithTemplate-descriptorUpdateTemplate-parameter',
-    'VUID-vkUpdateDescriptorSetWithTemplateKHR-descriptorUpdateTemplate-parent'           : 'VUID-vkUpdateDescriptorSetWithTemplate-descriptorUpdateTemplate-parent',
-    'VUID-vkUpdateDescriptorSetWithTemplateKHR-device-parameter'                          : 'VUID-vkUpdateDescriptorSetWithTemplate-device-parameter',
-    'VUID-vkCreateDescriptorUpdateTemplateKHR-pCreateInfo-parameter'                                : 'VUID-vkCreateDescriptorUpdateTemplate-pCreateInfo-parameter',
-    'VUID-vkCreateSamplerYcbcrConversionKHR-pCreateInfo-parameter'                                  : 'VUID-vkCreateSamplerYcbcrConversion-pCreateInfo-parameter',
-    'VUID-vkGetBufferMemoryRequirements2KHR-pInfo-parameter'                                        : 'VUID-vkGetBufferMemoryRequirements2-pInfo-parameter',
-    'VUID-vkGetBufferMemoryRequirements2KHR-pMemoryRequirements-parameter'                          : 'VUID-vkGetBufferMemoryRequirements2-pMemoryRequirements-parameter',
-    'VUID-vkGetDescriptorSetLayoutSupportKHR-pCreateInfo-parameter'                                 : 'VUID-vkGetDescriptorSetLayoutSupport-pCreateInfo-parameter',
-    'VUID-vkGetDescriptorSetLayoutSupportKHR-pSupport-parameter'                                    : 'VUID-vkGetDescriptorSetLayoutSupport-pSupport-parameter',
-    'VUID-vkGetImageMemoryRequirements2KHR-pInfo-parameter'                                         : 'VUID-vkGetImageMemoryRequirements2-pInfo-parameter',
-    'VUID-vkGetImageMemoryRequirements2KHR-pMemoryRequirements-parameter'                           : 'VUID-vkGetImageMemoryRequirements2-pMemoryRequirements-parameter',
-    'VUID-vkGetImageSparseMemoryRequirements2KHR-pInfo-parameter'                                   : 'VUID-vkGetImageSparseMemoryRequirements2-pInfo-parameter',
-    'VUID-vkGetPhysicalDeviceExternalBufferPropertiesKHR-pExternalBufferInfo-parameter'             : 'VUID-vkGetPhysicalDeviceExternalBufferProperties-pExternalBufferInfo-parameter',
-    'VUID-vkGetPhysicalDeviceExternalBufferPropertiesKHR-pExternalBufferProperties-parameter'       : 'VUID-vkGetPhysicalDeviceExternalBufferProperties-pExternalBufferProperties-parameter',
-    'VUID-vkGetPhysicalDeviceExternalFencePropertiesKHR-pExternalFenceInfo-parameter'               : 'VUID-vkGetPhysicalDeviceExternalFenceProperties-pExternalFenceInfo-parameter',
-    'VUID-vkGetPhysicalDeviceExternalFencePropertiesKHR-pExternalFenceProperties-parameter'         : 'VUID-vkGetPhysicalDeviceExternalFenceProperties-pExternalFenceProperties-parameter',
-    'VUID-vkGetPhysicalDeviceExternalSemaphorePropertiesKHR-pExternalSemaphoreInfo-parameter'       : 'VUID-vkGetPhysicalDeviceExternalSemaphoreProperties-pExternalSemaphoreInfo-parameter',
-    'VUID-vkGetPhysicalDeviceExternalSemaphorePropertiesKHR-pExternalSemaphoreProperties-parameter' : 'VUID-vkGetPhysicalDeviceExternalSemaphoreProperties-pExternalSemaphoreProperties-parameter',
-    'VUID-vkGetPhysicalDeviceFeatures2KHR-pFeatures-parameter'                                      : 'VUID-vkGetPhysicalDeviceFeatures2-pFeatures-parameter',
-    'VUID-vkGetPhysicalDeviceFormatProperties2KHR-pFormatProperties-parameter'                      : 'VUID-vkGetPhysicalDeviceFormatProperties2-pFormatProperties-parameter',
-    'VUID-vkGetPhysicalDeviceImageFormatProperties2KHR-pImageFormatInfo-parameter'                  : 'VUID-vkGetPhysicalDeviceImageFormatProperties2-pImageFormatInfo-parameter',
-    'VUID-vkGetPhysicalDeviceImageFormatProperties2KHR-pImageFormatProperties-parameter'            : 'VUID-vkGetPhysicalDeviceImageFormatProperties2-pImageFormatProperties-parameter',
-    'VUID-vkGetPhysicalDeviceMemoryProperties2KHR-pMemoryProperties-parameter'                      : 'VUID-vkGetPhysicalDeviceMemoryProperties2-pMemoryProperties-parameter',
-    'VUID-vkGetPhysicalDeviceProperties2KHR-pProperties-parameter'                                  : 'VUID-vkGetPhysicalDeviceProperties2-pProperties-parameter',
-    'VUID-vkGetPhysicalDeviceSparseImageFormatProperties2KHR-pFormatInfo-parameter'                 : 'VUID-vkGetPhysicalDeviceSparseImageFormatProperties2-pFormatInfo-parameter' }
 
 def printHelp():
     print ("Usage:")
@@ -436,23 +364,6 @@ class Consistency:
         self.valid = all_json
         self.checks = all_checks
         self.tests = all_tests
-
-        if (dealias_khr):
-            dk = set()
-            for vuid in self.checks:
-                if vuid in khr_aliases:
-                    dk.add(khr_aliases[vuid])
-                else:
-                    dk.add(vuid)
-            self.checks = dk
-
-            dk = set()
-            for vuid in self.tests:
-                if vuid in khr_aliases:
-                    dk.add(khr_aliases[vuid])
-                else:
-                    dk.add(vuid)
-            self.tests = dk
 
     # Report undefined VUIDs in source code
     def undef_vuids_in_layer_code(self):
