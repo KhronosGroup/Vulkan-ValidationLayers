@@ -880,7 +880,7 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
             item.second.reset();
         }
 
-        memset(&pCB->activeRenderPassBeginInfo, 0, sizeof(pCB->activeRenderPassBeginInfo));
+        pCB->activeRenderPassBeginInfo = safe_VkRenderPassBeginInfo();
         pCB->activeRenderPass = nullptr;
         pCB->activeSubpassContents = VK_SUBPASS_CONTENTS_INLINE;
         pCB->activeSubpass = 0;
@@ -3620,8 +3620,7 @@ void ValidationStateTracker::RecordCmdBeginRenderPassState(VkCommandBuffer comma
     if (render_pass_state) {
         cb_state->activeFramebuffer = pRenderPassBegin->framebuffer;
         cb_state->activeRenderPass = render_pass_state;
-        // This is a shallow copy as that is all that is needed for now
-        cb_state->activeRenderPassBeginInfo = *pRenderPassBegin;
+        cb_state->activeRenderPassBeginInfo = safe_VkRenderPassBeginInfo(pRenderPassBegin);
         cb_state->activeSubpass = 0;
         cb_state->activeSubpassContents = contents;
         cb_state->framebuffers.insert(pRenderPassBegin->framebuffer);

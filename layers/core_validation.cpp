@@ -8754,7 +8754,7 @@ bool CoreChecks::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer,
 void CoreChecks::RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     FRAMEBUFFER_STATE *framebuffer = GetFramebufferState(cb_state->activeFramebuffer);
-    TransitionFinalSubpassLayouts(cb_state, &cb_state->activeRenderPassBeginInfo, framebuffer);
+    TransitionFinalSubpassLayouts(cb_state, cb_state->activeRenderPassBeginInfo.ptr(), framebuffer);
 }
 
 void CoreChecks::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) {
