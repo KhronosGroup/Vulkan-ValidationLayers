@@ -551,7 +551,14 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
 void CoreChecks::TransitionAttachmentRefLayout(CMD_BUFFER_STATE *pCB, FRAMEBUFFER_STATE *pFramebuffer,
                                                const safe_VkAttachmentReference2 &ref) {
     if (ref.attachment != VK_ATTACHMENT_UNUSED) {
-        auto image_view = GetAttachmentImageViewState(pFramebuffer, ref.attachment);
+        IMAGE_VIEW_STATE *image_view = nullptr;
+        if (pFramebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) {
+            const auto attachment_info =
+                lvl_find_in_chain<VkRenderPassAttachmentBeginInfoKHR>(pCB->activeRenderPassBeginInfo.pNext);
+            if (attachment_info) image_view = GetImageViewState(attachment_info->pAttachments[ref.attachment]);
+        } else {
+            image_view = GetAttachmentImageViewState(pFramebuffer, ref.attachment);
+        }
         if (image_view) {
             VkImageLayout stencil_layout = kInvalidLayout;
             const auto *attachment_reference_stencil_layout = lvl_find_in_chain<VkAttachmentReferenceStencilLayoutKHR>(ref.pNext);
@@ -590,7 +597,14 @@ void CoreChecks::TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE *cb_state, co
     // First transition into initialLayout
     auto const rpci = render_pass_state->createInfo.ptr();
     for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
-        auto view_state = GetAttachmentImageViewState(framebuffer_state, i);
+        IMAGE_VIEW_STATE *view_state = nullptr;
+        if (framebuffer_state->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) {
+            const auto attachment_info =
+                lvl_find_in_chain<VkRenderPassAttachmentBeginInfoKHR>(cb_state->activeRenderPassBeginInfo.pNext);
+            if (attachment_info) view_state = GetImageViewState(attachment_info->pAttachments[i]);
+        } else {
+            view_state = GetAttachmentImageViewState(framebuffer_state, i);
+        }
         if (view_state) {
             VkImageLayout stencil_layout = kInvalidLayout;
             const auto *attachment_description_stencil_layout =
@@ -1152,8 +1166,14 @@ void CoreChecks::TransitionFinalSubpassLayouts(CMD_BUFFER_STATE *pCB, const VkRe
 
     const VkRenderPassCreateInfo2KHR *pRenderPassInfo = renderPass->createInfo.ptr();
     if (framebuffer_state) {
+        IMAGE_VIEW_STATE *view_state = nullptr;
         for (uint32_t i = 0; i < pRenderPassInfo->attachmentCount; ++i) {
-            auto view_state = GetAttachmentImageViewState(framebuffer_state, i);
+            if (framebuffer_state->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) {
+                const auto attachment_info = lvl_find_in_chain<VkRenderPassAttachmentBeginInfoKHR>(pRenderPassBegin->pNext);
+                if (attachment_info) view_state = GetImageViewState(attachment_info->pAttachments[i]);
+            } else {
+                view_state = GetAttachmentImageViewState(framebuffer_state, i);
+            }
             if (view_state) {
                 VkImageLayout stencil_layout = kInvalidLayout;
                 const auto *attachment_description_stencil_layout =
@@ -1161,7 +1181,6 @@ void CoreChecks::TransitionFinalSubpassLayouts(CMD_BUFFER_STATE *pCB, const VkRe
                 if (attachment_description_stencil_layout) {
                     stencil_layout = attachment_description_stencil_layout->stencilFinalLayout;
                 }
-
                 SetImageViewLayout(pCB, *view_state, pRenderPassInfo->pAttachments[i].finalLayout, stencil_layout);
             }
         }

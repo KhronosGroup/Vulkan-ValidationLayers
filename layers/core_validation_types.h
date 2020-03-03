@@ -1059,7 +1059,7 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     uint32_t scissorMask;
     uint32_t initial_device_mask;
 
-    VkRenderPassBeginInfo activeRenderPassBeginInfo;
+    safe_VkRenderPassBeginInfo activeRenderPassBeginInfo;
     RENDER_PASS_STATE *activeRenderPass;
     VkSubpassContents activeSubpassContents;
     uint32_t active_render_pass_device_mask;
