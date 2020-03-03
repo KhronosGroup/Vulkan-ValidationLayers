@@ -101,6 +101,7 @@ bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pC
 
 void BestPractices::PreCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                                 VkInstance* pInstance) {
+    ValidationStateTracker::PreCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance);
     instance_api_version = pCreateInfo->pApplicationInfo->apiVersion;
 }
 
@@ -415,6 +416,7 @@ bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory me
 }
 
 void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) {
+    ValidationStateTracker::PreCallRecordFreeMemory(device, memory, pAllocator);
     if (memory != VK_NULL_HANDLE) {
         num_mem_objects--;
     }
@@ -1082,6 +1084,8 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
 
 void BestPractices::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
                                                   VkFence fence, VkResult result) {
+    ValidationStateTracker::PostCallRecordQueueBindSparse(queue, bindInfoCount, pBindInfo, fence, result);
+
     if (result != VK_SUCCESS) {
         static std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY,
                                                     VK_ERROR_DEVICE_LOST};
