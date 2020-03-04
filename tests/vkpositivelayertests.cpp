@@ -9304,3 +9304,190 @@ TEST_F(VkPositiveLayerTest, SubresourceLayout) {
     m_commandBuffer->QueueCommandBuffer();
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
+    TEST_DESCRIPTION("Test layout tracking on imageless framebuffers");
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find required device extension %s; skipped.\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_IMAGE_FORMAT_LIST_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_IMAGELESS_FRAMEBUFFER_EXTENSION_NAME);
+    } else {
+        printf("%s test requires VK_KHR_imageless_framebuffer, not available.  Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    if (!AddSwapchainDeviceExtension()) {
+        printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    VkPhysicalDeviceImagelessFramebufferFeaturesKHR physicalDeviceImagelessFramebufferFeatures = {};
+    physicalDeviceImagelessFramebufferFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES_KHR;
+    physicalDeviceImagelessFramebufferFeatures.imagelessFramebuffer = VK_TRUE;
+    VkPhysicalDeviceFeatures2 physicalDeviceFeatures2 = {};
+    physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    physicalDeviceFeatures2.pNext = &physicalDeviceImagelessFramebufferFeatures;
+
+    uint32_t physical_device_group_count = 0;
+    vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, nullptr);
+
+    if (physical_device_group_count == 0) {
+        printf("%s physical_device_group_count is 0, skipping test\n", kSkipPrefix);
+        return;
+    }
+    std::vector<VkPhysicalDeviceGroupProperties> physical_device_group(physical_device_group_count,
+                                                                       {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GROUP_PROPERTIES});
+    vk::EnumeratePhysicalDeviceGroups(instance(), &physical_device_group_count, physical_device_group.data());
+    VkDeviceGroupDeviceCreateInfo create_device_pnext = {};
+    create_device_pnext.sType = VK_STRUCTURE_TYPE_DEVICE_GROUP_DEVICE_CREATE_INFO;
+    create_device_pnext.physicalDeviceCount = physical_device_group[0].physicalDeviceCount;
+    create_device_pnext.pPhysicalDevices = physical_device_group[0].physicalDevices;
+    create_device_pnext.pNext = &physicalDeviceFeatures2;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &create_device_pnext, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    if (!InitSwapchain(VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
+        printf("%s Cannot create surface or swapchain, skipping test\n", kSkipPrefix);
+        return;
+    }
+    uint32_t attachmentWidth = 64;
+    uint32_t attachmentHeight = 64;
+    VkFormat attachmentFormat = VK_FORMAT_R8G8B8A8_UNORM;
+    VkAttachmentDescription attachmentDescription[] = {{0, attachmentFormat, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                                        VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                                        VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
+                                                        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR}};
+    VkAttachmentReference attachmentReference = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkSubpassDescription subpasses[] = {
+        {0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &attachmentReference, nullptr, nullptr, 0, nullptr},
+    };
+    VkRenderPassCreateInfo renderPassCreateInfo = {
+        VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, attachmentDescription, 1, subpasses, 0, nullptr};
+    VkRenderPass renderPass;
+    vk::CreateRenderPass(m_device->device(), &renderPassCreateInfo, NULL, &renderPass);
+
+    // Create an image to use in an imageless framebuffer.  Bind swapchain memory to it.
+    auto image_swapchain_create_info = lvl_init_struct<VkImageSwapchainCreateInfoKHR>();
+    image_swapchain_create_info.swapchain = m_swapchain;
+    VkImageCreateInfo imageCreateInfo = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                                         &image_swapchain_create_info,
+                                         VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
+                                         VK_IMAGE_TYPE_2D,
+                                         attachmentFormat,
+                                         {attachmentWidth, attachmentHeight, 1},
+                                         1,
+                                         1,
+                                         VK_SAMPLE_COUNT_1_BIT,
+                                         VK_IMAGE_TILING_OPTIMAL,
+                                         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                         VK_SHARING_MODE_EXCLUSIVE,
+                                         0,
+                                         nullptr,
+                                         VK_IMAGE_LAYOUT_UNDEFINED};
+
+    VkImageObj image(m_device);
+    image.init_no_mem(*m_device, imageCreateInfo);
+
+    auto bind_devicegroup_info = lvl_init_struct<VkBindImageMemoryDeviceGroupInfo>();
+    bind_devicegroup_info.deviceIndexCount = 2;
+    std::array<uint32_t, 2> deviceIndices = {0, 0};
+    bind_devicegroup_info.pDeviceIndices = deviceIndices.data();
+    bind_devicegroup_info.splitInstanceBindRegionCount = 0;
+    bind_devicegroup_info.pSplitInstanceBindRegions = nullptr;
+
+    auto bind_swapchain_info = lvl_init_struct<VkBindImageMemorySwapchainInfoKHR>(&bind_devicegroup_info);
+    bind_swapchain_info.swapchain = m_swapchain;
+    bind_swapchain_info.imageIndex = 0;
+
+    auto bind_info = lvl_init_struct<VkBindImageMemoryInfo>(&bind_swapchain_info);
+    bind_info.image = image.image();
+    bind_info.memory = VK_NULL_HANDLE;
+    bind_info.memoryOffset = 0;
+
+    vk::BindImageMemory2(m_device->device(), 1, &bind_info);
+
+    uint32_t swapchain_images_count = 0;
+    vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, nullptr);
+    std::vector<VkImage> swapchain_images;
+    swapchain_images.resize(swapchain_images_count);
+    vk::GetSwapchainImagesKHR(device(), m_swapchain, &swapchain_images_count, swapchain_images.data());
+    uint32_t current_buffer;
+    VkSemaphore image_acquired;
+    VkSemaphoreCreateInfo semaphore_create_info = {};
+    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &image_acquired);
+    vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, image_acquired, VK_NULL_HANDLE, &current_buffer);
+
+    VkImageView imageView = image.targetView(attachmentFormat);
+    VkFramebufferAttachmentImageInfoKHR framebufferAttachmentImageInfo = {VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO_KHR,
+                                                                          nullptr,
+                                                                          VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,
+                                                                          VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                                                          attachmentWidth,
+                                                                          attachmentHeight,
+                                                                          1,
+                                                                          1,
+                                                                          &attachmentFormat};
+    VkFramebufferAttachmentsCreateInfoKHR framebufferAttachmentsCreateInfo = {};
+    framebufferAttachmentsCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO_KHR;
+    framebufferAttachmentsCreateInfo.attachmentImageInfoCount = 1;
+    framebufferAttachmentsCreateInfo.pAttachmentImageInfos = &framebufferAttachmentImageInfo;
+    VkFramebufferCreateInfo framebufferCreateInfo = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+                                                     &framebufferAttachmentsCreateInfo,
+                                                     VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR,
+                                                     renderPass,
+                                                     1,
+                                                     nullptr,
+                                                     attachmentWidth,
+                                                     attachmentHeight,
+                                                     1};
+    VkFramebuffer framebuffer;
+    vk::CreateFramebuffer(m_device->device(), &framebufferCreateInfo, nullptr, &framebuffer);
+
+    VkRenderPassAttachmentBeginInfoKHR renderPassAttachmentBeginInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO_KHR,
+                                                                        nullptr, 1, &imageView};
+    VkRenderPassBeginInfo renderPassBeginInfo = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+                                                 &renderPassAttachmentBeginInfo,
+                                                 renderPass,
+                                                 framebuffer,
+                                                 {{0, 0}, {attachmentWidth, attachmentHeight}},
+                                                 0,
+                                                 nullptr};
+
+    // RenderPass should change the image layout of both the swapchain image and the aliased image to PRESENT_SRC_KHR
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(renderPassBeginInfo);
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    VkFenceObj fence;
+    fence.init(*m_device, VkFenceObj::create_info());
+    m_commandBuffer->QueueCommandBuffer(fence);
+
+    VkPresentInfoKHR present = {};
+    present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    present.pSwapchains = &m_swapchain;
+    present.pImageIndices = &current_buffer;
+    present.swapchainCount = 1;
+    vk::QueuePresentKHR(m_device->m_queue, &present);
+    m_errorMonitor->VerifyNotFound();
+
+    DestroySwapchain();
+    vk::DestroyRenderPass(m_device->device(), renderPass, nullptr);
+    vk::DestroySemaphore(m_device->device(), image_acquired, nullptr);
+    vk::DestroyFramebuffer(m_device->device(), framebuffer, nullptr);
+}
