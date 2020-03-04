@@ -135,12 +135,13 @@ VKAPI_ATTR VkBool32 VKAPI_CALL myDbgFunc(VkFlags msgFlags, VkDebugReportObjectTy
     return VK_FALSE;
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL LvtDebugUtilsFunc(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType, uint64_t srcObject,
-                                                 size_t location, int32_t msgCode, const char *pLayerPrefix, const char *pMsg,
-                                                 void *pUserData) {
+VKAPI_ATTR VkBool32 VKAPI_CALL LvtDebugUtilsFunc(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                 VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+                                                 const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData) {
     ErrorMonitor *errMonitor = (ErrorMonitor *)pUserData;
-    if (msgFlags & errMonitor->GetMessageFlags()) {
-        return errMonitor->CheckForDesiredMsg(pMsg);
+    auto msg_flags = DebugAnnotFlagsToMsgTypeFlags(messageSeverity, messageTypes);
+    if (msg_flags & errMonitor->GetMessageFlags()) {
+        return errMonitor->CheckForDesiredMsg(pCallbackData->pMessage);
     }
     return VK_FALSE;
 }
@@ -919,6 +920,7 @@ VkLayerTest::VkLayerTest() {
 
     // Add default instance extensions to the list
     m_instance_extension_names.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+    m_instance_extension_names.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
     m_instance_layer_names.push_back("VK_LAYER_KHRONOS_validation");
 
