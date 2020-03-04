@@ -76,6 +76,15 @@ void ShaderPrintf::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, c
         device_shader_printf->aborted = true;
         return;
     }
+
+    if (enabled.gpu_validation) {
+        ReportSetupProblem(device,
+                           "Debug Printf cannot be enabled when gpu assisted validation is enabled.  "
+                           "Debug Printf disabled.");
+        device_shader_printf->aborted = true;
+        return;
+    }
+
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     VkDescriptorSetLayoutBinding binding = {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
                                             VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT | kShaderStageAllRayTracing,
