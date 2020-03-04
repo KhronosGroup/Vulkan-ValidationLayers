@@ -246,6 +246,13 @@ void CoreChecks::SetImageLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_STATE &im
     if (subresource_map->SetSubresourceRangeLayout(*cb_node, image_subresource_range, layout, expected_layout)) {
         cb_node->image_layout_change_count++;  // Change the version of this data to force revalidation
     }
+    for (const auto &image : image_state.aliasing_images) {
+        auto alias_state = GetImageState(image);
+        // The map state of the aliases should all be in sync, so no need to check the return value
+        subresource_map = GetImageSubresourceLayoutMap(cb_node, *alias_state);
+        assert(subresource_map);
+        subresource_map->SetSubresourceRangeLayout(*cb_node, image_subresource_range, layout, expected_layout);
+    }
 }
 
 // Set the initial image layout for all slices of an image view
@@ -256,6 +263,11 @@ void CoreChecks::SetImageViewInitialLayout(CMD_BUFFER_STATE *cb_node, const IMAG
     IMAGE_STATE *image_state = view_state.image_state.get();
     auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, *image_state);
     subresource_map->SetSubresourceRangeInitialLayout(*cb_node, layout, view_state);
+    for (const auto &image : image_state->aliasing_images) {
+        image_state = GetImageState(image);
+        subresource_map = GetImageSubresourceLayoutMap(cb_node, *image_state);
+        subresource_map->SetSubresourceRangeInitialLayout(*cb_node, layout, view_state);
+    }
 }
 
 // Set the initial image layout for a passed non-normalized subresource range
@@ -264,6 +276,12 @@ void CoreChecks::SetImageInitialLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_ST
     auto *subresource_map = GetImageSubresourceLayoutMap(cb_node, image_state);
     assert(subresource_map);
     subresource_map->SetSubresourceRangeInitialLayout(*cb_node, NormalizeSubresourceRange(image_state, range), layout);
+    for (const auto &image : image_state.aliasing_images) {
+        auto alias_state = GetImageState(image);
+        subresource_map = GetImageSubresourceLayoutMap(cb_node, *alias_state);
+        assert(subresource_map);
+        subresource_map->SetSubresourceRangeInitialLayout(*cb_node, NormalizeSubresourceRange(*alias_state, range), layout);
+    }
 }
 
 void CoreChecks::SetImageInitialLayout(CMD_BUFFER_STATE *cb_node, VkImage image, const VkImageSubresourceRange &range,
@@ -1069,10 +1087,6 @@ void CoreChecks::TransitionImageLayouts(CMD_BUFFER_STATE *cb_state, uint32_t mem
         auto *image_state = GetImageState(mem_barrier.image);
         if (!image_state) continue;
         RecordTransitionImageLayout(cb_state, image_state, mem_barrier, is_release_op);
-        for (const auto &image : image_state->aliasing_images) {
-            image_state = GetImageState(image);
-            RecordTransitionImageLayout(cb_state, image_state, mem_barrier, is_release_op);
-        }
     }
 }
 
