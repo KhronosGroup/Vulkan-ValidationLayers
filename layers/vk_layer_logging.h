@@ -446,6 +446,25 @@ static inline void DebugAnnotFlagsToReportFlags(VkDebugUtilsMessageSeverityFlagB
     }
 }
 
+static inline LogMessageTypeFlags DebugAnnotFlagsToMsgTypeFlags(VkDebugUtilsMessageSeverityFlagBitsEXT da_severity,
+                                                                VkDebugUtilsMessageTypeFlagsEXT da_type) {
+    LogMessageTypeFlags msg_type_flags = 0;
+    if ((da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0) {
+        msg_type_flags |= kErrorBit;
+    } else if ((da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0) {
+        if ((da_type & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) != 0) {
+            msg_type_flags |= kPerformanceWarningBit;
+        } else {
+            msg_type_flags |= kWarningBit;
+        }
+    } else if ((da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) != 0) {
+        msg_type_flags |= kInformationBit;
+    } else if ((da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) != 0) {
+        msg_type_flags |= kDebugBit;
+    }
+    return msg_type_flags;
+}
+
 static inline void layer_debug_utils_destroy_instance(debug_report_data *debug_data) {
     if (debug_data) {
         std::unique_lock<std::mutex> lock(debug_data->debug_output_mutex);
@@ -617,11 +636,8 @@ static inline bool LogMsgLocked(const debug_report_data *debug_data, VkFlags msg
         }
     }
 
-    // Append layer prefix with VUID string, pass in recovered legacy numerical VUID
-
     bool result = debug_log_msg(debug_data, msg_flags, object_type, src_object, 0, "Validation", str_plus_spec_text.c_str(),
                                 vuid_text.c_str());
-
     free(err_msg);
     return result;
 }
