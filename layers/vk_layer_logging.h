@@ -338,7 +338,7 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
     callback_data.flags = 0;
     callback_data.pMessageIdName = text_vuid;
     callback_data.messageIdNumber = 0;  // deprecated, validation layers use only the pMessageIdName
-    callback_data.pMessage = message;
+    callback_data.pMessage = NULL;
     callback_data.queueLabelCount = 0;
     callback_data.pQueueLabels = NULL;
     callback_data.cmdBufLabelCount = 0;
@@ -348,7 +348,7 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
 
     std::vector<VkDebugUtilsLabelEXT> queue_labels;
     std::vector<VkDebugUtilsLabelEXT> cmd_buf_labels;
-    std::string new_debug_report_message = "";
+    std::string composite_message = "";
     std::ostringstream oss;
 
     if (0 != src_object) {
@@ -386,10 +386,15 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
     } else {
         oss << "Object: VK_NULL_HANDLE (Type = " << std::to_string(object_type) << ")";
     }
-    new_debug_report_message += oss.str();
-    new_debug_report_message += " | ";
-    new_debug_report_message += message;
 
+    composite_message += oss.str();
+    composite_message += " | ";
+    composite_message += message;
+    if (text_vuid != nullptr) {
+        composite_message.insert(0, " ] ");
+        composite_message.insert(0, text_vuid);
+        composite_message.insert(0, "[ ");
+    }
     const auto callback_list = &debug_data->debug_callback_list;
 
     // We only output to default callbacks if there are no non-default callbacks
@@ -404,20 +409,15 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
 
         // VK_EXT_debug_report callback (deprecated)
         if (!current_callback.IsUtils() && (current_callback.debug_report_msg_flags & msg_flags)) {
-            if (text_vuid != nullptr) {
-                // If a text vuid is supplied for the old debug report extension, prepend it to the message string
-                new_debug_report_message.insert(0, " ] ");
-                new_debug_report_message.insert(0, text_vuid);
-                new_debug_report_message.insert(0, " [ ");
-            }
             if (current_callback.debug_report_callback_function_ptr(msg_flags, convertCoreObjectToDebugReportObject(object_type),
                                                                     src_object, location, 0, layer_prefix,
-                                                                    new_debug_report_message.c_str(), current_callback.pUserData)) {
+                                                                    composite_message.c_str(), current_callback.pUserData)) {
                 bail = true;
             }
             // VK_EXT_debug_utils callback
         } else if (current_callback.IsUtils() && (current_callback.debug_utils_msg_flags & severity) &&
                    (current_callback.debug_utils_msg_type & types)) {
+            callback_data.pMessage = composite_message.c_str();
             if (current_callback.debug_utils_callback_function_ptr(static_cast<VkDebugUtilsMessageSeverityFlagBitsEXT>(severity),
                                                                    types, &callback_data, current_callback.pUserData)) {
                 bail = true;
