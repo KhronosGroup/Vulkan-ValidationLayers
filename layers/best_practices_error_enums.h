@@ -35,7 +35,7 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_ExtensionMis
 static const char DECORATE_UNUSED *kVUID_BestPractices_CreateInstance_DeprecatedExtension =
     "UNASSIGNED-BestPractices-vkCreateInstance-deprecated-extension";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_DeprecatedExtension =
-    "UNASSIGNED-BestPractices-vkCreateInstance-deprecated-extension";
+    "UNASSIGNED-BestPractices-vkCreateDevice-deprecated-extension";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_API_Mismatch =
     "UNASSIGNED-BestPractices-vkCreateDevice-API-version-mismatch";
 static const char DECORATE_UNUSED *kVUID_BestPractices_SharingModeExclusive =
