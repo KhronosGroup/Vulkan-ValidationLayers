@@ -316,7 +316,6 @@ const IMAGE_VIEW_STATE *ValidationStateTracker::GetAttachmentImageViewState(cons
 }
 
 void ValidationStateTracker::AddAliasingImage(IMAGE_STATE *image_state) {
-    if (!(image_state->createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT)) return;
     std::unordered_set<VkImage> *bound_images = nullptr;
 
     if (image_state->bind_swapchain) {
@@ -3720,7 +3719,7 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
             SetMemBinding(bindInfo.memory, image_state, bindInfo.memoryOffset,
                           VulkanTypedHandle(bindInfo.image, kVulkanObjectTypeImage));
         }
-        if (image_state->createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT) {
+        if ((image_state->createInfo.flags & VK_IMAGE_CREATE_ALIAS_BIT) || swapchain_info) {
             AddAliasingImage(image_state);
         }
     }
