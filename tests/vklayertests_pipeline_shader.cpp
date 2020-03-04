@@ -3807,7 +3807,7 @@ TEST_F(VkLayerTest, CreatePipelineAttribBindingConflict) {
         helper.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
         helper.vi_ci_.vertexAttributeDescriptionCount = 1;
     };
-    m_errorMonitor->SetUnexpectedError("VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-00616 ");
+    m_errorMonitor->SetUnexpectedError("VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-00616");
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "Duplicate vertex input binding descriptions for binding 0");
 }
 
