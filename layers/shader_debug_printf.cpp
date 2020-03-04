@@ -64,15 +64,15 @@ void ShaderPrintf::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, c
     if (getenv("DEBUG_PRINTF_TO_STDOUT")) device_shader_printf->use_stdout = true;
 
     if (device_shader_printf->phys_dev_props.apiVersion < VK_API_VERSION_1_1) {
-        ReportSetupProblem(device, "Shader Debug Printf requires Vulkan 1.1 or later.  GPU-Assisted Validation disabled.");
+        ReportSetupProblem(device, "Debug Printf requires Vulkan 1.1 or later.  Debug Printf disabled.");
         device_shader_printf->aborted = true;
         return;
     }
 
     if (!supported_features.fragmentStoresAndAtomics || !supported_features.vertexPipelineStoresAndAtomics) {
         ReportSetupProblem(device,
-                           "Debug Shader Printf requires fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics.  "
-                           "Debug Shader Printf disabled.");
+                           "Debug Printf requires fragmentStoresAndAtomics and vertexPipelineStoresAndAtomics.  "
+                           "Debug Printf disabled.");
         device_shader_printf->aborted = true;
         return;
     }
@@ -110,7 +110,7 @@ void ShaderPrintf::PreCallRecordCreatePipelineLayout(VkDevice device, const VkPi
     if (cpl_state->modified_create_info.setLayoutCount >= adjusted_max_desc_sets) {
         std::ostringstream strm;
         strm << "Pipeline Layout conflict with validation's descriptor set at slot " << desc_set_bind_index << ". "
-             << "Application has too many descriptor sets in the pipeline layout to continue with shader debug printf. "
+             << "Application has too many descriptor sets in the pipeline layout to continue with debug printf. "
              << "Not modifying the pipeline layout. "
              << "Instrumented shaders are replaced with non-instrumented shaders.";
         ReportSetupProblem(device, strm.str().c_str());
@@ -155,7 +155,7 @@ bool ShaderPrintf::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, u
     if (srcStageMask & VK_PIPELINE_STAGE_HOST_BIT) {
         ReportSetupProblem(commandBuffer,
                            "CmdWaitEvents recorded with VK_PIPELINE_STAGE_HOST_BIT set. "
-                           "Shader Debug Printf waits on queue completion. "
+                           "Debug Printf waits on queue completion. "
                            "This wait could block the host's signaling of this event, resulting in deadlock.");
     }
     return false;
@@ -525,11 +525,11 @@ void ShaderPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, Vk
                                         pipeline_handle, pipeline_bind_point, operation_index, common_message);
             SharedGenerateSourceMessages(pgm, &debug_output_buffer[index], true, filename_message, source_message);
             if (use_stdout) {
-                std::cout << "UNASSIGNED-GPU-Assisted Debug Shader Printf " << common_message.c_str() << " "
+                std::cout << "UNASSIGNED-GPU-PRINTF Debug Printf " << common_message.c_str() << " "
                           << stage_message.c_str() << " " << shader_message.str().c_str() << " " << filename_message.c_str() << " "
                           << source_message.c_str();
             } else {
-                LogError(queue, "UNASSIGNED-GPU-Assisted Debug Shader Printf", "%s %s %s %s%s", common_message.c_str(),
+                LogError(queue, "UNASSIGNED-GPU-PRINTF Debug Printf", "%s %s %s %s%s", common_message.c_str(),
                          stage_message.c_str(), shader_message.str().c_str(), filename_message.c_str(), source_message.c_str());
             }
         } else {
@@ -543,7 +543,7 @@ void ShaderPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, Vk
     if ((index - 1) != expect) {
         SendStringToCallback(
             report_data->debug_callback_list,
-            "WARNING - Shader Debug Printf message was truncated, likely due to a buffer size that was too small for the message");
+            "WARNING - Debug Printf message was truncated, likely due to a buffer size that was too small for the message");
     }
     memset(debug_output_buffer, 0, 4 * (debug_output_buffer[0] + 1));
 }
@@ -566,14 +566,14 @@ void ShaderPrintf::SendStringToCallback(std::vector<VkLayerDbgFunctionState> deb
         if (current_callback.IsUtils() && current_callback.debug_utils_callback_function_ptr) {
             VkDebugUtilsMessengerCallbackDataEXT callback_data = {};
             callback_data.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT;
-            callback_data.pMessageIdName = "Shader Debug Printf";
+            callback_data.pMessageIdName = "Debug Printf";
             callback_data.pMessage = shader_message.c_str();
             current_callback.debug_utils_callback_function_ptr(VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT,
                                                                VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT, &callback_data,
                                                                current_callback.pUserData);
         } else if (!current_callback.IsUtils() && current_callback.debug_report_callback_function_ptr) {
             current_callback.debug_report_callback_function_ptr(
-                VK_DEBUG_REPORT_DEBUG_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT, 0, 0, 0, "Shader Debug Printf",
+                VK_DEBUG_REPORT_DEBUG_BIT_EXT, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT, 0, 0, 0, "Debug Printf",
                 shader_message.c_str(), current_callback.pUserData);
         }
     }
