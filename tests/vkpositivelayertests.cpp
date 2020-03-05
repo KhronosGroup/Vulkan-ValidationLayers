@@ -6065,7 +6065,7 @@ TEST_F(VkPositiveLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     delete[] layouts;
 }
 
-TEST_F(VkPositiveLayerTest, GpuShaderPrintf) {
+TEST_F(VkPositiveLayerTest, GpuDebugPrintf) {
     TEST_DESCRIPTION("Verify that calls to debugPrintfEXT are received in debug stream");
     InitFramework(m_errorMonitor);
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {

@@ -1,6 +1,6 @@
-/* Copyright (c) 2019 The Khronos Group Inc.
- * Copyright (c) 2019 Valve Corporation
- * Copyright (c) 2019 LunarG, Inc.
+/* Copyright (c) 2020 The Khronos Group Inc.
+ * Copyright (c) 2020 Valve Corporation
+ * Copyright (c) 2020 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@
 #pragma once
 #include "chassis.h"
 #include "shader_validation.h"
-class SharedDescriptorSetManager {
+class UtilDescriptorSetManager {
   public:
-    SharedDescriptorSetManager(VkDevice device, uint32_t numBindingsInSet);
-    ~SharedDescriptorSetManager();
+    UtilDescriptorSetManager(VkDevice device, uint32_t numBindingsInSet);
+    ~UtilDescriptorSetManager();
 
     VkResult GetDescriptorSet(VkDescriptorPool *desc_pool, VkDescriptorSetLayout ds_layout, VkDescriptorSet *desc_sets);
     VkResult GetDescriptorSets(uint32_t count, VkDescriptorPool *pool, VkDescriptorSetLayout ds_layout,
@@ -39,16 +39,16 @@ class SharedDescriptorSetManager {
     uint32_t numBindingsInSet;
     std::unordered_map<VkDescriptorPool, struct PoolTracker> desc_pool_map_;
 };
-struct SharedQueueBarrierCommandInfo {
+struct UtilQueueBarrierCommandInfo {
     VkCommandPool barrier_command_pool = VK_NULL_HANDLE;
     VkCommandBuffer barrier_command_buffer = VK_NULL_HANDLE;
 };
-VkResult SharedInitializeVma(VkPhysicalDevice physical_device, VkDevice device, VmaAllocator *pAllocator);
-void SharedPreCallRecordCreateDevice(VkPhysicalDevice gpu, safe_VkDeviceCreateInfo *modified_create_info,
-                                     VkPhysicalDeviceFeatures supported_features, VkPhysicalDeviceFeatures desired_features);
+VkResult UtilInitializeVma(VkPhysicalDevice physical_device, VkDevice device, VmaAllocator *pAllocator);
+void UtilPreCallRecordCreateDevice(VkPhysicalDevice gpu, safe_VkDeviceCreateInfo *modified_create_info,
+                                   VkPhysicalDeviceFeatures supported_features, VkPhysicalDeviceFeatures desired_features);
 template <typename ObjectType>
-void SharedPostCallRecordCreateDevice(const VkDeviceCreateInfo *pCreateInfo, std::vector<VkDescriptorSetLayoutBinding> bindings,
-                                      ObjectType *object_ptr, VkPhysicalDeviceProperties physical_device_properties) {
+void UtilPostCallRecordCreateDevice(const VkDeviceCreateInfo *pCreateInfo, std::vector<VkDescriptorSetLayoutBinding> bindings,
+                                    ObjectType *object_ptr, VkPhysicalDeviceProperties physical_device_properties) {
     // If api version 1.1 or later, SetDeviceLoaderData will be in the loader
     auto chain_info = get_chain_info(pCreateInfo, VK_LOADER_DATA_CALLBACK);
     assert(chain_info->u.pfnSetDeviceLoaderData);
@@ -68,10 +68,10 @@ void SharedPostCallRecordCreateDevice(const VkDeviceCreateInfo *pCreateInfo, std
     }
     object_ptr->desc_set_bind_index = object_ptr->adjusted_max_desc_sets - 1;
 
-    VkResult result1 = SharedInitializeVma(object_ptr->physicalDevice, object_ptr->device, &object_ptr->vmaAllocator);
+    VkResult result1 = UtilInitializeVma(object_ptr->physicalDevice, object_ptr->device, &object_ptr->vmaAllocator);
     assert(result1 == VK_SUCCESS);
-    std::unique_ptr<SharedDescriptorSetManager> desc_set_manager(
-        new SharedDescriptorSetManager(object_ptr->device, static_cast<uint32_t>(bindings.size())));
+    std::unique_ptr<UtilDescriptorSetManager> desc_set_manager(
+        new UtilDescriptorSetManager(object_ptr->device, static_cast<uint32_t>(bindings.size())));
 
     const VkDescriptorSetLayoutCreateInfo debug_desc_layout_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, NULL, 0,
                                                                     static_cast<uint32_t>(bindings.size()), bindings.data()};
@@ -106,9 +106,9 @@ void SharedPostCallRecordCreateDevice(const VkDeviceCreateInfo *pCreateInfo, std
         [object_ptr](VkCommandBuffer command_buffer) -> void { object_ptr->ResetCommandBuffer(command_buffer); });
 }
 template <typename ObjectType>
-void SharedPreCallRecordDestroyDevice(ObjectType *object_ptr) {
+void UtilPreCallRecordDestroyDevice(ObjectType *object_ptr) {
     for (auto &queue_barrier_command_info_kv : object_ptr->queue_barrier_command_infos) {
-        SharedQueueBarrierCommandInfo &queue_barrier_command_info = queue_barrier_command_info_kv.second;
+        UtilQueueBarrierCommandInfo &queue_barrier_command_info = queue_barrier_command_info_kv.second;
 
         DispatchFreeCommandBuffers(object_ptr->device, queue_barrier_command_info.barrier_command_pool, 1,
                                    &queue_barrier_command_info.barrier_command_buffer);
@@ -134,8 +134,8 @@ void SharedPreCallRecordDestroyDevice(ObjectType *object_ptr) {
 }
 
 template <typename ObjectType>
-void SharedPreCallRecordCreatePipelineLayout(create_pipeline_layout_api_state *cpl_state, ObjectType *object_ptr,
-                                             const VkPipelineLayoutCreateInfo *pCreateInfo) {
+void UtilPreCallRecordCreatePipelineLayout(create_pipeline_layout_api_state *cpl_state, ObjectType *object_ptr,
+                                           const VkPipelineLayoutCreateInfo *pCreateInfo) {
     // Modify the pipeline layout by:
     // 1. Copying the caller's descriptor set desc_layouts
     // 2. Fill in dummy descriptor layouts up to the max binding
@@ -210,10 +210,10 @@ struct CreatePipelineTraits<VkRayTracingPipelineCreateInfoKHR> {
 // If any do, create new non-instrumented shader modules and use them to replace the instrumented
 // shaders in the pipeline.  Return the (possibly) modified create infos to the caller.
 template <typename CreateInfo, typename SafeCreateInfo, typename ObjectType>
-void SharedPreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator,
-                                          VkPipeline *pPipelines, std::vector<std::shared_ptr<PIPELINE_STATE>> &pipe_state,
-                                          std::vector<SafeCreateInfo> *new_pipeline_create_infos,
-                                          const VkPipelineBindPoint bind_point, ObjectType *object_ptr) {
+void UtilPreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCreateInfos, const VkAllocationCallbacks *pAllocator,
+                                        VkPipeline *pPipelines, std::vector<std::shared_ptr<PIPELINE_STATE>> &pipe_state,
+                                        std::vector<SafeCreateInfo> *new_pipeline_create_infos,
+                                        const VkPipelineBindPoint bind_point, ObjectType *object_ptr) {
     using Accessor = CreatePipelineTraits<CreateInfo>;
     if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
         bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
@@ -265,9 +265,9 @@ void SharedPreCallRecordPipelineCreations(uint32_t count, const CreateInfo *pCre
 //   - Track the shader in the shader_map
 //   - Save the shader binary if it contains debug code
 template <typename CreateInfo, typename ObjectType>
-void SharedPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo *pCreateInfos,
-                                           const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                           const VkPipelineBindPoint bind_point, ObjectType *object_ptr) {
+void UtilPostCallRecordPipelineCreations(const uint32_t count, const CreateInfo *pCreateInfos,
+                                         const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                         const VkPipelineBindPoint bind_point, ObjectType *object_ptr) {
     using Accessor = CreatePipelineTraits<CreateInfo>;
     if (bind_point != VK_PIPELINE_BIND_POINT_GRAPHICS && bind_point != VK_PIPELINE_BIND_POINT_COMPUTE &&
         bind_point != VK_PIPELINE_BIND_POINT_RAY_TRACING_NV) {
@@ -334,7 +334,7 @@ void SharedPostCallRecordPipelineCreations(const uint32_t count, const CreateInf
 }
 template <typename ObjectType>
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
-void SharedProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE *cb_node, ObjectType *object_ptr) {
+void UtilProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE *cb_node, ObjectType *object_ptr) {
     if (cb_node && (cb_node->hasDrawCmd || cb_node->hasTraceRaysCmd || cb_node->hasDispatchCmd)) {
         auto gpu_buffer_list = object_ptr->GetBufferInfo(cb_node->commandBuffer);
         uint32_t draw_index = 0;
@@ -377,10 +377,10 @@ void SharedProcessInstrumentationBuffer(VkQueue queue, CMD_BUFFER_STATE *cb_node
 template <typename ObjectType>
 // Submit a memory barrier on graphics queues.
 // Lazy-create and record the needed command buffer.
-void SharedSubmitBarrier(VkQueue queue, ObjectType *object_ptr) {
-    auto queue_barrier_command_info_it = object_ptr->queue_barrier_command_infos.emplace(queue, SharedQueueBarrierCommandInfo{});
+void UtilSubmitBarrier(VkQueue queue, ObjectType *object_ptr) {
+    auto queue_barrier_command_info_it = object_ptr->queue_barrier_command_infos.emplace(queue, UtilQueueBarrierCommandInfo{});
     if (queue_barrier_command_info_it.second) {
-        SharedQueueBarrierCommandInfo &queue_barrier_command_info = queue_barrier_command_info_it.first->second;
+        UtilQueueBarrierCommandInfo &queue_barrier_command_info = queue_barrier_command_info_it.first->second;
 
         uint32_t queue_family_index = 0;
 
@@ -436,7 +436,7 @@ void SharedSubmitBarrier(VkQueue queue, ObjectType *object_ptr) {
         }
     }
 
-    SharedQueueBarrierCommandInfo &queue_barrier_command_info = queue_barrier_command_info_it.first->second;
+    UtilQueueBarrierCommandInfo &queue_barrier_command_info = queue_barrier_command_info_it.first->second;
     if (queue_barrier_command_info.barrier_command_buffer != VK_NULL_HANDLE) {
         VkSubmitInfo submit_info = {};
         submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -445,10 +445,10 @@ void SharedSubmitBarrier(VkQueue queue, ObjectType *object_ptr) {
         DispatchQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
     }
 }
-void SharedGenerateStageMessage(const uint32_t *debug_record, std::string &msg);
-void SharedGenerateCommonMessage(const debug_report_data *report_data, const VkCommandBuffer commandBuffer,
-                                 const uint32_t *debug_record, const VkShaderModule shader_module_handle,
-                                 const VkPipeline pipeline_handle, const VkPipelineBindPoint pipeline_bind_point,
-                                 const uint32_t operation_index, std::string &msg);
-void SharedGenerateSourceMessages(const std::vector<unsigned int> &pgm, const uint32_t *debug_record, bool from_printf,
-                                  std::string &filename_msg, std::string &source_msg);
+void UtilGenerateStageMessage(const uint32_t *debug_record, std::string &msg);
+void UtilGenerateCommonMessage(const debug_report_data *report_data, const VkCommandBuffer commandBuffer,
+                               const uint32_t *debug_record, const VkShaderModule shader_module_handle,
+                               const VkPipeline pipeline_handle, const VkPipelineBindPoint pipeline_bind_point,
+                               const uint32_t operation_index, std::string &msg);
+void UtilGenerateSourceMessages(const std::vector<unsigned int> &pgm, const uint32_t *debug_record, bool from_printf,
+                                std::string &filename_msg, std::string &source_msg);

@@ -23,7 +23,7 @@
 #include "chassis.h"
 #include "state_tracker.h"
 #include "vk_mem_alloc.h"
-#include "gpu_shared.h"
+#include "gpu_utils.h"
 class GpuAssisted;
 
 struct GpuAssistedDeviceMemoryBlock {
@@ -100,11 +100,11 @@ class GpuAssisted : public ValidationStateTracker {
     uint32_t desc_set_bind_index;
     VkDescriptorSetLayout debug_desc_layout;
     VkDescriptorSetLayout dummy_desc_layout;
-    std::unique_ptr<SharedDescriptorSetManager> desc_set_manager;
+    std::unique_ptr<UtilDescriptorSetManager> desc_set_manager;
     std::unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
     VmaAllocator vmaAllocator = {};
-    std::map<VkQueue, SharedQueueBarrierCommandInfo> queue_barrier_command_infos;
+    std::map<VkQueue, UtilQueueBarrierCommandInfo> queue_barrier_command_infos;
     std::vector<GpuAssistedBufferInfo>& GetBufferInfo(const VkCommandBuffer command_buffer) {
         auto buffer_list = command_buffer_map.find(command_buffer);
         if (buffer_list == command_buffer_map.end()) {

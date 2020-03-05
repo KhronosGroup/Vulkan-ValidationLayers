@@ -202,7 +202,7 @@ void GpuAssisted::PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDevice
     features.vertexPipelineStoresAndAtomics = true;
     features.fragmentStoresAndAtomics = true;
     features.shaderInt64 = true;
-    SharedPreCallRecordCreateDevice(gpu, modified_create_info, supported_features, features);
+    UtilPreCallRecordCreateDevice(gpu, modified_create_info, supported_features, features);
 }
 // Perform initializations that can be done at Create Device time.
 void GpuAssisted::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
@@ -247,7 +247,7 @@ void GpuAssisted::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
         binding.binding = i;
         bindings.push_back(binding);
     }
-    SharedPostCallRecordCreateDevice(pCreateInfo, bindings, device_gpu_assisted, device_gpu_assisted->phys_dev_props);
+    UtilPostCallRecordCreateDevice(pCreateInfo, bindings, device_gpu_assisted, device_gpu_assisted->phys_dev_props);
     CreateAccelerationStructureBuildValidationState(device_gpu_assisted);
 }
 
@@ -279,7 +279,7 @@ void GpuAssisted::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, c
 // Clean up device-related resources
 void GpuAssisted::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     DestroyAccelerationStructureBuildValidationState();
-    SharedPreCallRecordDestroyDevice(this);
+    UtilPreCallRecordDestroyDevice(this);
 }
 
 void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *device_gpuav) {
@@ -960,7 +960,7 @@ void GpuAssisted::PreCallRecordCreatePipelineLayout(VkDevice device, const VkPip
              << "Instrumented shaders are replaced with non-instrumented shaders.";
         ReportSetupProblem(device, strm.str().c_str());
     } else {
-        SharedPreCallRecordCreatePipelineLayout(cpl_state, this, pCreateInfo);
+        UtilPreCallRecordCreatePipelineLayout(cpl_state, this, pCreateInfo);
     }
 }
 
@@ -1056,8 +1056,8 @@ void GpuAssisted::PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipeli
                                                        void *cgpl_state_data) {
     std::vector<safe_VkGraphicsPipelineCreateInfo> new_pipeline_create_infos;
     create_graphics_pipeline_api_state *cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state *>(cgpl_state_data);
-    SharedPreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, cgpl_state->pipe_state,
-                                         &new_pipeline_create_infos, VK_PIPELINE_BIND_POINT_GRAPHICS, this);
+    UtilPreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, cgpl_state->pipe_state,
+                                       &new_pipeline_create_infos, VK_PIPELINE_BIND_POINT_GRAPHICS, this);
     cgpl_state->gpu_create_infos = new_pipeline_create_infos;
     cgpl_state->pCreateInfos = reinterpret_cast<VkGraphicsPipelineCreateInfo *>(cgpl_state->gpu_create_infos.data());
 }
@@ -1068,8 +1068,8 @@ void GpuAssisted::PreCallRecordCreateComputePipelines(VkDevice device, VkPipelin
                                                       void *ccpl_state_data) {
     std::vector<safe_VkComputePipelineCreateInfo> new_pipeline_create_infos;
     auto *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
-    SharedPreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, ccpl_state->pipe_state,
-                                         &new_pipeline_create_infos, VK_PIPELINE_BIND_POINT_COMPUTE, this);
+    UtilPreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, ccpl_state->pipe_state,
+                                       &new_pipeline_create_infos, VK_PIPELINE_BIND_POINT_COMPUTE, this);
     ccpl_state->gpu_create_infos = new_pipeline_create_infos;
     ccpl_state->pCreateInfos = reinterpret_cast<VkComputePipelineCreateInfo *>(ccpl_state->gpu_create_infos.data());
 }
@@ -1080,8 +1080,8 @@ void GpuAssisted::PreCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPi
                                                            void *crtpl_state_data) {
     std::vector<safe_VkRayTracingPipelineCreateInfoCommon> new_pipeline_create_infos;
     auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_api_state *>(crtpl_state_data);
-    SharedPreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, crtpl_state->pipe_state,
-                                         &new_pipeline_create_infos, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, this);
+    UtilPreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, crtpl_state->pipe_state,
+                                       &new_pipeline_create_infos, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, this);
     crtpl_state->gpu_create_infos = new_pipeline_create_infos;
     crtpl_state->pCreateInfos = reinterpret_cast<VkRayTracingPipelineCreateInfoNV *>(crtpl_state->gpu_create_infos.data());
 }
@@ -1092,8 +1092,8 @@ void GpuAssisted::PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkP
                                                             void *crtpl_state_data) {
     std::vector<safe_VkRayTracingPipelineCreateInfoCommon> new_pipeline_create_infos;
     auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_khr_api_state *>(crtpl_state_data);
-    SharedPreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, crtpl_state->pipe_state,
-                                         &new_pipeline_create_infos, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, this);
+    UtilPreCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, crtpl_state->pipe_state,
+                                       &new_pipeline_create_infos, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, this);
     crtpl_state->gpu_create_infos = new_pipeline_create_infos;
     crtpl_state->pCreateInfos = reinterpret_cast<VkRayTracingPipelineCreateInfoKHR *>(crtpl_state->gpu_create_infos.data());
 }
@@ -1104,7 +1104,7 @@ void GpuAssisted::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipel
                                                         VkResult result, void *cgpl_state_data) {
     ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator,
                                                                   pPipelines, result, cgpl_state_data);
-    SharedPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_GRAPHICS, this);
+    UtilPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_GRAPHICS, this);
 }
 
 void GpuAssisted::PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
@@ -1113,7 +1113,7 @@ void GpuAssisted::PostCallRecordCreateComputePipelines(VkDevice device, VkPipeli
                                                        VkResult result, void *ccpl_state_data) {
     ValidationStateTracker::PostCallRecordCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines,
                                                                  result, ccpl_state_data);
-    SharedPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_COMPUTE, this);
+    UtilPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_COMPUTE, this);
 }
 
 void GpuAssisted::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
@@ -1122,7 +1122,7 @@ void GpuAssisted::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkP
                                                             VkResult result, void *crtpl_state_data) {
     ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator,
                                                                       pPipelines, result, crtpl_state_data);
-    SharedPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, this);
+    UtilPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, this);
 }
 
 void GpuAssisted::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
@@ -1131,8 +1131,7 @@ void GpuAssisted::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, Vk
                                                              VkResult result, void *crtpl_state_data) {
     ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(device, pipelineCache, count, pCreateInfos, pAllocator,
                                                                        pPipelines, result, crtpl_state_data);
-    SharedPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
-                                          this);
+    UtilPostCallRecordPipelineCreations(count, pCreateInfos, pAllocator, pPipelines, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, this);
 }
 
 // Remove all the shader trackers associated with this destroyed pipeline.
@@ -1263,10 +1262,10 @@ void GpuAssisted::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
         pgm = it->second.pgm;
     }
     GenerateValidationMessage(debug_record, validation_message, vuid_msg);
-    SharedGenerateStageMessage(debug_record, stage_message);
-    SharedGenerateCommonMessage(report_data, command_buffer, debug_record, shader_module_handle, pipeline_handle,
-                                pipeline_bind_point, operation_index, common_message);
-    SharedGenerateSourceMessages(pgm, debug_record, false, filename_message, source_message);
+    UtilGenerateStageMessage(debug_record, stage_message);
+    UtilGenerateCommonMessage(report_data, command_buffer, debug_record, shader_module_handle, pipeline_handle, pipeline_bind_point,
+                              operation_index, common_message);
+    UtilGenerateSourceMessages(pgm, debug_record, false, filename_message, source_message);
     LogError(queue, vuid_msg.c_str(), "%s %s %s %s%s", validation_message.c_str(), common_message.c_str(), stage_message.c_str(),
              filename_message.c_str(), source_message.c_str());
     // The debug record at word kInstCommonOutSize is the number of words in the record
@@ -1328,7 +1327,7 @@ void GpuAssisted::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount,
     }
     if (!buffers_present) return;
 
-    SharedSubmitBarrier(queue, this);
+    UtilSubmitBarrier(queue, this);
 
     DispatchQueueWaitIdle(queue);
 
@@ -1336,10 +1335,10 @@ void GpuAssisted::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount,
         const VkSubmitInfo *submit = &pSubmits[submit_idx];
         for (uint32_t i = 0; i < submit->commandBufferCount; i++) {
             auto cb_node = GetCBState(submit->pCommandBuffers[i]);
-            SharedProcessInstrumentationBuffer(queue, cb_node, this);
+            UtilProcessInstrumentationBuffer(queue, cb_node, this);
             ProcessAccelerationStructureBuildValidationBuffer(queue, cb_node);
             for (auto secondaryCmdBuffer : cb_node->linkedCommandBuffers) {
-                SharedProcessInstrumentationBuffer(queue, secondaryCmdBuffer, this);
+                UtilProcessInstrumentationBuffer(queue, secondaryCmdBuffer, this);
                 ProcessAccelerationStructureBuildValidationBuffer(queue, cb_node);
             }
         }
