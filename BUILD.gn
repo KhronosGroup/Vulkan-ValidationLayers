@@ -95,6 +95,8 @@ core_validation_sources = [
   "layers/descriptor_sets.cpp",
   "layers/descriptor_sets.h",
   "layers/drawdispatch.cpp",
+  "layers/gpu_utils.cpp",
+  "layers/gpu_utils.h",
   "layers/gpu_validation.cpp",
   "layers/gpu_validation.h",
   "layers/shader_validation.cpp",
@@ -133,6 +135,11 @@ best_practices_sources = [
   "layers/best_practices_error_enums.h",
 ]
 
+debug_printf_sources = [
+  "layers/debug_printf.cpp",
+  "layers/debug_printf.h"
+]
+
 command_counter_sources = [
   "layers/generated/command_counter_helper.cpp",
   "layers/generated/command_counter_helper.h",
@@ -155,7 +162,7 @@ layers = [ [
       core_validation_sources + object_lifetimes_sources +
           stateless_validation_sources + thread_safety_sources +
           unique_objects_sources + best_practices_sources +
-          command_counter_sources + chassis_sources,
+          debug_printf_sources + command_counter_sources + chassis_sources,
       [ ":vulkan_core_validation_glslang" ],
       [],
     ] ]

@@ -1,6 +1,6 @@
-/* Copyright (c) 2019 The Khronos Group Inc.
- * Copyright (c) 2019 Valve Corporation
- * Copyright (c) 2019 LunarG, Inc.
+/* Copyright (c) 2020 The Khronos Group Inc.
+ * Copyright (c) 2020 Valve Corporation
+ * Copyright (c) 2020 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,40 +22,40 @@
 #include "chassis.h"
 #include "vk_mem_alloc.h"
 #include "state_tracker.h"
-#include "gpu_shared.h"
+#include "gpu_utils.h"
 #include <map>
-class ShaderPrintf;
+class DebugPrintf;
 
-struct SPFDeviceMemoryBlock {
+struct DPFDeviceMemoryBlock {
     VkBuffer buffer;
     VmaAllocation allocation;
 };
 
-struct SPFBufferInfo {
-    SPFDeviceMemoryBlock output_mem_block;
+struct DPFBufferInfo {
+    DPFDeviceMemoryBlock output_mem_block;
     VkDescriptorSet desc_set;
     VkDescriptorPool desc_pool;
     VkPipelineBindPoint pipeline_bind_point;
-    SPFBufferInfo(SPFDeviceMemoryBlock output_mem_block, VkDescriptorSet desc_set, VkDescriptorPool desc_pool,
+    DPFBufferInfo(DPFDeviceMemoryBlock output_mem_block, VkDescriptorSet desc_set, VkDescriptorPool desc_pool,
                   VkPipelineBindPoint pipeline_bind_point)
         : output_mem_block(output_mem_block), desc_set(desc_set), desc_pool(desc_pool), pipeline_bind_point(pipeline_bind_point){};
 };
 
-struct SPFShaderTracker {
+struct DPFShaderTracker {
     VkPipeline pipeline;
     VkShaderModule shader_module;
     std::vector<unsigned int> pgm;
 };
 
 enum vartype { varsigned, varunsigned, varfloat };
-struct SPFSubstring {
+struct DPFSubstring {
     std::string string;
     bool needs_value;
     vartype type;
     uint64_t longval = 0;
 };
 
-struct SPFOutputRecord {
+struct DPFOutputRecord {
     uint32_t size;
     uint32_t shader_id;
     uint32_t instruction_position;
@@ -67,11 +67,11 @@ struct SPFOutputRecord {
     uint32_t values;
 };
 
-class ShaderPrintf : public ValidationStateTracker {
+class DebugPrintf : public ValidationStateTracker {
     VkPhysicalDeviceFeatures supported_features;
 
     uint32_t unique_shader_module_id = 0;
-    std::unordered_map<VkCommandBuffer, std::vector<SPFBufferInfo>> command_buffer_map;
+    std::unordered_map<VkCommandBuffer, std::vector<DPFBufferInfo>> command_buffer_map;
     uint32_t output_buffer_size;
 
   public:
@@ -84,15 +84,15 @@ class ShaderPrintf : public ValidationStateTracker {
     uint32_t desc_set_bind_index;
     VkDescriptorSetLayout debug_desc_layout;
     VkDescriptorSetLayout dummy_desc_layout;
-    std::unique_ptr<SharedDescriptorSetManager> desc_set_manager;
-    std::unordered_map<uint32_t, SPFShaderTracker> shader_map;
+    std::unique_ptr<UtilDescriptorSetManager> desc_set_manager;
+    std::unordered_map<uint32_t, DPFShaderTracker> shader_map;
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
     VmaAllocator vmaAllocator = {};
-    std::map<VkQueue, SharedQueueBarrierCommandInfo> queue_barrier_command_infos;
-    std::vector<SPFBufferInfo>& GetBufferInfo(const VkCommandBuffer command_buffer) {
+    std::map<VkQueue, UtilQueueBarrierCommandInfo> queue_barrier_command_infos;
+    std::vector<DPFBufferInfo>& GetBufferInfo(const VkCommandBuffer command_buffer) {
         auto buffer_list = command_buffer_map.find(command_buffer);
         if (buffer_list == command_buffer_map.end()) {
-            std::vector<SPFBufferInfo> new_list{};
+            std::vector<DPFBufferInfo> new_list{};
             command_buffer_map[command_buffer] = new_list;
             return command_buffer_map[command_buffer];
         }
@@ -153,7 +153,7 @@ class ShaderPrintf : public ValidationStateTracker {
     void PreCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule,
                                          void* csm_state_data);
-    std::vector<SPFSubstring> ParseFormatString(std::string format_string);
+    std::vector<DPFSubstring> ParseFormatString(std::string format_string);
     std::string FindFormatString(std::vector<unsigned int> pgm, uint32_t string_id);
     void AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQueue queue, VkPipelineBindPoint pipeline_bind_point,
                                     uint32_t operation_index, uint32_t* const debug_output_buffer);
@@ -205,6 +205,6 @@ class ShaderPrintf : public ValidationStateTracker {
                                                VkDeviceSize offset);
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                    VkResult result);
-    void AllocateShaderPrintfResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point);
+    void AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point);
     void SendStringToCallback(std::vector<VkLayerDbgFunctionState> debug_callback_list, std::string shader_message);
 };

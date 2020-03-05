@@ -1,6 +1,6 @@
-/* Copyright (c) 2019 The Khronos Group Inc.
- * Copyright (c) 2019 Valve Corporation
- * Copyright (c) 2019 LunarG, Inc.
+/* Copyright (c) 2020 The Khronos Group Inc.
+ * Copyright (c) 2020 Valve Corporation
+ * Copyright (c) 2020 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,10 +33,10 @@
 #define VMA_STATIC_VULKAN_FUNCTIONS 0
 #include "vk_mem_alloc.h"
 
-class SharedDescriptorSetManager {
+class UtilDescriptorSetManager {
   public:
-    SharedDescriptorSetManager(VkDevice device, uint32_t numBindingsInSet);
-    ~SharedDescriptorSetManager();
+    UtilDescriptorSetManager(VkDevice device, uint32_t numBindingsInSet);
+    ~UtilDescriptorSetManager();
 
     VkResult GetDescriptorSet(VkDescriptorPool *desc_pool, VkDescriptorSetLayout ds_layout, VkDescriptorSet *desc_sets);
     VkResult GetDescriptorSets(uint32_t count, VkDescriptorPool *pool, VkDescriptorSetLayout ds_layout,
@@ -55,18 +55,18 @@ class SharedDescriptorSetManager {
 };
 
 // Implementation for Descriptor Set Manager class
-SharedDescriptorSetManager::SharedDescriptorSetManager(VkDevice device, uint32_t numBindingsInSet)
+UtilDescriptorSetManager::UtilDescriptorSetManager(VkDevice device, uint32_t numBindingsInSet)
     : device(device), numBindingsInSet(numBindingsInSet) {}
 
-SharedDescriptorSetManager::~SharedDescriptorSetManager() {
+UtilDescriptorSetManager::~UtilDescriptorSetManager() {
     for (auto &pool : desc_pool_map_) {
         DispatchDestroyDescriptorPool(device, pool.first, NULL);
     }
     desc_pool_map_.clear();
 }
 
-VkResult SharedDescriptorSetManager::GetDescriptorSet(VkDescriptorPool *desc_pool, VkDescriptorSetLayout ds_layout,
-                                                      VkDescriptorSet *desc_set) {
+VkResult UtilDescriptorSetManager::GetDescriptorSet(VkDescriptorPool *desc_pool, VkDescriptorSetLayout ds_layout,
+                                                    VkDescriptorSet *desc_set) {
     std::vector<VkDescriptorSet> desc_sets;
     VkResult result = GetDescriptorSets(1, desc_pool, ds_layout, &desc_sets);
     if (result == VK_SUCCESS) {
@@ -75,8 +75,8 @@ VkResult SharedDescriptorSetManager::GetDescriptorSet(VkDescriptorPool *desc_poo
     return result;
 }
 
-VkResult SharedDescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptorPool *pool, VkDescriptorSetLayout ds_layout,
-                                                       std::vector<VkDescriptorSet> *desc_sets) {
+VkResult UtilDescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptorPool *pool, VkDescriptorSetLayout ds_layout,
+                                                     std::vector<VkDescriptorSet> *desc_sets) {
     const uint32_t default_pool_size = kItemsPerChunk;
     VkResult result = VK_SUCCESS;
     VkDescriptorPool pool_to_use = VK_NULL_HANDLE;
@@ -132,7 +132,7 @@ VkResult SharedDescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescrip
     return result;
 }
 
-void SharedDescriptorSetManager::PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set) {
+void UtilDescriptorSetManager::PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set) {
     auto iter = desc_pool_map_.find(desc_pool);
     if (iter != desc_pool_map_.end()) {
         VkResult result = DispatchFreeDescriptorSets(device, desc_pool, 1, &desc_set);
@@ -213,7 +213,7 @@ static VKAPI_ATTR void VKAPI_CALL gpuVkCmdCopyBuffer(VkCommandBuffer commandBuff
     DispatchCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
 }
 
-VkResult SharedInitializeVma(VkPhysicalDevice physical_device, VkDevice device, VmaAllocator *pAllocator) {
+VkResult UtilInitializeVma(VkPhysicalDevice physical_device, VkDevice device, VmaAllocator *pAllocator) {
     VmaVulkanFunctions functions;
     VmaAllocatorCreateInfo allocatorInfo = {};
     allocatorInfo.device = device;
@@ -241,8 +241,8 @@ VkResult SharedInitializeVma(VkPhysicalDevice physical_device, VkDevice device, 
     return vmaCreateAllocator(&allocatorInfo, pAllocator);
 }
 
-void SharedPreCallRecordCreateDevice(VkPhysicalDevice gpu, safe_VkDeviceCreateInfo *modified_create_info,
-                                     VkPhysicalDeviceFeatures supported_features, VkPhysicalDeviceFeatures desired_features) {
+void UtilPreCallRecordCreateDevice(VkPhysicalDevice gpu, safe_VkDeviceCreateInfo *modified_create_info,
+                                   VkPhysicalDeviceFeatures supported_features, VkPhysicalDeviceFeatures desired_features) {
     VkPhysicalDeviceFeatures *features = nullptr;
     if (modified_create_info->pEnabledFeatures) {
         // If pEnabledFeatures, VkPhysicalDeviceFeatures2 in pNext chain is not allowed
@@ -269,7 +269,7 @@ void SharedPreCallRecordCreateDevice(VkPhysicalDevice gpu, safe_VkDeviceCreateIn
 }
 
 // Generate the stage-specific part of the message.
-void SharedGenerateStageMessage(const uint32_t *debug_record, std::string &msg) {
+void UtilGenerateStageMessage(const uint32_t *debug_record, std::string &msg) {
     using namespace spvtools;
     std::ostringstream strm;
     switch (debug_record[kInstCommonOutStageIdx]) {
@@ -340,10 +340,10 @@ std::string LookupDebugUtilsName(const debug_report_data *report_data, const uin
 }
 
 // Generate message from the common portion of the debug report record.
-void SharedGenerateCommonMessage(const debug_report_data *report_data, const VkCommandBuffer commandBuffer,
-                                 const uint32_t *debug_record, const VkShaderModule shader_module_handle,
-                                 const VkPipeline pipeline_handle, const VkPipelineBindPoint pipeline_bind_point,
-                                 const uint32_t operation_index, std::string &msg) {
+void UtilGenerateCommonMessage(const debug_report_data *report_data, const VkCommandBuffer commandBuffer,
+                               const uint32_t *debug_record, const VkShaderModule shader_module_handle,
+                               const VkPipeline pipeline_handle, const VkPipelineBindPoint pipeline_bind_point,
+                               const uint32_t operation_index, std::string &msg) {
     using namespace spvtools;
     std::ostringstream strm;
     if (shader_module_handle == VK_NULL_HANDLE) {
@@ -473,8 +473,8 @@ bool GetLineAndFilename(const std::string string, uint32_t *linenumber, std::str
 
 // Extract the filename, line number, and column number from the correct OpLine and build a message string from it.
 // Scan the source (from OpSource) to find the line of source at the reported line number and place it in another message string.
-void SharedGenerateSourceMessages(const std::vector<unsigned int> &pgm, const uint32_t *debug_record, bool from_printf,
-                                  std::string &filename_msg, std::string &source_msg) {
+void UtilGenerateSourceMessages(const std::vector<unsigned int> &pgm, const uint32_t *debug_record, bool from_printf,
+                                std::string &filename_msg, std::string &source_msg) {
     using namespace spvtools;
     std::ostringstream filename_stream;
     std::ostringstream source_stream;
