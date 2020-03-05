@@ -6914,3 +6914,84 @@ TEST_F(VkLayerTest, PipelineStageConditionalRenderingWithWrongQueue) {
     vk::DestroyRenderPass(m_device->device(), rp, nullptr);
     vk::DestroyFramebuffer(m_device->device(), fb, nullptr);
 }
+
+TEST_F(VkLayerTest, CreatePipelineDynamicUniformIndex) {
+    TEST_DESCRIPTION("Check for the array dynamic array index features when the SPIR-V capabilities are requested.");
+
+    VkPhysicalDeviceFeatures features{};
+    features.shaderUniformBufferArrayDynamicIndexing = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(Init(&features));
+
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    std::string const source{R"(
+               OpCapability Shader
+          %1 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main "main"
+               OpExecutionMode %main OriginUpperLeft
+               OpSource GLSL 450
+               OpName %main "main"
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd)"};
+
+    {
+        std::string const capability{"OpCapability UniformBufferArrayDynamicIndexing"};
+
+        VkShaderObj fs(m_device, capability + source, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        auto info_override = [&](CreatePipelineHelper &info) {
+            info.shader_stages_ = {info.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        };
+
+        CreatePipelineHelper::OneshotTest(
+            *this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+            "Shader requires VkPhysicalDeviceFeatures::shaderUniformBufferArrayDynamicIndexing but is not enabled on the device");
+    }
+
+    {
+        std::string const capability{"OpCapability SampledImageArrayDynamicIndexing"};
+
+        VkShaderObj fs(m_device, capability + source, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        auto info_override = [&](CreatePipelineHelper &info) {
+            info.shader_stages_ = {info.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        };
+
+        CreatePipelineHelper::OneshotTest(
+            *this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+            "Shader requires VkPhysicalDeviceFeatures::shaderSampledImageArrayDynamicIndexing but is not enabled on the device");
+    }
+
+    {
+        std::string const capability{"OpCapability StorageBufferArrayDynamicIndexing"};
+
+        VkShaderObj fs(m_device, capability + source, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        auto info_override = [&](CreatePipelineHelper &info) {
+            info.shader_stages_ = {info.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        };
+
+        CreatePipelineHelper::OneshotTest(
+            *this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+            "Shader requires VkPhysicalDeviceFeatures::shaderStorageBufferArrayDynamicIndexing but is not enabled on the device");
+    }
+
+    {
+        std::string const capability{"OpCapability StorageImageArrayDynamicIndexing"};
+
+        VkShaderObj fs(m_device, capability + source, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+        auto info_override = [&](CreatePipelineHelper &info) {
+            info.shader_stages_ = {info.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        };
+
+        CreatePipelineHelper::OneshotTest(
+            *this, info_override, VK_DEBUG_REPORT_ERROR_BIT_EXT,
+            "Shader requires VkPhysicalDeviceFeatures::shaderStorageImageArrayDynamicIndexing but is not enabled on the device");
+    }
+}
