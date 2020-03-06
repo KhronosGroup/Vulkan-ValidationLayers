@@ -205,8 +205,6 @@ class VkRenderFramework : public VkTestFramework {
 
     void InitFramework(void *userData = NULL, void *instance_pnext = NULL);
 
-    void InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction = NULL, void *userData = NULL, void *instance_pnext = NULL);
-
     void ShutdownFramework();
     void GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *features);
     void GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *props);

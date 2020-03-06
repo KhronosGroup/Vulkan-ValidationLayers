@@ -551,10 +551,6 @@ void VkRenderFramework::InitFramework(void *userData, void *instance_pnext) {
 #endif
 }
 
-void VkRenderFramework::InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction, void *userData, void *instance_pnext) {
-    InitFrameworkDebugReport(myDbgFunc, userData, instance_pnext);
-}
-
 void VkRenderFramework::ShutdownFramework() {
     // Nothing to shut down without a VkInstance
     if (!this->inst) return;
