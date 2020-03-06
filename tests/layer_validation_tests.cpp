@@ -126,8 +126,9 @@ bool ImageFormatAndFeaturesSupported(const VkInstance inst, const VkPhysicalDevi
     return true;
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL myDbgFunc(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType, uint64_t srcObject, size_t location,
-                                         int32_t msgCode, const char *pLayerPrefix, const char *pMsg, void *pUserData) {
+VKAPI_ATTR VkBool32 VKAPI_CALL LvtDebugReportFunc(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType, uint64_t srcObject,
+                                                  size_t location, int32_t msgCode, const char *pLayerPrefix, const char *pMsg,
+                                                  void *pUserData) {
     ErrorMonitor *errMonitor = (ErrorMonitor *)pUserData;
     if (msgFlags & errMonitor->GetMessageFlags()) {
         return errMonitor->CheckForDesiredMsg(pMsg);
