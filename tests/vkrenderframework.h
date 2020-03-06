@@ -45,9 +45,23 @@ class VkImageObj;
 #include <vector>
 #include <unordered_set>
 
+// Validation report callback prototype
+extern VKAPI_ATTR VkBool32 VKAPI_CALL myDbgFunc(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType, uint64_t srcObject,
+                                                size_t location, int32_t msgCode, const char *pLayerPrefix, const char *pMsg,
+                                                void *pUserData);
+
+extern VKAPI_ATTR VkBool32 VKAPI_CALL LvtDebugUtilsFunc(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                        VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+                                                        const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData);
+
 using namespace std;
 
 using vk_testing::MakeVkHandles;
+
+typedef struct {
+    PFN_vkDebugReportCallbackEXT LvtDebugReportFunction;
+    PFN_vkDebugUtilsMessengerCallbackEXT LvtDebugUtilsFunction;
+} DebugCallbackFunctions;
 
 template <class Dst, class Src>
 std::vector<Dst *> MakeTestbindingHandles(const std::vector<Src *> &v) {
@@ -185,9 +199,13 @@ class VkRenderFramework : public VkTestFramework {
     void InitRenderTarget(uint32_t targets, VkImageView *dsBinding);
     void DestroyRenderTarget();
 
-    void InitFramework(PFN_vkDebugReportCallbackEXT = NULL, void *userData = NULL, void *instance_pnext = NULL);
+    void InitFrameworkDebugReport(PFN_vkDebugReportCallbackEXT = NULL, void *userData = NULL, void *instance_pnext = NULL);
 
-    void InitFramework(PFN_vkDebugUtilsMessengerCallbackEXT = NULL, void *userData = NULL, void *instance_pnext = NULL);
+    void InitFrameworkDebugUtils(PFN_vkDebugUtilsMessengerCallbackEXT = NULL, void *userData = NULL, void *instance_pnext = NULL);
+
+    void InitFramework(void *userData = NULL, void *instance_pnext = NULL);
+
+    void InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction = NULL, void *userData = NULL, void *instance_pnext = NULL);
 
     void ShutdownFramework();
     void GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *features);

@@ -182,13 +182,6 @@ bool ImageFormatAndFeaturesSupported(VkPhysicalDevice phy, VkFormat format, VkIm
 bool ImageFormatAndFeaturesSupported(const VkInstance inst, const VkPhysicalDevice phy, const VkImageCreateInfo info,
                                      const VkFormatFeatureFlags features);
 
-// Validation report callback prototype
-VKAPI_ATTR VkBool32 VKAPI_CALL myDbgFunc(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType, uint64_t srcObject, size_t location,
-                                         int32_t msgCode, const char *pLayerPrefix, const char *pMsg, void *pUserData);
-
-VKAPI_ATTR VkBool32 VKAPI_CALL LvtDebugUtilsFunc(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes,
-                                                 const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData);
-
 // Simple sane SamplerCreateInfo boilerplate
 VkSamplerCreateInfo SafeSaneSamplerCreateInfo();
 

@@ -377,7 +377,7 @@ bool VkRenderFramework::DeviceIsMockICD() {
 bool VkRenderFramework::DeviceSimulation() { return m_devsim_layer; }
 
 // Debug Report-based framework initialization
-void VkRenderFramework::InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction, void *userData, void *instance_pnext) {
+void VkRenderFramework::InitFrameworkDebugReport(PFN_vkDebugReportCallbackEXT dbgFunction, void *userData, void *instance_pnext) {
     // Only enable device profile layer by default if devsim is not enabled
     if (!VkTestFramework::m_devsim_layer && InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api")) {
         m_instance_layer_names.push_back("VK_LAYER_LUNARG_device_profile_api");
@@ -459,7 +459,8 @@ void VkRenderFramework::InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction, 
 }
 
 // Debug Utils-based framework initialization
-void VkRenderFramework::InitFramework(PFN_vkDebugUtilsMessengerCallbackEXT debug_function, void *userData, void *instance_pnext) {
+void VkRenderFramework::InitFrameworkDebugUtils(PFN_vkDebugUtilsMessengerCallbackEXT debug_function, void *userData,
+                                                void *instance_pnext) {
     // Only enable device profile layer by default if devsim is not enabled
     if (!VkTestFramework::m_devsim_layer && InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api")) {
         m_instance_layer_names.push_back("VK_LAYER_LUNARG_device_profile_api");
@@ -540,6 +541,18 @@ void VkRenderFramework::InitFramework(PFN_vkDebugUtilsMessengerCallbackEXT debug
                 << "Did not get function pointer for DestroyDebugUtilsMessengerEXT";
         }
     }
+}
+
+void VkRenderFramework::InitFramework(void *userData, void *instance_pnext) {
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    InitFrameworkDebugReport(myDbgFunc, userData, instance_pnext);
+#else
+    InitFrameworkDebugUtils(LvtDebugUtilsFunc, userData, instance_pnext);
+#endif
+}
+
+void VkRenderFramework::InitFramework(PFN_vkDebugReportCallbackEXT dbgFunction, void *userData, void *instance_pnext) {
+    InitFrameworkDebugReport(myDbgFunc, userData, instance_pnext);
 }
 
 void VkRenderFramework::ShutdownFramework() {
