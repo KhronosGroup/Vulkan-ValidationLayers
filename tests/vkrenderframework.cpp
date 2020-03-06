@@ -289,6 +289,10 @@ bool VkRenderFramework::EnableDeviceProfileLayer() {
 
 // Return true if extension name is found and spec value is >= requested spec value
 bool VkRenderFramework::InstanceExtensionSupported(const char *ext_name, uint32_t spec) {
+    // Debug utils is explicitly supported by the validation layer, no need to check for it
+    if (0 == strncmp(ext_name, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) {
+        return true;
+    }
     uint32_t ext_count = 0;
     std::vector<VkExtensionProperties> ext_props;
     VkResult res = vk::EnumerateInstanceExtensionProperties(nullptr, &ext_count, nullptr);
