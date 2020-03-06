@@ -34,7 +34,7 @@
 TEST_F(VkPositiveLayerTest, ToolingExtension) {
     TEST_DESCRIPTION("Call Tooling Extension and verify layer results");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     m_errorMonitor->ExpectSuccess();
@@ -76,7 +76,7 @@ TEST_F(VkPositiveLayerTest, NullFunctionPointer) {
     TEST_DESCRIPTION("On 1_0 instance , call GetDeviceProcAddr on promoted 1_1 device-level entrypoint");
     SetTargetApiVersion(VK_API_VERSION_1_0);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceExtensionSupported(gpu(), nullptr, "VK_KHR_get_memory_requirements2")) {
         m_device_extension_names.push_back("VK_KHR_get_memory_requirements2");
@@ -922,7 +922,7 @@ TEST_F(VkPositiveLayerTest, ThreadSafetyDisplayObjects) {
         printf("%s test requires KHR SURFACE and DISPLAY extensions, not available.  Skipping.\n", kSkipPrefix);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkGetPhysicalDeviceDisplayPropertiesKHR vkGetPhysicalDeviceDisplayPropertiesKHR =
@@ -955,7 +955,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneGetImageSubresourceLayout) {
     if (mp_extensions) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
@@ -1250,7 +1250,7 @@ TEST_F(VkPositiveLayerTest, ShaderRelaxedBlockLayout) {
     // Verifies the ability to relax block layout rules with a shader that requires them to be relaxed
     TEST_DESCRIPTION("Create a shader that requires relaxed block layout.");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     // The Relaxed Block Layout extension was promoted to core in 1.1.
     // Go ahead and check for it and turn it on in case a 1.0 device has it.
@@ -1305,7 +1305,7 @@ TEST_F(VkPositiveLayerTest, ShaderUboStd430Layout) {
         return;
     }
     m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     // Check for the UBO standard block layout extension and turn it on if it's available
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_UNIFORM_BUFFER_STANDARD_LAYOUT_EXTENSION_NAME)) {
@@ -1388,7 +1388,7 @@ TEST_F(VkPositiveLayerTest, ShaderScalarBlockLayout) {
         return;
     }
     m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     // Check for the Scalar Block Layout extension and turn it on if it's available
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME)) {
@@ -1448,7 +1448,7 @@ TEST_F(VkPositiveLayerTest, ShaderNonSemanticInfo) {
     // This is a positive test, no errors expected
     // Verifies the ability to use non-semantic extended instruction sets when the extension is enabled
     TEST_DESCRIPTION("Create a shader that uses SPV_KHR_non_semantic_info.");
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     // Check for the extension and turn it on if it's available
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
@@ -1486,7 +1486,7 @@ TEST_F(VkPositiveLayerTest, ShaderNonSemanticInfo) {
 
 TEST_F(VkPositiveLayerTest, SpirvGroupDecorations) {
     TEST_DESCRIPTION("Test shader validation support for group decorations.");
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -1618,7 +1618,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension1of2) {
     // Verifies the ability to deal with a shader that declares a non-unique SPIRV capability ID
     TEST_DESCRIPTION("Create a shader in which uses a non-unique capability ID extension, 1 of 2");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME)) {
         printf("%s Extension %s not supported, skipping this pass. \n", kSkipPrefix,
                VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
@@ -1658,7 +1658,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineCheckShaderCapabilityExtension2of2) {
     // Verifies the ability to deal with a shader that declares a non-unique SPIRV capability ID
     TEST_DESCRIPTION("Create a shader in which uses a non-unique capability ID extension, 2 of 2");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME)) {
         printf("%s Extension %s not supported, skipping this pass. \n", kSkipPrefix, VK_NV_VIEWPORT_ARRAY2_EXTENSION_NAME);
         return;
@@ -2459,7 +2459,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorNullDstSetTest) {
         printf("%s Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n", kSkipPrefix);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     } else {
@@ -2538,7 +2538,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorUnboundSetTest) {
         printf("%s Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n", kSkipPrefix);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     } else {
@@ -2635,7 +2635,7 @@ TEST_F(VkPositiveLayerTest, PushDescriptorSetUpdatingSetNumber) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     } else {
@@ -5388,7 +5388,7 @@ TEST_F(VkPositiveLayerTest, CreatePipeline64BitAttributesPositive) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
@@ -5653,7 +5653,7 @@ TEST_F(VkPositiveLayerTest, CreateDescriptorSetBindingWithIgnoredSamplers) {
                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool push_descriptor_found = false;
     if (prop2_found && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
@@ -5952,7 +5952,7 @@ TEST_F(VkPositiveLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
 TEST_F(VkPositiveLayerTest, Maintenance1Tests) {
     TEST_DESCRIPTION("Validate various special cases for the Maintenance1_KHR extension");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     } else {
@@ -5977,7 +5977,7 @@ TEST_F(VkPositiveLayerTest, ValidStructPNext) {
     TEST_DESCRIPTION("Verify that a valid pNext value is handled correctly");
 
     // Positive test to check parameter_validation and unique_objects support for NV_dedicated_allocation
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_NV_DEDICATED_ALLOCATION_EXTENSION_NAME);
     } else {
@@ -6143,7 +6143,7 @@ TEST_F(VkPositiveLayerTest, ExternalSemaphore) {
         printf("%s External semaphore extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     // Check for external semaphore device extensions
     if (DeviceExtensionSupported(gpu(), nullptr, extension_name)) {
@@ -6268,7 +6268,7 @@ TEST_F(VkPositiveLayerTest, ExternalFence) {
         printf("%s External fence extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     // Check for external fence device extensions
     if (DeviceExtensionSupported(gpu(), nullptr, extension_name)) {
@@ -6763,7 +6763,7 @@ TEST_F(VkPositiveLayerTest, ExternalMemory) {
         }
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     // Check for import/export capability
     VkPhysicalDeviceExternalBufferInfoKHR ebi = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO_KHR, nullptr, 0,
@@ -6909,7 +6909,7 @@ TEST_F(VkPositiveLayerTest, ParameterLayerFeatures2Capture) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
@@ -6992,7 +6992,7 @@ TEST_F(VkPositiveLayerTest, GetMemoryRequirements2) {
         "Get memory requirements with VK_KHR_get_memory_requirements2 instead of core entry points and verify layers do not emit "
         "errors when objects are bound and used");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     // Check for VK_KHR_get_memory_requirementes2 extensions
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME)) {
@@ -7076,7 +7076,7 @@ TEST_F(VkPositiveLayerTest, BindMemory2) {
         "Bind memory with VK_KHR_bind_memory2 instead of core entry points and verify layers do not emit errors when objects are "
         "used");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     // Check for VK_KHR_get_memory_requirementes2 extensions
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME)) {
@@ -7226,7 +7226,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageCopyBufferToImage) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
@@ -7305,7 +7305,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
@@ -7597,7 +7597,7 @@ TEST_F(VkPositiveLayerTest, ApiVersionZero) {
     TEST_DESCRIPTION("Check that apiVersion = 0 is valid.");
     m_errorMonitor->ExpectSuccess();
     app_info.apiVersion = 0U;
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     m_errorMonitor->VerifyNotFound();
 }
 
@@ -7607,7 +7607,7 @@ TEST_F(VkPositiveLayerTest, RayTracingPipelineNV) {
     if (!CreateNVRayTracingPipelineHelper::InitInstanceExtensions(*this, m_instance_extension_names)) {
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
@@ -7625,7 +7625,7 @@ TEST_F(VkPositiveLayerTest, RayTracingPipelineNV) {
 TEST_F(VkPositiveLayerTest, ViewportArray2NV) {
     TEST_DESCRIPTION("Test to validate VK_NV_viewport_array2");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     VkPhysicalDeviceFeatures available_features = {};
     ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&available_features));
@@ -7782,7 +7782,7 @@ TEST_F(VkPositiveLayerTest, HostQueryResetSuccess) {
     }
 
     m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)) {
         printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
@@ -7880,7 +7880,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineAttachmentUnused) {
 TEST_F(VkPositiveLayerTest, UseFirstQueueUnqueried) {
     TEST_DESCRIPTION("Use first queue family and one queue without first querying with vkGetPhysicalDeviceQueueFamilyProperties");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     const float q_priority[] = {1.0f};
     VkDeviceQueueCreateInfo queue_ci = {};
@@ -7906,7 +7906,7 @@ TEST_F(VkPositiveLayerTest, UseFirstQueueUnqueried) {
 #if !defined(ANDROID)
 TEST_F(VkPositiveLayerTest, GetDevProcAddrNullPtr) {
     TEST_DESCRIPTION("Call GetDeviceProcAddr on an enabled instance extension expecting nullptr");
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (InstanceExtensionSupported(VK_KHR_SURFACE_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
@@ -7927,7 +7927,7 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrNullPtr) {
 TEST_F(VkPositiveLayerTest, GetDevProcAddrExtensions) {
     TEST_DESCRIPTION("Call GetDeviceProcAddr with and without extension enabled");
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         printf("%s GetDevProcAddrExtensions requires Vulkan 1.1+, skipping test\n", kSkipPrefix);
         return;
@@ -7968,7 +7968,7 @@ TEST_F(VkPositiveLayerTest, GetDevProcAddrExtensions) {
 TEST_F(VkPositiveLayerTest, Vulkan12Features) {
     TEST_DESCRIPTION("Enable feature via Vulkan12features struct");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         printf("%s Vulkan12Struct requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
         return;
@@ -8054,7 +8054,7 @@ TEST_F(VkPositiveLayerTest, CmdCopySwapchainImage) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (!AddSwapchainDeviceExtension()) {
         printf("%s swapchain extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
@@ -8152,7 +8152,7 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (!AddSwapchainDeviceExtension()) {
         printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
@@ -8282,7 +8282,7 @@ TEST_F(VkPositiveLayerTest, RenderPassValidStages) {
     bool rp2_supported = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (rp2_supported) m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (rp2_supported) rp2_supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -8328,7 +8328,7 @@ TEST_F(VkPositiveLayerTest, RenderPassValidStages) {
 TEST_F(VkPositiveLayerTest, SampleMaskOverrideCoverageNV) {
     TEST_DESCRIPTION("Test to validate VK_NV_sample_mask_override_coverage");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_SAMPLE_MASK_OVERRIDE_COVERAGE_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_NV_SAMPLE_MASK_OVERRIDE_COVERAGE_EXTENSION_NAME);
@@ -8650,7 +8650,7 @@ TEST_F(VkPositiveLayerTest, SubpassWithReadOnlyLayoutWithoutDependency) {
 TEST_F(VkPositiveLayerTest, GeometryShaderPassthroughNV) {
     TEST_DESCRIPTION("Test to validate VK_NV_geometry_shader_passthrough");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     VkPhysicalDeviceFeatures available_features = {};
     ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&available_features));
@@ -8747,7 +8747,7 @@ TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
         printf("%s surface extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AddSwapchainDeviceExtension()) {
         printf("%s swapchain extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
         return;
@@ -8989,7 +8989,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt8) {
                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     } else {
@@ -9071,7 +9071,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt16) {
                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
@@ -9200,7 +9200,7 @@ TEST_F(VkPositiveLayerTest, CreatePipelineSpecializeInt64) {
                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");

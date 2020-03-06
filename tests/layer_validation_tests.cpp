@@ -677,7 +677,7 @@ bool CheckDescriptorIndexingSupportAndInitFramework(VkRenderFramework *renderFra
     if (descriptor_indexing) {
         instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
-    renderFramework->InitFramework(myDbgFunc, userData, features);
+    renderFramework->InitFramework(userData, features);
     descriptor_indexing = descriptor_indexing && renderFramework->DeviceExtensionSupported(renderFramework->gpu(), nullptr,
                                                                                            VK_KHR_MAINTENANCE3_EXTENSION_NAME);
     descriptor_indexing = descriptor_indexing && renderFramework->DeviceExtensionSupported(
@@ -905,7 +905,7 @@ void VkLayerTest::GenericDrawPreparation(VkCommandBufferObj *commandBuffer, VkPi
 
 void VkLayerTest::Init(VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatures2 *features2,
                        const VkCommandPoolCreateFlags flags, void *instance_pnext) {
-    InitFramework(myDbgFunc, m_errorMonitor, instance_pnext);
+    InitFramework(m_errorMonitor, instance_pnext);
     InitState(features, features2, flags);
 }
 
