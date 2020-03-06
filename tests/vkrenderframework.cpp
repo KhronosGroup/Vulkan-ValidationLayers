@@ -545,7 +545,7 @@ void VkRenderFramework::InitFrameworkDebugUtils(PFN_vkDebugUtilsMessengerCallbac
 
 void VkRenderFramework::InitFramework(void *userData, void *instance_pnext) {
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-    InitFrameworkDebugReport(myDbgFunc, userData, instance_pnext);
+    InitFrameworkDebugReport(LvtDebugReportFunc, userData, instance_pnext);
 #else
     InitFrameworkDebugUtils(LvtDebugUtilsFunc, userData, instance_pnext);
 #endif

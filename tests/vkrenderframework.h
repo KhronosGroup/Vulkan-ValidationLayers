@@ -45,11 +45,12 @@ class VkImageObj;
 #include <vector>
 #include <unordered_set>
 
-// Validation report callback prototype
-extern VKAPI_ATTR VkBool32 VKAPI_CALL myDbgFunc(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType, uint64_t srcObject,
-                                                size_t location, int32_t msgCode, const char *pLayerPrefix, const char *pMsg,
-                                                void *pUserData);
+// Validation debug report callback prototype
+extern VKAPI_ATTR VkBool32 VKAPI_CALL LvtDebugReportFunc(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType, uint64_t srcObject,
+                                                         size_t location, int32_t msgCode, const char *pLayerPrefix,
+                                                         const char *pMsg, void *pUserData);
 
+// Validation debug utils callback prototype
 extern VKAPI_ATTR VkBool32 VKAPI_CALL LvtDebugUtilsFunc(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                                         VkDebugUtilsMessageTypeFlagsEXT messageTypes,
                                                         const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData);
