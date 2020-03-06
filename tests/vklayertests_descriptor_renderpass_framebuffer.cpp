@@ -515,7 +515,7 @@ TEST_F(VkLayerTest, GpuBufferDeviceAddressOOB) {
     features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
     features.enabledValidationFeatureCount = 1;
     features.pEnabledValidationFeatures = enables;
-    InitFramework(myDbgFunc, m_errorMonitor, &features);
+    InitFramework(m_errorMonitor, &features);
 
     if (DeviceIsMockICD() || DeviceSimulation()) {
         printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
@@ -1775,7 +1775,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentIndexOutOfRange) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -1798,7 +1798,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReadOnlyButCleared) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     bool maintenance2Supported = rp2Supported;
@@ -1859,7 +1859,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentMismatchingLayoutsColor) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -1891,7 +1891,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentDescriptionInvalidFinalLayout) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
@@ -2184,7 +2184,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -2379,7 +2379,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReferenceInvalidLayout) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
@@ -2511,7 +2511,7 @@ TEST_F(VkLayerTest, RenderPassCreateOverlappingCorrelationMasks) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
 
     if (!rp2Supported) {
@@ -2559,7 +2559,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidViewMasks) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
 
     if (!rp2Supported) {
@@ -2591,7 +2591,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidViewMasks) {
 TEST_F(VkLayerTest, RenderPassCreateInvalidInputAttachmentReferences) {
     TEST_DESCRIPTION("Create a subpass with the meta data aspect mask set for an input attachment");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
@@ -2652,7 +2652,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidFragmentDensityMapReferences) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
@@ -2738,7 +2738,7 @@ TEST_F(VkLayerTest, RenderPassCreateSubpassNonGraphicsPipeline) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -2763,7 +2763,7 @@ TEST_F(VkLayerTest, RenderPassCreateSubpassMissingAttributesBitMultiviewNVX) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_NVX_MULTIVIEW_PER_VIEW_ATTRIBUTES_EXTENSION_NAME) &&
         DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
@@ -2799,7 +2799,7 @@ TEST_F(VkLayerTest, RenderPassCreate2SubpassInvalidInputAttachmentParameters) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
 
@@ -2852,7 +2852,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     bool rp2_supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     bool multiviewSupported = rp2_supported;
@@ -3049,7 +3049,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidMixedAttachmentSamplesAMD) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_AMD_MIXED_ATTACHMENT_SAMPLES_EXTENSION_NAME);
@@ -3136,7 +3136,7 @@ TEST_F(VkLayerTest, RenderPassBeginInvalidRenderArea) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -3157,7 +3157,7 @@ TEST_F(VkLayerTest, RenderPassBeginWithinRenderPass) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     PFN_vkCmdBeginRenderPass2KHR vkCmdBeginRenderPass2KHR = nullptr;
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -3262,7 +3262,7 @@ TEST_F(VkLayerTest, RenderPassBeginLayoutsFramebufferImageUsageMismatches) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     bool maintenance2Supported = rp2Supported;
 
@@ -3452,7 +3452,7 @@ TEST_F(VkLayerTest, RenderPassBeginClearOpMismatch) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
@@ -3499,7 +3499,7 @@ TEST_F(VkLayerTest, RenderPassBeginSampleLocationsInvalidIndicesEXT) {
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
     } else {
@@ -3597,7 +3597,7 @@ TEST_F(VkLayerTest, RenderPassNextSubpassExcessive) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     PFN_vkCmdNextSubpass2KHR vkCmdNextSubpass2KHR = nullptr;
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -3637,7 +3637,7 @@ TEST_F(VkLayerTest, RenderPassEndBeforeFinalSubpass) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     PFN_vkCmdEndRenderPass2KHR vkCmdEndRenderPass2KHR = nullptr;
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
@@ -3765,7 +3765,7 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     bool push_fragment_density_support = false;
 
@@ -5102,7 +5102,7 @@ TEST_F(VkLayerTest, InvalidDescriptorSetSamplerDestroyed) {
 TEST_F(VkLayerTest, ImageDescriptorLayoutMismatch) {
     TEST_DESCRIPTION("Create an image sampler layout->image layout mismatch within/without a command buffer");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool maint2_support = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME);
     if (maint2_support) {
         m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
@@ -5929,7 +5929,7 @@ TEST_F(VkLayerTest, DSBufferInfoErrors) {
     if (gpdp2_support) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     bool update_template_support = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     if (update_template_support) {
         m_device_extension_names.push_back(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
@@ -6225,7 +6225,7 @@ TEST_F(VkLayerTest, DSAspectBitsErrors) {
     if (mp_extensions) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
@@ -6687,7 +6687,7 @@ TEST_F(VkLayerTest, Maint1BindingSliceOf3DImage) {
     TEST_DESCRIPTION(
         "Attempt to bind a slice of a 3D texture in a descriptor set. This is explicitly disallowed by KHR_maintenance1 to keep "
         "things simple for drivers.");
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     } else {
@@ -7125,7 +7125,7 @@ TEST_F(VkLayerTest, InvalidPushDescriptorSetLayout) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     } else {
@@ -7348,7 +7348,7 @@ TEST_F(VkLayerTest, DescriptorIndexingUpdateAfterBind) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) &&
         DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE3_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
@@ -7561,7 +7561,7 @@ TEST_F(VkLayerTest, AllocatePushDescriptorSet) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     } else {
@@ -7618,7 +7618,7 @@ TEST_F(VkLayerTest, CreateDescriptorUpdateTemplate) {
         printf("%s Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n", kSkipPrefix);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     // Note: Includes workaround for some implementations which incorrectly return 0 maxPushDescriptors
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME) &&
         DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME) &&
@@ -7737,7 +7737,7 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     std::array<const char *, 2> required_device_extensions = {VK_KHR_MAINTENANCE1_EXTENSION_NAME,
                                                               VK_EXT_INLINE_UNIFORM_BLOCK_EXTENSION_NAME};
     for (auto device_extension : required_device_extensions) {

@@ -202,7 +202,7 @@ TEST_F(VkLayerTest, ReservedParameter) {
 TEST_F(VkLayerTest, DebugMarkerNameTest) {
     TEST_DESCRIPTION("Ensure debug marker object names are printed in debug report output");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), kValidationLayerName, VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
     } else {
@@ -323,7 +323,7 @@ TEST_F(VkLayerTest, DebugUtilsNameTest) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
 
     PFN_vkSetDebugUtilsObjectNameEXT fpvkSetDebugUtilsObjectNameEXT =
@@ -605,7 +605,7 @@ TEST_F(VkLayerTest, UnrecognizedValueBadFlag) {
 
 TEST_F(VkLayerTest, UnrecognizedValueBadBool) {
     // Make sure using VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE doesn't trigger a false positive.
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME);
     } else {
@@ -675,7 +675,7 @@ TEST_F(VkLayerTest, SubmitSignaledFence) {
 TEST_F(VkLayerTest, LeakAnObject) {
     TEST_DESCRIPTION("Create a fence and destroy its device without first destroying the fence.");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     // Workaround for overzealous layers checking even the guaranteed 0th queue family
     const auto q_props = vk_testing::PhysicalDevice(gpu()).queue_properties();
@@ -856,7 +856,7 @@ TEST_F(VkLayerTest, TemporaryExternalSemaphore) {
         printf("%s External semaphore extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     // Check for external semaphore device extensions
     if (DeviceExtensionSupported(gpu(), nullptr, extension_name)) {
@@ -986,7 +986,7 @@ TEST_F(VkLayerTest, TemporaryExternalFence) {
         printf("%s External fence extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     // Check for external fence device extensions
     if (DeviceExtensionSupported(gpu(), nullptr, extension_name)) {
@@ -1186,7 +1186,7 @@ TEST_F(VkLayerTest, Features12AndpNext) {
                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         printf("%s Vulkan12Struct requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
         return;
@@ -1271,7 +1271,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoSync) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (!AddSwapchainDeviceExtension()) {
         printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
@@ -1309,7 +1309,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoSync2KHR) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (extension_dependency_satisfied && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
@@ -1351,7 +1351,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (!AddSwapchainDeviceExtension()) {
         printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
@@ -1401,7 +1401,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore2KHR) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (extension_dependency_satisfied && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
@@ -1449,7 +1449,7 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages) {
     TEST_DESCRIPTION("Acquiring invalid amount of images from the swapchain.");
 
     if (!AddSurfaceInstanceExtension()) return;
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!AddSwapchainDeviceExtension()) return;
 
     ASSERT_NO_FATAL_FAILURE(InitState());
@@ -1494,7 +1494,7 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
     }
 
     if (!AddSurfaceInstanceExtension()) return;
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (extension_dependency_satisfied && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEVICE_GROUP_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
@@ -1549,7 +1549,7 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
         support_surface = false;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (support_surface) {
         if (!AddSwapchainDeviceExtension()) {
@@ -1734,7 +1734,7 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
 }
 
 TEST_F(VkLayerTest, ValidationCacheTestBadMerge) {
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), kValidationLayerName, VK_EXT_VALIDATION_CACHE_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_VALIDATION_CACHE_EXTENSION_NAME);
     } else {
@@ -2955,7 +2955,7 @@ TEST_F(VkLayerTest, ThreadUpdateDescriptorUpdateAfterBindNoCollision) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) &&
         DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE3_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
@@ -3048,7 +3048,7 @@ TEST_F(VkLayerTest, ExecuteUnrecordedPrimaryCB) {
 TEST_F(VkLayerTest, Maintenance1AndNegativeViewport) {
     TEST_DESCRIPTION("Attempt to enable AMD_negative_viewport_height and Maintenance1_KHR extension simultaneously");
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (!((DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME)) &&
           (DeviceExtensionSupported(gpu(), nullptr, VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME)))) {
         printf("%s Maintenance1 and AMD_negative viewport height extensions not supported, skipping test\n", kSkipPrefix);
@@ -3092,7 +3092,7 @@ TEST_F(VkLayerTest, InstanceDebugReportCallback) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCreateInstance-ppEnabledExtensionNames-01388");
     // Enable the instance extension, but none of the extensions it depends on
     m_instance_extension_names.push_back(VK_KHR_SURFACE_PROTECTED_CAPABILITIES_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     m_errorMonitor->VerifyFound();
 }
 
@@ -3106,7 +3106,7 @@ TEST_F(VkLayerTest, HostQueryResetNotEnabled) {
     }
 
     m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)) {
         printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
@@ -3143,7 +3143,7 @@ TEST_F(VkLayerTest, HostQueryResetBadFirstQuery) {
 
     m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)) {
         printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
@@ -3201,7 +3201,7 @@ TEST_F(VkLayerTest, HostQueryResetBadRange) {
     }
 
     m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)) {
         printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
@@ -3246,7 +3246,7 @@ TEST_F(VkLayerTest, HostQueryResetInvalidQueryPool) {
     }
 
     m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)) {
         printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
@@ -3292,7 +3292,7 @@ TEST_F(VkLayerTest, HostQueryResetWrongDevice) {
     }
 
     m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME)) {
         printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix, VK_EXT_HOST_QUERY_RESET_EXTENSION_NAME);
@@ -3412,7 +3412,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     std::array<const char *, 1> required_device_extensions = {{VK_NV_SHADING_RATE_IMAGE_EXTENSION_NAME}};
     for (auto device_extension : required_device_extensions) {
         if (DeviceExtensionSupported(gpu(), nullptr, device_extension)) {
@@ -3750,7 +3750,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer image create info.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
         // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
@@ -3896,7 +3896,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferFetchUnboundImageInfo) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer retreive image properties while memory unbound.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
         // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
@@ -3970,7 +3970,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer memory allocation.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
         // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
@@ -4214,7 +4214,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateYCbCrSampler) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer YCbCr sampler creation.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
         // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
@@ -4260,7 +4260,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferPhysDevImageFormatProp2) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer GetPhysicalDeviceImageFormatProperties.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
         // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
@@ -4319,7 +4319,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer image view creation.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
         // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
@@ -4501,7 +4501,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer import as buffer.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
         // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
@@ -4603,7 +4603,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferExporttBuffer) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer export memory as AHB.");
 
     SetTargetApiVersion(VK_API_VERSION_1_1);
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
         // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
@@ -4810,7 +4810,7 @@ TEST_F(VkLayerTest, WarningSwapchainCreateInfoPreTransform) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (!AddSwapchainDeviceExtension()) {
         printf("%s swapchain extensions not supported, skipping test\n", kSkipPrefix);
@@ -4848,7 +4848,7 @@ bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, std::vec
 
     VkValidationFeaturesEXT *enabled_features = need_gpu_validation ? &features : nullptr;
 
-    renderFramework->InitFramework(myDbgFunc, user_data, enabled_features);
+    renderFramework->InitFramework(user_data, enabled_features);
 
     if (renderFramework->DeviceIsMockICD() || renderFramework->DeviceSimulation()) {
         printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
@@ -6163,7 +6163,7 @@ TEST_F(VkLayerTest, QueryPerformanceCreation) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
@@ -6273,7 +6273,7 @@ TEST_F(VkLayerTest, QueryPerformanceCounterCommandbufferScope) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
@@ -6485,7 +6485,7 @@ TEST_F(VkLayerTest, QueryPerformanceCounterRenderPassScope) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
@@ -6626,7 +6626,7 @@ TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
@@ -6798,7 +6798,7 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME);
@@ -7068,7 +7068,7 @@ TEST_F(VkLayerTest, QueueSubmitNoTimelineSemaphoreInfo) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
@@ -7143,7 +7143,7 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreBadValue) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
@@ -7275,7 +7275,7 @@ TEST_F(VkLayerTest, InvalidExternalSemaphore) {
         printf("%s External semaphore extension not supported, skipping test\n", kSkipPrefix);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     // Check for external semaphore device extensions
     if (DeviceExtensionSupported(gpu(), nullptr, extension_name)) {
