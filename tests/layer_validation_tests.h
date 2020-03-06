@@ -230,6 +230,7 @@ T NearestSmaller(const T from) {
 
 class VkLayerTest : public VkRenderFramework {
   public:
+    const char *kValidationLayerName = "VK_LAYER_KHRONOS_validation";
     void VKTriangleTest(BsoFailSelect failCase);
 
     void GenericDrawPreparation(VkCommandBufferObj *commandBuffer, VkPipelineObj &pipelineobj, VkDescriptorSetObj &descriptorSet,

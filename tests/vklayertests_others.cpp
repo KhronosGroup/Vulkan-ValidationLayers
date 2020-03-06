@@ -203,7 +203,7 @@ TEST_F(VkLayerTest, DebugMarkerNameTest) {
     TEST_DESCRIPTION("Ensure debug marker object names are printed in debug report output");
 
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), "VK_LAYER_LUNARG_core_validation", VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
+    if (DeviceExtensionSupported(gpu(), kValidationLayerName, VK_EXT_DEBUG_MARKER_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
     } else {
         printf("%s Debug Marker Extension not supported, skipping test\n", kSkipPrefix);
@@ -1735,7 +1735,7 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
 
 TEST_F(VkLayerTest, ValidationCacheTestBadMerge) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(myDbgFunc, m_errorMonitor));
-    if (DeviceExtensionSupported(gpu(), "VK_LAYER_LUNARG_core_validation", VK_EXT_VALIDATION_CACHE_EXTENSION_NAME)) {
+    if (DeviceExtensionSupported(gpu(), kValidationLayerName, VK_EXT_VALIDATION_CACHE_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_EXT_VALIDATION_CACHE_EXTENSION_NAME);
     } else {
         printf("%s %s not supported, skipping test\n", kSkipPrefix, VK_EXT_VALIDATION_CACHE_EXTENSION_NAME);
