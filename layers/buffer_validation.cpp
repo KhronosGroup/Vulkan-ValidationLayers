@@ -2418,6 +2418,8 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
     const auto *cb_node = GetCBState(commandBuffer);
     const auto *src_image_state = GetImageState(srcImage);
     const auto *dst_image_state = GetImageState(dstImage);
+    const VkFormat src_format = src_image_state->createInfo.format;
+    const VkFormat dst_format = dst_image_state->createInfo.format;
     bool skip = false;
 
     skip = ValidateImageCopyData(regionCount, pRegions, src_image_state, dst_image_state);
@@ -2429,8 +2431,7 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
 
         // For comp/uncomp copies, the copy extent for the dest image must be adjusted
         VkExtent3D src_copy_extent = region.extent;
-        VkExtent3D dst_copy_extent =
-            GetAdjustedDestImageExtent(src_image_state->createInfo.format, dst_image_state->createInfo.format, region.extent);
+        VkExtent3D dst_copy_extent = GetAdjustedDestImageExtent(src_format, dst_format, region.extent);
 
         bool slice_override = false;
         uint32_t depth_slices = 0;
@@ -2502,7 +2503,7 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
         }
 
         // For each region, the aspectMask member of srcSubresource must be present in the source image
-        if (!VerifyAspectsPresent(region.srcSubresource.aspectMask, src_image_state->createInfo.format)) {
+        if (!VerifyAspectsPresent(region.srcSubresource.aspectMask, src_format)) {
             std::stringstream ss;
             ss << "vkCmdCopyImage(): pRegion[" << i
                << "] srcSubresource.aspectMask cannot specify aspects not present in source image";
@@ -2510,7 +2511,7 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
         }
 
         // For each region, the aspectMask member of dstSubresource must be present in the destination image
-        if (!VerifyAspectsPresent(region.dstSubresource.aspectMask, dst_image_state->createInfo.format)) {
+        if (!VerifyAspectsPresent(region.dstSubresource.aspectMask, dst_format)) {
             std::stringstream ss;
             ss << "vkCmdCopyImage(): pRegion[" << i
                << "] dstSubresource.aspectMask cannot specify aspects not present in dest image";
@@ -2598,7 +2599,7 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
         if (src_image_state->image == dst_image_state->image) {
             for (uint32_t j = 0; j < regionCount; j++) {
                 if (RegionIntersects(&region, &pRegions[j], src_image_state->createInfo.imageType,
-                                     FormatIsMultiplane(src_image_state->createInfo.format))) {
+                                     FormatIsMultiplane(src_format))) {
                     std::stringstream ss;
                     ss << "vkCmdCopyImage(): pRegions[" << i << "] src overlaps with pRegions[" << j << "].";
                     skip |= LogError(command_buffer, "VUID-vkCmdCopyImage-pRegions-00124", "%s.", ss.str().c_str());
@@ -2648,15 +2649,18 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
     // The formats of src_image and dst_image must be compatible. Formats are considered compatible if their texel size in bytes
     // is the same between both formats. For example, VK_FORMAT_R8G8B8A8_UNORM is compatible with VK_FORMAT_R32_UINT because
     // because both texels are 4 bytes in size. Depth/stencil formats must match exactly.
-    if (FormatIsDepthOrStencil(src_image_state->createInfo.format) || FormatIsDepthOrStencil(dst_image_state->createInfo.format)) {
-        if (src_image_state->createInfo.format != dst_image_state->createInfo.format) {
+    if (FormatIsDepthOrStencil(src_format) || FormatIsDepthOrStencil(dst_format)) {
+        if (src_format != dst_format) {
             char const str[] = "vkCmdCopyImage called with unmatched source and dest image depth/stencil formats.";
             skip |= LogError(command_buffer, kVUID_Core_DrawState_MismatchedImageFormat, str);
         }
     } else {
-        if (!FormatSizesAreEqual(src_image_state->createInfo.format, dst_image_state->createInfo.format, regionCount, pRegions)) {
+        if ((!FormatSizesAreEqual(src_format, dst_format, regionCount, pRegions)) && (!FormatIsMultiplane(src_format)) &&
+            (!FormatIsMultiplane(dst_format))) {
+            const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion) ? "VUID-vkCmdCopyImage-srcImage-01548"
+                                                                                   : "VUID-vkCmdCopyImage-srcImage-00135";
             char const str[] = "vkCmdCopyImage called with unmatched source and dest image format sizes.";
-            skip |= LogError(command_buffer, "VUID-vkCmdCopyImage-srcImage-00135", "%s.", str);
+            skip |= LogError(command_buffer, vuid, "%s.", str);
         }
     }
 
