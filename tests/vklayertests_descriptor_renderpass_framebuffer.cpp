@@ -1591,6 +1591,60 @@ TEST_F(VkLayerTest, InvalidDescriptorPoolConsistency) {
     vk::DestroyDescriptorPool(m_device->device(), bad_pool, NULL);
 }
 
+TEST_F(VkLayerTest, BadSubpassIndices) {
+    TEST_DESCRIPTION("Create render pass with valid stages");
+
+    bool rp2_supported = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (rp2_supported) m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (rp2_supported) rp2_supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkSubpassDescription sci[2] = {};
+    sci[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    sci[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+    const VkPipelineStageFlags kGraphicsStages =
+        VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT | VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT |
+        VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT |
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+
+    VkSubpassDependency dependency = {};
+    // Use only 2 subpasses, so these values should trigger validation errors
+    dependency.srcSubpass = 4;
+    dependency.dstSubpass = 4;
+    dependency.srcStageMask = kGraphicsStages;
+    dependency.dstStageMask = kGraphicsStages;
+
+    VkRenderPassCreateInfo rpci = {};
+    rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    rpci.subpassCount = 2;
+    rpci.pSubpasses = sci;
+    rpci.dependencyCount = 1;
+    rpci.pDependencies = &dependency;
+
+    VkRenderPass render_pass = VK_NULL_HANDLE;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo-srcSubpass-02517");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo-dstSubpass-02518");
+    vk::CreateRenderPass(m_device->device(), &rpci, nullptr, &render_pass);
+    m_errorMonitor->VerifyFound();
+
+    if (rp2_supported) {
+        PFN_vkCreateRenderPass2KHR vkCreateRenderPass2KHR =
+            (PFN_vkCreateRenderPass2KHR)vk::GetDeviceProcAddr(m_device->device(), "vkCreateRenderPass2KHR");
+        safe_VkRenderPassCreateInfo2 create_info2;
+        ConvertVkRenderPassCreateInfoToV2KHR(rpci, &create_info2);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-srcSubpass-02526");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkRenderPassCreateInfo2-dstSubpass-02527");
+        vkCreateRenderPass2KHR(m_device->device(), create_info2.ptr(), nullptr, &render_pass);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
 TEST_F(VkLayerTest, DrawWithPipelineIncompatibleWithSubpass) {
     TEST_DESCRIPTION("Use a pipeline for the wrong subpass in a render pass instance");
 
