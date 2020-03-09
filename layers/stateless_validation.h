@@ -1091,6 +1091,34 @@ class StatelessValidation : public ValidationObject {
         for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
             const auto &dependency = pCreateInfo->pDependencies[i];
 
+            if ((dependency.srcSubpass != VK_SUBPASS_EXTERNAL) && (dependency.srcSubpass >= pCreateInfo->subpassCount)) {
+                if (use_rp2) {
+                    skip |= LogError(
+                        device, "VUID-VkRenderPassCreateInfo2-srcSubpass-02526",
+                        "VkCreateRenderpass2(): pCreateInfo->pDependencies[%d].srcSubpass must be less than subpassCount (%d)", i,
+                        pCreateInfo->subpassCount);
+                } else {
+                    skip |= LogError(
+                        device, "VUID-VkRenderPassCreateInfo-srcSubpass-02517",
+                        "VkCreateRenderpass(): pCreateInfo->pDependencies[%d].srcSubpass must be less than subpassCount (%d)", i,
+                        pCreateInfo->subpassCount);
+                }
+            }
+
+            if ((dependency.dstSubpass != VK_SUBPASS_EXTERNAL) && (dependency.dstSubpass >= pCreateInfo->subpassCount)) {
+                if (use_rp2) {
+                    skip |= LogError(
+                        device, "VUID-VkRenderPassCreateInfo2-dstSubpass-02527",
+                        "VkCreateRenderpass2(): pCreateInfo->pDependencies[%d].dstSubpass must be less than subpassCount (%d)", i,
+                        pCreateInfo->subpassCount);
+                } else {
+                    skip |= LogError(
+                        device, "VUID-VkRenderPassCreateInfo-dstSubpass-02518",
+                        "VkCreateRenderpass(): pCreateInfo->pDependencies[%d].dstSubpass must be less than subpassCount (%d)", i,
+                        pCreateInfo->subpassCount);
+                }
+            }
+
             // Spec currently only supports Graphics pipeline in render pass -- so only that pipeline is currently checked
             vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-pDependencies-03054" : "VUID-VkRenderPassCreateInfo-pDependencies-00837";
             skip |= ValidateSubpassGraphicsFlags(report_data, pCreateInfo, i, dependency.srcSubpass, dependency.srcStageMask, vuid,
