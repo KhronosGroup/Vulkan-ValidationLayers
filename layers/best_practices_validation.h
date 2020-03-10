@@ -200,6 +200,7 @@ class BestPractices : public ValidationStateTracker {
                                         const VkImageResolve* pRegions) const;
     bool PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
                                       const VkAllocationCallbacks* pAllocator, VkSampler* pSampler) const;
+    void PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkResult result);
 
 // Include code-generated functions
 #include "best_practices.h"
