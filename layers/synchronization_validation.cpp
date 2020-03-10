@@ -160,7 +160,7 @@ HazardResult AccessTrackerContext::DetectHazard(const VulkanTypedHandle &handle,
     bool whole_range_gap = true;
     HazardResult hazard;
     if (access_tracker) {
-        auto accesses = access_tracker->GetCurrentAccessMap();
+        const auto &accesses = access_tracker->GetCurrentAccessMap();
         const auto from = accesses.lower_bound(range);
         if (from != accesses.end() && from->first.intersects(range)) {
             whole_range_gap = false;
