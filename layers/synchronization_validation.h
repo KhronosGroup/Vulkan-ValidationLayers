@@ -59,7 +59,15 @@ struct SyncStageAccess {
     }
 };
 
-using ResourceUsageTag = uint64_t;  // TODO -- identify a better DWORD or QWORD size UID/Tag for usages causing hazards
+struct ResourceUsageTag {
+    uint64_t index;
+    ResourceUsageTag &operator++() {
+        index++;
+        return *this;
+    }
+    bool IsBefore(const ResourceUsageTag &rhs) const { return index < rhs.index; }
+};
+
 struct HazardResult {
     SyncHazard hazard = NONE;
     ResourceUsageTag tag = ResourceUsageTag();
@@ -92,7 +100,6 @@ class ResourceAccessState : public SyncStageAccess {
         ResourceUsageTag tag;
     };
 
-    void ApplyBarrier(const SyncBarrier &barrier);
     static ResourceAccessState ApplyBarrierStack(const ResourceAccessState &that, const SyncBarrierStack &barrier_stack);
 
   public:
@@ -107,6 +114,8 @@ class ResourceAccessState : public SyncStageAccess {
     HazardResult DetectAsyncHazard(SyncStageAccessIndex usage_index) const;
 
     void Update(SyncStageAccessIndex usage_index, const ResourceUsageTag &tag);
+    void Resolve(const ResourceAccessState &other);
+    void ApplyBarrier(const SyncBarrier &barrier);
     void ApplyExecutionBarrier(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask);
     void ApplyMemoryAccessBarrier(VkPipelineStageFlags src_stage_mask, SyncStageAccessFlags src_scope,
                                   VkPipelineStageFlags dst_stage_mask, SyncStageAccessFlags dst_scope);
@@ -226,6 +235,10 @@ class AccessTrackerContext {
         async_.clear();
         external_ = TrackBack();
     }
+    // TODO: See if returning the lower_bound would be useful from a performance POV -- look at the lower_bound overhead
+    // Would need to add a "hint" overload to parallel_iterator::invalidate_[AB] call, if so.
+    void ResolvePreviousAccess(const VulkanTypedHandle &handle, const ResourceAccessRange &range,
+                               ResourceAccessRangeMap *descent_map, const ResourceAccessState *infill_state) const;
     void UpdateAccessState(const VulkanTypedHandle &handle, SyncStageAccessIndex current_usage, const ResourceAccessRange &range,
                            const ResourceUsageTag &tag);
     void UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
@@ -239,16 +252,16 @@ class AccessTrackerContext {
 
   private:
     template <typename Detector>
-    HazardResult DetectHazard(const VulkanTypedHandle &handle, const Detector &detector, const ResourceAccessRange &range,
-                              SyncBarrierStack *barrier_stack) const;
-    template <typename Detector>
-    HazardResult DetectHazardRecur(const VulkanTypedHandle &handle, const Detector &detector, const ResourceAccessRange &range,
-                                   SyncBarrierStack *barrier_stack) const;
-    template <typename Detector>
     HazardResult DetectHazard(const VulkanTypedHandle &handle, const Detector &detector, const ResourceAccessRange &range) const;
     template <typename Detector>
     HazardResult DetectAsyncHazard(const VulkanTypedHandle &handle, const Detector &detector,
                                    const ResourceAccessRange &range) const;
+    template <typename Detector>
+    HazardResult DetectPreviousHazard(const VulkanTypedHandle &handle, const Detector &detector,
+                                      const ResourceAccessRange &range) const;
+    void ResolveTrackBack(const VulkanTypedHandle &handle, const ResourceAccessRange &range,
+                          const AccessTrackerContext::TrackBack &track_back, ResourceAccessRangeMap *descent_map,
+                          const ResourceAccessState *infill_state) const;
 
     AccessTrackerMap access_tracker_map_;
 
@@ -323,7 +336,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     using StateTracker = ValidationStateTracker;
 
     using StateTracker::AccessorTraitsTypes;
-    ResourceUsageTag tag = 0;  // Find a better tagging scheme...
+    ResourceUsageTag tag;  // Find a better tagging scheme...
     std::unordered_map<VkCommandBuffer, std::unique_ptr<CommandBufferAccessContext>> cb_access_state;
     CommandBufferAccessContext *GetAccessContextImpl(VkCommandBuffer command_buffer, bool do_insert) {
         auto found_it = cb_access_state.find(command_buffer);
