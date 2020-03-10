@@ -6323,7 +6323,22 @@ TEST_F(VkLayerTest, CreateImageViewDifferentClass) {
     imgViewInfo.image = mutImage.handle();
 
     // Create mutable format image that is not compatiable
-    CreateImageViewTest(*this, &imgViewInfo, "VUID-VkImageViewCreateInfo-image-01018");
+    bool ycbcr_support = (DeviceExtensionEnabled(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME) ||
+                          (DeviceValidationVersion() >= VK_API_VERSION_1_1));
+    bool maintenance2_support =
+        (DeviceExtensionEnabled(VK_KHR_MAINTENANCE2_EXTENSION_NAME) || (DeviceValidationVersion() >= VK_API_VERSION_1_1));
+    const char *error_vuid;
+    if ((!maintenance2_support) && (!ycbcr_support)) {
+        error_vuid = "VUID-VkImageViewCreateInfo-image-01018";
+    } else if ((maintenance2_support) && (!ycbcr_support)) {
+        error_vuid = "VUID-VkImageViewCreateInfo-image-01759";
+    } else if ((!maintenance2_support) && (ycbcr_support)) {
+        error_vuid = "VUID-VkImageViewCreateInfo-image-01760";
+    } else {
+        // both enabled
+        error_vuid = "VUID-VkImageViewCreateInfo-image-01761";
+    }
+    CreateImageViewTest(*this, &imgViewInfo, error_vuid);
 
     // Use CUBE_ARRAY without feature enabled
     if (device_features.imageCubeArray == false) {

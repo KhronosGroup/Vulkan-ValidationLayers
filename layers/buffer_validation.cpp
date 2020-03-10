@@ -4494,17 +4494,29 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                     skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-01586", "%s", ss.str().c_str());
                 }
             } else {
-                if ((!device_extensions.vk_khr_maintenance2 ||
-                     !(image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT_KHR))) {
+                if ((!(image_flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT_KHR)) || (!FormatIsMultiplane(image_format))) {
                     // Format MUST be compatible (in the same format compatibility class) as the format the image was created with
                     if (FormatCompatibilityClass(image_format) != FormatCompatibilityClass(view_format)) {
+                        const char *error_vuid;
+                        if ((!device_extensions.vk_khr_maintenance2) && (!device_extensions.vk_khr_sampler_ycbcr_conversion)) {
+                            error_vuid = "VUID-VkImageViewCreateInfo-image-01018";
+                        } else if ((device_extensions.vk_khr_maintenance2) &&
+                                   (!device_extensions.vk_khr_sampler_ycbcr_conversion)) {
+                            error_vuid = "VUID-VkImageViewCreateInfo-image-01759";
+                        } else if ((!device_extensions.vk_khr_maintenance2) &&
+                                   (device_extensions.vk_khr_sampler_ycbcr_conversion)) {
+                            error_vuid = "VUID-VkImageViewCreateInfo-image-01760";
+                        } else {
+                            // both enabled
+                            error_vuid = "VUID-VkImageViewCreateInfo-image-01761";
+                        }
                         std::stringstream ss;
                         ss << "vkCreateImageView(): ImageView format " << string_VkFormat(view_format)
                            << " is not in the same format compatibility class as "
                            << report_data->FormatHandle(pCreateInfo->image).c_str() << "  format " << string_VkFormat(image_format)
                            << ".  Images created with the VK_IMAGE_CREATE_MUTABLE_FORMAT BIT "
                            << "can support ImageViews with differing formats but they must be in the same compatibility class.";
-                        skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-01018", "%s", ss.str().c_str());
+                        skip |= LogError(pCreateInfo->image, error_vuid, "%s", ss.str().c_str());
                     }
                 }
             }
