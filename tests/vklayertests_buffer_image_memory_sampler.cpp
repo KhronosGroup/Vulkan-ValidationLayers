@@ -7231,7 +7231,7 @@ TEST_F(VkLayerTest, DuplicateValidPNextStructures) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkLayerTest, DedicatedAllocation) {
+TEST_F(VkLayerTest, DedicatedAllocationBinding) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
@@ -8514,6 +8514,156 @@ TEST_F(VkLayerTest, DeviceCoherentMemoryDisabledAMD) {
     vk::AllocateMemory(m_device->device(), &mem_alloc, NULL, &mem);
 
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, DedicatedAllocation) {
+    TEST_DESCRIPTION("Create invalid requests to dedicated allocation of memory");
+
+    // Both VK_KHR_dedicated_allocation and VK_KHR_sampler_ycbcr_conversion supported in 1.1
+    // Quicke to set 1.1 then check all extensions in 1.0
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
+        printf("%s test requires Vulkan 1.1 extensions, not available.  Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    const VkFormat disjoint_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    const VkFormat normal_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkFormatProperties format_properties;
+    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), disjoint_format, &format_properties);
+
+    bool sparse_support = (m_device->phy().features().sparseBinding == VK_TRUE);
+    bool disjoint_support = ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DISJOINT_BIT) != 0);
+
+    VkBufferCreateInfo buffer_create_info = {};
+    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_create_info.pNext = NULL;
+    buffer_create_info.usage = 0;
+    buffer_create_info.size = 2048;
+    buffer_create_info.queueFamilyIndexCount = 0;
+    buffer_create_info.pQueueFamilyIndices = NULL;
+    buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = NULL;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = normal_format;
+    image_create_info.extent.width = 64;
+    image_create_info.extent.height = 64;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = 0;
+    image_create_info.flags = 0;
+
+    // Create Images and Buffers without any memory backing
+    VkImage normal_image = VK_NULL_HANDLE;
+    vk::CreateImage(device(), &image_create_info, nullptr, &normal_image);
+
+    VkBuffer normal_buffer = VK_NULL_HANDLE;
+    vk::CreateBuffer(device(), &buffer_create_info, nullptr, &normal_buffer);
+
+    VkImage sparse_image = VK_NULL_HANDLE;
+    VkBuffer sparse_buffer = VK_NULL_HANDLE;
+    if (sparse_support == true) {
+        image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+        vk::CreateImage(device(), &image_create_info, nullptr, &sparse_image);
+        buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_BINDING_BIT;
+        vk::CreateBuffer(device(), &buffer_create_info, nullptr, &sparse_buffer);
+    }
+
+    VkImage disjoint_image = VK_NULL_HANDLE;
+    if (disjoint_support == true) {
+        image_create_info.format = disjoint_format;
+        image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
+        vk::CreateImage(device(), &image_create_info, nullptr, &disjoint_image);
+    }
+
+    VkDeviceMemory device_memory;
+    VkMemoryDedicatedAllocateInfo dedicated_allocate_info = {};
+    dedicated_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
+    dedicated_allocate_info.pNext = nullptr;
+
+    VkMemoryAllocateInfo memory_allocate_info = {};
+    memory_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memory_allocate_info.pNext = (void *)&dedicated_allocate_info;
+    memory_allocate_info.memoryTypeIndex = 0;
+    memory_allocate_info.allocationSize = 64;
+
+    // Both image and buffer set in dedicated allocation
+    dedicated_allocate_info.image = normal_image;
+    dedicated_allocate_info.buffer = normal_buffer;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-image-01432");
+    vk::AllocateMemory(m_device->device(), &memory_allocate_info, NULL, &device_memory);
+    m_errorMonitor->VerifyFound();
+
+    if (sparse_support == true) {
+        VkMemoryRequirements sparse_image_memory_req;
+        vk::GetImageMemoryRequirements(device(), sparse_image, &sparse_image_memory_req);
+        VkMemoryRequirements sparse_buffer_memory_req;
+        vk::GetBufferMemoryRequirements(device(), sparse_buffer, &sparse_buffer_memory_req);
+
+        dedicated_allocate_info.image = sparse_image;
+        dedicated_allocate_info.buffer = VK_NULL_HANDLE;
+        memory_allocate_info.allocationSize = sparse_image_memory_req.size;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-image-01434");
+        vk::AllocateMemory(m_device->device(), &memory_allocate_info, NULL, &device_memory);
+        m_errorMonitor->VerifyFound();
+
+        dedicated_allocate_info.image = VK_NULL_HANDLE;
+        dedicated_allocate_info.buffer = sparse_buffer;
+        memory_allocate_info.allocationSize = sparse_buffer_memory_req.size;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-buffer-01436");
+        vk::AllocateMemory(m_device->device(), &memory_allocate_info, NULL, &device_memory);
+        m_errorMonitor->VerifyFound();
+    }
+
+    if (disjoint_support == true) {
+        VkMemoryRequirements disjoint_image_memory_req;
+        vk::GetImageMemoryRequirements(device(), disjoint_image, &disjoint_image_memory_req);
+
+        dedicated_allocate_info.image = disjoint_image;
+        dedicated_allocate_info.buffer = VK_NULL_HANDLE;
+        memory_allocate_info.allocationSize = disjoint_image_memory_req.size;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-image-01797");
+        vk::AllocateMemory(m_device->device(), &memory_allocate_info, NULL, &device_memory);
+        m_errorMonitor->VerifyFound();
+    }
+
+    VkMemoryRequirements normal_image_memory_req;
+    vk::GetImageMemoryRequirements(device(), normal_image, &normal_image_memory_req);
+    VkMemoryRequirements normal_buffer_memory_req;
+    vk::GetBufferMemoryRequirements(device(), normal_buffer, &normal_buffer_memory_req);
+
+    // Set allocation size to be not equal to memory requirement
+    memory_allocate_info.allocationSize = normal_image_memory_req.size - 1;
+    dedicated_allocate_info.image = normal_image;
+    dedicated_allocate_info.buffer = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-image-01433");
+    vk::AllocateMemory(m_device->device(), &memory_allocate_info, NULL, &device_memory);
+    m_errorMonitor->VerifyFound();
+
+    memory_allocate_info.allocationSize = normal_buffer_memory_req.size - 1;
+    dedicated_allocate_info.image = VK_NULL_HANDLE;
+    dedicated_allocate_info.buffer = normal_buffer;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-buffer-01435");
+    vk::AllocateMemory(m_device->device(), &memory_allocate_info, NULL, &device_memory);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyImage(device(), normal_image, nullptr);
+    vk::DestroyBuffer(device(), normal_buffer, nullptr);
+    if (sparse_support == true) {
+        vk::DestroyImage(device(), sparse_image, nullptr);
+        vk::DestroyBuffer(device(), sparse_buffer, nullptr);
+    }
+    if (disjoint_support == true) {
+        vk::DestroyImage(device(), disjoint_image, nullptr);
+    }
 }
 
 TEST_F(VkLayerTest, InvalidMemoryRequirements) {
