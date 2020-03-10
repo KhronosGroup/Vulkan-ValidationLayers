@@ -170,6 +170,7 @@ class BestPractices : public ValidationStateTracker {
                                             const VkClearRect* pRects) const;
     void ValidateReturnCodes(const char* api_name, VkResult result, const std::vector<VkResult>& success_codes,
                              const std::vector<VkResult>& error_codes) const;
+    void PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkResult result);
 
 // Include code-generated functions
 #include "best_practices.h"

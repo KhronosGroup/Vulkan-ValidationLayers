@@ -642,6 +642,22 @@ bool BestPractices::CheckPipelineStageFlags(std::string api_name, const VkPipeli
     return skip;
 }
 
+void BestPractices::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkResult result) {
+    ValidationStateTracker::PostCallRecordQueuePresentKHR(queue, pPresentInfo, result);
+    for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
+        auto swapchains_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : result;
+        if (swapchains_result == VK_SUBOPTIMAL_KHR) {
+            LogPerformanceWarning(
+                pPresentInfo->pSwapchains[i], kVUID_BestPractices_SuboptimalSwapchain,
+                "vkQueuePresentKHR: %s :VK_SUBOPTIMAL_KHR was returned. VK_SUBOPTIMAL_KHR - Presentation will still succeed, "
+                "subject to the window resize behavior, but the swapchain is no longer configured optimally for the surface it "
+                "targets. Applications should query updated surface information and recreate their swapchain at the next "
+                "convenient opportunity.",
+                report_data->FormatHandle(pPresentInfo->pSwapchains[i]).c_str());
+        }
+    }
+}
+
 bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits,
                                                VkFence fence) const {
     bool skip = false;
