@@ -118,21 +118,6 @@ void StatelessValidation::PostCallRecordCreateInstance(const VkInstanceCreateInf
     this->instance_extensions = instance_data->instance_extensions;
 }
 
-void StatelessValidation::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo, VkResult result) {
-    for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
-        auto swapchains_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : result;
-        if (swapchains_result == VK_SUBOPTIMAL_KHR) {
-            LogPerformanceWarning(
-                pPresentInfo->pSwapchains[i], kVUID_PVPerfWarn_SuboptimalSwapchain,
-                "vkQueuePresentKHR: %s :VK_SUBOPTIMAL_KHR was returned. VK_SUBOPTIMAL_KHR - Presentation will still succeed, "
-                "subject to the window resize behavior, but the swapchain is no longer configured optimally for the surface it "
-                "targets. Applications should query updated surface information and recreate their swapchain at the next "
-                "convenient opportunity.",
-                report_data->FormatHandle(pPresentInfo->pSwapchains[i]).c_str());
-        }
-    }
-}
-
 void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkDevice *pDevice, VkResult result) {
     auto device_data = GetLayerDataPtr(get_dispatch_key(*pDevice), layer_data_map);
