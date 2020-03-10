@@ -1474,10 +1474,13 @@ void ValidationStateTracker::RetireWorkOnQueue(QUEUE_STATE *pQueue, uint64_t seq
             lastSeq = std::max(lastSeq, wait.seq);
         }
 
-        for (auto &semaphore : submission.signalSemaphores) {
-            auto pSemaphore = GetSemaphoreState(semaphore.semaphore);
+        for (auto &signal : submission.signalSemaphores) {
+            auto pSemaphore = GetSemaphoreState(signal.semaphore);
             if (pSemaphore) {
                 pSemaphore->in_use.fetch_sub(1);
+                if (pSemaphore->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && pSemaphore->payload < signal.payload) {
+                    pSemaphore->payload = signal.payload;
+                }
             }
         }
 
@@ -1579,12 +1582,24 @@ void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t s
             auto pSemaphore = GetSemaphoreState(semaphore);
             if (pSemaphore) {
                 if (pSemaphore->scope == kSyncScopeInternal) {
-                    if (pSemaphore->signaler.first != VK_NULL_HANDLE) {
-                        semaphore_waits.push_back({semaphore, pSemaphore->signaler.first, pSemaphore->signaler.second});
+                    SEMAPHORE_WAIT wait;
+                    wait.semaphore = semaphore;
+                    if (pSemaphore->type == VK_SEMAPHORE_TYPE_BINARY_KHR) {
+                        if (pSemaphore->signaler.first != VK_NULL_HANDLE) {
+                            wait.queue = pSemaphore->signaler.first;
+                            wait.seq = pSemaphore->signaler.second;
+                            semaphore_waits.push_back(wait);
+                            pSemaphore->in_use.fetch_add(1);
+                        }
+                        pSemaphore->signaler.first = VK_NULL_HANDLE;
+                        pSemaphore->signaled = false;
+                    } else if (pSemaphore->payload < timeline_semaphore_submit->pWaitSemaphoreValues[i]) {
+                        wait.queue = queue;
+                        wait.seq = next_seq;
+                        wait.payload = timeline_semaphore_submit->pWaitSemaphoreValues[i];
+                        semaphore_waits.push_back(wait);
                         pSemaphore->in_use.fetch_add(1);
                     }
-                    pSemaphore->signaler.first = VK_NULL_HANDLE;
-                    pSemaphore->signaled = false;
                 } else {
                     semaphore_externals.push_back(semaphore);
                     pSemaphore->in_use.fetch_add(1);
