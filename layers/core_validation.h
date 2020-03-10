@@ -51,6 +51,7 @@ class CoreChecks : public ValidationStateTracker {
     void StoreMemRanges(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size);
     bool ValidateIdleDescriptorSet(VkDescriptorSet set, const char* func_str) const;
     void InitializeShadowMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
+    bool SemaphoreWasSignaled(VkSemaphore semaphore) const;
     bool ValidatePipelineLocked(std::vector<std::shared_ptr<PIPELINE_STATE>> const& pPipelines, int pipelineIndex) const;
     bool ValidatePipelineUnlocked(const PIPELINE_STATE* pPipeline, uint32_t pipelineIndex) const;
     bool ValidImageBufferQueue(const CMD_BUFFER_STATE* cb_node, const VulkanTypedHandle& object, uint32_t queueFamilyIndex,
@@ -59,11 +60,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo* submit,
                                      std::unordered_set<VkSemaphore>* unsignaled_sema_arg,
                                      std::unordered_set<VkSemaphore>* signaled_sema_arg,
-                                     std::unordered_set<VkSemaphore>* internal_sema_arg,
-                                     unordered_map<VkSemaphore, std::set<uint64_t>>* timeline_values_arg) const;
-    bool ValidateMaxTimelineSemaphoreValueDifference(VkQueue queue, VkSemaphore semaphore, const uint64_t semaphoreHandleValue,
-                                                     unordered_map<VkSemaphore, std::set<uint64_t>>* timeline_values_arg,
-                                                     const char* func_name, const char* vuid) const;
+                                     std::unordered_set<VkSemaphore>* internal_sema_arg) const;
+    bool ValidateMaxTimelineSemaphoreValueDifference(VkSemaphore semaphore, uint64_t value, const char* func_name,
+                                                     const char* vuid) const;
     bool ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitInfo* submit, GlobalImageLayoutMap* localImageLayoutMap_arg,
                                          QueryMap* local_query_to_state_map, std::vector<VkCommandBuffer>* current_cmds_arg) const;
     bool ValidateStatus(const CMD_BUFFER_STATE* pNode, CBStatusFlags status_mask, const char* fail_msg, const char* msg_code) const;

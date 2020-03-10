@@ -1132,6 +1132,7 @@ static inline QFOTransferBarrierSets<VkBufferMemoryBarrier> &GetQFOBarrierSets(
 struct SEMAPHORE_WAIT {
     VkSemaphore semaphore;
     VkQueue queue;
+    uint64_t payload;
     uint64_t seq;
 };
 
