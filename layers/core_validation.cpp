@@ -2794,6 +2794,51 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
         }
     }
 
+    auto dedicated_allocate_info = lvl_find_in_chain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
+    if (dedicated_allocate_info) {
+        if ((dedicated_allocate_info->buffer != VK_NULL_HANDLE) && (dedicated_allocate_info->image != VK_NULL_HANDLE)) {
+            skip |= LogError(device, "VUID-VkMemoryDedicatedAllocateInfo-image-01432",
+                             "Either buffer or image has to be VK_NULL_HANDLE in VkMemoryDedicatedAllocateInfo");
+        } else if (dedicated_allocate_info->image != VK_NULL_HANDLE) {
+            // Dedicated VkImage
+            const IMAGE_STATE *image_state = GetImageState(dedicated_allocate_info->image);
+            if (pAllocateInfo->allocationSize != image_state->requirements.size) {
+                skip |= LogError(device, "VUID-VkMemoryDedicatedAllocateInfo-image-01433",
+                                 "Allocation Size (%u) needs to be equal to VkImage %s VkMemoryRequirements::size (%u)",
+                                 pAllocateInfo->allocationSize, report_data->FormatHandle(dedicated_allocate_info->image).c_str(),
+                                 image_state->requirements.size);
+            }
+            if ((image_state->createInfo.flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0) {
+                skip |= LogError(device, "VUID-VkMemoryDedicatedAllocateInfo-image-01434",
+                                 "VkImage %s can't be used in VkMemoryDedicatedAllocateInfo because it was created with "
+                                 "VK_IMAGE_CREATE_SPARSE_BINDING_BIT",
+                                 report_data->FormatHandle(dedicated_allocate_info->image).c_str());
+            }
+            if ((device_extensions.vk_khr_sampler_ycbcr_conversion) &&
+                ((image_state->createInfo.flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0)) {
+                skip |= LogError(device, "VUID-VkMemoryDedicatedAllocateInfo-image-01797",
+                                 "VkImage %s can't be used in VkMemoryDedicatedAllocateInfo because it was created with "
+                                 "VK_IMAGE_CREATE_DISJOINT_BIT",
+                                 report_data->FormatHandle(dedicated_allocate_info->image).c_str());
+            }
+        } else if (dedicated_allocate_info->buffer != VK_NULL_HANDLE) {
+            // Dedicated VkBuffer
+            const BUFFER_STATE *buffer_state = GetBufferState(dedicated_allocate_info->buffer);
+            if (pAllocateInfo->allocationSize != buffer_state->requirements.size) {
+                skip |= LogError(device, "VUID-VkMemoryDedicatedAllocateInfo-buffer-01435",
+                                 "Allocation Size (%u) needs to be equal to VkBuffer %s VkMemoryRequirements::size (%u)",
+                                 pAllocateInfo->allocationSize, report_data->FormatHandle(dedicated_allocate_info->buffer).c_str(),
+                                 buffer_state->requirements.size);
+            }
+            if ((buffer_state->createInfo.flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0) {
+                skip |= LogError(device, "VUID-VkMemoryDedicatedAllocateInfo-buffer-01436",
+                                 "VkBuffer %s can't be used in VkMemoryDedicatedAllocateInfo because it was created with "
+                                 "VK_BUFFER_CREATE_SPARSE_BINDING_BIT",
+                                 report_data->FormatHandle(dedicated_allocate_info->buffer).c_str());
+            }
+        }
+    }
+
     // TODO: VUIDs ending in 00643, 00644, 00646, 00647, 01742, 01743, 01745, 00645, 00648, 01744
     return skip;
 }
