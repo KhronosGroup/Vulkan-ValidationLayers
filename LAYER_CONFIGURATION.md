@@ -21,6 +21,35 @@ Vulkan validation and utility layers give Vulkan application developers the abil
 
 Developers can use the Vulkan Configurator, `vkconfig`, to enable explicit layers and disable implicit layers as well as change layer settings through a graphical user interface.  Please see [the Vulkan Configurator documentation in the Vulkan SDK](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) for more information on using the Vulkan Configurator. Continue reading for instructions on how to configure layers without using vkconfig.
 
+## Validation Layer Overview
+
+Application validation in Vulkan is implemented solely by the [Khronos validation layer](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/docs/khronos_validation_layer.md),
+ **`VK_LAYER_KHRONOS_validation`**.
+
+Initially, validation was implemented as a dozen or so individual layers with limited scope -- i.e., `mem_tracker`, `object_tracker`, `device_limits`,
+`unique_objects`, etc., and a standard validation meta-layer, `VK_LAYER_LUNARG_standard_validation`, was supplied to enforce a particular layer order.
+In order to simplify configuration, improve build times, and standardize layer interfaces, validation was
+further consolidated into the single, configurable Khronos validation layer, while the individual component layers and meta-layer have been
+deprecated. For additional detail, see the [Unified Validation Layer whitepaper](https://www.lunarg.com/wp-content/uploads/2019/04/UberLayer_V3.pdf).
+
+**Validation Layer History**
+
+| Layer Name                                  | Introduced          |    Status        |
+|---------------------------------------------|---------------------|------------------|
+|   **VK_LAYER_KHRONOS_validation**           | **March 2019**      |  **Supported**   |
+|   VK_LAYER_LUNARG_standard_validation       | February 2016       |  Deprecated      |
+|   VK_LAYER_LUNARG_core_validation           | March 2016          |  Deprecated      |
+|   VK_LAYER_LUNARG_object_tracker            | October 2014        |  Deprecated      |
+|   VK_LAYER_GOOGLE_threading                 | April 2015          |  Deprecated      |
+|   VK_LAYER_GOOGLE_unique_objects            | December 2015       |  Deprecated      |
+|   VK_LAYER_LUNARG_parameter_validation      | December 2014       |  Deprecated      |
+|   VK_LAYER_LUNARG_mem_tracker               | November 2014       |  Deprecated      |
+|   VK_LAYER_LUNARG_draw_state                | October 2014        |  Deprecated      |
+|   VK_LAYER_LUNARG_swapchain                 | September 2015      |  Deprecated      |
+|   VK_LAYER_LUNARG_device_limits             | September 2015      |  Deprecated      |
+|   VK_LAYER_LUNARG_shader_checker            | April 2015          |  Deprecated      |
+|   VK_LAYER_LUNARG_image                     | June 2015           |  Deprecated      |
+
 ## Activating Layers on Windows
 Before or during execution of a Vulkan application, the loader must be informed of the layers to activate.
 This can be done in two ways:  programmatically, or by using environment variables.
