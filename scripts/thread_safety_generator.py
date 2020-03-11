@@ -1175,45 +1175,6 @@ void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(
         # Internal state - accumulators for different inner block text
         self.sections = dict([(section, []) for section in self.ALL_SECTIONS])
         self.non_dispatchable_types = set()
-        self.object_to_vulkan_object_type = {
-            'VkInstance' : 'kVulkanObjectTypeInstance',
-            'VkPhysicalDevice' : 'kVulkanObjectTypePhysicalDevice',
-            'VkDevice' : 'kVulkanObjectTypeDevice',
-            'VkQueue' : 'kVulkanObjectTypeQueue',
-            'VkSemaphore' : 'kVulkanObjectTypeSemaphore',
-            'VkCommandBuffer' : 'kVulkanObjectTypeCommandBuffer',
-            'VkFence' : 'kVulkanObjectTypeFence',
-            'VkDeviceMemory' : 'kVulkanObjectTypeDeviceMemory',
-            'VkBuffer' : 'kVulkanObjectTypeBuffer',
-            'VkImage' : 'kVulkanObjectTypeImage',
-            'VkEvent' : 'kVulkanObjectTypeEvent',
-            'VkQueryPool' : 'kVulkanObjectTypeQueryPool',
-            'VkBufferView' : 'kVulkanObjectTypeBufferView',
-            'VkImageView' : 'kVulkanObjectTypeImageView',
-            'VkShaderModule' : 'kVulkanObjectTypeShaderModule',
-            'VkPipelineCache' : 'kVulkanObjectTypePipelineCache',
-            'VkPipelineLayout' : 'kVulkanObjectTypePipelineLayout',
-            'VkRenderPass' : 'kVulkanObjectTypeRenderPass',
-            'VkPipeline' : 'kVulkanObjectTypePipeline',
-            'VkDescriptorSetLayout' : 'kVulkanObjectTypeDescriptorSetLayout',
-            'VkSampler' : 'kVulkanObjectTypeSampler',
-            'VkDescriptorPool' : 'kVulkanObjectTypeDescriptorPool',
-            'VkDescriptorSet' : 'kVulkanObjectTypeDescriptorSet',
-            'VkFramebuffer' : 'kVulkanObjectTypeFramebuffer',
-            'VkCommandPool' : 'kVulkanObjectTypeCommandPool',
-            'VkSurfaceKHR' : 'kVulkanObjectTypeSurfaceKHR',
-            'VkSwapchainKHR' : 'kVulkanObjectTypeSwapchainKHR',
-            'VkDisplayKHR' : 'kVulkanObjectTypeDisplayKHR',
-            'VkDisplayModeKHR' : 'kVulkanObjectTypeDisplayModeKHR',
-            'VkObjectTableNVX' : 'kVulkanObjectTypeObjectTableNVX',
-            'VkIndirectCommandsLayoutNVX' : 'kVulkanObjectTypeIndirectCommandsLayoutNVX',
-            'VkSamplerYcbcrConversion' : 'kVulkanObjectTypeSamplerYcbcrConversion',
-            'VkDescriptorUpdateTemplate' : 'kVulkanObjectTypeDescriptorUpdateTemplate',
-            'VkAccelerationStructureNV' : 'kVulkanObjectTypeAccelerationStructureNV',
-            'VkDebugReportCallbackEXT' : 'kVulkanObjectTypeDebugReportCallbackEXT',
-            'VkDebugUtilsMessengerEXT' : 'kVulkanObjectTypeDebugUtilsMessengerEXT',
-            'VkPerformanceConfigurationINTEL' : 'kVulkanObjectTypePerformanceConfigurationINTEL',
-            'VkValidationCacheEXT' : 'kVulkanObjectTypeValidationCacheEXT' }
 
     # Check if the parameter passed in is a pointer to an array
     def paramIsArray(self, param):
@@ -1430,16 +1391,12 @@ void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(
         for obj in sorted(self.non_dispatchable_types):
             if (not self.is_aliased_type[obj]):
                 counter_class_defs += '    counter<%s> c_%s;\n' % (obj, obj)
-                if obj in self.object_to_vulkan_object_type:
-                    obj_type = self.object_to_vulkan_object_type[obj]
-                else:
-                    obj_type = 'kVulkanObjectTypeUnknown,'
+                obj_type = 'kVulkanObjectType' + obj[2:]
                 counter_class_instances += '          c_%s("%s", %s, this),\n' % (obj, obj, obj_type)
                 if 'VkSurface' in obj or 'VkDebugReportCallback' in obj or 'VkDebugUtilsMessenger' in obj:
                     counter_class_bodies += 'WRAPPER_PARENT_INSTANCE(%s)\n' % obj
                 else:
                     counter_class_bodies += 'WRAPPER(%s)\n' % obj
-
         if self.header_file:
             class_def = self.inline_custom_header_preamble.replace('COUNTER_CLASS_DEFINITIONS_TEMPLATE', counter_class_defs)
             class_def = class_def.replace('COUNTER_CLASS_INSTANCES_TEMPLATE', counter_class_instances[:-2]) # Kill last comma
