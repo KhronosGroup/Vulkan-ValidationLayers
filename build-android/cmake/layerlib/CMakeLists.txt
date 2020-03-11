@@ -9,6 +9,9 @@ if (CMAKE_CURRENT_SOURCE_DIR MATCHES "sources/third_party/vulkan/src")
     set(BUILD_IN_NDK ON)
 endif()
 
+# Enable beta Vulkan extensions
+add_definitions(-DVK_ENABLE_BETA_EXTENSIONS)
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Werror \
         -Wno-unused-function -Wno-unused-const-variable \
         -Wno-c++98-compat-pedantic -DVK_PROTOTYPES \
