@@ -73,14 +73,14 @@ const std::unordered_map<std::string, VkFlags> log_msg_type_option_definitions =
                                                                                   {std::string("error"), kErrorBit},
                                                                                   {std::string("debug"), kDebugBit}};
 
-VK_LAYER_EXPORT const char *getLayerOption(const char *option);
+VK_LAYER_EXPORT const char *GetLayerOption(const char *option);
 VK_LAYER_EXPORT const char *GetLayerEnvVar(const char *option);
 
-VK_LAYER_EXPORT FILE *getLayerLogOutput(const char *option, const char *layer_name);
+VK_LAYER_EXPORT FILE *GetLayerLogOutput(const char *option, const char *layer_name);
 VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(std::string option, std::unordered_map<std::string, VkFlags> const &enum_data,
                                             uint32_t option_default);
 
-VK_LAYER_EXPORT void setLayerOption(const char *option, const char *val);
+VK_LAYER_EXPORT void SetLayerOption(const char *option, const char *val);
 VK_LAYER_EXPORT void PrintMessageFlags(VkFlags vk_flags, char *msg_flags);
 VK_LAYER_EXPORT void PrintMessageSeverity(VkFlags vk_flags, char *msg_flags);
 VK_LAYER_EXPORT void PrintMessageType(VkFlags vk_flags, char *msg_flags);

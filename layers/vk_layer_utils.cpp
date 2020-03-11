@@ -129,8 +129,8 @@ VK_LAYER_EXPORT void layer_debug_messenger_actions(debug_report_data *report_dat
     }
 
     if (debug_action & VK_DBG_LAYER_ACTION_LOG_MSG) {
-        const char *log_filename = getLayerOption(log_filename_key.c_str());
-        FILE *log_output = getLayerLogOutput(log_filename, layer_identifier);
+        const char *log_filename = GetLayerOption(log_filename_key.c_str());
+        FILE *log_output = GetLayerLogOutput(log_filename, layer_identifier);
         dbgCreateInfo.pfnUserCallback = messenger_log_callback;
         dbgCreateInfo.pUserData = (void *)log_output;
         layer_create_messenger_callback(report_data, true, &dbgCreateInfo, pAllocator, &messenger);
@@ -173,8 +173,8 @@ VK_LAYER_EXPORT void layer_debug_report_actions(debug_report_data *report_data, 
     bool default_layer_callback = (debug_action & VK_DBG_LAYER_ACTION_DEFAULT) ? true : false;
 
     if (debug_action & VK_DBG_LAYER_ACTION_LOG_MSG) {
-        const char *log_filename = getLayerOption(log_filename_key.c_str());
-        FILE *log_output = getLayerLogOutput(log_filename, layer_identifier);
+        const char *log_filename = GetLayerOption(log_filename_key.c_str());
+        FILE *log_output = GetLayerLogOutput(log_filename, layer_identifier);
         VkDebugReportCallbackCreateInfoEXT dbgCreateInfo;
         memset(&dbgCreateInfo, 0, sizeof(dbgCreateInfo));
         dbgCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;

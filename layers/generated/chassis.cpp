@@ -295,9 +295,9 @@ void ProcessConfigAndEnvSettings(const char* layer_description, CHECK_ENABLED* e
     std::string disable_key = layer_description;
     enable_key.append(".enables");
     disable_key.append(".disables");
-    std::string list_of_config_enables = getLayerOption(enable_key.c_str());
+    std::string list_of_config_enables = GetLayerOption(enable_key.c_str());
     std::string list_of_env_enables = GetLayerEnvVar("VK_LAYER_ENABLES");
-    std::string list_of_config_disables = getLayerOption(disable_key.c_str());
+    std::string list_of_config_disables = GetLayerOption(disable_key.c_str());
     std::string list_of_env_disables = GetLayerEnvVar("VK_LAYER_DISABLES");
 #if defined(_WIN32)
     std::string env_delimiter = ";";
