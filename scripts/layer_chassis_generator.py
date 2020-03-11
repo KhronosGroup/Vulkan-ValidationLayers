@@ -320,7 +320,6 @@ struct CHECK_ENABLED {
     bool best_practices;
     bool vendor_specific_arm;                       // Vendor-specific validation for Arm platforms
 
-    void SetAll(bool value) { std::fill(&gpu_validation, &gpu_validation_reserve_binding_slot + 1, value); }
     void SetAllVendorSpecific(bool value) { std::fill(&vendor_specific_arm, &vendor_specific_arm + 1, value); }
 };
 
