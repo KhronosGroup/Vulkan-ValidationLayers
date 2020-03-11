@@ -994,8 +994,6 @@ void SyncValidator::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, cons
     const auto rp_state = Get<RENDER_PASS_STATE>(pRenderPassBegin->renderPass);
     auto cb_context = GetAccessContext(commandBuffer);
     if (rp_state && cb_context) {
-        const auto cb_state = cb_context->GetCommandBufferState();
-        assert(cb_state);
         cb_context->BeginRenderPass(*rp_state);
     }
 }
