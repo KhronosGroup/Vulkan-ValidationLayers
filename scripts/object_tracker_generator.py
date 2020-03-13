@@ -313,7 +313,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             if objtype == 'device':
                 output_func += '    skip |= ReportLeaked%sObjects(%s, kVulkanObjectTypeCommandBuffer, error_code);\n' % (upper_objtype, objtype)
             for handle in self.object_types:
-                if self.handle_types.IsNonDispatchable(handle):
+                if self.handle_types.IsNonDispatchable(handle) and not self.is_aliased_type[handle]:
                     if (objtype == 'device' and self.handle_parents.IsParentDevice(handle)) or (objtype == 'instance' and not self.handle_parents.IsParentDevice(handle)):
                         output_func += '    skip |= ReportLeaked%sObjects(%s, %s, error_code);\n' % (upper_objtype, objtype, self.GetVulkanObjType(handle))
             output_func += '    return skip;\n'
@@ -330,7 +330,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             if objtype == 'device':
                 output_func += '    DestroyUndestroyedObjects(kVulkanObjectTypeCommandBuffer);\n'
             for handle in self.object_types:
-                if self.handle_types.IsNonDispatchable(handle):
+                if self.handle_types.IsNonDispatchable(handle) and not self.is_aliased_type[handle]:
                     if (objtype == 'device' and self.handle_parents.IsParentDevice(handle)) or (objtype == 'instance' and not self.handle_parents.IsParentDevice(handle)):
                         output_func += '    DestroyUndestroyedObjects(%s);\n' % self.GetVulkanObjType(handle)
             output_func += '}\n'
@@ -368,6 +368,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         self.handle_types = GetHandleTypes(self.registry.tree)
         self.handle_parents = GetHandleParents(self.registry.tree)
         self.type_categories = GetTypeCategories(self.registry.tree)
+        self.is_aliased_type = GetHandleAliased(self.registry.tree)
 
         header_file = (genOpts.filename == 'object_tracker.h')
         source_file = (genOpts.filename == 'object_tracker.cpp')

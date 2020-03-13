@@ -1400,6 +1400,7 @@ void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(
         
         # Initialize members that require the tree
         self.handle_types = GetHandleTypes(self.registry.tree)
+        self.is_aliased_type = GetHandleAliased(self.registry.tree)
 
         # TODO: LUGMAL -- remove this and add our copyright
         # User-supplied prefix text, if any (list of strings)
@@ -1427,16 +1428,18 @@ void ThreadSafety::PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(
         counter_class_bodies = ''
 
         for obj in sorted(self.non_dispatchable_types):
-            counter_class_defs += '    counter<%s> c_%s;\n' % (obj, obj)
-            if obj in self.object_to_vulkan_object_type:
-                obj_type = self.object_to_vulkan_object_type[obj]
-            else:
-                obj_type = 'kVulkanObjectTypeUnknown,'
-            counter_class_instances += '          c_%s("%s", %s, this),\n' % (obj, obj, obj_type)
-            if 'VkSurface' in obj or 'VkDebugReportCallback' in obj or 'VkDebugUtilsMessenger' in obj:
-                counter_class_bodies += 'WRAPPER_PARENT_INSTANCE(%s)\n' % obj
-            else:
-                counter_class_bodies += 'WRAPPER(%s)\n' % obj
+            if (not self.is_aliased_type[obj]):
+                counter_class_defs += '    counter<%s> c_%s;\n' % (obj, obj)
+                if obj in self.object_to_vulkan_object_type:
+                    obj_type = self.object_to_vulkan_object_type[obj]
+                else:
+                    obj_type = 'kVulkanObjectTypeUnknown,'
+                counter_class_instances += '          c_%s("%s", %s, this),\n' % (obj, obj, obj_type)
+                if 'VkSurface' in obj or 'VkDebugReportCallback' in obj or 'VkDebugUtilsMessenger' in obj:
+                    counter_class_bodies += 'WRAPPER_PARENT_INSTANCE(%s)\n' % obj
+                else:
+                    counter_class_bodies += 'WRAPPER(%s)\n' % obj
+
         if self.header_file:
             class_def = self.inline_custom_header_preamble.replace('COUNTER_CLASS_DEFINITIONS_TEMPLATE', counter_class_defs)
             class_def = class_def.replace('COUNTER_CLASS_INSTANCES_TEMPLATE', counter_class_instances[:-2]) # Kill last comma
