@@ -4735,17 +4735,17 @@ bool CoreChecks::ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triang
     bool skip = false;
 
     const BUFFER_STATE *vb_state = GetBufferState(triangles.vertexData);
-    if (vb_state != nullptr && vb_state->binding.size <= triangles.vertexOffset) {
+    if (vb_state != nullptr && vb_state->createInfo.size <= triangles.vertexOffset) {
         skip |= LogError(device, "VUID-VkGeometryTrianglesNV-vertexOffset-02428", "%s", func_name);
     }
 
     const BUFFER_STATE *ib_state = GetBufferState(triangles.indexData);
-    if (ib_state != nullptr && ib_state->binding.size <= triangles.indexOffset) {
+    if (ib_state != nullptr && ib_state->createInfo.size <= triangles.indexOffset) {
         skip |= LogError(device, "VUID-VkGeometryTrianglesNV-indexOffset-02431", "%s", func_name);
     }
 
     const BUFFER_STATE *td_state = GetBufferState(triangles.transformData);
-    if (td_state != nullptr && td_state->binding.size <= triangles.transformOffset) {
+    if (td_state != nullptr && td_state->createInfo.size <= triangles.transformOffset) {
         skip |= LogError(device, "VUID-VkGeometryTrianglesNV-transformOffset-02437", "%s", func_name);
     }
 
@@ -4756,7 +4756,7 @@ bool CoreChecks::ValidateGeometryAABBNV(const VkGeometryAABBNV &aabbs, const cha
     bool skip = false;
 
     const BUFFER_STATE *aabb_state = GetBufferState(aabbs.aabbData);
-    if (aabb_state != nullptr && aabb_state->binding.size > 0 && aabb_state->binding.size <= aabbs.offset) {
+    if (aabb_state != nullptr && aabb_state->createInfo.size > 0 && aabb_state->createInfo.size <= aabbs.offset) {
         skip |= LogError(device, "VUID-VkGeometryAABBNV-offset-02439", "%s", func_name);
     }
 
@@ -4974,7 +4974,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
         }
         if (scratch_buffer_state != nullptr && dst_as_state != nullptr &&
             dst_as_state->update_scratch_memory_requirements.memoryRequirements.size >
-                (scratch_buffer_state->binding.size - scratchOffset)) {
+                (scratch_buffer_state->createInfo.size - scratchOffset)) {
             skip |= LogError(commandBuffer, "VUID-vkCmdBuildAccelerationStructureNV-update-02492",
                              "vkCmdBuildAccelerationStructureNV(): If update is VK_TRUE, The size member of the "
                              "VkMemoryRequirements structure returned from a call to "
@@ -4994,7 +4994,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
         }
         if (scratch_buffer_state != nullptr && dst_as_state != nullptr &&
             dst_as_state->build_scratch_memory_requirements.memoryRequirements.size >
-                (scratch_buffer_state->binding.size - scratchOffset)) {
+                (scratch_buffer_state->createInfo.size - scratchOffset)) {
             skip |= LogError(commandBuffer, "VUID-vkCmdBuildAccelerationStructureNV-update-02491",
                              "vkCmdBuildAccelerationStructureNV(): If update is VK_FALSE, The size member of the "
                              "VkMemoryRequirements structure returned from a call to "
