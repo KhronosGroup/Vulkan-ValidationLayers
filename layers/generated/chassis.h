@@ -2775,10 +2775,8 @@ class ValidationObject {
             return nullptr;
         };
 
-        // Debug Logging Templates
-        template <typename HANDLE_T>
-        bool LogError(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
-
+        // Debug Logging Helpers
+        bool LogError(const LogObjectList &objects, const std::string &vuid_text, const char *format, ...) const {
             std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
             // Avoid logging cost if msg is to be ignored
             if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) ||
@@ -2792,9 +2790,44 @@ class ValidationObject {
                 str = nullptr;
             }
             va_end(argptr);
+            return LogMsgLocked(report_data, kErrorBit, objects, vuid_text, str);
+        };
 
-            return LogMsgLocked(report_data, kErrorBit, VkHandleInfo<HANDLE_T>::kVkObjectType,
-                HandleToUint64(src_object), vuid_text, str);
+        template <typename HANDLE_T>
+        bool LogError(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
+            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
+            // Avoid logging cost if msg is to be ignored
+            if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) ||
+                !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
+                return false;
+            }
+            va_list argptr;
+            va_start(argptr, format);
+            char *str;
+            if (-1 == vasprintf(&str, format, argptr)) {
+                str = nullptr;
+            }
+            va_end(argptr);
+            LogObjectList single_object(src_object);
+            return LogMsgLocked(report_data, kErrorBit, single_object, vuid_text, str);
+
+        };
+
+        bool LogWarning(const LogObjectList &objects, const std::string &vuid_text, const char *format, ...) const {
+            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
+            // Avoid logging cost if msg is to be ignored
+            if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) ||
+                !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
+                return false;
+            }
+            va_list argptr;
+            va_start(argptr, format);
+            char *str;
+            if (-1 == vasprintf(&str, format, argptr)) {
+                str = nullptr;
+            }
+            va_end(argptr);
+            return LogMsgLocked(report_data, kWarningBit, objects, vuid_text, str);
         };
 
         template <typename HANDLE_T>
@@ -2812,9 +2845,25 @@ class ValidationObject {
                 str = nullptr;
             }
             va_end(argptr);
+            LogObjectList single_object(src_object);
+            return LogMsgLocked(report_data, kWarningBit, single_object, vuid_text, str);
+        };
 
-            return LogMsgLocked(report_data, kWarningBit, VkHandleInfo<HANDLE_T>::kVkObjectType,
-                HandleToUint64(src_object), vuid_text, str);
+        bool LogPerformanceWarning(const LogObjectList &objects, const std::string &vuid_text, const char *format, ...) const {
+            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
+            // Avoid logging cost if msg is to be ignored
+            if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) ||
+                !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)) {
+                return false;
+            }
+            va_list argptr;
+            va_start(argptr, format);
+            char *str;
+            if (-1 == vasprintf(&str, format, argptr)) {
+                str = nullptr;
+            }
+            va_end(argptr);
+            return LogMsgLocked(report_data, kPerformanceWarningBit, objects, vuid_text, str);
         };
 
         template <typename HANDLE_T>
@@ -2832,9 +2881,25 @@ class ValidationObject {
                 str = nullptr;
             }
             va_end(argptr);
+            LogObjectList single_object(src_object);
+            return LogMsgLocked(report_data, kPerformanceWarningBit, single_object, vuid_text, str);
+        };
 
-            return LogMsgLocked(report_data, kPerformanceWarningBit, VkHandleInfo<HANDLE_T>::kVkObjectType,
-                HandleToUint64(src_object), vuid_text, str);
+        bool LogInfo(const LogObjectList &objects, const std::string &vuid_text, const char *format, ...) const {
+            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
+            // Avoid logging cost if msg is to be ignored
+            if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) ||
+                !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
+                return false;
+            }
+            va_list argptr;
+            va_start(argptr, format);
+            char *str;
+            if (-1 == vasprintf(&str, format, argptr)) {
+                str = nullptr;
+            }
+            va_end(argptr);
+            return LogMsgLocked(report_data, kInformationBit, objects, vuid_text, str);
         };
 
         template <typename HANDLE_T>
@@ -2852,9 +2917,8 @@ class ValidationObject {
                 str = nullptr;
             }
             va_end(argptr);
-
-            return LogMsgLocked(report_data, kInformationBit, VkHandleInfo<HANDLE_T>::kVkObjectType,
-                HandleToUint64(src_object), vuid_text, str);
+            LogObjectList single_object(src_object);
+            return LogMsgLocked(report_data, kInformationBit, single_object, vuid_text, str);
         };
 
         // Handle Wrapping Data
