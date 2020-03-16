@@ -955,7 +955,7 @@ bool CoreChecks::ValidateViAgainstVsInputs(VkPipelineVertexInputStateCreateInfo 
     for (const auto &attrib_it : attribs) location_map[attrib_it.first].attrib = attrib_it.second;
     for (const auto &input_it : inputs) location_map[input_it.first.first].input = &input_it.second;
 
-    for (const auto location_it : location_map) {
+    for (const auto &location_it : location_map) {
         const auto location = location_it.first;
         const auto attrib = location_it.second.attrib;
         const auto input = location_it.second.input;
@@ -1018,7 +1018,7 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(SHADER_MODULE_STATE const *f
     const bool alphaToCoverageEnabled = pipeline->graphicsPipelineCI.pMultisampleState != NULL &&
                                         pipeline->graphicsPipelineCI.pMultisampleState->alphaToCoverageEnable == VK_TRUE;
 
-    for (const auto location_it : location_map) {
+    for (const auto &location_it : location_map) {
         const auto reference = location_it.second.reference;
         if (reference != nullptr && reference->attachment == VK_ATTACHMENT_UNUSED) {
             continue;
