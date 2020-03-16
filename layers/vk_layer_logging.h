@@ -39,6 +39,7 @@
 #include <vector>
 #include <unordered_map>
 #include <utility>
+#include <cstring>
 
 #include "vk_typemap_helper.h"
 #include "vk_layer_config.h"
@@ -46,10 +47,12 @@
 #include "vk_loader_platform.h"
 #include "vulkan/vk_layer.h"
 #include "vk_object_types.h"
+#include "vk_enum_string_helper.h"
 #include "cast_utils.h"
 #include "vk_validation_error_messages.h"
 #include "vk_layer_dispatch_table.h"
 #include "vk_safe_struct.h"
+#include "xxhash.h"
 
 // Suppress unused warning on Linux
 #if defined(__GNUC__)
@@ -79,6 +82,25 @@ typedef enum DebugCallbackStatusBits {
     DEBUG_CALLBACK_INSTANCE = 0x00000004,  // An internally created temporary instance callback
 } DebugCallbackStatusBits;
 typedef VkFlags DebugCallbackStatusFlags;
+
+struct LogObjectList {
+    std::vector<VulkanTypedHandle> object_list;
+
+    template <typename HANDLE_T>
+    void add(HANDLE_T object) {
+        VulkanTypedHandle v_t_handle(object, ConvertCoreObjectToVulkanObject(VkHandleInfo<HANDLE_T>::kVkObjectType));
+        object_list.push_back(v_t_handle);
+    }
+
+    void add(VulkanTypedHandle typed_handle) { object_list.push_back(typed_handle); }
+
+    template <typename HANDLE_T>
+    LogObjectList(HANDLE_T object) {
+        add(object);
+    }
+
+    LogObjectList(){};
+};
 
 typedef struct {
     DebugCallbackStatusFlags callback_status;
@@ -273,9 +295,8 @@ static inline void DebugReportFlagsToAnnotFlags(VkDebugReportFlagsEXT dr_flags, 
 }
 
 // Forward Declarations
-static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkObjectType object_type,
-                                 uint64_t src_object, size_t location, const char *layer_prefix, const char *message,
-                                 const char *text_vuid);
+static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags, const LogObjectList &objects,
+                                 const char *layer_prefix, const char *message, const char *text_vuid);
 
 static void SetDebugUtilsSeverityFlags(std::vector<VkLayerDbgFunctionState> &callbacks, debug_report_data *debug_data) {
     // For all callback in list, return their complete set of severities and modes
@@ -314,89 +335,109 @@ static inline void RemoveAllMessageCallbacks(debug_report_data *debug_data, std:
     callbacks.clear();
 }
 
-static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags, VkObjectType object_type,
-                                 uint64_t src_object, size_t location, const char *layer_prefix, const char *message,
-                                 const char *text_vuid) {
+static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags, const LogObjectList &objects,
+                                 const char *layer_prefix, const char *message, const char *text_vuid) {
     bool bail = false;
+    std::vector<VkDebugUtilsLabelEXT> queue_labels;
+    std::vector<VkDebugUtilsLabelEXT> cmd_buf_labels;
 
-    VkDebugUtilsMessageSeverityFlagsEXT severity;
+    // Convert the info to the VK_EXT_debug_utils format
     VkDebugUtilsMessageTypeFlagsEXT types;
-    VkDebugUtilsMessengerCallbackDataEXT callback_data;
-    VkDebugUtilsObjectNameInfoEXT object_name_info;
-
-    // Convert the info to the VK_EXT_debug_utils form in case we need it.
+    VkDebugUtilsMessageSeverityFlagsEXT severity;
     DebugReportFlagsToAnnotFlags(msg_flags, true, &severity, &types);
-    object_name_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    object_name_info.pNext = NULL;
-    object_name_info.objectType = object_type;
-    object_name_info.objectHandle = (uint64_t)(uintptr_t)src_object;
-    object_name_info.pObjectName = NULL;
-    std::string object_label = {};
 
+    std::vector<VkDebugUtilsObjectNameInfoEXT> object_name_info;
+    object_name_info.resize(objects.object_list.size());
+    for (uint32_t i = 0; i < objects.object_list.size(); i++) {
+        object_name_info[i].sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        object_name_info[i].pNext = NULL;
+        object_name_info[i].objectType = ConvertVulkanObjectToCoreObject(objects.object_list[i].type);
+        object_name_info[i].objectHandle = objects.object_list[i].handle;
+        object_name_info[i].pObjectName = NULL;
+
+        std::string object_label = {};
+        // Look for any debug utils or marker names to use for this object
+        object_label = debug_data->DebugReportGetUtilsObjectName(objects.object_list[i].handle);
+        if (object_label.empty()) {
+            object_label = debug_data->DebugReportGetMarkerObjectName(objects.object_list[i].handle);
+        }
+        if (!object_label.empty()) {
+            char *local_obj_name = new char[object_label.length() + 1];
+            std::strcpy(local_obj_name, object_label.c_str());
+            object_name_info[i].pObjectName = local_obj_name;
+        }
+
+        // If this is a queue, add any queue labels to the callback data.
+        if (VK_OBJECT_TYPE_QUEUE == object_name_info[i].objectType) {
+            auto label_iter = debug_data->debugUtilsQueueLabels.find(reinterpret_cast<VkQueue>(object_name_info[i].objectHandle));
+            if (label_iter != debug_data->debugUtilsQueueLabels.end()) {
+                auto found_queue_labels = label_iter->second->Export();
+                queue_labels.insert(queue_labels.end(), found_queue_labels.begin(), found_queue_labels.end());
+            }
+            // If this is a command buffer, add any command buffer labels to the callback data.
+        } else if (VK_OBJECT_TYPE_COMMAND_BUFFER == object_name_info[i].objectType) {
+            auto label_iter =
+                debug_data->debugUtilsCmdBufLabels.find(reinterpret_cast<VkCommandBuffer>(object_name_info[i].objectHandle));
+            if (label_iter != debug_data->debugUtilsCmdBufLabels.end()) {
+                auto found_cmd_buf_labels = label_iter->second->Export();
+                cmd_buf_labels.insert(cmd_buf_labels.end(), found_cmd_buf_labels.begin(), found_cmd_buf_labels.end());
+            }
+        }
+    }
+
+    size_t location = 0;
+    if (text_vuid != nullptr) {
+        // Hash for vuid text
+        location = XXH32(text_vuid, strlen(text_vuid), 8);
+    }
+
+    VkDebugUtilsMessengerCallbackDataEXT callback_data;
     callback_data.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT;
     callback_data.pNext = NULL;
     callback_data.flags = 0;
     callback_data.pMessageIdName = text_vuid;
-    callback_data.messageIdNumber = 0;  // deprecated, validation layers use only the pMessageIdName
+    callback_data.messageIdNumber = static_cast<int32_t>(location);
     callback_data.pMessage = NULL;
-    callback_data.queueLabelCount = 0;
-    callback_data.pQueueLabels = NULL;
-    callback_data.cmdBufLabelCount = 0;
-    callback_data.pCmdBufLabels = NULL;
-    callback_data.objectCount = 1;
-    callback_data.pObjects = &object_name_info;
+    callback_data.queueLabelCount = static_cast<uint32_t>(queue_labels.size());
+    callback_data.pQueueLabels = queue_labels.empty() ? nullptr : queue_labels.data();
+    callback_data.cmdBufLabelCount = static_cast<uint32_t>(cmd_buf_labels.size());
+    callback_data.pCmdBufLabels = cmd_buf_labels.empty() ? nullptr : cmd_buf_labels.data();
+    callback_data.objectCount = static_cast<uint32_t>(object_name_info.size());
+    callback_data.pObjects = object_name_info.data();
 
-    std::vector<VkDebugUtilsLabelEXT> queue_labels;
-    std::vector<VkDebugUtilsLabelEXT> cmd_buf_labels;
-    std::string composite_message = "";
     std::ostringstream oss;
-
-    if (0 != src_object) {
-        oss << "Object: 0x" << std::hex << src_object;
-        // If this is a queue, add any queue labels to the callback data.
-        if (VK_OBJECT_TYPE_QUEUE == object_name_info.objectType) {
-            auto label_iter = debug_data->debugUtilsQueueLabels.find(reinterpret_cast<VkQueue>(src_object));
-            if (label_iter != debug_data->debugUtilsQueueLabels.end()) {
-                queue_labels = label_iter->second->Export();
-                callback_data.queueLabelCount = static_cast<uint32_t>(queue_labels.size());
-                callback_data.pQueueLabels = queue_labels.empty() ? nullptr : queue_labels.data();
-            }
-            // If this is a command buffer, add any command buffer labels to the callback data.
-        } else if (VK_OBJECT_TYPE_COMMAND_BUFFER == object_name_info.objectType) {
-            auto label_iter = debug_data->debugUtilsCmdBufLabels.find(reinterpret_cast<VkCommandBuffer>(src_object));
-            if (label_iter != debug_data->debugUtilsCmdBufLabels.end()) {
-                cmd_buf_labels = label_iter->second->Export();
-                callback_data.cmdBufLabelCount = static_cast<uint32_t>(cmd_buf_labels.size());
-                callback_data.pCmdBufLabels = cmd_buf_labels.empty() ? nullptr : cmd_buf_labels.data();
-            }
-        }
-
-        // Look for any debug utils or marker names to use for this object
-        object_label = debug_data->DebugReportGetUtilsObjectName(src_object);
-        if (object_label.empty()) {
-            object_label = debug_data->DebugReportGetMarkerObjectName(src_object);
-        }
-        if (!object_label.empty()) {
-            object_name_info.pObjectName = object_label.c_str();
-            oss << " (Name = " << object_label << " : Type = ";
-        } else {
-            oss << " (Type = ";
-        }
-        oss << std::to_string(object_type) << ")";
-    } else {
-        oss << "Object: VK_NULL_HANDLE (Type = " << std::to_string(object_type) << ")";
+    if (msg_flags & kErrorBit) {
+        oss << "Validation Error: ";
+    } else if (msg_flags & kWarningBit) {
+        oss << "Validation Warning: ";
+    } else if (msg_flags & kPerformanceWarningBit) {
+        oss << "Validation Performance Warning: ";
+    } else if (msg_flags & kInformationBit) {
+        oss << "Validation Information: ";
+    } else if (msg_flags & kDebugBit) {
+        oss << "DEBUG: ";
     }
-
-    composite_message += oss.str();
-    composite_message += " | ";
-    composite_message += message;
     if (text_vuid != nullptr) {
-        composite_message.insert(0, " ] ");
-        composite_message.insert(0, text_vuid);
-        composite_message.insert(0, "[ ");
+        oss << "[ " << text_vuid << " ] ";
     }
-    const auto callback_list = &debug_data->debug_callback_list;
+    uint32_t index = 0;
+    for (auto src_object : object_name_info) {
+        if (0 != src_object.objectHandle) {
+            oss << "Object " << index++ << ": handle = 0x" << std::hex << src_object.objectHandle;
+            if (src_object.pObjectName) {
+                oss << ", name = " << src_object.pObjectName << ", type = ";
+            } else {
+                oss << ", type = ";
+            }
+            oss << string_VkObjectType(src_object.objectType) << "; ";
+        } else {
+            oss << "Object " << index++ << ": VK_NULL_HANDLE, type = " << string_VkObjectType(src_object.objectType) << "; ";
+        }
+    }
+    oss << "| MessageID = 0x" << std::hex << location << " | " << message;
+    std::string composite = oss.str();
 
+    const auto callback_list = &debug_data->debug_callback_list;
     // We only output to default callbacks if there are no non-default callbacks
     bool use_default_callbacks = true;
     for (auto current_callback : *callback_list) {
@@ -407,19 +448,19 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
         // Skip callback if it's a default callback and there are non-default callbacks present
         if (current_callback.IsDefault() && !use_default_callbacks) continue;
 
-        // VK_EXT_debug_report callback (deprecated)
-        if (!current_callback.IsUtils() && (current_callback.debug_report_msg_flags & msg_flags)) {
-            if (current_callback.debug_report_callback_function_ptr(msg_flags, convertCoreObjectToDebugReportObject(object_type),
-                                                                    src_object, location, 0, layer_prefix,
-                                                                    composite_message.c_str(), current_callback.pUserData)) {
-                bail = true;
-            }
-            // VK_EXT_debug_utils callback
-        } else if (current_callback.IsUtils() && (current_callback.debug_utils_msg_flags & severity) &&
-                   (current_callback.debug_utils_msg_type & types)) {
-            callback_data.pMessage = composite_message.c_str();
+        // VK_EXT_debug_utils callback
+        if (current_callback.IsUtils() && (current_callback.debug_utils_msg_flags & severity) &&
+            (current_callback.debug_utils_msg_type & types)) {
+            callback_data.pMessage = composite.c_str();
             if (current_callback.debug_utils_callback_function_ptr(static_cast<VkDebugUtilsMessageSeverityFlagBitsEXT>(severity),
                                                                    types, &callback_data, current_callback.pUserData)) {
+                bail = true;
+            }
+        } else if (!current_callback.IsUtils() && (current_callback.debug_report_msg_flags & msg_flags)) {
+            // VK_EXT_debug_report callback (deprecated)
+            if (current_callback.debug_report_callback_function_ptr(
+                    msg_flags, convertCoreObjectToDebugReportObject(object_name_info[0].objectType),
+                    object_name_info[0].objectHandle, location, 0, layer_prefix, composite.c_str(), current_callback.pUserData)) {
                 bail = true;
             }
         }
@@ -608,9 +649,8 @@ static inline int vasprintf(char **strp, char const *fmt, va_list ap) {
 }
 #endif
 
-// This must be called with the debug_output_mutex already held
-static inline bool LogMsgLocked(const debug_report_data *debug_data, VkFlags msg_flags, VkObjectType object_type,
-                                uint64_t src_object, const std::string &vuid_text, char *err_msg) {
+static inline bool LogMsgLocked(const debug_report_data *debug_data, VkFlags msg_flags, const LogObjectList &objects,
+                                const std::string &vuid_text, char *err_msg) {
     std::string str_plus_spec_text(err_msg ? err_msg : "Allocation failure");
 
     // Append the spec error text to the error message, unless it's an UNASSIGNED or UNDEFINED vuid
@@ -632,8 +672,7 @@ static inline bool LogMsgLocked(const debug_report_data *debug_data, VkFlags msg
         }
     }
 
-    bool result = debug_log_msg(debug_data, msg_flags, object_type, src_object, 0, "Validation", str_plus_spec_text.c_str(),
-                                vuid_text.c_str());
+    bool result = debug_log_msg(debug_data, msg_flags, objects, "Validation", str_plus_spec_text.c_str(), vuid_text.c_str());
     free(err_msg);
     return result;
 }
