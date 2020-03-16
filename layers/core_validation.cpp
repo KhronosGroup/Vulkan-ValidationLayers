@@ -229,13 +229,18 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, co
     bool result = false;
     if (image_state->create_from_swapchain != VK_NULL_HANDLE) {
         if (image_state->bind_swapchain == VK_NULL_HANDLE) {
-            LogError(image_state->image, error_code,
+            LogObjectList objlist(image_state->image);
+            objlist.add(image_state->create_from_swapchain);
+            LogError(objlist, error_code,
                      "%s: %s is created by %s, and the image should be bound by calling vkBindImageMemory2(), and the pNext chain "
                      "includes VkBindImageMemorySwapchainInfoKHR.",
                      api_name, report_data->FormatHandle(image_state->image).c_str(),
                      report_data->FormatHandle(image_state->create_from_swapchain).c_str());
         } else if (image_state->create_from_swapchain != image_state->bind_swapchain) {
-            LogError(image_state->image, error_code,
+            LogObjectList objlist(image_state->image);
+            objlist.add(image_state->create_from_swapchain);
+            objlist.add(image_state->bind_swapchain);
+            LogError(objlist, error_code,
                      "%s: %s is created by %s, but the image is bound by %s. The image should be created and bound by the same "
                      "swapchain",
                      api_name, report_data->FormatHandle(image_state->image).c_str(),
@@ -290,7 +295,9 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHand
             } else {
                 assert(typed_handle.type == kVulkanObjectTypeImage);
             }
-            skip |= LogError(mem, error_code,
+            LogObjectList objlist(mem);
+            objlist.add(typed_handle);
+            skip |= LogError(objlist, error_code,
                              "In %s, attempting to bind %s to %s which was created with sparse memory flags "
                              "(VK_%s_CREATE_SPARSE_*_BIT).",
                              apiName, report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(typed_handle).c_str(),
@@ -307,13 +314,18 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHand
                     } else {
                         assert(typed_handle.type == kVulkanObjectTypeImage);
                     }
+                    LogObjectList objlist(mem);
+                    objlist.add(typed_handle);
+                    objlist.add(prev_binding->mem);
                     skip |=
-                        LogError(mem, error_code, "In %s, attempting to bind %s to %s which has already been bound to %s.", apiName,
-                                 report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(typed_handle).c_str(),
+                        LogError(objlist, error_code, "In %s, attempting to bind %s to %s which has already been bound to %s.",
+                                 apiName, report_data->FormatHandle(mem).c_str(), report_data->FormatHandle(typed_handle).c_str(),
                                  report_data->FormatHandle(prev_binding->mem).c_str());
                 } else {
+                    LogObjectList objlist(mem);
+                    objlist.add(typed_handle);
                     skip |=
-                        LogError(mem, kVUID_Core_MemTrack_RebindObject,
+                        LogError(objlist, kVUID_Core_MemTrack_RebindObject,
                                  "In %s, attempting to bind %s to %s which was previous bound to memory that has "
                                  "since been freed. Memory bindings are immutable in "
                                  "Vulkan so this attempt to bind to new memory is not allowed.",
@@ -436,7 +448,9 @@ bool CoreChecks::ValidateDrawStateFlags(const CMD_BUFFER_STATE *pCB, const PIPEL
 bool CoreChecks::LogInvalidAttachmentMessage(const char *type1_string, const RENDER_PASS_STATE *rp1_state, const char *type2_string,
                                              const RENDER_PASS_STATE *rp2_state, uint32_t primary_attach, uint32_t secondary_attach,
                                              const char *msg, const char *caller, const char *error_code) const {
-    return LogError(rp1_state->renderPass, error_code,
+    LogObjectList objlist(rp1_state->renderPass);
+    objlist.add(rp2_state->renderPass);
+    return LogError(objlist, error_code,
                     "%s: RenderPasses incompatible between %s w/ %s and %s w/ %s Attachment %u is not "
                     "compatible with %u: %s.",
                     caller, type1_string, report_data->FormatHandle(rp1_state->renderPass).c_str(), type2_string,
@@ -547,7 +561,9 @@ bool CoreChecks::ValidateRenderPassCompatibility(const char *type1_string, const
     bool skip = false;
 
     if (rp1_state->createInfo.subpassCount != rp2_state->createInfo.subpassCount) {
-        skip |= LogError(rp1_state->renderPass, error_code,
+        LogObjectList objlist(rp1_state->renderPass);
+        objlist.add(rp2_state->renderPass);
+        skip |= LogError(objlist, error_code,
                          "%s: RenderPasses incompatible between %s w/ %s with a subpassCount of %u and %s w/ "
                          "%s with a subpassCount of %u.",
                          caller, type1_string, report_data->FormatHandle(rp1_state->renderPass).c_str(),
@@ -623,11 +639,13 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 VkDeviceSize vtx_attrib_req_alignment = pPipeline->vertex_attribute_alignments_[i];
 
                 if (SafeModulo(attrib_address, vtx_attrib_req_alignment) != 0) {
-                    skip |= LogError(
-                        current_vtx_bfr_binding_info[vertex_binding].buffer, kVUID_Core_DrawState_InvalidVtxAttributeAlignment,
-                        "Invalid attribAddress alignment for vertex attribute " PRINTF_SIZE_T_SPECIFIER " from %s and vertex %s.",
-                        i, report_data->FormatHandle(state.pipeline_state->pipeline).c_str(),
-                        report_data->FormatHandle(current_vtx_bfr_binding_info[vertex_binding].buffer).c_str());
+                    LogObjectList objlist(current_vtx_bfr_binding_info[vertex_binding].buffer);
+                    objlist.add(state.pipeline_state->pipeline);
+                    skip |= LogError(objlist, kVUID_Core_DrawState_InvalidVtxAttributeAlignment,
+                                     "Invalid attribAddress alignment for vertex attribute " PRINTF_SIZE_T_SPECIFIER
+                                     " from %s and vertex %s.",
+                                     i, report_data->FormatHandle(state.pipeline_state->pipeline).c_str(),
+                                     report_data->FormatHandle(current_vtx_bfr_binding_info[vertex_binding].buffer).c_str());
                 }
             }
         }
@@ -691,7 +709,9 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
 
             if (!(device_extensions.vk_amd_mixed_attachment_samples || device_extensions.vk_nv_framebuffer_mixed_samples) &&
                 ((subpass_num_samples & static_cast<unsigned>(pso_num_samples)) != subpass_num_samples)) {
-                skip |= LogError(pPipeline->pipeline, kVUID_Core_DrawState_NumSamplesMismatch,
+                LogObjectList objlist(pPipeline->pipeline);
+                objlist.add(pCB->activeRenderPass->renderPass);
+                skip |= LogError(objlist, kVUID_Core_DrawState_NumSamplesMismatch,
                                  "Num samples mismatch! At draw-time in %s with %u samples while current %s w/ "
                                  "%u samples!",
                                  report_data->FormatHandle(pPipeline->pipeline).c_str(), pso_num_samples,
@@ -767,7 +787,10 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
 
     // Check if the current pipeline is compatible for the maximum used set with the bound sets.
     if (pPipe->active_slots.size() > 0 && !CompatForSet(pPipe->max_active_slot, state, pipeline_layout->compat_for_set)) {
-        result |= LogError(pPipe->pipeline, vuid.compatible_pipeline,
+        LogObjectList objlist(pPipe->pipeline);
+        objlist.add(pipeline_layout->layout);
+        objlist.add(state.pipeline_layout);
+        result |= LogError(objlist, vuid.compatible_pipeline,
                            "%s(): %s defined with %s is not compatible for maximum set statically used %" PRIu32
                            " with bound descriptor sets, last bound with %s",
                            command_name_list[cmd_type], report_data->FormatHandle(pPipe->pipeline).c_str(),
@@ -786,7 +809,9 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                                                  setIndex, errorString)) {
             // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
             VkDescriptorSet setHandle = state.per_set[setIndex].bound_descriptor_set->GetSet();
-            result |= LogError(setHandle, kVUID_Core_DrawState_PipelineLayoutsIncompatible,
+            LogObjectList objlist(setHandle);
+            objlist.add(pipeline_layout->layout);
+            result |= LogError(objlist, kVUID_Core_DrawState_PipelineLayoutsIncompatible,
                                "%s bound as set #%u is not compatible with overlapping %s due to: %s",
                                report_data->FormatHandle(setHandle).c_str(), setIndex,
                                report_data->FormatHandle(pipeline_layout->layout).c_str(), errorString.c_str());
@@ -1448,9 +1473,11 @@ bool CoreChecks::ReportInvalidCommandBuffer(const CMD_BUFFER_STATE *cb_state, co
         const char *cause_str = GetCauseStr(obj);
         string VUID;
         string_sprintf(&VUID, "%s-%s", kVUID_Core_DrawState_InvalidCommandBuffer, object_string[obj.type]);
-        skip |= LogError(cb_state->commandBuffer, VUID.c_str(), "You are adding %s to %s that is invalid because bound %s was %s.",
-                         call_source, report_data->FormatHandle(cb_state->commandBuffer).c_str(),
-                         report_data->FormatHandle(obj).c_str(), cause_str);
+        LogObjectList objlist(cb_state->commandBuffer);
+        objlist.add(obj);
+        skip |=
+            LogError(objlist, VUID.c_str(), "You are adding %s to %s that is invalid because bound %s was %s.", call_source,
+                     report_data->FormatHandle(cb_state->commandBuffer).c_str(), report_data->FormatHandle(obj).c_str(), cause_str);
     }
     return skip;
 }
@@ -1805,7 +1832,9 @@ bool CoreChecks::ValidImageBufferQueue(const CMD_BUFFER_STATE *cb_node, const Vu
     }
 
     if (!found) {
-        skip = LogError(cb_node->commandBuffer, kVUID_Core_DrawState_InvalidQueueFamily,
+        LogObjectList objlist(cb_node->commandBuffer);
+        objlist.add(object);
+        skip = LogError(objlist, kVUID_Core_DrawState_InvalidQueueFamily,
                         "vkQueueSubmit: %s contains %s which was not created allowing concurrent access to "
                         "this queue family %d.",
                         report_data->FormatHandle(cb_node->commandBuffer).c_str(), report_data->FormatHandle(object).c_str(),
@@ -1823,7 +1852,9 @@ bool CoreChecks::ValidateQueueFamilyIndices(const CMD_BUFFER_STATE *pCB, VkQueue
 
     if (pPool && queue_state) {
         if (pPool->queueFamilyIndex != queue_state->queueFamilyIndex) {
-            skip |= LogError(pCB->commandBuffer, "VUID-vkQueueSubmit-pCommandBuffers-00074",
+            LogObjectList objlist(pCB->commandBuffer);
+            objlist.add(queue);
+            skip |= LogError(objlist, "VUID-vkQueueSubmit-pCommandBuffers-00074",
                              "vkQueueSubmit: Primary %s created in queue family %d is being submitted on %s "
                              "from queue family %d.",
                              report_data->FormatHandle(pCB->commandBuffer).c_str(), pPool->queueFamilyIndex,
@@ -1885,7 +1916,9 @@ bool CoreChecks::ValidatePerformanceQueries(const CMD_BUFFER_STATE *pCB, VkQueue
         }
 
         if (query_pool_state->has_perf_scope_command_buffer && (pCB->commandCount - 1) != query.endCommandIndex) {
-            skip |= LogError(pCB->commandBuffer, "VUID-vkCmdEndQuery-queryPool-03227",
+            LogObjectList objlist(pCB->commandBuffer);
+            objlist.add(query.pool);
+            skip |= LogError(objlist, "VUID-vkCmdEndQuery-queryPool-03227",
                              "vkCmdEndQuery: Query pool %s was created with a counter of scope"
                              "VK_QUERY_SCOPE_COMMAND_BUFFER_KHR but the end of the query is not the last "
                              "command in the command buffer %s.",
@@ -1930,7 +1963,11 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(const CMD_BUFFER_STATE *pCB, 
             // TODO: replace with InvalidateCommandBuffers() at recording.
             if ((pSubCB->primaryCommandBuffer != pCB->commandBuffer) &&
                 !(pSubCB->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
-                skip |= LogError(device, "VUID-vkQueueSubmit-pCommandBuffers-00073",
+                LogObjectList objlist(device);
+                objlist.add(pCB->commandBuffer);
+                objlist.add(pSubCB->commandBuffer);
+                objlist.add(pSubCB->primaryCommandBuffer);
+                skip |= LogError(objlist, "VUID-vkQueueSubmit-pCommandBuffers-00073",
                                  "%s was submitted with secondary %s but that buffer has subsequently been bound to "
                                  "primary %s and it does not have VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
                                  report_data->FormatHandle(pCB->commandBuffer).c_str(),
@@ -2046,7 +2083,9 @@ bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *
             (pSemaphore->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
             if (unsignaled_semaphores.count(semaphore) ||
                 (!(signaled_semaphores.count(semaphore)) && !(pSemaphore->signaled) && !SemaphoreWasSignaled(semaphore))) {
-                skip |= LogError(semaphore,
+                LogObjectList objlist(semaphore);
+                objlist.add(queue);
+                skip |= LogError(objlist,
                                  pSemaphore->scope == kSyncScopeInternal ? vuid_error : kVUID_Core_DrawState_QueueForwardProgress,
                                  "%s is waiting on %s that has no way to be signaled.", report_data->FormatHandle(queue).c_str(),
                                  report_data->FormatHandle(semaphore).c_str());
@@ -2085,7 +2124,10 @@ bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *
         if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_BINARY_KHR &&
             (pSemaphore->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
             if (signaled_semaphores.count(semaphore) || (!(unsignaled_semaphores.count(semaphore)) && pSemaphore->signaled)) {
-                skip |= LogError(semaphore, kVUID_Core_DrawState_QueueForwardProgress,
+                LogObjectList objlist(semaphore);
+                objlist.add(queue);
+                objlist.add(pSemaphore->signaler.first);
+                skip |= LogError(objlist, kVUID_Core_DrawState_QueueForwardProgress,
                                  "%s is signaling %s that was previously signaled by %s but has not since "
                                  "been waited on by any queue.",
                                  report_data->FormatHandle(queue).c_str(), report_data->FormatHandle(semaphore).c_str(),
@@ -2395,7 +2437,10 @@ bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice d
         // count() requires DEVICE_MEMORY_STATE* const & or DEVICE_MEMORY_STATE*, not const DEVICE_MEMORY_STATE*.
         // But here is in a const function. It could get const DEVICE_MEMORY_STATE* only, so cast it.
         if ((nullptr == image_state) || (0 == (image_state->GetBoundMemory().count((DEVICE_MEMORY_STATE *)mem_info)))) {
-            skip |= LogError(device, "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-pNext-01883",
+            LogObjectList objlist(device);
+            objlist.add(pInfo->memory);
+            objlist.add(mem_info->dedicated_image);
+            skip |= LogError(objlist, "VUID-VkMemoryGetAndroidHardwareBufferInfoANDROID-pNext-01883",
                              "vkGetMemoryAndroidHardwareBufferANDROID: %s was allocated using a dedicated "
                              "%s, but that image is not bound to the VkDeviceMemory object.",
                              report_data->FormatHandle(pInfo->memory).c_str(),
@@ -3154,7 +3199,9 @@ bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle
             assert(false);
         }
 
-        skip = LogError(mem_info->mem, error_code,
+        LogObjectList objlist(mem_info->mem);
+        objlist.add(typed_handle);
+        skip = LogError(objlist, error_code,
                         "In %s, attempting to bind %s to %s, memoryOffset=0x%" PRIxLEAST64
                         " must be less than the memory allocation size 0x%" PRIxLEAST64 ".",
                         api_name, report_data->FormatHandle(mem_info->mem).c_str(), report_data->FormatHandle(typed_handle).c_str(),
@@ -3240,7 +3287,10 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                 if (strcmp(api_name, "vkBindBufferMemory()") == 0) {
                     validation_error = "VUID-vkBindBufferMemory-memory-01508";
                 }
-                skip |= LogError(buffer, validation_error,
+                LogObjectList objlist(buffer);
+                objlist.add(mem);
+                objlist.add(mem_info->dedicated_buffer);
+                skip |= LogError(objlist, validation_error,
                                  "%s: for dedicated %s, VkMemoryDedicatedAllocateInfoKHR::buffer %s must be equal "
                                  "to %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
                                  api_name, report_data->FormatHandle(mem).c_str(),
@@ -4518,7 +4568,9 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
         VkCommandPool cmdPool = cb_state->createInfo.commandPool;
         const auto *pPool = cb_state->command_pool.get();
         if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pPool->createFlags)) {
-            skip |= LogError(commandBuffer, "VUID-vkBeginCommandBuffer-commandBuffer-00050",
+            LogObjectList objlist(commandBuffer);
+            objlist.add(cmdPool);
+            skip |= LogError(objlist, "VUID-vkBeginCommandBuffer-commandBuffer-00050",
                              "Call to vkBeginCommandBuffer() on %s attempts to implicitly reset cmdBuffer created from "
                              "%s that does NOT have the VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT bit set.",
                              report_data->FormatHandle(commandBuffer).c_str(), report_data->FormatHandle(cmdPool).c_str());
@@ -4562,7 +4614,9 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
     const auto *pPool = pCB->command_pool.get();
 
     if (!(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT & pPool->createFlags)) {
-        skip |= LogError(commandBuffer, "VUID-vkResetCommandBuffer-commandBuffer-00046",
+        LogObjectList objlist(commandBuffer);
+        objlist.add(cmdPool);
+        skip |= LogError(objlist, "VUID-vkResetCommandBuffer-commandBuffer-00046",
                          "Attempt to reset %s created from %s that does NOT have the "
                          "VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT bit set.",
                          report_data->FormatHandle(commandBuffer).c_str(), report_data->FormatHandle(cmdPool).c_str());
@@ -5281,8 +5335,10 @@ bool CoreChecks::ValidatePipelineBindPoint(const CMD_BUFFER_STATE *cb_state, VkP
         const auto &qfp = GetPhysicalDeviceState()->queue_family_properties[pool->queueFamilyIndex];
         if (0 == (qfp.queueFlags & flag_mask.at(bind_point))) {
             const std::string &error = bind_errors.at(bind_point);
-            skip |= LogError(cb_state->commandBuffer, error, "%s: %s was allocated from %s that does not support bindpoint %s.",
-                             func_name, report_data->FormatHandle(cb_state->commandBuffer).c_str(),
+            LogObjectList objlist(cb_state->commandBuffer);
+            objlist.add(cb_state->createInfo.commandPool);
+            skip |= LogError(objlist, error, "%s: %s was allocated from %s that does not support bindpoint %s.", func_name,
+                             report_data->FormatHandle(cb_state->commandBuffer).c_str(),
                              report_data->FormatHandle(cb_state->createInfo.commandPool).c_str(),
                              string_VkPipelineBindPoint(bind_point));
         }
@@ -5636,7 +5692,9 @@ bool CoreChecks::ValidateImageBarrierAttachment(const char *funcName, CMD_BUFFER
                          string_VkImageLayout(img_barrier.oldLayout), string_VkImageLayout(img_barrier.newLayout));
     } else {
         if (sub_image_found && sub_image_layout != img_barrier.oldLayout) {
-            skip |= LogError(rp_handle, "VUID-vkCmdPipelineBarrier-oldLayout-02636",
+            LogObjectList objlist(rp_handle);
+            objlist.add(img_bar_image);
+            skip |= LogError(objlist, "VUID-vkCmdPipelineBarrier-oldLayout-02636",
                              "%s: Barrier pImageMemoryBarriers[%d].%s is referenced by the VkSubpassDescription for active "
                              "subpass (%d) of current %s as having layout %s, but image barrier has layout %s.",
                              funcName, img_index, report_data->FormatHandle(img_bar_image).c_str(), active_subpass,
@@ -8724,7 +8782,11 @@ bool CoreChecks::ValidateFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BU
     VkFramebuffer secondary_fb = pSubCB->beginInfo.pInheritanceInfo->framebuffer;
     if (secondary_fb != VK_NULL_HANDLE) {
         if (primary_fb != secondary_fb) {
-            skip |= LogError(primaryBuffer, "VUID-vkCmdExecuteCommands-pCommandBuffers-00099",
+            LogObjectList objlist(primaryBuffer);
+            objlist.add(secondaryBuffer);
+            objlist.add(secondary_fb);
+            objlist.add(primary_fb);
+            skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-pCommandBuffers-00099",
                              "vkCmdExecuteCommands() called w/ invalid secondary %s which has a %s"
                              " that is not the same as the primary command buffer's current active %s.",
                              report_data->FormatHandle(secondaryBuffer).c_str(), report_data->FormatHandle(secondary_fb).c_str(),
@@ -8732,7 +8794,10 @@ bool CoreChecks::ValidateFramebuffer(VkCommandBuffer primaryBuffer, const CMD_BU
         }
         auto fb = GetFramebufferState(secondary_fb);
         if (!fb) {
-            skip |= LogError(primaryBuffer, kVUID_Core_DrawState_InvalidSecondaryCommandBuffer,
+            LogObjectList objlist(primaryBuffer);
+            objlist.add(secondaryBuffer);
+            objlist.add(secondary_fb);
+            skip |= LogError(objlist, kVUID_Core_DrawState_InvalidSecondaryCommandBuffer,
                              "vkCmdExecuteCommands() called w/ invalid %s which has invalid %s.",
                              report_data->FormatHandle(secondaryBuffer).c_str(), report_data->FormatHandle(secondary_fb).c_str());
             return skip;
@@ -8752,8 +8817,10 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE *pCB
                     pSubCB->beginInfo.pInheritanceInfo) {
                     VkQueryPipelineStatisticFlags cmdBufStatistics = pSubCB->beginInfo.pInheritanceInfo->pipelineStatistics;
                     if ((cmdBufStatistics & query_pool_state->createInfo.pipelineStatistics) != cmdBufStatistics) {
+                        LogObjectList objlist(pCB->commandBuffer);
+                        objlist.add(queryObject.pool);
                         skip |= LogError(
-                            pCB->commandBuffer, "VUID-vkCmdExecuteCommands-commandBuffer-00104",
+                            objlist, "VUID-vkCmdExecuteCommands-commandBuffer-00104",
                             "vkCmdExecuteCommands() called w/ invalid %s which has invalid active %s"
                             ". Pipeline statistics is being queried so the command buffer must have all bits set on the queryPool.",
                             report_data->FormatHandle(pCB->commandBuffer).c_str(),
@@ -8766,7 +8833,9 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE *pCB
         for (auto queryObject : pSubCB->startedQueries) {
             auto query_pool_state = GetQueryPoolState(queryObject.pool);
             if (query_pool_state && activeTypes.count(query_pool_state->createInfo.queryType)) {
-                skip |= LogError(pCB->commandBuffer, kVUID_Core_DrawState_InvalidSecondaryCommandBuffer,
+                LogObjectList objlist(pCB->commandBuffer);
+                objlist.add(queryObject.pool);
+                skip |= LogError(objlist, kVUID_Core_DrawState_InvalidSecondaryCommandBuffer,
                                  "vkCmdExecuteCommands() called w/ invalid %s which has invalid active %s"
                                  " of type %d but a query of that type has been started on secondary %s.",
                                  report_data->FormatHandle(pCB->commandBuffer).c_str(),
@@ -8778,7 +8847,9 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const CMD_BUFFER_STATE *pCB
     auto primary_pool = pCB->command_pool.get();
     auto secondary_pool = pSubCB->command_pool.get();
     if (primary_pool && secondary_pool && (primary_pool->queueFamilyIndex != secondary_pool->queueFamilyIndex)) {
-        skip |= LogError(pSubCB->commandBuffer, kVUID_Core_DrawState_InvalidQueueFamily,
+        LogObjectList objlist(pSubCB->commandBuffer);
+        objlist.add(pCB->commandBuffer);
+        skip |= LogError(objlist, kVUID_Core_DrawState_InvalidQueueFamily,
                          "vkCmdExecuteCommands(): Primary %s created in queue family %d has secondary "
                          "%s created in queue family %d.",
                          report_data->FormatHandle(pCB->commandBuffer).c_str(), primary_pool->queueFamilyIndex,
@@ -8809,7 +8880,9 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                 const auto secondary_rp_state = GetRenderPassState(sub_cb_state->beginInfo.pInheritanceInfo->renderPass);
                 if (cb_state->activeRenderPass &&
                     !(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
-                    skip |= LogError(pCommandBuffers[i], "VUID-vkCmdExecuteCommands-pCommandBuffers-00096",
+                    LogObjectList objlist(pCommandBuffers[i]);
+                    objlist.add(cb_state->activeRenderPass->renderPass);
+                    skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-pCommandBuffers-00096",
                                      "vkCmdExecuteCommands(): Secondary %s is executed within a %s "
                                      "instance scope, but the Secondary Command Buffer does not have the "
                                      "VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT set in VkCommandBufferBeginInfo::flags when "
@@ -8857,8 +8930,10 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
             }
             // We use an const_cast, because one cannot query a container keyed on a non-const pointer using a const pointer
             if (cb_state->linkedCommandBuffers.count(const_cast<CMD_BUFFER_STATE *>(sub_cb_state))) {
+                LogObjectList objlist(cb_state->commandBuffer);
+                objlist.add(sub_cb_state->commandBuffer);
                 skip |= LogError(
-                    cb_state->commandBuffer, "VUID-vkCmdExecuteCommands-pCommandBuffers-00092",
+                    objlist, "VUID-vkCmdExecuteCommands-pCommandBuffers-00092",
                     "Cannot execute %s without VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set if previously executed in %s",
                     report_data->FormatHandle(sub_cb_state->commandBuffer).c_str(),
                     report_data->FormatHandle(cb_state->commandBuffer).c_str());
@@ -8873,7 +8948,9 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
             if (cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
                 // Warn that non-simultaneous secondary cmd buffer renders primary non-simultaneous
-                skip |= LogWarning(pCommandBuffers[i], kVUID_Core_DrawState_InvalidCommandBufferSimultaneousUse,
+                LogObjectList objlist(pCommandBuffers[i]);
+                objlist.add(cb_state->commandBuffer);
+                skip |= LogWarning(objlist, kVUID_Core_DrawState_InvalidCommandBufferSimultaneousUse,
                                    "vkCmdExecuteCommands(): Secondary %s does not have "
                                    "VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set and will cause primary "
                                    "%s to be treated as if it does not have "
@@ -9192,8 +9269,11 @@ bool CoreChecks::ValidateBindImageMemory(const VkBindImageMemoryInfo &bindInfo, 
                         } else {
                             validation_error = "VUID-VkBindImageMemoryInfo-memory-02631";
                         }
+                        LogObjectList objlist(bindInfo.image);
+                        objlist.add(bindInfo.memory);
+                        objlist.add(mem_info->dedicated_image);
                         skip |= LogError(
-                            bindInfo.image, validation_error,
+                            objlist, validation_error,
                             "%s: for dedicated memory allocation %s, VkMemoryDedicatedAllocateInfoKHR:: %s must compatible "
                             "with %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
                             api_name, report_data->FormatHandle(bindInfo.memory).c_str(),
@@ -9208,8 +9288,11 @@ bool CoreChecks::ValidateBindImageMemory(const VkBindImageMemoryInfo &bindInfo, 
                         } else {
                             validation_error = "VUID-VkBindImageMemoryInfo-memory-01903";
                         }
+                        LogObjectList objlist(bindInfo.image);
+                        objlist.add(bindInfo.memory);
+                        objlist.add(mem_info->dedicated_image);
                         skip |=
-                            LogError(bindInfo.image, validation_error,
+                            LogError(objlist, validation_error,
                                      "%s: for dedicated memory allocation %s, VkMemoryDedicatedAllocateInfoKHR:: %s must be equal "
                                      "to %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
                                      api_name, report_data->FormatHandle(bindInfo.memory).c_str(),
@@ -9227,8 +9310,11 @@ bool CoreChecks::ValidateBindImageMemory(const VkBindImageMemoryInfo &bindInfo, 
                                  api_name, report_data->FormatHandle(bindInfo.memory).c_str());
             }
             if (image_state->create_from_swapchain != swapchain_info->swapchain) {
+                LogObjectList objlist(image_state->image);
+                objlist.add(image_state->create_from_swapchain);
+                objlist.add(swapchain_info->swapchain);
                 skip |= LogError(
-                    image_state->image, kVUID_Core_BindImageMemory_Swapchain,
+                    objlist, kVUID_Core_BindImageMemory_Swapchain,
                     "%s: %s is created by %s, but the image is bound by %s. The image should be created and bound by the same "
                     "swapchain",
                     api_name, report_data->FormatHandle(image_state->image).c_str(),
@@ -9393,8 +9479,10 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                 (pSemaphore->scope == kSyncScopeInternal || internal_semaphores.count(semaphore))) {
                 if (unsignaled_semaphores.count(semaphore) ||
                     (!(signaled_semaphores.count(semaphore)) && !(pSemaphore->signaled) && !SemaphoreWasSignaled(semaphore))) {
+                    LogObjectList objlist(semaphore);
+                    objlist.add(queue);
                     skip |= LogError(
-                        semaphore, pSemaphore->scope == kSyncScopeInternal ? vuid_error : kVUID_Core_DrawState_QueueForwardProgress,
+                        objlist, pSemaphore->scope == kSyncScopeInternal ? vuid_error : kVUID_Core_DrawState_QueueForwardProgress,
                         "%s is waiting on %s that has no way to be signaled.", report_data->FormatHandle(queue).c_str(),
                         report_data->FormatHandle(semaphore).c_str());
                 } else {
@@ -9419,7 +9507,9 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
             }
             if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && timeline_semaphore_submit_info &&
                 timeline_semaphore_submit_info->pSignalSemaphoreValues[i] <= pSemaphore->payload) {
-                skip |= LogError(semaphore, "VUID-VkBindSparseInfo-pSignalSemaphores-03249",
+                LogObjectList objlist(semaphore);
+                objlist.add(queue);
+                skip |= LogError(objlist, "VUID-VkBindSparseInfo-pSignalSemaphores-03249",
                                  "VkQueueBindSparse: signal value in %s must be greater than current timeline semaphore %s value",
                                  report_data->FormatHandle(queue).c_str(), report_data->FormatHandle(semaphore).c_str());
             }
@@ -9433,7 +9523,10 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
             }
             if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_BINARY_KHR && pSemaphore->scope == kSyncScopeInternal) {
                 if (signaled_semaphores.count(semaphore) || (!(unsignaled_semaphores.count(semaphore)) && pSemaphore->signaled)) {
-                    skip |= LogError(semaphore, kVUID_Core_DrawState_QueueForwardProgress,
+                    LogObjectList objlist(semaphore);
+                    objlist.add(queue);
+                    objlist.add(pSemaphore->signaler.first);
+                    skip |= LogError(objlist, kVUID_Core_DrawState_QueueForwardProgress,
                                      "%s is signaling %s that was previously signaled by %s but has not since "
                                      "been waited on by any queue.",
                                      report_data->FormatHandle(queue).c_str(), report_data->FormatHandle(semaphore).c_str(),
@@ -9962,7 +10055,9 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                 report_data->FormatHandle(pPresentInfo->pWaitSemaphores[i]).c_str());
         }
         if (pSemaphore && (!pSemaphore->signaled || !SemaphoreWasSignaled(pPresentInfo->pWaitSemaphores[i]))) {
-            skip |= LogError(device, "VUID-vkQueuePresentKHR-pWaitSemaphores-03268",
+            LogObjectList objlist(queue);
+            objlist.add(pPresentInfo->pWaitSemaphores[i]);
+            skip |= LogError(objlist, "VUID-vkQueuePresentKHR-pWaitSemaphores-03268",
                              "%s is waiting on %s that has no way to be signaled.", report_data->FormatHandle(queue).c_str(),
                              report_data->FormatHandle(pPresentInfo->pWaitSemaphores[i]).c_str());
         }
@@ -10366,7 +10461,11 @@ bool CoreChecks::PreCallValidateCmdPushDescriptorSetWithTemplateKHR(VkCommandBuf
                              func_name, report_data->FormatHandle(descriptorUpdateTemplate).c_str(), template_ci.set, set);
         }
         if (!CompatForSet(set, layout_data, GetPipelineLayout(template_ci.pipelineLayout))) {
-            skip |= LogError(cb_state->commandBuffer, kVUID_Core_PushDescriptorUpdate_Template_LayoutMismatched,
+            LogObjectList objlist(cb_state->commandBuffer);
+            objlist.add(descriptorUpdateTemplate);
+            objlist.add(template_ci.pipelineLayout);
+            objlist.add(layout);
+            skip |= LogError(objlist, kVUID_Core_PushDescriptorUpdate_Template_LayoutMismatched,
                              "%s: descriptorUpdateTemplate %s created with %s is incompatible with command parameter "
                              "%s for set %" PRIu32,
                              func_name, report_data->FormatHandle(descriptorUpdateTemplate).c_str(),
