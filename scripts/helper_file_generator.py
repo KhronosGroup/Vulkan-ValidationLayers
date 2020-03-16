@@ -844,14 +844,16 @@ class HelperFileOutputGenerator(OutputGenerator):
         # Output a conversion routine from the layer object definitions to the core object type definitions
         # This will intentionally *fail* for unmatched types as the VK_OBJECT_TYPE list should match the kVulkanObjectType list
         object_types_header += '\n'
-        object_types_header += '// Helper array to get Official Vulkan VkObjectType enum from the internal layers version\n'
-        object_types_header += 'const VkObjectType get_object_type_enum[] = {\n'
-        object_types_header += '    VK_OBJECT_TYPE_UNKNOWN, // kVulkanObjectTypeUnknown\n' # no unknown handle, so must be here explicitly
+        object_types_header += '// Helper function to get Official Vulkan VkObjectType enum from the internal layers version\n'
+        object_types_header += 'static inline VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType internal_type) {\n'
+        object_types_header += '    switch (internal_type) {\n'
 
         for object_type in type_list:
             kenum_type = vko_dict[kenum_to_key(object_type)]
-            object_types_header += '    %s,   // %s\n' % (kenum_type, object_type)
+            object_types_header += '        case %s: return %s;\n' % (object_type, kenum_type)
             object_type_info[object_type]['VkoType'] = kenum_type
+        object_types_header += '        default: return VK_OBJECT_TYPE_UNKNOWN;\n'
+        object_types_header += '    }\n'
         object_types_header += '};\n'
 
         # Output a function converting from core object type definitions to the Vulkan object type enums
