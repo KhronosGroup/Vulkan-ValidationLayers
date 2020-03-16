@@ -743,6 +743,89 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkArmBestPracticesLayerTest, SuboptimalDescriptorReuseTest) {
+    TEST_DESCRIPTION("Test for validation warnings of potentially suboptimal re-use of descriptor set allocations");
+
+    InitBestPracticesFramework();
+    InitState();
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkDescriptorPoolSize ds_type_count = {};
+    ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    ds_type_count.descriptorCount = 3;
+
+    VkDescriptorPoolCreateInfo ds_pool_ci = {};
+    ds_pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    ds_pool_ci.pNext = NULL;
+    ds_pool_ci.maxSets = 6;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    ds_pool_ci.pPoolSizes = &ds_type_count;
+
+    VkDescriptorPool ds_pool;
+    VkResult err = vk::CreateDescriptorPool(m_device->device(), &ds_pool_ci, NULL, &ds_pool);
+    ASSERT_VK_SUCCESS(err);
+
+    VkDescriptorSetLayoutBinding ds_binding = {};
+    ds_binding.binding = 0;
+    ds_binding.descriptorCount = 1;
+    ds_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+
+    VkDescriptorSetLayoutCreateInfo ds_layout_info = {};
+    ds_layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    ds_layout_info.bindingCount = 1;
+    ds_layout_info.pBindings = &ds_binding;
+
+    VkDescriptorSetLayout ds_layout;
+    err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_info, nullptr, &ds_layout);
+    ASSERT_VK_SUCCESS(err);
+
+    auto ds_layouts = std::vector<VkDescriptorSetLayout>(ds_pool_ci.maxSets, ds_layout);
+
+    std::vector<VkDescriptorSet> descriptor_sets = {};
+    descriptor_sets.resize(ds_layouts.size());
+
+    // allocate N/2 descriptor sets
+    VkDescriptorSetAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    alloc_info.descriptorPool = ds_pool;
+    alloc_info.descriptorSetCount = descriptor_sets.size() / 2;
+    alloc_info.pSetLayouts = ds_layouts.data();
+
+    err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, descriptor_sets.data());
+    ASSERT_VK_SUCCESS(err);
+
+    // free one descriptor set
+    VkDescriptorSet* ds = descriptor_sets.data();
+    err = vk::FreeDescriptorSets(m_device->device(), ds_pool, 1, ds);
+
+    // the previous allocate and free should not cause any warning
+    ASSERT_VK_SUCCESS(err);
+    m_errorMonitor->VerifyNotFound();
+
+    // allocate the previously freed descriptor set
+    alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    alloc_info.descriptorPool = ds_pool;
+    alloc_info.descriptorSetCount = 1;
+    alloc_info.pSetLayouts = ds_layouts.data();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkAllocateDescriptorSets-suboptimal-reuse");
+
+    err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, ds);
+
+    // this should create a validation warning, in addition to the appropriate warning message
+    m_errorMonitor->VerifyFound();
+
+    // allocate the remaining descriptor sets (N - (N/2))
+    alloc_info.descriptorSetCount = descriptor_sets.size() - (descriptor_sets.size() / 2);
+    err = vk::AllocateDescriptorSets(m_device->device(), &alloc_info, ds);
+
+    // this should create no validation warnings
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
     TEST_DESCRIPTION(
         "Test for appropriate warnings to be thrown when recording an indexed draw call with sparse/non-sparse index buffers.");
