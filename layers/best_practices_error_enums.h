@@ -93,6 +93,8 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_NonSuccess_Result = "UNAS
 static const char DECORATE_UNUSED *kVUID_BestPractices_SuboptimalSwapchain = "UNASSIGNED-BestPractices-SuboptimalSwapchain";
 
 // Arm-specific best practice
+static const char DECORATE_UNUSED *kVUID_BestPractices_AllocateDescriptorSets_SuboptimalReuse =
+    "UNASSIGNED-BestPractices-vkAllocateDescriptorSets-suboptimal-reuse";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelines_MultisampledBlending =
     "UNASSIGNED-BestPractices-vkCreatePipelines-multisampled-blending";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CreateImage_TooLargeSampleCount =
