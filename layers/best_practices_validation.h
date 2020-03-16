@@ -152,6 +152,8 @@ class BestPractices : public ValidationStateTracker {
                                 uint32_t firstInstance) const;
     bool PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                        uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) const;
+    bool ValidateIndexBufferArm(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
+                                int32_t vertexOffset, uint32_t firstInstance) const;
     void PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                      uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance);
     bool PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,
@@ -211,4 +213,23 @@ class BestPractices : public ValidationStateTracker {
 
     // Check that vendor-specific checks are enabled for at least one of the vendors
     bool VendorCheckEnabled(BPVendorFlags vendors) const;
+
+    struct CacheEntry {
+        uint32_t value;
+        uint32_t age;
+    };
+
+    class PostTransformLRUCacheModel {
+      public:
+        typedef std::vector<CacheEntry>::iterator cache_iterator;
+
+        void resize(size_t size);
+
+        // Returns true if there was a cache hit - also models LRU behavior which will effect subsequent calls.
+        bool query_cache(uint32_t value);
+
+      private:
+        std::vector<CacheEntry> _entries = {};
+        uint32_t iteration = 0;
+    };
 };
