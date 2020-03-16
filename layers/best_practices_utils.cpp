@@ -416,6 +416,61 @@ bool BestPractices::PreCallValidateCreateFramebuffer(VkDevice device, const VkFr
     return skip;
 }
 
+bool BestPractices::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                                          VkDescriptorSet* pDescriptorSets, void* ads_state_data) const {
+    bool skip = false;
+    skip |= ValidationStateTracker::PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, ads_state_data);
+
+    if (!skip) {
+        const auto& pool_handle = pAllocateInfo->descriptorPool;
+        auto iter = descriptor_pool_freed_count.find(pool_handle);
+        // if the number of freed sets > 0, it implies they could be recycled instead if desirable
+        // this warning is specific to Arm
+        if (VendorCheckEnabled(kBPVendorArm) && iter != descriptor_pool_freed_count.end() && iter->second > 0) {
+            skip |= LogPerformanceWarning(
+                device, kVUID_BestPractices_AllocateDescriptorSets_SuboptimalReuse,
+                "%s Descriptor set memory was allocated via vkAllocateDescriptorSets() for sets which were previously freed in the "
+                "same logical device. On some drivers or architectures it may be most optimal to re-use existing descriptor sets.",
+                VendorSpecificTag(kBPVendorArm));
+        }
+    }
+
+    return skip;
+}
+
+void BestPractices::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                                         VkDescriptorSet* pDescriptorSets, VkResult result, void* ads_state) {
+    ValidationStateTracker::PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, result, ads_state);
+
+    if (result == VK_SUCCESS) {
+        // find the free count for the pool we allocated into
+        auto iter = descriptor_pool_freed_count.find(pAllocateInfo->descriptorPool);
+        if (iter != descriptor_pool_freed_count.end()) {
+            // we record successful allocations by subtracting the allocation count from the last recorded free count
+            const auto alloc_count = pAllocateInfo->descriptorSetCount;
+            // clamp the unsigned subtraction to the range [0, last_free_count]
+            if (iter->second > alloc_count)
+                iter->second -= alloc_count;
+            else
+                iter->second = 0;
+        }
+    }
+}
+
+void BestPractices::PostCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
+                                                     const VkDescriptorSet* pDescriptorSets, VkResult result) {
+    ValidationStateTracker::PostCallRecordFreeDescriptorSets(device, descriptorPool, descriptorSetCount, pDescriptorSets, result);
+    if (result == VK_SUCCESS) {
+        // we want to track frees because we're interested in suggesting re-use
+        auto iter = descriptor_pool_freed_count.find(descriptorPool);
+        if (iter == descriptor_pool_freed_count.end()) {
+            descriptor_pool_freed_count.insert(std::make_pair(descriptorPool, descriptorSetCount));
+        } else {
+            iter->second += descriptorSetCount;
+        }
+    }
+}
+
 bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory) const {
     bool skip = false;

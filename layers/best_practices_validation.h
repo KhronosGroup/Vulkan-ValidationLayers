@@ -95,6 +95,12 @@ class BestPractices : public ValidationStateTracker {
                                          const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass) const;
     bool PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer) const;
+    bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                               VkDescriptorSet* pDescriptorSets, void* ads_state_data) const;
+    void PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                              VkDescriptorSet* pDescriptorSets, VkResult result, void* ads_state);
+    void PostCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
+                                          const VkDescriptorSet* pDescriptorSets, VkResult result);
     bool PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory) const;
     void PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
@@ -213,6 +219,9 @@ class BestPractices : public ValidationStateTracker {
 
     // Check that vendor-specific checks are enabled for at least one of the vendors
     bool VendorCheckEnabled(BPVendorFlags vendors) const;
+
+    // State for use in best practices:
+    std::unordered_map<VkDescriptorPool, uint32_t> descriptor_pool_freed_count = {};
 
     struct CacheEntry {
         uint32_t value;
