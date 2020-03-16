@@ -742,3 +742,154 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
+
+TEST_F(VkArmBestPracticesLayerTest, SparseIndexBufferTest) {
+    TEST_DESCRIPTION(
+        "Test for appropriate warnings to be thrown when recording an indexed draw call with sparse/non-sparse index buffers.");
+
+    InitBestPracticesFramework();
+    InitState();
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (DeviceIsMockICD() || DeviceSimulation()) {
+        printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    // create a non-sparse index buffer
+    std::vector<uint16_t> nonsparse_indices;
+    nonsparse_indices.resize(128);
+    for (unsigned i = 0; i < nonsparse_indices.size(); i++) {
+        nonsparse_indices[i] = i;
+    }
+
+    std::vector<uint16_t> sparse_indices = nonsparse_indices;
+    // The buffer (0, 1, 2, ..., n) is completely un-sparse. However, if n < 0xFFFF, by adding 0xFFFF at the end, we
+    // should trigger a warning due to loading all the indices in the range 0 to 0xFFFF, despite indices in the range
+    // (n+1) to (0xFFFF - 1) not being used.
+    sparse_indices[sparse_indices.size() - 1] = 0xFFFF;
+
+    VkConstantBufferObj nonsparse_ibo(m_device, nonsparse_indices.size() * sizeof(uint16_t), nonsparse_indices.data(),
+                                      VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    VkConstantBufferObj sparse_ibo(m_device, sparse_indices.size() * sizeof(uint16_t), sparse_indices.data(),
+                                   VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.ia_ci_.primitiveRestartEnable = VK_FALSE;
+    pipe.CreateGraphicsPipeline();
+
+    // pipeline with primitive restarts enabled
+    CreatePipelineHelper pr_pipe(*this);
+    pr_pipe.InitInfo();
+    pr_pipe.InitState();
+    pr_pipe.ia_ci_.primitiveRestartEnable = VK_TRUE;
+    pr_pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    auto test_pipelines = [&](VkConstantBufferObj& ibo, size_t index_count, bool expect_error) -> void {
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+        m_commandBuffer->BindIndexBuffer(&ibo, static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
+        m_errorMonitor->VerifyNotFound();
+
+        // the validation layer will only be able to analyse mapped memory, it's too expensive otherwise to do in the layer itself
+        ibo.memory().map();
+        if (expect_error)
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                                 "UNASSIGNED-BestPractices-vkCmdDrawIndexed-sparse-index-buffer");
+        m_commandBuffer->DrawIndexed(index_count, 0, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
+        ibo.memory().unmap();
+
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pr_pipe.pipeline_);
+        m_commandBuffer->BindIndexBuffer(&ibo, static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
+        m_errorMonitor->VerifyNotFound();
+
+        ibo.memory().map();
+        if (expect_error)
+            m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                                 "UNASSIGNED-BestPractices-vkCmdDrawIndexed-sparse-index-buffer");
+        m_commandBuffer->DrawIndexed(index_count, 0, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
+        ibo.memory().unmap();
+    };
+
+    // our non-sparse indices should not trigger a warning for both pipelines in this case
+    test_pipelines(nonsparse_ibo, nonsparse_indices.size(), false);
+    // our sparse indices should trigger warnings for both pipelines in this case
+    test_pipelines(sparse_ibo, sparse_indices.size(), true);
+}
+
+TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest) {
+    TEST_DESCRIPTION(
+        "Test for appropriate warnings to be thrown when recording an indexed draw call where the indices thrash the "
+        "post-transform vertex cache.");
+
+    InitBestPracticesFramework();
+    InitState();
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    if (DeviceIsMockICD() || DeviceSimulation()) {
+        printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    std::vector<uint16_t> worst_indices;
+    worst_indices.resize(128 * 16);
+    for (size_t i = 0; i < 16; i++) {
+        for (size_t j = 0; j < 128; j++) {
+            // worst case index buffer sequence for re-use
+            // (0, 1, 2, 3, ..., 127, 0, 1, 2, 3, ..., 127, 0, 1, 2, ...<x16>)
+            worst_indices[j + i * 128] = j;
+        }
+    }
+
+    std::vector<uint16_t> best_indices;
+    best_indices.resize(128 * 16);
+    for (size_t i = 0; i < 16; i++) {
+        for (size_t j = 0; j < 128; j++) {
+            // best case index buffer sequence for re-use
+            // (0, 0, 0, ...<x16>, 1, 1, 1, ...<x16>, 2, 2, 2, ...<x16> , ..., 127)
+            best_indices[i + j * 16] = j;
+        }
+    }
+
+    // make sure the worst-case indices throw a warning
+    VkConstantBufferObj worst_ibo(m_device, worst_indices.size() * sizeof(uint16_t), worst_indices.data(),
+                                  VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    m_commandBuffer->BindIndexBuffer(&worst_ibo, static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
+    m_errorMonitor->VerifyNotFound();
+
+    // the validation layer will only be able to analyse mapped memory, it's too expensive otherwise to do in the layer itself
+    worst_ibo.memory().map();
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+                                         "UNASSIGNED-BestPractices-vkCmdDrawIndexed-post-transform-cache-thrashing");
+    m_commandBuffer->DrawIndexed(worst_indices.size(), 0, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+    worst_ibo.memory().unmap();
+
+    // make sure that the best-case indices don't throw a warning
+    VkConstantBufferObj best_ibo(m_device, best_indices.size() * sizeof(uint16_t), best_indices.data(),
+                                 VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    m_commandBuffer->BindIndexBuffer(&best_ibo, static_cast<VkDeviceSize>(0), VK_INDEX_TYPE_UINT16);
+    m_errorMonitor->VerifyNotFound();
+
+    best_ibo.memory().map();
+    m_commandBuffer->DrawIndexed(best_indices.size(), 0, 0, 0, 0);
+    m_errorMonitor->VerifyNotFound();
+    best_ibo.memory().unmap();
+}
