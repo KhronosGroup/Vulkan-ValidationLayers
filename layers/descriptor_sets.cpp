@@ -1811,8 +1811,10 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t write_count, const VkWrit
         std::string error_code;
         std::string error_str;
         if (!ValidateCopyUpdate(&p_cds[i], dst_node, src_node, func_name, &error_code, &error_str)) {
+            LogObjectList objlist(dst_set);
+            objlist.add(src_set);
             skip |=
-                LogError(dst_set, error_code, "%s failed copy update from %s to %s with error: %s.", func_name,
+                LogError(objlist, error_code, "%s failed copy update from %s to %s with error: %s.", func_name,
                          report_data->FormatHandle(src_set).c_str(), report_data->FormatHandle(dst_set).c_str(), error_str.c_str());
         }
     }
