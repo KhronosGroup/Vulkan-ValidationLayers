@@ -329,6 +329,10 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
 
     if (!image_state) {
+        LogObjectList objlist(image);
+        objlist.add(renderpass);
+        objlist.add(framebuffer);
+        objlist.add(image_view);
         skip |= LogError(image, "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
                          "Render Pass begin with %s uses %s where pAttachments[%" PRIu32 "] = %s, which refers to an invalid image",
                          report_data->FormatHandle(renderpass).c_str(), report_data->FormatHandle(framebuffer).c_str(),
@@ -341,8 +345,12 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
     // Check for layouts that mismatch image usages in the framebuffer
     if (layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03094" : "VUID-vkCmdBeginRenderPass-initialLayout-00895";
+        LogObjectList objlist(image);
+        objlist.add(renderpass);
+        objlist.add(framebuffer);
+        objlist.add(image_view);
         skip |=
-            LogError(image, vuid,
+            LogError(objlist, vuid,
                      "Layout/usage mismatch for attachment %u in %s"
                      " - the %s is %s but the image attached to %s via %s"
                      " was not created with VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT",
@@ -353,8 +361,12 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
     if (layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL &&
         !(image_usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT))) {
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03097" : "VUID-vkCmdBeginRenderPass-initialLayout-00897";
+        LogObjectList objlist(image);
+        objlist.add(renderpass);
+        objlist.add(framebuffer);
+        objlist.add(image_view);
         skip |=
-            LogError(image, vuid,
+            LogError(objlist, vuid,
                      "Layout/usage mismatch for attachment %u in %s"
                      " - the %s is %s but the image attached to %s via %s"
                      " was not created with VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT or VK_IMAGE_USAGE_SAMPLED_BIT",
@@ -364,8 +376,12 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
 
     if (layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT)) {
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03098" : "VUID-vkCmdBeginRenderPass-initialLayout-00898";
+        LogObjectList objlist(image);
+        objlist.add(renderpass);
+        objlist.add(framebuffer);
+        objlist.add(image_view);
         skip |=
-            LogError(image, vuid,
+            LogError(objlist, vuid,
                      "Layout/usage mismatch for attachment %u in %s"
                      " - the %s is %s but the image attached to %s via %s"
                      " was not created with VK_IMAGE_USAGE_TRANSFER_SRC_BIT",
@@ -375,8 +391,12 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
 
     if (layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03099" : "VUID-vkCmdBeginRenderPass-initialLayout-00899";
+        LogObjectList objlist(image);
+        objlist.add(renderpass);
+        objlist.add(framebuffer);
+        objlist.add(image_view);
         skip |=
-            LogError(image, vuid,
+            LogError(objlist, vuid,
                      "Layout/usage mismatch for attachment %u in %s"
                      " - the %s is %s but the image attached to %s via %s"
                      " was not created with VK_IMAGE_USAGE_TRANSFER_DST_BIT",
@@ -391,7 +411,11 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
              layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) &&
             !(image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
             vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03096" : "VUID-vkCmdBeginRenderPass-initialLayout-01758";
-            skip |= LogError(image, vuid,
+            LogObjectList objlist(image);
+            objlist.add(renderpass);
+            objlist.add(framebuffer);
+            objlist.add(image_view);
+            skip |= LogError(objlist, vuid,
                              "Layout/usage mismatch for attachment %u in %s"
                              " - the %s is %s but the image attached to %s via %s"
                              " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT",
@@ -404,7 +428,11 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
         if ((layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
              layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) &&
             !(image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
-            skip |= LogError(image, "VUID-vkCmdBeginRenderPass-initialLayout-00896",
+            LogObjectList objlist(image);
+            objlist.add(renderpass);
+            objlist.add(framebuffer);
+            objlist.add(image_view);
+            skip |= LogError(objlist, "VUID-vkCmdBeginRenderPass-initialLayout-00896",
                              "Layout/usage mismatch for attachment %u in %s"
                              " - the %s is %s but the image attached to %s via %s"
                              " was not created with VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT",
@@ -444,7 +472,10 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
             auto view_state = GetImageViewState(image_view);
 
             if (!view_state) {
-                skip |= LogError(pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
+                LogObjectList objlist(pRenderPassBegin->renderPass);
+                objlist.add(framebuffer_state->framebuffer);
+                objlist.add(image_view);
+                skip |= LogError(objlist, "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
                                  "vkCmdBeginRenderPass(): %s pAttachments[%" PRIu32 "] = %s is not a valid VkImageView handle",
                                  report_data->FormatHandle(framebuffer_state->framebuffer).c_str(), i,
                                  report_data->FormatHandle(image_view).c_str());
@@ -455,7 +486,11 @@ bool CoreChecks::VerifyFramebufferAndRenderPassLayouts(RenderPassCreateVersion r
             const IMAGE_STATE *image_state = GetImageState(image);
 
             if (!image_state) {
-                skip |= LogError(pRenderPassBegin->renderPass, "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
+                LogObjectList objlist(pRenderPassBegin->renderPass);
+                objlist.add(framebuffer_state->framebuffer);
+                objlist.add(image_view);
+                objlist.add(image);
+                skip |= LogError(objlist, "VUID-VkRenderPassBeginInfo-framebuffer-parameter",
                                  "vkCmdBeginRenderPass(): %s pAttachments[%" PRIu32 "] =  %s references non-extant %s.",
                                  report_data->FormatHandle(framebuffer_state->framebuffer).c_str(), i,
                                  report_data->FormatHandle(image_view).c_str(), report_data->FormatHandle(image).c_str());
@@ -965,7 +1000,10 @@ bool CoreChecks::ValidateAndUpdateQFOScoreboard(const debug_report_data *report_
     auto inserted = scoreboard->insert(std::make_pair(barrier, cb_state));
     if (!inserted.second && inserted.first->second != cb_state) {
         // This is a duplication (but don't report duplicates from the same CB, as we do that at record time
-        skip = LogWarning(cb_state->commandBuffer, BarrierRecord::ErrMsgDuplicateQFOInSubmit(),
+        LogObjectList objlist(cb_state->commandBuffer);
+        objlist.add(barrier.handle);
+        objlist.add(inserted.first->second->commandBuffer);
+        skip = LogWarning(objlist, BarrierRecord::ErrMsgDuplicateQFOInSubmit(),
                           "%s: %s %s queue ownership of %s (%s), from srcQueueFamilyIndex %" PRIu32
                           " to dstQueueFamilyIndex %" PRIu32 " duplicates existing barrier submitted in this batch from %s.",
                           "vkQueueSubmit()", BarrierRecord::BarrierName(), operation, BarrierRecord::HandleName(),
