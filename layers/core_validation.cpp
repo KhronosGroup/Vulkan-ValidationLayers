@@ -6199,6 +6199,11 @@ bool CoreChecks::ValidateBarriers(const char *funcName, const CMD_BUFFER_STATE *
                                  funcName, report_data->FormatHandle(mem_barrier.buffer).c_str(),
                                  HandleToUint64(mem_barrier.offset), HandleToUint64(mem_barrier.size), HandleToUint64(buffer_size));
             }
+            if (mem_barrier.size == 0) {
+                skip |= LogError(cb_state->commandBuffer, "VUID-VkBufferMemoryBarrier-size-01188",
+                                 "%s: Buffer Barrier %s has a size of 0.", funcName,
+                                 report_data->FormatHandle(mem_barrier.buffer).c_str());
+            }
         }
     }
 
