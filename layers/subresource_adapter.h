@@ -95,7 +95,8 @@ class RangeEncoder {
     // Create the encoder suitable to the full range (aspect mask *must* be canonical)
     RangeEncoder(const VkImageSubresourceRange& full_range)
         : RangeEncoder(full_range, AspectParameters::Get(full_range.aspectMask)) {}
-    RangeEncoder(const RangeEncoder& from);
+    RangeEncoder(const RangeEncoder& from) = default;
+    ;
 
     inline bool InRange(const VkImageSubresource& subres) const {
         bool in_range = (subres.mipLevel < limits_.mipLevel) && (subres.arrayLayer < limits_.arrayLayer) &&
@@ -365,7 +366,7 @@ class OffsetRangeEncoder : public RangeEncoder {
     // Create the encoder suitable to the full range (aspect mask *must* be canonical)
     OffsetRangeEncoder(const VkImageSubresourceRange& full_range, const VkExtent3D& full_range_image_extent)
         : OffsetRangeEncoder(full_range, full_range_image_extent, AspectParameters::Get(full_range.aspectMask)) {}
-    OffsetRangeEncoder(const OffsetRangeEncoder& from);
+    OffsetRangeEncoder(const OffsetRangeEncoder& from) = default;
     inline bool InRange(const VkImageSubresource& subres, const VkOffset3D& offset) const {
         bool in_range = (subres.mipLevel < limits_.mipLevel) && (subres.arrayLayer < limits_.arrayLayer) &&
                         (subres.aspectMask & limits_.aspectMask) && (offset.x < limits_.offset.x) && (offset.y < limits_.offset.y);
