@@ -4064,7 +4064,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     std::valarray<uint32_t> max_descriptors_per_stage = GetDescriptorCountMaxPerStage(&enabled_features, set_layouts, true);
     // Samplers
     if (max_descriptors_per_stage[DSL_TYPE_SAMPLERS] > phys_dev_props.limits.maxPerStageDescriptorSamplers) {
-        skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00287",
+        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03016"
+                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00287";
+        skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): max per-stage sampler bindings count (%d) exceeds device "
                          "maxPerStageDescriptorSamplers limit (%d).",
                          max_descriptors_per_stage[DSL_TYPE_SAMPLERS], phys_dev_props.limits.maxPerStageDescriptorSamplers);
@@ -4072,7 +4074,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Uniform buffers
     if (max_descriptors_per_stage[DSL_TYPE_UNIFORM_BUFFERS] > phys_dev_props.limits.maxPerStageDescriptorUniformBuffers) {
-        skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00288",
+        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03017"
+                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00288";
+        skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): max per-stage uniform buffer bindings count (%d) exceeds device "
                          "maxPerStageDescriptorUniformBuffers limit (%d).",
                          max_descriptors_per_stage[DSL_TYPE_UNIFORM_BUFFERS],
@@ -4081,7 +4085,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Storage buffers
     if (max_descriptors_per_stage[DSL_TYPE_STORAGE_BUFFERS] > phys_dev_props.limits.maxPerStageDescriptorStorageBuffers) {
-        skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00289",
+        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03018"
+                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00289";
+        skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): max per-stage storage buffer bindings count (%d) exceeds device "
                          "maxPerStageDescriptorStorageBuffers limit (%d).",
                          max_descriptors_per_stage[DSL_TYPE_STORAGE_BUFFERS],
@@ -4090,8 +4096,10 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Sampled images
     if (max_descriptors_per_stage[DSL_TYPE_SAMPLED_IMAGES] > phys_dev_props.limits.maxPerStageDescriptorSampledImages) {
+        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03019"
+                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00290";
         skip |=
-            LogError(device, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00290",
+            LogError(device, vuid,
                      "vkCreatePipelineLayout(): max per-stage sampled image bindings count (%d) exceeds device "
                      "maxPerStageDescriptorSampledImages limit (%d).",
                      max_descriptors_per_stage[DSL_TYPE_SAMPLED_IMAGES], phys_dev_props.limits.maxPerStageDescriptorSampledImages);
@@ -4099,8 +4107,10 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Storage images
     if (max_descriptors_per_stage[DSL_TYPE_STORAGE_IMAGES] > phys_dev_props.limits.maxPerStageDescriptorStorageImages) {
+        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03020"
+                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00291";
         skip |=
-            LogError(device, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-00291",
+            LogError(device, vuid,
                      "vkCreatePipelineLayout(): max per-stage storage image bindings count (%d) exceeds device "
                      "maxPerStageDescriptorStorageImages limit (%d).",
                      max_descriptors_per_stage[DSL_TYPE_STORAGE_IMAGES], phys_dev_props.limits.maxPerStageDescriptorStorageImages);
@@ -4108,7 +4118,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Input attachments
     if (max_descriptors_per_stage[DSL_TYPE_INPUT_ATTACHMENTS] > phys_dev_props.limits.maxPerStageDescriptorInputAttachments) {
-        skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01676",
+        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03021"
+                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01676";
+        skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): max per-stage input attachment bindings count (%d) exceeds device "
                          "maxPerStageDescriptorInputAttachments limit (%d).",
                          max_descriptors_per_stage[DSL_TYPE_INPUT_ATTACHMENTS],
@@ -4118,6 +4130,8 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     // Inline uniform blocks
     if (max_descriptors_per_stage[DSL_TYPE_INLINE_UNIFORM_BLOCK] >
         phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorInlineUniformBlocks) {
+        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-02214"
+                                                                          : "VUID-VkPipelineLayoutCreateInfo-descriptorType-02212";
         skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02214",
                          "vkCreatePipelineLayout(): max per-stage inline uniform block bindings count (%d) exceeds device "
                          "maxPerStageDescriptorInlineUniformBlocks limit (%d).",
@@ -4131,7 +4145,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     // Samplers
     uint32_t sum = sum_all_stages[VK_DESCRIPTOR_TYPE_SAMPLER] + sum_all_stages[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER];
     if (sum > phys_dev_props.limits.maxDescriptorSetSamplers) {
-        skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01677",
+        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03028"
+                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01677";
+        skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): sum of sampler bindings among all stages (%d) exceeds device "
                          "maxDescriptorSetSamplers limit (%d).",
                          sum, phys_dev_props.limits.maxDescriptorSetSamplers);
@@ -4139,7 +4155,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Uniform buffers
     if (sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER] > phys_dev_props.limits.maxDescriptorSetUniformBuffers) {
-        skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01678",
+        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03029"
+                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01678";
+        skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): sum of uniform buffer bindings among all stages (%d) exceeds device "
                          "maxDescriptorSetUniformBuffers limit (%d).",
                          sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER], phys_dev_props.limits.maxDescriptorSetUniformBuffers);
@@ -4147,7 +4165,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Dynamic uniform buffers
     if (sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC] > phys_dev_props.limits.maxDescriptorSetUniformBuffersDynamic) {
-        skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01679",
+        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03030"
+                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01679";
+        skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): sum of dynamic uniform buffer bindings among all stages (%d) exceeds device "
                          "maxDescriptorSetUniformBuffersDynamic limit (%d).",
                          sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC],
@@ -4156,7 +4176,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Storage buffers
     if (sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER] > phys_dev_props.limits.maxDescriptorSetStorageBuffers) {
-        skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01680",
+        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03031"
+                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01680";
+        skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): sum of storage buffer bindings among all stages (%d) exceeds device "
                          "maxDescriptorSetStorageBuffers limit (%d).",
                          sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER], phys_dev_props.limits.maxDescriptorSetStorageBuffers);
@@ -4164,7 +4186,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Dynamic storage buffers
     if (sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC] > phys_dev_props.limits.maxDescriptorSetStorageBuffersDynamic) {
-        skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01681",
+        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03032"
+                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01681";
+        skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): sum of dynamic storage buffer bindings among all stages (%d) exceeds device "
                          "maxDescriptorSetStorageBuffersDynamic limit (%d).",
                          sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC],
@@ -4175,7 +4199,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     sum = sum_all_stages[VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE] + sum_all_stages[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER] +
           sum_all_stages[VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER];
     if (sum > phys_dev_props.limits.maxDescriptorSetSampledImages) {
-        skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01682",
+        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03033"
+                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01682";
+        skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): sum of sampled image bindings among all stages (%d) exceeds device "
                          "maxDescriptorSetSampledImages limit (%d).",
                          sum, phys_dev_props.limits.maxDescriptorSetSampledImages);
@@ -4184,7 +4210,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     //  Storage images
     sum = sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_IMAGE] + sum_all_stages[VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER];
     if (sum > phys_dev_props.limits.maxDescriptorSetStorageImages) {
-        skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01683",
+        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03034"
+                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01683";
+        skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): sum of storage image bindings among all stages (%d) exceeds device "
                          "maxDescriptorSetStorageImages limit (%d).",
                          sum, phys_dev_props.limits.maxDescriptorSetStorageImages);
@@ -4192,8 +4220,10 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
     // Input attachments
     if (sum_all_stages[VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT] > phys_dev_props.limits.maxDescriptorSetInputAttachments) {
+        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-03035"
+                                                                          : "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01684";
         skip |=
-            LogError(device, "VUID-VkPipelineLayoutCreateInfo-pSetLayouts-01684",
+            LogError(device, vuid,
                      "vkCreatePipelineLayout(): sum of input attachment bindings among all stages (%d) exceeds device "
                      "maxDescriptorSetInputAttachments limit (%d).",
                      sum_all_stages[VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT], phys_dev_props.limits.maxDescriptorSetInputAttachments);
@@ -4202,7 +4232,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
     // Inline uniform blocks
     if (sum_all_stages[VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT] >
         phys_dev_ext_props.inline_uniform_block_props.maxDescriptorSetInlineUniformBlocks) {
-        skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02216",
+        const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-02216"
+                                                                          : "VUID-VkPipelineLayoutCreateInfo-descriptorType-02213";
+        skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): sum of inline uniform block bindings among all stages (%d) exceeds device "
                          "maxDescriptorSetInlineUniformBlocks limit (%d).",
                          sum_all_stages[VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT],
