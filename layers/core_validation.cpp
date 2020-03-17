@@ -4132,7 +4132,7 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
         phys_dev_ext_props.inline_uniform_block_props.maxPerStageDescriptorInlineUniformBlocks) {
         const char *vuid = (device_extensions.vk_ext_descriptor_indexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-02214"
                                                                           : "VUID-VkPipelineLayoutCreateInfo-descriptorType-02212";
-        skip |= LogError(device, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02214",
+        skip |= LogError(device, vuid,
                          "vkCreatePipelineLayout(): max per-stage inline uniform block bindings count (%d) exceeds device "
                          "maxPerStageDescriptorInlineUniformBlocks limit (%d).",
                          max_descriptors_per_stage[DSL_TYPE_INLINE_UNIFORM_BLOCK],

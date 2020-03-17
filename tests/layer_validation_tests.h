@@ -605,6 +605,9 @@ VkPhysicalDevicePushDescriptorPropertiesKHR GetPushDescriptorProperties(VkInstan
 // Subgroup properties helper
 VkPhysicalDeviceSubgroupProperties GetSubgroupProperties(VkInstance instance, VkPhysicalDevice gpu);
 
+// Descriptor Indexing properties helper
+VkPhysicalDeviceDescriptorIndexingProperties GetDescriptorIndexingProperties(VkInstance instance, VkPhysicalDevice gpu);
+
 class BarrierQueueFamilyTestHelper {
   public:
     struct QueueFamilyObjs {
