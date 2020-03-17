@@ -1030,10 +1030,26 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
 
             // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
 
-            // Collect active stages
+            // Collect active stages and other information
+            // Only want to loop through pStages once
             uint32_t active_shaders = 0;
-            for (uint32_t stages = 0; stages < pCreateInfos[i].stageCount; stages++) {
-                active_shaders |= pCreateInfos[i].pStages[stages].stage;
+            bool has_eval = false;
+            bool has_control = false;
+            if (pCreateInfos[i].pStages != nullptr) {
+                for (uint32_t stage_index = 0; stage_index < pCreateInfos[i].stageCount; ++stage_index) {
+                    active_shaders |= pCreateInfos[i].pStages[stage_index].stage;
+
+                    if (pCreateInfos[i].pStages[stage_index].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
+                        has_control = true;
+                    } else if (pCreateInfos[i].pStages[stage_index].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
+                        has_eval = true;
+                    }
+
+                    skip |= validate_string(
+                        "vkCreateGraphicsPipelines",
+                        ParameterName("pCreateInfos[%i].pStages[%i].pName", ParameterName::IndexVector{i, stage_index}),
+                        "VUID-VkGraphicsPipelineCreateInfo-pStages-parameter", pCreateInfos[i].pStages[stage_index].pName);
+                }
             }
 
             if ((active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) &&
@@ -1242,51 +1258,36 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 }
             }
 
-            if (pCreateInfos[i].pStages != nullptr) {
-                bool has_control = false;
-                bool has_eval = false;
+            // pTessellationState is ignored without both tessellation control and tessellation evaluation shaders stages
+            if (has_control && has_eval) {
+                if (pCreateInfos[i].pTessellationState == nullptr) {
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-00731",
+                                     "vkCreateGraphicsPipelines: if pCreateInfos[%d].pStages includes a tessellation control "
+                                     "shader stage and a tessellation evaluation shader stage, "
+                                     "pCreateInfos[%d].pTessellationState must not be NULL.",
+                                     i, i);
+                } else {
+                    const VkStructureType allowed_type = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO;
+                    skip |= validate_struct_pnext(
+                        "vkCreateGraphicsPipelines",
+                        ParameterName("pCreateInfos[%i].pTessellationState->pNext", ParameterName::IndexVector{i}),
+                        "VkPipelineTessellationDomainOriginStateCreateInfo", pCreateInfos[i].pTessellationState->pNext, 1,
+                        &allowed_type, GeneratedVulkanHeaderVersion, "VUID-VkGraphicsPipelineCreateInfo-pNext-pNext",
+                        "VUID-VkGraphicsPipelineCreateInfo-sType-unique");
 
-                for (uint32_t stage_index = 0; stage_index < pCreateInfos[i].stageCount; ++stage_index) {
-                    if (pCreateInfos[i].pStages[stage_index].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
-                        has_control = true;
-                    } else if (pCreateInfos[i].pStages[stage_index].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
-                        has_eval = true;
-                    }
-                }
+                    skip |= validate_reserved_flags(
+                        "vkCreateGraphicsPipelines",
+                        ParameterName("pCreateInfos[%i].pTessellationState->flags", ParameterName::IndexVector{i}),
+                        pCreateInfos[i].pTessellationState->flags, "VUID-VkPipelineTessellationStateCreateInfo-flags-zerobitmask");
 
-                // pTessellationState is ignored without both tessellation control and tessellation evaluation shaders stages
-                if (has_control && has_eval) {
-                    if (pCreateInfos[i].pTessellationState == nullptr) {
-                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-00731",
-                                         "vkCreateGraphicsPipelines: if pCreateInfos[%d].pStages includes a tessellation control "
-                                         "shader stage and a tessellation evaluation shader stage, "
-                                         "pCreateInfos[%d].pTessellationState must not be NULL.",
-                                         i, i);
-                    } else {
-                        const VkStructureType allowed_type =
-                            VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO;
-                        skip |= validate_struct_pnext(
-                            "vkCreateGraphicsPipelines",
-                            ParameterName("pCreateInfos[%i].pTessellationState->pNext", ParameterName::IndexVector{i}),
-                            "VkPipelineTessellationDomainOriginStateCreateInfo", pCreateInfos[i].pTessellationState->pNext, 1,
-                            &allowed_type, GeneratedVulkanHeaderVersion, "VUID-VkGraphicsPipelineCreateInfo-pNext-pNext",
-                            "VUID-VkGraphicsPipelineCreateInfo-sType-unique");
-
-                        skip |= validate_reserved_flags(
-                            "vkCreateGraphicsPipelines",
-                            ParameterName("pCreateInfos[%i].pTessellationState->flags", ParameterName::IndexVector{i}),
-                            pCreateInfos[i].pTessellationState->flags,
-                            "VUID-VkPipelineTessellationStateCreateInfo-flags-zerobitmask");
-
-                        if (pCreateInfos[i].pTessellationState->patchControlPoints == 0 ||
-                            pCreateInfos[i].pTessellationState->patchControlPoints > device_limits.maxTessellationPatchSize) {
-                            skip |= LogError(device, "VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214",
-                                             "vkCreateGraphicsPipelines: invalid parameter "
-                                             "pCreateInfos[%d].pTessellationState->patchControlPoints value %u. patchControlPoints "
-                                             "should be >0 and <=%u.",
-                                             i, pCreateInfos[i].pTessellationState->patchControlPoints,
-                                             device_limits.maxTessellationPatchSize);
-                        }
+                    if (pCreateInfos[i].pTessellationState->patchControlPoints == 0 ||
+                        pCreateInfos[i].pTessellationState->patchControlPoints > device_limits.maxTessellationPatchSize) {
+                        skip |= LogError(device, "VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214",
+                                         "vkCreateGraphicsPipelines: invalid parameter "
+                                         "pCreateInfos[%d].pTessellationState->patchControlPoints value %u. patchControlPoints "
+                                         "should be >0 and <=%u.",
+                                         i, pCreateInfos[i].pTessellationState->patchControlPoints,
+                                         device_limits.maxTessellationPatchSize);
                     }
                 }
             }
@@ -2058,12 +2059,6 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                      "].pRasterizationState->lineWidth (=%f) is not 1.0.",
                                      i, i, pCreateInfos[i].pRasterizationState->lineWidth);
                 }
-            }
-
-            for (size_t j = 0; j < pCreateInfos[i].stageCount; j++) {
-                skip |= validate_string("vkCreateGraphicsPipelines",
-                                        ParameterName("pCreateInfos[%i].pStages[%i].pName", ParameterName::IndexVector{i, j}),
-                                        "VUID-VkGraphicsPipelineCreateInfo-pStages-parameter", pCreateInfos[i].pStages[j].pName);
             }
         }
     }
