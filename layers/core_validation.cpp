@@ -5901,10 +5901,10 @@ const static VkPipelineStageFlags AccessMaskToPipeStage[28] = {
     VK_ACCESS_FLAG_BITS_MAX_ENUM,  // Always match
     // VK_ACCESS_MEMORY_WRITE_BIT = 16
     VK_ACCESS_FLAG_BITS_MAX_ENUM,  // Always match
-    // VK_ACCESS_COMMAND_PROCESS_READ_BIT_NVX = 17
-    VK_PIPELINE_STAGE_COMMAND_PROCESS_BIT_NVX,
-    // VK_ACCESS_COMMAND_PROCESS_WRITE_BIT_NVX = 18
-    VK_PIPELINE_STAGE_COMMAND_PROCESS_BIT_NVX,
+    // VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV = 17
+    VK_PIPELINE_STAGE_COMMAND_PREPROCESS_BIT_NV,
+    // VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV = 18
+    VK_PIPELINE_STAGE_COMMAND_PREPROCESS_BIT_NV,
     // VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT = 19
     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
     // VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT = 20
@@ -6307,7 +6307,7 @@ bool CoreChecks::ValidateEventStageMask(const ValidationStateTracker *state_data
 
 // Note that we only check bits that HAVE required queueflags -- don't care entries are skipped
 static std::unordered_map<VkPipelineStageFlags, VkQueueFlags> supported_pipeline_stages_table = {
-    {VK_PIPELINE_STAGE_COMMAND_PROCESS_BIT_NVX, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT},
+    {VK_PIPELINE_STAGE_COMMAND_PREPROCESS_BIT_NV, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT},
     {VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT},
     {VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, VK_QUEUE_GRAPHICS_BIT},
     {VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_QUEUE_GRAPHICS_BIT},
@@ -6323,7 +6323,7 @@ static std::unordered_map<VkPipelineStageFlags, VkQueueFlags> supported_pipeline
     {VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT},
     {VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_QUEUE_GRAPHICS_BIT}};
 
-static const VkPipelineStageFlags stage_flag_bit_array[] = {VK_PIPELINE_STAGE_COMMAND_PROCESS_BIT_NVX,
+static const VkPipelineStageFlags stage_flag_bit_array[] = {VK_PIPELINE_STAGE_COMMAND_PREPROCESS_BIT_NV,
                                                             VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
                                                             VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
                                                             VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
