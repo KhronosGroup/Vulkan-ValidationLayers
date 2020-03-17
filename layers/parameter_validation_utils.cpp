@@ -2422,6 +2422,17 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
                                      "values.",
                                      i, i);
                 }
+
+                if ((pCreateInfo->pBindings[i].descriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) &&
+                    (pCreateInfo->pBindings[i].stageFlags != 0) &&
+                    (pCreateInfo->pBindings[i].stageFlags != VK_SHADER_STAGE_FRAGMENT_BIT)) {
+                    skip |=
+                        LogError(device, "VUID-VkDescriptorSetLayoutBinding-descriptorType-01510",
+                                 "vkCreateDescriptorSetLayout(): if pCreateInfo->pBindings[%d].descriptorCount is not 0 and "
+                                 "descriptorType is VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT then pCreateInfo->pBindings[%d].stageFlags "
+                                 "must be 0 or VK_SHADER_STAGE_FRAGMENT_BIT but is currently %s",
+                                 i, i, string_VkShaderStageFlags(pCreateInfo->pBindings[i].stageFlags).c_str());
+                }
             }
         }
     }
