@@ -108,7 +108,10 @@ bool ObjectLifetimes::ValidateCommandBuffer(VkCommandPool command_pool, VkComman
         if (pNode->parent_object != HandleToUint64(command_pool)) {
             // We know that the parent *must* be a command pool
             const auto parent_pool = CastFromUint64<VkCommandPool>(pNode->parent_object);
-            skip |= LogError(command_buffer, "VUID-vkFreeCommandBuffers-pCommandBuffers-parent",
+            LogObjectList objlist(command_buffer);
+            objlist.add(parent_pool);
+            objlist.add(command_pool);
+            skip |= LogError(objlist, "VUID-vkFreeCommandBuffers-pCommandBuffers-parent",
                              "FreeCommandBuffers is attempting to free %s belonging to %s from %s).",
                              report_data->FormatHandle(command_buffer).c_str(), report_data->FormatHandle(parent_pool).c_str(),
                              report_data->FormatHandle(command_pool).c_str());
@@ -144,7 +147,10 @@ bool ObjectLifetimes::ValidateDescriptorSet(VkDescriptorPool descriptor_pool, Vk
         if (dsItem->second->parent_object != HandleToUint64(descriptor_pool)) {
             // We know that the parent *must* be a descriptor pool
             const auto parent_pool = CastFromUint64<VkDescriptorPool>(dsItem->second->parent_object);
-            skip |= LogError(descriptor_set, "VUID-vkFreeDescriptorSets-pDescriptorSets-parent",
+            LogObjectList objlist(descriptor_set);
+            objlist.add(parent_pool);
+            objlist.add(descriptor_pool);
+            skip |= LogError(objlist, "VUID-vkFreeDescriptorSets-pDescriptorSets-parent",
                              "FreeDescriptorSets is attempting to free %s"
                              " belonging to %s from %s).",
                              report_data->FormatHandle(descriptor_set).c_str(), report_data->FormatHandle(parent_pool).c_str(),
@@ -247,7 +253,9 @@ bool ObjectLifetimes::ReportLeakedInstanceObjects(VkInstance instance, VulkanObj
     auto snapshot = object_map[object_type].snapshot();
     for (const auto &item : snapshot) {
         const auto object_info = item.second;
-        skip |= LogError(instance, error_code, "OBJ ERROR : For %s, %s has not been destroyed.",
+        LogObjectList objlist(instance);
+        objlist.add(ObjTrackStateTypedHandle(*object_info));
+        skip |= LogError(objlist, error_code, "OBJ ERROR : For %s, %s has not been destroyed.",
                          report_data->FormatHandle(instance).c_str(),
                          report_data->FormatHandle(ObjTrackStateTypedHandle(*object_info)).c_str());
     }
@@ -261,7 +269,9 @@ bool ObjectLifetimes::ReportLeakedDeviceObjects(VkDevice device, VulkanObjectTyp
     auto snapshot = object_map[object_type].snapshot();
     for (const auto &item : snapshot) {
         const auto object_info = item.second;
-        skip |= LogError(device, error_code, "OBJ ERROR : For %s, %s has not been destroyed.",
+        LogObjectList objlist(device);
+        objlist.add(ObjTrackStateTypedHandle(*object_info));
+        skip |= LogError(objlist, error_code, "OBJ ERROR : For %s, %s has not been destroyed.",
                          report_data->FormatHandle(device).c_str(),
                          report_data->FormatHandle(ObjTrackStateTypedHandle(*object_info)).c_str());
     }
