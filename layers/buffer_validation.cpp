@@ -4526,12 +4526,16 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             }
         } else {
             // Format MUST be IDENTICAL to the format the image was created with
-            if (image_format != view_format) {
+            // Unless it is a multi-planar color bit aspect
+            if ((image_format != view_format) &&
+                ((FormatIsMultiplane(image_format) == false) || (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT))) {
+                const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion) ? "VUID-VkImageViewCreateInfo-image-01762"
+                                                                                       : "VUID-VkImageViewCreateInfo-image-01019";
                 std::stringstream ss;
                 ss << "vkCreateImageView() format " << string_VkFormat(view_format) << " differs from "
                    << report_data->FormatHandle(pCreateInfo->image).c_str() << " format " << string_VkFormat(image_format)
                    << ".  Formats MUST be IDENTICAL unless VK_IMAGE_CREATE_MUTABLE_FORMAT BIT was set on image creation.";
-                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-01019", "%s", ss.str().c_str());
+                skip |= LogError(pCreateInfo->image, vuid, "%s", ss.str().c_str());
             }
         }
 
