@@ -549,28 +549,32 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
 
     uint8_t *pData;
     // Attempt to map memory size 0 is invalid
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VkMapMemory: Attempting to map memory range of size zero");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-size-00680");
     err = vk::MapMemory(m_device->device(), mem, 0, 0, 0, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // Map memory twice
     err = vk::MapMemory(m_device->device(), mem, 0, mem_reqs.size, 0, (void **)&pData);
     ASSERT_VK_SUCCESS(err);
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-MemTrack-InvalidMap");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-memory-00678");
     err = vk::MapMemory(m_device->device(), mem, 0, mem_reqs.size, 0, (void **)&pData);
     m_errorMonitor->VerifyFound();
 
     // Unmap the memory to avoid re-map error
     vk::UnmapMemory(m_device->device(), mem);
-    // overstep allocation with VK_WHOLE_SIZE
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " with size of VK_WHOLE_SIZE oversteps total array size 0x");
+    // overstep offset with VK_WHOLE_SIZE
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-offset-00679");
+    err = vk::MapMemory(m_device->device(), mem, allocation_size + 1, VK_WHOLE_SIZE, 0, (void **)&pData);
+    m_errorMonitor->VerifyFound();
+    // overstep offset w/o VK_WHOLE_SIZE
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-offset-00679");
     err = vk::MapMemory(m_device->device(), mem, allocation_size + 1, VK_WHOLE_SIZE, 0, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // overstep allocation w/o VK_WHOLE_SIZE
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, " oversteps total array size 0x");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkMapMemory-size-00681");
     err = vk::MapMemory(m_device->device(), mem, 1, allocation_size, 0, (void **)&pData);
     m_errorMonitor->VerifyFound();
     // Now error due to unmapping memory that's not mapped
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "Unmapping Memory without memory being mapped: ");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkUnmapMemory-memory-00689");
     vk::UnmapMemory(m_device->device(), mem);
     m_errorMonitor->VerifyFound();
 
@@ -579,6 +583,7 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
     ASSERT_VK_SUCCESS(err);
     VkMappedMemoryRange mmr = {};
     mmr.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    mmr.pNext = nullptr;
     mmr.memory = mem;
     mmr.offset = atom_size;  // Error b/c offset less than offset of mapped mem
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-size-00685");
@@ -628,6 +633,18 @@ TEST_F(VkLayerTest, InvalidMemoryMapping) {
         m_errorMonitor->VerifyFound();
     }
 
+    // Try flushing and invalidating host memory not mapped
+    vk::UnmapMemory(m_device->device(), mem);
+    mmr.offset = 0;
+    mmr.size = VK_WHOLE_SIZE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-memory-00684");
+    vk::FlushMappedMemoryRanges(m_device->device(), 1, &mmr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-memory-00684");
+    vk::InvalidateMappedMemoryRanges(m_device->device(), 1, &mmr);
+    m_errorMonitor->VerifyFound();
+
     pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
                                            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     if (!pass) {
@@ -669,6 +686,21 @@ TEST_F(VkLayerTest, MapMemWithoutHostVisibleBit) {
 
     void *mappedAddress = NULL;
     err = vk::MapMemory(m_device->device(), mem, 0, VK_WHOLE_SIZE, 0, &mappedAddress);
+    m_errorMonitor->VerifyFound();
+
+    // Attempt to flush and invalidate non-host memory
+    VkMappedMemoryRange memory_range = {};
+    memory_range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    memory_range.pNext = nullptr;
+    memory_range.memory = mem;
+    memory_range.offset = 0;
+    memory_range.size = VK_WHOLE_SIZE;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-memory-00684");
+    vk::FlushMappedMemoryRanges(m_device->device(), 1, &memory_range);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMappedMemoryRange-memory-00684");
+    vk::InvalidateMappedMemoryRanges(m_device->device(), 1, &memory_range);
     m_errorMonitor->VerifyFound();
 
     vk::FreeMemory(m_device->device(), mem, NULL);

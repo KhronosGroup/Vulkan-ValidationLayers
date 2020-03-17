@@ -2874,24 +2874,24 @@ bool CoreChecks::ValidateMapMemRange(const DEVICE_MEMORY_STATE *mem_info, VkDevi
     assert(mem_info);
     const auto mem = mem_info->mem;
     if (size == 0) {
-        skip = LogError(mem, kVUID_Core_MemTrack_InvalidMap, "VkMapMemory: Attempting to map memory range of size zero");
+        skip = LogError(mem, "VUID-vkMapMemory-size-00680", "VkMapMemory: Attempting to map memory range of size zero");
     }
 
     // It is an application error to call VkMapMemory on an object that is already mapped
     if (mem_info->mapped_range.size != 0) {
-        skip = LogError(mem, kVUID_Core_MemTrack_InvalidMap, "VkMapMemory: Attempting to map memory on an already-mapped %s.",
+        skip = LogError(mem, "VUID-vkMapMemory-memory-00678", "VkMapMemory: Attempting to map memory on an already-mapped %s.",
                         report_data->FormatHandle(mem).c_str());
     }
 
+    // Validate offset is not over allocaiton size
+    if (offset >= mem_info->alloc_info.allocationSize) {
+        skip = LogError(mem, "VUID-vkMapMemory-offset-00679",
+                        "VkMapMemory: Attempting to map memory with an offset of 0x%" PRIx64
+                        " which is larger than the total array size 0x%" PRIx64,
+                        offset, mem_info->alloc_info.allocationSize);
+    }
     // Validate that offset + size is within object's allocationSize
-    if (size == VK_WHOLE_SIZE) {
-        if (offset >= mem_info->alloc_info.allocationSize) {
-            skip = LogError(mem, kVUID_Core_MemTrack_InvalidMap,
-                            "Mapping Memory from 0x%" PRIx64 " to 0x%" PRIx64
-                            " with size of VK_WHOLE_SIZE oversteps total array size 0x%" PRIx64,
-                            offset, mem_info->alloc_info.allocationSize, mem_info->alloc_info.allocationSize);
-        }
-    } else {
+    if (size != VK_WHOLE_SIZE) {
         if ((offset + size) > mem_info->alloc_info.allocationSize) {
             skip = LogError(mem, "VUID-vkMapMemory-size-00681",
                             "Mapping Memory from 0x%" PRIx64 " to 0x%" PRIx64 " oversteps total array size 0x%" PRIx64 ".", offset,
@@ -8983,6 +8983,13 @@ bool CoreChecks::ValidateMemoryIsMapped(const char *funcName, uint32_t memRangeC
     for (uint32_t i = 0; i < memRangeCount; ++i) {
         auto mem_info = GetDevMemState(pMemRanges[i].memory);
         if (mem_info) {
+            // Makes sure the memory is already mapped
+            if (mem_info->mapped_range.size == 0) {
+                skip = LogError(pMemRanges[i].memory, "VUID-VkMappedMemoryRange-memory-00684",
+                                "%s: Attempting to use memory (%s) that is not currently host mapped.", funcName,
+                                report_data->FormatHandle(pMemRanges[i].memory).c_str());
+            }
+
             if (pMemRanges[i].size == VK_WHOLE_SIZE) {
                 if (mem_info->mapped_range.offset > pMemRanges[i].offset) {
                     skip |= LogError(pMemRanges[i].memory, "VUID-VkMappedMemoryRange-size-00686",
