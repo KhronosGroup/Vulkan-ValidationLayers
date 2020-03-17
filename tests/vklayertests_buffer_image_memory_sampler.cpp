@@ -6655,6 +6655,16 @@ TEST_F(VkLayerTest, CreateImageMiscErrors) {
         image_ci.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-initialLayout-00993");
     }
+
+    // Storage usage can't be multisample if feature not set
+    {
+        // Feature should not have been set for these tests
+        ASSERT_TRUE(features.shaderStorageImageMultisample == VK_FALSE);
+        VkImageCreateInfo image_ci = safe_image_ci;
+        image_ci.usage = VK_IMAGE_USAGE_STORAGE_BIT;
+        image_ci.samples = VK_SAMPLE_COUNT_2_BIT;
+        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-00968");
+    }
 }
 
 TEST_F(VkLayerTest, CreateImageMinLimitsViolation) {
