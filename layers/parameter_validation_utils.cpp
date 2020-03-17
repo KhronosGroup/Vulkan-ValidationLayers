@@ -995,26 +995,167 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
             bool has_dynamic_viewport = false;
             bool has_dynamic_scissor = false;
             bool has_dynamic_line_width = false;
+            bool has_dynamic_depth_bias = false;
+            bool has_dynamic_blend_constant = false;
+            bool has_dynamic_depth_bounds = false;
+            bool has_dynamic_stencil_compare = false;
+            bool has_dynamic_stencil_write = false;
+            bool has_dynamic_stencil_reference = false;
             bool has_dynamic_viewport_w_scaling_nv = false;
             bool has_dynamic_discard_rectangle_ext = false;
             bool has_dynamic_sample_locations_ext = false;
             bool has_dynamic_exclusive_scissor_nv = false;
             bool has_dynamic_shading_rate_palette_nv = false;
+            bool has_dynamic_viewport_course_sample_order_nv = false;
             bool has_dynamic_line_stipple = false;
             if (pCreateInfos[i].pDynamicState != nullptr) {
                 const auto &dynamic_state_info = *pCreateInfos[i].pDynamicState;
                 for (uint32_t state_index = 0; state_index < dynamic_state_info.dynamicStateCount; ++state_index) {
                     const auto &dynamic_state = dynamic_state_info.pDynamicStates[state_index];
-                    if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT) has_dynamic_viewport = true;
-                    if (dynamic_state == VK_DYNAMIC_STATE_SCISSOR) has_dynamic_scissor = true;
-                    if (dynamic_state == VK_DYNAMIC_STATE_LINE_WIDTH) has_dynamic_line_width = true;
-                    if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV) has_dynamic_viewport_w_scaling_nv = true;
-                    if (dynamic_state == VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT) has_dynamic_discard_rectangle_ext = true;
-                    if (dynamic_state == VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) has_dynamic_sample_locations_ext = true;
-                    if (dynamic_state == VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV) has_dynamic_exclusive_scissor_nv = true;
-                    if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV)
+                    if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT) {
+                        if (has_dynamic_viewport == true) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VIEWPORT was listed twice in the "
+                                             "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
+                        has_dynamic_viewport = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_SCISSOR) {
+                        if (has_dynamic_scissor == true) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_SCISSOR was listed twice in the "
+                                             "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
+                        has_dynamic_scissor = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_LINE_WIDTH) {
+                        if (has_dynamic_line_width == true) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_LINE_WIDTH was listed twice in the "
+                                             "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
+                        has_dynamic_line_width = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_DEPTH_BIAS) {
+                        if (has_dynamic_depth_bias == true) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DEPTH_BIAS was listed twice in the "
+                                             "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
+                        has_dynamic_depth_bias = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_BLEND_CONSTANTS) {
+                        if (has_dynamic_blend_constant == true) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_BLEND_CONSTANTS was listed twice in the "
+                                             "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
+                        has_dynamic_blend_constant = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_DEPTH_BOUNDS) {
+                        if (has_dynamic_depth_bounds == true) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DEPTH_BOUNDS was listed twice in the "
+                                             "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
+                        has_dynamic_depth_bounds = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK) {
+                        if (has_dynamic_stencil_compare == true) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK was listed twice in "
+                                             "the pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
+                        has_dynamic_stencil_compare = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_STENCIL_WRITE_MASK) {
+                        if (has_dynamic_stencil_write == true) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_STENCIL_WRITE_MASK was listed twice in "
+                                             "the pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
+                        has_dynamic_stencil_write = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_STENCIL_REFERENCE) {
+                        if (has_dynamic_stencil_reference == true) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_STENCIL_REFERENCE was listed twice in "
+                                             "the pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
+                        has_dynamic_stencil_reference = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV) {
+                        if (has_dynamic_viewport_w_scaling_nv == true) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV was listed twice "
+                                             "in the pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
+                        has_dynamic_viewport_w_scaling_nv = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT) {
+                        if (has_dynamic_discard_rectangle_ext == true) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT was listed twice "
+                                             "in the pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
+                        has_dynamic_discard_rectangle_ext = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) {
+                        if (has_dynamic_sample_locations_ext == true) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT was listed twice in "
+                                             "the pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
+                        has_dynamic_sample_locations_ext = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV) {
+                        if (has_dynamic_exclusive_scissor_nv == true) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_NV was listed twice in "
+                                             "the pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
+                        has_dynamic_exclusive_scissor_nv = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV) {
+                        if (has_dynamic_shading_rate_palette_nv == true) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV was "
+                                             "listed twice in the pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
                         has_dynamic_shading_rate_palette_nv = true;
-                    if (dynamic_state == VK_DYNAMIC_STATE_LINE_STIPPLE_EXT) has_dynamic_line_stipple = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV) {
+                        if (has_dynamic_viewport_course_sample_order_nv == true) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_VIEWPORT_COARSE_SAMPLE_ORDER_NV was "
+                                             "listed twice in the pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
+                        has_dynamic_viewport_course_sample_order_nv = true;
+                    }
+                    if (dynamic_state == VK_DYNAMIC_STATE_LINE_STIPPLE_EXT) {
+                        if (has_dynamic_line_stipple == true) {
+                            skip |= LogError(device, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442",
+                                             "vkCreateGraphicsPipelines: VK_DYNAMIC_STATE_LINE_STIPPLE_EXT was listed twice in the "
+                                             "pCreateInfos[%d].pDynamicState->pDynamicStates array",
+                                             i);
+                        }
+                        has_dynamic_line_stipple = true;
+                    }
                 }
             }
 
