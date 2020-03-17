@@ -756,7 +756,7 @@ TEST_F(VkLayerTest, MapMemWithoutHostVisibleBit) {
     vk::FreeMemory(m_device->device(), mem, NULL);
 }
 
-TEST_F(VkLayerTest, RebindMemory) {
+TEST_F(VkLayerTest, RebindMemory_MultiObjectDebugUtils) {
     VkResult err;
     bool pass;
 
@@ -820,7 +820,11 @@ TEST_F(VkLayerTest, RebindMemory) {
     // Introduce validation failure, try to bind a different memory object to
     // the same image object
     err = vk::BindImageMemory(m_device->device(), image, mem2, 0);
+    m_errorMonitor->VerifyFound();
 
+    // This particular VU should output three objects in its error message. Verify this works correctly.
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VK_OBJECT_TYPE_IMAGE");
+    err = vk::BindImageMemory(m_device->device(), image, mem2, 0);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyImage(m_device->device(), image, NULL);
