@@ -4486,7 +4486,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     ivci.format = VK_FORMAT_R5G6B5_UNORM_PACK16;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-02399");
     // Also causes "view format different from image format"
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-01019");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-01762");
     vk::CreateImageView(dev, &ivci, NULL, &image_view);
     m_errorMonitor->VerifyFound();
 
