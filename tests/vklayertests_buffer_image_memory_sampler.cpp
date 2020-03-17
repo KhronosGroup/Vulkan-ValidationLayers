@@ -4252,6 +4252,10 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     // Size greater than total size
     conc_test("", "VUID-VkBufferMemoryBarrier-size-01189");
 
+    conc_test.buffer_barrier_.size = 0;
+    // Size is zero
+    conc_test("", "VUID-VkBufferMemoryBarrier-size-01188");
+
     conc_test.buffer_barrier_.size = VK_WHOLE_SIZE;
 
     // Now exercise barrier aspect bit errors, first DS
