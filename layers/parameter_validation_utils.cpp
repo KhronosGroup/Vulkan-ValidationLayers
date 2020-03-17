@@ -724,6 +724,13 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                 }
             }
         }
+
+        if ((!physical_device_features.shaderStorageImageMultisample) && ((pCreateInfo->usage & VK_IMAGE_USAGE_STORAGE_BIT) != 0) &&
+            (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT)) {
+            skip |= LogError(device, "VUID-VkImageCreateInfo-usage-00968",
+                             "vkCreateImage(): usage contains VK_IMAGE_USAGE_STORAGE_BIT and the multisampled storage images "
+                             "feature is not enabled, image samples must be VK_SAMPLE_COUNT_1_BIT");
+        }
     }
 
     return skip;
