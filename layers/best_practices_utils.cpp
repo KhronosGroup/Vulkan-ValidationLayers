@@ -475,7 +475,10 @@ bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory me
     const DEVICE_MEMORY_STATE* mem_info = ValidationStateTracker::GetDevMemState(memory);
 
     for (auto& obj : mem_info->obj_bindings) {
-        skip |= LogWarning(device, layer_name.c_str(), "VK Object %s still has a reference to mem obj %s.",
+        LogObjectList objlist(device);
+        objlist.add(obj);
+        objlist.add(mem_info->mem);
+        skip |= LogWarning(objlist, layer_name.c_str(), "VK Object %s still has a reference to mem obj %s.",
                            report_data->FormatHandle(obj).c_str(), report_data->FormatHandle(mem_info->mem).c_str());
     }
 
