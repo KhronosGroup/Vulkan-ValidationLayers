@@ -8080,3 +8080,38 @@ TEST_F(VkLayerTest, WrongdstArrayElement) {
     descriptor_set2.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, DescriptorSetLayoutMisc) {
+    TEST_DESCRIPTION("Various invalid ways to create a VkDescriptorSetLayout.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    VkDescriptorSetLayoutBinding dsl_binding = {};
+    dsl_binding.binding = 1;
+    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    dsl_binding.descriptorCount = 1;
+    dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    dsl_binding.pImmutableSamplers = nullptr;
+
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = {};
+    ds_layout_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    ds_layout_ci.pNext = nullptr;
+    ds_layout_ci.bindingCount = 1;
+    ds_layout_ci.pBindings = &dsl_binding;
+
+    VkDescriptorSetLayout ds_layout;
+
+    // Should succeed with shader stage of 0 or fragment
+    m_errorMonitor->ExpectSuccess();
+    vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
+    vk::DestroyDescriptorSetLayout(device(), ds_layout, nullptr);
+    dsl_binding.stageFlags = 0;
+    vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
+    vk::DestroyDescriptorSetLayout(device(), ds_layout, nullptr);
+    m_errorMonitor->VerifyNotFound();
+
+    dsl_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDescriptorSetLayoutBinding-descriptorType-01510");
+    vk::CreateDescriptorSetLayout(device(), &ds_layout_ci, NULL, &ds_layout);
+    m_errorMonitor->VerifyFound();
+}
