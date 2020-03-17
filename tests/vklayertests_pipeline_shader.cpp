@@ -6995,3 +6995,34 @@ TEST_F(VkLayerTest, CreatePipelineDynamicUniformIndex) {
             "Shader requires VkPhysicalDeviceFeatures::shaderStorageImageArrayDynamicIndexing but is not enabled on the device");
     }
 }
+
+TEST_F(VkLayerTest, DuplicateDynamicStates) {
+    TEST_DESCRIPTION("Create a pipeline with duplicate dynamic states set.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkDynamicState dynamic_states[4] = {VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK, VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
+                                        VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK, VK_DYNAMIC_STATE_STENCIL_REFERENCE};
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.dyn_state_ci_ = {};
+    pipe.dyn_state_ci_.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    pipe.dyn_state_ci_.pNext = nullptr;
+    pipe.dyn_state_ci_.flags = 0;
+    pipe.dyn_state_ci_.dynamicStateCount = 4;
+    pipe.dyn_state_ci_.pDynamicStates = dynamic_states;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    // Should error twice since 2 sets of duplicates now
+    dynamic_states[3] = VK_DYNAMIC_STATE_STENCIL_WRITE_MASK;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineDynamicStateCreateInfo-pDynamicStates-01442");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
