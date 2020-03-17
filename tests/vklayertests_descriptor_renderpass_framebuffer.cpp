@@ -7868,8 +7868,12 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
     VkResult err = vk::CreateDescriptorSetLayout(m_device->device(), &ds_layout_ci, NULL, &ds_layout);
     ASSERT_VK_SUCCESS(err);
 
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02214");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02216");
+    const char *max_inline_vuid = (supportsDescriptorIndexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-02214"
+                                                               : "VUID-VkPipelineLayoutCreateInfo-descriptorType-02212";
+    const char *max_all_inline_vuid = (supportsDescriptorIndexing) ? "VUID-VkPipelineLayoutCreateInfo-descriptorType-02216"
+                                                                   : "VUID-VkPipelineLayoutCreateInfo-descriptorType-02213";
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_inline_vuid);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, max_all_inline_vuid);
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02215");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineLayoutCreateInfo-descriptorType-02217");
 

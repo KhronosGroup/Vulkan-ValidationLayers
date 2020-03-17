@@ -168,6 +168,14 @@ VkPhysicalDeviceSubgroupProperties GetSubgroupProperties(VkInstance instance, Vk
     return subgroup_prop;
 }
 
+VkPhysicalDeviceDescriptorIndexingProperties GetDescriptorIndexingProperties(VkInstance instance, VkPhysicalDevice gpu) {
+    auto descriptor_indexing_prop = lvl_init_struct<VkPhysicalDeviceDescriptorIndexingProperties>();
+
+    auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2>(&descriptor_indexing_prop);
+    vk::GetPhysicalDeviceProperties2(gpu, &prop2);
+    return descriptor_indexing_prop;
+}
+
 bool operator==(const VkDebugUtilsLabelEXT &rhs, const VkDebugUtilsLabelEXT &lhs) {
     bool is_equal = (rhs.color[0] == lhs.color[0]) && (rhs.color[1] == lhs.color[1]) && (rhs.color[2] == lhs.color[2]) &&
                     (rhs.color[3] == lhs.color[3]);
