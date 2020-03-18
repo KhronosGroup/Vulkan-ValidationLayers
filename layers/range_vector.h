@@ -28,6 +28,7 @@
 #include <limits>
 #include <map>
 #include <utility>
+#include <cstdint>
 
 #define RANGE_ASSERT(b) assert(b)
 
