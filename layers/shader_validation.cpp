@@ -443,14 +443,6 @@ static bool TypesMatch(SHADER_MODULE_STATE const *a, SHADER_MODULE_STATE const *
     }
 }
 
-static unsigned ValueOrDefault(std::unordered_map<unsigned, unsigned> const &map, unsigned id, unsigned def) {
-    auto it = map.find(id);
-    if (it == map.end())
-        return def;
-    else
-        return it->second;
-}
-
 static unsigned GetLocationsConsumedByType(SHADER_MODULE_STATE const *src, unsigned type, bool strip_array_level) {
     auto insn = src->get_def(type);
     assert(insn != src->end());
