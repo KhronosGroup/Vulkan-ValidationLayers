@@ -476,7 +476,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 flagBits = flag.replace('Flags', 'FlagBits')
                 if flagBits in self.flagBits:
                     bits = self.flagBits[flagBits]
-                    decl = 'const {} All{} = {}'.format(flag, flagBits, bits[0])
+                    decl = 'const DECORATE_UNUSED {} All{} = {}'.format(flag, flagBits, bits[0])
                     for bit in bits[1:]:
                         decl += '|' + bit
                     decl += ';'

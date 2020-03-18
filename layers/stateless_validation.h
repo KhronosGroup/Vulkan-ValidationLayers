@@ -43,8 +43,6 @@ static const char DECORATE_UNUSED *kVUID_PVError_DeviceFeature = "UNASSIGNED-Gen
 static const char DECORATE_UNUSED *kVUID_PVError_FailureCode = "UNASSIGNED-GeneralParameterError-FailureCode";
 static const char DECORATE_UNUSED *kVUID_PVError_ExtensionNotEnabled = "UNASSIGNED-GeneralParameterError-ExtensionNotEnabled";
 
-#undef DECORATE_UNUSED
-
 extern const uint32_t GeneratedVulkanHeaderVersion;
 
 extern const VkQueryPipelineStatisticFlags AllVkQueryPipelineStatisticFlagBits;
