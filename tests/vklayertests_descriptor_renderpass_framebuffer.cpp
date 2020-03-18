@@ -4473,7 +4473,10 @@ TEST_F(VkLayerTest, WriteDescriptorSetIntegrityCheck) {
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, NULL},
         {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, NULL},
         {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, static_cast<VkSampler *>(&sampler)},
-        {3, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, NULL}};
+        {3, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, NULL},
+        {4, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 3, VK_SHADER_STAGE_FRAGMENT_BIT, NULL},
+        {5, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, NULL},
+        {6, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, NULL}};
     OneOffDescriptorSet descriptor_set(m_device, bindings);
     ASSERT_TRUE(descriptor_set.Initialized());
 
@@ -4501,23 +4504,54 @@ TEST_F(VkLayerTest, WriteDescriptorSetIntegrityCheck) {
     VkBufferObj dynamic_uniform_buffer;
     dynamic_uniform_buffer.init(*m_device, buffCI);
 
-    VkDescriptorBufferInfo buffInfo[2] = {};
-    buffInfo[0].buffer = dynamic_uniform_buffer.handle();
-    buffInfo[0].offset = 0;
-    buffInfo[0].range = 1024;
-    buffInfo[1].buffer = dynamic_uniform_buffer.handle();
-    buffInfo[1].offset = 0;
-    buffInfo[1].range = 1024;
+    VkDescriptorBufferInfo buffInfo[5] = {};
+    for (int i = 0; i < 5; ++i) {
+        buffInfo[i].buffer = dynamic_uniform_buffer.handle();
+        buffInfo[i].offset = 0;
+        buffInfo[i].range = 1024;
+    }
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_write.pBufferInfo = buffInfo;
-    descriptor_write.descriptorCount = 2;
 
     // 2) The stateFlags and type don't match between the first and second descriptor
+    descriptor_write.dstBinding = 0;
+    descriptor_write.dstArrayElement = 0;
+    descriptor_write.descriptorCount = 2;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorCount-00317");
     vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 
+    descriptor_write.dstBinding = 4;
+    descriptor_write.dstArrayElement = 0;
+    descriptor_write.descriptorCount = 5;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorCount-00317");
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    m_errorMonitor->VerifyFound();
+
+    descriptor_write.dstBinding = 4;
+    descriptor_write.dstArrayElement = 1;
+    descriptor_write.descriptorCount = 4;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorCount-00317");
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    m_errorMonitor->VerifyFound();
+
+    descriptor_write.dstBinding = 4;
+    descriptor_write.dstArrayElement = 0;
+    descriptor_write.descriptorCount = 4;
+    m_errorMonitor->ExpectSuccess();
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    m_errorMonitor->VerifyNotFound();
+
+    descriptor_write.dstBinding = 4;
+    descriptor_write.dstArrayElement = 1;
+    descriptor_write.descriptorCount = 3;
+    m_errorMonitor->ExpectSuccess();
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    m_errorMonitor->VerifyNotFound();
+
     // 3) The second descriptor has a null_ptr pImmutableSamplers and the third descriptor contains an immutable sampler
     descriptor_write.dstBinding = 1;
+    descriptor_write.dstArrayElement = 0;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
 
     // Make pImageInfo index non-null to avoid complaints of it missing
