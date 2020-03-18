@@ -10,7 +10,6 @@ matrix:
   fast_finish: true
   allow_failures:
     - env: CHECK_COMMIT_FORMAT=ON
-    - env: VULKAN_BUILD_TARGET=GN
   include:
     # Android build.
     - os: linux
