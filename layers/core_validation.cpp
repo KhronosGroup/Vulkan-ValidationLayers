@@ -65,6 +65,33 @@
 // Array of command names indexed by CMD_TYPE enum
 static const std::array<const char *, CMD_RANGE_SIZE> command_name_list = {{VUID_CMD_NAME_LIST}};
 
+static VkImageLayout NormalizeImageLayout(VkImageLayout layout, VkImageLayout non_normal, VkImageLayout normal) {
+    return (layout == non_normal) ? normal : layout;
+}
+
+static VkImageLayout NormalizeDepthImageLayout(VkImageLayout layout) {
+    return NormalizeImageLayout(layout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL);
+}
+
+static VkImageLayout NormalizeStencilImageLayout(VkImageLayout layout) {
+    return NormalizeImageLayout(layout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL);
+}
+
+bool ImageLayoutMatches(const VkImageAspectFlags aspect_mask, VkImageLayout a, VkImageLayout b) {
+    bool matches = (a == b);
+    if (!matches) {
+        // Relaxed rules when referencing *only* the depth or stencil aspects
+        if (aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT) {
+            matches = NormalizeDepthImageLayout(a) == NormalizeDepthImageLayout(b);
+        } else if (aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT) {
+            matches = NormalizeStencilImageLayout(a) == NormalizeStencilImageLayout(b);
+        }
+    }
+    return matches;
+}
+
 // These functions are defined *outside* the core_validation namespace as their type
 // is also defined outside that namespace
 size_t PipelineLayoutCompatDef::hash() const {

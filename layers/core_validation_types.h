@@ -505,32 +505,7 @@ class SWAPCHAIN_NODE : public BASE_NODE {
 
 std::string FormatDebugLabel(const char *prefix, const LoggingLabel &label);
 
-static VkImageLayout NormalizeImageLayout(VkImageLayout layout, VkImageLayout non_normal, VkImageLayout normal) {
-    return (layout == non_normal) ? normal : layout;
-}
-
-static VkImageLayout NormalizeDepthImageLayout(VkImageLayout layout) {
-    return NormalizeImageLayout(layout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-                                VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL);
-}
-
-static VkImageLayout NormalizeStencilImageLayout(VkImageLayout layout) {
-    return NormalizeImageLayout(layout, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-                                VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL);
-}
-
-static bool ImageLayoutMatches(const VkImageAspectFlags aspect_mask, VkImageLayout a, VkImageLayout b) {
-    bool matches = (a == b);
-    if (!matches) {
-        // Relaxed rules when referencing *only* the depth or stencil aspects
-        if (aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT) {
-            matches = NormalizeDepthImageLayout(a) == NormalizeDepthImageLayout(b);
-        } else if (aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT) {
-            matches = NormalizeStencilImageLayout(a) == NormalizeStencilImageLayout(b);
-        }
-    }
-    return matches;
-}
+extern bool ImageLayoutMatches(const VkImageAspectFlags aspect_mask, VkImageLayout a, VkImageLayout b);
 
 // Store the DAG.
 struct DAGNode {
