@@ -219,14 +219,8 @@ using std::unordered_map;
 #define VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(handle_type, state_type, map_member) \
     VALSTATETRACK_MAP_AND_TRAITS_IMPL(handle_type, state_type, map_member, true)
 
-static std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> GetDslFromPipelineLayout(
-    PIPELINE_LAYOUT_STATE const* layout_data, uint32_t set) {
-    std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> dsl = nullptr;
-    if (layout_data && (set < layout_data->set_layouts.size())) {
-        dsl = layout_data->set_layouts[set];
-    }
-    return dsl;
-}
+extern std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> GetDslFromPipelineLayout(
+    PIPELINE_LAYOUT_STATE const* layout_data, uint32_t set);
 
 struct SHADER_MODULE_STATE;
 
