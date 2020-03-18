@@ -44,13 +44,20 @@
 
 #define VK_VERSION_1_1_NAME "VK_VERSION_1_1"
 
+// Suppress unused warning on Linux
+#if defined(__GNUC__)
+#define DECORATE_UNUSED __attribute__((unused))
+#else
+#define DECORATE_UNUSED
+#endif
+
 enum ExtEnabled : unsigned char {
     kNotEnabled,
     kEnabledByCreateinfo,
     kEnabledByApiLevel,
 };
 
-static bool IsExtEnabled(ExtEnabled feature) {
+static bool DECORATE_UNUSED IsExtEnabled(ExtEnabled feature) {
     if (feature == kNotEnabled) return false;
     return true;
 };
