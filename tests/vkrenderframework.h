@@ -283,7 +283,6 @@ class VkRenderFramework : public VkTestFramework {
 class VkDescriptorSetObj;
 class VkConstantBufferObj;
 class VkPipelineObj;
-class VkDescriptorSetObj;
 typedef vk_testing::Fence VkFenceObj;
 typedef vk_testing::Buffer VkBufferObj;
 typedef vk_testing::AccelerationStructure VkAccelerationStructureObj;
