@@ -83,6 +83,15 @@ void ValidationStateTracker::RecordDestroySamplerYcbcrConversionANDROID(VkSample
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
+std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> GetDslFromPipelineLayout(PIPELINE_LAYOUT_STATE const *layout_data,
+                                                                                     uint32_t set) {
+    std::shared_ptr<cvdescriptorset::DescriptorSetLayout const> dsl = nullptr;
+    if (layout_data && (set < layout_data->set_layouts.size())) {
+        dsl = layout_data->set_layouts[set];
+    }
+    return dsl;
+}
+
 void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                                                        const VkAllocationCallbacks *pAllocator, VkImage *pImage, VkResult result) {
     if (VK_SUCCESS != result) return;
@@ -4899,8 +4908,8 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
             // Add imageMap entries for each swapchain image
             VkImageCreateInfo image_ci;
             image_ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-            image_ci.pNext = nullptr;                    // to be set later
-            image_ci.flags = 0;                          // to be updated below
+            image_ci.pNext = nullptr;  // to be set later
+            image_ci.flags = 0;        // to be updated below
             image_ci.imageType = VK_IMAGE_TYPE_2D;
             image_ci.format = swapchain_state->createInfo.imageFormat;
             image_ci.extent.width = swapchain_state->createInfo.imageExtent.width;
