@@ -2504,10 +2504,9 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
         VkShaderStageFlags stageFlags = current_binding.GetStageFlags();
         VkDescriptorType descriptorType = current_binding.GetType();
         bool immutableSamplers = (current_binding.GetImmutableSamplerPtr() == nullptr);
-        ++current_binding;
+        uint32_t dstArrayElement = update->dstArrayElement;
 
-        // Start at 1 since first binding is used as comparsion value
-        for (uint32_t i = 1; i < update->descriptorCount; i++) {
+        for (uint32_t i = 0; i < update->descriptorCount;) {
             if (current_binding.AtEnd() == true) {
                 break;  // prevents setting error here if bindings don't exist
             }
@@ -2534,6 +2533,10 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
                 *error_msg = error_str.str();
                 return false;
             }
+
+            // Skip the remaining descriptors for this binding, and move to the next binding
+            i += (current_binding.GetDescriptorCount() - dstArrayElement);
+            dstArrayElement = 0;
             ++current_binding;
         }
     }
