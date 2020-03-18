@@ -66,6 +66,8 @@ struct ResourceUsageTag {
         return *this;
     }
     bool IsBefore(const ResourceUsageTag &rhs) const { return index < rhs.index; }
+    bool operator==(const ResourceUsageTag &rhs) const { return (index == rhs.index); }
+    bool operator!=(const ResourceUsageTag &rhs) const { return !(*this == rhs); }
 };
 
 struct HazardResult {
@@ -98,6 +100,11 @@ class ResourceAccessState : public SyncStageAccess {
         VkPipelineStageFlagBits stage;  // The stage of this read
         VkPipelineStageFlags barriers;  // all applicable barriered stages
         ResourceUsageTag tag;
+        bool operator==(const ReadState &rhs) const {
+            bool same = (stage == rhs.stage) && (barriers == rhs.barriers) && (tag == rhs.tag);
+            return same;
+        }
+        bool operator!=(const ReadState &rhs) const { return !(*this == rhs); }
     };
 
     static ResourceAccessState ApplyBarrierStack(const ResourceAccessState &that, const SyncBarrierStack &barrier_stack);
@@ -124,6 +131,16 @@ class ResourceAccessState : public SyncStageAccess {
         : write_barriers(~SyncStageAccessFlags(0)), write_dependency_chain(0), last_read_count(0), last_read_stages(0) {}
 
     bool HasWriteOp() const { return last_write != 0; }
+    bool operator==(const ResourceAccessState &rhs) const {
+        bool same = (write_barriers == rhs.write_barriers) && (write_dependency_chain == rhs.write_dependency_chain) &&
+                    (last_read_count == rhs.last_read_count) && (last_read_stages == rhs.last_read_stages) &&
+                    (write_tag == rhs.write_tag);
+        for (uint32_t i = 0; same && i < last_read_count; i++) {
+            same |= last_reads[i] == rhs.last_reads[i];
+        }
+        return same;
+    }
+    bool operator!=(const ResourceAccessState &rhs) const { return !(*this == rhs); }
 
   private:
     bool IsWriteHazard(SyncStageAccessFlagBits usage) const { return 0 != (usage & ~write_barriers); }
@@ -229,16 +246,21 @@ class AccessTrackerContext {
 
     const AccessTrackerMap &GetAccessTrackerMap() const { return access_tracker_map_; }
     AccessTrackerMap &GetAccessTrackerMap() { return access_tracker_map_; }
+
+    const TrackBack &GetDstExternalTrackBack() const { return dst_external_; }
     void Reset() {
         access_tracker_map_.clear();
         prev_.clear();
         async_.clear();
-        external_ = TrackBack();
+        src_external_ = TrackBack();
     }
     // TODO: See if returning the lower_bound would be useful from a performance POV -- look at the lower_bound overhead
     // Would need to add a "hint" overload to parallel_iterator::invalidate_[AB] call, if so.
     void ResolvePreviousAccess(const VulkanTypedHandle &handle, const ResourceAccessRange &range,
                                ResourceAccessRangeMap *descent_map, const ResourceAccessState *infill_state) const;
+    void ResolveTrackBack(const VulkanTypedHandle &handle, const ResourceAccessRange &range,
+                          const AccessTrackerContext::TrackBack &track_back, ResourceAccessRangeMap *descent_map,
+                          const ResourceAccessState *infill_state, bool recur_to_infill = true) const;
     void UpdateAccessState(const VulkanTypedHandle &handle, SyncStageAccessIndex current_usage, const ResourceAccessRange &range,
                            const ResourceUsageTag &tag);
     void UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
@@ -259,15 +281,13 @@ class AccessTrackerContext {
     template <typename Detector>
     HazardResult DetectPreviousHazard(const VulkanTypedHandle &handle, const Detector &detector,
                                       const ResourceAccessRange &range) const;
-    void ResolveTrackBack(const VulkanTypedHandle &handle, const ResourceAccessRange &range,
-                          const AccessTrackerContext::TrackBack &track_back, ResourceAccessRangeMap *descent_map,
-                          const ResourceAccessState *infill_state) const;
 
     AccessTrackerMap access_tracker_map_;
 
     std::vector<TrackBack> prev_;
     std::vector<AccessTrackerContext *> async_;
-    TrackBack external_;
+    TrackBack src_external_;
+    TrackBack dst_external_;
 };
 
 struct RenderPassAccessContext {

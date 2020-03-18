@@ -144,10 +144,15 @@ AccessTrackerContext::AccessTrackerContext(uint32_t subpass, VkQueueFlags queue_
     for (const auto async_subpass : subpass_dep.async) {
         async_.emplace_back(const_cast<AccessTrackerContext *>(&contexts[async_subpass]));
     }
-    if (subpass_dep.barrier_from_external)
-        external_ = TrackBack(external_context, queue_flags, *subpass_dep.barrier_from_external);
-    else {
-        external_ = TrackBack();
+    if (subpass_dep.barrier_from_external) {
+        src_external_ = TrackBack(external_context, queue_flags, *subpass_dep.barrier_from_external);
+    } else {
+        src_external_ = TrackBack();
+    }
+    if (subpass_dep.barrier_to_external) {
+        dst_external_ = TrackBack(this, queue_flags, *subpass_dep.barrier_to_external);
+    } else {
+        dst_external_ = TrackBack();
     }
 }
 
@@ -237,7 +242,7 @@ HazardResult AccessTrackerContext::DetectAsyncHazard(const VulkanTypedHandle &ha
 
 void AccessTrackerContext::ResolveTrackBack(const VulkanTypedHandle &handle, const ResourceAccessRange &range,
                                             const AccessTrackerContext::TrackBack &track_back, ResourceAccessRangeMap *descent_map,
-                                            const ResourceAccessState *infill_state) const {
+                                            const ResourceAccessState *infill_state, bool recur_to_infill) const {
     const auto *access_tracker = GetAccessTracker(handle);
     if (access_tracker) {
         sparse_container::parallel_iterator<ResourceAccessRangeMap, const ResourceAccessRangeMap> current(
@@ -269,8 +274,10 @@ void AccessTrackerContext::ResolveTrackBack(const VulkanTypedHandle &handle, con
                 }
             } else {
                 // we have to descend to fill this gap
-                track_back.context->ResolvePreviousAccess(handle, range, descent_map, infill_state);
-                current.invalidate_A();  // Update the parallel iterator to point at the correct segment after recursion.
+                if (recur_to_infill) {
+                    track_back.context->ResolvePreviousAccess(handle, range, descent_map, infill_state);
+                    current.invalidate_A();  // Update the parallel iterator to point at the correct segment after recursion.
+                }
                 if (!current->pos_A->valid && infill_state) {
                     // If we didn't find anything in the previous range, we infill with default to prevent repeating
                     // a fruitless search
@@ -286,7 +293,7 @@ void AccessTrackerContext::ResolveTrackBack(const VulkanTypedHandle &handle, con
 void AccessTrackerContext::ResolvePreviousAccess(const VulkanTypedHandle &handle, const ResourceAccessRange &range,
                                                  ResourceAccessRangeMap *descent_map,
                                                  const ResourceAccessState *infill_state) const {
-    if ((prev_.size() == 0) && (external_.context == nullptr)) {
+    if ((prev_.size() == 0) && (src_external_.context == nullptr)) {
         if (range.non_empty() && infill_state) {
             descent_map->insert(std::make_pair(range, *infill_state));
         }
@@ -296,8 +303,8 @@ void AccessTrackerContext::ResolvePreviousAccess(const VulkanTypedHandle &handle
             ResolveTrackBack(handle, range, prev_dep, descent_map, infill_state);
         }
 
-        if (external_.context) {
-            ResolveTrackBack(handle, range, external_, descent_map, infill_state);
+        if (src_external_.context) {
+            ResolveTrackBack(handle, range, src_external_, descent_map, infill_state);
         }
     }
 }
@@ -324,12 +331,50 @@ void CommandBufferAccessContext::BeginRenderPass(const RENDER_PASS_STATE &rp_sta
     render_pass_contexts_.emplace_back(queue_flags_, &rp_state.subpass_dependencies, &cb_tracker_context_);
     current_renderpass_context_ = &render_pass_contexts_.back();
     current_context_ = &current_renderpass_context_->CurrentContext();
+
+    // TODO: Add layout load/store/transition/resolve access (here or in RenderPassContext)
 }
 
 void CommandBufferAccessContext::NextRenderPass(const RENDER_PASS_STATE &rp_state) {
     assert(current_renderpass_context_);
     current_renderpass_context_->NextSubpass(queue_flags_, &cb_tracker_context_);
+    // TODO: Add layout load/store/transition/resolve access (here or in RenderPassContext)
     current_context_ = &current_renderpass_context_->CurrentContext();
+}
+
+void CommandBufferAccessContext::EndRenderPass(const RENDER_PASS_STATE &render_pass) {
+    std::unordered_set<VulkanTypedHandle> resolved;
+    assert(current_renderpass_context_);
+    if (!current_renderpass_context_) return;
+
+    const auto &contexts = current_renderpass_context_->subpass_contexts_;
+
+    // TODO: Add layout load/store/transition/resolve access (here or in RenderPassContext)
+
+    for (uint32_t subpass_index = 0; subpass_index < contexts.size(); subpass_index++) {
+        auto &context = contexts[subpass_index];
+        for (const auto &tracker_pair : context.GetAccessTrackerMap()) {
+            if (tracker_pair.second.GetCurrentAccessMap().size() == 0) continue;
+            auto insert_pair = resolved.insert(tracker_pair.first);
+            if (insert_pair.second) {  // only create the resolve map for this handle if we haven't seen it before
+                // This is the first time we've seen this handle accessed, resolve this for all subsequent subpasses
+                ResourceAccessRangeMap resolve_map;
+                auto resolve_index = static_cast<uint32_t>(contexts.size());
+                while (resolve_index > subpass_index) {
+                    resolve_index--;
+                    const auto &from_context = contexts[resolve_index];
+                    from_context.ResolveTrackBack(tracker_pair.first, full_range, from_context.GetDstExternalTrackBack(),
+                                                  &resolve_map, nullptr, false);
+                }
+                // Given that all DAG paths lead back to the src_external_ (if only a default one) we can just overwrite.
+                sparse_container::splice(&cb_tracker_context_.GetAccessTracker(tracker_pair.first)->GetCurrentAccessMap(),
+                                         resolve_map, sparse_container::value_precedence::prefer_source);
+                // TODO: This might be a place to consolidate the map
+            }
+        }
+    }
+    current_context_ = &cb_tracker_context_;
+    current_renderpass_context_ = nullptr;
 }
 
 HazardResult AccessTrackerContext::DetectHazard(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
@@ -1154,7 +1199,18 @@ void SyncValidator::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuff
     RecordCmdNextSubpass(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo);
 }
 
-void SyncValidator::RecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) {}
+void SyncValidator::RecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo) {
+    // Resolve the all subpass contexts to the command buffer contexts
+    auto cb_context = GetAccessContext(commandBuffer);
+    assert(cb_context);
+    auto cb_state = cb_context->GetCommandBufferState();
+    if (!cb_state) return;
+
+    const auto *rp_state = cb_state->activeRenderPass;
+    if (!rp_state) return;
+
+    cb_context->EndRenderPass(*rp_state);
+}
 
 void SyncValidator::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) {
     StateTracker::PostCallRecordCmdEndRenderPass(commandBuffer);
