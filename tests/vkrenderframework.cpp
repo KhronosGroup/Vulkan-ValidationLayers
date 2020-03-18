@@ -33,7 +33,7 @@ ErrorMonitor::ErrorMonitor() {
     test_platform_thread_unlock_mutex(&mutex_);
 }
 
-ErrorMonitor::~ErrorMonitor() { test_platform_thread_delete_mutex(&mutex_); }
+ErrorMonitor::~ErrorMonitor() NOEXCEPT { test_platform_thread_delete_mutex(&mutex_); }
 
 void ErrorMonitor::Reset() {
     message_flags_ = 0;
@@ -1041,7 +1041,7 @@ VkDescriptorSetLayoutObj::VkDescriptorSetLayoutObj(const VkDeviceObj *device,
 
 VkDescriptorSetObj::VkDescriptorSetObj(VkDeviceObj *device) : m_device(device), m_nextSlot(0) {}
 
-VkDescriptorSetObj::~VkDescriptorSetObj() {
+VkDescriptorSetObj::~VkDescriptorSetObj() NOEXCEPT {
     if (m_set) {
         delete m_set;
     }
@@ -1190,7 +1190,7 @@ VkRenderpassObj::VkRenderpassObj(VkDeviceObj *dev) {
     vk::CreateRenderPass(device, &rpci, NULL, &m_renderpass);
 }
 
-VkRenderpassObj::~VkRenderpassObj() { vk::DestroyRenderPass(device, m_renderpass, NULL); }
+VkRenderpassObj::~VkRenderpassObj() NOEXCEPT { vk::DestroyRenderPass(device, m_renderpass, NULL); }
 
 VkImageObj::VkImageObj(VkDeviceObj *dev) {
     m_device = dev;
