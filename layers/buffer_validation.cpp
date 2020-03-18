@@ -4906,35 +4906,35 @@ bool CoreChecks::ValidateBufferImageCopyData(uint32_t regionCount, const VkBuffe
         }
 
         // Calculate adjusted image extent, accounting for multiplane image factors
-        VkExtent3D adusted_image_extent = GetImageSubresourceExtent(image_state, &pRegions[i].imageSubresource);
+        VkExtent3D adjusted_image_extent = GetImageSubresourceExtent(image_state, &pRegions[i].imageSubresource);
         // imageOffset.x and (imageExtent.width + imageOffset.x) must both be >= 0 and <= image subresource width
-        if ((pRegions[i].imageOffset.x < 0) || (pRegions[i].imageOffset.x > static_cast<int32_t>(adusted_image_extent.width)) ||
-            ((pRegions[i].imageOffset.x + pRegions[i].imageExtent.width) > static_cast<int32_t>(adusted_image_extent.width))) {
+        if ((pRegions[i].imageOffset.x < 0) || (pRegions[i].imageOffset.x > static_cast<int32_t>(adjusted_image_extent.width)) ||
+            ((pRegions[i].imageOffset.x + pRegions[i].imageExtent.width) > static_cast<int32_t>(adjusted_image_extent.width))) {
             skip |= LogError(image_state->image, "VUID-VkBufferImageCopy-imageOffset-00197",
                              "%s(): Both pRegion[%d] imageoffset.x (%d) and (imageExtent.width + imageOffset.x) (%d) must be >= "
                              "zero or <= image subresource width (%d).",
                              function, i, pRegions[i].imageOffset.x, (pRegions[i].imageOffset.x + pRegions[i].imageExtent.width),
-                             adusted_image_extent.width);
+                             adjusted_image_extent.width);
         }
 
         // imageOffset.y and (imageExtent.height + imageOffset.y) must both be >= 0 and <= image subresource height
-        if ((pRegions[i].imageOffset.y < 0) || (pRegions[i].imageOffset.y > static_cast<int32_t>(adusted_image_extent.height)) ||
-            ((pRegions[i].imageOffset.y + pRegions[i].imageExtent.height) > static_cast<int32_t>(adusted_image_extent.height))) {
+        if ((pRegions[i].imageOffset.y < 0) || (pRegions[i].imageOffset.y > static_cast<int32_t>(adjusted_image_extent.height)) ||
+            ((pRegions[i].imageOffset.y + pRegions[i].imageExtent.height) > static_cast<int32_t>(adjusted_image_extent.height))) {
             skip |= LogError(image_state->image, "VUID-VkBufferImageCopy-imageOffset-00198",
                              "%s(): Both pRegion[%d] imageoffset.y (%d) and (imageExtent.height + imageOffset.y) (%d) must be >= "
                              "zero or <= image subresource height (%d).",
                              function, i, pRegions[i].imageOffset.y, (pRegions[i].imageOffset.y + pRegions[i].imageExtent.height),
-                             adusted_image_extent.height);
+                             adjusted_image_extent.height);
         }
 
         // imageOffset.z and (imageExtent.depth + imageOffset.z) must both be >= 0 and <= image subresource depth
-        if ((pRegions[i].imageOffset.z < 0) || (pRegions[i].imageOffset.z > static_cast<int32_t>(adusted_image_extent.depth)) ||
-            ((pRegions[i].imageOffset.z + pRegions[i].imageExtent.depth) > static_cast<int32_t>(adusted_image_extent.depth))) {
+        if ((pRegions[i].imageOffset.z < 0) || (pRegions[i].imageOffset.z > static_cast<int32_t>(adjusted_image_extent.depth)) ||
+            ((pRegions[i].imageOffset.z + pRegions[i].imageExtent.depth) > static_cast<int32_t>(adjusted_image_extent.depth))) {
             skip |= LogError(image_state->image, "VUID-VkBufferImageCopy-imageOffset-00200",
                              "%s(): Both pRegion[%d] imageoffset.z (%d) and (imageExtent.depth + imageOffset.z) (%d) must be >= "
                              "zero or <= image subresource depth (%d).",
                              function, i, pRegions[i].imageOffset.z, (pRegions[i].imageOffset.z + pRegions[i].imageExtent.depth),
-                             adusted_image_extent.depth);
+                             adjusted_image_extent.depth);
         }
 
         // subresource aspectMask must have exactly 1 bit set
