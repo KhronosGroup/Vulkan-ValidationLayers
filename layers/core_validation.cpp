@@ -3684,7 +3684,21 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
 
     auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_api_state *>(crtpl_state_data);
     for (uint32_t i = 0; i < count; i++) {
-        skip |= ValidateRayTracingPipelineNV(crtpl_state->pipe_state[i].get());
+        skip |= ValidateRayTracingPipeline(crtpl_state->pipe_state[i].get(), /*isKHR*/ false);
+    }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                             const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
+                                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                             void *crtpl_state_data) const {
+    bool skip = StateTracker::PreCallValidateCreateRayTracingPipelinesKHR(device, pipelineCache, count, pCreateInfos, pAllocator,
+                                                                          pPipelines, crtpl_state_data);
+
+    auto *crtpl_state = reinterpret_cast<create_ray_tracing_pipeline_khr_api_state *>(crtpl_state_data);
+    for (uint32_t i = 0; i < count; i++) {
+        skip |= ValidateRayTracingPipeline(crtpl_state->pipe_state[i].get(), /*isKHR*/ true);
     }
     return skip;
 }
@@ -4877,7 +4891,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
         }
     }
 
-    if (pInfo != nullptr && pInfo->geometryCount > phys_dev_ext_props.ray_tracing_props.maxGeometryCount) {
+    if (pInfo != nullptr && pInfo->geometryCount > phys_dev_ext_props.ray_tracing_propsNV.maxGeometryCount) {
         skip |= LogError(commandBuffer, "VUID-vkCmdBuildAccelerationStructureNV-geometryCount-02241",
                          "vkCmdBuildAccelerationStructureNV(): geometryCount [%d] must be less than or equal to "
                          "VkPhysicalDeviceRayTracingPropertiesNV::maxGeometryCount.",
@@ -10868,8 +10882,8 @@ void PIPELINE_STATE::initComputePipeline(const ValidationStateTracker *state_dat
     }
 }
 
-void PIPELINE_STATE::initRayTracingPipelineNV(const ValidationStateTracker *state_data,
-                                              const VkRayTracingPipelineCreateInfoNV *pCreateInfo) {
+template <typename CreateInfo>
+void PIPELINE_STATE::initRayTracingPipeline(const ValidationStateTracker *state_data, const CreateInfo *pCreateInfo) {
     reset();
     raytracingPipelineCI.initialize(pCreateInfo);
 
@@ -10902,3 +10916,8 @@ void PIPELINE_STATE::initRayTracingPipelineNV(const ValidationStateTracker *stat
         state_data->RecordPipelineShaderStage(&shader_stage, this, &stage_state[stage_index]);
     }
 }
+
+template void PIPELINE_STATE::initRayTracingPipeline(const ValidationStateTracker *state_data,
+                                                     const VkRayTracingPipelineCreateInfoNV *pCreateInfo);
+template void PIPELINE_STATE::initRayTracingPipeline(const ValidationStateTracker *state_data,
+                                                     const VkRayTracingPipelineCreateInfoKHR *pCreateInfo);

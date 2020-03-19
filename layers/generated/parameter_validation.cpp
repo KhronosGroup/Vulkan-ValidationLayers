@@ -11560,6 +11560,7 @@ bool StatelessValidation::PreCallValidateCreateAccelerationStructureKHR(
         }
     }
     skip |= validate_required_pointer("vkCreateAccelerationStructureKHR", "pAccelerationStructure", pAccelerationStructure, "VUID-vkCreateAccelerationStructureKHR-pAccelerationStructure-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure);
     return skip;
 }
 
@@ -12059,6 +12060,7 @@ bool StatelessValidation::PreCallValidateCreateRayTracingPipelinesKHR(
         }
     }
     skip |= validate_array("vkCreateRayTracingPipelinesKHR", "createInfoCount", "pPipelines", createInfoCount, &pPipelines, true, true, "VUID-vkCreateRayTracingPipelinesKHR-createInfoCount-arraylength", "VUID-vkCreateRayTracingPipelinesKHR-pPipelines-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateRayTracingPipelinesKHR(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
     return skip;
 }
 

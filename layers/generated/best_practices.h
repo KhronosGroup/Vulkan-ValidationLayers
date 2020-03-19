@@ -1504,7 +1504,8 @@ void PostCallRecordvkCreateRayTracingPipelinesKHR(
     const VkRayTracingPipelineCreateInfoKHR*    pCreateInfos,
     const VkAllocationCallbacks*                pAllocator,
     VkPipeline*                                 pPipelines,
-    VkResult                                    result);
+    VkResult                                    result,
+    void*                                       state_data);
 
 
 #endif // VK_ENABLE_BETA_EXTENSIONS

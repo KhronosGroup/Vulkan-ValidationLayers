@@ -352,7 +352,7 @@ class CoreChecks : public ValidationStateTracker {
     // Stuff from shader_validation
     bool ValidateGraphicsPipelineShaderState(const PIPELINE_STATE* pPipeline) const;
     bool ValidateComputePipelineShaderState(PIPELINE_STATE* pPipeline) const;
-    bool ValidateRayTracingPipelineNV(PIPELINE_STATE* pipeline) const;
+    bool ValidateRayTracingPipeline(PIPELINE_STATE* pipeline, bool isKHR) const;
     bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
                                            const VkAllocationCallbacks* pAllocator, VkShaderModule* pShaderModule) const;
     bool ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo const* pStage, const PIPELINE_STATE* pipeline,
@@ -688,6 +688,10 @@ class CoreChecks : public ValidationStateTracker {
                                                     const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                     void* pipe_state) const;
+    bool PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                     const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
+                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                     void* pipe_state) const;
     bool PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
                                        VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
                                        VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
@@ -702,6 +706,28 @@ class CoreChecks : public ValidationStateTracker {
                                       VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
                                       VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
                                       uint32_t width, uint32_t height, uint32_t depth);
+    bool PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer, const VkStridedBufferRegionKHR* pRaygenShaderBindingTable,
+                                        const VkStridedBufferRegionKHR* pMissShaderBindingTable,
+                                        const VkStridedBufferRegionKHR* pHitShaderBindingTable,
+                                        const VkStridedBufferRegionKHR* pCallableShaderBindingTable, uint32_t width,
+                                        uint32_t height, uint32_t depth) const;
+    void PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer, const VkStridedBufferRegionKHR* pRaygenShaderBindingTable,
+                                       const VkStridedBufferRegionKHR* pMissShaderBindingTable,
+                                       const VkStridedBufferRegionKHR* pHitShaderBindingTable,
+                                       const VkStridedBufferRegionKHR* pCallableShaderBindingTable, uint32_t width, uint32_t height,
+                                       uint32_t depth);
+    bool PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
+                                                const VkStridedBufferRegionKHR* pRaygenShaderBindingTable,
+                                                const VkStridedBufferRegionKHR* pMissShaderBindingTable,
+                                                const VkStridedBufferRegionKHR* pHitShaderBindingTable,
+                                                const VkStridedBufferRegionKHR* pCallableShaderBindingTable, VkBuffer buffer,
+                                                VkDeviceSize offset) const;
+    void PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
+                                               const VkStridedBufferRegionKHR* pRaygenShaderBindingTable,
+                                               const VkStridedBufferRegionKHR* pMissShaderBindingTable,
+                                               const VkStridedBufferRegionKHR* pHitShaderBindingTable,
+                                               const VkStridedBufferRegionKHR* pCallableShaderBindingTable, VkBuffer buffer,
+                                               VkDeviceSize offset);
     bool PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkDevice* pDevice) const;
     void PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
