@@ -2145,6 +2145,65 @@ bool CoreChecks::ValidateShaderStageInputOutputLimits(SHADER_MODULE_STATE const 
     return skip;
 }
 
+bool CoreChecks::ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const PIPELINE_STATE *pipeline) const {
+    bool skip = false;
+    uint32_t total_resources = 0;
+
+    // Only currently testing for graphics and compute pipelines
+    // TODO: Add check and support for Ray Tracing pipeline VUID 03428
+    if ((stage & (VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT)) == 0) {
+        return false;
+    }
+
+    if (stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
+        // "For the fragment shader stage the framebuffer color attachments also count against this limit"
+        total_resources += pipeline->rp_state->createInfo.pSubpasses[pipeline->graphicsPipelineCI.subpass].colorAttachmentCount;
+    }
+
+    // TODO: This reuses a lot of GetDescriptorCountMaxPerStage but currently would need to make it agnostic in a way to handle
+    // input from CreatePipeline and CreatePipelineLayout level
+    for (auto set_layout : pipeline->pipeline_layout->set_layouts) {
+        if ((set_layout->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT) != 0) {
+            continue;
+        }
+
+        for (uint32_t binding_idx = 0; binding_idx < set_layout->GetBindingCount(); binding_idx++) {
+            const VkDescriptorSetLayoutBinding *binding = set_layout->GetDescriptorSetLayoutBindingPtrFromIndex(binding_idx);
+            // Bindings with a descriptorCount of 0 are "reserved" and should be skipped
+            if (((stage & binding->stageFlags) != 0) && (binding->descriptorCount > 0)) {
+                // Check only descriptor types listed in maxPerStageResources description in spec
+                switch (binding->descriptorType) {
+                    case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+                    case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+                    case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+                    case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+                    case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+                    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+                    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+                    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+                    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+                    case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+                        total_resources += binding->descriptorCount;
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+    }
+
+    if (total_resources > phys_dev_props.limits.maxPerStageResources) {
+        const char *vuid = (stage == VK_SHADER_STAGE_COMPUTE_BIT) ? "VUID-VkComputePipelineCreateInfo-layout-01687"
+                                                                  : "VUID-VkGraphicsPipelineCreateInfo-layout-01688";
+        skip |= LogError(pipeline->pipeline, vuid,
+                         "Invalid Pipeline CreateInfo State: Shader Stage %s exceeds component limit "
+                         "VkPhysicalDeviceLimits::maxPerStageResources (%u)",
+                         string_VkShaderStageFlagBits(stage), phys_dev_props.limits.maxPerStageResources);
+    }
+
+    return skip;
+}
+
 // copy the specialization constant value into buf, if it is present
 void GetSpecConstantValue(VkPipelineShaderStageCreateInfo const *pStage, uint32_t spec_id, void *buf) {
     VkSpecializationInfo const *spec = pStage->pSpecializationInfo;
@@ -2923,6 +2982,7 @@ bool CoreChecks::ValidatePipelineShaderStage(VkPipelineShaderStageCreateInfo con
     skip |= ValidateShaderCapabilities(module, pStage->stage);
     skip |= ValidateShaderStageWritableDescriptor(pStage->stage, has_writable_descriptor);
     skip |= ValidateShaderStageInputOutputLimits(module, pStage, pipeline, entrypoint);
+    skip |= ValidateShaderStageMaxResources(pStage->stage, pipeline);
     skip |= ValidateShaderStageGroupNonUniform(module, pStage->stage);
     skip |= ValidateExecutionModes(module, entrypoint);
     skip |= ValidateSpecializationOffsets(pStage);
