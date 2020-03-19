@@ -7257,3 +7257,100 @@ TEST_F(VkLayerTest, DuplicateDynamicStates) {
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, PipelineMaxPerStageResources) {
+    TEST_DESCRIPTION("Check case where pipeline is created that exceeds maxPerStageResources");
+
+    if (!EnableDeviceProfileLayer()) {
+        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT =
+        (PFN_vkSetPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT");
+    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT =
+        (PFN_vkGetOriginalPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceLimitsEXT");
+
+    if (!(fpvkSetPhysicalDeviceLimitsEXT) || !(fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
+        printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    // Spec requires a minimum of 128 so know this is setting it lower than that
+    const uint32_t maxPerStageResources = 4;
+    VkPhysicalDeviceProperties props;
+    fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    props.limits.maxPerStageResources = maxPerStageResources;
+    fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    // Adds the one color attachment
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    // A case where it shouldn't error because no single stage is over limit
+    std::vector<VkDescriptorSetLayoutBinding> layout_bindings_normal = {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxPerStageResources, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+
+    // vertex test
+    std::vector<VkDescriptorSetLayoutBinding> layout_bindings_vert = {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxPerStageResources, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+
+    // fragment only has it at the limit because color attachment should push it over
+    std::vector<VkDescriptorSetLayoutBinding> layout_bindings_frag = {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxPerStageResources, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
+
+    // compute test
+    std::vector<VkDescriptorSetLayoutBinding> layout_bindings_comp = {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxPerStageResources, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+
+    // Have case where it pushes limit from two setLayouts instead of two setLayoutBindings
+    std::vector<VkDescriptorSetLayoutBinding> layout_binding_combined0 = {
+        {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, maxPerStageResources, VK_SHADER_STAGE_VERTEX_BIT, nullptr}};
+    std::vector<VkDescriptorSetLayoutBinding> layout_binding_combined1 = {
+        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}};
+
+    const VkDescriptorSetLayoutObj ds_layout_normal(m_device, layout_bindings_normal);
+    const VkDescriptorSetLayoutObj ds_layout_vert(m_device, layout_bindings_vert);
+    const VkDescriptorSetLayoutObj ds_layout_frag(m_device, layout_bindings_frag);
+    const VkDescriptorSetLayoutObj ds_layout_comp(m_device, layout_bindings_comp);
+    const VkDescriptorSetLayoutObj ds_layout_combined0(m_device, layout_binding_combined0);
+    const VkDescriptorSetLayoutObj ds_layout_combined1(m_device, layout_binding_combined1);
+
+    CreateComputePipelineHelper compute_pipe(*this);
+    compute_pipe.InitInfo();
+    compute_pipe.InitShaderInfo();
+    compute_pipe.InitState();
+    compute_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_comp});
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkComputePipelineCreateInfo-layout-01687");
+    compute_pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+
+    CreatePipelineHelper graphics_pipe(*this);
+    graphics_pipe.InitInfo();
+    graphics_pipe.InitShaderInfo();
+
+    graphics_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_normal});
+    m_errorMonitor->ExpectSuccess();
+    graphics_pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyNotFound();
+
+    graphics_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_vert});
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-01688");
+    graphics_pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    graphics_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_frag});
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-01688");
+    graphics_pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+
+    graphics_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_combined0, &ds_layout_combined1});
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-01688");
+    graphics_pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
