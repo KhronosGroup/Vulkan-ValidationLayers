@@ -93,7 +93,8 @@ class StatelessValidation : public ValidationObject {
     struct DeviceExtensionProperties {
         VkPhysicalDeviceShadingRateImagePropertiesNV shading_rate_image_props;
         VkPhysicalDeviceMeshShaderPropertiesNV mesh_shader_props;
-        VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props;
+        VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_propsNV;
+        VkPhysicalDeviceRayTracingPropertiesKHR ray_tracing_propsKHR;
         VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
@@ -1350,6 +1351,10 @@ class StatelessValidation : public ValidationObject {
                                                              const VkAccelerationStructureCreateInfoNV *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator,
                                                              VkAccelerationStructureNV *pAccelerationStructure) const;
+    bool manual_PreCallValidateCreateAccelerationStructureKHR(VkDevice device,
+                                                              const VkAccelerationStructureCreateInfoKHR *pCreateInfo,
+                                                              const VkAllocationCallbacks *pAllocator,
+                                                              VkAccelerationStructureKHR *pAccelerationStructure) const;
     bool manual_PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer,
                                                                const VkAccelerationStructureInfoNV *pInfo, VkBuffer instanceData,
                                                                VkDeviceSize instanceOffset, VkBool32 update,
@@ -1360,6 +1365,10 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                            const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                            const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) const;
+    bool manual_PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkPipelineCache pipelineCache,
+                                                            uint32_t createInfoCount,
+                                                            const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
+                                                            const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines) const;
     bool manual_PreCallValidateCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,
                                                         uint32_t viewportCount,
                                                         const VkViewportWScalingNV *pViewportWScalings) const;

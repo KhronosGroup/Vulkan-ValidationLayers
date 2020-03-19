@@ -4827,7 +4827,8 @@ TEST_F(VkLayerTest, WarningSwapchainCreateInfoPreTransform) {
     DestroySwapchain();
 }
 
-bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, std::vector<const char *> &instance_extension_names,
+bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, bool isKHR,
+                                    std::vector<const char *> &instance_extension_names,
                                     std::vector<const char *> &device_extension_names, void *user_data,
                                     bool need_gpu_validation = false, bool need_push_descriptors = false) {
     const std::array<const char *, 1> required_instance_extensions = {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME};
@@ -4855,10 +4856,18 @@ bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, std::vec
         return false;
     }
 
-    std::vector<const char *> required_device_extensions = {
-        VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-        VK_NV_RAY_TRACING_EXTENSION_NAME,
-    };
+    std::vector<const char *> required_device_extensions;
+    required_device_extensions.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    if (isKHR) {
+        required_device_extensions.push_back(VK_KHR_RAY_TRACING_EXTENSION_NAME);
+        required_device_extensions.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        required_device_extensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+        required_device_extensions.push_back(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+        required_device_extensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+        required_device_extensions.push_back(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
+    } else {
+        required_device_extensions.push_back(VK_NV_RAY_TRACING_EXTENSION_NAME);
+    }
     if (need_push_descriptors) {
         required_device_extensions.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     }
@@ -4877,7 +4886,7 @@ bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, std::vec
 
 TEST_F(VkLayerTest, ValidateGeometryNV) {
     TEST_DESCRIPTION("Validate acceleration structure geometries.");
-    if (!InitFrameworkForRayTracingTest(this, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
+    if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
         return;
     }
 
@@ -5164,7 +5173,7 @@ void GetSimpleGeometryForAccelerationStructureTests(const VkDeviceObj &device, V
 
 TEST_F(VkLayerTest, ValidateCreateAccelerationStructureNV) {
     TEST_DESCRIPTION("Validate acceleration structure creation.");
-    if (!InitFrameworkForRayTracingTest(this, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
+    if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
         return;
     }
 
@@ -5258,15 +5267,117 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureNV) {
         mix_geometry_types_as_create_info.info.pGeometries = geometries.data();
         mix_geometry_types_as_create_info.info.flags = 0;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-VkAccelerationStructureInfoNV-pGeometries-XXXX");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAccelerationStructureInfoNV-type-02786");
         vkCreateAccelerationStructureNV(m_device->handle(), &mix_geometry_types_as_create_info, nullptr, &as);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHR) {
+    TEST_DESCRIPTION("Validate acceleration structure creation.");
+    if (!InitFrameworkForRayTracingTest(this, true, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
+        return;
+    }
+
+    PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(
+        vk::GetDeviceProcAddr(m_device->handle(), "vkCreateAccelerationStructureKHR"));
+    assert(vkCreateAccelerationStructureKHR != nullptr);
+
+    VkBufferObj vbo;
+    VkBufferObj ibo;
+    // Get an NV geometry in the helper, then pull out the bits we need for Create
+    VkGeometryNV geometryNV;
+    GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometryNV);
+
+    VkAccelerationStructureCreateGeometryTypeInfoKHR geometryInfo = {};
+    geometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_GEOMETRY_TYPE_INFO_KHR;
+    geometryInfo.geometryType = geometryNV.geometryType;
+    geometryInfo.maxPrimitiveCount = 1024;
+    geometryInfo.indexType = geometryNV.geometry.triangles.indexType;
+    geometryInfo.maxVertexCount = 1024;
+    geometryInfo.vertexFormat = geometryNV.geometry.triangles.vertexFormat;
+    geometryInfo.allowsTransforms = VK_TRUE;
+
+    VkAccelerationStructureCreateInfoKHR as_create_info = {};
+    as_create_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+
+    VkAccelerationStructureKHR as = VK_NULL_HANDLE;
+
+    // Top level can not have geometry
+    {
+        VkAccelerationStructureCreateInfoKHR bad_top_level_create_info = as_create_info;
+        bad_top_level_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+        bad_top_level_create_info.maxGeometryCount = 1;
+        bad_top_level_create_info.pGeometryInfos = &geometryInfo;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAccelerationStructureCreateInfoKHR-type-03496");
+        vkCreateAccelerationStructureKHR(m_device->handle(), &bad_top_level_create_info, nullptr, &as);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Bot level can not have instances
+    {
+        VkAccelerationStructureCreateInfoKHR bad_bot_level_create_info = as_create_info;
+        bad_bot_level_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+        bad_bot_level_create_info.maxGeometryCount = 1;
+        VkAccelerationStructureCreateGeometryTypeInfoKHR geometryInfo2 = geometryInfo;
+        geometryInfo2.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+        bad_bot_level_create_info.pGeometryInfos = &geometryInfo2;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAccelerationStructureCreateInfoKHR-type-03497");
+        vkCreateAccelerationStructureKHR(m_device->handle(), &bad_bot_level_create_info, nullptr, &as);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Can not prefer both fast trace and fast build
+    {
+        VkAccelerationStructureCreateInfoKHR bad_flags_level_create_info = as_create_info;
+        bad_flags_level_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+        bad_flags_level_create_info.maxGeometryCount = 1;
+        bad_flags_level_create_info.pGeometryInfos = &geometryInfo;
+        bad_flags_level_create_info.flags =
+            VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-VkAccelerationStructureCreateInfoKHR-flags-03499");
+        vkCreateAccelerationStructureKHR(m_device->handle(), &bad_flags_level_create_info, nullptr, &as);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Can not have geometry or instance for compacting
+    {
+        VkAccelerationStructureCreateInfoKHR bad_compacting_as_create_info = as_create_info;
+        bad_compacting_as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+        bad_compacting_as_create_info.maxGeometryCount = 1;
+        bad_compacting_as_create_info.pGeometryInfos = &geometryInfo;
+        bad_compacting_as_create_info.flags = 0;
+        bad_compacting_as_create_info.compactedSize = 1024;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-VkAccelerationStructureCreateInfoKHR-compactedSize-03490");
+        vkCreateAccelerationStructureKHR(m_device->handle(), &bad_compacting_as_create_info, nullptr, &as);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // Can not mix different geometry types into single bottom level acceleration structure
+    {
+        VkAccelerationStructureCreateGeometryTypeInfoKHR aabb_geometry = {};
+        aabb_geometry = geometryInfo;
+        aabb_geometry.geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
+
+        std::vector<VkAccelerationStructureCreateGeometryTypeInfoKHR> geometries = {geometryInfo, aabb_geometry};
+
+        VkAccelerationStructureCreateInfoKHR mix_geometry_types_as_create_info = as_create_info;
+        mix_geometry_types_as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+        mix_geometry_types_as_create_info.maxGeometryCount = static_cast<uint32_t>(geometries.size());
+        mix_geometry_types_as_create_info.pGeometryInfos = geometries.data();
+        mix_geometry_types_as_create_info.flags = 0;
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAccelerationStructureCreateInfoKHR-type-03498");
+        vkCreateAccelerationStructureKHR(m_device->handle(), &mix_geometry_types_as_create_info, nullptr, &as);
         m_errorMonitor->VerifyFound();
     }
 }
 
 TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
     TEST_DESCRIPTION("Validate acceleration structure binding.");
-    if (!InitFrameworkForRayTracingTest(this, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
+    if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
         return;
     }
 
@@ -5426,7 +5537,7 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
 
 TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructureNV) {
     TEST_DESCRIPTION("Validate acceleration structure building.");
-    if (!InitFrameworkForRayTracingTest(this, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
+    if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
         return;
     }
 
@@ -5532,7 +5643,7 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructureNV) {
 
 TEST_F(VkLayerTest, ValidateGetAccelerationStructureHandleNV) {
     TEST_DESCRIPTION("Validate acceleration structure handle querying.");
-    if (!InitFrameworkForRayTracingTest(this, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
+    if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
         return;
     }
 
@@ -5579,7 +5690,7 @@ TEST_F(VkLayerTest, ValidateGetAccelerationStructureHandleNV) {
 
 TEST_F(VkLayerTest, ValidateCmdCopyAccelerationStructureNV) {
     TEST_DESCRIPTION("Validate acceleration structure copying.");
-    if (!InitFrameworkForRayTracingTest(this, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
+    if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
         return;
     }
 
@@ -5632,7 +5743,7 @@ TEST_F(VkLayerTest, GpuBuildAccelerationStructureValidationInvalidHandle) {
         "Acceleration structure gpu validation should report an invalid handle when trying to build a top level "
         "acceleration structure with an invalid handle for a bottom level acceleration structure.");
 
-    if (!InitFrameworkForRayTracingTest(this, m_instance_extension_names, m_device_extension_names, m_errorMonitor,
+    if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor,
                                         /*need_gpu_validation=*/true)) {
         return;
     }
@@ -5719,7 +5830,7 @@ TEST_F(VkLayerTest, GpuBuildAccelerationStructureValidationBottomLevelNotYetBuil
         "Acceleration structure gpu validation should report an invalid handle when trying to build a top level "
         "acceleration structure with a handle for a bottom level acceleration structure that has not yet been built.");
 
-    if (!InitFrameworkForRayTracingTest(this, m_instance_extension_names, m_device_extension_names, m_errorMonitor,
+    if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor,
                                         /*need_gpu_validation=*/true)) {
         return;
     }
@@ -5817,7 +5928,7 @@ TEST_F(VkLayerTest, GpuBuildAccelerationStructureValidationBottomLevelDestroyed)
         "Acceleration structure gpu validation should report an invalid handle when trying to build a top level "
         "acceleration structure with a handle for a destroyed bottom level acceleration structure.");
 
-    if (!InitFrameworkForRayTracingTest(this, m_instance_extension_names, m_device_extension_names, m_errorMonitor,
+    if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor,
                                         /*need_gpu_validation=*/true)) {
         return;
     }
@@ -5937,7 +6048,7 @@ TEST_F(VkLayerTest, GpuBuildAccelerationStructureValidationBottomLevelDestroyed)
 TEST_F(VkLayerTest, GpuBuildAccelerationStructureValidationRestoresState) {
     TEST_DESCRIPTION("Validate that acceleration structure gpu validation correctly restores compute state.");
 
-    if (!InitFrameworkForRayTracingTest(this, m_instance_extension_names, m_device_extension_names, m_errorMonitor,
+    if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor,
                                         /*need_gpu_validation=*/true, /*need_push_descriptors=*/true)) {
         return;
     }

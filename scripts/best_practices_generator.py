@@ -89,6 +89,7 @@ class BestPracticesOutputGenerator(OutputGenerator):
             "vkCreateComputePipelines",
             "vkAllocateDescriptorSets",
             "vkCreateRayTracingPipelinesNV",
+            "vkCreateRayTracingPipelinesKHR",
             ]
 
         self.extension_info = dict()

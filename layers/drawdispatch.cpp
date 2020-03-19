@@ -131,6 +131,26 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         kVUIDUndefined, // render_pass_compatible
         kVUIDUndefined, // subpass_index
     }},
+    {CMD_TRACERAYSKHR, {
+        "VUID-vkCmdTraceRaysKHR-commandBuffer-cmdpool",
+        "VUID-vkCmdTraceRaysKHR-renderpass",
+        "VUID-vkCmdTraceRaysKHR-None-02700",
+        "VUID-vkCmdTraceRaysKHR-commandBuffer-02701",
+        kVUIDUndefined, // vertex_binding
+        "VUID-vkCmdTraceRaysKHR-None-02697",
+        kVUIDUndefined, // render_pass_compatible
+        kVUIDUndefined, // subpass_index
+    }},
+    {CMD_TRACERAYSINDIRECTKHR, {
+        "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-cmdpool",
+        "VUID-vkCmdTraceRaysIndirectKHR-renderpass",
+        "VUID-vkCmdTraceRaysIndirectKHR-None-02700",
+        "VUID-vkCmdTraceRaysIndirectKHR-commandBuffer-02701",
+        kVUIDUndefined, // vertex_binding
+        "VUID-vkCmdTraceRaysIndirectKHR-None-02697",
+        kVUIDUndefined, // render_pass_compatible
+        kVUIDUndefined, // subpass_index
+    }},
     {CMD_DRAWMESHTASKSNV, {
         "VUID-vkCmdDrawMeshTasksNV-commandBuffer-cmdpool",
         "VUID-vkCmdDrawMeshTasksNV-renderpass",
@@ -411,6 +431,52 @@ void CoreChecks::PostCallRecordCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkB
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     UpdateStateCmdDrawDispatchType(cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV);
     cb_state->hasTraceRaysCmd = true;
+}
+
+bool CoreChecks::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
+                                                const VkStridedBufferRegionKHR *pRaygenShaderBindingTable,
+                                                const VkStridedBufferRegionKHR *pMissShaderBindingTable,
+                                                const VkStridedBufferRegionKHR *pHitShaderBindingTable,
+                                                const VkStridedBufferRegionKHR *pCallableShaderBindingTable, uint32_t width,
+                                                uint32_t height, uint32_t depth) const {
+    bool skip = ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSKHR,
+                                    "vkCmdTraceRaysKHR()", VK_QUEUE_COMPUTE_BIT);
+    return skip;
+}
+
+void CoreChecks::PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
+                                               const VkStridedBufferRegionKHR *pRaygenShaderBindingTable,
+                                               const VkStridedBufferRegionKHR *pMissShaderBindingTable,
+                                               const VkStridedBufferRegionKHR *pHitShaderBindingTable,
+                                               const VkStridedBufferRegionKHR *pCallableShaderBindingTable, uint32_t width,
+                                               uint32_t height, uint32_t depth) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    UpdateStateCmdDrawDispatchType(cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+    cb_state->hasTraceRaysCmd = true;
+}
+
+bool CoreChecks::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
+                                                        const VkStridedBufferRegionKHR *pRaygenShaderBindingTable,
+                                                        const VkStridedBufferRegionKHR *pMissShaderBindingTable,
+                                                        const VkStridedBufferRegionKHR *pHitShaderBindingTable,
+                                                        const VkStridedBufferRegionKHR *pCallableShaderBindingTable,
+                                                        VkBuffer buffer, VkDeviceSize offset) const {
+    bool skip = ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, CMD_TRACERAYSKHR,
+                                    "vkCmdTraceRaysIndirectKHR()", VK_QUEUE_COMPUTE_BIT);
+    return skip;
+}
+
+void CoreChecks::PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
+                                                       const VkStridedBufferRegionKHR *pRaygenShaderBindingTable,
+                                                       const VkStridedBufferRegionKHR *pMissShaderBindingTable,
+                                                       const VkStridedBufferRegionKHR *pHitShaderBindingTable,
+                                                       const VkStridedBufferRegionKHR *pCallableShaderBindingTable, VkBuffer buffer,
+                                                       VkDeviceSize offset) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    BUFFER_STATE *buffer_state = GetBufferState(buffer);
+    UpdateStateCmdDrawDispatchType(cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+    cb_state->hasTraceRaysCmd = true;
+    AddCommandBufferBindingBuffer(cb_state, buffer_state);
 }
 
 bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) const {

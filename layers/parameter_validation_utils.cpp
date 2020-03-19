@@ -154,7 +154,15 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         auto ray_tracing_props = lvl_init_struct<VkPhysicalDeviceRayTracingPropertiesNV>();
         auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_props);
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
-        phys_dev_ext_props.ray_tracing_props = ray_tracing_props;
+        phys_dev_ext_props.ray_tracing_propsNV = ray_tracing_props;
+    }
+
+    if (device_extensions.vk_khr_ray_tracing) {
+        // Get the needed ray tracing limits
+        auto ray_tracing_props = lvl_init_struct<VkPhysicalDeviceRayTracingPropertiesKHR>();
+        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_props);
+        DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
+        phys_dev_ext_props.ray_tracing_propsKHR = ray_tracing_props;
     }
 
     if (device_extensions.vk_ext_transform_feedback) {
@@ -3690,12 +3698,12 @@ bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerati
                          "VkAccelerationStructureInfoNV: If flags has the VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV"
                          "bit set, then it must not have the VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_NV bit set.");
     }
-    if (info.geometryCount > phys_dev_ext_props.ray_tracing_props.maxGeometryCount) {
+    if (info.geometryCount > phys_dev_ext_props.ray_tracing_propsNV.maxGeometryCount) {
         skip |= LogError(object_handle, "VUID-VkAccelerationStructureInfoNV-geometryCount-02422",
                          "VkAccelerationStructureInfoNV: geometryCount must be less than or equal to "
                          "VkPhysicalDeviceRayTracingPropertiesNV::maxGeometryCount.");
     }
-    if (info.instanceCount > phys_dev_ext_props.ray_tracing_props.maxInstanceCount) {
+    if (info.instanceCount > phys_dev_ext_props.ray_tracing_propsNV.maxInstanceCount) {
         skip |= LogError(object_handle, "VUID-VkAccelerationStructureInfoNV-instanceCount-02423",
                          "VkAccelerationStructureInfoNV: instanceCount must be less than or equal to "
                          "VkPhysicalDeviceRayTracingPropertiesNV::maxInstanceCount.");
@@ -3712,7 +3720,7 @@ bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerati
             }
             total_triangle_count += geometry.geometry.triangles.indexCount / 3;
         }
-        if (total_triangle_count > phys_dev_ext_props.ray_tracing_props.maxTriangleCount) {
+        if (total_triangle_count > phys_dev_ext_props.ray_tracing_propsNV.maxTriangleCount) {
             skip |= LogError(object_handle, "VUID-VkAccelerationStructureInfoNV-maxTriangleCount-02424",
                              "VkAccelerationStructureInfoNV: The total number of triangles in all geometries must be less than "
                              "or equal to VkPhysicalDeviceRayTracingPropertiesNV::maxTriangleCount.");
@@ -3723,8 +3731,7 @@ bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerati
         for (uint32_t i = 1; i < info.geometryCount; i++) {
             const VkGeometryNV &geometry = info.pGeometries[i];
             if (geometry.geometryType != first_geometry_type) {
-                // TODO: update fake VUID below with the real one once it is generated.
-                skip |= LogError(device, "UNASSIGNED-VkAccelerationStructureInfoNV-pGeometries-XXXX",
+                skip |= LogError(device, "VUID-VkAccelerationStructureInfoNV-type-02786",
                                  "VkAccelerationStructureInfoNV: info.pGeometries[%d].geometryType does not match "
                                  "info.pGeometries[0].geometryType.",
                                  i);
@@ -3770,6 +3777,64 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructureNV(
     return skip;
 }
 
+bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
+    VkDevice device, const VkAccelerationStructureCreateInfoKHR *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+    VkAccelerationStructureKHR *pAccelerationStructure) const {
+    bool skip = false;
+
+    if (pCreateInfo) {
+        for (uint32_t i = 0; i < pCreateInfo->maxGeometryCount; ++i) {
+            if (pCreateInfo->type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR && pCreateInfo->compactedSize == 0) {
+                if (pCreateInfo->pGeometryInfos[i].geometryType != VK_GEOMETRY_TYPE_INSTANCES_KHR) {
+                    skip |= LogError(device, "VUID-VkAccelerationStructureCreateInfoKHR-type-03496",
+                                     "VkAccelerationStructureCreateInfoKHR: Top-level acceleration structure "
+                                     "pGeometryInfos[%d].geometryType must be VK_GEOMETRY_TYPE_INSTANCES_KHR",
+                                     i);
+                }
+            }
+
+            if (pCreateInfo->type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR && pCreateInfo->compactedSize == 0) {
+                if (pCreateInfo->pGeometryInfos[i].geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
+                    skip |= LogError(device, "VUID-VkAccelerationStructureCreateInfoKHR-type-03497",
+                                     "VkAccelerationStructureCreateInfoKHR: Bottom-level acceleration structure "
+                                     "pGeometryInfos[%d].geometryType must not be VK_GEOMETRY_TYPE_INSTANCES_KHR",
+                                     i);
+                }
+            }
+        }
+
+        if (pCreateInfo->flags & VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR &&
+            pCreateInfo->flags & VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR) {
+            skip |= LogError(
+                device, "VUID-VkAccelerationStructureCreateInfoKHR-flags-03499",
+                "VkAccelerationStructureCreateInfoKHR: If flags has the VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR"
+                "bit set, then it must not have the VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR bit set.");
+        }
+
+        if (pCreateInfo->compactedSize != 0 && pCreateInfo->maxGeometryCount != 0) {
+            skip |= LogError(device, "VUID-VkAccelerationStructureCreateInfoKHR-compactedSize-03490",
+                             "VkAccelerationStructureCreateInfoKHR: pCreateInfo->compactedSize nonzero (%" PRIu64
+                             ") with maxGeometryCount (%" PRIu32 ") nonzero.",
+                             pCreateInfo->compactedSize, pCreateInfo->maxGeometryCount);
+        }
+
+        if (pCreateInfo->type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV && pCreateInfo->maxGeometryCount > 1) {
+            const VkGeometryTypeKHR first_geometry_type = pCreateInfo->pGeometryInfos[0].geometryType;
+            for (uint32_t i = 1; i < pCreateInfo->maxGeometryCount; i++) {
+                const VkGeometryTypeKHR geometry_type = pCreateInfo->pGeometryInfos[i].geometryType;
+                if (geometry_type != first_geometry_type) {
+                    skip |= LogError(device, "VUID-VkAccelerationStructureCreateInfoKHR-type-03498",
+                                     "VkAccelerationStructureCreateInfoKHR: pGeometryInfos[%d].geometryType does not match "
+                                     "pGeometryInfos[0].geometryType.",
+                                     i);
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateGetAccelerationStructureHandleNV(VkDevice device,
                                                                                  VkAccelerationStructureNV accelerationStructure,
                                                                                  size_t dataSize, void *pData) const {
@@ -3795,6 +3860,27 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDe
                              "vkCreateRayTracingPipelinesNV(): in pCreateInfo[%" PRIu32
                              "], VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount"
                              "(=%" PRIu32 ") must equal VkRayTracingPipelineCreateInfoNV::stageCount(=%" PRIu32 ").",
+                             i, feedback_struct->pipelineStageCreationFeedbackCount, pCreateInfos[i].stageCount);
+        }
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkPipelineCache pipelineCache,
+                                                                             uint32_t createInfoCount,
+                                                                             const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
+                                                                             const VkAllocationCallbacks *pAllocator,
+                                                                             VkPipeline *pPipelines) const {
+    bool skip = false;
+
+    for (uint32_t i = 0; i < createInfoCount; i++) {
+        auto feedback_struct = lvl_find_in_chain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
+        if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != pCreateInfos[i].stageCount)) {
+            skip |= LogError(device, "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02670",
+                             "vkCreateRayTracingPipelinesKHR(): in pCreateInfo[%" PRIu32
+                             "], VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount"
+                             "(=%" PRIu32 ") must equal VkRayTracingPipelineCreateInfoKHR::stageCount(=%" PRIu32 ").",
                              i, feedback_struct->pipelineStageCreationFeedbackCount, pCreateInfos[i].stageCount);
         }
     }

@@ -713,6 +713,59 @@ struct interface_var {
 };
 typedef std::pair<unsigned, unsigned> descriptor_slot_t;
 
+// Safe struct that spans NV and KHR VkRayTracingPipelineCreateInfo structures.
+// It is a safe_VkRayTracingPipelineCreateInfoKHR and supports construction from
+// a VkRayTracingPipelineCreateInfoNV.
+class safe_VkRayTracingPipelineCreateInfoCommon : public safe_VkRayTracingPipelineCreateInfoKHR {
+  public:
+    safe_VkRayTracingPipelineCreateInfoCommon() : safe_VkRayTracingPipelineCreateInfoKHR() {}
+    safe_VkRayTracingPipelineCreateInfoCommon(const VkRayTracingPipelineCreateInfoNV *pCreateInfo)
+        : safe_VkRayTracingPipelineCreateInfoKHR() {
+        initialize(pCreateInfo);
+    }
+    void initialize(const VkRayTracingPipelineCreateInfoNV *pCreateInfo) {
+        safe_VkRayTracingPipelineCreateInfoNV nvStruct;
+        nvStruct.initialize(pCreateInfo);
+
+        sType = nvStruct.sType;
+
+        // Take ownership of the pointer and null it out in nvStruct
+        pNext = nvStruct.pNext;
+        nvStruct.pNext = nullptr;
+
+        flags = nvStruct.flags;
+        stageCount = nvStruct.stageCount;
+
+        pStages = nvStruct.pStages;
+        nvStruct.pStages = nullptr;
+
+        groupCount = nvStruct.groupCount;
+        maxRecursionDepth = nvStruct.maxRecursionDepth;
+        layout = nvStruct.layout;
+        basePipelineHandle = nvStruct.basePipelineHandle;
+        basePipelineIndex = nvStruct.basePipelineIndex;
+
+        assert(pGroups == nullptr);
+        if (nvStruct.groupCount && nvStruct.pGroups) {
+            pGroups = new safe_VkRayTracingShaderGroupCreateInfoKHR[groupCount];
+            for (uint32_t i = 0; i < groupCount; ++i) {
+                pGroups[i].sType = nvStruct.pGroups[i].sType;
+                pGroups[i].pNext = nvStruct.pGroups[i].pNext;
+                pGroups[i].type = nvStruct.pGroups[i].type;
+                pGroups[i].generalShader = nvStruct.pGroups[i].generalShader;
+                pGroups[i].closestHitShader = nvStruct.pGroups[i].closestHitShader;
+                pGroups[i].anyHitShader = nvStruct.pGroups[i].anyHitShader;
+                pGroups[i].intersectionShader = nvStruct.pGroups[i].intersectionShader;
+                pGroups[i].intersectionShader = nvStruct.pGroups[i].intersectionShader;
+                pGroups[i].pShaderGroupCaptureReplayHandle = nullptr;
+            }
+        }
+    }
+    void initialize(const VkRayTracingPipelineCreateInfoKHR *pCreateInfo) {
+        safe_VkRayTracingPipelineCreateInfoKHR::initialize(pCreateInfo);
+    }
+};
+
 class PIPELINE_STATE : public BASE_NODE {
   public:
     struct StageState {
@@ -724,7 +777,7 @@ class PIPELINE_STATE : public BASE_NODE {
     VkPipeline pipeline;
     safe_VkGraphicsPipelineCreateInfo graphicsPipelineCI;
     safe_VkComputePipelineCreateInfo computePipelineCI;
-    safe_VkRayTracingPipelineCreateInfoNV raytracingPipelineCI;
+    safe_VkRayTracingPipelineCreateInfoCommon raytracingPipelineCI;
     // Hold shared ptr to RP in case RP itself is destroyed
     std::shared_ptr<const RENDER_PASS_STATE> rp_state;
     // Flag of which shader stages are active for this pipeline
@@ -769,7 +822,7 @@ class PIPELINE_STATE : public BASE_NODE {
         graphicsPipelineCI.initialize(&emptyGraphicsCI, false, false);
         VkComputePipelineCreateInfo emptyComputeCI = {};
         computePipelineCI.initialize(&emptyComputeCI);
-        VkRayTracingPipelineCreateInfoNV emptyRayTracingCI = {};
+        VkRayTracingPipelineCreateInfoKHR emptyRayTracingCI = {};
         raytracingPipelineCI.initialize(&emptyRayTracingCI);
         stage_state.clear();
     }
@@ -777,7 +830,9 @@ class PIPELINE_STATE : public BASE_NODE {
     void initGraphicsPipeline(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                               std::shared_ptr<const RENDER_PASS_STATE> &&rpstate);
     void initComputePipeline(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo);
-    void initRayTracingPipelineNV(const ValidationStateTracker *state_data, const VkRayTracingPipelineCreateInfoNV *pCreateInfo);
+
+    template <typename CreateInfo>
+    void initRayTracingPipeline(const ValidationStateTracker *state_data, const CreateInfo *pCreateInfo);
 
     inline VkPipelineBindPoint getPipelineType() const {
         if (graphicsPipelineCI.sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO)
@@ -786,6 +841,8 @@ class PIPELINE_STATE : public BASE_NODE {
             return VK_PIPELINE_BIND_POINT_COMPUTE;
         else if (raytracingPipelineCI.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV)
             return VK_PIPELINE_BIND_POINT_RAY_TRACING_NV;
+        else if (raytracingPipelineCI.sType == VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR)
+            return VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
         else
             return VK_PIPELINE_BIND_POINT_MAX_ENUM;
     }
@@ -1176,6 +1233,7 @@ struct DeviceFeatures {
     VkPhysicalDevicePerformanceQueryFeaturesKHR performance_query_features;
     VkPhysicalDeviceCoherentMemoryFeaturesAMD device_coherent_memory_features;
     VkPhysicalDeviceYcbcrImageArraysFeaturesEXT ycbcr_image_array_features;
+    VkPhysicalDeviceRayTracingFeaturesKHR ray_tracing_features;
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };

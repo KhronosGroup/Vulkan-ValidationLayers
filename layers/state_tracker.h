@@ -140,9 +140,16 @@ struct create_compute_pipeline_api_state {
 
 // This structure is used to save data across the CreateRayTracingPipelinesNV down-chain API call.
 struct create_ray_tracing_pipeline_api_state {
-    std::vector<safe_VkRayTracingPipelineCreateInfoNV> gpu_create_infos;
+    std::vector<safe_VkRayTracingPipelineCreateInfoCommon> gpu_create_infos;
     std::vector<std::shared_ptr<PIPELINE_STATE>> pipe_state;
     const VkRayTracingPipelineCreateInfoNV* pCreateInfos;
+};
+
+// This structure is used to save data across the CreateRayTracingPipelinesKHR down-chain API call.
+struct create_ray_tracing_pipeline_khr_api_state {
+    std::vector<safe_VkRayTracingPipelineCreateInfoCommon> gpu_create_infos;
+    std::vector<std::shared_ptr<PIPELINE_STATE>> pipe_state;
+    const VkRayTracingPipelineCreateInfoKHR* pCreateInfos;
 };
 
 // This structure is used modify parameters for the CreatePipelineLayout down-chain API call
@@ -719,6 +726,14 @@ class ValidationStateTracker : public ValidationObject {
                                                    const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
                                                    void* pipe_state);
+    bool PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                     const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
+                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                     void* pipe_state) const;
+    void PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
+                                                    const VkRayTracingPipelineCreateInfoKHR* pCreateInfos,
+                                                    const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                    VkResult result, void* pipe_state);
     void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass, VkResult result);
     void RecordCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2KHR* pCreateInfo,
@@ -1108,7 +1123,8 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vtx_attrib_divisor_props;
         VkPhysicalDeviceCooperativeMatrixPropertiesNV cooperative_matrix_props;
         VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
-        VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_props;
+        VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_propsNV;
+        VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_propsKHR;
         VkPhysicalDeviceTexelBufferAlignmentPropertiesEXT texel_buffer_alignment_props;
         VkPhysicalDeviceFragmentDensityMapPropertiesEXT fragment_density_map_props;
         VkPhysicalDevicePerformanceQueryPropertiesKHR performance_query_props;
