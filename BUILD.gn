@@ -58,6 +58,7 @@ config("vulkan_internal_config") {
   defines = [
     "VULKAN_NON_CMAKE_BUILD",
     "API_NAME=\"Vulkan\"",
+    "VK_ENABLE_BETA_EXTENSIONS",
   ]
   if (is_clang || !is_win) {
     cflags = [ "-Wno-unused-function" ]
