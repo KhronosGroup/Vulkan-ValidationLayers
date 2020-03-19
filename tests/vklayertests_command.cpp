@@ -2744,7 +2744,6 @@ TEST_F(VkLayerTest, CopyImageSinglePlane422Alignment) {
     copy_region.dstOffset = {1, 0, 0};
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCopy-dstImage-01731");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-dstOffset-01784");
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-pRegions-00123");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCopy-dstOffset-00150");
     m_commandBuffer->CopyImage(image_ucmp.image(), VK_IMAGE_LAYOUT_GENERAL, image_422.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
@@ -2956,8 +2955,6 @@ TEST_F(VkLayerTest, CopyImageSrcSizeExceeded) {
 
     // Source exceeded in x-dim, VU 01202
     copy_region.srcOffset.x = 4;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-vkCmdCopyImage-pRegions-00122");  // General "contained within" VU
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCopy-srcOffset-00144");
     m_commandBuffer->CopyImage(src_image.image(), VK_IMAGE_LAYOUT_GENERAL, dst_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
@@ -2966,7 +2963,6 @@ TEST_F(VkLayerTest, CopyImageSrcSizeExceeded) {
     // Source exceeded in y-dim, VU 01203
     copy_region.srcOffset.x = 0;
     copy_region.extent.height = 48;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-pRegions-00122");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCopy-srcOffset-00145");
     m_commandBuffer->CopyImage(src_image.image(), VK_IMAGE_LAYOUT_GENERAL, dst_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
@@ -2975,7 +2971,6 @@ TEST_F(VkLayerTest, CopyImageSrcSizeExceeded) {
     // Source exceeded in z-dim, VU 01204
     copy_region.extent = {4, 4, 4};
     copy_region.srcSubresource.mipLevel = 2;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-pRegions-00122");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCopy-srcOffset-00147");
     m_commandBuffer->CopyImage(src_image.image(), VK_IMAGE_LAYOUT_GENERAL, dst_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
@@ -3040,8 +3035,6 @@ TEST_F(VkLayerTest, CopyImageDstSizeExceeded) {
 
     // Dest exceeded in x-dim, VU 01205
     copy_region.dstOffset.x = 4;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
-                                         "VUID-vkCmdCopyImage-pRegions-00123");  // General "contained within" VU
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCopy-dstOffset-00150");
     m_commandBuffer->CopyImage(src_image.image(), VK_IMAGE_LAYOUT_GENERAL, dst_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
@@ -3050,7 +3043,6 @@ TEST_F(VkLayerTest, CopyImageDstSizeExceeded) {
     // Dest exceeded in y-dim, VU 01206
     copy_region.dstOffset.x = 0;
     copy_region.extent.height = 48;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-pRegions-00123");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCopy-dstOffset-00151");
     m_commandBuffer->CopyImage(src_image.image(), VK_IMAGE_LAYOUT_GENERAL, dst_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
@@ -3059,7 +3051,6 @@ TEST_F(VkLayerTest, CopyImageDstSizeExceeded) {
     // Dest exceeded in z-dim, VU 01207
     copy_region.extent = {4, 4, 4};
     copy_region.dstSubresource.mipLevel = 2;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-pRegions-00123");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCopy-dstOffset-00153");
     m_commandBuffer->CopyImage(src_image.image(), VK_IMAGE_LAYOUT_GENERAL, dst_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
@@ -3174,7 +3165,6 @@ TEST_F(VkLayerTest, CopyImageMultiPlaneSizeExceeded) {
     copy_region.extent = {128, 64, 1};
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
     copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-pRegions-00123");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCopy-dstOffset-00150");
     m_commandBuffer->CopyImage(src_image.image(), VK_IMAGE_LAYOUT_GENERAL, dst_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
@@ -3184,7 +3174,6 @@ TEST_F(VkLayerTest, CopyImageMultiPlaneSizeExceeded) {
     copy_region.extent = {128, 64, 1};
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
     copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-pRegions-00122");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCopy-srcOffset-00144");
     m_commandBuffer->CopyImage(src_image.image(), VK_IMAGE_LAYOUT_GENERAL, dst_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
@@ -3193,7 +3182,6 @@ TEST_F(VkLayerTest, CopyImageMultiPlaneSizeExceeded) {
     // src exceeded in y-dim from offset
     copy_region = original_region;
     copy_region.srcOffset.y = 4;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-pRegions-00122");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCopy-srcOffset-00145");
     m_commandBuffer->CopyImage(src_image.image(), VK_IMAGE_LAYOUT_GENERAL, dst_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);
@@ -3202,7 +3190,6 @@ TEST_F(VkLayerTest, CopyImageMultiPlaneSizeExceeded) {
     // dst exceeded in y-dim from offset
     copy_region = original_region;
     copy_region.dstOffset.y = 4;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-pRegions-00123");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCopy-dstOffset-00151");
     m_commandBuffer->CopyImage(src_image.image(), VK_IMAGE_LAYOUT_GENERAL, dst_image.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
                                &copy_region);

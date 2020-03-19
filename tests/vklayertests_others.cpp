@@ -5312,7 +5312,7 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
         as_bind_info_freed.memory = as_memory_freed;
         as_bind_info_freed.memoryOffset = 0;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindAccelerationStructureMemoryInfoNV-memory-parameter");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindAccelerationStructureMemoryInfoKHR-memory-parameter");
         (void)vkBindAccelerationStructureMemoryNV(device(), 1, &as_bind_info_freed);
         m_errorMonitor->VerifyFound();
     }
@@ -5329,7 +5329,7 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
         as_bind_info_bad_alignment.memory = as_memory_bad_alignment;
         as_bind_info_bad_alignment.memoryOffset = 1;
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindAccelerationStructureMemoryInfoNV-memoryOffset-02594");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindAccelerationStructureMemoryInfoKHR-memoryOffset-02594");
         (void)vkBindAccelerationStructureMemoryNV(device(), 1, &as_bind_info_bad_alignment);
         m_errorMonitor->VerifyFound();
 
@@ -5346,7 +5346,7 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
         as_bind_info_bad_offset.memoryOffset =
             (as_memory_alloc.allocationSize + as_memory_requirements.alignment) & ~(as_memory_requirements.alignment - 1);
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindAccelerationStructureMemoryInfoNV-memoryOffset-02451");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindAccelerationStructureMemoryInfoKHR-memoryOffset-02451");
         (void)vkBindAccelerationStructureMemoryNV(device(), 1, &as_bind_info_bad_offset);
         m_errorMonitor->VerifyFound();
 
@@ -5364,7 +5364,7 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
             as_bind_info_bad_offset.memory = as_memory_bad_offset;
             as_bind_info_bad_offset.memoryOffset = offset;
 
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindAccelerationStructureMemoryInfoNV-size-02595");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindAccelerationStructureMemoryInfoKHR-size-02595");
             (void)vkBindAccelerationStructureMemoryNV(device(), 1, &as_bind_info_bad_offset);
             m_errorMonitor->VerifyFound();
 
@@ -5389,7 +5389,7 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
             VkBindAccelerationStructureMemoryInfoNV as_bind_info_bad_type = as_bind_info;
             as_bind_info_bad_type.memory = as_memory_bad_type;
 
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindAccelerationStructureMemoryInfoNV-memory-02593");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindAccelerationStructureMemoryInfoKHR-memory-02593");
             (void)vkBindAccelerationStructureMemoryNV(device(), 1, &as_bind_info_bad_type);
             m_errorMonitor->VerifyFound();
 
@@ -5414,7 +5414,7 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
 
         ASSERT_VK_SUCCESS(vkBindAccelerationStructureMemoryNV(device(), 1, &as_bind_info_twice_1));
         m_errorMonitor->VerifyNotFound();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindAccelerationStructureMemoryInfoNV-accelerationStructure-02450");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindAccelerationStructureMemoryInfoKHR-accelerationStructure-02450");
         (void)vkBindAccelerationStructureMemoryNV(device(), 1, &as_bind_info_twice_2);
         m_errorMonitor->VerifyFound();
 
@@ -5613,7 +5613,7 @@ TEST_F(VkLayerTest, ValidateCmdCopyAccelerationStructureNV) {
     m_commandBuffer->begin();
 
     // Src must have been created with allow compaction flag
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyAccelerationStructureNV-src-02497");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyAccelerationStructureNV-src-03411");
     vkCmdCopyAccelerationStructureNV(m_commandBuffer->handle(), dst_as.handle(), src_as.handle(),
                                      VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_NV);
     m_errorMonitor->VerifyFound();
