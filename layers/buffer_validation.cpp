@@ -2518,31 +2518,6 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
             skip |= LogError(command_buffer, "VUID-VkImageCopy-aspectMask-00143", "%s.", ss.str().c_str());
         }
 
-        // Check region extents for 1D-1D, 2D-2D, and 3D-3D copies
-        if (src_image_state->createInfo.imageType == dst_image_state->createInfo.imageType) {
-            // The source region specified by a given element of regions must be a region that is contained within srcImage
-            VkExtent3D img_extent = GetImageSubresourceExtent(src_image_state, &(region.srcSubresource));
-            if (0 != ExceedsBounds(&region.srcOffset, &src_copy_extent, &img_extent)) {
-                std::stringstream ss;
-                ss << "vkCmdCopyImage(): Source pRegion[" << i << "] with mipLevel [ " << region.srcSubresource.mipLevel
-                   << " ], offset [ " << region.srcOffset.x << ", " << region.srcOffset.y << ", " << region.srcOffset.z
-                   << " ], extent [ " << src_copy_extent.width << ", " << src_copy_extent.height << ", " << src_copy_extent.depth
-                   << " ] exceeds the source image dimensions";
-                skip |= LogError(command_buffer, "VUID-vkCmdCopyImage-pRegions-00122", "%s.", ss.str().c_str());
-            }
-
-            // The destination region specified by a given element of regions must be a region that is contained within dst_image
-            img_extent = GetImageSubresourceExtent(dst_image_state, &(region.dstSubresource));
-            if (0 != ExceedsBounds(&region.dstOffset, &dst_copy_extent, &img_extent)) {
-                std::stringstream ss;
-                ss << "vkCmdCopyImage(): Dest pRegion[" << i << "] with mipLevel [ " << region.dstSubresource.mipLevel
-                   << " ], offset [ " << region.dstOffset.x << ", " << region.dstOffset.y << ", " << region.dstOffset.z
-                   << " ], extent [ " << dst_copy_extent.width << ", " << dst_copy_extent.height << ", " << dst_copy_extent.depth
-                   << " ] exceeds the destination image dimensions";
-                skip |= LogError(command_buffer, "VUID-vkCmdCopyImage-pRegions-00123", "%s.", ss.str().c_str());
-            }
-        }
-
         // Each dimension offset + extent limits must fall with image subresource extent
         VkExtent3D subresource_extent = GetImageSubresourceExtent(src_image_state, &(region.srcSubresource));
         if (slice_override) src_copy_extent.depth = depth_slices;
