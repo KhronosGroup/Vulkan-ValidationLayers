@@ -3214,7 +3214,7 @@ bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle
         } else if (typed_handle.type == kVulkanObjectTypeImage) {
             error_code = "VUID-vkBindImageMemory-memoryOffset-01046";
         } else if (typed_handle.type == kVulkanObjectTypeAccelerationStructureNV) {
-            error_code = "VUID-VkBindAccelerationStructureMemoryInfoNV-memoryOffset-02451";
+            error_code = "VUID-VkBindAccelerationStructureMemoryInfoKHR-memoryOffset-02451";
         } else {
             // Unsupported object type
             assert(false);
@@ -4861,7 +4861,7 @@ bool CoreChecks::ValidateBindAccelerationStructureMemoryNV(VkDevice device,
     }
     if (!as_state->GetBoundMemory().empty()) {
         skip |=
-            LogError(info.accelerationStructure, "VUID-VkBindAccelerationStructureMemoryInfoNV-accelerationStructure-02450",
+            LogError(info.accelerationStructure, "VUID-VkBindAccelerationStructureMemoryInfoKHR-accelerationStructure-02450",
                      "vkBindAccelerationStructureMemoryNV(): accelerationStructure must not already be backed by a memory object.");
     }
 
@@ -4873,12 +4873,12 @@ bool CoreChecks::ValidateBindAccelerationStructureMemoryNV(VkDevice device,
                                                                "vkBindAccelerationStructureMemoryNV()");
         skip |= ValidateMemoryTypes(mem_info, as_state->memory_requirements.memoryRequirements.memoryTypeBits,
                                     "vkBindAccelerationStructureMemoryNV()",
-                                    "VUID-VkBindAccelerationStructureMemoryInfoNV-memory-02593");
+                                    "VUID-VkBindAccelerationStructureMemoryInfoKHR-memory-02593");
     }
 
     // Validate memory requirements alignment
     if (SafeModulo(info.memoryOffset, as_state->memory_requirements.memoryRequirements.alignment) != 0) {
-        skip |= LogError(info.accelerationStructure, "VUID-VkBindAccelerationStructureMemoryInfoNV-memoryOffset-02594",
+        skip |= LogError(info.accelerationStructure, "VUID-VkBindAccelerationStructureMemoryInfoKHR-memoryOffset-02594",
                          "vkBindAccelerationStructureMemoryNV(): memoryOffset is 0x%" PRIxLEAST64
                          " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
                          ", returned from a call to vkGetAccelerationStructureMemoryRequirementsNV with accelerationStructure"
@@ -4889,7 +4889,7 @@ bool CoreChecks::ValidateBindAccelerationStructureMemoryNV(VkDevice device,
     if (mem_info) {
         // Validate memory requirements size
         if (as_state->memory_requirements.memoryRequirements.size > (mem_info->alloc_info.allocationSize - info.memoryOffset)) {
-            skip |= LogError(info.accelerationStructure, "VUID-VkBindAccelerationStructureMemoryInfoNV-size-02595",
+            skip |= LogError(info.accelerationStructure, "VUID-VkBindAccelerationStructureMemoryInfoKHR-size-02595",
                              "vkBindAccelerationStructureMemoryNV(): memory size minus memoryOffset is 0x%" PRIxLEAST64
                              " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
                              ", returned from a call to vkGetAccelerationStructureMemoryRequirementsNV with accelerationStructure"
@@ -5095,7 +5095,7 @@ bool CoreChecks::PreCallValidateCmdCopyAccelerationStructureNV(VkCommandBuffer c
     if (mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_NV) {
         if (src_as_state != nullptr &&
             (!src_as_state->built || !(src_as_state->build_info.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_NV))) {
-            skip |= LogError(commandBuffer, "VUID-vkCmdCopyAccelerationStructureNV-src-02497",
+            skip |= LogError(commandBuffer, "VUID-vkCmdCopyAccelerationStructureNV-src-03411",
                              "vkCmdCopyAccelerationStructureNV(): src must have been built with "
                              "VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_NV if mode is "
                              "VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_NV.");
@@ -5111,7 +5111,7 @@ bool CoreChecks::PreCallValidateDestroyAccelerationStructureNV(VkDevice device, 
     bool skip = false;
     if (as_state) {
         skip |= ValidateObjectNotInUse(as_state, obj_struct, "vkDestroyAccelerationStructureNV",
-                                       "VUID-vkDestroyAccelerationStructureNV-accelerationStructure-02442");
+                                       "VUID-vkDestroyAccelerationStructureKHR-accelerationStructure-02442");
     }
     return skip;
 }
