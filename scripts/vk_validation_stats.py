@@ -193,12 +193,15 @@ class ValidationJSON:
         self.regex_dict[re.compile(r'\\\(\\lceil{\\frac{maxFramebufferWidth}{minFragmentDensityTexelSize_{width}}}\\rceil\\\)')] = "the ceiling of maxFramebufferWidth/minFragmentDensityTexelSize.width"
         self.regex_dict[re.compile(r'\\\(\\lceil\{\\mathit\{rasterizationSamples} \\over 32}\\rceil\\\)')] = "(rasterizationSamples/32)"
         self.regex_dict[re.compile(r'\\\(\\textrm\{codeSize} \\over 4\\\)')] = "(codeSize/4)"
+        self.regex_dict[re.compile('\u00b4')] = "'"         # Handle acute accent
         self.regex_dict[re.compile('\u2032')] = "'"         # Handle prime
         self.regex_dict[re.compile('"')] = '\\"'            # Handle \"
         # Some fancy punctuation chars that break the Android build...
         self.regex_dict[re.compile('&#8594;')] = "->"       # Arrow char
         self.regex_dict[re.compile('&#8217;')] = "'"        # Left-slanting apostrophe to apostrophe
         self.regex_dict[re.compile('&#822(0|1);')] = "'"    # L/R-slanting quotes to apostrophe
+        self.regex_dict[re.compile('&#8203;')] = ""          # Zero width space
+        self.regex_dict[re.compile('&#8230;')] = "..."       # Horizontal ellipsis
 
     def read(self):
         self.json_dict = {}
