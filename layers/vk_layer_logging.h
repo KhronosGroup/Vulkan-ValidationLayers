@@ -626,11 +626,7 @@ static inline bool LogMsgLocked(const debug_report_data *debug_data, VkFlags msg
             }
         }
 
-        if (nullptr == spec_text) {
-            // If this happens, you've hit a VUID string that isn't defined in the spec's json file
-            // Try running 'vk_validation_stats -c' to look for invalid VUID strings in the repo code
-            assert(0);
-        } else {
+        if (nullptr != spec_text) {
             str_plus_spec_text += " The Vulkan spec states: ";
             str_plus_spec_text += spec_text;
         }
