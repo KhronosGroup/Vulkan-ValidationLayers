@@ -83,6 +83,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         self.structTypes = dict()                         # Map of Vulkan struct typename to required VkStructureType
         self.structMembers = []                           # List of StructMemberData records for all Vulkan structs
         self.object_types = []                            # List of all handle types
+        self.object_guards = {}                           # Ifdef guards for object types
         self.object_type_aliases = []                     # Aliases to handles types (for handles that were extensions)
         self.debug_report_object_types = []               # Handy copy of debug_report_object_type enum data
         self.core_object_types = []                       # Handy copy of core_object_type enum data
@@ -232,6 +233,8 @@ class HelperFileOutputGenerator(OutputGenerator):
                 self.object_type_aliases.append((name,alias))
             else:
                 self.object_types.append(name)
+                self.object_guards[name] = self.featureExtraProtect
+
         elif (category == 'struct' or category == 'union'):
             self.structNames.append(name)
             self.genStruct(typeinfo, name, alias)
@@ -784,7 +787,7 @@ class HelperFileOutputGenerator(OutputGenerator):
             object_types_header += ' = %d,\n' % enum_num
             enum_num += 1
             type_list.append(enum_entry)
-            object_type_info[enum_entry] = { 'VkType': item }
+            object_type_info[enum_entry] = { 'VkType': item , 'Guard': self.object_guards[item]}
             # We'll want lists of the dispatchable and non dispatchable handles below with access to the same info
             if self.handle_types.IsNonDispatchable(item):
                 non_dispatchable[item] = enum_entry
@@ -823,7 +826,13 @@ class HelperFileOutputGenerator(OutputGenerator):
         for object_type in type_list:
             # VK_DEBUG_REPORT is not updated anymore; there might be missing object types
             kenum_type = dro_dict.get(kenum_to_key(object_type), 'VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT')
+            if object_type_info[object_type]['Guard']:
+                object_types_header += '#ifdef %s\n' % object_type_info[object_type]['Guard']
             object_types_header += '    %s,   // %s\n' % (kenum_type, object_type)
+            if object_type_info[object_type]['Guard']:
+                object_types_header += '#else\n'
+                object_types_header += '    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // %s\n' % object_type
+                object_types_header += '#endif\n'
             object_type_info[object_type]['DbgType'] = kenum_type
         object_types_header += '};\n'
 
@@ -915,8 +924,12 @@ class HelperFileOutputGenerator(OutputGenerator):
         object_types_header += '#ifdef TYPESAFE_NONDISPATCHABLE_HANDLES\n'
         for vk_type, object_type in sorted(non_dispatchable.items()):
             info = object_type_info[object_type]
+            if info['Guard']:
+                object_types_header += '#ifdef {}\n'.format(info['Guard'])
             object_types_header += traits_format.format(vk_type=vk_type, obj_type=object_type, dbg_type=info['DbgType'],
                                                       vko_type=info['VkoType'])
+            if info['Guard']:
+                object_types_header += '#endif\n'
         object_types_header += '#endif // TYPESAFE_NONDISPATCHABLE_HANDLES\n'
 
         object_types_header += Outdent('''
