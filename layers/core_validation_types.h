@@ -570,6 +570,14 @@ struct SubpassDependencyGraphNode {
 };
 
 struct RENDER_PASS_STATE : public BASE_NODE {
+    struct AttachmentTransition {
+        uint32_t attachment;
+        VkImageLayout old_layout;
+        VkImageLayout new_layout;
+        AttachmentTransition(uint32_t attachment_, VkImageLayout old_layout_, VkImageLayout new_layout_)
+            : attachment(attachment_), old_layout(old_layout_), new_layout(new_layout_) {}
+    };
+
     VkRenderPass renderPass;
     safe_VkRenderPassCreateInfo2 createInfo;
     std::vector<std::vector<uint32_t>> self_dependencies;
@@ -578,6 +586,7 @@ struct RENDER_PASS_STATE : public BASE_NODE {
     std::vector<uint32_t> attachment_first_subpass;
     std::vector<uint32_t> attachment_last_subpass;
     std::vector<SubpassDependencyGraphNode> subpass_dependencies;
+    std::vector<std::vector<AttachmentTransition>> subpass_transitions;
 
     RENDER_PASS_STATE(VkRenderPassCreateInfo2KHR const *pCreateInfo) : createInfo(pCreateInfo) {}
     RENDER_PASS_STATE(VkRenderPassCreateInfo const *pCreateInfo) {
