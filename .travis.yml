@@ -149,7 +149,7 @@ script:
             -DVULKAN_LOADER_INSTALL_DIR=${TRAVIS_BUILD_DIR}/external/Vulkan-Loader/build/install \
             -DVULKAN_VALIDATIONLAYERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/build/install \
             ..
-      cmake --build . -- -j $core_count
+      cmake --build . --target VkLayer_device_simulation -- -j $core_count
       popd
     fi
   - |
