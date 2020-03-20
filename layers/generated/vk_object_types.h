@@ -159,7 +159,11 @@ const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {
     VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT,   // kVulkanObjectTypeSwapchainKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_KHR_EXT,   // kVulkanObjectTypeDisplayKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_MODE_KHR_EXT,   // kVulkanObjectTypeDisplayModeKHR
+#ifdef VK_ENABLE_BETA_EXTENSIONS
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeDeferredOperationKHR
+#else
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeDeferredOperationKHR
+#endif
     VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT_EXT,   // kVulkanObjectTypeDebugReportCallbackEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeDebugUtilsMessengerEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_VALIDATION_CACHE_EXT_EXT,   // kVulkanObjectTypeValidationCacheEXT
@@ -483,6 +487,7 @@ template <> struct VkHandleInfo<VkDebugUtilsMessengerEXT> {
 template <> struct VulkanObjectTypeInfo<kVulkanObjectTypeDebugUtilsMessengerEXT> {
     typedef VkDebugUtilsMessengerEXT Type;
 };
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 template <> struct VkHandleInfo<VkDeferredOperationKHR> {
     static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeDeferredOperationKHR;
     static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
@@ -494,6 +499,7 @@ template <> struct VkHandleInfo<VkDeferredOperationKHR> {
 template <> struct VulkanObjectTypeInfo<kVulkanObjectTypeDeferredOperationKHR> {
     typedef VkDeferredOperationKHR Type;
 };
+#endif
 template <> struct VkHandleInfo<VkDescriptorPool> {
     static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeDescriptorPool;
     static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT;
