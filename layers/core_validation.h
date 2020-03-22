@@ -29,6 +29,18 @@
 #include "gpu_validation.h"
 #include "shader_validation.h"
 
+// Set of VUID that need to go between core_validation.cpp and drawdispatch.cpp
+struct DrawDispatchVuid {
+    const char* queue_flag;
+    const char* inside_renderpass;
+    const char* pipeline_bound;
+    const char* dynamic_state;
+    const char* vertex_binding;
+    const char* compatible_pipeline;
+    const char* render_pass_compatible;
+    const char* subpass_index;
+};
+
 class CoreChecks : public ValidationStateTracker {
   public:
     using StateTracker = ValidationStateTracker;
@@ -172,10 +184,9 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateCmdEndQuery(const CMD_BUFFER_STATE* cb_state, const QueryObject& query_obj, CMD_TYPE cmd, const char* cmd_name,
                              const char* vuid_queue_flags, const char* vuid_active_queries) const;
 
+    const DrawDispatchVuid& GetDrawDispatchVuid(CMD_TYPE cmd_type) const;
     bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, bool indexed, VkPipelineBindPoint bind_point, CMD_TYPE cmd_type,
-                             const char* caller, VkQueueFlags queue_flags, const char* queue_flag_code,
-                             const char* renderpass_msg_code, const char* pipebound_msg_code, const char* dynamic_state_msg_code,
-                             const char* vtx_binding_msg_code) const;
+                             const char* caller, VkQueueFlags queue_flags) const;
     bool ValidateCmdNextSubpass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer) const;
     bool ValidateInsertMemoryRange(const VulkanTypedHandle& typed_handle, const DEVICE_MEMORY_STATE* mem_info,
                                    VkDeviceSize memoryOffset, const VkMemoryRequirements& memRequirements, bool is_linear,
@@ -284,10 +295,9 @@ class CoreChecks : public ValidationStateTracker {
                                            QFOTransferCBScoreboards<VkImageMemoryBarrier>* qfo_image_scoreboards,
                                            QFOTransferCBScoreboards<VkBufferMemoryBarrier>* qfo_buffer_scoreboards) const;
     bool ValidatePipelineDrawtimeState(const LAST_BOUND_STATE& state, const CMD_BUFFER_STATE* pCB, CMD_TYPE cmd_type,
-                                       const PIPELINE_STATE* pPipeline, const char* caller, const char* vtx_binding_err_code) const;
+                                       const PIPELINE_STATE* pPipeline, const char* caller) const;
     bool ValidateCmdBufDrawState(const CMD_BUFFER_STATE* cb_node, CMD_TYPE cmd_type, const bool indexed,
-                                 const VkPipelineBindPoint bind_point, const char* function, const char* pipe_err_code,
-                                 const char* state_err_code, const char* vtx_binding_err_code) const;
+                                 const VkPipelineBindPoint bind_point, const char* function) const;
     static bool ValidateEventStageMask(const ValidationStateTracker* state_data, const CMD_BUFFER_STATE* pCB, size_t eventCount,
                                        size_t firstEventIndex, VkPipelineStageFlags sourceStageMask,
                                        EventToStageMap* localEventToStageMap);
