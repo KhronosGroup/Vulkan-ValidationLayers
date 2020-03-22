@@ -584,10 +584,10 @@ static void ListBits(std::ostream &s, uint32_t bits) {
 
 // Validate draw-time state related to the PSO
 bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, const CMD_BUFFER_STATE *pCB, CMD_TYPE cmd_type,
-                                               const PIPELINE_STATE *pPipeline, const char *caller,
-                                               const char *vtx_binding_err_code) const {
+                                               const PIPELINE_STATE *pPipeline, const char *caller) const {
     bool skip = false;
     const auto &current_vtx_bfr_binding_info = pCB->current_vertex_buffer_binding_info.vertex_buffer_bindings;
+    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
 
     // Verify vertex binding
     if (pPipeline->vertex_binding_descriptions_.size() > 0) {
@@ -596,7 +596,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             if ((current_vtx_bfr_binding_info.size() < (vertex_binding + 1)) ||
                 (current_vtx_bfr_binding_info[vertex_binding].buffer == VK_NULL_HANDLE)) {
                 skip |=
-                    LogError(pCB->commandBuffer, vtx_binding_err_code,
+                    LogError(pCB->commandBuffer, vuid.vertex_binding,
                              "%s expects that this Command Buffer's vertex binding Index %u should be set via "
                              "vkCmdBindVertexBuffers. This is because VkVertexInputBindingDescription struct at "
                              "index " PRINTF_SIZE_T_SPECIFIER " of pVertexBindingDescriptions has a binding value of %u.",
@@ -705,54 +705,14 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
     }
     // Verify that PSO creation renderPass is compatible with active renderPass
     if (pCB->activeRenderPass) {
-        // TODO: Move all of the error codes common across different Draws into a LUT accessed by cmd_type
         // TODO: AMD extension codes are included here, but actual function entrypoints are not yet intercepted
-        // Error codes for renderpass and subpass mismatches
-        auto rp_error = "VUID-vkCmdDraw-renderPass-02684", sp_error = "VUID-vkCmdDraw-subpass-02685";
-        switch (cmd_type) {
-            case CMD_DRAWINDEXED:
-                rp_error = "VUID-vkCmdDrawIndexed-renderPass-02684";
-                sp_error = "VUID-vkCmdDrawIndexed-subpass-02685";
-                break;
-            case CMD_DRAWINDIRECT:
-                rp_error = "VUID-vkCmdDrawIndirect-renderPass-02684";
-                sp_error = "VUID-vkCmdDrawIndirect-subpass-02685";
-                break;
-            case CMD_DRAWINDIRECTCOUNT:
-                rp_error = "VUID-vkCmdDrawIndirectCount-renderPass-02684";
-                sp_error = "VUID-vkCmdDrawIndirectCount-subpass-02685";
-                break;
-            case CMD_DRAWINDEXEDINDIRECT:
-                rp_error = "VUID-vkCmdDrawIndexedIndirect-renderPass-02684";
-                sp_error = "VUID-vkCmdDrawIndexedIndirect-subpass-02685";
-                break;
-            case CMD_DRAWINDEXEDINDIRECTCOUNT:
-                rp_error = "VUID-vkCmdDrawIndexedIndirectCount-renderPass-02684";
-                sp_error = "VUID-vkCmdDrawIndexedIndirectCount-subpass-02685";
-                break;
-            case CMD_DRAWMESHTASKSNV:
-                rp_error = "VUID-vkCmdDrawMeshTasksNV-renderPass-02684";
-                sp_error = "VUID-vkCmdDrawMeshTasksNV-subpass-02685";
-                break;
-            case CMD_DRAWMESHTASKSINDIRECTNV:
-                rp_error = "VUID-vkCmdDrawMeshTasksIndirectNV-renderPass-02684";
-                sp_error = "VUID-vkCmdDrawMeshTasksIndirectNV-subpass-02685";
-                break;
-            case CMD_DRAWMESHTASKSINDIRECTCOUNTNV:
-                rp_error = "VUID-vkCmdDrawMeshTasksIndirectCountNV-renderPass-02684";
-                sp_error = "VUID-vkCmdDrawMeshTasksIndirectCountNV-subpass-02685";
-                break;
-            default:
-                assert(CMD_DRAW == cmd_type);
-                break;
-        }
         if (pCB->activeRenderPass->renderPass != pPipeline->rp_state->renderPass) {
             // renderPass that PSO was created with must be compatible with active renderPass that PSO is being used with
             skip |= ValidateRenderPassCompatibility("active render pass", pCB->activeRenderPass, "pipeline state object",
-                                                    pPipeline->rp_state.get(), caller, rp_error);
+                                                    pPipeline->rp_state.get(), caller, vuid.render_pass_compatible);
         }
         if (pPipeline->graphicsPipelineCI.subpass != pCB->activeSubpass) {
-            skip |= LogError(pPipeline->pipeline, sp_error, "Pipeline was built for subpass %u but used in subpass %u.",
+            skip |= LogError(pPipeline->pipeline, vuid.subpass_index, "Pipeline was built for subpass %u but used in subpass %u.",
                              pPipeline->graphicsPipelineCI.subpass, pCB->activeSubpass);
         }
     }
@@ -779,36 +739,10 @@ static bool VerifySetLayoutCompatibility(const debug_report_data *report_data, c
     return cvdescriptorset::VerifySetLayoutCompatibility(report_data, layout_node, descriptor_set->GetLayout().get(), &errorMsg);
 }
 
-static const char *string_VuidNotCompatibleForSet(CMD_TYPE cmd_type) {
-    const static std::map<CMD_TYPE, const char *> incompatible_for_set_vuid = {
-        {CMD_DISPATCH, "VUID-vkCmdDispatch-None-02697"},
-        {CMD_DISPATCHINDIRECT, "VUID-vkCmdDispatchIndirect-None-02697"},
-        {CMD_DRAW, "VUID-vkCmdDraw-None-02697"},
-        {CMD_DRAWINDEXED, "VUID-vkCmdDrawIndexed-None-02697"},
-        {CMD_DRAWINDEXEDINDIRECT, "VUID-vkCmdDrawIndexedIndirect-None-02697"},
-        {CMD_DRAWINDEXEDINDIRECTCOUNT, "VUID-vkCmdDrawIndexedIndirectCount-None-02697"},
-        {CMD_DRAWINDIRECT, "VUID-vkCmdDrawIndirect-None-02697"},
-        {CMD_DRAWINDIRECTCOUNT, "VUID-vkCmdDrawIndirectCount-None-02697"},
-        {CMD_DRAWMESHTASKSINDIRECTCOUNTNV, "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-02697"},
-        {CMD_DRAWMESHTASKSINDIRECTNV, "VUID-vkCmdDrawMeshTasksIndirectNV-None-02697"},
-        {CMD_DRAWMESHTASKSNV, "VUID-vkCmdDrawMeshTasksNV-None-02697"},
-
-        // Not implemented on this path...
-        // { CMD_DRAWDISPATCHBASE, "VUID-vkCmdDispatchBase-None-02697" },
-        // { CMD_DRAWINDIRECTBYTECOUNTEXT, "VUID-vkCmdDrawIndirectByteCountEXT-None-02697"},
-        {CMD_TRACERAYSNV, "VUID-vkCmdTraceRaysNV-None-02697"},
-    };
-    auto find_it = incompatible_for_set_vuid.find(cmd_type);
-    if (find_it == incompatible_for_set_vuid.cend()) {
-        assert(find_it != incompatible_for_set_vuid.cend());
-        return "BAD VUID -- Unknown Command Type";
-    }
-    return find_it->second;
-}
 // Validate overall state at the time of a draw call
 bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TYPE cmd_type, const bool indexed,
-                                         const VkPipelineBindPoint bind_point, const char *function, const char *pipe_err_code,
-                                         const char *state_err_code, const char *vtx_binding_err_code) const {
+                                         const VkPipelineBindPoint bind_point, const char *function) const {
+    const DrawDispatchVuid vuid = GetDrawDispatchVuid(cmd_type);
     const auto last_bound_it = cb_node->lastBound.find(bind_point);
     const PIPELINE_STATE *pPipe = nullptr;
     if (last_bound_it != cb_node->lastBound.cend()) {
@@ -816,7 +750,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     }
 
     if (nullptr == pPipe) {
-        return LogError(cb_node->commandBuffer, pipe_err_code,
+        return LogError(cb_node->commandBuffer, vuid.pipeline_bound,
                         "Must not call %s on this command buffer while there is no %s pipeline bound.", function,
                         bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS ? "Graphics" : "Compute");
     }
@@ -825,7 +759,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     auto const &state = last_bound_it->second;
 
     // First check flag states
-    if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) result = ValidateDrawStateFlags(cb_node, pPipe, indexed, state_err_code);
+    if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) result = ValidateDrawStateFlags(cb_node, pPipe, indexed, vuid.dynamic_state);
 
     // Now complete other state checks
     string errorString;
@@ -833,7 +767,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
 
     // Check if the current pipeline is compatible for the maximum used set with the bound sets.
     if (pPipe->active_slots.size() > 0 && !CompatForSet(pPipe->max_active_slot, state, pipeline_layout->compat_for_set)) {
-        result |= LogError(pPipe->pipeline, string_VuidNotCompatibleForSet(cmd_type),
+        result |= LogError(pPipe->pipeline, vuid.compatible_pipeline,
                            "%s(): %s defined with %s is not compatible for maximum set statically used %" PRIu32
                            " with bound descriptor sets, last bound with %s",
                            command_name_list[cmd_type], report_data->FormatHandle(pPipe->pipeline).c_str(),
@@ -917,7 +851,7 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
 
     // Check general pipeline state that needs to be validated at drawtime
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point)
-        result |= ValidatePipelineDrawtimeState(state, cb_node, cmd_type, pPipe, function, vtx_binding_err_code);
+        result |= ValidatePipelineDrawtimeState(state, cb_node, cmd_type, pPipe, function);
 
     return result;
 }
