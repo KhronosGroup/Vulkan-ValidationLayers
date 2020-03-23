@@ -1519,22 +1519,18 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     }
 
     if (device_extensions.vk_khr_maintenance2) {
-        if (pCreateInfo->flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT_KHR) {
+        if (pCreateInfo->flags & VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT) {
             if (!(FormatIsCompressed_BC(pCreateInfo->format) || FormatIsCompressed_ASTC_LDR(pCreateInfo->format) ||
                   FormatIsCompressed_ETC2_EAC(pCreateInfo->format))) {
-                // TODO: Add Maintenance2 VUID
-                skip |=
-                    LogError(device, kVUIDUndefined,
-                             "vkCreateImage(): If pCreateInfo->flags contains VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT_KHR, "
-                             "format must be block, ETC or ASTC compressed, but is %s",
-                             string_VkFormat(pCreateInfo->format));
+                skip |= LogError(device, "VUID-VkImageCreateInfo-flags-01572",
+                                 "vkCreateImage(): If pCreateInfo->flags contains VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT, "
+                                 "format must be block, ETC or ASTC compressed, but is %s",
+                                 string_VkFormat(pCreateInfo->format));
             }
             if (!(pCreateInfo->flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {
-                // TODO: Add Maintenance2 VUID
-                skip |=
-                    LogError(device, kVUIDUndefined,
-                             "vkCreateImage(): If pCreateInfo->flags contains VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT_KHR, "
-                             "flags must also contain VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT.");
+                skip |= LogError(device, "VUID-VkImageCreateInfo-flags-01573",
+                                 "vkCreateImage(): If pCreateInfo->flags contains VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT, "
+                                 "flags must also contain VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT.");
             }
         }
     }
