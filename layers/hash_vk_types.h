@@ -99,4 +99,89 @@ struct hash<VkImageSubresourceRange> {
 };
 }  // namespace std
 
+// these comparisons, do not take extensions into account
+// VkPipelineTessellationStateCreateInfo
+static bool operator==(const VkPipelineTessellationStateCreateInfo &lhs, const VkPipelineTessellationStateCreateInfo &rhs) {
+    return (lhs.flags == rhs.flags) && (lhs.patchControlPoints == rhs.patchControlPoints);
+}
+
+// VkPipelineVertexInputStateCreateInfo
+static bool operator==(const VkPipelineVertexInputStateCreateInfo &lhs, const VkPipelineVertexInputStateCreateInfo &rhs) {
+    if ((lhs.flags != rhs.flags) || (lhs.vertexBindingDescriptionCount != rhs.vertexBindingDescriptionCount) ||
+        (lhs.vertexAttributeDescriptionCount != rhs.vertexAttributeDescriptionCount)) {
+        return false;
+    }
+
+    return hash_util::equal_unordered_arrays(lhs.vertexBindingDescriptionCount, lhs.pVertexBindingDescriptions,
+                                             rhs.pVertexBindingDescriptions) &&
+           hash_util::equal_unordered_arrays(lhs.vertexAttributeDescriptionCount, lhs.pVertexAttributeDescriptions,
+                                             rhs.pVertexAttributeDescriptions);
+};
+
+// VkPipelineInputAssemblyStateCreateInfo
+static bool operator==(const VkPipelineInputAssemblyStateCreateInfo &lhs, const VkPipelineInputAssemblyStateCreateInfo &rhs) {
+    return (lhs.flags == rhs.flags) && (lhs.topology == rhs.topology) &&
+           (lhs.primitiveRestartEnable == rhs.primitiveRestartEnable);
+}
+
+// VkPipelineViewportStateCreateInfo
+static bool operator==(const VkPipelineViewportStateCreateInfo &lhs, const VkPipelineViewportStateCreateInfo &rhs) {
+    if ((lhs.flags != rhs.flags) || (lhs.viewportCount != rhs.viewportCount) || (lhs.scissorCount != rhs.scissorCount)) {
+        return false;
+    }
+    return (!lhs.scissorCount || memcmp(lhs.pScissors, rhs.pScissors, sizeof(VkRect2D) * lhs.scissorCount) == 0) &&
+           (!lhs.viewportCount || memcmp(lhs.pViewports, rhs.pViewports, sizeof(VkViewport) * lhs.viewportCount) == 0);
+};
+
+// VkPipelineRasterizationStateCreateInfo
+static bool operator==(const VkPipelineRasterizationStateCreateInfo &lhs, const VkPipelineRasterizationStateCreateInfo &rhs) {
+    return memcmp(&lhs.flags, &rhs.flags, sizeof(VkPipelineRasterizationStateCreateInfo) - offsetof(VkPipelineRasterizationStateCreateInfo, flags)) == 0;
+};
+
+// VkPipelineMultisampleStateCreateInfo
+static bool operator==(const VkPipelineMultisampleStateCreateInfo &lhs, const VkPipelineMultisampleStateCreateInfo &rhs) {
+    if ((lhs.rasterizationSamples != rhs.rasterizationSamples) || (lhs.sampleShadingEnable != rhs.sampleShadingEnable) ||
+        (lhs.minSampleShading != rhs.minSampleShading) || (lhs.alphaToCoverageEnable != rhs.alphaToCoverageEnable) ||
+        (lhs.alphaToOneEnable != rhs.alphaToOneEnable) || !hash_util::similar_for_nullity(lhs.pSampleMask, rhs.pSampleMask)) {
+        return false;
+    }
+    uint32_t maskCount = lhs.rasterizationSamples & VK_SAMPLE_COUNT_64_BIT ? 2 : 1;
+    return (!lhs.pSampleMask || memcmp(lhs.pSampleMask, rhs.pSampleMask, sizeof(VkSampleMask) * maskCount) == 0);
+};
+
+// VkPipelineDepthStencilStateCreateInfo
+static bool operator==(const VkPipelineDepthStencilStateCreateInfo &lhs, const VkPipelineDepthStencilStateCreateInfo &rhs) {
+    return memcmp(&lhs.flags, &rhs.flags,
+                  sizeof(VkPipelineDepthStencilStateCreateInfo) - offsetof(VkPipelineDepthStencilStateCreateInfo, flags)) == 0;
+};
+
+// VkPipelineColorBlendStateCreateInfo
+static bool operator==(const VkPipelineColorBlendStateCreateInfo &lhs, const VkPipelineColorBlendStateCreateInfo &rhs) {
+    if ((lhs.flags != rhs.flags) || (lhs.logicOpEnable != rhs.logicOpEnable) || (lhs.logicOp != rhs.logicOp) ||
+            (lhs.attachmentCount != rhs.attachmentCount)) {
+        return false;
+    }
+
+    return (!lhs.attachmentCount ||
+            memcmp(lhs.pAttachments, rhs.pAttachments, sizeof(VkPipelineColorBlendAttachmentState) * lhs.attachmentCount) == 0) &&
+           memcmp(lhs.blendConstants, rhs.blendConstants, sizeof(float) * 4) == 0;
+};
+
+// VkPipelineDynamicStateCreateInfo
+static bool operator==(const VkPipelineDynamicStateCreateInfo &lhs, const VkPipelineDynamicStateCreateInfo &rhs) {
+    if ((lhs.flags == rhs.flags) && (lhs.dynamicStateCount == rhs.dynamicStateCount)) {
+        return false;
+    }
+    uint32_t matchCount = 0;
+    for (uint32_t i = 0; i < lhs.dynamicStateCount; i++) {
+      for (uint32_t n = 0; n < rhs.dynamicStateCount; n++){
+        if (lhs.pDynamicStates[i] == rhs.pDynamicStates[n]) {
+            matchCount++;
+            break;
+        }
+      }
+    }
+    return matchCount == lhs.dynamicStateCount;
+};
+
 #endif  // HASH_VK_TYPES_H_

@@ -7617,7 +7617,6 @@ bool StatelessValidation::PreCallValidateCreateDisplayModeKHR(
         }
     }
     skip |= validate_required_pointer("vkCreateDisplayModeKHR", "pMode", pMode, "VUID-vkCreateDisplayModeKHR-pMode-parameter");
-    if (!skip) skip |= manual_PreCallValidateCreateDisplayModeKHR(physicalDevice, display, pCreateInfo, pAllocator, pMode);
     return skip;
 }
 
@@ -12776,6 +12775,7 @@ bool StatelessValidation::PreCallValidateGetGeneratedCommandsMemoryRequirementsN
 
         skip |= validate_struct_pnext("vkGetGeneratedCommandsMemoryRequirementsNV", "pMemoryRequirements->pNext", "VkMemoryDedicatedRequirements", pMemoryRequirements->pNext, ARRAY_SIZE(allowed_structs_VkMemoryRequirements2), allowed_structs_VkMemoryRequirements2, GeneratedVulkanHeaderVersion, "VUID-VkMemoryRequirements2-pNext-pNext", "VUID-VkMemoryRequirements2-sType-unique");
     }
+    if (!skip) skip |= manual_PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(device, pInfo, pMemoryRequirements);
     return skip;
 }
 
@@ -12807,6 +12807,7 @@ bool StatelessValidation::PreCallValidateCmdPreprocessGeneratedCommandsNV(
 
         skip |= validate_required_handle("vkCmdPreprocessGeneratedCommandsNV", "pGeneratedCommandsInfo->preprocessBuffer", pGeneratedCommandsInfo->preprocessBuffer);
     }
+    if (!skip) skip |= manual_PreCallValidateCmdPreprocessGeneratedCommandsNV(commandBuffer, pGeneratedCommandsInfo);
     return skip;
 }
 
@@ -12840,6 +12841,7 @@ bool StatelessValidation::PreCallValidateCmdExecuteGeneratedCommandsNV(
 
         skip |= validate_required_handle("vkCmdExecuteGeneratedCommandsNV", "pGeneratedCommandsInfo->preprocessBuffer", pGeneratedCommandsInfo->preprocessBuffer);
     }
+    if (!skip) skip |= manual_PreCallValidateCmdExecuteGeneratedCommandsNV(commandBuffer, isPreprocessed, pGeneratedCommandsInfo);
     return skip;
 }
 
@@ -12916,6 +12918,7 @@ bool StatelessValidation::PreCallValidateCreateIndirectCommandsLayoutNV(
         }
     }
     skip |= validate_required_pointer("vkCreateIndirectCommandsLayoutNV", "pIndirectCommandsLayout", pIndirectCommandsLayout, "VUID-vkCreateIndirectCommandsLayoutNV-pIndirectCommandsLayout-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateIndirectCommandsLayoutNV(device, pCreateInfo, pAllocator, pIndirectCommandsLayout);
     return skip;
 }
 
@@ -12945,6 +12948,7 @@ bool StatelessValidation::PreCallValidateDestroyIndirectCommandsLayoutNV(
 
         }
     }
+    if (!skip) skip |= manual_PreCallValidateDestroyIndirectCommandsLayoutNV(device, indirectCommandsLayout, pAllocator);
     return skip;
 }
 

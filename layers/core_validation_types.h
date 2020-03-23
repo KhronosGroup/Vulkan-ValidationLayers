@@ -952,7 +952,29 @@ class PIPELINE_STATE : public BASE_NODE {
         std::string entry_point_name;
         std::shared_ptr<const SHADER_MODULE_STATE> shader_state;
     };
+    
+    struct VertexState {
+        std::vector<VkVertexInputBindingDescription> binding_descriptions_;
+        std::vector<VkVertexInputAttributeDescription> attribute_descriptions_;
+        std::vector<VkDeviceSize> attribute_alignments_;
+        std::unordered_map<uint32_t, uint32_t> binding_to_index_map_;
 
+        VertexState() : binding_descriptions_(), attribute_descriptions_(), binding_to_index_map_(), attribute_alignments_() {}
+    };
+    struct ShaderGroup {
+        uint32_t active_shaders;
+        uint32_t duplicate_shaders;
+        std::vector<StageState> stage_state;
+        VertexState             vertex_state;
+
+        ShaderGroup() : vertex_state(), stage_state(), active_shaders(0), duplicate_shaders(0) {}
+    };
+    struct ShaderGroupReference {
+        uint32_t                              lower_shader_group;
+        uint32_t                              upper_shader_group;
+        std::shared_ptr<const PIPELINE_STATE> pipeline_state;
+    };
+    
     VkPipeline pipeline;
     safe_VkGraphicsPipelineCreateInfo graphicsPipelineCI;
     safe_VkComputePipelineCreateInfo computePipelineCI;
@@ -969,16 +991,18 @@ class PIPELINE_STATE : public BASE_NODE {
     std::vector<StageState> stage_state;
     std::unordered_set<uint32_t> fragmentShader_writable_output_location_list;
     // Vtx input info (if any)
-    std::vector<VkVertexInputBindingDescription> vertex_binding_descriptions_;
-    std::vector<VkVertexInputAttributeDescription> vertex_attribute_descriptions_;
-    std::vector<VkDeviceSize> vertex_attribute_alignments_;
-    std::unordered_map<uint32_t, uint32_t> vertex_binding_to_index_map_;
+    VertexState vertex_state;
     std::vector<VkPipelineColorBlendAttachmentState> attachments;
     bool blendConstantsEnabled;  // Blend constants enabled for any attachments
     std::shared_ptr<const PIPELINE_LAYOUT_STATE> pipeline_layout;
     VkPrimitiveTopology topology_at_rasterizer;
     VkBool32 sample_location_enabled;
-
+    
+    uint32_t effective_shader_group_count;
+    std::vector<ShaderGroup> shader_groups;
+    std::vector<ShaderGroupReference> shader_group_references;
+    std::unordered_set<VkPipeline> referenced_pipelines;
+    
     // Default constructor
     PIPELINE_STATE()
         : pipeline{},
@@ -990,14 +1014,16 @@ class PIPELINE_STATE : public BASE_NODE {
           duplicate_shaders(0),
           active_slots(),
           max_active_slot(0),
-          vertex_binding_descriptions_(),
-          vertex_attribute_descriptions_(),
-          vertex_binding_to_index_map_(),
+          vertex_state(),
           attachments(),
           blendConstantsEnabled(false),
           pipeline_layout(),
           topology_at_rasterizer{},
-          sample_location_enabled(VK_FALSE) {}
+          sample_location_enabled(VK_FALSE),
+          effective_shader_group_count(1),
+          shader_groups(),
+          shader_group_references(),
+          referenced_pipelines() {}
 
     void reset() {
         VkGraphicsPipelineCreateInfo emptyGraphicsCI = {};
@@ -1008,8 +1034,12 @@ class PIPELINE_STATE : public BASE_NODE {
         raytracingPipelineCI.initialize(&emptyRayTracingCI);
         stage_state.clear();
         fragmentShader_writable_output_location_list.clear();
+        shader_groups.clear();
+        shader_group_references.clear();
+        referenced_pipelines.clear();
     }
 
+    static void initVertexState(VertexState &vertex_state, const VkPipelineVertexInputStateCreateInfo *pVertexInputStateCreateInfo);
     void initGraphicsPipeline(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                               std::shared_ptr<const RENDER_PASS_STATE> &&rpstate);
     void initComputePipeline(const ValidationStateTracker *state_data, const VkComputePipelineCreateInfo *pCreateInfo);
@@ -1040,6 +1070,14 @@ class PIPELINE_STATE : public BASE_NODE {
         else
             return 0;
     }
+
+    const VertexState &getVertexState(uint32_t groupIndex) const;
+
+    void appendReferencedPipelines(std::unordered_set<VkPipeline>& pipelines) const {
+        for (auto iter : referenced_pipelines) {
+            pipelines.insert(iter);
+        }
+    }
 };
 
 // Track last states that are bound per pipeline bind point (Gfx & Compute)
@@ -1047,6 +1085,7 @@ struct LAST_BOUND_STATE {
     LAST_BOUND_STATE() { reset(); }  // must define default constructor for portability reasons
     PIPELINE_STATE *pipeline_state;
     VkPipelineLayout pipeline_layout;
+    uint32_t shader_group;
     std::unique_ptr<cvdescriptorset::DescriptorSet> push_descriptor_set;
 
     // Ordered bound set tracking where index is set# that given set is bound to
@@ -1076,6 +1115,7 @@ struct LAST_BOUND_STATE {
     void reset() {
         pipeline_state = nullptr;
         pipeline_layout = VK_NULL_HANDLE;
+        shader_group = 0;
         push_descriptor_set = nullptr;
         per_set.clear();
     }
@@ -1378,6 +1418,8 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     uint32_t small_indexed_draw_call_count;
 
     bool transform_feedback_active{false};
+
+    const std::unordered_set<uint32_t>* generated_vertex_bindings = nullptr;
 };
 
 static inline const QFOTransferBarrierSets<VkImageMemoryBarrier> &GetQFOBarrierSets(
@@ -1453,6 +1495,17 @@ class FRAMEBUFFER_STATE : public BASE_NODE {
         : framebuffer(fb), createInfo(pCreateInfo), rp_state(rpstate){};
 };
 
+class INDIRECT_COMMANDS_LAYOUT_STATE : public BASE_NODE {
+public:
+  VkIndirectCommandsLayoutNV indirectCmdsLayout;
+  safe_VkIndirectCommandsLayoutCreateInfoNV createInfo;
+  bool hasShaderGroups = false;
+  std::unordered_set<uint32_t> generated_vertex_bindings;
+  INDIRECT_COMMANDS_LAYOUT_STATE(VkIndirectCommandsLayoutNV cmdsLayout, const VkIndirectCommandsLayoutCreateInfoNV *pCreateInfo)
+    : indirectCmdsLayout(cmdsLayout), createInfo(pCreateInfo){};
+};
+
+
 struct SHADER_MODULE_STATE;
 struct DeviceExtensions;
 
@@ -1491,6 +1544,7 @@ struct DeviceFeatures {
     VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT pipeline_creation_cache_control_features;
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extended_dynamic_state_features;
     VkPhysicalDeviceMultiviewFeatures multiview_features;
+    VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV device_generated_cmds_features;
     VkPhysicalDevicePortabilitySubsetFeaturesKHR portability_subset_features;
     VkPhysicalDeviceFragmentShadingRateFeaturesKHR fragment_shading_rate_features;
     VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL shader_integer_functions2_features;

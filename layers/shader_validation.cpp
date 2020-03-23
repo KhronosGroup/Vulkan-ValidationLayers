@@ -3641,8 +3641,11 @@ static inline uint32_t DetermineFinalGeomStage(const PIPELINE_STATE *pipeline, c
 
 // Validate that the shaders used by the given pipeline and store the active_slots
 //  that are actually used by the pipeline into pPipeline->active_slots
-bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipeline) const {
+bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipeline, uint32_t groupIndex) const {
     auto create_info = pipeline->graphicsPipelineCI.ptr();
+    auto shader_groups_info = lvl_find_in_chain<VkGraphicsPipelineShaderGroupsCreateInfoNV>(create_info->pNext);
+    assert(groupIndex == 0 || shader_groups_info);
+
     int vertex_stage = GetShaderStageId(VK_SHADER_STAGE_VERTEX_BIT);
     int fragment_stage = GetShaderStageId(VK_SHADER_STAGE_FRAGMENT_BIT);
 
@@ -3653,8 +3656,14 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
 
     uint32_t pointlist_stage_mask = DetermineFinalGeomStage(pipeline, create_info);
 
-    for (uint32_t i = 0; i < create_info->stageCount; i++) {
-        auto stage = &create_info->pStages[i];
+    uint32_t stageCount = groupIndex == 0
+                              ? create_info->stageCount
+                              : shader_groups_info->pGroups[groupIndex].stageCount;
+    auto pStages = groupIndex == 0 ? create_info->pStages : shader_groups_info->pGroups[groupIndex].pStages;
+    auto &stage_state = groupIndex == 0 ? pipeline->stage_state : pipeline->shader_groups[groupIndex].stage_state;
+
+    for (uint32_t i = 0; i < stageCount; i++) {
+        auto stage = &pStages[i];
         auto stage_id = GetShaderStageId(stage->stage);
         shaders[stage_id] = GetShaderModuleState(stage->module);
         entrypoints[stage_id] = FindEntrypoint(shaders[stage_id], stage->pName, stage->stage);
@@ -3665,7 +3674,7 @@ bool CoreChecks::ValidateGraphicsPipelineShaderState(const PIPELINE_STATE *pipel
     // if the shader stages are no good individually, cross-stage validation is pointless.
     if (skip) return true;
 
-    auto vi = create_info->pVertexInputState;
+    auto vi = groupIndex == 0 ? create_info->pVertexInputState : shader_groups_info->pGroups[groupIndex].pVertexInputState;
 
     if (vi) {
         skip |= ValidateViConsistency(vi);

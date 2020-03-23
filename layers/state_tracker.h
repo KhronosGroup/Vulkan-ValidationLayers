@@ -50,6 +50,7 @@ std::pair<uint32_t, const VkImageView*> GetFramebufferAttachments(const VkRender
                                                                   const FRAMEBUFFER_STATE& fb_state);
 VkImageSubresourceRange NormalizeSubresourceRange(const IMAGE_STATE& image_state, const VkImageSubresourceRange& range);
 PIPELINE_STATE* GetCurrentPipelineFromCommandBuffer(const CMD_BUFFER_STATE& cmd, VkPipelineBindPoint pipelineBindPoint);
+PIPELINE_STATE* GetCurrentPipelineShaderGroupFromCommandBuffer(const CMD_BUFFER_STATE& cmd, VkPipelineBindPoint pipelineBindPoint, uint32_t& shaderGroup);
 void GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(const CMD_BUFFER_STATE& cmd, VkPipelineBindPoint pipelineBindPoint,
                                                          const PIPELINE_STATE** rtn_pipe,
                                                          const std::vector<LAST_BOUND_STATE::PER_SET>** rtn_sets);
@@ -416,6 +417,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkSamplerYcbcrConversion, SAMPLER_YCBCR_CONVERSION_STATE, samplerYcbcrConversionMap)
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE, accelerationStructureMap)
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureKHR, ACCELERATION_STRUCTURE_STATE_KHR, accelerationStructureMap_khr)
+    VALSTATETRACK_MAP_AND_TRAITS(VkIndirectCommandsLayoutNV, INDIRECT_COMMANDS_LAYOUT_STATE, indirectCommandsLayoutMap)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, SURFACE_STATE, surface_map)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkDisplayModeKHR, DISPLAY_MODE_STATE, display_mode_map)
 
@@ -609,6 +611,12 @@ class ValidationStateTracker : public ValidationObject {
     }
     ACCELERATION_STRUCTURE_STATE_KHR* GetAccelerationStructureStateKHR(VkAccelerationStructureKHR as) {
         return Get<ACCELERATION_STRUCTURE_STATE_KHR>(as);
+    }
+    const INDIRECT_COMMANDS_LAYOUT_STATE* GetIndirectCommandsLayoutState(VkIndirectCommandsLayoutNV ind) const {
+        return Get<INDIRECT_COMMANDS_LAYOUT_STATE>(ind);
+    }
+    INDIRECT_COMMANDS_LAYOUT_STATE* GetIndirectCommandsLayoutState(VkIndirectCommandsLayoutNV ind) {
+        return Get<INDIRECT_COMMANDS_LAYOUT_STATE>(ind);
     }
     const SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface) const { return Get<SURFACE_STATE>(surface); }
     SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface) { return Get<SURFACE_STATE>(surface); }
@@ -986,6 +994,11 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordCreateDisplayModeKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display,
                                             const VkDisplayModeCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                             VkDisplayModeKHR* pMode, VkResult result) override;
+    void PostCallRecordCreateIndirectCommandsLayoutNV(VkDevice device, const VkIndirectCommandsLayoutCreateInfoNV* pCreateInfo,
+                                                      const VkAllocationCallbacks* pAllocator,
+                                                      VkIndirectCommandsLayoutNV* pIndirectCommandsLayout, VkResult result);
+    void PreCallRecordDestroyIndirectCommandsLayoutNV(VkDevice device, VkIndirectCommandsLayoutNV indirectCommandsLayout,
+                                                       const VkAllocationCallbacks* pAllocator);
 
     // CommandBuffer/Queue Control
     void PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo) override;
@@ -1212,6 +1225,14 @@ class ValidationStateTracker : public ValidationObject {
                                                                  VkResult result) override;
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
+    void PreCallRecordCmdPreprocessGeneratedCommandsNV(VkCommandBuffer commandBuffer,
+                                                       const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo);
+    void PreCallRecordCmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                    const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo);
+    void PostCallRecordCmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                     const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo);
+    void PreCallRecordCmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                   VkPipeline pipeline, uint32_t groupIndex);
     // WSI
     void PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                            VkFence fence, uint32_t* pImageIndex, VkResult result) override;
@@ -1442,6 +1463,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceMultiviewProperties multiview_props;
         VkPhysicalDevicePortabilitySubsetPropertiesKHR portability_props;
         VkPhysicalDeviceFragmentShadingRatePropertiesKHR fragment_shading_rate_props;
+        VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV device_generated_cmds_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;

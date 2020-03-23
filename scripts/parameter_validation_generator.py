@@ -240,6 +240,12 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkGetAccelerationStructureBuildSizesKHR',
             'vkCmdWriteAccelerationStructuresPropertiesNV',
             'vkCreateDisplayModeKHR'
+            'vkCmdBindPipelineShaderGroupNV',
+            'vkCmdExecuteGeneratedCommandsNV',
+            'vkCmdPreprocessGeneratedCommandsNV',
+            'vkGetGeneratedCommandsMemoryRequirementsNV',
+            'vkCreateIndirectCommandsLayoutNV',
+            'vkDestroyIndirectCommandsLayoutNV',
             ]
 
         # Commands to ignore

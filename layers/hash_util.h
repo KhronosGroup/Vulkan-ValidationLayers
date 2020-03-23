@@ -38,6 +38,21 @@ bool similar_for_nullity(const T *const lhs, const T *const rhs) {
     return ((lhs != nullptr) && (rhs != nullptr)) || ((lhs == nullptr) && (rhs == nullptr));
 }
 
+template <typename T>
+bool equal_unordered_arrays(uint32_t count, const T *const lhs, const T *const rhs) {
+    uint32_t matchCount = 0;
+
+    for (uint32_t i = 0; i < count; i++) {
+        for (uint32_t n = 0; n < count; n++) {
+            if (memcmp(&lhs[i], &rhs[n], sizeof(T)) == 0) {
+                matchCount++;
+            }
+        }
+    }
+
+    return count == matchCount;
+}
+
 // Wrap std hash to avoid manual casts for the holes in std::hash (in C++11)
 template <typename Value>
 size_t HashWithUnderlying(Value value, typename std::enable_if<!std::is_enum<Value>::value, void *>::type = nullptr) {

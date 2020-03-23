@@ -273,6 +273,7 @@ class ObjectLifetimes : public ValidationObject {
                 }
             }
         }
+
         return skip;
     }
 
