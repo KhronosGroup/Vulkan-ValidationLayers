@@ -72,7 +72,6 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         self.instance_dispatch_list = []      # List of entries for instance dispatch list
         self.device_dispatch_list = []        # List of entries for device dispatch list
         self.dev_ext_stub_list = []           # List of stub functions for device extension functions
-        self.device_extension_list = []       # List of device extension functions
         self.stub_list = []                   # List of functions with stubs (promoted or extensions)
         self.extension_type = ''
 
@@ -156,7 +155,6 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
         OutputGenerator.beginFeature(self, interface, emit)
         self.featureExtraProtect = GetFeatureProtect(interface)
         self.extension_type = interface.get('type')
-
     #
     # Process commands, adding to appropriate dispatch tables
     def genCmd(self, cmdinfo, name, alias):
@@ -208,8 +206,6 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
                 self.dev_ext_stub_list.append('#endif // %s' % self.featureExtraProtect)
         if handle_type != 'VkInstance' and handle_type != 'VkPhysicalDevice' and name != 'vkGetInstanceProcAddr':
             self.device_dispatch_list.append((name, self.featureExtraProtect))
-            if promoted or extension:
-                self.device_extension_list.append([name, self.featureName])
         else:
             self.instance_dispatch_list.append((name, self.featureExtraProtect))
         return
@@ -227,11 +223,33 @@ class DispatchTableHelperOutputGenerator(OutputGenerator):
     #
     # Output a function that'll determine if an extension is in the enabled list
     def OutputExtEnabledFunction(self):
-        ext_fcn  = ''
+        ext_fcn = ''
         # First, write out our static data structure -- map of all APIs that are part of extensions to their extension.
         ext_fcn += 'const std::unordered_map<std::string, std::string> api_extension_map {\n'
-        for extn in self.device_extension_list:
-            ext_fcn += '    {"%s", "%s"},\n' % (extn[0], extn[1])
+        api_ext = dict()
+        handles = GetHandleTypes(self.registry.tree)
+        features = self.registry.tree.findall('feature') + self.registry.tree.findall('extensions/extension')
+        for feature in features:
+            feature_name = feature.get('name')
+            if 'VK_VERSION_1_0' == feature_name:
+                continue
+            for require_element in feature.findall('require'):
+                for command in require_element.findall('command'):
+                    command_name = command.get('name')
+                    if 'EnumerateInstanceVersion' in command_name:
+                        continue
+                    disp_obj = self.registry.tree.find("commands/command/[@name='%s']/param/type" % command_name)
+                    if disp_obj is None:
+                        cmd_info = self.registry.tree.find("commands/command/[@name='%s']" % command_name)
+                        alias_name = cmd_info.get('alias')
+                        if alias_name is not None:
+                            disp_obj = self.registry.tree.find("commands/command/[@name='%s']/param/type" % alias_name)
+                    if 'VkInstance' != disp_obj.text and 'VkPhysicalDevice' != disp_obj.text:
+                        # Ensure APIs belonging to multiple extensions match the existing order
+                        if command_name not in api_ext:
+                            api_ext[command_name] = feature_name
+        for api in sorted(api_ext):
+            ext_fcn += '    {"%s", "%s"},\n' % (api, api_ext[api])
         ext_fcn += '};\n\n'
         ext_fcn += '// Using the above code-generated map of APINames-to-parent extension names, this function will:\n'
         ext_fcn += '//   o  Determine if the API has an associated extension\n'
