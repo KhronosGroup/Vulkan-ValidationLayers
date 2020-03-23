@@ -6213,11 +6213,7 @@ bool CoreChecks::ValidateBarriers(const char *funcName, const CMD_BUFFER_STATE *
         }
 
         if (image_data) {
-            // There is no VUID for this, but there is blanket text:
-            //     "Non-sparse resources must be bound completely and contiguously to a single VkDeviceMemory object before
-            //     recording commands in a command buffer."
-            // TODO: Update this when VUID is defined
-            skip |= ValidateMemoryIsBoundToImage(image_data, funcName, kVUIDUndefined);
+            skip |= ValidateMemoryIsBoundToImage(image_data, funcName, "VUID-VkBufferMemoryBarrier-buffer-01931");
 
             const auto aspect_mask = mem_barrier.subresourceRange.aspectMask;
             skip |= ValidateImageAspectMask(image_data->image, image_data->createInfo.format, aspect_mask, funcName);
@@ -6245,11 +6241,7 @@ bool CoreChecks::ValidateBarriers(const char *funcName, const CMD_BUFFER_STATE *
         skip |= ValidateBarrierQueueFamilies(funcName, cb_state, mem_barrier, buffer_state);
 
         if (buffer_state) {
-            // There is no VUID for this, but there is blanket text:
-            //     "Non-sparse resources must be bound completely and contiguously to a single VkDeviceMemory object before
-            //     recording commands in a command buffer"
-            // TODO: Update this when VUID is defined
-            skip |= ValidateMemoryIsBoundToBuffer(buffer_state, funcName, kVUIDUndefined);
+            skip |= ValidateMemoryIsBoundToBuffer(buffer_state, funcName, "VUID-VkBufferMemoryBarrier-buffer-01931");
 
             auto buffer_size = buffer_state->createInfo.size;
             if (mem_barrier.offset >= buffer_size) {
