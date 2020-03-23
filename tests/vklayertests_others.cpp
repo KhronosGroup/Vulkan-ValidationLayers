@@ -5414,7 +5414,8 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
 
         ASSERT_VK_SUCCESS(vkBindAccelerationStructureMemoryNV(device(), 1, &as_bind_info_twice_1));
         m_errorMonitor->VerifyNotFound();
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindAccelerationStructureMemoryInfoKHR-accelerationStructure-02450");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                             "VUID-VkBindAccelerationStructureMemoryInfoKHR-accelerationStructure-02450");
         (void)vkBindAccelerationStructureMemoryNV(device(), 1, &as_bind_info_twice_2);
         m_errorMonitor->VerifyFound();
 
