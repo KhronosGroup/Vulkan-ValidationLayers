@@ -2029,12 +2029,6 @@ static void processCommand(struct android_app *app, int32_t cmd) {
 }
 
 void android_main(struct android_app *app) {
-    int vulkanSupport = InitVulkan();
-    if (vulkanSupport == 0) {
-        __android_log_print(ANDROID_LOG_INFO, appTag, "==== FAILED ==== No Vulkan support found");
-        return;
-    }
-
     app->onAppCmd = processCommand;
     app->onInputEvent = processInput;
 
@@ -2108,11 +2102,6 @@ void android_main(struct android_app *app) {
 
 int main(int argc, char **argv) {
     int result;
-
-#ifdef ANDROID
-    int vulkanSupport = InitVulkan();
-    if (vulkanSupport == 0) return 1;
-#endif
 
 #if defined(_WIN32) && !defined(NDEBUG)
     _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
