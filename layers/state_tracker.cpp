@@ -842,7 +842,7 @@ void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, const V
             }
         }
     }
-    if (!pPipe->vertex_binding_descriptions_.empty()) {
+    if (!pPipe->vertex_state.binding_descriptions_.empty()) {
         cb_state->vertex_buffer_used = true;
     }
 }
@@ -1409,6 +1409,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.ray_tracing_features = *ray_tracing_features;
     }
 
+    const auto *device_generated_cmds_features =
+        lvl_find_in_chain<VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV>(pCreateInfo->pNext);
+    if (device_generated_cmds_features) {
+        state_tracker->enabled_features.device_generated_cmds_features = *device_generated_cmds_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);
@@ -1499,6 +1505,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_fragment_density_map, &phys_dev_props->fragment_density_map_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_performance_query, &phys_dev_props->performance_query_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_sample_locations, &phys_dev_props->sample_locations_props);
+    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_nv_device_generated_commands, &phys_dev_props->device_generated_cmds_props);
 
     if (!state_tracker->device_extensions.vk_feature_version_1_2 && dev_ext.vk_khr_timeline_semaphore) {
         VkPhysicalDeviceTimelineSemaphorePropertiesKHR timeline_semaphore_props;
@@ -3131,8 +3138,13 @@ void ValidationStateTracker::PreCallRecordCmdBindPipeline(VkCommandBuffer comman
     }
     ResetCommandBufferPushConstantDataIfIncompatible(cb_state, pipe_state->pipeline_layout->layout);
     cb_state->lastBound[pipelineBindPoint].pipeline_state = pipe_state;
+    cb_state->lastBound[pipelineBindPoint].shader_group = 0;
     SetPipelineState(pipe_state);
     AddCommandBufferBinding(pipe_state->cb_bindings, VulkanTypedHandle(pipeline, kVulkanObjectTypePipeline), cb_state);
+    for (auto piperef : pipe_state->referenced_pipelines) {
+        auto piperef_state = GetPipelineState(piperef);
+        AddCommandBufferBinding(piperef_state->cb_bindings, VulkanTypedHandle(piperef, kVulkanObjectTypePipeline), cb_state);
+    }
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport,
@@ -3357,6 +3369,65 @@ void ValidationStateTracker::PreCallRecordCmdSetViewportWScalingNV(VkCommandBuff
                                                                    const VkViewportWScalingNV *pViewportWScalings) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     cb_state->status |= CBSTATUS_VIEWPORT_W_SCALING_SET;
+}
+
+void ValidationStateTracker::PreCallRecordCmdPreprocessGeneratedCommandsNV(
+    VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoNV *pGeneratedCommandsInfo) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    INDIRECT_COMMANDS_LAYOUT_STATE *ind_state = GetIndirectCommandsLayoutState(pGeneratedCommandsInfo->indirectCommandsLayout);
+    PIPELINE_STATE *pipe_state = GetPipelineState(pGeneratedCommandsInfo->pipeline);
+    assert(ind_state);
+    assert(pipe_state);
+    AddCommandBufferBinding(
+        ind_state->cb_bindings,
+        VulkanTypedHandle(pGeneratedCommandsInfo->indirectCommandsLayout, kVulkanObjectTypeIndirectCommandsLayoutNV), cb_state);
+    AddCommandBufferBinding(pipe_state->cb_bindings, VulkanTypedHandle(pGeneratedCommandsInfo->pipeline, kVulkanObjectTypePipeline),
+                            cb_state);
+    for (auto piperef : pipe_state->referenced_pipelines) {
+        auto piperef_state = GetPipelineState(piperef);
+        AddCommandBufferBinding(piperef_state->cb_bindings, VulkanTypedHandle(piperef, kVulkanObjectTypePipeline), cb_state);
+    }
+}
+
+void ValidationStateTracker::PreCallRecordCmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                                        const VkGeneratedCommandsInfoNV *pGeneratedCommandsInfo) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    INDIRECT_COMMANDS_LAYOUT_STATE *ind_state =
+        GetIndirectCommandsLayoutState(pGeneratedCommandsInfo->indirectCommandsLayout);
+    assert(ind_state);
+    cb_state->generated_vertex_bindings = &ind_state->generated_vertex_bindings;
+
+    AddCommandBufferBinding(ind_state->cb_bindings,
+                            VulkanTypedHandle(pGeneratedCommandsInfo->indirectCommandsLayout, kVulkanObjectTypeIndirectCommandsLayoutNV), cb_state);
+}
+
+void ValidationStateTracker::PostCallRecordCmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                                         const VkGeneratedCommandsInfoNV *pGeneratedCommandsInfo) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    cb_state->generated_vertex_bindings = nullptr;
+}
+
+void ValidationStateTracker::PreCallRecordCmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer,
+                                                                       VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
+                                                                       uint32_t groupIndex) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    assert(cb_state);
+
+    auto pipe_state = GetPipelineState(pipeline);
+    if (VK_PIPELINE_BIND_POINT_GRAPHICS == pipelineBindPoint) {
+        cb_state->status &= ~cb_state->static_status;
+        cb_state->static_status = MakeStaticStateMask(pipe_state->graphicsPipelineCI.ptr()->pDynamicState);
+        cb_state->status |= cb_state->static_status;
+    }
+    ResetCommandBufferPushConstantDataIfIncompatible(cb_state, pipe_state->pipeline_layout->layout);
+    cb_state->lastBound[pipelineBindPoint].pipeline_state = pipe_state;
+    cb_state->lastBound[pipelineBindPoint].shader_group = groupIndex;
+    SetPipelineState(pipe_state);
+    AddCommandBufferBinding(pipe_state->cb_bindings, VulkanTypedHandle(pipeline, kVulkanObjectTypePipeline), cb_state);
+    for (auto piperef : pipe_state->referenced_pipelines) {
+        auto piperef_state = GetPipelineState(piperef);
+        AddCommandBufferBinding(piperef_state->cb_bindings, VulkanTypedHandle(piperef, kVulkanObjectTypePipeline), cb_state);
+    }
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) {
@@ -4266,6 +4337,39 @@ void ValidationStateTracker::PreCallRecordDestroySwapchainKHR(VkDevice device, V
         }
         swapchain_data->destroyed = true;
         swapchainMap.erase(swapchain);
+    }
+}
+
+void ValidationStateTracker::PostCallRecordCreateIndirectCommandsLayoutNV(VkDevice device,
+                                                                          const VkIndirectCommandsLayoutCreateInfoNV *pCreateInfo,
+                                                                          const VkAllocationCallbacks *pAllocator,
+                                                                          VkIndirectCommandsLayoutNV *pIndirectCommandsLayout,
+                                                                          VkResult result) {
+    if (VK_SUCCESS != result) return;
+    auto ind_state = std::make_shared<INDIRECT_COMMANDS_LAYOUT_STATE>(*pIndirectCommandsLayout, pCreateInfo);
+
+    for (uint32_t i = 0; i < pCreateInfo->tokenCount; i++) {
+        switch (pCreateInfo->pTokens[i].tokenType) {
+            case VK_INDIRECT_COMMANDS_TOKEN_TYPE_SHADER_GROUP_NV: {
+                ind_state->hasShaderGroups = true;
+            } break;
+            case VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_NV: {
+                ind_state->generated_vertex_bindings.insert(pCreateInfo->pTokens[i].vertexBindingUnit);
+            } break;
+        }
+    }
+
+    indirectCommandsLayoutMap[*pIndirectCommandsLayout] = std::move(ind_state);
+}
+
+void ValidationStateTracker::PreCallRecordDestroyIndirectCommandsLayoutNV(VkDevice device,
+                                                                          VkIndirectCommandsLayoutNV indirectCommandsLayout,
+                                                                          const VkAllocationCallbacks *pAllocator) {
+    if (!indirectCommandsLayout) return;
+    auto ind_state = GetIndirectCommandsLayoutState(indirectCommandsLayout);
+    if (ind_state) {
+        ind_state->destroyed = true;
+        indirectCommandsLayoutMap.erase(indirectCommandsLayout);
     }
 }
 

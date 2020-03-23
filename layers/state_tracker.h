@@ -298,6 +298,7 @@ class ValidationStateTracker : public ValidationObject {
     VALSTATETRACK_MAP_AND_TRAITS(VkSemaphore, SEMAPHORE_STATE, semaphoreMap)
     VALSTATETRACK_MAP_AND_TRAITS(VkSamplerYcbcrConversion, SAMPLER_YCBCR_CONVERSION_STATE, samplerYcbcrConversionMap)
     VALSTATETRACK_MAP_AND_TRAITS(VkAccelerationStructureNV, ACCELERATION_STRUCTURE_STATE, accelerationStructureMap)
+    VALSTATETRACK_MAP_AND_TRAITS(VkIndirectCommandsLayoutNV, INDIRECT_COMMANDS_LAYOUT_STATE, indirectCommandsLayoutMap)
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkSurfaceKHR, SURFACE_STATE, surface_map)
 
     void AddAliasingImage(IMAGE_STATE* image_state);
@@ -484,6 +485,12 @@ class ValidationStateTracker : public ValidationObject {
     }
     ACCELERATION_STRUCTURE_STATE* GetAccelerationStructureState(VkAccelerationStructureNV as) {
         return Get<ACCELERATION_STRUCTURE_STATE>(as);
+    }
+    const INDIRECT_COMMANDS_LAYOUT_STATE* GetIndirectCommandsLayoutState(VkIndirectCommandsLayoutNV ind) const {
+        return Get<INDIRECT_COMMANDS_LAYOUT_STATE>(ind);
+    }
+    INDIRECT_COMMANDS_LAYOUT_STATE* GetIndirectCommandsLayoutState(VkIndirectCommandsLayoutNV ind) {
+        return Get<INDIRECT_COMMANDS_LAYOUT_STATE>(ind);
     }
     const SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface) const { return Get<SURFACE_STATE>(surface); }
     SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface) { return Get<SURFACE_STATE>(surface); }
@@ -805,6 +812,11 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain, VkResult result);
     void PreCallRecordDestroySwapchainKHR(VkDevice device, VkSwapchainKHR swapchain, const VkAllocationCallbacks* pAllocator);
+    void PostCallRecordCreateIndirectCommandsLayoutNV(VkDevice device, const VkIndirectCommandsLayoutCreateInfoNV* pCreateInfo,
+                                                      const VkAllocationCallbacks* pAllocator,
+                                                      VkIndirectCommandsLayoutNV* pIndirectCommandsLayout, VkResult result);
+    void PreCallRecordDestroyIndirectCommandsLayoutNV(VkDevice device, VkIndirectCommandsLayoutNV indirectCommandsLayout,
+                                                       const VkAllocationCallbacks* pAllocator);
 
     // CommandBuffer/Queue Control
     void PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo);
@@ -995,6 +1007,14 @@ class ValidationStateTracker : public ValidationObject {
                                                                  VkResult result);
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
+    void PreCallRecordCmdPreprocessGeneratedCommandsNV(VkCommandBuffer commandBuffer,
+                                                       const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo);
+    void PreCallRecordCmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                    const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo);
+    void PostCallRecordCmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                     const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo);
+    void PreCallRecordCmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                   VkPipeline pipeline, uint32_t groupIndex);
     // WSI
     void PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
                                            VkFence fence, uint32_t* pImageIndex, VkResult result);
@@ -1173,6 +1193,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceFragmentDensityMapPropertiesEXT fragment_density_map_props;
         VkPhysicalDevicePerformanceQueryPropertiesKHR performance_query_props;
         VkPhysicalDeviceSampleLocationsPropertiesEXT sample_locations_props;
+        VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV device_generated_cmds_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;

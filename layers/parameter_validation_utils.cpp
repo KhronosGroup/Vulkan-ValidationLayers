@@ -24,6 +24,7 @@
 #include "chassis.h"
 #include "stateless_validation.h"
 #include "layer_chassis_dispatch.h"
+#include "hash_vk_types.h"
 
 static const int MaxParamCheckerStringLength = 256;
 
@@ -171,6 +172,14 @@ void StatelessValidation::PostCallRecordCreateDevice(VkPhysicalDevice physicalDe
         auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&transform_feedback_props);
         DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
         phys_dev_ext_props.transform_feedback_props = transform_feedback_props;
+    }
+
+    if (device_extensions.vk_nv_device_generated_commands) {
+        // Get the needed transform feedback limits
+        auto device_generated_cmds_props = lvl_init_struct<VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV>();
+        auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&device_generated_cmds_props);
+        DispatchGetPhysicalDeviceProperties2KHR(physicalDevice, &prop2);
+        phys_dev_ext_props.device_generated_cmds_props = device_generated_cmds_props;
     }
 
     stateless_validation->phys_dev_ext_props = this->phys_dev_ext_props;
@@ -1111,12 +1120,235 @@ bool StatelessValidation::ValidateCoarseSampleOrderCustomNV(const VkCoarseSample
     return skip;
 }
 
+bool StatelessValidation::ValidatePipelineShaderStageCreateInfos(uint32_t stageCount,
+                                                                 const VkPipelineShaderStageCreateInfo *pStages,
+                                                                 uint32_t pipelineIndex, uint32_t &active_shaders) const {
+    bool skip = false;
+
+    active_shaders = 0;
+    for (uint32_t stage_index = 0; stage_index < stageCount; ++stage_index) {
+        active_shaders |= pStages[stage_index].stage;
+
+        skip |= validate_string(
+            "vkCreateGraphicsPipelines",
+            ParameterName("pCreateInfos[%i].pStages[%i].pName", ParameterName::IndexVector{pipelineIndex, stage_index}),
+            "VUID-VkGraphicsPipelineCreateInfo-pStages-parameter", pStages[stage_index].pName);
+    }
+    return skip;
+}
+
+bool StatelessValidation::ValidatePipelineVertexInputStateCreateInfo(const VkPipelineVertexInputStateCreateInfo *pVertexInputState,
+                                                                     uint32_t active_shaders, uint32_t i) const {
+    bool skip = false;
+
+    if (!(active_shaders & VK_SHADER_STAGE_MESH_BIT_NV) && (pVertexInputState != nullptr)) {
+        auto const &vertex_input_state = pVertexInputState;
+
+        if (pVertexInputState->flags != 0) {
+            skip |= LogError(device, "VUID-VkPipelineVertexInputStateCreateInfo-flags-zerobitmask",
+                             "vkCreateGraphicsPipelines: pararameter "
+                             "pCreateInfos[%d].pVertexInputState->flags (%u) is reserved and must be zero.",
+                             i, vertex_input_state->flags);
+        }
+
+        const VkStructureType allowed_structs_VkPipelineVertexInputStateCreateInfo[] = {
+            VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT};
+        skip |= validate_struct_pnext(
+            "vkCreateGraphicsPipelines", "pVertexInputState->pNext", "VkPipelineVertexInputDivisorStateCreateInfoEXT",
+            pVertexInputState->pNext, 1, allowed_structs_VkPipelineVertexInputStateCreateInfo, GeneratedVulkanHeaderVersion,
+            "VUID-VkPipelineVertexInputStateCreateInfo-pNext-pNext", "VUID-VkPipelineVertexInputStateCreateInfo-sType-unique");
+        skip |= validate_struct_type("vkCreateGraphicsPipelines", "pVertexInputState",
+                                     "VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO", vertex_input_state,
+                                     VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, false, kVUIDUndefined,
+                                     "VUID-VkPipelineVertexInputStateCreateInfo-sType-sType");
+        skip |= validate_array("vkCreateGraphicsPipelines", "pVertexInputState->vertexBindingDescriptionCount",
+                               "pVertexInputState->pVertexBindingDescriptions", pVertexInputState->vertexBindingDescriptionCount,
+                               &pVertexInputState->pVertexBindingDescriptions, false, true, kVUIDUndefined,
+                               "VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-parameter");
+
+        skip |= validate_array("vkCreateGraphicsPipelines", "pVertexInputState->vertexAttributeDescriptionCount",
+                               "pCreateInfos[i]->pVertexAttributeDescriptions", vertex_input_state->vertexAttributeDescriptionCount,
+                               &vertex_input_state->pVertexAttributeDescriptions, false, true, kVUIDUndefined,
+                               "VUID-VkPipelineVertexInputStateCreateInfo-pVertexAttributeDescriptions-parameter");
+
+        if (pVertexInputState->pVertexBindingDescriptions != NULL) {
+            for (uint32_t vertexBindingDescriptionIndex = 0;
+                 vertexBindingDescriptionIndex < pVertexInputState->vertexBindingDescriptionCount;
+                 ++vertexBindingDescriptionIndex) {
+                skip |=
+                    validate_ranged_enum("vkCreateGraphicsPipelines", "pVertexInputState->pVertexBindingDescriptions[j].inputRate",
+                                         "VkVertexInputRate", AllVkVertexInputRateEnums,
+                                         pVertexInputState->pVertexBindingDescriptions[vertexBindingDescriptionIndex].inputRate,
+                                         "VUID-VkVertexInputBindingDescription-inputRate-parameter");
+            }
+        }
+
+        if (pVertexInputState->pVertexAttributeDescriptions != NULL) {
+            for (uint32_t vertexAttributeDescriptionIndex = 0;
+                 vertexAttributeDescriptionIndex < pVertexInputState->vertexAttributeDescriptionCount;
+                 ++vertexAttributeDescriptionIndex) {
+                skip |= validate_ranged_enum(
+                    "vkCreateGraphicsPipelines", "pVertexInputState->pVertexAttributeDescriptions[i].format", "VkFormat",
+                    AllVkFormatEnums, pVertexInputState->pVertexAttributeDescriptions[vertexAttributeDescriptionIndex].format,
+                    "VUID-VkVertexInputAttributeDescription-format-parameter");
+            }
+        }
+
+        if (vertex_input_state->vertexBindingDescriptionCount > device_limits.maxVertexInputBindings) {
+            skip |= LogError(device, "VUID-VkPipelineVertexInputStateCreateInfo-vertexBindingDescriptionCount-00613",
+                             "vkCreateGraphicsPipelines: pararameter "
+                             "pCreateInfo[%d].pVertexInputState->vertexBindingDescriptionCount (%u) is "
+                             "greater than VkPhysicalDeviceLimits::maxVertexInputBindings (%u).",
+                             i, vertex_input_state->vertexBindingDescriptionCount, device_limits.maxVertexInputBindings);
+        }
+
+        if (vertex_input_state->vertexAttributeDescriptionCount > device_limits.maxVertexInputAttributes) {
+            skip |= LogError(device, "VUID-VkPipelineVertexInputStateCreateInfo-vertexAttributeDescriptionCount-00614",
+                             "vkCreateGraphicsPipelines: pararameter "
+                             "pCreateInfo[%d].pVertexInputState->vertexAttributeDescriptionCount (%u) is "
+                             "greater than VkPhysicalDeviceLimits::maxVertexInputAttributes (%u).",
+                             i, vertex_input_state->vertexAttributeDescriptionCount, device_limits.maxVertexInputAttributes);
+        }
+
+        std::unordered_set<uint32_t> vertex_bindings(vertex_input_state->vertexBindingDescriptionCount);
+        for (uint32_t d = 0; d < vertex_input_state->vertexBindingDescriptionCount; ++d) {
+            auto const &vertex_bind_desc = vertex_input_state->pVertexBindingDescriptions[d];
+            auto const &binding_it = vertex_bindings.find(vertex_bind_desc.binding);
+            if (binding_it != vertex_bindings.cend()) {
+                skip |= LogError(device, "VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-00616",
+                                 "vkCreateGraphicsPipelines: parameter "
+                                 "pCreateInfo[%d].pVertexInputState->pVertexBindingDescription[%d].binding "
+                                 "(%" PRIu32 ") is not distinct.",
+                                 i, d, vertex_bind_desc.binding);
+            }
+            vertex_bindings.insert(vertex_bind_desc.binding);
+
+            if (vertex_bind_desc.binding >= device_limits.maxVertexInputBindings) {
+                skip |= LogError(device, "VUID-VkVertexInputBindingDescription-binding-00618",
+                                 "vkCreateGraphicsPipelines: parameter "
+                                 "pCreateInfos[%u].pVertexInputState->pVertexBindingDescriptions[%u].binding (%u) is "
+                                 "greater than or equal to VkPhysicalDeviceLimits::maxVertexInputBindings (%u).",
+                                 i, d, vertex_bind_desc.binding, device_limits.maxVertexInputBindings);
+            }
+
+            if (vertex_bind_desc.stride > device_limits.maxVertexInputBindingStride) {
+                skip |= LogError(device, "VUID-VkVertexInputBindingDescription-stride-00619",
+                                 "vkCreateGraphicsPipelines: parameter "
+                                 "pCreateInfos[%u].pVertexInputState->pVertexBindingDescriptions[%u].stride (%u) is greater "
+                                 "than VkPhysicalDeviceLimits::maxVertexInputBindingStride (%u).",
+                                 i, d, vertex_bind_desc.stride, device_limits.maxVertexInputBindingStride);
+            }
+        }
+
+        std::unordered_set<uint32_t> attribute_locations(vertex_input_state->vertexAttributeDescriptionCount);
+        for (uint32_t d = 0; d < vertex_input_state->vertexAttributeDescriptionCount; ++d) {
+            auto const &vertex_attrib_desc = vertex_input_state->pVertexAttributeDescriptions[d];
+            auto const &location_it = attribute_locations.find(vertex_attrib_desc.location);
+            if (location_it != attribute_locations.cend()) {
+                skip |=
+                    LogError(device, "VUID-VkPipelineVertexInputStateCreateInfo-pVertexAttributeDescriptions-00617",
+                             "vkCreateGraphicsPipelines: parameter "
+                             "pCreateInfo[%d].pVertexInputState->vertexAttributeDescriptions[%d].location (%u) is not distinct.",
+                             i, d, vertex_attrib_desc.location);
+            }
+            attribute_locations.insert(vertex_attrib_desc.location);
+
+            auto const &binding_it = vertex_bindings.find(vertex_attrib_desc.binding);
+            if (binding_it == vertex_bindings.cend()) {
+                skip |= LogError(device, "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615",
+                                 "vkCreateGraphicsPipelines: parameter "
+                                 " pCreateInfo[%d].pVertexInputState->vertexAttributeDescriptions[%d].binding (%u) does not exist "
+                                 "in any pCreateInfo[%d].pVertexInputState->pVertexBindingDescription.",
+                                 i, d, vertex_attrib_desc.binding, i);
+            }
+
+            if (vertex_attrib_desc.location >= device_limits.maxVertexInputAttributes) {
+                skip |= LogError(device, "VUID-VkVertexInputAttributeDescription-location-00620",
+                                 "vkCreateGraphicsPipelines: parameter "
+                                 "pCreateInfos[%u].pVertexInputState->pVertexAttributeDescriptions[%u].location (%u) is "
+                                 "greater than or equal to VkPhysicalDeviceLimits::maxVertexInputAttributes (%u).",
+                                 i, d, vertex_attrib_desc.location, device_limits.maxVertexInputAttributes);
+            }
+
+            if (vertex_attrib_desc.binding >= device_limits.maxVertexInputBindings) {
+                skip |= LogError(device, "VUID-VkVertexInputAttributeDescription-binding-00621",
+                                 "vkCreateGraphicsPipelines: parameter "
+                                 "pCreateInfos[%u].pVertexInputState->pVertexAttributeDescriptions[%u].binding (%u) is "
+                                 "greater than or equal to VkPhysicalDeviceLimits::maxVertexInputBindings (%u).",
+                                 i, d, vertex_attrib_desc.binding, device_limits.maxVertexInputBindings);
+            }
+
+            if (vertex_attrib_desc.offset > device_limits.maxVertexInputAttributeOffset) {
+                skip |= LogError(device, "VUID-VkVertexInputAttributeDescription-offset-00622",
+                                 "vkCreateGraphicsPipelines: parameter "
+                                 "pCreateInfos[%u].pVertexInputState->pVertexAttributeDescriptions[%u].offset (%u) is "
+                                 "greater than VkPhysicalDeviceLimits::maxVertexInputAttributeOffset (%u).",
+                                 i, d, vertex_attrib_desc.offset, device_limits.maxVertexInputAttributeOffset);
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::ValidatePipelineTessellationStateCreateInfo(
+    const VkPipelineTessellationStateCreateInfo *pTessellationState, uint32_t active_shaders, uint32_t i) const {
+    bool skip = false;
+    bool hasTessellation = (active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) &&
+                           (active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
+
+    if (!hasTessellation) {
+        return false;
+    }
+
+    if (pTessellationState != nullptr) {
+        skip |= validate_struct_type("vkCreateGraphicsPipelines", "pCreateInfos[i].pTessellationState",
+                                     "VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO", pTessellationState,
+                                     VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, false, kVUIDUndefined,
+                                     "VUID-VkPipelineTessellationStateCreateInfo-sType-sType");
+
+        const VkStructureType allowed_type = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO;
+        skip |= validate_struct_pnext("vkCreateGraphicsPipelines",
+                                      ParameterName("pCreateInfos[%i].pTessellationState->pNext", ParameterName::IndexVector{i}),
+                                      "VkPipelineTessellationDomainOriginStateCreateInfo", pTessellationState->pNext, 1,
+                                      &allowed_type, GeneratedVulkanHeaderVersion, "VUID-VkGraphicsPipelineCreateInfo-pNext-pNext",
+                                      "VUID-VkGraphicsPipelineCreateInfo-sType-unique");
+
+        skip |= validate_reserved_flags("vkCreateGraphicsPipelines",
+                                        ParameterName("pCreateInfos[%i].pTessellationState->flags", ParameterName::IndexVector{i}),
+                                        pTessellationState->flags, "VUID-VkPipelineTessellationStateCreateInfo-flags-zerobitmask");
+
+        if (pTessellationState->patchControlPoints == 0 ||
+            pTessellationState->patchControlPoints > device_limits.maxTessellationPatchSize) {
+            skip |= LogError(device, "VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214",
+                             "vkCreateGraphicsPipelines: invalid parameter "
+                             "pCreateInfos[%d].pTessellationState->patchControlPoints value %u. patchControlPoints "
+                             "should be >0 and <=%u.",
+                             i, pTessellationState->patchControlPoints, device_limits.maxTessellationPatchSize);
+        }
+    } else {
+        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-00731",
+                         "vkCreateGraphicsPipelines: if pCreateInfos[%d].pStages includes a tessellation control "
+                         "shader stage and a tessellation evaluation shader stage, "
+                         "pCreateInfos[%d].pTessellationState must not be NULL.",
+                         i, i);
+    }
+
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache,
                                                                         uint32_t createInfoCount,
                                                                         const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                                         const VkAllocationCallbacks *pAllocator,
                                                                         VkPipeline *pPipelines) const {
     bool skip = false;
+    const auto *device_generated_cmds =
+        lvl_find_in_chain<VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV>(device_createinfo_pnext);
+
+    bool device_generated_cmds_disabled = !device_extensions.vk_nv_device_generated_commands || (device_generated_cmds == nullptr) ||
+                                         (device_generated_cmds->deviceGeneratedCommands == VK_FALSE);
+
 
     if (pCreateInfos != nullptr) {
         for (uint32_t i = 0; i < createInfoCount; ++i) {
@@ -1297,53 +1529,97 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                  i, feedback_struct->pipelineStageCreationFeedbackCount, pCreateInfos[i].stageCount);
             }
 
-            // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
+            auto shader_groups_struct = lvl_find_in_chain<VkGraphicsPipelineShaderGroupsCreateInfoNV>(pCreateInfos[i].pNext);
+            if (shader_groups_struct != nullptr) {
+                if (device_generated_cmds_disabled) {
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-deviceGeneratedCommands-02887",
+                                     "vkCreateGraphicsPipelines(): in pCreateInfo[%d] VK_NV_device_generated_commands extension "
+                                     "and deviceGeneratedCommands not enabled",
+                                     i);
+                }
 
-            // Collect active stages and other information
-            // Only want to loop through pStages once
-            uint32_t active_shaders = 0;
-            bool has_eval = false;
-            bool has_control = false;
-            if (pCreateInfos[i].pStages != nullptr) {
-                for (uint32_t stage_index = 0; stage_index < pCreateInfos[i].stageCount; ++stage_index) {
-                    active_shaders |= pCreateInfos[i].pStages[stage_index].stage;
+                if (shader_groups_struct->groupCount == 0 ||
+                    shader_groups_struct->groupCount > phys_dev_ext_props.device_generated_cmds_props.maxGraphicsShaderGroupCount) {
+                    skip |= LogError(device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-groupCount-02879",
+                                     "vkCreateGraphicsPipelines(): in pCreateInfo[%d] shader groups groupCount is zero or beyond "
+                                     "VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::maxGraphicsShaderGroupCount",
+                                     i);
+                }
 
-                    if (pCreateInfos[i].pStages[stage_index].stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
-                        has_control = true;
-                    } else if (pCreateInfos[i].pStages[stage_index].stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
-                        has_eval = true;
+                for (uint32_t groupIndex = 0; groupIndex < shader_groups_struct->groupCount; groupIndex++) {
+                    uint32_t group_active_shaders = 0;
+                    bool group_skip = false;
+
+                    if (ValidatePipelineShaderStageCreateInfos(shader_groups_struct->pGroups[groupIndex].stageCount,
+                                                               shader_groups_struct->pGroups[groupIndex].pStages, i,
+                                                               group_active_shaders)) {
+                        skip |=
+                            LogError(device, "VUID-VkGraphicsShaderGroupCreateInfoNV-pStages-02889",
+                                     "vkCreateGraphicsPipelines() : in pCreateInfo[%d] has an invalid shader group %d stage state",
+                                     i, groupIndex);
                     }
 
-                    skip |= validate_string(
-                        "vkCreateGraphicsPipelines",
-                        ParameterName("pCreateInfos[%i].pStages[%i].pName", ParameterName::IndexVector{i, stage_index}),
-                        "VUID-VkGraphicsPipelineCreateInfo-pStages-parameter", pCreateInfos[i].pStages[stage_index].pName);
+                    if (ValidatePipelineTessellationStateCreateInfo(shader_groups_struct->pGroups[groupIndex].pTessellationState,
+                                                                    group_active_shaders, i)) {
+                        skip |= LogError(device, "VUID-VkGraphicsShaderGroupCreateInfoNV-pTessellationState-02891",
+                                         "vkCreateGraphicsPipelines() : in pCreateInfo[%d] has an invalid shader group %d "
+                                         "tessellation state",
+                                         i, groupIndex);
+                    }
+
+                    if (ValidatePipelineVertexInputStateCreateInfo(shader_groups_struct->pGroups[groupIndex].pVertexInputState,
+                                                                   group_active_shaders, i)) {
+                        skip |=
+                            LogError(device, "VUID-VkGraphicsShaderGroupCreateInfoNV-pVertexInputState-02890",
+                                     "vkCreateGraphicsPipelines() : in pCreateInfo[%d] has an invalid shader group %d vertex state",
+                                     i, groupIndex);
+                    }
+
+                    skip |= group_skip;
+                }
+
+                // not fully accurate, skipping complexity of detailed pStage comparison
+                if ((shader_groups_struct->pGroups[0].stageCount != pCreateInfos[i].stageCount) ||
+                    !hash_util::similar_for_nullity(shader_groups_struct->pGroups[0].pStages, pCreateInfos[i].pStages) ||
+                    !hash_util::similar_for_nullity(shader_groups_struct->pGroups[0].pVertexInputState,
+                                                    pCreateInfos[i].pVertexInputState) ||
+                    !hash_util::similar_for_nullity(shader_groups_struct->pGroups[0].pTessellationState,
+                                                    pCreateInfos[i].pTessellationState) ||
+                    (shader_groups_struct->pGroups[0].pVertexInputState &&
+                     !(*shader_groups_struct->pGroups[0].pVertexInputState == *pCreateInfos[i].pVertexInputState)) ||
+                    (shader_groups_struct->pGroups[0].pTessellationState &&
+                     !(*shader_groups_struct->pGroups[0].pTessellationState == *pCreateInfos[i].pTessellationState))) {
+                    skip |= LogError(
+                        device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pGroups-02881",
+                        "vkCreateGraphicsPipelines() : in pCreateInfo[%d] shader group 0 does not match the base state", i);
+                } else {
+                    for (uint32_t stageIndex = 0; stageIndex < pCreateInfos[i].stageCount; stageIndex++) {
+                        auto &lhs = pCreateInfos[i].pStages[stageIndex];
+                        auto &rhs = shader_groups_struct->pGroups[0].pStages[stageIndex];
+
+                        if ((lhs.flags != rhs.flags) || (lhs.stage != rhs.stage) || (lhs.module != rhs.module) ||
+                            !hash_util::similar_for_nullity(lhs.pName, rhs.pName) ||
+                            !hash_util::similar_for_nullity(lhs.pSpecializationInfo, rhs.pSpecializationInfo) ||
+                            (lhs.pName && strcmp(lhs.pName, rhs.pName) != 0)) {
+                            skip |= LogError(
+                                device, "VUID-VkGraphicsPipelineShaderGroupsCreateInfoNV-pGroups-02881",
+                                "vkCreateGraphicsPipelines() : in pCreateInfo[%d] shader group 0 does not match the base state", i);
+                            break;
+                        }
+                    }
                 }
             }
 
-            if ((active_shaders & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) &&
-                (active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) && (pCreateInfos[i].pTessellationState != nullptr)) {
-                skip |= validate_struct_type("vkCreateGraphicsPipelines", "pCreateInfos[i].pTessellationState",
-                                             "VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO",
-                                             pCreateInfos[i].pTessellationState,
-                                             VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, false, kVUIDUndefined,
-                                             "VUID-VkPipelineTessellationStateCreateInfo-sType-sType");
+            // Validation for parameters excluded from the generated validation code due to a 'noautovalidity' tag in vk.xml
 
-                const VkStructureType allowed_structs_VkPipelineTessellationStateCreateInfo[] = {
-                    VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO};
-
-                skip |= validate_struct_pnext("vkCreateGraphicsPipelines", "pCreateInfos[i].pTessellationState->pNext",
-                                              "VkPipelineTessellationDomainOriginStateCreateInfo",
-                                              pCreateInfos[i].pTessellationState->pNext,
-                                              ARRAY_SIZE(allowed_structs_VkPipelineTessellationStateCreateInfo),
-                                              allowed_structs_VkPipelineTessellationStateCreateInfo, GeneratedVulkanHeaderVersion,
-                                              "VUID-VkPipelineTessellationStateCreateInfo-pNext-pNext",
-                                              "VUID-VkPipelineTessellationStateCreateInfo-sType-unique");
-
-                skip |= validate_reserved_flags("vkCreateGraphicsPipelines", "pCreateInfos[i].pTessellationState->flags",
-                                                pCreateInfos[i].pTessellationState->flags,
-                                                "VUID-VkPipelineTessellationStateCreateInfo-flags-zerobitmask");
+            // Collect active stages
+            uint32_t active_shaders = 0;
+            if (pCreateInfos[i].pStages != nullptr) {
+                skip |=
+                    ValidatePipelineShaderStageCreateInfos(pCreateInfos[i].stageCount, pCreateInfos[i].pStages, i, active_shaders);
             }
+
+            skip |= ValidatePipelineTessellationStateCreateInfo(pCreateInfos[i].pTessellationState, active_shaders, i);
 
             if (!(active_shaders & VK_SHADER_STAGE_MESH_BIT_NV) && (pCreateInfos[i].pInputAssemblyState != nullptr)) {
                 skip |= validate_struct_type("vkCreateGraphicsPipelines", "pCreateInfos[i].pInputAssemblyState",
@@ -1369,197 +1645,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                         pCreateInfos[i].pInputAssemblyState->primitiveRestartEnable);
             }
 
-            if (!(active_shaders & VK_SHADER_STAGE_MESH_BIT_NV) && (pCreateInfos[i].pVertexInputState != nullptr)) {
-                auto const &vertex_input_state = pCreateInfos[i].pVertexInputState;
-
-                if (pCreateInfos[i].pVertexInputState->flags != 0) {
-                    skip |= LogError(device, "VUID-VkPipelineVertexInputStateCreateInfo-flags-zerobitmask",
-                                     "vkCreateGraphicsPipelines: pararameter "
-                                     "pCreateInfos[%d].pVertexInputState->flags (%u) is reserved and must be zero.",
-                                     i, vertex_input_state->flags);
-                }
-
-                const VkStructureType allowed_structs_VkPipelineVertexInputStateCreateInfo[] = {
-                    VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_DIVISOR_STATE_CREATE_INFO_EXT};
-                skip |= validate_struct_pnext("vkCreateGraphicsPipelines", "pCreateInfos[i].pVertexInputState->pNext",
-                                              "VkPipelineVertexInputDivisorStateCreateInfoEXT",
-                                              pCreateInfos[i].pVertexInputState->pNext, 1,
-                                              allowed_structs_VkPipelineVertexInputStateCreateInfo, GeneratedVulkanHeaderVersion,
-                                              "VUID-VkPipelineVertexInputStateCreateInfo-pNext-pNext",
-                                              "VUID-VkPipelineVertexInputStateCreateInfo-sType-unique");
-                skip |= validate_struct_type("vkCreateGraphicsPipelines", "pCreateInfos[i].pVertexInputState",
-                                             "VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO", vertex_input_state,
-                                             VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, false, kVUIDUndefined,
-                                             "VUID-VkPipelineVertexInputStateCreateInfo-sType-sType");
-                skip |=
-                    validate_array("vkCreateGraphicsPipelines", "pCreateInfos[i].pVertexInputState->vertexBindingDescriptionCount",
-                                   "pCreateInfos[i].pVertexInputState->pVertexBindingDescriptions",
-                                   pCreateInfos[i].pVertexInputState->vertexBindingDescriptionCount,
-                                   &pCreateInfos[i].pVertexInputState->pVertexBindingDescriptions, false, true, kVUIDUndefined,
-                                   "VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-parameter");
-
-                skip |= validate_array(
-                    "vkCreateGraphicsPipelines", "pCreateInfos[i].pVertexInputState->vertexAttributeDescriptionCount",
-                    "pCreateInfos[i]->pVertexAttributeDescriptions", vertex_input_state->vertexAttributeDescriptionCount,
-                    &vertex_input_state->pVertexAttributeDescriptions, false, true, kVUIDUndefined,
-                    "VUID-VkPipelineVertexInputStateCreateInfo-pVertexAttributeDescriptions-parameter");
-
-                if (pCreateInfos[i].pVertexInputState->pVertexBindingDescriptions != NULL) {
-                    for (uint32_t vertexBindingDescriptionIndex = 0;
-                         vertexBindingDescriptionIndex < pCreateInfos[i].pVertexInputState->vertexBindingDescriptionCount;
-                         ++vertexBindingDescriptionIndex) {
-                        skip |= validate_ranged_enum(
-                            "vkCreateGraphicsPipelines",
-                            "pCreateInfos[i].pVertexInputState->pVertexBindingDescriptions[j].inputRate", "VkVertexInputRate",
-                            AllVkVertexInputRateEnums,
-                            pCreateInfos[i].pVertexInputState->pVertexBindingDescriptions[vertexBindingDescriptionIndex].inputRate,
-                            "VUID-VkVertexInputBindingDescription-inputRate-parameter");
-                    }
-                }
-
-                if (pCreateInfos[i].pVertexInputState->pVertexAttributeDescriptions != NULL) {
-                    for (uint32_t vertexAttributeDescriptionIndex = 0;
-                         vertexAttributeDescriptionIndex < pCreateInfos[i].pVertexInputState->vertexAttributeDescriptionCount;
-                         ++vertexAttributeDescriptionIndex) {
-                        skip |= validate_ranged_enum(
-                            "vkCreateGraphicsPipelines",
-                            "pCreateInfos[i].pVertexInputState->pVertexAttributeDescriptions[i].format", "VkFormat",
-                            AllVkFormatEnums,
-                            pCreateInfos[i].pVertexInputState->pVertexAttributeDescriptions[vertexAttributeDescriptionIndex].format,
-                            "VUID-VkVertexInputAttributeDescription-format-parameter");
-                    }
-                }
-
-                if (vertex_input_state->vertexBindingDescriptionCount > device_limits.maxVertexInputBindings) {
-                    skip |= LogError(device, "VUID-VkPipelineVertexInputStateCreateInfo-vertexBindingDescriptionCount-00613",
-                                     "vkCreateGraphicsPipelines: pararameter "
-                                     "pCreateInfo[%d].pVertexInputState->vertexBindingDescriptionCount (%u) is "
-                                     "greater than VkPhysicalDeviceLimits::maxVertexInputBindings (%u).",
-                                     i, vertex_input_state->vertexBindingDescriptionCount, device_limits.maxVertexInputBindings);
-                }
-
-                if (vertex_input_state->vertexAttributeDescriptionCount > device_limits.maxVertexInputAttributes) {
-                    skip |=
-                        LogError(device, "VUID-VkPipelineVertexInputStateCreateInfo-vertexAttributeDescriptionCount-00614",
-                                 "vkCreateGraphicsPipelines: pararameter "
-                                 "pCreateInfo[%d].pVertexInputState->vertexAttributeDescriptionCount (%u) is "
-                                 "greater than VkPhysicalDeviceLimits::maxVertexInputAttributes (%u).",
-                                 i, vertex_input_state->vertexAttributeDescriptionCount, device_limits.maxVertexInputAttributes);
-                }
-
-                std::unordered_set<uint32_t> vertex_bindings(vertex_input_state->vertexBindingDescriptionCount);
-                for (uint32_t d = 0; d < vertex_input_state->vertexBindingDescriptionCount; ++d) {
-                    auto const &vertex_bind_desc = vertex_input_state->pVertexBindingDescriptions[d];
-                    auto const &binding_it = vertex_bindings.find(vertex_bind_desc.binding);
-                    if (binding_it != vertex_bindings.cend()) {
-                        skip |= LogError(device, "VUID-VkPipelineVertexInputStateCreateInfo-pVertexBindingDescriptions-00616",
-                                         "vkCreateGraphicsPipelines: parameter "
-                                         "pCreateInfo[%d].pVertexInputState->pVertexBindingDescription[%d].binding "
-                                         "(%" PRIu32 ") is not distinct.",
-                                         i, d, vertex_bind_desc.binding);
-                    }
-                    vertex_bindings.insert(vertex_bind_desc.binding);
-
-                    if (vertex_bind_desc.binding >= device_limits.maxVertexInputBindings) {
-                        skip |= LogError(device, "VUID-VkVertexInputBindingDescription-binding-00618",
-                                         "vkCreateGraphicsPipelines: parameter "
-                                         "pCreateInfos[%u].pVertexInputState->pVertexBindingDescriptions[%u].binding (%u) is "
-                                         "greater than or equal to VkPhysicalDeviceLimits::maxVertexInputBindings (%u).",
-                                         i, d, vertex_bind_desc.binding, device_limits.maxVertexInputBindings);
-                    }
-
-                    if (vertex_bind_desc.stride > device_limits.maxVertexInputBindingStride) {
-                        skip |=
-                            LogError(device, "VUID-VkVertexInputBindingDescription-stride-00619",
-                                     "vkCreateGraphicsPipelines: parameter "
-                                     "pCreateInfos[%u].pVertexInputState->pVertexBindingDescriptions[%u].stride (%u) is greater "
-                                     "than VkPhysicalDeviceLimits::maxVertexInputBindingStride (%u).",
-                                     i, d, vertex_bind_desc.stride, device_limits.maxVertexInputBindingStride);
-                    }
-                }
-
-                std::unordered_set<uint32_t> attribute_locations(vertex_input_state->vertexAttributeDescriptionCount);
-                for (uint32_t d = 0; d < vertex_input_state->vertexAttributeDescriptionCount; ++d) {
-                    auto const &vertex_attrib_desc = vertex_input_state->pVertexAttributeDescriptions[d];
-                    auto const &location_it = attribute_locations.find(vertex_attrib_desc.location);
-                    if (location_it != attribute_locations.cend()) {
-                        skip |= LogError(
-                            device, "VUID-VkPipelineVertexInputStateCreateInfo-pVertexAttributeDescriptions-00617",
-                            "vkCreateGraphicsPipelines: parameter "
-                            "pCreateInfo[%d].pVertexInputState->vertexAttributeDescriptions[%d].location (%u) is not distinct.",
-                            i, d, vertex_attrib_desc.location);
-                    }
-                    attribute_locations.insert(vertex_attrib_desc.location);
-
-                    auto const &binding_it = vertex_bindings.find(vertex_attrib_desc.binding);
-                    if (binding_it == vertex_bindings.cend()) {
-                        skip |= LogError(
-                            device, "VUID-VkPipelineVertexInputStateCreateInfo-binding-00615",
-                            "vkCreateGraphicsPipelines: parameter "
-                            " pCreateInfo[%d].pVertexInputState->vertexAttributeDescriptions[%d].binding (%u) does not exist "
-                            "in any pCreateInfo[%d].pVertexInputState->pVertexBindingDescription.",
-                            i, d, vertex_attrib_desc.binding, i);
-                    }
-
-                    if (vertex_attrib_desc.location >= device_limits.maxVertexInputAttributes) {
-                        skip |= LogError(device, "VUID-VkVertexInputAttributeDescription-location-00620",
-                                         "vkCreateGraphicsPipelines: parameter "
-                                         "pCreateInfos[%u].pVertexInputState->pVertexAttributeDescriptions[%u].location (%u) is "
-                                         "greater than or equal to VkPhysicalDeviceLimits::maxVertexInputAttributes (%u).",
-                                         i, d, vertex_attrib_desc.location, device_limits.maxVertexInputAttributes);
-                    }
-
-                    if (vertex_attrib_desc.binding >= device_limits.maxVertexInputBindings) {
-                        skip |= LogError(device, "VUID-VkVertexInputAttributeDescription-binding-00621",
-                                         "vkCreateGraphicsPipelines: parameter "
-                                         "pCreateInfos[%u].pVertexInputState->pVertexAttributeDescriptions[%u].binding (%u) is "
-                                         "greater than or equal to VkPhysicalDeviceLimits::maxVertexInputBindings (%u).",
-                                         i, d, vertex_attrib_desc.binding, device_limits.maxVertexInputBindings);
-                    }
-
-                    if (vertex_attrib_desc.offset > device_limits.maxVertexInputAttributeOffset) {
-                        skip |= LogError(device, "VUID-VkVertexInputAttributeDescription-offset-00622",
-                                         "vkCreateGraphicsPipelines: parameter "
-                                         "pCreateInfos[%u].pVertexInputState->pVertexAttributeDescriptions[%u].offset (%u) is "
-                                         "greater than VkPhysicalDeviceLimits::maxVertexInputAttributeOffset (%u).",
-                                         i, d, vertex_attrib_desc.offset, device_limits.maxVertexInputAttributeOffset);
-                    }
-                }
-            }
-
-            // pTessellationState is ignored without both tessellation control and tessellation evaluation shaders stages
-            if (has_control && has_eval) {
-                if (pCreateInfos[i].pTessellationState == nullptr) {
-                    skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-pStages-00731",
-                                     "vkCreateGraphicsPipelines: if pCreateInfos[%d].pStages includes a tessellation control "
-                                     "shader stage and a tessellation evaluation shader stage, "
-                                     "pCreateInfos[%d].pTessellationState must not be NULL.",
-                                     i, i);
-                } else {
-                    const VkStructureType allowed_type = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO;
-                    skip |= validate_struct_pnext(
-                        "vkCreateGraphicsPipelines",
-                        ParameterName("pCreateInfos[%i].pTessellationState->pNext", ParameterName::IndexVector{i}),
-                        "VkPipelineTessellationDomainOriginStateCreateInfo", pCreateInfos[i].pTessellationState->pNext, 1,
-                        &allowed_type, GeneratedVulkanHeaderVersion, "VUID-VkGraphicsPipelineCreateInfo-pNext-pNext",
-                        "VUID-VkGraphicsPipelineCreateInfo-sType-unique");
-
-                    skip |= validate_reserved_flags(
-                        "vkCreateGraphicsPipelines",
-                        ParameterName("pCreateInfos[%i].pTessellationState->flags", ParameterName::IndexVector{i}),
-                        pCreateInfos[i].pTessellationState->flags, "VUID-VkPipelineTessellationStateCreateInfo-flags-zerobitmask");
-
-                    if (pCreateInfos[i].pTessellationState->patchControlPoints == 0 ||
-                        pCreateInfos[i].pTessellationState->patchControlPoints > device_limits.maxTessellationPatchSize) {
-                        skip |= LogError(device, "VUID-VkPipelineTessellationStateCreateInfo-patchControlPoints-01214",
-                                         "vkCreateGraphicsPipelines: invalid parameter "
-                                         "pCreateInfos[%d].pTessellationState->patchControlPoints value %u. patchControlPoints "
-                                         "should be >0 and <=%u.",
-                                         i, pCreateInfos[i].pTessellationState->patchControlPoints,
-                                         device_limits.maxTessellationPatchSize);
-                    }
-                }
-            }
+            skip |= ValidatePipelineVertexInputStateCreateInfo(pCreateInfos[i].pVertexInputState, active_shaders, i);
 
             // pViewportState, pMultisampleState, pDepthStencilState, and pColorBlendState ignored when rasterization is disabled
             if ((pCreateInfos[i].pRasterizationState != nullptr) &&
@@ -2292,6 +2378,13 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 }
             }
 
+            if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV && device_generated_cmds_disabled) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-02877",
+                                 "vkCreateGraphicsPipelines pCreateInfos[i].flags uses VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV"
+                                 "without VK_NV_device_generated_commands extension and deviceGeneratedCommands feature enabled.",
+                                 i);
+            }
+
             if (pCreateInfos[i].pRasterizationState) {
                 if (!device_extensions.vk_nv_fill_rectangle) {
                     if (pCreateInfos[i].pRasterizationState->polygonMode == VK_POLYGON_MODE_FILL_RECTANGLE_NV) {
@@ -2359,6 +2452,13 @@ bool StatelessValidation::manual_PreCallValidateCreateComputePipelines(VkDevice 
             skip |= LogError(device, "VUID-VkComputePipelineCreateInfo-stage-00701",
                              "vkCreateComputePipelines(): the pCreateInfo[%u].stage.stage (%s) is not VK_SHADER_STAGE_COMPUTE_BIT",
                              i, string_VkShaderStageFlagBits(pCreateInfos[i].stage.stage));
+        }
+
+        if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV) {
+            skip |= LogError(
+                device, "VUID-VkComputePipelineCreateInfo-flags-02874",
+                "vkCreateComputePipelines(): the pCreateInfo[%u].flag must not contain VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV",
+                i);
         }
     }
     return skip;
@@ -4335,6 +4435,12 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(VkD
                                  "If the libraryCount member of libraries is greater than 0, pLibraryInterface must not be NULL.");
             }
         }
+        if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV) {
+            skip |= LogError(device, "VUID-vkCreateRayTracingPipelinesKHR-flags-02904",
+                             "vkCreateRayTracingPipelinesKHR(): the pCreateInfo[%u].flag must not contain "
+                             "VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV",
+                             i);
+        }
     }
 
     return skip;
@@ -4542,6 +4648,342 @@ bool StatelessValidation::manual_PreCallValidateImportSemaphoreFdKHR(
                          report_data->FormatHandle(pImportSemaphoreFdInfo->semaphore).c_str(),
                          string_VkExternalSemaphoreHandleTypeFlagBits(pImportSemaphoreFdInfo->handleType),
                          string_VkExternalSemaphoreHandleTypeFlags(supported_handle_types).c_str());
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(
+    VkDevice device, const VkGeneratedCommandsMemoryRequirementsInfoNV *pInfo, VkMemoryRequirements2 *pMemoryRequirements) const {
+    bool skip = false;
+
+    // Check samplerYcbcrConversion feature is set
+    const auto *device_generated_cmds =
+        lvl_find_in_chain<VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV>(device_createinfo_pnext);
+    if ((device_generated_cmds == nullptr) || (device_generated_cmds->deviceGeneratedCommands == VK_FALSE)) {
+        skip |= LogError(device, "VUID-vkGetGeneratedCommandsMemoryRequirementsNV-deviceGeneratedCommands-02906",
+                         "deviceGeneratedCommands must be enabled to call vkGetGeneratedCommandsMemoryRequirementsNV.");
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::ValidateGeneratedCommandsInfoNV(VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoNV *pGenInfo,
+                                                          bool isPreprocess, const char *apiName) const {
+    bool skip = false;
+
+    if (pGenInfo->sequencesCount > phys_dev_ext_props.device_generated_cmds_props.maxIndirectSequenceCount) {
+        skip |=
+            LogError(commandBuffer, "VUID-VkGeneratedCommandsInfoNV-sequencesCount-02917",
+                     "%s(): sequencesCount %u must be smaller than "
+                     "VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::maxIndirectSequenceCount %u.",
+                     apiName, pGenInfo->sequencesCount, phys_dev_ext_props.device_generated_cmds_props.maxIndirectSequenceCount);
+    }
+
+    {
+        VkGeneratedCommandsMemoryRequirementsInfoNV genReqs = {VK_STRUCTURE_TYPE_GENERATED_COMMANDS_MEMORY_REQUIREMENTS_INFO_NV};
+        VkMemoryRequirements2 memReqs = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
+        genReqs.indirectCommandsLayout = pGenInfo->indirectCommandsLayout;
+        genReqs.maxSequencesCount = pGenInfo->sequencesCount;
+        genReqs.pipelineBindPoint = pGenInfo->pipelineBindPoint;
+        genReqs.pipeline = pGenInfo->pipeline;
+
+        DispatchGetGeneratedCommandsMemoryRequirementsNV(device, &genReqs, &memReqs);
+
+        if (pGenInfo->preprocessSize < memReqs.memoryRequirements.size) {
+            skip |= LogError(
+                commandBuffer, "VUID-VkGeneratedCommandsInfoNV-preprocessSize-02920",
+                "%s: preprocessSize must be at least equal to size returned by vkGetGeneratedCommandsMemoryRequirementsNV.",
+                apiName);
+        }
+    }
+
+    if ((pGenInfo->preprocessOffset % phys_dev_ext_props.device_generated_cmds_props.minIndirectCommandsBufferOffsetAlignment) !=
+        0) {
+        skip |= LogError(commandBuffer, "VUID-VkGeneratedCommandsInfoNV-preprocessOffset-02919",
+                         "%s: preprocessOffset must be aligned to "
+                         "VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::minIndirectCommandsBufferOffsetAlignment.",
+                         apiName);
+    }
+    if (pGenInfo->sequencesCountBuffer &&
+        (pGenInfo->sequencesCountOffset % phys_dev_ext_props.device_generated_cmds_props.minSequencesCountBufferOffsetAlignment) !=
+            0) {
+        skip |= LogError(commandBuffer, "VUID-VkGeneratedCommandsInfoNV-sequencesCountBuffer-02923",
+                         "%s: sequencesCountOffset must be aligned to "
+                         "VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::minSequencesCountBufferOffsetAlignment.",
+                         apiName);
+    }
+    if (pGenInfo->sequencesIndexBuffer &&
+        (pGenInfo->sequencesIndexOffset % phys_dev_ext_props.device_generated_cmds_props.minSequencesIndexBufferOffsetAlignment) !=
+            0) {
+        skip |= LogError(commandBuffer, "VUID-VkGeneratedCommandsInfoNV-sequencesIndexBuffer-02926",
+                         "%s: sequencesIndexOffset must be aligned to "
+                         "VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::minSequencesIndexBufferOffsetAlignment.",
+                         apiName);
+    }
+
+    for (uint32_t i = 0; i < pGenInfo->streamCount; i++) {
+        if ((pGenInfo->pStreams[i].offset %
+             phys_dev_ext_props.device_generated_cmds_props.minIndirectCommandsBufferOffsetAlignment) != 0) {
+            skip |= LogError(commandBuffer, "VUID-VkIndirectCommandsStreamNV-offset-02943",
+                             "%s: pStreams[%u].offset must be aligned to "
+                             "VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::minIndirectCommandsBufferOffsetAlignment.",
+                             apiName, i);
+        }
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdPreprocessGeneratedCommandsNV(
+    VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoNV *pGeneratedCommandsInfo) const {
+    bool skip = false;
+
+    const auto *device_generated_cmds =
+        lvl_find_in_chain<VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV>(device_createinfo_pnext);
+    if ((device_generated_cmds == nullptr) || (device_generated_cmds->deviceGeneratedCommands == VK_FALSE)) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdPreprocessGeneratedCommandsNV-deviceGeneratedCommands-02928",
+                         "deviceGeneratedCommands must be enabled to call vkCmdPreprocessGeneratedCommandsNV.");
+    }
+    skip |= ValidateGeneratedCommandsInfoNV(commandBuffer, pGeneratedCommandsInfo, true, "vkCmdPreprocessGeneratedCommandsNV()");
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdExecuteGeneratedCommandsNV(
+    VkCommandBuffer commandBuffer, VkBool32 isPreprocessed, const VkGeneratedCommandsInfoNV *pGeneratedCommandsInfo) const {
+    bool skip = false;
+
+    const auto *device_generated_cmds =
+        lvl_find_in_chain<VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV>(device_createinfo_pnext);
+    if ((device_generated_cmds == nullptr) || (device_generated_cmds->deviceGeneratedCommands == VK_FALSE)) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdExecuteGeneratedCommandsNV-deviceGeneratedCommands-02911",
+                         "deviceGeneratedCommands must be enabled to call vkCmdExecuteGeneratedCommandsNV.");
+    }
+    skip |= ValidateGeneratedCommandsInfoNV(commandBuffer, pGeneratedCommandsInfo, false, "vkCmdExecuteGeneratedCommandsNV()");
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer,
+                                                                             VkPipelineBindPoint pipelineBindPoint,
+                                                                             VkPipeline pipeline, uint32_t groupIndex) const {
+    bool skip = false;
+
+    const auto *device_generated_cmds =
+        lvl_find_in_chain<VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV>(device_createinfo_pnext);
+    if ((device_generated_cmds == nullptr) || (device_generated_cmds->deviceGeneratedCommands == VK_FALSE)) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBindPipelineShaderGroupNV-deviceGeneratedCommands-02896",
+                         "deviceGeneratedCommands must be enabled to call vkCmdBindPipelineShaderGroupNV.");
+    }
+
+    if (pipelineBindPoint != VK_PIPELINE_BIND_POINT_GRAPHICS) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBindPipelineShaderGroupNV-pipelineBindPoint-02894",
+                         "pipelineBindPoint must be VK_PIPELINE_BIND_POINT_GRAPHICS for vkCmdBindPipelineShaderGroupNV.");
+    }
+
+    if (PreCallValidateCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline)) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBindPipelineShaderGroupNV-groupIndex-02895",
+                         "pipeline binding must be valid for vkCmdBindPipelineShaderGroupNV.");
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCreateIndirectCommandsLayoutNV(
+    VkDevice device, const VkIndirectCommandsLayoutCreateInfoNV *pCreateInfo, const VkAllocationCallbacks *pAllocator,
+    VkIndirectCommandsLayoutNV *pIndirectCommandsLayout) const {
+    bool skip = false;
+
+    const auto *device_generated_cmds =
+        lvl_find_in_chain<VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV>(device_createinfo_pnext);
+    if ((device_generated_cmds == nullptr) || (device_generated_cmds->deviceGeneratedCommands == VK_FALSE)) {
+        skip |= LogError(device, "VUID-vkCreateIndirectCommandsLayoutNV-deviceGeneratedCommands-02929",
+                         "deviceGeneratedCommands must be enabled to call vkCreateIndirectCommandsLayoutNV.");
+    }
+    if (pCreateInfo->pipelineBindPoint != VK_PIPELINE_BIND_POINT_GRAPHICS) {
+        skip |= LogError(device, "VUID-VkIndirectCommandsLayoutCreateInfoNV-pipelineBindPoint-02930",
+                         "vkCreateIndirectCommandsLayoutNV: pipelineBindPoint must be VK_PIPELINE_BIND_POINT_GRAPHICS.");
+    }
+    if (pCreateInfo->tokenCount == 0 ||
+        pCreateInfo->tokenCount > phys_dev_ext_props.device_generated_cmds_props.maxIndirectCommandsTokenCount) {
+        skip |= LogError(device, "VUID-VkIndirectCommandsLayoutCreateInfoNV-tokenCount-02931",
+                         "vkCreateIndirectCommandsLayoutNV: tokenCount must be at least 1 and at maximum "
+                         "VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::maxIndirectCommandsTokenCount.");
+    }
+
+    uint32_t stream_misaligned = 0;
+    bool hadWork = false;
+    for (uint32_t index = 0; index < pCreateInfo->tokenCount; index++) {
+        const VkIndirectCommandsLayoutTokenNV *token = &pCreateInfo->pTokens[index];
+        bool hadShader = false;
+        bool hadState = false;
+        bool isWork = false;
+        uint32_t alignment = 4;
+
+        if (token->stream > pCreateInfo->streamCount) {
+            skip |= LogError(device, "VUID-VkIndirectCommandsLayoutTokenNV-stream-02951",
+                             "vkCreateIndirectCommandsLayoutNV token %u: "
+                             "stream %u exceeds streamCount %u.",
+                             index, token->stream, pCreateInfo->streamCount);
+        }
+        if (token->offset > phys_dev_ext_props.device_generated_cmds_props.maxIndirectCommandsTokenOffset) {
+            skip |= LogError(
+                device, "VUID-VkIndirectCommandsLayoutTokenNV-offset-02952",
+                "vkCreateIndirectCommandsLayoutNV token %u: "
+                "offset %u exceeds VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::maxIndirectCommandsTokenOffset %u.",
+                index, token->offset, phys_dev_ext_props.device_generated_cmds_props.maxIndirectCommandsTokenOffset);
+        }
+
+        switch (token->tokenType) {
+            case VK_INDIRECT_COMMANDS_TOKEN_TYPE_SHADER_GROUP_NV: {
+                if (index != 0) {
+                    skip |= LogError(device, "VUID-VkIndirectCommandsLayoutCreateInfoNV-pTokens-02932",
+                                     "vkCreateIndirectCommandsLayoutNV token %u: "
+                                     "VK_INDIRECT_COMMANDS_TOKEN_TYPE_SHADER_GROUP_NV must be first token if used.",
+                                     index);
+                }
+                if (hadShader) {
+                    skip |= LogError(device, "VUID-VkIndirectCommandsLayoutCreateInfoNV-pTokens-02932",
+                                     "vkCreateIndirectCommandsLayoutNV token %u: "
+                                     "VK_INDIRECT_COMMANDS_TOKEN_TYPE_SHADER_GROUP_NV must exist only once if used.",
+                                     index);
+                }
+                hadShader = true;
+            }
+            case VK_INDIRECT_COMMANDS_TOKEN_TYPE_STATE_FLAGS_NV: {
+                if (hadState) {
+                    skip |= LogError(device, "VUID-VkIndirectCommandsLayoutCreateInfoNV-pTokens-02933",
+                                     "vkCreateIndirectCommandsLayoutNV token %u: "
+                                     "VK_INDIRECT_COMMANDS_TOKEN_TYPE_STATE_FLAGS_NV must exist only once if used.",
+                                     index);
+                }
+                if (!token->indirectStateFlags) {
+                    skip |= LogError(device, "VUID-VkIndirectCommandsLayoutTokenNV-tokenType-02984",
+                                     "vkCreateIndirectCommandsLayoutNV token %u: "
+                                     "must have a non-zero indirectStateFlags.");
+                }
+                hadState = true;
+            }
+            case VK_INDIRECT_COMMANDS_TOKEN_TYPE_INDEX_BUFFER_NV: {
+                alignment = 8;
+            } break;
+            case VK_INDIRECT_COMMANDS_TOKEN_TYPE_VERTEX_BUFFER_NV: {
+                alignment = 8;
+                if (token->vertexBindingUnit > device_limits.maxVertexInputBindings) {
+                    skip |= LogError(device, "VUID-VkIndirectCommandsLayoutTokenNV-tokenType-02976",
+                                     "vkCreateIndirectCommandsLayoutNV token %u: "
+                                     "vertexBindingUnit (%u) must be less than maxVertexInputBindings (%u)",
+                                     index, token->vertexBindingUnit, device_limits.maxVertexInputBindings);
+                }
+            } break;
+            case VK_INDIRECT_COMMANDS_TOKEN_TYPE_PUSH_CONSTANT_NV: {
+                uint32_t size = token->pushconstantSize;
+                uint32_t offset = token->pushconstantOffset;
+                uint32_t const maxPushConstantsSize = device_limits.maxPushConstantsSize;
+
+                if (!token->pushconstantPipelineLayout) {
+                    skip |= LogError(device, "VUID-VkIndirectCommandsLayoutCreateInfoNV-tokenType-02977",
+                                     "vkCreateIndirectCommandsLayoutNV token %u: pushconstantPipelineLayout not provided.", index);
+                }
+                /* FIXME could be better in spec */
+                if ((offset >= maxPushConstantsSize) || (size > maxPushConstantsSize - offset)) {
+                    if (offset >= maxPushConstantsSize) {
+                        skip |= LogError(device, "VUID-VkIndirectCommandsLayoutTokenNV-tokenType-02980",
+                                         "vkCreateIndirectCommandsLayoutNV token %u: pushconstantOffset %u that "
+                                         "exceeds this device's "
+                                         "maxPushConstantSize of %u.",
+                                         index, offset, maxPushConstantsSize);
+                    }
+                    if (size > maxPushConstantsSize - offset) {
+                        skip |= LogError(device, "VUID-VkIndirectCommandsLayoutTokenNV-tokenType-02981",
+                                         "vkCreateIndirectCommandsLayoutNV token %u: pushconstantOffset %u and pushconstantSize "
+                                         "%u that exceeds this device's "
+                                         "maxPushConstantSize of %u.",
+                                         index, offset, size, maxPushConstantsSize);
+                    }
+                }
+                if (token->pushconstantOffset & 0x3) {
+                    skip |= LogError(device, "VUID-VkIndirectCommandsLayoutTokenNV-tokenType-02978",
+                                     "vkCreateIndirectCommandsLayoutNV token %u: pushconstantOffset %u. Offset must be "
+                                     "a multiple of 4.",
+                                     index, offset);
+                }
+                if (token->pushconstantSize & 0x3) {
+                    skip |= LogError(device, "VUID-VkIndirectCommandsLayoutTokenNV-tokenType-02979",
+                                     "vkCreateIndirectCommandsLayoutNV token %u: pushconstantSize %u. Size must be "
+                                     "a multiple of 4.",
+                                     index, size);
+                }
+            } break;
+            case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_INDEXED_NV:
+            case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_NV:
+            case VK_INDIRECT_COMMANDS_TOKEN_TYPE_DRAW_TASKS_NV: {
+                if (hadWork) {
+                    skip |= LogError(device, "VUID-VkIndirectCommandsLayoutCreateInfoNV-pTokens-02935",
+                                     "vkCreateIndirectCommandsLayoutNV token %u: only one work provoking token must exist.", index);
+                }
+                hadWork = true;
+                isWork = true;
+            } break;
+            default:
+                break;
+        }
+
+        if (token->offset % alignment != 0) {
+            skip |= LogError(device, "VUID-VkIndirectCommandsLayoutCreateInfoNV-pStreamStrides-02937",
+                             "vkCreateIndirectCommandsLayoutNV token %u: all tokens must be aligned properly.", index);
+        }
+
+        if (!(stream_misaligned & (1 << token->stream)) && pCreateInfo->pStreamStrides[token->stream] % alignment != 0) {
+            stream_misaligned |= (1 << token->stream);
+            skip |= LogError(device, "VUID-VkIndirectCommandsLayoutCreateInfoNV-pStreamStrides-02937",
+                             "vkCreateIndirectCommandsLayoutNV pStreamStrides[%u]: all tokens must be aligned properly.",
+                             token->stream);
+        }
+
+        if (!isWork && hadWork) {
+            skip |=
+                LogError(device, "VUID-VkIndirectCommandsLayoutCreateInfoNV-pTokens-02934",
+                         "vkCreateIndirectCommandsLayoutNV token %u: all state tokens must be prior work provoking tokens.", index);
+        }
+    }
+
+    if (!hadWork) {
+        skip |= LogError(device, "VUID-VkIndirectCommandsLayoutCreateInfoNV-pTokens-02935",
+                         "vkCreateIndirectCommandsLayoutNV call must have at least one work provoking token.");
+    }
+
+    if (pCreateInfo->streamCount == 0 ||
+        pCreateInfo->streamCount > phys_dev_ext_props.device_generated_cmds_props.maxIndirectCommandsStreamCount) {
+        skip |= LogError(device, "VUID-VkIndirectCommandsLayoutCreateInfoNV-streamCount-02936",
+                         "vkCreateIndirectCommandsLayoutNV: streamCount must be at least 1 and at maximum "
+                         "VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::maxIndirectCommandsStreamCount.");
+    }
+
+    for (uint32_t index = 0; index < pCreateInfo->streamCount; index++) {
+        if (pCreateInfo->pStreamStrides[index] == 0 ||
+            pCreateInfo->pStreamStrides[index] > phys_dev_ext_props.device_generated_cmds_props.maxIndirectCommandsStreamStride) {
+            skip |= LogError(device, "VUID-VkIndirectCommandsLayoutCreateInfoNV-pStreamStrides-02937",
+                             "vkCreateIndirectCommandsLayoutNV pStreamStrides[%u] is %u and must be set and at maximum "
+                             "VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV::maxIndirectCommandsStreamStride.",
+                             index, pCreateInfo->pStreamStrides[index],
+                             phys_dev_ext_props.device_generated_cmds_props.maxIndirectCommandsStreamStride);
+        }
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateDestroyIndirectCommandsLayoutNV(VkDevice device,
+                                                                                VkIndirectCommandsLayoutNV indirectCommandsLayout,
+                                                                                const VkAllocationCallbacks *pAllocator) const {
+    bool skip = false;
+
+    // Check samplerYcbcrConversion feature is set
+    const auto *device_generated_cmds =
+        lvl_find_in_chain<VkPhysicalDeviceDeviceGeneratedCommandsFeaturesNV>(device_createinfo_pnext);
+    if ((device_generated_cmds == nullptr) || (device_generated_cmds->deviceGeneratedCommands == VK_FALSE)) {
+        skip |= LogError(device, "VUID-vkDestroyIndirectCommandsLayoutNV-deviceGeneratedCommands-02941",
+                         "deviceGeneratedCommands must be enabled to call vkDestroyIndirectCommandsLayoutNV.");
     }
     return skip;
 }

@@ -11412,6 +11412,7 @@ bool StatelessValidation::PreCallValidateGetGeneratedCommandsMemoryRequirementsN
 
         skip |= validate_struct_pnext("vkGetGeneratedCommandsMemoryRequirementsNV", "pMemoryRequirements->pNext", "VkMemoryDedicatedRequirements", pMemoryRequirements->pNext, ARRAY_SIZE(allowed_structs_VkMemoryRequirements2), allowed_structs_VkMemoryRequirements2, GeneratedVulkanHeaderVersion, "VUID-VkMemoryRequirements2-pNext-pNext", "VUID-VkMemoryRequirements2-sType-unique");
     }
+    if (!skip) skip |= manual_PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(device, pInfo, pMemoryRequirements);
     return skip;
 }
 
@@ -11443,6 +11444,7 @@ bool StatelessValidation::PreCallValidateCmdPreprocessGeneratedCommandsNV(
 
         skip |= validate_required_handle("vkCmdPreprocessGeneratedCommandsNV", "pGeneratedCommandsInfo->preprocessBuffer", pGeneratedCommandsInfo->preprocessBuffer);
     }
+    if (!skip) skip |= manual_PreCallValidateCmdPreprocessGeneratedCommandsNV(commandBuffer, pGeneratedCommandsInfo);
     return skip;
 }
 
@@ -11476,6 +11478,7 @@ bool StatelessValidation::PreCallValidateCmdExecuteGeneratedCommandsNV(
 
         skip |= validate_required_handle("vkCmdExecuteGeneratedCommandsNV", "pGeneratedCommandsInfo->preprocessBuffer", pGeneratedCommandsInfo->preprocessBuffer);
     }
+    if (!skip) skip |= manual_PreCallValidateCmdExecuteGeneratedCommandsNV(commandBuffer, isPreprocessed, pGeneratedCommandsInfo);
     return skip;
 }
 
@@ -11488,6 +11491,7 @@ bool StatelessValidation::PreCallValidateCmdBindPipelineShaderGroupNV(
     if (!device_extensions.vk_nv_device_generated_commands) skip |= OutputExtensionError("vkCmdBindPipelineShaderGroupNV", VK_NV_DEVICE_GENERATED_COMMANDS_EXTENSION_NAME);
     skip |= validate_ranged_enum("vkCmdBindPipelineShaderGroupNV", "pipelineBindPoint", "VkPipelineBindPoint", AllVkPipelineBindPointEnums, pipelineBindPoint, "VUID-vkCmdBindPipelineShaderGroupNV-pipelineBindPoint-parameter");
     skip |= validate_required_handle("vkCmdBindPipelineShaderGroupNV", "pipeline", pipeline);
+    if (!skip) skip |= manual_PreCallValidateCmdBindPipelineShaderGroupNV(commandBuffer, pipelineBindPoint, pipeline, groupIndex);
     return skip;
 }
 
@@ -11552,6 +11556,7 @@ bool StatelessValidation::PreCallValidateCreateIndirectCommandsLayoutNV(
         }
     }
     skip |= validate_required_pointer("vkCreateIndirectCommandsLayoutNV", "pIndirectCommandsLayout", pIndirectCommandsLayout, "VUID-vkCreateIndirectCommandsLayoutNV-pIndirectCommandsLayout-parameter");
+    if (!skip) skip |= manual_PreCallValidateCreateIndirectCommandsLayoutNV(device, pCreateInfo, pAllocator, pIndirectCommandsLayout);
     return skip;
 }
 
@@ -11582,6 +11587,7 @@ bool StatelessValidation::PreCallValidateDestroyIndirectCommandsLayoutNV(
 
         }
     }
+    if (!skip) skip |= manual_PreCallValidateDestroyIndirectCommandsLayoutNV(device, indirectCommandsLayout, pAllocator);
     return skip;
 }
 

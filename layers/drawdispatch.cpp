@@ -195,6 +195,16 @@ static const std::map<CMD_TYPE, DrawDispatchVuid> drawdispatch_vuid = {
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-subpass-02685",
         "VUID-vkCmdDrawMeshTasksIndirectCountNV-sampleLocationsEnable-02689"
     }},
+    {CMD_EXECUTEGENERATEDCOMMANDSNV, {
+        "VUID-vkCmdExecuteGeneratedCommandsNV-commandBuffer-cmdpool",
+        "VUID-vkCmdExecuteGeneratedCommandsNV-renderpass",
+        "VUID-vkCmdExecuteGeneratedCommandsNV-None-02700",
+        "VUID-vkCmdExecuteGeneratedCommandsNV-commandBuffer-02701",
+        "VUID-vkCmdExecuteGeneratedCommandsNV-None-02720",
+        "VUID-vkCmdExecuteGeneratedCommandsNV-None-02697",
+        "VUID-vkCmdExecuteGeneratedCommandsNV-renderPass-02684",
+        "VUID-vkCmdExecuteGeneratedCommandsNV-subpass-02685"
+    }},
     // Used if invalid cmd_type is used
     {CMD_NONE, {kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined, kVUIDUndefined}}
 };

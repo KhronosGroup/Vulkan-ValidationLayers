@@ -100,6 +100,7 @@ class StatelessValidation : public ValidationObject {
         VkPhysicalDeviceRayTracingPropertiesNV ray_tracing_propsNV;
         VkPhysicalDeviceRayTracingPropertiesKHR ray_tracing_propsKHR;
         VkPhysicalDeviceTransformFeedbackPropertiesEXT transform_feedback_props;
+        VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV device_generated_cmds_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
 
@@ -1222,6 +1223,16 @@ class StatelessValidation : public ValidationObject {
     bool ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkDeviceSize offset, VkDeviceSize countBufferOffset,
                                              bool khr) const;
 
+    bool ValidatePipelineShaderStageCreateInfos(uint32_t stageCount, const VkPipelineShaderStageCreateInfo *pStages,
+                                                uint32_t pipelineIndex, uint32_t &active_shaders) const;
+    bool ValidatePipelineVertexInputStateCreateInfo(const VkPipelineVertexInputStateCreateInfo *pVertexInputState,
+                                                    uint32_t active_shaders, uint32_t pipelineIndex) const;
+    bool ValidatePipelineTessellationStateCreateInfo(const VkPipelineTessellationStateCreateInfo *pTessellationState,
+                                                     uint32_t active_shaders, uint32_t pipelineIndex) const;
+
+    bool ValidateGeneratedCommandsInfoNV(VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoNV *pGeneratedCommandsInfo,
+                                         bool isPreprocess, const char *apiName) const;
+
     bool OutputExtensionError(const std::string &api_name, const std::string &extension_name) const;
 
     void PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
@@ -1492,6 +1503,22 @@ class StatelessValidation : public ValidationObject {
                                                                     const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo) const;
     bool manual_PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
         VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo) const;
+
+    bool manual_PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(VkDevice device,
+                                                                        const VkGeneratedCommandsMemoryRequirementsInfoNV *pInfo,
+                                                                        VkMemoryRequirements2 *pMemoryRequirements) const;
+    bool manual_PreCallValidateCmdPreprocessGeneratedCommandsNV(VkCommandBuffer commandBuffer,
+                                                                const VkGeneratedCommandsInfoNV *pGeneratedCommandsInfo) const;
+    bool manual_PreCallValidateCmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                             const VkGeneratedCommandsInfoNV *pGeneratedCommandsInfo) const;
+    bool manual_PreCallValidateCmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                            VkPipeline pipeline, uint32_t groupIndex) const;
+    bool manual_PreCallValidateCreateIndirectCommandsLayoutNV(VkDevice device,
+                                                              const VkIndirectCommandsLayoutCreateInfoNV *pCreateInfo,
+                                                              const VkAllocationCallbacks *pAllocator,
+                                                              VkIndirectCommandsLayoutNV *pIndirectCommandsLayout) const;
+    bool manual_PreCallValidateDestroyIndirectCommandsLayoutNV(VkDevice device, VkIndirectCommandsLayoutNV indirectCommandsLayout,
+                                                               const VkAllocationCallbacks *pAllocator) const;
 
 #include "parameter_validation.h"
 };  // Class StatelessValidation

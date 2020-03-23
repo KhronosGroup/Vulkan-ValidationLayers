@@ -361,7 +361,7 @@ class CoreChecks : public ValidationStateTracker {
                                       const VkCopyDescriptorSet* p_cds, const char* func_name) const;
 
     // Stuff from shader_validation
-    bool ValidateGraphicsPipelineShaderState(const PIPELINE_STATE* pPipeline) const;
+    bool ValidateGraphicsPipelineShaderState(const PIPELINE_STATE* pPipeline, uint32_t groupIndex = 0) const;
     bool ValidateComputePipelineShaderState(PIPELINE_STATE* pPipeline) const;
     bool ValidateRayTracingPipeline(PIPELINE_STATE* pipeline, bool isKHR) const;
     bool PreCallValidateCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* pCreateInfo,
@@ -1144,6 +1144,24 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateReleaseProfilingLockKHR(VkDevice device) const;
     bool PreCallValidateCmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void* pCheckpointMarker) const;
 
+
+    bool PreCallValidateCreateIndirectCommandsLayoutNV(VkDevice device, const VkIndirectCommandsLayoutCreateInfoNV* pCreateInfo,
+                                                       const VkAllocationCallbacks* pAllocator,
+                                                       VkIndirectCommandsLayoutNV* pIndirectCommandsLayout) const;
+    bool ValidatePipelineReferences(VkPipeline pipeline, const char* vuid, const char* apiName) const;
+    bool PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(VkDevice device,
+                                                                 const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,
+                                                                 VkMemoryRequirements2* pMemoryRequirements) const;
+    bool ValidateGeneratedCommandsBufferNV(VkCommandBuffer commandBuffer, VkBuffer buffer, const char* bufferName,
+                                           const char* vuidBound, const char* vuidFlag, const char* apiName) const;
+    bool ValidateGeneratedCommandsInfoNV(VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo,
+                                         bool isPreprocess, const char* apiName) const;
+    bool PreCallValidateCmdPreprocessGeneratedCommandsNV(VkCommandBuffer commandBuffer, const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) const;
+    bool PreCallValidateCmdExecuteGeneratedCommandsNV(VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+                                                      const VkGeneratedCommandsInfoNV* pGeneratedCommandsInfo) const;
+
+    bool PreCallValidateCmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                        VkPipeline pipeline, uint32_t groupIndex) const;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     bool PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
                                                                   VkAndroidHardwareBufferPropertiesANDROID* pProperties) const;

@@ -997,3 +997,64 @@ void ObjectLifetimes::PostCallRecordCreateDescriptorUpdateTemplateKHR(VkDevice d
                                                                       VkResult result) {
     return PostCallRecordCreateDescriptorUpdateTemplate(device, pCreateInfo, pAllocator, pDescriptorUpdateTemplate, result);
 }
+
+bool ObjectLifetimes::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache,
+                                                             uint32_t createInfoCount,
+                                                             const VkGraphicsPipelineCreateInfo *pCreateInfos,
+                                                             const VkAllocationCallbacks *pAllocator,
+                                                             VkPipeline *pPipelines) const {
+    bool skip = false;
+    skip |=
+        ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkCreateGraphicsPipelines-device-parameter", kVUIDUndefined);
+    skip |= ValidateObject(pipelineCache, kVulkanObjectTypePipelineCache, true,
+                           "VUID-vkCreateGraphicsPipelines-pipelineCache-parameter",
+                           "VUID-vkCreateGraphicsPipelines-pipelineCache-parent");
+    if (pCreateInfos) {
+        for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
+            if (pCreateInfos[index0].pStages) {
+                for (uint32_t index1 = 0; index1 < pCreateInfos[index0].stageCount; ++index1) {
+                    skip |= ValidateObject(pCreateInfos[index0].pStages[index1].module, kVulkanObjectTypeShaderModule, false,
+                                           "VUID-VkPipelineShaderStageCreateInfo-module-parameter", kVUIDUndefined);
+                }
+            }
+            skip |= ValidateObject(pCreateInfos[index0].layout, kVulkanObjectTypePipelineLayout, false,
+                                   "VUID-VkGraphicsPipelineCreateInfo-layout-parameter",
+                                   "VUID-VkGraphicsPipelineCreateInfo-commonparent");
+            skip |= ValidateObject(pCreateInfos[index0].renderPass, kVulkanObjectTypeRenderPass, false,
+                                   "VUID-VkGraphicsPipelineCreateInfo-renderPass-parameter",
+                                   "VUID-VkGraphicsPipelineCreateInfo-commonparent");
+            if ((pCreateInfos[index0].flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) && (pCreateInfos[index0].basePipelineIndex == -1))
+                skip |= ValidateObject(pCreateInfos[index0].basePipelineHandle, kVulkanObjectTypePipeline, false,
+                                       "VUID-VkGraphicsPipelineCreateInfo-flags-00722",
+                                       "VUID-VkGraphicsPipelineCreateInfo-commonparent");
+            
+            auto shader_groups =
+                device_extensions.vk_nv_device_generated_commands ? lvl_find_in_chain<VkGraphicsPipelineShaderGroupsCreateInfoNV>(
+                    pCreateInfos[index0].pNext) : nullptr;
+            if (shader_groups) {
+                for (uint32_t group = 0; group < shader_groups->groupCount; ++group) {
+                    for (uint32_t index1 = 0; index1 < shader_groups->pGroups[group].stageCount; ++index1) {
+                        skip |= ValidateObject(shader_groups->pGroups[group].pStages[index1].module, kVulkanObjectTypeShaderModule, false,
+                                               "VUID-VkPipelineShaderStageCreateInfo-module-parameter", kVUIDUndefined);
+                    }
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
+void ObjectLifetimes::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache,
+                                                            uint32_t createInfoCount,
+                                                            const VkGraphicsPipelineCreateInfo *pCreateInfos,
+                                                            const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
+                                                            VkResult result) {
+    if (VK_ERROR_VALIDATION_FAILED_EXT == result) return;
+    if (pPipelines) {
+        for (uint32_t index = 0; index < createInfoCount; index++) {
+            if (!pPipelines[index]) continue;
+            CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator);
+        }
+    }
+}

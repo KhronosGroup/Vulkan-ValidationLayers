@@ -207,6 +207,12 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdDrawIndirectCountKHR',
             'vkCmdDrawIndexedIndirectCount',
             'vkCmdDrawIndexedIndirectCountKHR',
+            'vkCmdBindPipelineShaderGroupNV',
+            'vkCmdExecuteGeneratedCommandsNV',
+            'vkCmdPreprocessGeneratedCommandsNV',
+            'vkGetGeneratedCommandsMemoryRequirementsNV',
+            'vkCreateIndirectCommandsLayoutNV',
+            'vkDestroyIndirectCommandsLayoutNV',
             ]
 
         # Commands to ignore
