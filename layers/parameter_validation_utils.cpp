@@ -2391,16 +2391,13 @@ bool StatelessValidation::manual_PreCallValidateCreateDescriptorSetLayout(VkDevi
     if ((pCreateInfo != nullptr) && (pCreateInfo->pBindings != nullptr)) {
         for (uint32_t i = 0; i < pCreateInfo->bindingCount; ++i) {
             if (pCreateInfo->pBindings[i].descriptorCount != 0) {
-                // If descriptorType is VK_DESCRIPTOR_TYPE_SAMPLER or VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, and descriptorCount
-                // is not 0 and pImmutableSamplers is not NULL, pImmutableSamplers must be a pointer to an array of descriptorCount
-                // valid VkSampler handles
                 if (((pCreateInfo->pBindings[i].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER) ||
                      (pCreateInfo->pBindings[i].descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)) &&
                     (pCreateInfo->pBindings[i].pImmutableSamplers != nullptr)) {
                     for (uint32_t descriptor_index = 0; descriptor_index < pCreateInfo->pBindings[i].descriptorCount;
                          ++descriptor_index) {
                         if (pCreateInfo->pBindings[i].pImmutableSamplers[descriptor_index] == VK_NULL_HANDLE) {
-                            skip |= LogError(device, kVUID_PVError_RequiredParameter,
+                            skip |= LogError(device, "VUID-VkDescriptorSetLayoutBinding-descriptorType-00282",
                                              "vkCreateDescriptorSetLayout: required parameter "
                                              "pCreateInfo->pBindings[%d].pImmutableSamplers[%d] specified as VK_NULL_HANDLE",
                                              i, descriptor_index);
