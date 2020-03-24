@@ -136,21 +136,22 @@ script:
     fi
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
-      # Build VulkanTools
-      # Note: VulkanTools has a build dependency on Vulkan-ValidationLayers so it must be built after V-VL is built
-      pushd ${TRAVIS_BUILD_DIR}/external/VulkanTools
+      # Build DevSim in VulkanTools to run Vulkan-ValidationLayer tests
+      cd ${TRAVIS_BUILD_DIR}/external
+      git clone https://github.com/LunarG/VulkanTools.git
+      cd VulkanTools
       ./update_external_sources.sh
       mkdir build
       cd build
       cmake -DCMAKE_BUILD_TYPE=Debug \
             -DBUILD_VIA=NO -DBUILD_VKTRACE=NO -DBUILD_VLF=NO -DBUILD_TESTS=NO -DBUILD_LAYERMGR=NO \
+            -DBUILD_MONITOR=NO -DBUILD_SCREENSHOT=NO -DBUILD_APIDUMP=NO \
             -DBUILD_VKTRACEVIEWER=NO -DBUILD_VKTRACE_LAYER=NO -DBUILD_VKTRACE_REPLAY=NO \
             -DVULKAN_HEADERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/external/Vulkan-Headers/build/install \
             -DVULKAN_LOADER_INSTALL_DIR=${TRAVIS_BUILD_DIR}/external/Vulkan-Loader/build/install \
             -DVULKAN_VALIDATIONLAYERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/build/install \
             ..
       cmake --build . --target VkLayer_device_simulation -- -j $core_count
-      popd
     fi
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
