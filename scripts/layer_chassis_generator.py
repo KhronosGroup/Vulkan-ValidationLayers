@@ -647,10 +647,7 @@ static const std::unordered_map<std::string, VkValidationFeatureEnableEXT> VkVal
     {"VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT", VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT},
     {"VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT", VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT},
     {"VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT", VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT},
-};
-
-static const std::unordered_map<std::string, VkValidationFeatureEnable> VkValFeatureEnableLookup2 = {
-    {"VK_VALIDATION_FEATURE_ENABLE_SHADER_DEBUG_PRINTF", VK_VALIDATION_FEATURE_ENABLE_SHADER_DEBUG_PRINTF},
+    {"VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT", VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT}, 
 };
 
 static const std::unordered_map<std::string, ValidationCheckDisables> ValidationDisableLookup = {
@@ -748,16 +745,8 @@ void SetValidationFeatureEnable(CHECK_ENABLED *enable_data, const VkValidationFe
         case VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT:
             enable_data->best_practices = true;
             break;
-        default:
-            break;
-    }
-}
-
-void SetValidationFeatureEnable2(CHECK_ENABLED *enable_data, const VkValidationFeatureEnable feature_enable) {
-    switch(feature_enable) {
-        case VK_VALIDATION_FEATURE_ENABLE_SHADER_DEBUG_PRINTF:
+        case VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT:
             enable_data->debug_printf = true;
-            break;
         default:
             break;
     }
@@ -807,12 +796,7 @@ void SetLocalEnableSetting(std::string list_of_enables, std::string delimiter, C
             auto result = VkValFeatureEnableLookup.find(token);
             if (result != VkValFeatureEnableLookup.end()) {
                 SetValidationFeatureEnable(enables, result->second);
-            } else {
-                auto result2 = VkValFeatureEnableLookup2.find(token);
-                if (result2 != VkValFeatureEnableLookup2.end()) {
-                  SetValidationFeatureEnable2(enables, result2->second);
-                }
-            }
+            } 
         }
         else if (token.find("VALIDATION_CHECK_ENABLE_") != std::string::npos) {
             auto result = ValidationEnableLookup.find(token);

@@ -5951,13 +5951,18 @@ TEST_F(VkPositiveLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
 
 TEST_F(VkPositiveLayerTest, GpuDebugPrintf) {
     TEST_DESCRIPTION("Verify that calls to debugPrintfEXT are received in debug stream");
-    InitFramework(m_errorMonitor);
+    VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
+    VkValidationFeaturesEXT validation_features = {};
+    validation_features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+    validation_features.enabledValidationFeatureCount = 1;
+    validation_features.pEnabledValidationFeatures = enables;
+    m_device_extension_names.push_back(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    InitFramework(m_errorMonitor, &validation_features);
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
         printf("%s Extension %s not supported, skipping this pass. \n", kSkipPrefix,
-            VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+               VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
         return;
     }
-    m_device_extension_names.push_back(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
     if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
         printf("%s GPU-Assisted printf test requires Vulkan 1.1+.\n", kSkipPrefix);
@@ -6171,8 +6176,7 @@ TEST_F(VkPositiveLayerTest, GpuDebugPrintf) {
         data[0] = 1;
         buffer0.memory().unmap();
         m_errorMonitor->SetDesiredFailureMsg(
-            kInformationBit,
-            "Here's a vector of ul 2000000000000001, 2000000000000001, 2000000000000001, 2000000000000001");
+            kInformationBit, "Here's a vector of ul 2000000000000001, 2000000000000001, 2000000000000001, 2000000000000001");
         err = vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
         ASSERT_VK_SUCCESS(err);
         err = vk::QueueWaitIdle(m_device->m_queue);
