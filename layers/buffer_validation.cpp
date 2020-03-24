@@ -3423,10 +3423,11 @@ bool CoreChecks::ValidateLayoutVsAttachmentDescription(const debug_report_data *
                                                        const VkImageLayout first_layout, const uint32_t attachment,
                                                        const VkAttachmentDescription2KHR &attachment_description) const {
     bool skip = false;
-    const char *vuid;
     const bool use_rp2 = (rp_version == RENDER_PASS_VERSION_2);
 
     // Verify that initial loadOp on READ_ONLY attachments is not CLEAR
+    // for both loadOp and stencilLoaOp rp2 has it in 1 VU while rp1 has it in 2 VU with half behind Maintenance2 extension
+    // Each is VUID is below in following order: rp2 -> rp1 with Maintenance2 -> rp1 with no extenstion
     if (attachment_description.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
         if (use_rp2 && ((first_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) ||
                         (first_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) ||
@@ -3434,28 +3435,40 @@ bool CoreChecks::ValidateLayoutVsAttachmentDescription(const debug_report_data *
             skip |= LogError(device, "VUID-VkRenderPassCreateInfo2-pAttachments-02522",
                              "Cannot clear attachment %d with invalid first layout %s.", attachment,
                              string_VkImageLayout(first_layout));
-        } else if (!use_rp2 && ((first_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) ||
-                                (first_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL))) {
+        } else if ((use_rp2 == false) && (device_extensions.vk_khr_maintenance2) &&
+                   (first_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL)) {
+            skip |= LogError(device, "VUID-VkRenderPassCreateInfo-pAttachments-01566",
+                             "Cannot clear attachment %d with invalid first layout %s.", attachment,
+                             string_VkImageLayout(first_layout));
+        } else if ((use_rp2 == false) && ((first_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) ||
+                                          (first_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL))) {
             skip |= LogError(device, "VUID-VkRenderPassCreateInfo-pAttachments-00836",
                              "Cannot clear attachment %d with invalid first layout %s.", attachment,
                              string_VkImageLayout(first_layout));
         }
     }
-    if (attachment_description.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-        if (first_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
-            vuid = use_rp2 ? kVUID_Core_DrawState_InvalidRenderpass : "VUID-VkRenderPassCreateInfo-pAttachments-01566";
-            skip |= LogError(device, vuid, "Cannot clear attachment %d with invalid first layout %s.", attachment,
+
+    // Same as above for loadOp, but for stencilLoadOp
+    if (attachment_description.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+        if (use_rp2 && ((first_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) ||
+                        (first_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) ||
+                        (first_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL))) {
+            skip |= LogError(device, "VUID-VkRenderPassCreateInfo2-pAttachments-02523",
+                             "Cannot clear attachment %d with invalid first layout %s.", attachment,
+                             string_VkImageLayout(first_layout));
+        } else if ((use_rp2 == false) && (device_extensions.vk_khr_maintenance2) &&
+                   (first_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL)) {
+            skip |= LogError(device, "VUID-VkRenderPassCreateInfo-pAttachments-01567",
+                             "Cannot clear attachment %d with invalid first layout %s.", attachment,
+                             string_VkImageLayout(first_layout));
+        } else if ((use_rp2 == false) && ((first_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) ||
+                                          (first_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL))) {
+            skip |= LogError(device, "VUID-VkRenderPassCreateInfo-pAttachments-02511",
+                             "Cannot clear attachment %d with invalid first layout %s.", attachment,
                              string_VkImageLayout(first_layout));
         }
     }
 
-    if (attachment_description.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-        if (first_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL) {
-            vuid = use_rp2 ? kVUID_Core_DrawState_InvalidRenderpass : "VUID-VkRenderPassCreateInfo-pAttachments-01567";
-            skip |= LogError(device, vuid, "Cannot clear attachment %d with invalid first layout %s.", attachment,
-                             string_VkImageLayout(first_layout));
-        }
-    }
     return skip;
 }
 

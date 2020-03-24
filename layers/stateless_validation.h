@@ -1089,32 +1089,19 @@ class StatelessValidation : public ValidationObject {
         for (uint32_t i = 0; i < pCreateInfo->dependencyCount; ++i) {
             const auto &dependency = pCreateInfo->pDependencies[i];
 
+            // Need to check first so layer doesn't segfault from out of bound array access
+            // src subpass bound check
             if ((dependency.srcSubpass != VK_SUBPASS_EXTERNAL) && (dependency.srcSubpass >= pCreateInfo->subpassCount)) {
-                if (use_rp2) {
-                    skip |= LogError(
-                        device, "VUID-VkRenderPassCreateInfo2-srcSubpass-02526",
-                        "VkCreateRenderpass2(): pCreateInfo->pDependencies[%d].srcSubpass must be less than subpassCount (%d)", i,
-                        pCreateInfo->subpassCount);
-                } else {
-                    skip |= LogError(
-                        device, "VUID-VkRenderPassCreateInfo-srcSubpass-02517",
-                        "VkCreateRenderpass(): pCreateInfo->pDependencies[%d].srcSubpass must be less than subpassCount (%d)", i,
-                        pCreateInfo->subpassCount);
-                }
+                vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-srcSubpass-02526" : "VUID-VkRenderPassCreateInfo-srcSubpass-02517";
+                skip |= LogError(device, vuid, "Dependency %u srcSubpass index (%u) has to be less than subpassCount (%u)", i,
+                                 dependency.srcSubpass, pCreateInfo->subpassCount);
             }
 
+            // dst subpass bound check
             if ((dependency.dstSubpass != VK_SUBPASS_EXTERNAL) && (dependency.dstSubpass >= pCreateInfo->subpassCount)) {
-                if (use_rp2) {
-                    skip |= LogError(
-                        device, "VUID-VkRenderPassCreateInfo2-dstSubpass-02527",
-                        "VkCreateRenderpass2(): pCreateInfo->pDependencies[%d].dstSubpass must be less than subpassCount (%d)", i,
-                        pCreateInfo->subpassCount);
-                } else {
-                    skip |= LogError(
-                        device, "VUID-VkRenderPassCreateInfo-dstSubpass-02518",
-                        "VkCreateRenderpass(): pCreateInfo->pDependencies[%d].dstSubpass must be less than subpassCount (%d)", i,
-                        pCreateInfo->subpassCount);
-                }
+                vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-dstSubpass-02527" : "VUID-VkRenderPassCreateInfo-dstSubpass-02518";
+                skip |= LogError(device, vuid, "Dependency %u dstSubpass index (%u) has to be less than subpassCount (%u)", i,
+                                 dependency.dstSubpass, pCreateInfo->subpassCount);
             }
 
             // Spec currently only supports Graphics pipeline in render pass -- so only that pipeline is currently checked

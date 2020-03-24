@@ -1855,54 +1855,68 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReadOnlyButCleared) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
-    bool maintenance2Supported = rp2Supported;
+    bool maintenance2Supported = false;
 
     // Check for VK_KHR_maintenance2
-    if (!rp2Supported && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) {
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
         maintenance2Supported = true;
     }
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
+    if (m_device->props.apiVersion >= VK_API_VERSION_1_1) {
         maintenance2Supported = true;
     }
 
     VkAttachmentDescription description = {0,
                                            VK_FORMAT_D32_SFLOAT_S8_UINT,
                                            VK_SAMPLE_COUNT_1_BIT,
-                                           VK_ATTACHMENT_LOAD_OP_CLEAR,
+                                           VK_ATTACHMENT_LOAD_OP_DONT_CARE,  // loadOp
                                            VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                                           VK_ATTACHMENT_LOAD_OP_CLEAR,
+                                           VK_ATTACHMENT_LOAD_OP_DONT_CARE,  // stencilLoadOp
                                            VK_ATTACHMENT_STORE_OP_DONT_CARE,
                                            VK_IMAGE_LAYOUT_GENERAL,
                                            VK_IMAGE_LAYOUT_GENERAL};
 
-    VkAttachmentReference depth_stencil_ref = {0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL};
+    VkAttachmentReference depth_stencil_ref = {0, VK_IMAGE_LAYOUT_GENERAL};
 
     VkSubpassDescription subpass = {0,      VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 0, nullptr, nullptr, &depth_stencil_ref, 0,
                                     nullptr};
 
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 1, &description, 1, &subpass, 0, nullptr};
 
-    // VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL but depth cleared
+    // Test both cases when rp2 is not supported
+
+    // Set loadOp to clear
+    description.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+
+    depth_stencil_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pAttachments-00836",
                          "VUID-VkRenderPassCreateInfo2-pAttachments-02522");
 
-    if (maintenance2Supported) {
-        // VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL but depth cleared
+    if (maintenance2Supported == true) {
         depth_stencil_ref.layout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
-
         TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                             "VUID-VkRenderPassCreateInfo-pAttachments-01566", nullptr);
-
-        // VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL but depth cleared
-        depth_stencil_ref.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
-
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
-                             "VUID-VkRenderPassCreateInfo-pAttachments-01567", nullptr);
+                             "VUID-VkRenderPassCreateInfo-pAttachments-01566", "VUID-VkRenderPassCreateInfo2-pAttachments-02522");
     }
+
+    description.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;  // reset
+
+    // Set stencilLoadOp to clear
+    description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+
+    depth_stencil_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkRenderPassCreateInfo-pAttachments-02511",
+                         "VUID-VkRenderPassCreateInfo2-pAttachments-02523");
+
+    if (maintenance2Supported == true) {
+        depth_stencil_ref.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported,
+                             "VUID-VkRenderPassCreateInfo-pAttachments-01567", "VUID-VkRenderPassCreateInfo2-pAttachments-02523");
+    }
+
+    description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;  // reset
 }
 
 TEST_F(VkLayerTest, RenderPassCreateAttachmentMismatchingLayoutsColor) {
@@ -3027,6 +3041,16 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
 
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkSubpassDependency-dstAccessMask-00869",
                          "VUID-VkSubpassDependency2-dstAccessMask-03089");
+
+    // srcSubpass larger than subpassCount
+    dependency = {3, 0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, 0};
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkRenderPassCreateInfo-srcSubpass-02517",
+                         "VUID-VkRenderPassCreateInfo2-srcSubpass-02526");
+
+    // dstSubpass larger than subpassCount
+    dependency = {0, 3, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, 0};
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2_supported, "VUID-VkRenderPassCreateInfo-dstSubpass-02518",
+                         "VUID-VkRenderPassCreateInfo2-dstSubpass-02527");
 
     if (multiviewSupported) {
         // VIEW_LOCAL_BIT but multiview is not enabled
