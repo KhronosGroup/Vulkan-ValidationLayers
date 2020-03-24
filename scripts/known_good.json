@@ -23,44 +23,6 @@
       "commit" : "v1.2.135"
     },
     {
-      "name" : "VulkanTools",
-      "url" : "https://github.com/LunarG/VulkanTools.git",
-      "sub_dir" : "VulkanTools",
-      "build_dir" : "VulkanTools/build",
-      "install_dir" : "VulkanTools/build/install",
-      "commit" : "6460b29c47ecdd7d06f6eb1679a720e23c4e9a09",
-      "deps" : [
-        {
-          "var_name" : "VULKAN_HEADERS_INSTALL_DIR",
-          "repo_name" : "Vulkan-Headers"
-        },
-        {
-          "var_name" : "VULKAN_LOADER_INSTALL_DIR",
-          "repo_name" : "Vulkan-Loader"
-        },
-        {
-          "var_name" : "VULKAN_VALIDATIONLAYERS_INSTALL_DIR",
-          "repo_name" : "Vulkan-ValidationLayers"
-        }
-      ],
-      "prebuild_linux" : [
-        "bash update_external_sources.sh"
-      ],
-      "prebuild_windows" : [
-        ".\\update_external_sources.bat"
-      ],
-      "cmake_options" : [
-        "-DBUILD_TESTS=NO",
-        "-DBUILD_VKTRACE=NO",
-        "-DBUILD_VLF=NO",
-        "-DBUILD_VIA=NO"
-      ],
-      "ci_only" : [
-        "TRAVIS"
-      ],
-      "build_step" : "skip"
-    },
-    {
       "name" : "Vulkan-Tools",
       "url" : "https://github.com/KhronosGroup/Vulkan-Tools.git",
       "sub_dir" : "Vulkan-Tools",
