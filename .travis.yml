@@ -155,6 +155,28 @@ script:
     fi
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
+      # Build MockICD in Vulkan-Tools to run Vulkan-ValidationLayer tests
+      cd ${TRAVIS_BUILD_DIR}/external
+      git clone https://github.com/KhronosGroup/Vulkan-Tools.git
+      cd Vulkan-Tools
+      mkdir build
+      cd build
+      cmake -DCMAKE_BUILD_TYPE=Debug \
+            -DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -DINSTALL_ICD=OFF \
+            -DVULKAN_HEADERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/external/Vulkan-Headers/build/install \
+            ..
+      pushd ../icd/generated
+      VVL_REG_DIR=${TRAVIS_BUILD_DIR}/external/Vulkan-Headers/registry
+      VT_SCRIPTS_DIR=${TRAVIS_BUILD_DIR}/external/Vulkan-Tools/scripts
+      python3 ${TRAVIS_BUILD_DIR}/scripts/lvl_genvk.py -registry ${VVL_REG_DIR}/vk.xml vk_typemap_helper.h
+      python3 ${VT_SCRIPTS_DIR}/kvt_genvk.py -registry ${VVL_REG_DIR}/vk.xml mock_icd.cpp
+      python3 ${VT_SCRIPTS_DIR}/kvt_genvk.py -registry ${VVL_REG_DIR}/vk.xml mock_icd.h
+      popd
+      cmake --build . --target VkICD_mock_icd -- -j $core_count
+      cp ../icd/linux/VkICD_mock_icd.json icd
+    fi
+  - |
+    if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
       # Run Tests
       cd ${TRAVIS_BUILD_DIR}
       export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/external/Vulkan-Loader/build/install/lib:${LD_LIBRARY_PATH}

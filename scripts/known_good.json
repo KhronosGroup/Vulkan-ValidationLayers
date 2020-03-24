@@ -21,36 +21,6 @@
       "build_dir" : "Vulkan-Headers/build",
       "install_dir" : "Vulkan-Headers/build/install",
       "commit" : "v1.2.135"
-    },
-    {
-      "name" : "Vulkan-Tools",
-      "url" : "https://github.com/KhronosGroup/Vulkan-Tools.git",
-      "sub_dir" : "Vulkan-Tools",
-      "build_dir" : "Vulkan-Tools/build",
-      "install_dir" : "Vulkan-Tools/build/install",
-      "commit" : "v1.2.135",
-      "deps" : [
-        {
-          "var_name" : "VULKAN_HEADERS_INSTALL_DIR",
-          "repo_name" : "Vulkan-Headers"
-        },
-        {
-          "var_name" : "GLSLANG_INSTALL_DIR",
-          "repo_name" : "glslang"
-        },
-        {
-          "var_name" : "MOLTENVK_REPO_ROOT",
-          "repo_name" : "MoltenVK"
-        }
-      ],
-      "cmake_options" : [
-        "-DBUILD_CUBE=NO",
-        "-DBUILD_VULKANINFO=NO",
-        "-DINSTALL_ICD=ON"
-      ],
-      "ci_only" : [
-        "TRAVIS"
-      ]
     }
   ],
   "install_names" : {
