@@ -61,7 +61,7 @@ static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &creat
     return NormalizeSubresourceRange(create_info, init_range);
 }
 
-IMAGE_STATE::IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
+IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCreateInfo)
     : image(img),
       safe_create_info(pCreateInfo),
       createInfo(*safe_create_info.ptr()),
@@ -84,6 +84,9 @@ IMAGE_STATE::IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
       plane0_memory_requirements_checked(false),
       plane1_memory_requirements_checked(false),
       plane2_memory_requirements_checked(false),
+      subresource_encoder(full_range),
+      // TODO enable when cont usage works... fragment_encoder(dev, *this),
+      store_device_as_workaround(dev),  // TODO REMOVE WHEN encoder can be const
       sparse_requirements{} {
     if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
         uint32_t *pQueueFamilyIndices = new uint32_t[createInfo.queueFamilyIndexCount];
@@ -151,7 +154,7 @@ IMAGE_VIEW_STATE::IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &im, VkIma
     : image_view(iv),
       create_info(*ci),
       normalized_subresource_range(NormalizeSubresourceRange(*im, ci->subresourceRange)),
-      range_generator(im->range_encoder, normalized_subresource_range),
+      range_generator(im->subresource_encoder, normalized_subresource_range),
       samplerConversion(VK_NULL_HANDLE),
       image_state(im) {
     auto *conversionInfo = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(create_info.pNext);
@@ -3567,7 +3570,7 @@ GlobalImageLayoutRangeMap *GetLayoutRangeMap(GlobalImageLayoutMap *map, const IM
     auto inserted = map->emplace(std::make_pair(image_state.image, nullptr));
     if (inserted.second) {
         assert(nullptr == inserted.first->second.get());
-        GlobalImageLayoutRangeMap *layout_map = new GlobalImageLayoutRangeMap(image_state.range_encoder.SubresourceCount());
+        GlobalImageLayoutRangeMap *layout_map = new GlobalImageLayoutRangeMap(image_state.subresource_encoder.SubresourceCount());
         inserted.first->second.reset(layout_map);
         return layout_map;
     } else {
@@ -3635,7 +3638,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const G
                 if (!matches) {
                     // We can report all the errors for the intersected range directly
                     for (auto index : sparse_container::range_view<decltype(intersected_range)>(intersected_range)) {
-                        const auto subresource = image_state->range_encoder.Decode(index);
+                        const auto subresource = image_state->subresource_encoder.Decode(index);
                         skip |= LogError(
                             pCB->commandBuffer, kVUID_Core_DrawState_InvalidImageLayout,
                             "Submitted command buffer expects %s (subresource: aspectMask 0x%X array layer %u, mip level %u) "
