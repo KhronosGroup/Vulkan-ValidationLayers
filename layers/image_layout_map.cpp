@@ -63,7 +63,7 @@ bool ImageSubresourceLayoutMap::SubresourceLayout::operator==(const ImageSubreso
 }
 ImageSubresourceLayoutMap::ImageSubresourceLayoutMap(const IMAGE_STATE& image_state)
     : image_state_(image_state),
-      encoder_(image_state.range_encoder),
+      encoder_(image_state.subresource_encoder),
       layouts_(encoder_.SubresourceCount()),
       initial_layout_states_(),
       initial_layout_state_map_(encoder_.SubresourceCount()) {}

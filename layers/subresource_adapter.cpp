@@ -20,6 +20,9 @@
  */
 #include <cassert>
 #include "subresource_adapter.h"
+#include "vk_format_utils.h"
+#include "state_tracker.h"
+#include "core_validation_types.h"
 
 namespace subresource_adapter {
 Subresource::Subresource(const RangeEncoder& encoder, const VkImageSubresource& subres)
@@ -156,8 +159,8 @@ void RangeEncoder::PopulateFunctionPointers() {
 }
 
 RangeEncoder::RangeEncoder(const VkImageSubresourceRange& full_range, const AspectParameters* param)
-    : full_range_(full_range),
-      limits_(param->AspectMask(), full_range.levelCount, full_range.layerCount, param->AspectCount()),
+    : limits_(param->AspectMask(), full_range.levelCount, full_range.layerCount, param->AspectCount()),
+      full_range_(full_range),
       mip_size_(full_range.layerCount),
       aspect_size_(mip_size_ * full_range.levelCount),
       aspect_bits_(param->AspectBits()),
@@ -172,60 +175,6 @@ RangeEncoder::RangeEncoder(const VkImageSubresourceRange& full_range, const Aspe
     // TODO: should be some static assert
     assert(param->AspectCount() <= kMaxSupportedAspect);
     PopulateFunctionPointers();
-}
-
-SubresourceOffset::SubresourceOffset(const OffsetRangeEncoder& encoder, const VkImageSubresource& subres, const VkOffset3D& offset_)
-    : Subresource(encoder, subres), offset({offset_.x, offset_.y}) {
-    if (offset_.z > 1) {
-        arrayLayer = offset_.z;
-    }
-}
-
-OffsetRangeEncoder::OffsetRangeEncoder(const VkImageSubresourceRange& full_range, const VkExtent3D& full_range_image_extent,
-                                       const AspectParameters* param)
-    : RangeEncoder(full_range, param),
-      full_range_image_extent_(full_range_image_extent),
-      limits_(param->AspectMask(), full_range.levelCount, full_range.layerCount, param->AspectCount(),
-              {static_cast<int32_t>(full_range_image_extent_.width), static_cast<int32_t>(full_range_image_extent_.height),
-               static_cast<int32_t>(full_range_image_extent_.depth)}),
-      offset_size_({static_cast<int32_t>(limits_.aspect_index * AspectSize()),
-                    static_cast<int32_t>(limits_.aspect_index * AspectSize() * limits_.offset.x)}),
-      encode_offset_function_(nullptr),
-      decode_offset_function_(nullptr) {
-    if (full_range_image_extent_.depth > 1) {
-        limits_.arrayLayer = full_range_image_extent_.depth;
-    }
-    PopulateFunctionPointers();
-}
-
-void OffsetRangeEncoder::PopulateFunctionPointers() {
-    // Select the encode/decode specialists
-    if (limits_.offset.y == 1) {
-        encode_offset_function_ = &OffsetRangeEncoder::Encode1D;
-        decode_offset_function_ = &OffsetRangeEncoder::Decode1D;
-    } else {
-        encode_offset_function_ = &OffsetRangeEncoder::Encode2D;
-        decode_offset_function_ = &OffsetRangeEncoder::Decode2D;
-    }
-}
-
-IndexType OffsetRangeEncoder::Encode1D(const SubresourceOffset& pos) const { return pos.offset.x * OffsetXSize(); }
-
-IndexType OffsetRangeEncoder::Encode2D(const SubresourceOffset& pos) const {
-    return (pos.offset.x * OffsetXSize()) + (pos.offset.y * OffsetYSize());
-}
-
-IndexType OffsetRangeEncoder::Decode1D(const IndexType& encode, SubresourceOffset& offset_decode) const {
-    offset_decode.offset.y = 1;
-    offset_decode.offset.x = static_cast<int32_t>(encode / OffsetXSize());
-    return (encode % OffsetXSize());
-}
-
-IndexType OffsetRangeEncoder::Decode2D(const IndexType& encode, SubresourceOffset& offset_decode) const {
-    offset_decode.offset.y = static_cast<int32_t>(encode / OffsetYSize());
-    const IndexType new_encode = encode - OffsetYSize() * offset_decode.offset.y;
-    offset_decode.offset.x = static_cast<int32_t>(new_encode / OffsetXSize());
-    return (new_encode % OffsetXSize());
 }
 
 static bool IsValid(const RangeEncoder& encoder, const VkImageSubresourceRange& bounds) {
@@ -317,132 +266,135 @@ RangeGenerator& RangeGenerator::operator++() {
     return *this;
 }
 
-static bool IsValid(const OffsetRangeEncoder& encoder, const VkImageSubresourceRange& bounds, const VkOffset2D& offset,
-                    const VkExtent2D& extent) {
-    const auto& limits = encoder.Limits();
-    return (((bounds.aspectMask & limits.aspectMask) == bounds.aspectMask) &&
-            (bounds.baseMipLevel + bounds.levelCount <= limits.mipLevel) &&
-            (bounds.baseArrayLayer + bounds.layerCount <= limits.arrayLayer) &&
-            ((offset.x + static_cast<int32_t>(extent.width)) <= limits.offset.x) &&
-            ((offset.y + static_cast<int32_t>(extent.height)) <= limits.offset.y));
-}
+ImageRangeEncoder::ImageRangeEncoder(const VkDevice device, const IMAGE_STATE& image)
+    : ImageRangeEncoder(device, image, AspectParameters::Get(image.full_range.aspectMask)) {}
 
-OffsetRangeGenerator::OffsetRangeGenerator(const OffsetRangeEncoder& encoder, const VkImageSubresourceRange& subres_range,
-                                           const VkOffset3D& offset, const VkExtent3D& extent)
-    : encoder_(&encoder), isr_pos_(encoder, subres_range, offset, extent), pos_(), aspect_base_() {
-    assert(IsValid(encoder, isr_pos_.Limits(), isr_pos_.Limits_Offset(), isr_pos_.Limits_Extent()));
+ImageRangeEncoder::ImageRangeEncoder(const VkDevice device, const IMAGE_STATE& image, const AspectParameters* param)
+    : RangeEncoder(image.full_range, param), device_(device), image_(&image) {
+    VkSubresourceLayout layout = {};
+    VkImageSubresourceLayers subres_layers = {limits_.aspectMask, 0, 0, limits_.arrayLayer};
 
-    // To see if we have a full range special case, need to compare the subres_range against the *encoders* limits
-    const auto& limits = encoder.Limits();
-    if ((subres_range.baseArrayLayer == 0 && subres_range.layerCount == limits.arrayLayer)) {
-        if ((subres_range.baseMipLevel == 0) && (subres_range.levelCount == limits.mipLevel)) {
-            if (subres_range.aspectMask == limits.aspectMask) {
-                if (offset.x == 0 && extent.width == limits.offset.x) {
-                    if (offset.y == 0 && extent.height == limits.offset.y) {
-                        // Full range
-                        pos_.begin = 0;
-                        pos_.end = encoder.OffsetYSize() * limits.offset.y;
-                        offset_count_ = {1, 1};
-                    } else {
-                        // Not full Y range
-                        pos_.begin = encoder.OffsetYSize() * offset.y + encoder.OffsetYSize() * offset.y;
-                        pos_.end = pos_.begin + encoder.OffsetYSize() * extent.height;
-                        offset_count_ = {1, 1};
-                    }
-                } else {
-                    // Not full X Y range
-                    pos_.begin = encoder.OffsetYSize() * offset.y + +encoder.OffsetXSize() * offset.x;
-                    pos_.end = pos_.begin + encoder.OffsetXSize() * extent.width;
-                    offset_count_ = {1, static_cast<int32_t>(extent.height)};
-                }
-                aspect_count_ = 1;
-            } else {
-                // Not full aspect X Y range
-                pos_.begin = encoder.OffsetYSize() * offset.y + +encoder.OffsetXSize() * offset.x +
-                             encoder.AspectBase(isr_pos_.aspect_index);
-                pos_.end = pos_.begin + encoder.AspectSize();
-                aspect_count_ = limits.aspect_index;
-                offset_count_ = {static_cast<int32_t>(extent.width), static_cast<int32_t>(extent.height)};
-            }
-            mip_count_ = 1;
-        } else {
-            // Not full mip aspect X Y range
-            pos_.begin = encoder.OffsetYSize() * offset.y + +encoder.OffsetXSize() * offset.x +
-                         encoder.AspectBase(isr_pos_.aspect_index) + subres_range.baseMipLevel * encoder.MipSize();
-            pos_.end = pos_.begin + subres_range.levelCount * encoder.MipSize();
-            aspect_count_ = limits.aspect_index;
-            mip_count_ = 1;
-            offset_count_ = {static_cast<int32_t>(extent.width), static_cast<int32_t>(extent.height)};
+    for (uint32_t mip_index = 0; mip_index < limits_.mipLevel; ++mip_index) {
+        subres_layers.mipLevel = mip_index;
+        auto subres_extent = GetImageSubresourceExtent(image_, &subres_layers);
+        subres_extents_.push_back(subres_extent);
+
+        for (uint32_t aspect_index = 0; aspect_index < limits_.aspect_index; ++aspect_index) {
+            element_size_ = FormatElementSize(image.createInfo.format, AspectBit(aspect_index));
+            auto divisors = FindMultiplaneExtentDivisors(image.createInfo.format, AspectBit(aspect_index));
+            layout.offset += layout.size;
+            layout.rowPitch = subres_extent.width * element_size_ / divisors.width;
+            layout.arrayPitch = layout.rowPitch * subres_extent.height / divisors.height;
+            layout.depthPitch = layout.arrayPitch;
+            layout.size = layout.arrayPitch * limits_.arrayLayer;
+            optimal_subres_layouts_.push_back(layout);
         }
-    } else {
-        pos_.begin = encoder.Encode(isr_pos_);
-        pos_.end = pos_.begin + subres_range.layerCount;
-
-        mip_count_ = subres_range.levelCount;
-        aspect_count_ = limits.aspect_index;
-        offset_count_ = {static_cast<int32_t>(extent.width), static_cast<int32_t>(extent.height)};
     }
-
-    // To get to the next aspect range we offset from the last base
-    aspect_base_ = pos_;
-    offset_x_base_ = pos_;
-    offset_y_base_ = pos_;
-    mip_index_ = 0;
-    aspect_index_ = isr_pos_.aspect_index;
-    offset_index_ = {0, 0};
 }
 
-OffsetRangeGenerator& OffsetRangeGenerator::operator++() {
-    mip_index_++;
-    // NOTE: If all selected mip levels are done at once, mip_count_ is set to one, not the number of selected mip_levels
-    if (mip_index_ >= mip_count_) {
-        const auto last_aspect_index = aspect_index_;
-        // Seek the next value aspect (if any)
-        aspect_index_ = encoder_->LowerBoundFromMask(isr_pos_.Limits().aspectMask, aspect_index_ + 1);
-        if (aspect_index_ < aspect_count_) {
-            // Force isr_pos to the beginning of this found aspect
-            isr_pos_.SeekAspect(aspect_index_);
-            // SubresourceGenerator should never be at tombstones we we aren't
-            assert(isr_pos_.aspectMask != 0);
+IndexType ImageRangeEncoder::Encode(uint32_t layer, VkOffset3D offset) const {
+    return layer * current_subres_layout_.arrayPitch + offset.z * current_subres_layout_.depthPitch +
+           offset.y * current_subres_layout_.rowPitch + offset.x * element_size_ + current_subres_layout_.offset;
+}
 
-            // Offset by the distance between the last start of aspect and *this* start of aspect
-            aspect_base_ += (encoder_->AspectBase(isr_pos_.aspect_index) - encoder_->AspectBase(last_aspect_index));
-            pos_ = aspect_base_;
-            mip_index_ = 0;
+void ImageRangeEncoder::Decode(const IndexType& encode, uint32_t& out_layer, VkOffset3D& out_offset) const {
+    IndexType decode = encode - current_subres_layout_.offset;
+    out_layer = static_cast<uint32_t>(decode / current_subres_layout_.arrayPitch);
+    decode -= (out_layer * current_subres_layout_.arrayPitch);
+    out_offset.z = static_cast<int32_t>(decode / current_subres_layout_.depthPitch);
+    decode -= (out_offset.z * current_subres_layout_.depthPitch);
+    out_offset.y = static_cast<int32_t>(decode / current_subres_layout_.rowPitch);
+    decode -= (out_offset.y * current_subres_layout_.rowPitch);
+    out_offset.x = static_cast<int32_t>(decode / element_size_);
+}
+
+const VkSubresourceLayout& ImageRangeEncoder::SubresourceLayout(const VkImageSubresource& subres) {
+    current_subres_ = subres;
+    element_size_ = FormatElementSize(image_->createInfo.format, current_subres_.aspectMask);
+    auto subres_extent = SubresourceExtent(subres.mipLevel);
+    if (subres_extent.depth > 1) {
+        limits_.arrayLayer = subres_extent.depth;
+    }
+    int optimal_index = 0;
+    switch (image_->createInfo.tiling) {
+        case VK_IMAGE_TILING_OPTIMAL:
+            optimal_index = subres.mipLevel * limits_.aspect_index + LowerBoundFromMask(subres.aspectMask);
+            current_subres_layout_ = optimal_subres_layouts_[optimal_index];
+            break;
+        case VK_IMAGE_TILING_LINEAR:
+        case VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT:
+            DispatchGetImageSubresourceLayout(device_, image_->image, &current_subres_, &current_subres_layout_);
+            break;
+        default:
+            break;
+    }
+    return current_subres_layout_;
+}
+
+ImageRangeGenerator::ImageRangeGenerator(ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range,
+                                         const VkOffset3D& offset, const VkExtent3D& extent)
+    : encoder_(&encoder), subres_range_(subres_range), offset_(offset), extent_(extent) {
+    assert(IsValid(*encoder_, subres_range));
+    mip_level_index_ = 0;
+    aspect_index_ = encoder_->LowerBoundFromMask(subres_range.aspectMask);
+    SetPos();
+}
+
+void ImageRangeGenerator::SetPos() {
+    VkImageSubresource subres = {VkImageAspectFlags(encoder_->AspectBit(aspect_index_)),
+                                 subres_range_.baseMipLevel + mip_level_index_, subres_range_.baseArrayLayer};
+    encoder_->SubresourceLayout(subres);
+    pos_.begin = encoder_->Encode(subres_range_.baseArrayLayer, offset_);
+    VkExtent3D subres_extent = encoder_->SubresourceExtent(subres.mipLevel);
+    pos_.end = pos_.begin + encoder_->ElementSize() * ((extent_.width < subres_extent.width) ? extent_.width : subres_extent.width);
+    offset_layer_base_ = pos_;
+    offset_offset_y_base_ = pos_;
+    arrayLayer_index_ = 0;
+    offset_y_index_ = 0;
+    Subresource limits = encoder_->Limits();
+    aspect_count_ = limits.aspect_index;
+    offset_y_count_ = static_cast<int32_t>((extent_.height < subres_extent.height) ? extent_.height : subres_extent.height);
+
+    if ((offset_.z + extent_.depth) == 1) {
+        layer_count_ = limits.arrayLayer - subres_range_.baseArrayLayer;
+        layer_count_ = (layer_count_ < subres_range_.layerCount) ? layer_count_ : subres_range_.layerCount;
+    } else {
+        layer_count_ = limits.arrayLayer - offset_.z;
+        layer_count_ = (layer_count_ < extent_.depth) ? layer_count_ : extent_.depth;
+    }
+}
+
+ImageRangeGenerator* ImageRangeGenerator::operator++() {
+    offset_y_index_++;
+
+    if (offset_y_index_ < offset_y_count_) {
+        offset_offset_y_base_ += encoder_->SubresourceLayout().rowPitch;
+        pos_ = offset_offset_y_base_;
+    } else {
+        offset_y_index_ = 0;
+        arrayLayer_index_++;
+        if (arrayLayer_index_ < layer_count_) {
+            offset_layer_base_ += encoder_->SubresourceLayout().arrayPitch;
+            offset_offset_y_base_ = offset_layer_base_;
+            pos_ = offset_layer_base_;
         } else {
-            ++offset_index_.x;
-            if (offset_index_.x < offset_count_.x) {
-                isr_pos_.SeekOffsetX(offset_index_.x);
-                offset_x_base_ += encoder_->OffsetXSize();
-                pos_ = offset_x_base_;
-                aspect_base_ = pos_;
-                mip_index_ = 0;
-                aspect_index_ = encoder_->LowerBoundFromMask(isr_pos_.Limits().aspectMask);
+            arrayLayer_index_ = 0;
+            mip_level_index_++;
+            if (mip_level_index_ < subres_range_.levelCount) {
+                SetPos();
             } else {
-                ++offset_index_.y;
-                if (offset_index_.y < offset_count_.y) {
-                    isr_pos_.SeekOffsetY(offset_index_.y);
-                    offset_y_base_ += encoder_->OffsetYSize();
-                    pos_ = offset_y_base_;
-                    offset_x_base_ = pos_;
-                    aspect_base_ = pos_;
-                    mip_index_ = 0;
-                    aspect_index_ = encoder_->LowerBoundFromMask(isr_pos_.Limits().aspectMask);
-                    offset_index_.x = 0;
+                mip_level_index_ = 0;
+                aspect_index_ = encoder_->LowerBoundFromMask(subres_range_.aspectMask, aspect_index_ + 1);
+                if (aspect_index_ < aspect_count_) {
+                    SetPos();
                 } else {
-                    // Tombstone both index range and subresource positions to "At end" convention
+                    // End
                     pos_ = {0, 0};
-                    isr_pos_.aspectMask = 0;
                 }
             }
         }
-    } else {
-        // Note: for the layerCount < full_range.layerCount case, because the generated ranges per mip_level are discontinuous
-        // we have to do each individual array of ranges
-        pos_ += encoder_->MipSize();
-        isr_pos_.SeekMip(isr_pos_.Limits().baseMipLevel + mip_index_);
     }
-    return *this;
+    return this;
 }
 
 template <typename AspectTraits>

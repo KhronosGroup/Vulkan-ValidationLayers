@@ -411,8 +411,12 @@ class IMAGE_STATE : public BINDABLE {
     VkMemoryRequirements plane2_requirements;
     bool plane2_memory_requirements_checked;
 
+    const image_layout_map::Encoder subresource_encoder;  // Subresource resolution encoder
+    // const subresource_adapter::ImageRangeEncoder fragment_encoder; //Fragment resolution encoder
+    const VkDevice store_device_as_workaround;  // TODO REMOVE WHEN encoder can be const
+
     std::vector<VkSparseImageMemoryRequirements> sparse_requirements;
-    IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo);
+    IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCreateInfo);
     IMAGE_STATE(IMAGE_STATE const &rh_obj) = delete;
 
     std::unordered_set<VkImage> aliasing_images;
