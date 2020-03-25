@@ -25,12 +25,15 @@
 
 #include <algorithm>
 #include <array>
+#include <vector>
 #include "range_vector.h"
 #ifndef SPARSE_CONTAINER_UNIT_TEST
 #include "vulkan/vulkan.h"
 #else
 #include "vk_snippets.h"
 #endif
+
+class IMAGE_STATE;
 
 namespace subresource_adapter {
 
@@ -78,8 +81,8 @@ class RangeEncoder {
 
     // The default constructor for default iterators
     RangeEncoder()
-        : full_range_(),
-          limits_(),
+        : limits_(),
+          full_range_(),
           mip_size_(0),
           aspect_size_(0),
           aspect_bits_(nullptr),
@@ -221,9 +224,10 @@ class RangeEncoder {
     uint32_t LowerBoundWithStartImpl2(VkImageAspectFlags aspect_mask, uint32_t start) const;
     uint32_t LowerBoundWithStartImpl3(VkImageAspectFlags aspect_mask, uint32_t start) const;
 
+    Subresource limits_;
+
   private:
     VkImageSubresourceRange full_range_;
-    Subresource limits_;
     const size_t mip_size_;
     const size_t aspect_size_;
     const VkImageAspectFlagBits* const aspect_bits_;
@@ -325,245 +329,64 @@ class RangeGenerator {
     uint32_t aspect_index_ = 0;
 };
 
-class OffsetRangeEncoder;
-
-struct SubresourceOffset : public Subresource {
-    // It doesn't save offset.z. If the z > 1, the z will save in arrayLayer.
-    VkOffset2D offset;
-    SubresourceOffset() : Subresource(), offset() {}
-    SubresourceOffset(const SubresourceOffset& from) = default;
-    SubresourceOffset(const OffsetRangeEncoder& encoder, const VkImageSubresource& subres, const VkOffset3D& offset_);
-    SubresourceOffset(VkImageAspectFlags aspect_mask_, uint32_t mip_level_, uint32_t array_layer_, uint32_t aspect_index_,
-                      const VkOffset3D& offset_)
-        : Subresource(aspect_mask_, mip_level_, array_layer_, aspect_index_), offset({offset_.x, offset_.y}) {
-        if (offset_.z > 1) {
-            arrayLayer = offset_.z;
-        }
-    }
-    SubresourceOffset(VkImageAspectFlagBits aspect_, uint32_t mip_level_, uint32_t array_layer_, uint32_t aspect_index_,
-                      const VkOffset3D& offset_)
-        : SubresourceOffset(static_cast<VkImageAspectFlags>(aspect_), mip_level_, array_layer_, aspect_index_, offset_) {}
-
-    SubresourceOffset& operator=(const Subresource& sub) {
-        Subresource::operator=(sub);
-        return *this;
-    }
-};
-
-class OffsetRangeEncoder : public RangeEncoder {
+class ImageRangeEncoder : public RangeEncoder {
   public:
     // The default constructor for default iterators
-    OffsetRangeEncoder()
-        : full_range_image_extent_(),
-          limits_(),
-          offset_size_(),
-          encode_offset_function_(nullptr),
-          decode_offset_function_(nullptr) {}
+    ImageRangeEncoder() : device_(), image_(nullptr) {}
 
-    OffsetRangeEncoder(const VkImageSubresourceRange& full_range, const VkExtent3D& full_range_image_extent,
-                       const AspectParameters* param);
-    // Create the encoder suitable to the full range (aspect mask *must* be canonical)
-    OffsetRangeEncoder(const VkImageSubresourceRange& full_range, const VkExtent3D& full_range_image_extent)
-        : OffsetRangeEncoder(full_range, full_range_image_extent, AspectParameters::Get(full_range.aspectMask)) {}
-    OffsetRangeEncoder(const OffsetRangeEncoder& from) = default;
-    inline bool InRange(const VkImageSubresource& subres, const VkOffset3D& offset) const {
-        bool in_range = (subres.mipLevel < limits_.mipLevel) && (subres.arrayLayer < limits_.arrayLayer) &&
-                        (subres.aspectMask & limits_.aspectMask) && (offset.x < limits_.offset.x) && (offset.y < limits_.offset.y);
-        return in_range;
-    }
-    inline bool InRange(const VkImageSubresourceRange& range, const VkOffset3D& offset, const VkExtent3D& extent) const {
-        bool in_range =
-            (range.baseMipLevel < limits_.mipLevel) && ((range.baseMipLevel + range.levelCount) <= limits_.mipLevel) &&
-            (range.baseArrayLayer < limits_.arrayLayer) && ((range.baseArrayLayer + range.layerCount) <= limits_.arrayLayer) &&
-            (range.aspectMask & limits_.aspectMask) && ((offset.x + static_cast<int32_t>(extent.width)) < limits_.offset.x) &&
-            ((offset.y + static_cast<int32_t>(extent.height)) < limits_.offset.y);
-        return in_range;
-    }
+    ImageRangeEncoder(const VkDevice device, const IMAGE_STATE& image, const AspectParameters* param);
+    ImageRangeEncoder(const VkDevice device, const IMAGE_STATE& image);
+    ImageRangeEncoder(const ImageRangeEncoder& from) = default;
 
-    inline SubresourceOffset BeginSubresourceOffset(const VkImageSubresourceRange& range, const VkOffset3D& offset) const {
-        const auto aspect_index = LowerBoundFromMask(range.aspectMask);
-        SubresourceOffset begin(AspectBit(aspect_index), range.baseMipLevel, range.baseArrayLayer, aspect_index, offset);
-        return begin;
-    }
+    inline IndexType Encode(uint32_t layer, VkOffset3D offset) const;
+    void Decode(const IndexType& encode, uint32_t& out_layer, VkOffset3D& out_offset) const;
 
-    // Encode running offset part and subresource part.
-    inline IndexType Encode(const SubresourceOffset& pos) const {
-        return (this->*(encode_offset_function_))(pos) + RangeEncoder::Encode(pos);
-    }
-
-    inline IndexType Encode(const VkImageSubresource& subres, const VkOffset3D& offset) const {
-        return Encode(SubresourceOffset(*this, subres, offset));
-    }
-
-    // Decode offset part first, and get subresource part of IndexType, and then decode subresource part.
-    SubresourceOffset Decode(const IndexType& index) const {
-        SubresourceOffset decode = {};
-        IndexType subresouce_index = (this->*decode_offset_function_)(index, decode);
-        decode = RangeEncoder::Decode(subresouce_index);
-        return decode;
-    }
-
-    inline IndexType OffsetXSize() const { return offset_size_.x; }
-    inline IndexType OffsetYSize() const { return offset_size_.y; }
-    inline const SubresourceOffset& Limits() const { return limits_; }
-
-  protected:
-    void PopulateFunctionPointers();
-
-    IndexType Encode1D(const SubresourceOffset& pos) const;
-    IndexType Encode2D(const SubresourceOffset& pos) const;
-
-    // offset_decode is the return of offset part of decode.
-    // The return IndexType is only for Subresource, so it can use the IndexType to decode to get Subresource.
-    IndexType Decode1D(const IndexType& encode, SubresourceOffset& offset_decode) const;
-    IndexType Decode2D(const IndexType& encode, SubresourceOffset& offset_decode) const;
+    inline const VkDeviceSize& ElementSize() const { return element_size_; }
+    inline const VkSubresourceLayout& SubresourceLayout() const { return current_subres_layout_; }
+    // TODO: This next call should work in a const way...
+    const VkSubresourceLayout& SubresourceLayout(const VkImageSubresource& subres);
+    inline VkExtent3D SubresourceExtent(int mip_level) const { return subres_extents_[mip_level]; }
 
   private:
-    VkExtent3D full_range_image_extent_;
-    SubresourceOffset limits_;
-    // It doesn't save offset_size_.z. If the z > 1, the z will save in limits_.arrayLayer.
-    const VkOffset2D offset_size_;
-    IndexType (OffsetRangeEncoder::*encode_offset_function_)(const SubresourceOffset&) const;
-    IndexType (OffsetRangeEncoder::*decode_offset_function_)(const IndexType& encode, SubresourceOffset& offset_decode) const;
+    VkDeviceSize element_size_;
+    const VkDevice device_;
+    const IMAGE_STATE* image_;
+    std::vector<VkExtent3D> subres_extents_;
+    std::vector<VkSubresourceLayout> optimal_subres_layouts_;
+    VkImageSubresource current_subres_;
+    VkSubresourceLayout current_subres_layout_;
 };
 
-class SubresourceOffsetGenerator : public SubresourceOffset {
+class ImageRangeGenerator {
   public:
-    SubresourceOffsetGenerator() : SubresourceOffset(), encoder_(nullptr), limits_(), limits_offset_(), limits_extent_(){};
-    SubresourceOffsetGenerator(const OffsetRangeEncoder& encoder, const VkImageSubresourceRange& range, const VkOffset3D& offset,
-                               const VkExtent3D& extent)
-        : SubresourceOffset(encoder.BeginSubresourceOffset(range, offset)),
-          encoder_(&encoder),
-          limits_(range),
-          limits_offset_({offset.x, offset.y}),
-          limits_extent_({extent.width, extent.height}) {
-        if (offset.z > 1 || extent.depth > 1) {
-            limits_.baseArrayLayer = offset.z;
-            limits_.layerCount = extent.depth;
-        }
-    }
-
-    const VkImageSubresourceRange& Limits() const { return limits_; }
-    const VkOffset2D& Limits_Offset() const { return limits_offset_; }
-    const VkExtent2D& Limits_Extent() const { return limits_extent_; }
-
-    // Seek functions are used by generators to force synchronization, as callers may have altered the position
-    // to iterater between calls to the generator increment or Seek functions
-    void SeekOffsetY(int32_t offset_y_index) {
-        arrayLayer = limits_.baseArrayLayer;
-        mipLevel = limits_.baseMipLevel;
-        aspect_index = encoder_->LowerBoundFromMask(limits_.aspectMask);
-        aspectMask = encoder_->AspectBit(aspect_index) & limits_.aspectMask;
-        offset.x = limits_offset_.x;
-        if (offset_y_index < static_cast<int32_t>(limits_extent_.height)) {
-            offset.y = offset_y_index;
-        } else {
-            // This is an "end" tombstone
-            offset.y = static_cast<int32_t>(limits_extent_.height);
-        }
-    }
-    void SeekOffsetX(int32_t offset_x_index) {
-        arrayLayer = limits_.baseArrayLayer;
-        mipLevel = limits_.baseMipLevel;
-        aspect_index = encoder_->LowerBoundFromMask(limits_.aspectMask);
-        aspectMask = encoder_->AspectBit(aspect_index) & limits_.aspectMask;
-        offset.x = offset_x_index;
-    }
-    void SeekAspect(uint32_t seek_index) {
-        arrayLayer = limits_.baseArrayLayer;
-        mipLevel = limits_.baseMipLevel;
-        aspect_index = seek_index;
-        // Seeking to bit outside of the limit will set a "empty" subresource
-        aspectMask = encoder_->AspectBit(aspect_index) & limits_.aspectMask;
-    }
-
-    void SeekMip(uint32_t mip_level) {
-        arrayLayer = limits_.baseArrayLayer;
-        mipLevel = mip_level;
-    }
-
-    // Next and and ++ functions are for iteration from a base with the bounds, this may be additionally
-    // controlled/updated by an owning generator (like RangeGenerator using Seek functions)
-    inline void NextOffsetY() { SeekOffsetY(++offset.y); }
-    inline void NextOffsetX() {
-        ++offset.x;
-        if (offset.x >= static_cast<int32_t>(limits_extent_.width)) {
-            NextOffsetY();
-        } else {
-            SeekOffsetX(offset.x);
-        }
-    }
-    inline void NextAspect() {
-        ++aspect_index;
-        if (aspect_index >= encoder_->Limits().aspect_index) {
-            NextOffsetX();
-        } else {
-            SeekAspect(encoder_->LowerBoundFromMask(limits_.aspectMask, aspect_index));
-        }
-    }
-    void NextMip() {
-        ++mipLevel;
-        if (mipLevel >= (limits_.baseMipLevel + limits_.levelCount)) {
-            NextAspect();
-        } else {
-            SeekMip(mipLevel);
-        }
-    }
-
-    SubresourceOffsetGenerator& operator++() {
-        arrayLayer++;
-        if (arrayLayer >= (limits_.baseArrayLayer + limits_.layerCount)) {
-            NextMip();
-        }
-        return *this;
-    }
-
-    // General purpose and slow, when we have no other information to update the generator
-    void Seek(IndexType index) {
-        // skip forward past discontinuities
-        *static_cast<SubresourceOffset* const>(this) = encoder_->Decode(index);
-    }
-
-    const VkImageSubresource& operator*() const { return *this; }
-    const VkImageSubresource* operator->() const { return this; }
-
-  private:
-    const OffsetRangeEncoder* encoder_;
-    VkImageSubresourceRange limits_;
-
-    // It doesn't save limits_offset_.z and limits_extent_.depth.
-    // If the z or the depth > 1, the z will save in limits_.baseArrayLayer, and the depth will save in limits_.layerCount.
-    const VkOffset2D limits_offset_;
-    const VkExtent2D limits_extent_;
-};
-
-class OffsetRangeGenerator {
-  public:
-    OffsetRangeGenerator() : encoder_(nullptr), isr_pos_(), pos_(), aspect_base_() {}
-    bool operator!=(const OffsetRangeGenerator& rhs) { return (pos_ != rhs.pos_) || (&encoder_ != &rhs.encoder_); }
-    OffsetRangeGenerator(const OffsetRangeEncoder& encoder);
-    OffsetRangeGenerator(const OffsetRangeEncoder& encoder, const VkImageSubresourceRange& subres_range, const VkOffset3D& offset,
-                         const VkExtent3D& extent);
+    ImageRangeGenerator() : encoder_(nullptr), subres_range_(), offset_(), extent_() {}
+    bool operator!=(const ImageRangeGenerator& rhs) { return (pos_ != rhs.pos_) || (&encoder_ != &rhs.encoder_); }
+    ImageRangeGenerator(ImageRangeEncoder& encoder);
+    ImageRangeGenerator(ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range, const VkOffset3D& offset,
+                        const VkExtent3D& extent);
     inline const IndexRange& operator*() const { return pos_; }
     inline const IndexRange* operator->() const { return &pos_; }
-    SubresourceOffsetGenerator& GetSubresourceOffsetGenerator() { return isr_pos_; }
-    SubresourceOffset& GetSubresourceOffset() { return isr_pos_; }
-    OffsetRangeGenerator& operator++();
+    ImageRangeGenerator* operator++();
+    void SetPos();
 
   private:
-    const OffsetRangeEncoder* encoder_;
-    SubresourceOffsetGenerator isr_pos_;
+    // TODO encoder should be const
+    ImageRangeEncoder* encoder_;
+    const VkImageSubresourceRange subres_range_;
+    const VkOffset3D offset_;
+    const VkExtent3D extent_;
     IndexRange pos_;
-    IndexRange aspect_base_;
-    IndexRange offset_x_base_;
-    IndexRange offset_y_base_;
-    uint32_t mip_count_ = 0;
-    uint32_t mip_index_ = 0;
+    IndexRange offset_offset_y_base_;
+    IndexRange offset_layer_base_;
+    uint32_t offset_y_index_;
+    uint32_t offset_y_count_;
     uint32_t aspect_count_ = 0;
     uint32_t aspect_index_ = 0;
-    // It doesn't have offset_count_.z and offset_index_.z. If the z > 1, it will be used in arrayLayer.
-    VkOffset2D offset_count_ = {};
-    VkOffset2D offset_index_ = {};
+
+    // It doesn't have offset_z. If the z > 1, it will be used in arrayLayer.
+    uint32_t arrayLayer_index_;
+    uint32_t layer_count_;
+    uint32_t mip_level_index_;
 };
 
 // Designed for use with RangeMap of MappedType

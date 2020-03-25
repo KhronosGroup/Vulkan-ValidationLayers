@@ -240,7 +240,7 @@ class AccessTrackerContext {
     HazardResult DetectBarrierHazard(const VulkanTypedHandle &handle, SyncStageAccessIndex current_usage,
                                      VkPipelineStageFlags src_exec_scope, SyncStageAccessFlags src_access_scope,
                                      const ResourceAccessRange &range) const;
-    HazardResult DetectHazard(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
+    HazardResult DetectHazard(const CMD_BUFFER_STATE &cmd, const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
                               const VkImageSubresourceLayers &subresource, const VkOffset3D &offset,
                               const VkExtent3D &extent) const;
 
@@ -263,7 +263,7 @@ class AccessTrackerContext {
                           const ResourceAccessState *infill_state, bool recur_to_infill = true) const;
     void UpdateAccessState(const VulkanTypedHandle &handle, SyncStageAccessIndex current_usage, const ResourceAccessRange &range,
                            const ResourceUsageTag &tag);
-    void UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
+    void UpdateAccessState(const CMD_BUFFER_STATE &cmd, const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
                            const VkImageSubresourceLayers &subresource, const VkOffset3D &offset, const VkExtent3D &extent,
                            const ResourceUsageTag &tag);
 
@@ -393,7 +393,7 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void ApplyBufferBarriers(AccessTrackerContext *context, VkPipelineStageFlags src_stage_mask,
                              SyncStageAccessFlags src_stage_scope, VkPipelineStageFlags dst_stage_mask,
                              SyncStageAccessFlags dst_stage_scope, uint32_t barrier_count, const VkBufferMemoryBarrier *barriers);
-    void ApplyImageBarriers(AccessTrackerContext *context, VkPipelineStageFlags src_stage_mask,
+    void ApplyImageBarriers(const CMD_BUFFER_STATE &cmd, AccessTrackerContext *context, VkPipelineStageFlags src_stage_mask,
                             SyncStageAccessFlags src_stage_scope, VkPipelineStageFlags dst_stage_mask,
                             SyncStageAccessFlags dst_stage_scope, uint32_t barrier_count, const VkImageMemoryBarrier *barriers);
 
