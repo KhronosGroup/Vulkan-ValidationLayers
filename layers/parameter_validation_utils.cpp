@@ -764,6 +764,27 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
     return skip;
 }
 
+bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
+                                                                const VkAllocationCallbacks *pAllocator, VkImageView *pView) const {
+    bool skip = false;
+
+    if (pCreateInfo != nullptr) {
+        if (pCreateInfo->subresourceRange.layerCount != VK_REMAINING_ARRAY_LAYERS) {
+            if (pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_CUBE && pCreateInfo->subresourceRange.layerCount != 6) {
+                skip |= LogError(device, "VUID-VkImageViewCreateInfo-viewType-02960",
+                                 "vkCreateImageView(): subresourceRange.layerCount (%d) must be 6",
+                                 pCreateInfo->subresourceRange.layerCount);
+            }
+            if (pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY && (pCreateInfo->subresourceRange.layerCount % 6) != 0) {
+                skip |= LogError(device, "VUID-VkImageViewCreateInfo-viewType-02961",
+                                 "vkCreateImageView(): subresourceRange.layerCount (%d) must be a multiple of 6",
+                                 pCreateInfo->subresourceRange.layerCount);
+            }
+        }
+    }
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateViewport(const VkViewport &viewport, const char *fn_name,
                                                          const ParameterName &parameter_name, VkCommandBuffer object) const {
     bool skip = false;

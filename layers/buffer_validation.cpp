@@ -4852,6 +4852,22 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                                  "VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV, format must be VK_FORMAT_R8_UINT.");
             }
         }
+
+        if (pCreateInfo->subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS) {
+            if (pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_CUBE &&
+                image_state->createInfo.arrayLayers - pCreateInfo->subresourceRange.baseArrayLayer != 6) {
+                skip |= LogError(device, "VUID-VkImageViewCreateInfo-viewType-02962",
+                                 "vkCreateImageView(): subresourceRange.layerCount VK_REMAINING_ARRAY_LAYERS=(%d) must be 6",
+                                 image_state->createInfo.arrayLayers - pCreateInfo->subresourceRange.baseArrayLayer);
+            }
+            if (pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY &&
+                ((image_state->createInfo.arrayLayers - pCreateInfo->subresourceRange.baseArrayLayer) % 6) != 0) {
+                skip |= LogError(
+                    device, "VUID-VkImageViewCreateInfo-viewType-02963",
+                    "vkCreateImageView(): subresourceRange.layerCount VK_REMAINING_ARRAY_LAYERS=(%d) must be a multiple of 6",
+                    image_state->createInfo.arrayLayers - pCreateInfo->subresourceRange.baseArrayLayer);
+            }
+        }
     }
     return skip;
 }

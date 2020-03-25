@@ -196,6 +196,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCreateSamplerYcbcrConversionKHR',
             'vkImportSemaphoreFdKHR',
             'vkCmdBindVertexBuffers',
+            'vkCreateImageView',
             ]
 
         # Commands to ignore
