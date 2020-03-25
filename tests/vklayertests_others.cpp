@@ -3485,6 +3485,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
     CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-imageType-02082");
 
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.arrayLayers = 6;
 
     // must be single sample
     image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
@@ -3516,6 +3517,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
 
     // view type must be 2D or 2D_ARRAY
     ivci.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+    ivci.subresourceRange.layerCount = 6;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-02086");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageViewCreateInfo-image-01003");
     result = vk::CreateImageView(m_device->device(), &ivci, nullptr, &view);
@@ -3525,6 +3527,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
         view = VK_NULL_HANDLE;
     }
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.subresourceRange.layerCount = 1;
 
     // format must be R8_UINT
     ivci.format = VK_FORMAT_R8_UNORM;

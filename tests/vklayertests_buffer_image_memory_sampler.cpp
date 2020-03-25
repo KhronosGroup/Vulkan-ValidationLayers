@@ -7100,6 +7100,84 @@ TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
             CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-01719");
         }
     }
+
+    {
+        VkImageObj cubeArrayImg(m_device);
+        auto image_ci = vk_testing::Image::create_info();
+        image_ci.arrayLayers = 18;
+        image_ci.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+        image_ci.imageType = VK_IMAGE_TYPE_2D;
+        image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+        image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+        image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        cubeArrayImg.init(&image_ci);
+
+        VkImageViewCreateInfo cube_img_view_info_template = {};
+        cube_img_view_info_template.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        cube_img_view_info_template.image = cubeArrayImg.handle();
+        cube_img_view_info_template.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+        cube_img_view_info_template.format = cubeArrayImg.format();
+        // subresourceRange to be filled later for the purposes of this test
+        cube_img_view_info_template.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        cube_img_view_info_template.subresourceRange.baseMipLevel = 0;
+        cube_img_view_info_template.subresourceRange.levelCount = 0;
+        cube_img_view_info_template.subresourceRange.baseArrayLayer = 0;
+        cube_img_view_info_template.subresourceRange.layerCount = 0;
+
+        {
+            const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 6};
+            VkImageViewCreateInfo img_view_info = cube_img_view_info_template;
+            img_view_info.subresourceRange = range;
+            CreateImageViewTest(*this, &img_view_info);
+        }
+        {
+            const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 5};
+            VkImageViewCreateInfo img_view_info = cube_img_view_info_template;
+            img_view_info.subresourceRange = range;
+            CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-viewType-02960");
+        }
+        {
+            const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 12, VK_REMAINING_ARRAY_LAYERS};
+            VkImageViewCreateInfo img_view_info = cube_img_view_info_template;
+            img_view_info.subresourceRange = range;
+            CreateImageViewTest(*this, &img_view_info);
+        }
+        {
+            const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 6, VK_REMAINING_ARRAY_LAYERS};
+            VkImageViewCreateInfo img_view_info = cube_img_view_info_template;
+            img_view_info.subresourceRange = range;
+            CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-viewType-02962");
+        }
+        {
+            const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 12};
+            VkImageViewCreateInfo img_view_info = cube_img_view_info_template;
+            img_view_info.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+            img_view_info.subresourceRange = range;
+            CreateImageViewTest(*this, &img_view_info);
+        }
+        {
+            const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 13};
+            VkImageViewCreateInfo img_view_info = cube_img_view_info_template;
+            img_view_info.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+            img_view_info.subresourceRange = range;
+            CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-viewType-02961");
+        }
+        {
+            const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 6, VK_REMAINING_ARRAY_LAYERS};
+            VkImageViewCreateInfo img_view_info = cube_img_view_info_template;
+            img_view_info.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+            img_view_info.subresourceRange = range;
+            CreateImageViewTest(*this, &img_view_info);
+        }
+        {
+            const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 11, VK_REMAINING_ARRAY_LAYERS};
+            VkImageViewCreateInfo img_view_info = cube_img_view_info_template;
+            img_view_info.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+            img_view_info.subresourceRange = range;
+            CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-viewType-02963");
+        }
+    }
 }
 
 TEST_F(VkLayerTest, CreateImageMiscErrors) {
