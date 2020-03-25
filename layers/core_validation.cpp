@@ -9444,6 +9444,17 @@ bool CoreChecks::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfo
                 }
             }
         }
+
+        for (uint32_t image_idx = 0; image_idx < bindInfo.imageBindCount; ++image_idx) {
+            const VkSparseImageMemoryBindInfo &image_bind = bindInfo.pImageBinds[image_idx];
+            const auto image_state = GetImageState(image_bind.image);
+
+            if (image_state && !(image_state->createInfo.flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT)) {
+                skip |= LogError(
+                    image_bind.image, "VUID-VkSparseImageMemoryBindInfo-image-02901",
+                    "VkSparseImageMemoryBindInfo: image must have been created with VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT set");
+            }
+        }
     }
 
     if (skip) return skip;
