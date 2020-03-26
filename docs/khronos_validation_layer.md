@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2019 LunarG, Inc. -->
+<!-- Copyright 2015-2020 LunarG, Inc. -->
 
 [![Khronos Vulkan][1]][2]
 
@@ -20,6 +20,7 @@ The `VK_LAYER_KHRONOS_validation` layer supports the following validation areas:
 - Core validation checks
 - GPU-Assisted validation
 - Best practices validation
+- Debug Printf functionality
 - Handle wrapping functionality
 
 Details for the functionality contained in each of these areas can be viewed in their respective validation detail documents, located in this directory.
