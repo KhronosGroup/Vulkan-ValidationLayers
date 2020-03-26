@@ -90,6 +90,7 @@ class HelperFileOutputGenerator(OutputGenerator):
         self.device_extension_info = dict()               # Dict of device extension name defines and ifdef values
         self.instance_extension_info = dict()             # Dict of instance extension name defines and ifdef values
         self.structextends_list = []                      # List of structs which extend another struct via pNext
+        self.structOrUnion = dict()                       # Map of Vulkan typename to 'struct' or 'union'
 
 
         # Named tuples to store struct and command data
@@ -238,6 +239,10 @@ class HelperFileOutputGenerator(OutputGenerator):
         elif (category == 'struct' or category == 'union'):
             self.structNames.append(name)
             self.genStruct(typeinfo, name, alias)
+            if (category == 'union'):
+                self.structOrUnion[name] = 'union'
+            else:
+                self.structOrUnion[name] = 'struct'
     #
     # Check if the parameter passed in is a pointer
     def paramIsPointer(self, param):
@@ -452,7 +457,7 @@ class HelperFileOutputGenerator(OutputGenerator):
                 safe_struct_header += '\n'
                 if item.ifdef_protect is not None:
                     safe_struct_header += '#ifdef %s\n' % item.ifdef_protect
-                safe_struct_header += 'struct safe_%s {\n' % (item.name)
+                safe_struct_header += self.structOrUnion[item.name] + ' safe_%s {\n' % (item.name)
                 for member in item.members:
                     if member.type in self.structNames:
                         member_index = next((i for i, v in enumerate(self.structMembers) if v[0] == member.type), None)
@@ -1487,7 +1492,11 @@ class HelperFileOutputGenerator(OutputGenerator):
             if copy_pnext:
                 destruct_txt += '    if (pNext)\n        FreePnextChain(pNext);\n'
 
-            safe_struct_body.append("\n%s::%s(const %s* in_struct%s) :%s\n{\n%s}" % (ss_name, ss_name, item.name, self.custom_construct_params.get(item.name, ''), init_list, construct_txt))
+            if (self.structOrUnion[item.name] == 'union'):
+                # Unions don't allow multiple members in the initialization list, so just call initialize
+                safe_struct_body.append("\n%s::%s(const %s* in_struct%s)\n{\n    initialize(in_struct);\n}" % (ss_name, ss_name, item.name, self.custom_construct_params.get(item.name, '')))
+            else:
+                safe_struct_body.append("\n%s::%s(const %s* in_struct%s) :%s\n{\n%s}" % (ss_name, ss_name, item.name, self.custom_construct_params.get(item.name, ''), init_list, construct_txt))
             if '' != default_init_list:
                 default_init_list = " :%s" % (default_init_list[:-1])
             safe_struct_body.append("\n%s::%s()%s\n{}" % (ss_name, ss_name, default_init_list))
