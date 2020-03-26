@@ -138,19 +138,7 @@ void BestPractices::PostCallRecordEnumerateDeviceLayerProperties(
     }
 }
 
-void BestPractices::PostCallRecordQueueSubmit(
-    VkQueue                                     queue,
-    uint32_t                                    submitCount,
-    const VkSubmitInfo*                         pSubmits,
-    VkFence                                     fence,
-    VkResult                                    result) {
-    ValidationStateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, result);
-    if (result != VK_SUCCESS) {
-        static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_DEVICE_LOST};
-        static const std::vector<VkResult> success_codes = {};
-        ValidateReturnCodes("vkQueueSubmit", result, error_codes, success_codes);
-    }
-}
+// Skipping vkQueueSubmit for autogen as it has a manually created custom function or ignored.
 
 void BestPractices::PostCallRecordQueueWaitIdle(
     VkQueue                                     queue,
@@ -174,20 +162,7 @@ void BestPractices::PostCallRecordDeviceWaitIdle(
     }
 }
 
-void BestPractices::PostCallRecordAllocateMemory(
-    VkDevice                                    device,
-    const VkMemoryAllocateInfo*                 pAllocateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkDeviceMemory*                             pMemory,
-    VkResult                                    result) {
-    ValidationStateTracker::PostCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, result);
-    ManualPostCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, result);
-    if (result != VK_SUCCESS) {
-        static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_INVALID_EXTERNAL_HANDLE,VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR};
-        static const std::vector<VkResult> success_codes = {};
-        ValidateReturnCodes("vkAllocateMemory", result, error_codes, success_codes);
-    }
-}
+// Skipping vkAllocateMemory for autogen as it has a manually created custom function or ignored.
 
 void BestPractices::PostCallRecordMapMemory(
     VkDevice                                    device,
@@ -259,34 +234,9 @@ void BestPractices::PostCallRecordBindImageMemory(
     }
 }
 
-void BestPractices::PostCallRecordQueueBindSparse(
-    VkQueue                                     queue,
-    uint32_t                                    bindInfoCount,
-    const VkBindSparseInfo*                     pBindInfo,
-    VkFence                                     fence,
-    VkResult                                    result) {
-    ValidationStateTracker::PostCallRecordQueueBindSparse(queue, bindInfoCount, pBindInfo, fence, result);
-    ManualPostCallRecordQueueBindSparse(queue, bindInfoCount, pBindInfo, fence, result);
-    if (result != VK_SUCCESS) {
-        static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_DEVICE_LOST};
-        static const std::vector<VkResult> success_codes = {};
-        ValidateReturnCodes("vkQueueBindSparse", result, error_codes, success_codes);
-    }
-}
+// Skipping vkQueueBindSparse for autogen as it has a manually created custom function or ignored.
 
-void BestPractices::PostCallRecordCreateFence(
-    VkDevice                                    device,
-    const VkFenceCreateInfo*                    pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkFence*                                    pFence,
-    VkResult                                    result) {
-    ValidationStateTracker::PostCallRecordCreateFence(device, pCreateInfo, pAllocator, pFence, result);
-    if (result != VK_SUCCESS) {
-        static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY};
-        static const std::vector<VkResult> success_codes = {};
-        ValidateReturnCodes("vkCreateFence", result, error_codes, success_codes);
-    }
-}
+// Skipping vkCreateFence for autogen as it has a manually created custom function or ignored.
 
 void BestPractices::PostCallRecordResetFences(
     VkDevice                                    device,
@@ -328,19 +278,7 @@ void BestPractices::PostCallRecordWaitForFences(
     }
 }
 
-void BestPractices::PostCallRecordCreateSemaphore(
-    VkDevice                                    device,
-    const VkSemaphoreCreateInfo*                pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkSemaphore*                                pSemaphore,
-    VkResult                                    result) {
-    ValidationStateTracker::PostCallRecordCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore, result);
-    if (result != VK_SUCCESS) {
-        static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY};
-        static const std::vector<VkResult> success_codes = {};
-        ValidateReturnCodes("vkCreateSemaphore", result, error_codes, success_codes);
-    }
-}
+// Skipping vkCreateSemaphore for autogen as it has a manually created custom function or ignored.
 
 void BestPractices::PostCallRecordCreateEvent(
     VkDevice                                    device,
@@ -537,40 +475,9 @@ void BestPractices::PostCallRecordMergePipelineCaches(
     }
 }
 
-void BestPractices::PostCallRecordCreateGraphicsPipelines(
-    VkDevice                                    device,
-    VkPipelineCache                             pipelineCache,
-    uint32_t                                    createInfoCount,
-    const VkGraphicsPipelineCreateInfo*         pCreateInfos,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines,
-    VkResult                                    result,
-    void*                                       state_data) {
-    ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, state_data);
-    ManualPostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, state_data);
-    if (result != VK_SUCCESS) {
-        static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_INVALID_SHADER_NV};
-        static const std::vector<VkResult> success_codes = {VK_PIPELINE_COMPILE_REQUIRED_EXT};
-        ValidateReturnCodes("vkCreateGraphicsPipelines", result, error_codes, success_codes);
-    }
-}
+// Skipping vkCreateGraphicsPipelines for autogen as it has a manually created custom function or ignored.
 
-void BestPractices::PostCallRecordCreateComputePipelines(
-    VkDevice                                    device,
-    VkPipelineCache                             pipelineCache,
-    uint32_t                                    createInfoCount,
-    const VkComputePipelineCreateInfo*          pCreateInfos,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines,
-    VkResult                                    result,
-    void*                                       state_data) {
-    ValidationStateTracker::PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, state_data);
-    if (result != VK_SUCCESS) {
-        static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_INVALID_SHADER_NV};
-        static const std::vector<VkResult> success_codes = {VK_PIPELINE_COMPILE_REQUIRED_EXT};
-        ValidateReturnCodes("vkCreateComputePipelines", result, error_codes, success_codes);
-    }
-}
+// Skipping vkCreateComputePipelines for autogen as it has a manually created custom function or ignored.
 
 void BestPractices::PostCallRecordCreatePipelineLayout(
     VkDevice                                    device,
@@ -723,16 +630,7 @@ void BestPractices::PostCallRecordBeginCommandBuffer(
     }
 }
 
-void BestPractices::PostCallRecordEndCommandBuffer(
-    VkCommandBuffer                             commandBuffer,
-    VkResult                                    result) {
-    ValidationStateTracker::PostCallRecordEndCommandBuffer(commandBuffer, result);
-    if (result != VK_SUCCESS) {
-        static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY};
-        static const std::vector<VkResult> success_codes = {};
-        ValidateReturnCodes("vkEndCommandBuffer", result, error_codes, success_codes);
-    }
-}
+// Skipping vkEndCommandBuffer for autogen as it has a manually created custom function or ignored.
 
 void BestPractices::PostCallRecordResetCommandBuffer(
     VkCommandBuffer                             commandBuffer,
@@ -745,6 +643,8 @@ void BestPractices::PostCallRecordResetCommandBuffer(
         ValidateReturnCodes("vkResetCommandBuffer", result, error_codes, success_codes);
     }
 }
+
+// Skipping vkCmdPipelineBarrier for autogen as it has a manually created custom function or ignored.
 
 // Skipping vkEnumerateInstanceVersion for autogen as it has a manually created custom function or ignored.
 
@@ -984,18 +884,7 @@ void BestPractices::PostCallRecordAcquireNextImageKHR(
     }
 }
 
-void BestPractices::PostCallRecordQueuePresentKHR(
-    VkQueue                                     queue,
-    const VkPresentInfoKHR*                     pPresentInfo,
-    VkResult                                    result) {
-    ValidationStateTracker::PostCallRecordQueuePresentKHR(queue, pPresentInfo, result);
-    ManualPostCallRecordQueuePresentKHR(queue, pPresentInfo, result);
-    if (result != VK_SUCCESS) {
-        static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_DEVICE_LOST,VK_ERROR_OUT_OF_DATE_KHR,VK_ERROR_SURFACE_LOST_KHR,VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT};
-        static const std::vector<VkResult> success_codes = {VK_SUBOPTIMAL_KHR};
-        ValidateReturnCodes("vkQueuePresentKHR", result, error_codes, success_codes);
-    }
-}
+// Skipping vkQueuePresentKHR for autogen as it has a manually created custom function or ignored.
 
 void BestPractices::PostCallRecordGetDeviceGroupPresentCapabilitiesKHR(
     VkDevice                                    device,

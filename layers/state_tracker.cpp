@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2020 Valve Corporation
  * Copyright (c) 2015-2020 LunarG, Inc.
  * Copyright (C) 2015-2020 Google Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +19,7 @@
  * Author: Mark Lobodzinski <mark@lunarg.com>
  * Author: Dave Houlton <daveh@lunarg.com>
  * Shannon McPherson <shannon@lunarg.com>
+ * Author: Nadav Geva <nadav.geva@amd.com>
  */
 
 #include <cmath>
@@ -1414,6 +1416,7 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
         pCB->viewportMask = 0;
         pCB->viewportWithCountMask = 0;
         pCB->scissorMask = 0;
+        pCB->commands_in_buffer.clear();
         pCB->scissorWithCountMask = 0;
         pCB->primitiveTopology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
 

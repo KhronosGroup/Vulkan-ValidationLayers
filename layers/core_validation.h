@@ -21,6 +21,7 @@
  * Author: Mark Lobodzinski <mark@lunarg.com>
  * Author: Dave Houlton <daveh@lunarg.com>
  * Author: Jeremy Kniager <jeremyk@lunarg.com>
+ * Author: Nadav Geva <nadav.geva@amd.com>
  */
 
 #pragma once
@@ -103,6 +104,7 @@ class CoreChecks : public ValidationStateTracker {
     void InitDeviceValidationObject(bool add_obj, ValidationObject* inst_obj, ValidationObject* dev_obj);
 
     void IncrementCommandCount(VkCommandBuffer commandBuffer);
+    void RecordIntoCommandList(VkCommandBuffer commandBuffer, CMD_TYPE cmdType);
 
     bool VerifyQueueStateToSeq(const QUEUE_STATE* initial_queue, uint64_t initial_seq) const;
     bool ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHandle& typed_handle, const char* apiName) const;

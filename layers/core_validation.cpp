@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2020 Valve Corporation
  * Copyright (c) 2015-2020 LunarG, Inc.
  * Copyright (C) 2015-2020 Google Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +35,7 @@
  * Author: John Zulauf <jzulauf@lunarg.com>
  * Author: Shannon McPherson <shannon@lunarg.com>
  * Author: Jeremy Kniager <jeremyk@lunarg.com>
+ * Author: Nadav Geva <nadav.geva@amd.com>
  */
 
 #include <algorithm>
@@ -197,12 +199,6 @@ void CoreChecks::InitDeviceValidationObject(bool add_obj, ValidationObject *inst
         }
         ValidationStateTracker::InitDeviceValidationObject(add_obj, inst_obj, dev_obj);
     }
-}
-
-// Tracks the number of commands recorded in a command buffer.
-void CoreChecks::IncrementCommandCount(VkCommandBuffer commandBuffer) {
-    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    cb_state->commandCount++;
 }
 
 // For given mem object, verify that it is not null or UNBOUND, if it is, report error. Return skip value.

@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2020 Valve Corporation
  * Copyright (c) 2015-2020 LunarG, Inc.
  * Copyright (C) 2015-2020 Google Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +17,7 @@
  * limitations under the License.
  *
  * Author: Camden Stocker <camden@lunarg.com>
+ * Author: Nadav Geva <nadav.geva@amd.com>
  */
 
 #ifndef BEST_PRACTICES_ERROR_ENUMS_H_
@@ -146,5 +148,61 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_RobustBuffer
     "UNASSIGNED-BestPractices-vkCreateDevice-RobustBufferAccess";
 static const char DECORATE_UNUSED *kVUID_BestPractices_EndRenderPass_DepthPrePassUsage =
     "UNASSIGNED-BestPractices-vkCmdEndRenderPass-depth-pre-pass-usage";
+
+// AMD-specific best practice
+static const char DECORATE_UNUSED *kVUID_BestPractices_CmdBuffer_AvoidTinyCmdBuffers =
+    "UNASSIGNED-BestPractices-VkCommandBuffer-AvoidTinyCmdBuffers";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CmdBuffer_AvoidSecondaryCmdBuffers =
+    "UNASSIGNED-BestPractices-VkCommandBuffer-AvoidSecondaryCmdBuffers";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CmdBuffer_AvoidSmallSecondaryCmdBuffers =
+    "UNASSIGNED-BestPractices-VkCommandBuffer-AvoidSmallSecondaryCmdBuffers";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CmdBuffer_AvoidClearSecondaryCmdBuffers =
+    "UNASSIGNED-BestPractices-VkCommandBuffer-AvoidClearSecondaryCmdBuffers";
+static const char DECORATE_UNUSED *kVUID_BestPractices_DrawState_AvoidVertexBindEveryDraw =
+    "UNASSIGNED-BestPractices-DrawState-AvoidVertexBindEveryDraw";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CmdPool_DisparateSizedCmdBuffers =
+    "UNASSIGNED-BestPractices-CmdPool-DisparateSizedCmdBuffers";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelines_TooManyPipelines =
+    "UNASSIGNED-BestPractices-CreatePipelines-TooManyPipelines";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelines_MultiplePipelineCaches =
+    "UNASSIGNED-BestPractices-vkCreatePipelines-multiple-pipelines-caches";
+static const char DECORATE_UNUSED *kVUID_BestPractices_vkImage_DontUseMutableRT =
+    "UNASSIGNED-BestPractices-vkImage-DontUseMutableRT";
+static const char DECORATE_UNUSED *kVUID_BestPractices_vkImage_AvoidImageToImageCopy =
+    "UNASSIGNED-BestPractices-vkImage-AvoidImageToImageCopy";
+static const char DECORATE_UNUSED *kVUID_BestPractices_vkImage_AvoidConcurentRT =
+    "UNASSIGNED-BestPractices-vkImage-AvoidConcurentRT";
+static const char DECORATE_UNUSED *kVUID_BestPractices_vkImage_DontUseStorageRT =
+    "UNASSIGNED-BestPractices-vkImage-DontUseStorageRT";
+static const char DECORATE_UNUSED *kVUID_BestPractices_vkImage_AvoidGeneral = "UNASSIGNED-BestPractices-vkImage-AvoidGeneral";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelines_AvoidPrimitiveRestart =
+    "UNASSIGNED-BestPractices-CreatePipelines-AvoidPrimitiveRestart";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelines_MinimizeNumDynamicStates =
+    "UNASSIGNED-BestPractices-CreatePipelines-MinimizeNumDynamicStates";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelinesLayout_KeepLayoutSmall =
+    "UNASSIGNED-BestPractices-CreatePipelinesLayout-KeepLayoutSmall";
+static const char DECORATE_UNUSED *kVUID_BestPractices_UpdateDescriptors_AvoidCopyingDescriptors =
+    "UNASSIGNED-BestPractices-UpdateDescriptors-AvoidCopyingDescriptors";
+static const char DECORATE_UNUSED *kVUID_BestPractices_UpdateDescriptors_PreferNonTemplate =
+    "UNASSIGNED-BestPractices-UpdateDescriptors-PreferNonTemplate";
+static const char DECORATE_UNUSED *kVUID_BestPractices_ClearAttachment_FastClearValues =
+    "UNASSIGNED-BestPractices-ClearAttachment-FastClearValues";
+static const char DECORATE_UNUSED *kVUID_BestPractices_ClearAttachment_ClearImage =
+    "UNASSIGNED-BestPractices-ClearAttachment-ClearImage";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CmdBuffer_backToBackBarrier =
+    "UNASSIGNED-BestPractices-CmdBuffer-backToBackBarrier";
+static const char DECORATE_UNUSED *kVUID_BestPractices_CmdBuffer_highBarrierCount =
+    "UNASSIGNED-BestPractices-CmdBuffer-highBarrierCount";
+static const char DECORATE_UNUSED *kVUID_BestPractices_PipelineBarrier_readToReadBarrier =
+    "UNASSIGNED-BestPractices-PipelineBarrier-readToReadBarrier";
+static const char DECORATE_UNUSED *kVUID_BestPractices_Submission_ReduceNumberOfSubmissions =
+    "UNASSIGNED-BestPractices-Submission-ReduceNumberOfSubmissions";
+static const char DECORATE_UNUSED *kVUID_BestPractices_Pipeline_SortAndBind = "UNASSIGNED-BestPractices-Pipeline-SortAndBind";
+static const char DECORATE_UNUSED *kVUID_BestPractices_Pipeline_WorkPerPipelineChange =
+    "UNASSIGNED-BestPractices-Pipeline-WorkPerPipelineChange";
+static const char DECORATE_UNUSED *kVUID_BestPractices_SyncObjects_HighNumberOfFences =
+    "UNASSIGNED-BestPractices-SyncObjects-HighNumberOfFences";
+static const char DECORATE_UNUSED *kVUID_BestPractices_SyncObjects_HighNumberOfSemaphores =
+    "UNASSIGNED-BestPractices-SyncObjects-HighNumberOfSemaphores";
 
 #endif

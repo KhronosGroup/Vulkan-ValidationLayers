@@ -2856,6 +2856,7 @@ typedef enum ValidationCheckDisables {
 
 typedef enum ValidationCheckEnables {
     VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM,
+    VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD,
     VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL,
 } ValidationCheckEnables;
 
@@ -2889,6 +2890,7 @@ typedef enum EnableFlags {
     gpu_validation_reserve_binding_slot,
     best_practices,
     vendor_specific_arm,
+    vendor_specific_amd,
     debug_printf,
     sync_validation,
     // Insert new enables above this line

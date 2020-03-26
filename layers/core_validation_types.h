@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2020 Valve Corporation
  * Copyright (c) 2015-2020 LunarG, Inc.
  * Copyright (C) 2015-2020 Google Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +22,7 @@
  * Author: Mark Lobodzinski <mark@lunarg.com>
  * Author: Dave Houlton <daveh@lunarg.com>
  * Author: John Zulauf <jzulauf@lunarg.com>
+ * Author: Nadav Geva <nadav.geva@amd.com>
  */
 #ifndef CORE_VALIDATION_TYPES_H_
 #define CORE_VALIDATION_TYPES_H_
@@ -100,6 +102,8 @@ struct COMMAND_POOL_STATE : public BASE_NODE {
     bool unprotected;  // can't be used for protected memory
     // Cmd buffers allocated from this pool
     std::unordered_set<VkCommandBuffer> commandBuffers;
+
+    uint64_t sizeOfLargestCmdBufferUsed = 0;
 };
 
 // Utilities for barriers and the commmand pool
@@ -1256,6 +1260,8 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     bool hasBuildAccelerationStructureCmd;
     bool hasDispatchCmd;
     bool unprotected;  // can't be used for protected memory
+
+    std::vector<CMD_TYPE> commands_in_buffer;
 
     CB_STATE state;         // Track cmd buffer update state
     uint64_t commandCount;  // Number of commands recorded

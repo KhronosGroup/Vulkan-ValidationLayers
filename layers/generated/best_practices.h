@@ -86,14 +86,6 @@ void PostCallRecordEnumerateDeviceLayerProperties(
     VkResult                                    result);
 
 
-void PostCallRecordQueueSubmit(
-    VkQueue                                     queue,
-    uint32_t                                    submitCount,
-    const VkSubmitInfo*                         pSubmits,
-    VkFence                                     fence,
-    VkResult                                    result);
-
-
 void PostCallRecordQueueWaitIdle(
     VkQueue                                     queue,
     VkResult                                    result);
@@ -101,14 +93,6 @@ void PostCallRecordQueueWaitIdle(
 
 void PostCallRecordDeviceWaitIdle(
     VkDevice                                    device,
-    VkResult                                    result);
-
-
-void PostCallRecordAllocateMemory(
-    VkDevice                                    device,
-    const VkMemoryAllocateInfo*                 pAllocateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkDeviceMemory*                             pMemory,
     VkResult                                    result);
 
 
@@ -152,22 +136,6 @@ void PostCallRecordBindImageMemory(
     VkResult                                    result);
 
 
-void PostCallRecordQueueBindSparse(
-    VkQueue                                     queue,
-    uint32_t                                    bindInfoCount,
-    const VkBindSparseInfo*                     pBindInfo,
-    VkFence                                     fence,
-    VkResult                                    result);
-
-
-void PostCallRecordCreateFence(
-    VkDevice                                    device,
-    const VkFenceCreateInfo*                    pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkFence*                                    pFence,
-    VkResult                                    result);
-
-
 void PostCallRecordResetFences(
     VkDevice                                    device,
     uint32_t                                    fenceCount,
@@ -187,14 +155,6 @@ void PostCallRecordWaitForFences(
     const VkFence*                              pFences,
     VkBool32                                    waitAll,
     uint64_t                                    timeout,
-    VkResult                                    result);
-
-
-void PostCallRecordCreateSemaphore(
-    VkDevice                                    device,
-    const VkSemaphoreCreateInfo*                pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkSemaphore*                                pSemaphore,
     VkResult                                    result);
 
 
@@ -309,28 +269,6 @@ void PostCallRecordMergePipelineCaches(
     VkResult                                    result);
 
 
-void PostCallRecordCreateGraphicsPipelines(
-    VkDevice                                    device,
-    VkPipelineCache                             pipelineCache,
-    uint32_t                                    createInfoCount,
-    const VkGraphicsPipelineCreateInfo*         pCreateInfos,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines,
-    VkResult                                    result,
-    void*                                       state_data);
-
-
-void PostCallRecordCreateComputePipelines(
-    VkDevice                                    device,
-    VkPipelineCache                             pipelineCache,
-    uint32_t                                    createInfoCount,
-    const VkComputePipelineCreateInfo*          pCreateInfos,
-    const VkAllocationCallbacks*                pAllocator,
-    VkPipeline*                                 pPipelines,
-    VkResult                                    result,
-    void*                                       state_data);
-
-
 void PostCallRecordCreatePipelineLayout(
     VkDevice                                    device,
     const VkPipelineLayoutCreateInfo*           pCreateInfo,
@@ -412,11 +350,6 @@ void PostCallRecordAllocateCommandBuffers(
 void PostCallRecordBeginCommandBuffer(
     VkCommandBuffer                             commandBuffer,
     const VkCommandBufferBeginInfo*             pBeginInfo,
-    VkResult                                    result);
-
-
-void PostCallRecordEndCommandBuffer(
-    VkCommandBuffer                             commandBuffer,
     VkResult                                    result);
 
 
@@ -552,12 +485,6 @@ void PostCallRecordAcquireNextImageKHR(
     VkSemaphore                                 semaphore,
     VkFence                                     fence,
     uint32_t*                                   pImageIndex,
-    VkResult                                    result);
-
-
-void PostCallRecordQueuePresentKHR(
-    VkQueue                                     queue,
-    const VkPresentInfoKHR*                     pPresentInfo,
     VkResult                                    result);
 
 

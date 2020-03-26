@@ -1,6 +1,7 @@
 /* Copyright (c) 2015-2020 The Khronos Group Inc.
  * Copyright (c) 2015-2020 Valve Corporation
  * Copyright (c) 2015-2020 LunarG, Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +16,7 @@
  * limitations under the License.
  *
  * Author: Camden Stocker <camden@lunarg.com>
+ * Author: Nadav Geva <nadav.geva@amd.com>
  */
 
 #pragma once
@@ -37,6 +39,34 @@ static const VkDeviceSize kMinDeviceAllocationSize = 256 * 1024;
 // very large allocation.
 static const VkDeviceSize kMinDedicatedAllocationSize = 1024 * 1024;
 
+// AMD best practices
+// Note: These are initial ball park numbers for good performance
+// We expect to adjust them as we get more data on layer usage
+// Avoid small command buffers
+static const uint32_t kMinRecommendedCommandBufferSize = 10;
+// Avoid small secondary command buffers
+static const uint32_t kMinRecommendedDrawsInSecondaryCommandBufferSize = 10;
+// Idealy, only 1 fence per frame, so 3 for triple buffering
+static const uint32_t kMaxRecommendedFenceObjectsSize = 3;
+// Avoid excessive sempahores
+static const uint32_t kMaxRecommendedSemaphoreObjectsSize = 10;
+// Avoid excessive barriers
+static const uint32_t kMaxRecommendedBarriersSize = 500;
+// Avoid excessive pipelines
+static const uint32_t kMaxRecommendedNumberOfPSO = 5000;
+// Unlikely that the user needs all the dynamic states enabled at the same time, and they encur a cost
+static const uint32_t kDynamicStatesWarningLimit = 7;
+// Too many dynamic descriptor sets can cause a large pipeline layout
+static const uint32_t kPipelineLayoutSizeWarningLimit = 13;
+// Check that the user is submitting excessivly to a queue
+static const uint32_t kNumberOfSubmissionWarningLimit = 20;
+// Check that there is enough work per vertex stream change
+static const float kVertexStreamToDrawRatioWarningLimit = 0.8f;
+// Check that there is enough work per pipeline change
+static const float kDrawsPerPipelineRatioWarningLimit = 5.f;
+// Check that command buffers are used with an appropriatly sized pool
+static const float kCmdBufferToCmdPoolRatioWarningLimit = 0.1f;
+
 typedef enum {
     kExtPromoted,
     kExtObsoleted,
@@ -50,6 +80,7 @@ typedef struct {
 
 typedef enum {
     kBPVendorArm = 0x00000001,
+    kBPVendorAMD = 0x00000002,
 } BPVendorFlagBits;
 typedef VkFlags BPVendorFlags;
 
@@ -103,6 +134,8 @@ class BestPractices : public ValidationStateTracker {
     BestPractices() { container_type = LayerObjectTypeBestPractices; }
 
     std::string GetAPIVersionName(uint32_t version) const;
+
+    void InitDeviceValidationObject(bool add_obj, ValidationObject* inst_obj, ValidationObject* dev_obj);
 
     bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* caller) const;
 
@@ -338,12 +371,83 @@ class BestPractices : public ValidationStateTracker {
     void ManualPostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkDevice* pDevice, VkResult result);
 
+    void PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                               const VkGraphicsPipelineCreateInfo* pCreateInfos,
+                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
+                                               void* cgpl_state);
+    void PostCallRecordCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                              const VkComputePipelineCreateInfo* pCreateInfos,
+                                              const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, VkResult result,
+                                              void* pipe_state);
+    void PostCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
+                                          VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
+                                          uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                          uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                          uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers);
+    void PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, VkResult result);
+    void PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                              const VkGraphicsPipelineCreateInfo* pCreateInfos,
+                                              const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines, void* cgpl_state);    
+
+    void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
+                                   VkResult result);
+    void PostCallRecordCreateFence(VkDevice device, const VkFenceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                   VkFence* pFence, VkResult result);
+
+    void PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
+                                       const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore, VkResult result);
+    bool PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) const;
+    bool PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
+                                           const VkCommandBuffer* pCommandBuffers) const;
+
+    bool PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descriptorWriteCount,
+                                            const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
+                                            const VkCopyDescriptorSet* pDescriptorCopies) const;
+    bool PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
+                                                       const VkAllocationCallbacks* pAllocator,
+                                                       VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate) const;
+    bool PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                           const VkClearColorValue* pColor, uint32_t rangeCount,
+                                           const VkImageSubresourceRange* pRanges) const;
+
+    bool PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                  const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
+                                                  const VkImageSubresourceRange* pRanges) const;
+
+    bool PreCallValidateCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo* pCreateInfo,
+                                             const VkAllocationCallbacks* pAllocator, VkPipelineLayout* pPipelineLayout) const;
+
+    bool PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                     VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                     const VkImageCopy* pRegions) const;
+
+    bool PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                        VkPipeline pipeline) const;    
+
+    bool PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo) const;
+
+    bool PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
+                                        const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore) const;
+    bool PreCallValidateCreateFence(VkDevice device, const VkFenceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                    VkFence* pFence) const;
+
+
 // Include code-generated functions
 #include "best_practices.h"
 
   private:
     uint32_t instance_api_version = 0;
     uint32_t num_mem_objects = 0;
+
+    // AMD tracked
+    uint32_t num_fence_objects = 0;
+    uint32_t num_semaphore_objects = 0;
+    uint32_t num_barriers_objects = 0;
+    uint32_t num_pso = 0;
+    uint32_t num_queue_submissions = 0;
+    VkPipelineCache pipeline_cache = 0;
+    std::unordered_set<VkPipeline> pipelines_used_in_frame;
+    mutable bool robust_buffer_access = false;
 
     // Check that vendor-specific checks are enabled for at least one of the vendors
     bool VendorCheckEnabled(BPVendorFlags vendors) const;

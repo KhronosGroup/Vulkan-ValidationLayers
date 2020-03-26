@@ -273,6 +273,7 @@ class VkPositiveLayerTest : public VkLayerTest {
 class VkBestPracticesLayerTest : public VkLayerTest {
   public:
     void InitBestPracticesFramework();
+    void InitBestPracticesFramework(const char* ValidationChecksToEnable);
 
   protected:
     VkValidationFeatureEnableEXT enables_[1] = {VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT};
@@ -283,6 +284,7 @@ class VkBestPracticesLayerTest : public VkLayerTest {
 };
 
 class VkArmBestPracticesLayerTest : public VkBestPracticesLayerTest {};
+class VkAmdBestPracticesLayerTest : public VkBestPracticesLayerTest {};
 
 class VkWsiEnabledLayerTest : public VkLayerTest {
   public:

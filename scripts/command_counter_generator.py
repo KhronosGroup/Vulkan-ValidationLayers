@@ -19,6 +19,7 @@
 #
 # Author: Mark Lobodzinski <mark@lunarg.com>
 # Author: Lionel Landwerlin <lionel.g.landwerlin@intel.com>
+# Author: Nadav Geva <nadav.geva@amd.com>
 
 import os,re,sys
 import xml.etree.ElementTree as etree
@@ -126,6 +127,7 @@ class CommandCounterOutputGenerator(OutputGenerator):
         copyright += ' *\n'
         copyright += ' * Author: Mark Lobodzinski <mark@lunarg.com>\n'
         copyright += ' * Author: Lionel Landwerlin <lionel.g.landwerlin@intel.com>\n'
+        copyright += ' * Author: Nadav Geva <nadav.geva@amd.com>\n'        
         copyright += ' */\n'
         write(copyright, file=self.outFile)
     #
@@ -153,7 +155,7 @@ class CommandCounterOutputGenerator(OutputGenerator):
         params = cmdinfo.elem.findall('param')
         info = self.getTypeNameTuple(params[0])
         if name.startswith('vkCmd') and info[0] == 'VkCommandBuffer':
-            self.dispatch_list.append((self.featureExtraProtect, name, cmdinfo))
+            self.dispatch_list.append((self.featureExtraProtect, name, cmdinfo, alias))
 
     #
     # Retrieve the type and name for a parameter
@@ -181,13 +183,20 @@ class CommandCounterOutputGenerator(OutputGenerator):
         for item in entries:
             # Remove 'vk' from proto name
             base_name = item[1][2:]
+            # name in CMD enum, removes vkCmd and replaces with CMD_
+            alias = item[3]
+            if alias is not None:
+                enum_name = "CMD_" + alias[5:].upper()
+            else:
+                enum_name = "CMD_" + base_name[3:].upper()
 
             if item[0] is not None:
                 table += '#ifdef %s\n' % item[0]
             params = item[2].elem.findall('param')
             paramstext = ', '.join([''.join(param.itertext()) for param in params])
             table += 'void CommandCounter::PreCallRecord%s(%s) {\n' % (base_name, paramstext)
-            table += '    coreChecks->IncrementCommandCount(%s);\n' % params[0].findall('name')[0].text
+            table += '    trackerObject->IncrementCommandCount(%s);\n' % params[0].findall('name')[0].text
+            table += '    trackerObject->RecordIntoCommandList(%s, %s);\n' % (params[0].findall('name')[0].text, enum_name)
             table += '}\n'
             if item[0] is not None:
                 table += '#endif // %s\n' % item[0]

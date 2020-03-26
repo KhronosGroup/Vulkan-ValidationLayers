@@ -3,6 +3,7 @@
  * Copyright (c) 2015-2020 Valve Corporation
  * Copyright (c) 2015-2020 LunarG, Inc.
  * Copyright (c) 2015-2020 Google, Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -11,15 +12,21 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Author: Camden Stocker <camden@lunarg.com>
+ * Author: Nadav Geva <nadav.geva@amd.com>
  */
 
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
 
 void VkBestPracticesLayerTest::InitBestPracticesFramework() {
-    // Enable all vendor-specific checks
+    // Enable all vendor-specific checks    
+    InitBestPracticesFramework("VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL");    
+}
+
+void VkBestPracticesLayerTest::InitBestPracticesFramework(const char* VendorChecksToEnable) {
+    // Enable the vendor-specific checks spcified by VendorChecksToEnable
     VkLayerSettingValueDataEXT bp_setting_string_value{};
-    bp_setting_string_value.arrayString.pCharArray = "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL";
+    bp_setting_string_value.arrayString.pCharArray = VendorChecksToEnable;
     bp_setting_string_value.arrayString.count = sizeof(bp_setting_string_value.arrayString.pCharArray);
     VkLayerSettingValueEXT bp_vendor_all_setting_val = {"enables", VK_LAYER_SETTING_VALUE_TYPE_STRING_ARRAY_EXT,
                                                         bp_setting_string_value};
@@ -260,6 +267,7 @@ TEST_F(VkBestPracticesLayerTest, VtxBufferBadIndex) {
     // This test may also trigger other warnings
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation");
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkBindMemory-small-dedicated-allocation");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-VkCommandBuffer-AvoidTinyCmdBuffers");
 
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -530,6 +538,8 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation");
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkBindMemory-small-dedicated-allocation");
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkBindImageMemory-non-lazy-transient-image");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-VkCommandBuffer-AvoidTinyCmdBuffers");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkImage-AvoidGeneral");
 
     VkAttachmentDescription attachment{};
     attachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -596,6 +606,7 @@ TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {
     // This test may also trigger the small allocation warnings
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation");
     m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkBindMemory-small-dedicated-allocation");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-VkCommandBuffer-AvoidTinyCmdBuffers");
 
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
@@ -794,3 +805,4 @@ TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {
     vk::CreateDevice(phys_device_obj.handle(), &device_ci, nullptr, &device);
     m_errorMonitor->VerifyFound();
 }
+

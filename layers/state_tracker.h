@@ -2,6 +2,7 @@
  * Copyright (c) 2015-2020 Valve Corporation
  * Copyright (c) 2015-2020 LunarG, Inc.
  * Copyright (C) 2015-2020 Google Inc.
+ * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +21,7 @@
  * Author: Chris Forbes <chrisf@ijw.co.nz>
  * Author: Mark Lobodzinski <mark@lunarg.com>
  * Author: Dave Houlton <daveh@lunarg.com>
+ * Author: Nadav Geva <nadav.geva@amd.com>
  */
 
 #pragma once
@@ -563,6 +565,17 @@ class ValidationStateTracker : public ValidationObject {
     const COMMAND_POOL_STATE* GetCommandPoolState(VkCommandPool pool) const { return Get<COMMAND_POOL_STATE>(pool); }
     COMMAND_POOL_STATE* GetCommandPoolState(VkCommandPool pool) { return Get<COMMAND_POOL_STATE>(pool); }
 
+    // Tracks the number of commands recorded in a command buffer.
+    void IncrementCommandCount(VkCommandBuffer commandBuffer) {
+        CMD_BUFFER_STATE* cb_state = GetCBState(commandBuffer);
+        cb_state->commandCount++;
+    }
+
+    void RecordIntoCommandList(VkCommandBuffer commandBuffer, CMD_TYPE cmdType) {
+        CMD_BUFFER_STATE* cb_state = GetCBState(commandBuffer);
+        cb_state->commands_in_buffer.push_back(cmdType);
+    }
+    
     std::shared_ptr<const PIPELINE_LAYOUT_STATE> GetPipelineLayoutShared(VkPipelineLayout pipeLayout) const {
         return GetShared<PIPELINE_LAYOUT_STATE>(pipeLayout);
     }
