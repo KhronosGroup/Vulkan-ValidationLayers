@@ -6368,7 +6368,7 @@ struct safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL {
     VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL const *ptr() const { return reinterpret_cast<VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL const *>(this); }
 };
 
-struct safe_VkPerformanceValueDataINTEL {
+union safe_VkPerformanceValueDataINTEL {
     uint32_t value32;
     uint64_t value64;
     float valueFloat;
@@ -7379,7 +7379,7 @@ struct safe_VkDeviceDiagnosticsConfigCreateInfoNV {
 };
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkDeviceOrHostAddressKHR {
+union safe_VkDeviceOrHostAddressKHR {
     VkDeviceAddress deviceAddress;
     void* hostAddress;
     safe_VkDeviceOrHostAddressKHR(const VkDeviceOrHostAddressKHR* in_struct);
@@ -7395,7 +7395,7 @@ struct safe_VkDeviceOrHostAddressKHR {
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-struct safe_VkDeviceOrHostAddressConstKHR {
+union safe_VkDeviceOrHostAddressConstKHR {
     VkDeviceAddress deviceAddress;
     const void* hostAddress;
     safe_VkDeviceOrHostAddressConstKHR(const VkDeviceOrHostAddressConstKHR* in_struct);

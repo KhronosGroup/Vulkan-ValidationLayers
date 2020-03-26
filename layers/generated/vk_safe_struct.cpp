@@ -27411,13 +27411,9 @@ void safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL::initialize(const
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
-safe_VkPerformanceValueDataINTEL::safe_VkPerformanceValueDataINTEL(const VkPerformanceValueDataINTEL* in_struct) :
-    value32(in_struct->value32),
-    value64(in_struct->value64),
-    valueFloat(in_struct->valueFloat),
-    valueBool(in_struct->valueBool)
+safe_VkPerformanceValueDataINTEL::safe_VkPerformanceValueDataINTEL(const VkPerformanceValueDataINTEL* in_struct)
 {
-    valueString = SafeStringCopy(in_struct->valueString);
+    initialize(in_struct);
 }
 
 safe_VkPerformanceValueDataINTEL::safe_VkPerformanceValueDataINTEL() :
@@ -31381,10 +31377,9 @@ void safe_VkDeviceDiagnosticsConfigCreateInfoNV::initialize(const safe_VkDeviceD
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 
-safe_VkDeviceOrHostAddressKHR::safe_VkDeviceOrHostAddressKHR(const VkDeviceOrHostAddressKHR* in_struct) :
-    deviceAddress(in_struct->deviceAddress),
-    hostAddress(in_struct->hostAddress)
+safe_VkDeviceOrHostAddressKHR::safe_VkDeviceOrHostAddressKHR(const VkDeviceOrHostAddressKHR* in_struct)
 {
+    initialize(in_struct);
 }
 
 safe_VkDeviceOrHostAddressKHR::safe_VkDeviceOrHostAddressKHR() :
@@ -31428,10 +31423,9 @@ void safe_VkDeviceOrHostAddressKHR::initialize(const safe_VkDeviceOrHostAddressK
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 
-safe_VkDeviceOrHostAddressConstKHR::safe_VkDeviceOrHostAddressConstKHR(const VkDeviceOrHostAddressConstKHR* in_struct) :
-    deviceAddress(in_struct->deviceAddress),
-    hostAddress(in_struct->hostAddress)
+safe_VkDeviceOrHostAddressConstKHR::safe_VkDeviceOrHostAddressConstKHR(const VkDeviceOrHostAddressConstKHR* in_struct)
 {
+    initialize(in_struct);
 }
 
 safe_VkDeviceOrHostAddressConstKHR::safe_VkDeviceOrHostAddressConstKHR() :
