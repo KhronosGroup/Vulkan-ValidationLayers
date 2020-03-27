@@ -27,10 +27,10 @@ static const VkShaderStageFlags kShaderStageAllRayTracing =
     VK_SHADER_STAGE_ANY_HIT_BIT_NV | VK_SHADER_STAGE_CALLABLE_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV |
     VK_SHADER_STAGE_INTERSECTION_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV | VK_SHADER_STAGE_RAYGEN_BIT_NV;
 
-// Convenience function for reporting problems with setting up GPU Validation.
+// Convenience function for reporting problems with setting up Debug Printf.
 template <typename T>
 void DebugPrintf::ReportSetupProblem(T object, const char *const specific_message) const {
-    LogError(object, "UNASSIGNED-Debug Shader Printf Error. ", "Detail: (%s)", specific_message);
+    LogError(object, "UNASSIGNED-DEBUG-PRINTF ", "Detail: (%s)", specific_message);
 }
 
 // Turn on necessary device features.
@@ -523,24 +523,25 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
                                       pipeline_handle, pipeline_bind_point, operation_index, common_message);
             UtilGenerateSourceMessages(pgm, &debug_output_buffer[index], true, filename_message, source_message);
             if (use_stdout) {
-                std::cout << "UNASSIGNED-GPU-PRINTF Debug Printf " << common_message.c_str() << " " << stage_message.c_str() << " "
+                std::cout << "UNASSIGNED-DEBUG-PRINTF " << common_message.c_str() << " " << stage_message.c_str() << " "
                           << shader_message.str().c_str() << " " << filename_message.c_str() << " " << source_message.c_str();
             } else {
-                LogError(queue, "UNASSIGNED-GPU-PRINTF Debug Printf", "%s %s %s %s%s", common_message.c_str(),
-                         stage_message.c_str(), shader_message.str().c_str(), filename_message.c_str(), source_message.c_str());
+                LogInfo(queue, "UNASSIGNED-DEBUG-PRINTF", "%s %s %s %s%s", common_message.c_str(), stage_message.c_str(),
+                        shader_message.str().c_str(), filename_message.c_str(), source_message.c_str());
             }
         } else {
-            if (use_stdout)
+            if (use_stdout) {
                 std::cout << shader_message.str();
-            else
-                SendStringToCallback(report_data->debug_callback_list, shader_message.str());
+            } else {
+                // Don't let LogInfo process any '%'s in the string
+                LogInfo(device, "UNASSIGNED-DEBUG-PRINTF", "%s", shader_message.str().c_str());
+            }
         }
         index += debug_record->size;
     }
     if ((index - 1) != expect) {
-        SendStringToCallback(
-            report_data->debug_callback_list,
-            "WARNING - Debug Printf message was truncated, likely due to a buffer size that was too small for the message");
+        LogWarning(device, "UNASSIGNED-DEBUG-PRINTF",
+                   "WARNING - Debug Printf message was truncated, likely due to a buffer size that was too small for the message");
     }
     memset(debug_output_buffer, 0, 4 * (debug_output_buffer[0] + 1));
 }
@@ -548,33 +549,6 @@ void DebugPrintf::AnalyzeAndGenerateMessages(VkCommandBuffer command_buffer, VkQ
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
-
-void DebugPrintf::SendStringToCallback(std::vector<VkLayerDbgFunctionState> debug_callback_list, std::string shader_message) {
-    // We only output to default callbacks if there are no non-default callbacks
-    bool use_default_callbacks = true;
-    for (auto current_callback : debug_callback_list) {
-        use_default_callbacks &= current_callback.IsDefault();
-    }
-
-    for (auto current_callback : debug_callback_list) {
-        // Skip callback if it's a default callback and there are non-default callbacks present
-        if (current_callback.IsDefault() && !use_default_callbacks) continue;
-
-        if (current_callback.IsUtils() && current_callback.debug_utils_callback_function_ptr) {
-            VkDebugUtilsMessengerCallbackDataEXT callback_data = {};
-            callback_data.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT;
-            callback_data.pMessageIdName = "Debug Printf";
-            callback_data.pMessage = shader_message.c_str();
-            current_callback.debug_utils_callback_function_ptr(VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT,
-                                                               VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT, &callback_data,
-                                                               current_callback.pUserData);
-        } else if (!current_callback.IsUtils() && current_callback.debug_report_callback_function_ptr) {
-            current_callback.debug_report_callback_function_ptr(VK_DEBUG_REPORT_DEBUG_BIT_EXT,
-                                                                VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT, 0, 0, 0,
-                                                                "Debug Printf", shader_message.c_str(), current_callback.pUserData);
-        }
-    }
-}
 
 // Issue a memory barrier to make GPU-written data available to host.
 // Wait for the queue to complete execution.
