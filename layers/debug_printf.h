@@ -206,5 +206,4 @@ class DebugPrintf : public ValidationStateTracker {
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                    VkResult result);
     void AllocateDebugPrintfResources(const VkCommandBuffer cmd_buffer, const VkPipelineBindPoint bind_point);
-    void SendStringToCallback(std::vector<VkLayerDbgFunctionState> debug_callback_list, std::string shader_message);
 };
