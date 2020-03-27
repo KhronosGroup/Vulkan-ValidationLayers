@@ -67,7 +67,7 @@ a good reason is "This violates the style guide, but it improves type safety."
     * There are `.clang-format` files present in the repository to define clang-format settings
       which are found and used automatically by clang-format.
 	* **clang-format** binaries are available from the LLVM orginization, here: [LLVM](https://clang.llvm.org/). Our CI system (Travis-CI)
-	  currently uses clang-format version 5.0.0 to check that the lines of code you have changed are formatted properly. It is
+	  currently uses clang-format version 7.0.0 to check that the lines of code you have changed are formatted properly. It is
 	  recommended that you use the same version to format your code prior to submission.
     * A sample git workflow may look like:
 
