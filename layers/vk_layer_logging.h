@@ -80,7 +80,7 @@ typedef enum DebugCallbackStatusBits {
 } DebugCallbackStatusBits;
 typedef VkFlags DebugCallbackStatusFlags;
 
-typedef struct {
+typedef struct VkLayerDbgFunctionState {
     DebugCallbackStatusFlags callback_status;
 
     // Debug report related information
