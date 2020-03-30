@@ -1722,6 +1722,18 @@ void ValidationStateTracker::PreCallRecordFreeMemory(VkDevice device, VkDeviceMe
         }
 
         if (bindable_state) {
+            // Remove any sparse bindings bound to the resource that use this memory.
+            for (auto it = bindable_state->sparse_bindings.begin(); it != bindable_state->sparse_bindings.end();) {
+                auto nextit = it;
+                nextit++;
+
+                auto &sparse_mem_binding = *it;
+                if (sparse_mem_binding.mem_state.get() == mem_info) {
+                    bindable_state->sparse_bindings.erase(it);
+                }
+
+                it = nextit;
+            }
             bindable_state->UpdateBoundMemorySet();
         }
     }
