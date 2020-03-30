@@ -413,7 +413,9 @@ public:
 #else   // DISTINCT_NONDISPATCHABLE_HANDLES
           c_uint64_t("NON_DISPATCHABLE_HANDLE", kVulkanObjectTypeUnknown, this)
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
-              {};
+    {
+        container_type = LayerObjectTypeThreading;
+    };
 
 #define WRAPPER(type)                                                \
     void StartWriteObject(type object, const char *api_name) {       \

@@ -20,7 +20,7 @@
 
 class CommandCounter : public ValidationObject {
   public:
-    CommandCounter(CoreChecks *coreChecks) : coreChecks(coreChecks) {}
+    CommandCounter(CoreChecks *coreChecks) : coreChecks(coreChecks) { container_type = LayerObjectTypeCommandCounter; }
     virtual ~CommandCounter() {}
 
     virtual write_lock_guard_t write_lock() { return coreChecks->write_lock(); }

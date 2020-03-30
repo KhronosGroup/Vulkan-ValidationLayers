@@ -93,6 +93,8 @@ class GpuAssisted : public ValidationStateTracker {
     GpuAssistedAccelerationStructureBuildValidationState acceleration_structure_validation_state;
 
   public:
+    GpuAssisted() { container_type = LayerObjectTypeGpuAssisted; }
+
     bool aborted = false;
     VkDevice device;
     VkPhysicalDevice physicalDevice;
