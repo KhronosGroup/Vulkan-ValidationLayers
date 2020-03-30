@@ -3536,6 +3536,122 @@ TEST_F(VkPositiveLayerTest, BindSparse) {
     m_errorMonitor->VerifyNotFound();
 }
 
+// This is a positive test. No failures are expected.
+TEST_F(VkPositiveLayerTest, BindSparseFreeMemory) {
+    TEST_DESCRIPTION("Test using a sparse image after freeing memory that was bound to it.");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    auto index = m_device->graphics_queue_node_index_;
+    if (!(m_device->queue_props[index].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)) {
+        printf("%s Graphics queue does not have sparse binding bit.\n", kSkipPrefix);
+        return;
+    }
+    if (!m_device->phy().features().sparseResidencyImage2D) {
+        printf("%s Device does not support sparseResidencyImage2D.\n", kSkipPrefix);
+        return;
+    }
+
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+
+    VkImage image;
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = NULL;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
+    image_create_info.extent.width = 512;
+    image_create_info.extent.height = 512;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
+    VkResult err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
+    ASSERT_VK_SUCCESS(err);
+
+    VkMemoryRequirements memory_reqs;
+    VkDeviceMemory memory;
+
+    VkMemoryAllocateInfo memory_info = {};
+    memory_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memory_info.pNext = NULL;
+    memory_info.allocationSize = 0;
+    memory_info.memoryTypeIndex = 0;
+    vk::GetImageMemoryRequirements(m_device->device(), image, &memory_reqs);
+    memory_info.allocationSize = memory_reqs.size;
+    bool pass = m_device->phy().set_memory_type(memory_reqs.memoryTypeBits, &memory_info, 0);
+    ASSERT_TRUE(pass);
+
+    err = vk::AllocateMemory(m_device->device(), &memory_info, NULL, &memory);
+    ASSERT_VK_SUCCESS(err);
+
+    VkSparseMemoryBind bind;
+    bind.flags = 0;
+    bind.memory = memory;
+    bind.memoryOffset = 0;
+    bind.resourceOffset = 0;
+    bind.size = memory_info.allocationSize;
+
+    VkSparseImageOpaqueMemoryBindInfo opaqueBindInfo;
+    opaqueBindInfo.image = image;
+    opaqueBindInfo.bindCount = 1;
+    opaqueBindInfo.pBinds = &bind;
+
+    VkFence fence = VK_NULL_HANDLE;
+    VkBindSparseInfo bindSparseInfo = {};
+    bindSparseInfo.sType = VK_STRUCTURE_TYPE_BIND_SPARSE_INFO;
+    bindSparseInfo.imageOpaqueBindCount = 1;
+    bindSparseInfo.pImageOpaqueBinds = &opaqueBindInfo;
+
+    // Bind to the memory
+    vk::QueueBindSparse(m_device->m_queue, 1, &bindSparseInfo, fence);
+
+    // Bind back to NULL
+    bind.memory = VK_NULL_HANDLE;
+    vk::QueueBindSparse(m_device->m_queue, 1, &bindSparseInfo, fence);
+
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    // Free the memory, then use the image in a new command buffer
+    vk::FreeMemory(m_device->device(), memory, NULL);
+
+    m_commandBuffer->begin();
+
+    auto img_barrier = lvl_init_struct<VkImageMemoryBarrier>();
+    img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    img_barrier.image = image;
+    img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    img_barrier.subresourceRange.baseArrayLayer = 0;
+    img_barrier.subresourceRange.baseMipLevel = 0;
+    img_barrier.subresourceRange.layerCount = 1;
+    img_barrier.subresourceRange.levelCount = 1;
+    vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
+                           nullptr, 0, nullptr, 1, &img_barrier);
+
+    const VkClearColorValue clear_color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+    VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    vk::CmdClearColorImage(m_commandBuffer->handle(), image, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &range);
+    m_commandBuffer->end();
+
+    VkSubmitInfo submit_info{};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &m_commandBuffer->handle();
+    submit_info.signalSemaphoreCount = 0;
+    submit_info.pSignalSemaphores = nullptr;
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueWaitIdle(m_device->m_queue);
+
+    vk::DestroyImage(m_device->device(), image, NULL);
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkPositiveLayerTest, BindSparseMetadata) {
     TEST_DESCRIPTION("Bind memory for the metadata aspect of a sparse image");
 
