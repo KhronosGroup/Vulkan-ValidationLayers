@@ -3441,7 +3441,7 @@ QueryState ValidationStateTracker::GetQueryState(const QueryMap *localQueryToSta
                                                  uint32_t queryIndex) const {
     QueryObject query = {queryPool, queryIndex};
 
-    const std::array<const decltype(queryToStateMap) *, 2> map_list = {localQueryToStateMap, &queryToStateMap};
+    const std::array<const decltype(queryToStateMap) *, 2> map_list = {{localQueryToStateMap, &queryToStateMap}};
 
     for (const auto map : map_list) {
         auto query_data = map->find(query);
