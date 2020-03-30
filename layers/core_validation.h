@@ -49,6 +49,8 @@ class CoreChecks : public ValidationStateTracker {
     GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> qfo_release_buffer_barrier_map;
     GlobalImageLayoutMap imageLayoutMap;
 
+    CoreChecks() { container_type = LayerObjectTypeCoreValidation; }
+
     void IncrementCommandCount(VkCommandBuffer commandBuffer);
 
     bool VerifyQueueStateToSeq(const QUEUE_STATE* initial_queue, uint64_t initial_seq) const;

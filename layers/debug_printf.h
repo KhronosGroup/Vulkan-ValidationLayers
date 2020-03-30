@@ -75,6 +75,8 @@ class DebugPrintf : public ValidationStateTracker {
     uint32_t output_buffer_size;
 
   public:
+    DebugPrintf() { container_type = LayerObjectTypeDebugPrintf; }
+
     bool aborted = false;
     bool verbose = false;
     bool use_stdout = false;

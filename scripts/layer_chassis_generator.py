@@ -263,6 +263,7 @@ enum LayerObjectTypeId {
     LayerObjectTypeBestPractices,               // Instance or device best practices layer object
     LayerObjectTypeGpuAssisted,                 // Instance or device gpu assisted validation layer object
     LayerObjectTypeDebugPrintf,                 // Instance or device shader debug printf layer object
+    LayerObjectTypeCommandCounter,              // Command Counter validation object, child of corechecks
     LayerObjectTypeMaxEnum,                     // Max enum count
 };
 

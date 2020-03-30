@@ -66,6 +66,8 @@ class BestPractices : public ValidationStateTracker {
   public:
     using StateTracker = ValidationStateTracker;
 
+    BestPractices() { container_type = LayerObjectTypeBestPractices; }
+
     std::string GetAPIVersionName(uint32_t version) const;
 
     bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* caller) const;
