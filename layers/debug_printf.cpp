@@ -311,8 +311,8 @@ vartype vartype_lookup(char intype) {
     }
 }
 
-std::vector<DPFSubstring> DebugPrintf::ParseFormatString(std::string format_string) {
-    const char types[] = {'d', 'i', 'o', 'u', 'x', 'X', 'a', 'A', 'e', 'E', 'f', 'F', 'g', 'G', 'v'};
+std::vector<DPFSubstring> DebugPrintf::ParseFormatString(const std::string format_string) {
+    const char types[] = {'d', 'i', 'o', 'u', 'x', 'X', 'a', 'A', 'e', 'E', 'f', 'F', 'g', 'G', 'v', '\0'};
     std::vector<DPFSubstring> parsed_strings;
     size_t pos = 0;
     size_t begin = 0;
