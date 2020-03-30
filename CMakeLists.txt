@@ -45,6 +45,15 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 find_package(PythonInterp 3 QUIET)
 
+if(TARGET gtest OR IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/googletest)
+    option(BUILD_TESTS "Build tests" ON)
+else()
+    option(BUILD_TESTS "Build tests" OFF)
+endif()
+
+# Add the externals directory early so we pickup the headers if they're present
+add_subdirectory(external)
+
 if (TARGET Vulkan::Headers)
     message(STATUS "Using Vulkan headers from Vulkan::Headers target")
     get_target_property(VulkanHeaders_INCLUDE_DIRS Vulkan::Headers INTERFACE_INCLUDE_DIRECTORIES)
@@ -148,12 +157,6 @@ elseif(MSVC)
     add_compile_options("/w34057")
     # Warn about signed/unsigned mismatch.
     add_compile_options("/w34245")
-endif()
-
-if(TARGET gtest OR IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/googletest)
-    option(BUILD_TESTS "Build tests" ON)
-else()
-    option(BUILD_TESTS "Build tests" OFF)
 endif()
 
 option(INSTALL_TESTS "Install tests" OFF)
@@ -357,7 +360,6 @@ endif()
 
 # Add subprojects ----------------------------------------------------------------------------------------------------------------
 
-add_subdirectory(external)
 if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()

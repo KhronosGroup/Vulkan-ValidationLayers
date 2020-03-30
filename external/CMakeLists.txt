@@ -43,3 +43,19 @@ if(BUILD_TESTS)
                            "Provide Google Test in external/googletest or set BUILD_TESTS=OFF")
     endif()
 endif()
+
+if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Vulkan-Headers")
+  add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Vulkan-Headers")
+endif()
+
+if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/SPIRV-Headers")
+  add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/SPIRV-Headers")
+endif()
+
+if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/SPIRV-Tools")
+  add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/SPIRV-Tools")
+endif()
+
+if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/GLSLang")
+  add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/GLSLang")
+endif()
