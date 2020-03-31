@@ -990,3 +990,107 @@ TEST_F(VkArmBestPracticesLayerTest, PostTransformVertexCacheThrashingIndicesTest
     m_errorMonitor->VerifyNotFound();
     best_ibo.memory().unmap();
 }
+
+TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
+    InitBestPracticesFramework();
+    InitState();
+    InitRenderTarget();
+
+    VkAttachmentDescription attachment{};
+    attachment.samples = VK_SAMPLE_COUNT_4_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkRenderPassCreateInfo rp_info{};
+    rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    rp_info.attachmentCount = 1;
+    rp_info.pAttachments = &attachment;
+    rp_info.pNext = nullptr;
+
+    VkRenderPass rp = VK_NULL_HANDLE;
+    vk::CreateRenderPass(m_device->device(), &rp_info, nullptr, &rp);
+
+    // set up pipelines
+
+    VkPipelineColorBlendAttachmentState color_write_off = {};
+    VkPipelineColorBlendAttachmentState color_write_on = {};
+    color_write_on.colorWriteMask = 0xF;
+
+    VkPipelineColorBlendStateCreateInfo cb_depth_only_ci = {};
+    cb_depth_only_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    cb_depth_only_ci.attachmentCount = 1;
+    cb_depth_only_ci.pAttachments = &color_write_off;
+
+    VkPipelineColorBlendStateCreateInfo cb_depth_equal_ci = {};
+    cb_depth_equal_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    cb_depth_equal_ci.attachmentCount = 1;
+    cb_depth_equal_ci.pAttachments = &color_write_on;
+
+    VkPipelineDepthStencilStateCreateInfo ds_depth_only_ci = {};
+    ds_depth_only_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    ds_depth_only_ci.depthTestEnable = VK_TRUE;
+    ds_depth_only_ci.depthWriteEnable = VK_TRUE;
+    ds_depth_only_ci.depthCompareOp = VK_COMPARE_OP_LESS;
+
+    VkPipelineDepthStencilStateCreateInfo ds_depth_equal_ci = {};
+    ds_depth_equal_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    ds_depth_equal_ci.depthTestEnable = VK_TRUE;
+    ds_depth_equal_ci.depthWriteEnable = VK_FALSE;
+    ds_depth_equal_ci.depthCompareOp = VK_COMPARE_OP_EQUAL;
+
+    CreatePipelineHelper pipe_depth_only(*this);
+    pipe_depth_only.InitInfo();
+    pipe_depth_only.gp_ci_.pColorBlendState = &cb_depth_only_ci;
+    pipe_depth_only.gp_ci_.pDepthStencilState = &ds_depth_only_ci;
+    pipe_depth_only.InitState();
+    pipe_depth_only.CreateGraphicsPipeline();
+
+    CreatePipelineHelper pipe_depth_equal(*this);
+    pipe_depth_equal.InitInfo();
+    pipe_depth_equal.gp_ci_.pColorBlendState = &cb_depth_equal_ci;
+    pipe_depth_equal.gp_ci_.pDepthStencilState = &ds_depth_equal_ci;
+    pipe_depth_equal.InitState();
+    pipe_depth_equal.CreateGraphicsPipeline();
+
+    // create a simple index buffer
+
+    std::vector<uint32_t> indices = {};
+    indices.resize(3);
+
+    VkConstantBufferObj ibo(m_device, sizeof(uint32_t) * indices.size(), indices.data(), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BindIndexBuffer(&ibo, 0, VK_INDEX_TYPE_UINT32);
+
+    // record a command buffer which doesn't use enough depth pre-passes or geometry to matter
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_depth_only.pipeline_);
+    for (size_t i = 0; i < 30; i++) m_commandBuffer->DrawIndexed(indices.size(), 10, 0, 0, 0);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_depth_equal.pipeline_);
+    for (size_t i = 0; i < 30; i++) m_commandBuffer->DrawIndexed(indices.size(), 10, 0, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+
+    m_errorMonitor->VerifyNotFound();
+
+    // record a command buffer which records a significant number of depth pre-passes
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
+                                         "UNASSIGNED-BestPractices-vkCmdEndRenderPass-depth-pre-pass-usage");
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_depth_only.pipeline_);
+    for (size_t i = 0; i < 30; i++) m_commandBuffer->DrawIndexed(indices.size(), 1000, 0, 0, 0);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_depth_equal.pipeline_);
+    for (size_t i = 0; i < 30; i++) m_commandBuffer->DrawIndexed(indices.size(), 1000, 0, 0, 0);
+
+    m_commandBuffer->EndRenderPass();
+
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
