@@ -174,12 +174,14 @@ RangeEncoder::RangeEncoder(const VkImageSubresourceRange& full_range, const Aspe
     PopulateFunctionPointers();
 }
 
+#ifndef NDEBUG
 static bool IsValid(const RangeEncoder& encoder, const VkImageSubresourceRange& bounds) {
     const auto& limits = encoder.Limits();
     return (((bounds.aspectMask & limits.aspectMask) == bounds.aspectMask) &&
             (bounds.baseMipLevel + bounds.levelCount <= limits.mipLevel) &&
             (bounds.baseArrayLayer + bounds.layerCount <= limits.arrayLayer));
 }
+#endif  // NDEBUG
 
 // Create an iterator like "generator" that for each increment produces the next index range matching the
 // next contiguous (in index space) section of the VkImageSubresourceRange
