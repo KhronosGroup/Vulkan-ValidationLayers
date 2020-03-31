@@ -7626,8 +7626,8 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageCopyBufferToImage) {
     image.ImageMemoryBarrier(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_ACCESS_TRANSFER_WRITE_BIT,
                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-    std::array<VkImageAspectFlagBits, 3> aspects = {VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT,
-                                                    VK_IMAGE_ASPECT_PLANE_2_BIT};
+    std::array<VkImageAspectFlagBits, 3> aspects = {
+        {VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT, VK_IMAGE_ASPECT_PLANE_2_BIT}};
     std::array<VkBufferObj, 3> buffers;
     VkMemoryPropertyFlags reqs = 0;
 
@@ -8566,7 +8566,7 @@ TEST_F(VkPositiveLayerTest, TransferImageToSwapchainDeviceGroup) {
 
     auto bind_devicegroup_info = lvl_init_struct<VkBindImageMemoryDeviceGroupInfo>();
     bind_devicegroup_info.deviceIndexCount = 2;
-    std::array<uint32_t, 2> deviceIndices = {0, 0};
+    std::array<uint32_t, 2> deviceIndices = {{0, 0}};
     bind_devicegroup_info.pDeviceIndices = deviceIndices.data();
     bind_devicegroup_info.splitInstanceBindRegionCount = 0;
     bind_devicegroup_info.pSplitInstanceBindRegions = nullptr;
@@ -8947,7 +8947,7 @@ TEST_F(VkPositiveLayerTest, SubpassWithReadOnlyLayoutWithoutDependency) {
                                           VK_IMAGE_LAYOUT_UNDEFINED,
                                           VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL};
     const int size = 2;
-    std::array<VkAttachmentDescription, size> attachments = {attachment, attachment};
+    std::array<VkAttachmentDescription, size> attachments = {{attachment, attachment}};
 
     VkAttachmentReference att_ref_depth_stencil = {0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL};
 
@@ -8980,7 +8980,7 @@ TEST_F(VkPositiveLayerTest, SubpassWithReadOnlyLayoutWithoutDependency) {
     VkImageView view;
     err = vk::CreateImageView(m_device->device(), &ivci, nullptr, &view);
     ASSERT_VK_SUCCESS(err);
-    std::array<VkImageView, size> views = {view, view};
+    std::array<VkImageView, size> views = {{view, view}};
 
     VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, size, views.data(), 32, 32, 1};
     VkFramebuffer fb;
@@ -9756,7 +9756,7 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
 
     auto bind_devicegroup_info = lvl_init_struct<VkBindImageMemoryDeviceGroupInfo>();
     bind_devicegroup_info.deviceIndexCount = 2;
-    std::array<uint32_t, 2> deviceIndices = {0, 0};
+    std::array<uint32_t, 2> deviceIndices = {{0, 0}};
     bind_devicegroup_info.pDeviceIndices = deviceIndices.data();
     bind_devicegroup_info.splitInstanceBindRegionCount = 0;
     bind_devicegroup_info.pSplitInstanceBindRegions = nullptr;
