@@ -1221,6 +1221,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceInlineUniformBlockFeaturesEXT inline_uniform_block;
     VkPhysicalDeviceTransformFeedbackFeaturesEXT transform_feedback_features;
     VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vtx_attrib_divisor_features;
+    VkPhysicalDeviceBufferDeviceAddressFeaturesEXT buffer_device_address_ext;
     VkPhysicalDeviceCooperativeMatrixFeaturesNV cooperative_matrix_features;
     VkPhysicalDeviceComputeShaderDerivativesFeaturesNV compute_shader_derivatives_features;
     VkPhysicalDeviceFragmentShaderBarycentricFeaturesNV fragment_shader_barycentric_features;

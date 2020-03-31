@@ -10638,12 +10638,13 @@ bool CoreChecks::ValidateGetBufferDeviceAddress(VkDevice device, const VkBufferD
                                                 const char *apiName) const {
     bool skip = false;
 
-    if (!enabled_features.core12.bufferDeviceAddress) {
+    if (!enabled_features.core12.bufferDeviceAddress && !enabled_features.buffer_device_address_ext.bufferDeviceAddress) {
         skip |= LogError(pInfo->buffer, "VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324",
                          "The bufferDeviceAddress feature must: be enabled.");
     }
 
-    if (physical_device_count > 1 && !enabled_features.core12.bufferDeviceAddressMultiDevice) {
+    if (physical_device_count > 1 && !enabled_features.core12.bufferDeviceAddressMultiDevice &&
+        !enabled_features.buffer_device_address_ext.bufferDeviceAddressMultiDevice) {
         skip |= LogError(pInfo->buffer, "VUID-vkGetBufferDeviceAddress-device-03325",
                          "If device was created with multiple physical devices, then the "
                          "bufferDeviceAddressMultiDevice feature must: be enabled.");
