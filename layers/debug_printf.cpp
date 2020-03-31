@@ -405,8 +405,9 @@ std::string DebugPrintf::FindFormatString(std::vector<unsigned int> pgm, uint32_
     return format_string;
 }
 
-// GCC doesn't like using variables as format strings in sprintf
-#if defined(__GNUC__)
+// GCC and clang don't like using variables as format strings in sprintf.
+// #pragma GCC is recognized by both compilers
+#if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
