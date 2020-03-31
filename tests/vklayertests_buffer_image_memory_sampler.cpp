@@ -7892,7 +7892,22 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
     vkGetBufferDeviceAddressEXT(m_device->device(), &info);
     m_errorMonitor->VerifyFound();
 
+    VkMemoryRequirements buffer_mem_reqs = {};
+    vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
+    VkMemoryAllocateInfo buffer_alloc_info = {};
+    buffer_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    buffer_alloc_info.allocationSize = buffer_mem_reqs.size;
+    m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0);
+    VkDeviceMemory buffer_mem;
+    err = vk::AllocateMemory(m_device->device(), &buffer_alloc_info, NULL, &buffer_mem);
+    ASSERT_VK_SUCCESS(err);
+
+    m_errorMonitor->ExpectSuccess();
+    vk::BindBufferMemory(m_device->device(), buffer, buffer_mem, 0);
+
+    vk::FreeMemory(m_device->device(), buffer_mem, NULL);
     vk::DestroyBuffer(m_device->device(), buffer, NULL);
+    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
