@@ -63,6 +63,7 @@ endif()
 set(LIBGLM_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/libs)
 
 set(COMMON_CPP
+    vklayertests_instanceless.cpp
     vklayertests_pipeline_shader.cpp
     vklayertests_buffer_image_memory_sampler.cpp
     vklayertests_others.cpp
