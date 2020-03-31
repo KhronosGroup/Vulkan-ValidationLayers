@@ -380,7 +380,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         self.valid_usage_path = genOpts.valid_usage_path
         vu_json_filename = os.path.join(self.valid_usage_path + os.sep, 'validusage.json')
         if os.path.isfile(vu_json_filename):
-            json_file = open(vu_json_filename, 'r')
+            json_file = open(vu_json_filename, 'r', encoding='utf-8')
             self.vuid_dict = json.load(json_file)
             json_file.close()
         if len(self.vuid_dict) == 0:

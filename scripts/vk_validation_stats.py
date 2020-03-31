@@ -282,7 +282,7 @@ class ValidationSource:
         prepend = None
         for sf in self.source_files:
             line_num = 0
-            with open(sf) as f:
+            with open(sf, encoding='utf-8') as f:
                 for line in f:
                     line_num = line_num + 1
                     if True in [line.strip().startswith(comment) for comment in ['//', '/*']]:
