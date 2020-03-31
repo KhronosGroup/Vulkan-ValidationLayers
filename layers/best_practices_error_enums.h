@@ -132,5 +132,7 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_CreatePipelines_DepthBias
     "UNASSIGNED-BestPractices-vkCreatePipelines-depthbias-zero";
 static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_RobustBufferAccess =
     "UNASSIGNED-BestPractices-vkCreateDevice-RobustBufferAccess";
+static const char DECORATE_UNUSED *kVUID_BestPractices_EndRenderPass_DepthPrePassUsage =
+    "UNASSIGNED-BestPractices-vkCmdEndRenderPass-depth-pre-pass-usage";
 
 #endif
