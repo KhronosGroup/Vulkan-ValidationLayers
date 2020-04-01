@@ -445,56 +445,28 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     // Create temporary dispatch vector for pre-calls until instance is created
     std::vector<ValidationObject*> local_object_dispatch;
+
     // Add VOs to dispatch vector. Order here will be the validation dispatch order!
     auto thread_checker = new ThreadSafety(nullptr);
-    if (!local_disables.thread_safety) {
-        local_object_dispatch.emplace_back(thread_checker);
-    }
-    thread_checker->container_type = LayerObjectTypeThreading;
-    thread_checker->api_version = api_version;
-    thread_checker->report_data = report_data;
+    thread_checker->RegisterValidationObject(!local_disables.thread_safety, api_version, report_data, local_object_dispatch);
+
     auto parameter_validation = new StatelessValidation;
-    if (!local_disables.stateless_checks) {
-        local_object_dispatch.emplace_back(parameter_validation);
-    }
-    parameter_validation->container_type = LayerObjectTypeParameterValidation;
-    parameter_validation->api_version = api_version;
-    parameter_validation->report_data = report_data;
+    parameter_validation->RegisterValidationObject(!local_disables.stateless_checks, api_version, report_data, local_object_dispatch);
+
     auto object_tracker = new ObjectLifetimes;
-    if (!local_disables.object_tracking) {
-        local_object_dispatch.emplace_back(object_tracker);
-    }
-    object_tracker->container_type = LayerObjectTypeObjectTracker;
-    object_tracker->api_version = api_version;
-    object_tracker->report_data = report_data;
+    object_tracker->RegisterValidationObject(!local_disables.object_tracking, api_version, report_data, local_object_dispatch);
+
     auto core_checks = new CoreChecks;
-    if (!local_disables.core_checks) {
-        local_object_dispatch.emplace_back(core_checks);
-    }
-    core_checks->container_type = LayerObjectTypeCoreValidation;
-    core_checks->api_version = api_version;
-    core_checks->report_data = report_data;
+    core_checks->RegisterValidationObject(!local_disables.core_checks, api_version, report_data, local_object_dispatch);
+
     auto best_practices = new BestPractices;
-    if (local_enables.best_practices) {
-        local_object_dispatch.emplace_back(best_practices);
-    }
-    best_practices->container_type = LayerObjectTypeBestPractices;
-    best_practices->api_version = api_version;
-    best_practices->report_data = report_data;
+    best_practices->RegisterValidationObject(local_enables.best_practices, api_version, report_data, local_object_dispatch);
+
     auto gpu_assisted = new GpuAssisted;
-    if (local_enables.gpu_validation) {
-        local_object_dispatch.emplace_back(gpu_assisted);
-    }
-    gpu_assisted->container_type = LayerObjectTypeGpuAssisted;
-    gpu_assisted->api_version = api_version;
-    gpu_assisted->report_data = report_data;
+    gpu_assisted->RegisterValidationObject(local_enables.gpu_validation, api_version, report_data, local_object_dispatch);
+
     auto debug_printf = new DebugPrintf;
-    if (local_enables.debug_printf) {
-        local_object_dispatch.emplace_back(debug_printf);
-    }
-    debug_printf->container_type = LayerObjectTypeDebugPrintf;
-    debug_printf->api_version = api_version;
-    debug_printf->report_data = report_data;
+    debug_printf->RegisterValidationObject(local_enables.debug_printf, api_version, report_data, local_object_dispatch);
 
     // If handle wrapping is disabled via the ValidationFeatures extension, override build flag
     if (local_disables.handle_wrapping) {
@@ -527,29 +499,15 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     layer_debug_messenger_actions(framework->report_data, pAllocator, OBJECT_LAYER_DESCRIPTION);
 
-    object_tracker->instance_dispatch_table = framework->instance_dispatch_table;
-    object_tracker->enabled = framework->enabled;
-    object_tracker->disabled = framework->disabled;
-    thread_checker->instance_dispatch_table = framework->instance_dispatch_table;
-    thread_checker->enabled = framework->enabled;
-    thread_checker->disabled = framework->disabled;
-    parameter_validation->instance_dispatch_table = framework->instance_dispatch_table;
-    parameter_validation->enabled = framework->enabled;
-    parameter_validation->disabled = framework->disabled;
-    core_checks->instance_dispatch_table = framework->instance_dispatch_table;
+    thread_checker->FinalizeInstanceValidationObject(framework);
+    object_tracker->FinalizeInstanceValidationObject(framework);
+    parameter_validation->FinalizeInstanceValidationObject(framework);
+    core_checks->FinalizeInstanceValidationObject(framework);
     core_checks->instance = *pInstance;
-    core_checks->enabled = framework->enabled;
-    core_checks->disabled = framework->disabled;
     core_checks->instance_state = core_checks;
-    best_practices->instance_dispatch_table = framework->instance_dispatch_table;
-    best_practices->enabled = framework->enabled;
-    best_practices->disabled = framework->disabled;
-    gpu_assisted->instance_dispatch_table = framework->instance_dispatch_table;
-    gpu_assisted->enabled = framework->enabled;
-    gpu_assisted->disabled = framework->disabled;
-    debug_printf->instance_dispatch_table = framework->instance_dispatch_table;
-    debug_printf->enabled = framework->enabled;
-    debug_printf->disabled = framework->disabled;
+    best_practices->FinalizeInstanceValidationObject(framework);
+    gpu_assisted->FinalizeInstanceValidationObject(framework);
+    debug_printf->FinalizeInstanceValidationObject(framework);
 
     for (auto intercept : framework->object_dispatch) {
         intercept->PostCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance, result);
