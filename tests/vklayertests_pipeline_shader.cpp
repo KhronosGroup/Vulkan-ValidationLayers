@@ -394,7 +394,7 @@ TEST_F(VkLayerTest, BuiltinBlockOrderMismatchVsGs) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    if (!m_device->phy().features().geometryShader) {
+    if (!m_device->phy().features().geometryShader || !m_device->phy().features().shaderTessellationAndGeometryPointSize) {
         printf("%s Device does not support geometry shaders; Skipped.\n", kSkipPrefix);
         return;
     }
@@ -486,7 +486,7 @@ TEST_F(VkLayerTest, BuiltinBlockSizeMismatchVsGs) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    if (!m_device->phy().features().geometryShader) {
+    if (!m_device->phy().features().geometryShader || !m_device->phy().features().shaderTessellationAndGeometryPointSize) {
         printf("%s Device does not support geometry shaders; Skipped.\n", kSkipPrefix);
         return;
     }

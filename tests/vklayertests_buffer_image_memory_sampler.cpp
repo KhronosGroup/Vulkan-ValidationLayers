@@ -4578,6 +4578,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
 
 TEST_F(VkLayerTest, InvalidBarrierQueueFamily) {
     TEST_DESCRIPTION("Create and submit barriers with invalid queue families");
+    SetTargetApiVersion(VK_API_VERSION_1_0);
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
     // Find queues of two families
@@ -4592,7 +4593,7 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamily) {
     }
     BarrierQueueFamilyTestHelper::Context test_context(this, qf_indices);
 
-    if (m_device->props.apiVersion >= VK_API_VERSION_1_1) {
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
         printf(
             "%s Device has apiVersion greater than 1.0 -- skipping test cases that require external memory "
             "to be "

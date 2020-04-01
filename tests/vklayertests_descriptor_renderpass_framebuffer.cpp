@@ -4284,12 +4284,13 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
 TEST_F(VkLayerTest, AllocDescriptorFromEmptyPool) {
     TEST_DESCRIPTION("Attempt to allocate more sets and descriptors than descriptor pool has available.");
     VkResult err;
+    SetTargetApiVersion(VK_API_VERSION_1_0);
 
     ASSERT_NO_FATAL_FAILURE(Init());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // This test is valid for Vulkan 1.0 only -- skip if device has an API version greater than 1.0.
-    if (m_device->props.apiVersion >= VK_API_VERSION_1_1) {
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
         printf("%s Device has apiVersion greater than 1.0 -- skipping Descriptor Set checks.\n", kSkipPrefix);
         return;
     }
