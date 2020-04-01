@@ -62,6 +62,7 @@ if(BUILD_LAYER_SUPPORT_FILES)
         vk_layer_utils.cpp
         vk_loader_platform.h
         xxhash.h
+        xxhash.c
         generated/vk_validation_error_messages.h
         generated/vk_layer_dispatch_table.h
         generated/vk_dispatch_table_helper.h
