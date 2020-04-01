@@ -8303,6 +8303,57 @@ TEST_F(VkLayerTest, CreateImageMaxLimitsViolation) {
     }
 }
 
+TEST_F(VkLayerTest, SamplerImageViewFormatUnsupportedFilter) {
+    TEST_DESCRIPTION(
+        "Create sampler with a filter and use with image view using a format that does not support the sampler filter.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    VkImageTiling nonlinear_format_tiling = VK_IMAGE_TILING_LINEAR;
+    VkImageTiling noncubic_format_tiling = VK_IMAGE_TILING_LINEAR;
+    VkFormat nonlinear_format = VK_FORMAT_UNDEFINED;
+    VkFormat noncubic_format = VK_FORMAT_UNDEFINED;
+    for (uint32_t i = VK_FORMAT_R4G4_UNORM_PACK8; i <= VK_FORMAT_ASTC_12x12_SRGB_BLOCK; i++) {
+        VkFormatProperties props = {};
+        vk::GetPhysicalDeviceFormatProperties(gpu(), static_cast<VkFormat>(i), &props);
+        if (nonlinear_format == VK_FORMAT_UNDEFINED && props.linearTilingFeatures != 0 &&
+            !(props.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
+            nonlinear_format = static_cast<VkFormat>(i);
+        } else if (nonlinear_format == VK_FORMAT_UNDEFINED && props.optimalTilingFeatures != 0 &&
+                   !(props.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
+            nonlinear_format = static_cast<VkFormat>(i);
+            nonlinear_format_tiling = VK_IMAGE_TILING_OPTIMAL;
+        }
+
+        if (noncubic_format == VK_FORMAT_UNDEFINED && props.linearTilingFeatures != 0 &&
+            !(props.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT)) {
+            noncubic_format = static_cast<VkFormat>(i);
+        } else if (noncubic_format == VK_FORMAT_UNDEFINED && props.optimalTilingFeatures != 0 &&
+                   !(props.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT)) {
+            noncubic_format = static_cast<VkFormat>(i);
+            noncubic_format_tiling = VK_IMAGE_TILING_OPTIMAL;
+        }
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkImageCreateInfo ci = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                            nullptr,
+                            0,
+                            VK_IMAGE_TYPE_2D,
+                            nonlinear_format,
+                            {128, 128, 1},
+                            1,
+                            1,
+                            VK_SAMPLE_COUNT_1_BIT,
+                            nonlinear_format_tiling,
+                            VK_IMAGE_USAGE_SAMPLED_BIT,
+                            VK_SHARING_MODE_EXCLUSIVE,
+                            VK_IMAGE_LAYOUT_UNDEFINED};
+}
+
 TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     TEST_DESCRIPTION(
         "Create sampler with ycbcr conversion and use with an image created without ycrcb conversion or immutable sampler");
