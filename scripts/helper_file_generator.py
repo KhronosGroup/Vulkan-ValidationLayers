@@ -418,7 +418,7 @@ class HelperFileOutputGenerator(OutputGenerator):
     def GenerateEnumStringHelperHeader(self):
             enum_string_helper_header = '\n'
             enum_string_helper_header += '#pragma once\n'
-            enum_string_helper_header += '#ifdef _WIN32\n'
+            enum_string_helper_header += '#ifdef _MSC_VER\n'
             enum_string_helper_header += '#pragma warning( disable : 4065 )\n'
             enum_string_helper_header += '#endif\n'
             enum_string_helper_header += '\n'
