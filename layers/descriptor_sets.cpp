@@ -713,6 +713,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
     using ImageSamplerDescriptor = cvdescriptorset::ImageSamplerDescriptor;
     using SamplerDescriptor = cvdescriptorset::SamplerDescriptor;
     using TexelDescriptor = cvdescriptorset::TexelDescriptor;
+    using AccelerationStructureDescriptor = cvdescriptorset::AccelerationStructureDescriptor;
     DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(), binding);
     {
         // Copy the range, the end range is subject to update based on variable length descriptor arrays.
@@ -901,6 +902,30 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                   << string_VkFormat(buffer_view_state->create_info.format) << ".";
                         *error = error_str.str();
                         return false;
+                    }
+                } else if (descriptor_class == DescriptorClass::AccelerationStructure) {
+                    // Verify that acceleration structures are valid
+                    auto acc = static_cast<const AccelerationStructureDescriptor *>(descriptor)->GetAccelerationStructure();
+                    auto acc_node =
+                        static_cast<const AccelerationStructureDescriptor *>(descriptor)->GetAccelerationStructureState();
+                    if (!acc_node || acc_node->destroyed) {
+                        std::stringstream error_str;
+                        error_str << "Descriptor in binding #" << binding << " index " << index
+                                  << " is using acceleration structure " << report_data->FormatHandle(acc).c_str()
+                                  << " that is invalid or has been destroyed.";
+                        *error = error_str.str();
+                        return false;
+                    } else {
+                        for (auto mem_binding : acc_node->GetBoundMemory()) {
+                            if (mem_binding->destroyed) {
+                                std::stringstream error_str;
+                                error_str << "Descriptor in binding #" << binding << " index " << index
+                                          << " uses acceleration structure " << acc << " that references invalid memory "
+                                          << mem_binding->mem << ".";
+                                *error = error_str.str();
+                                return false;
+                            }
+                        }
                     }
                 }
                 if (descriptor_class == DescriptorClass::ImageSampler || descriptor_class == DescriptorClass::PlainSampler) {
@@ -1774,6 +1799,33 @@ void cvdescriptorset::TexelDescriptor::UpdateDrawState(ValidationStateTracker *d
     }
 }
 
+cvdescriptorset::AccelerationStructureDescriptor::AccelerationStructureDescriptor(const VkDescriptorType type)
+    : acc_(VK_NULL_HANDLE) {
+    updated = false;
+    descriptor_class = AccelerationStructure;
+}
+void cvdescriptorset::AccelerationStructureDescriptor::WriteUpdate(const ValidationStateTracker *dev_data,
+                                                                   const VkWriteDescriptorSet *update, const uint32_t index) {
+    const auto *accInfo = lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureKHR>(update->pNext);
+
+    updated = true;
+    acc_ = accInfo->pAccelerationStructures[index];
+    acc_state_ = dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE>(acc_);
+}
+
+void cvdescriptorset::AccelerationStructureDescriptor::CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *src) {
+    auto acc_desc = static_cast<const AccelerationStructureDescriptor *>(src);
+    updated = true;
+    acc_ = acc_desc->acc_;
+    acc_state_ = dev_data->GetConstCastShared<ACCELERATION_STRUCTURE_STATE>(acc_);
+}
+
+void cvdescriptorset::AccelerationStructureDescriptor::UpdateDrawState(ValidationStateTracker *dev_data,
+                                                                       CMD_BUFFER_STATE *cb_node) {
+    auto acc_node = GetAccelerationStructureState();
+    if (acc_node) dev_data->AddCommandBufferBindingAccelerationStructure(cb_node, acc_node);
+}
+
 // This is a helper function that iterates over a set of Write and Copy updates, pulls the DescriptorSet* for updated
 //  sets, and then calls their respective Validate[Write|Copy]Update functions.
 // If the update hits an issue for which the callback returns "true", meaning that the call down the chain should
@@ -2108,6 +2160,21 @@ bool CoreChecks::ValidateBufferUpdate(VkDescriptorBufferInfo const *buffer_info,
     }
     return true;
 }
+
+bool CoreChecks::ValidateAccelerationStructureUpdate(VkAccelerationStructureKHR acc, const char *func_name, std::string *error_code,
+                                                     std::string *error_msg) const {
+    // First make sure that acceleration structure is valid
+    auto acc_node = GetAccelerationStructureState(acc);
+    // Any invalid acc struct should already be caught by object_tracker
+    assert(acc_node);
+    if (ValidateMemoryIsBoundToAccelerationStructure(acc_node, func_name, kVUIDUndefined)) {
+        *error_code = kVUIDUndefined;
+        *error_msg = "No memory bound to acceleration structure.";
+        return false;
+    }
+    return true;
+}
+
 // Verify that the contents of the update are ok, but don't perform actual update
 bool CoreChecks::VerifyCopyUpdateContents(const VkCopyDescriptorSet *update, const DescriptorSet *src_set,
                                           VkDescriptorType src_type, uint32_t src_index, const DescriptorSet *dst_set,
@@ -2723,9 +2790,19 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
         }
         case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT:
             break;
-        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV:
-            // XXX TODO
-            break;
+        case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV: {
+            const auto *accInfo = lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureKHR>(update->pNext);
+            for (uint32_t di = 0; di < update->descriptorCount; ++di) {
+                if (!ValidateAccelerationStructureUpdate(accInfo->pAccelerationStructures[di], func_name, error_code, error_msg)) {
+                    std::stringstream error_str;
+                    error_str << "Attempted write update to acceleration structure descriptor failed due to: "
+                              << error_msg->c_str();
+                    *error_msg = error_str.str();
+                    return false;
+                }
+            }
+
+        } break;
         default:
             assert(0);  // We've already verified update type so should never get here
             break;

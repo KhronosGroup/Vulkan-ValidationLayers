@@ -612,9 +612,15 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordSignalSemaphoreKHR(VkDevice device, const VkSemaphoreSignalInfoKHR* pSignalInfo, VkResult result);
 
     // Create/Destroy/Bind
+    void PostCallRecordBindAccelerationStructureMemoryCommon(VkDevice device, uint32_t bindInfoCount,
+                                                             const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos,
+                                                             VkResult result, bool isNV);
     void PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                          const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
                                                          VkResult result);
+    void PostCallRecordBindAccelerationStructureMemoryKHR(VkDevice device, uint32_t bindInfoCount,
+                                                          const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos,
+                                                          VkResult result);
     void PostCallRecordBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset,
                                         VkResult result);
     void PostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfoKHR* pBindInfos,
@@ -637,6 +643,13 @@ class ValidationStateTracker : public ValidationObject {
                                                      VkAccelerationStructureNV* pAccelerationStructure, VkResult result);
     void PreCallRecordDestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
                                                      const VkAllocationCallbacks* pAllocator);
+
+    void PostCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
+                                                      const VkAllocationCallbacks* pAllocator,
+                                                      VkAccelerationStructureKHR* pAccelerationStructure, VkResult result);
+    void PreCallRecordDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
+                                                      const VkAllocationCallbacks* pAllocator);
+
     void PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                     VkBuffer* pBuffer, VkResult result);
     void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator);

@@ -255,7 +255,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDepthStencilResolve(const VkPhysicalDeviceVulkan12Properties& core12_props,
                                      const VkRenderPassCreateInfo2* pCreateInfo) const;
 
-    bool ValidateBindAccelerationStructureMemoryNV(VkDevice device, const VkBindAccelerationStructureMemoryInfoNV& info) const;
+    bool ValidateBindAccelerationStructureMemory(VkDevice device, const VkBindAccelerationStructureMemoryInfoKHR& info) const;
     // Prototypes for CoreChecks accessor functions
     VkFormatProperties GetPDFormatProperties(const VkFormat format) const;
     const VkPhysicalDeviceMemoryProperties* GetPhysicalDeviceMemoryProperties();
@@ -342,6 +342,8 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateSampler(VkSampler) const;
     bool ValidateBufferUpdate(VkDescriptorBufferInfo const* buffer_info, VkDescriptorType type, const char* func_name,
                               std::string* error_code, std::string* error_msg) const;
+    bool ValidateAccelerationStructureUpdate(VkAccelerationStructureKHR acc, const char* func_name, std::string* error_code,
+                                             std::string* error_msg) const;
     bool ValidateUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet, const TEMPLATE_STATE* template_state,
                                                      const void* pData) const;
     bool ValidateAllocateDescriptorSets(const VkDescriptorSetAllocateInfo*,
@@ -838,6 +840,8 @@ class CoreChecks : public ValidationStateTracker {
                                                       VkAccelerationStructureNV* pAccelerationStructure) const;
     bool PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                           const VkBindAccelerationStructureMemoryInfoNV* pBindInfos) const;
+    bool PreCallValidateBindAccelerationStructureMemoryKHR(VkDevice device, uint32_t bindInfoCount,
+                                                           const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos) const;
     bool PreCallValidateGetAccelerationStructureHandleNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
                                                          size_t dataSize, void* pData) const;
     bool PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
@@ -848,6 +852,8 @@ class CoreChecks : public ValidationStateTracker {
                                                        VkAccelerationStructureNV src, VkCopyAccelerationStructureModeNV mode) const;
     bool PreCallValidateDestroyAccelerationStructureNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
                                                        const VkAllocationCallbacks* pAllocator) const;
+    bool PreCallValidateDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure,
+                                                        const VkAllocationCallbacks* pAllocator) const;
     bool PreCallValidateCmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth) const;
     bool PreCallValidateCmdSetLineStippleEXT(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
                                              uint16_t lineStipplePattern) const;
