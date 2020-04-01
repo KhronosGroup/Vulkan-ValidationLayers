@@ -2767,6 +2767,21 @@ class ValidationObject {
             return write_lock_guard_t(validation_object_mutex);
         }
 
+        void RegisterValidationObject(bool vo_enabled, uint32_t instance_api_version,
+            debug_report_data* instance_report_data, std::vector<ValidationObject*> &dispatch_list) {
+            if (vo_enabled) {
+                api_version = instance_api_version;
+                report_data = instance_report_data;
+                dispatch_list.emplace_back(this);
+            }
+        }
+
+        void FinalizeInstanceValidationObject(ValidationObject *framework) {
+            instance_dispatch_table = framework->instance_dispatch_table;
+            enabled = framework->enabled;
+            disabled = framework->disabled;
+        }
+
         ValidationObject* GetValidationObject(std::vector<ValidationObject*>& object_dispatch, LayerObjectTypeId object_type) {
             for (auto validation_object : object_dispatch) {
                 if (validation_object->container_type == object_type) {
