@@ -45,7 +45,7 @@
 #include <vulkan/vk_sdk_platform.h>
 #include <vulkan/vulkan.h>
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #pragma warning(push)
 /*
     warnings 4251 and 4275 have to do with potential dll-interface mismatch
@@ -78,7 +78,7 @@
 #pragma pop_macro("None")
 #endif
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #pragma warning(pop)
 #endif
 #include "vktestbinding.h"
