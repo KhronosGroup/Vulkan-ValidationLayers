@@ -32,6 +32,7 @@ import platform
 import re
 import sys
 import time
+import unicodedata
 from collections import defaultdict
 
 verbose_mode = False
@@ -193,15 +194,42 @@ class ValidationJSON:
         self.regex_dict[re.compile(r'\\\(\\lceil{\\frac{maxFramebufferWidth}{minFragmentDensityTexelSize_{width}}}\\rceil\\\)')] = "the ceiling of maxFramebufferWidth/minFragmentDensityTexelSize.width"
         self.regex_dict[re.compile(r'\\\(\\lceil\{\\mathit\{rasterizationSamples} \\over 32}\\rceil\\\)')] = "(rasterizationSamples/32)"
         self.regex_dict[re.compile(r'\\\(\\textrm\{codeSize} \\over 4\\\)')] = "(codeSize/4)"
-        self.regex_dict[re.compile('\u00b4')] = "'"         # Handle acute accent
-        self.regex_dict[re.compile('\u2032')] = "'"         # Handle prime
-        self.regex_dict[re.compile('"')] = '\\"'            # Handle \"
-        # Some fancy punctuation chars that break the Android build...
-        self.regex_dict[re.compile('&#8594;')] = "->"       # Arrow char
-        self.regex_dict[re.compile('&#8217;')] = "'"        # Left-slanting apostrophe to apostrophe
-        self.regex_dict[re.compile('&#822(0|1);')] = "'"    # L/R-slanting quotes to apostrophe
-        self.regex_dict[re.compile('&#8203;')] = ""          # Zero width space
-        self.regex_dict[re.compile('&#8230;')] = "..."       # Horizontal ellipsis
+
+        # Regular expression for characters outside ascii range
+        self.unicode_regex = re.compile('[^\x00-\x7f]')
+        # Mapping from unicode char to ascii approximation
+        self.unicode_dict = {
+            '\u002b' : '+',  # PLUS SIGN
+            '\u00b4' : "'",  # ACUTE ACCENT
+            '\u200b' : '',   # ZERO WIDTH SPACE
+            '\u2018' : "'",  # LEFT SINGLE QUOTATION MARK
+            '\u2019' : "'",  # RIGHT SINGLE QUOTATION MARK
+            '\u201c' : '"',  # LEFT DOUBLE QUOTATION MARK
+            '\u201d' : '"',  # RIGHT DOUBLE QUOTATION MARK
+            '\u2026' : '...',# HORIZONTAL ELLIPSIS
+            '\u2032' : "'",  # PRIME
+            '\u2192' : '->', # RIGHTWARDS ARROW
+        }
+
+    def sanitize(self, text, location):
+        # Strip leading/trailing whitespace
+        text = text.strip()
+        # Apply regex text substitutions
+        for regex, replacement in self.regex_dict.items():
+            text = re.sub(regex, replacement, text)
+        # Un-escape html entity codes, ie &#XXXX;
+        text = html.unescape(text)
+        # Apply unicode substitutions
+        for unicode in self.unicode_regex.findall(text):
+            try:
+                # Replace known chars
+                text = text.replace(unicode, self.unicode_dict[unicode])
+            except KeyError:
+                # Strip and warn on unrecognized chars
+                text = text.replace(unicode, '')
+                name = unicodedata.name(unicode, 'UNKNOWN')
+                print('Warning: Unknown unicode character \\u{:04x} ({}) at {}'.format(ord(unicode), name, location))
+        return text
 
     def read(self):
         self.json_dict = {}
@@ -222,7 +250,6 @@ class ValidationJSON:
 
         # Parse vuid from json into local databases
         for apiname in validation.keys():
-            # print("entrypoint:%s"%apiname)
             apidict = validation[apiname]
             for ext in apidict.keys():
                 vlist = apidict[ext]
@@ -234,10 +261,7 @@ class ValidationJSON:
                     else:
                         self.implicit_vuids.add(vuid_string)    # otherwise, implicit
                         vtype = 'implicit'
-                    vuid_text = ventry['text']
-                    for regex, replacement in self.regex_dict.items():
-                        vuid_text = re.sub(regex, replacement, vuid_text)   # do regex substitution
-                    vuid_text = html.unescape(vuid_text)                    # anything missed by the regex
+                    vuid_text = self.sanitize(ventry['text'], vuid_string)
                     self.vuid_db[vuid_string].append({'api':apiname, 'ext':ext, 'type':vtype, 'text':vuid_text})
         self.all_vuids = self.explicit_vuids | self.implicit_vuids
         self.duplicate_vuids = set({v for v in self.vuid_db if len(self.vuid_db[v]) > 1})
@@ -257,8 +281,8 @@ def buildKvuidDict():
                     continue
 
                 if 'kVUID_' in line:
-                    kvuid_pos = line.find('kVUID_'); assert(kvuid_pos >= 0);
-                    eq_pos = line.find('=', kvuid_pos);
+                    kvuid_pos = line.find('kVUID_'); assert(kvuid_pos >= 0)
+                    eq_pos = line.find('=', kvuid_pos)
                     if eq_pos >= 0:
                         kvuid = line[kvuid_pos:eq_pos].strip(' \t\n;"')
                         unassigned_str = line[eq_pos+1:].strip(' \t\n;"')
@@ -713,7 +737,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
                 elif spec_list[0]['khr']: spec_url = self.spec_url_khr % (spec_list[0]['version'], vuid)
                 else: spec_url = self.spec_url_core % (spec_list[0]['version'], vuid)
 
-                db_text = db_entry['text'].strip(' ')
+                # Escape quotes when generating C strings for source code
+                db_text = db_entry['text'].replace('"', '\\"')
                 hfile.write('    {"%s", "%s (%s)"},\n' % (vuid, db_text, spec_url))
                 # For multiply-defined VUIDs, include versions with extension appended
                 if len(self.vj.vuid_db[vuid]) > 1:
