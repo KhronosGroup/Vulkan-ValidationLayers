@@ -3013,6 +3013,41 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevic
     accelerationStructureMap[*pAccelerationStructure] = std::move(as_state);
 }
 
+void ValidationStateTracker::PostCallRecordCreateAccelerationStructureKHR(VkDevice device,
+                                                                          const VkAccelerationStructureCreateInfoKHR *pCreateInfo,
+                                                                          const VkAllocationCallbacks *pAllocator,
+                                                                          VkAccelerationStructureKHR *pAccelerationStructure,
+                                                                          VkResult result) {
+    if (VK_SUCCESS != result) return;
+    auto as_state = std::make_shared<ACCELERATION_STRUCTURE_STATE>(*pAccelerationStructure, pCreateInfo);
+
+    // Query the requirements in case the application doesn't (to avoid bind/validation time query)
+    VkAccelerationStructureMemoryRequirementsInfoKHR as_memory_requirements_info = {};
+    as_memory_requirements_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR;
+    as_memory_requirements_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_KHR;
+    as_memory_requirements_info.buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR;
+    as_memory_requirements_info.accelerationStructure = as_state->acceleration_structure;
+    DispatchGetAccelerationStructureMemoryRequirementsKHR(device, &as_memory_requirements_info, &as_state->memory_requirements);
+
+    VkAccelerationStructureMemoryRequirementsInfoKHR scratch_memory_req_info = {};
+    scratch_memory_req_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR;
+    scratch_memory_req_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR;
+    scratch_memory_req_info.buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR;
+    scratch_memory_req_info.accelerationStructure = as_state->acceleration_structure;
+    DispatchGetAccelerationStructureMemoryRequirementsKHR(device, &scratch_memory_req_info,
+                                                          &as_state->build_scratch_memory_requirements);
+
+    VkAccelerationStructureMemoryRequirementsInfoKHR update_memory_req_info = {};
+    update_memory_req_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR;
+    update_memory_req_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_KHR;
+    update_memory_req_info.buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR;
+    update_memory_req_info.accelerationStructure = as_state->acceleration_structure;
+    DispatchGetAccelerationStructureMemoryRequirementsKHR(device, &update_memory_req_info,
+                                                          &as_state->update_scratch_memory_requirements);
+
+    accelerationStructureMap[*pAccelerationStructure] = std::move(as_state);
+}
+
 void ValidationStateTracker::PostCallRecordGetAccelerationStructureMemoryRequirementsNV(
     VkDevice device, const VkAccelerationStructureMemoryRequirementsInfoNV *pInfo, VkMemoryRequirements2KHR *pMemoryRequirements) {
     ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureState(pInfo->accelerationStructure);
@@ -3030,11 +3065,12 @@ void ValidationStateTracker::PostCallRecordGetAccelerationStructureMemoryRequire
     }
 }
 
-void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(
-    VkDevice device, uint32_t bindInfoCount, const VkBindAccelerationStructureMemoryInfoNV *pBindInfos, VkResult result) {
+void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryCommon(
+    VkDevice device, uint32_t bindInfoCount, const VkBindAccelerationStructureMemoryInfoKHR *pBindInfos, VkResult result,
+    bool isNV) {
     if (VK_SUCCESS != result) return;
     for (uint32_t i = 0; i < bindInfoCount; i++) {
-        const VkBindAccelerationStructureMemoryInfoNV &info = pBindInfos[i];
+        const VkBindAccelerationStructureMemoryInfoKHR &info = pBindInfos[i];
 
         ACCELERATION_STRUCTURE_STATE *as_state = GetAccelerationStructureState(info.accelerationStructure);
         if (as_state) {
@@ -3046,14 +3082,25 @@ void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(
             }
             // Track objects tied to memory
             SetMemBinding(info.memory, as_state, info.memoryOffset,
-                          VulkanTypedHandle(info.accelerationStructure, kVulkanObjectTypeAccelerationStructureNV));
+                          VulkanTypedHandle(info.accelerationStructure, kVulkanObjectTypeAccelerationStructureKHR));
 
             // GPU validation of top level acceleration structure building needs acceleration structure handles.
-            if (enabled.gpu_validation) {
+            // XXX TODO: Query device address for KHR extension
+            if (enabled.gpu_validation && isNV) {
                 DispatchGetAccelerationStructureHandleNV(device, info.accelerationStructure, 8, &as_state->opaque_handle);
             }
         }
     }
+}
+
+void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryNV(
+    VkDevice device, uint32_t bindInfoCount, const VkBindAccelerationStructureMemoryInfoNV *pBindInfos, VkResult result) {
+    PostCallRecordBindAccelerationStructureMemoryCommon(device, bindInfoCount, pBindInfos, result, true);
+}
+
+void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryKHR(
+    VkDevice device, uint32_t bindInfoCount, const VkBindAccelerationStructureMemoryInfoKHR *pBindInfos, VkResult result) {
+    PostCallRecordBindAccelerationStructureMemoryCommon(device, bindInfoCount, pBindInfos, result, false);
 }
 
 void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructureNV(
@@ -3094,13 +3141,13 @@ void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureNV(VkComm
     }
 }
 
-void ValidationStateTracker::PreCallRecordDestroyAccelerationStructureNV(VkDevice device,
-                                                                         VkAccelerationStructureNV accelerationStructure,
-                                                                         const VkAllocationCallbacks *pAllocator) {
+void ValidationStateTracker::PreCallRecordDestroyAccelerationStructureKHR(VkDevice device,
+                                                                          VkAccelerationStructureKHR accelerationStructure,
+                                                                          const VkAllocationCallbacks *pAllocator) {
     if (!accelerationStructure) return;
     auto *as_state = GetAccelerationStructureState(accelerationStructure);
     if (as_state) {
-        const VulkanTypedHandle obj_struct(accelerationStructure, kVulkanObjectTypeAccelerationStructureNV);
+        const VulkanTypedHandle obj_struct(accelerationStructure, kVulkanObjectTypeAccelerationStructureKHR);
         InvalidateCommandBuffers(as_state->cb_bindings, obj_struct);
         for (auto mem_binding : as_state->GetBoundMemory()) {
             RemoveAccelerationStructureMemoryRange(accelerationStructure, mem_binding);
@@ -3109,6 +3156,12 @@ void ValidationStateTracker::PreCallRecordDestroyAccelerationStructureNV(VkDevic
         as_state->destroyed = true;
         accelerationStructureMap.erase(accelerationStructure);
     }
+}
+
+void ValidationStateTracker::PreCallRecordDestroyAccelerationStructureNV(VkDevice device,
+                                                                         VkAccelerationStructureNV accelerationStructure,
+                                                                         const VkAllocationCallbacks *pAllocator) {
+    PreCallRecordDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
 }
 
 void ValidationStateTracker::PreCallRecordCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport,

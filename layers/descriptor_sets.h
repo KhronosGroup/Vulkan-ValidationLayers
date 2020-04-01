@@ -499,15 +499,17 @@ class InlineUniformDescriptor : public Descriptor {
 
 class AccelerationStructureDescriptor : public Descriptor {
   public:
-    AccelerationStructureDescriptor(const VkDescriptorType) {
-        updated = false;
-        descriptor_class = AccelerationStructure;
-    }
-    void WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override {
-        updated = true;
-    }
-    void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override { updated = true; }
-    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override {}
+    AccelerationStructureDescriptor(const VkDescriptorType);
+    void WriteUpdate(const ValidationStateTracker *dev_data, const VkWriteDescriptorSet *, const uint32_t) override;
+    VkAccelerationStructureKHR GetAccelerationStructure() const { return acc_; }
+    const ACCELERATION_STRUCTURE_STATE *GetAccelerationStructureState() const { return acc_state_.get(); }
+    ACCELERATION_STRUCTURE_STATE *GetAccelerationStructureState() { return acc_state_.get(); }
+    void CopyUpdate(const ValidationStateTracker *dev_data, const Descriptor *) override;
+    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *) override;
+
+  private:
+    VkAccelerationStructureKHR acc_;
+    std::shared_ptr<ACCELERATION_STRUCTURE_STATE> acc_state_;
 };
 
 union AnyDescriptor {
