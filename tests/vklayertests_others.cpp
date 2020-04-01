@@ -4232,7 +4232,11 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateYCbCrSampler) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    // Enable Ycbcr Conversion Features
+    VkPhysicalDeviceSamplerYcbcrConversionFeatures ycbcr_features = {};
+    ycbcr_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES;
+    ycbcr_features.samplerYcbcrConversion = VK_TRUE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &ycbcr_features));
     VkDevice dev = m_device->device();
 
     VkSamplerYcbcrConversion ycbcr_conv = VK_NULL_HANDLE;
