@@ -821,9 +821,10 @@ bool CoreChecks::ValidateBarriersToImages(const CMD_BUFFER_STATE *cb_state, uint
             }
 
             const VkImageCreateInfo &image_create_info = image_state->createInfo;
+            const VkFormat image_format = image_create_info.format;
+            const VkImageAspectFlags aspect_mask = img_barrier.subresourceRange.aspectMask;
             // For a Depth/Stencil image both aspects MUST be set
-            if (FormatIsDepthAndStencil(image_create_info.format)) {
-                auto const aspect_mask = img_barrier.subresourceRange.aspectMask;
+            if (FormatIsDepthAndStencil(image_format)) {
                 if (enabled_features.core12.separateDepthStencilLayouts) {
                     if (!(aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))) {
                         skip |=
@@ -831,7 +832,7 @@ bool CoreChecks::ValidateBarriersToImages(const CMD_BUFFER_STATE *cb_state, uint
                                      "%s: Image barrier %s references %s of format %s that must have either the depth or stencil "
                                      "aspects set, but its aspectMask is 0x%" PRIx32 ".",
                                      func_name, barrier_pname.c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
-                                     string_VkFormat(image_create_info.format), aspect_mask);
+                                     string_VkFormat(image_format), aspect_mask);
                     }
                 } else {
                     auto const ds_mask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
@@ -840,7 +841,7 @@ bool CoreChecks::ValidateBarriersToImages(const CMD_BUFFER_STATE *cb_state, uint
                                          "%s: Image barrier %s references %s of format %s that must have the depth and stencil "
                                          "aspects set, but its aspectMask is 0x%" PRIx32 ".",
                                          func_name, barrier_pname.c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
-                                         string_VkFormat(image_create_info.format), aspect_mask);
+                                         string_VkFormat(image_format), aspect_mask);
                     }
                 }
             }
@@ -867,6 +868,41 @@ bool CoreChecks::ValidateBarriersToImages(const CMD_BUFFER_STATE *cb_state, uint
                     }
                 }
                 skip |= subres_skip;
+            }
+
+            // checks color format and (single-plane or non-disjoint)
+            // if ycbcr extension is not supported then single-plane and non-disjoint are always both true
+            if ((FormatIsColor(image_format) == true) &&
+                ((FormatIsMultiplane(image_format) == false) || ((image_create_info.flags & VK_IMAGE_CREATE_DISJOINT_BIT) == 0))) {
+                if (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT) {
+                    const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion)
+                                           ? "VUID-VkImageMemoryBarrier-image-01671"
+                                           : "VUID-VkImageMemoryBarrier-image-02902";
+                    skip |= LogError(img_barrier.image, vuid,
+                                     "%s: Image barrier %s references %s of format %s that must be only VK_IMAGE_ASPECT_COLOR_BIT, "
+                                     "but its aspectMask is 0x%" PRIx32 ".",
+                                     func_name, barrier_pname.c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
+                                     string_VkFormat(image_format), aspect_mask);
+                }
+            }
+
+            VkImageAspectFlags valid_disjoint_mask =
+                VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT | VK_IMAGE_ASPECT_COLOR_BIT;
+            if ((FormatIsMultiplane(image_format) == true) && ((image_create_info.flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) &&
+                ((aspect_mask & valid_disjoint_mask) == 0)) {
+                skip |= LogError(img_barrier.image, "VUID-VkImageMemoryBarrier-image-01672",
+                                 "%s: Image barrier %s references %s of format %s has aspectMask (0x%" PRIx32
+                                 ") but needs to include either an VK_IMAGE_ASPECT_PLANE_*_BIT or VK_IMAGE_ASPECT_COLOR_BIT.",
+                                 func_name, barrier_pname.c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
+                                 string_VkFormat(image_format), aspect_mask);
+            }
+
+            if ((FormatPlaneCount(image_format) == 2) && ((aspect_mask & VK_IMAGE_ASPECT_PLANE_2_BIT) != 0)) {
+                skip |= LogError(img_barrier.image, "VUID-VkImageMemoryBarrier-image-01673",
+                                 "%s: Image barrier %s references %s of format %s has only two planes but included "
+                                 "VK_IMAGE_ASPECT_PLANE_2_BIT in its aspectMask (0x%" PRIx32 ").",
+                                 func_name, barrier_pname.c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
+                                 string_VkFormat(image_format), aspect_mask);
             }
         }
     }
@@ -4289,8 +4325,11 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
 bool CoreChecks::ValidateImageAspectMask(VkImage image, VkFormat format, VkImageAspectFlags aspect_mask, const char *func_name,
                                          const char *vuid) const {
     bool skip = false;
-
-    if (FormatIsColor(format)) {
+    const IMAGE_STATE *image_state = GetImageState(image);
+    // checks color format and (single-plane or non-disjoint)
+    // if ycbcr extension is not supported then single-plane and non-disjoint are always both true
+    if ((FormatIsColor(format)) &&
+        ((FormatIsMultiplane(format) == false) || ((image_state->createInfo.flags & VK_IMAGE_CREATE_DISJOINT_BIT) == 0))) {
         if ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != VK_IMAGE_ASPECT_COLOR_BIT) {
             skip |= LogError(image, vuid, "%s: Color image formats must have the VK_IMAGE_ASPECT_COLOR_BIT set.", func_name);
         } else if ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != aspect_mask) {
