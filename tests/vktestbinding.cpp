@@ -153,31 +153,25 @@ std::vector<VkExtensionProperties> GetGlobalExtensions(const char *pLayerName) {
 }
 
 /*
- * Return list of PhysicalDevice extensions provided by the ICD / Loader
- */
-std::vector<VkExtensionProperties> PhysicalDevice::extensions() const { return extensions(NULL); }
-
-/*
  * Return list of PhysicalDevice extensions provided by the specified layer
  * If pLayerName is NULL, will return extensions for ICD / loader.
  */
 std::vector<VkExtensionProperties> PhysicalDevice::extensions(const char *pLayerName) const {
-    std::vector<VkExtensionProperties> exts;
     VkResult err;
-
+    uint32_t extension_count;
+    std::vector<VkExtensionProperties> extensions;
     do {
-        uint32_t extCount = 0;
-        err = vk::EnumerateDeviceExtensionProperties(handle(), pLayerName, &extCount, NULL);
+        err = vk::EnumerateDeviceExtensionProperties(handle(), pLayerName, &extension_count, nullptr);
+        if (err || 0 == extension_count) return {};
 
-        if (err == VK_SUCCESS) {
-            exts.resize(extCount);
-            err = vk::EnumerateDeviceExtensionProperties(handle(), pLayerName, &extCount, exts.data());
-        }
-    } while (err == VK_INCOMPLETE);
+        extensions.resize(extension_count);
+        err = vk::EnumerateDeviceExtensionProperties(handle(), pLayerName, &extension_count, extensions.data());
+    } while (VK_INCOMPLETE == err);
 
-    assert(err == VK_SUCCESS);
+    if (err) return {};
+    extensions.resize(extension_count);
 
-    return exts;
+    return extensions;
 }
 
 bool PhysicalDevice::set_memory_type(const uint32_t type_bits, VkMemoryAllocateInfo *info, const VkFlags properties,
@@ -203,22 +197,21 @@ bool PhysicalDevice::set_memory_type(const uint32_t type_bits, VkMemoryAllocateI
  * Return list of PhysicalDevice layers
  */
 std::vector<VkLayerProperties> PhysicalDevice::layers() const {
-    std::vector<VkLayerProperties> layer_props;
     VkResult err;
-
+    uint32_t layer_count;
+    std::vector<VkLayerProperties> layers;
     do {
-        uint32_t layer_count = 0;
-        err = vk::EnumerateDeviceLayerProperties(handle(), &layer_count, NULL);
+        err = vk::EnumerateDeviceLayerProperties(handle(), &layer_count, nullptr);
+        if (err || 0 == layer_count) return {};
 
-        if (err == VK_SUCCESS) {
-            layer_props.reserve(layer_count);
-            err = vk::EnumerateDeviceLayerProperties(handle(), &layer_count, layer_props.data());
-        }
-    } while (err == VK_INCOMPLETE);
+        layers.resize(layer_count);
+        err = vk::EnumerateDeviceLayerProperties(handle(), &layer_count, layers.data());
+    } while (VK_INCOMPLETE == err);
 
-    assert(err == VK_SUCCESS);
+    if (err) return {};
+    layers.resize(layer_count);
 
-    return layer_props;
+    return layers;
 }
 
 QueueCreateInfoArray::QueueCreateInfoArray(const std::vector<VkQueueFamilyProperties> &queue_props)
