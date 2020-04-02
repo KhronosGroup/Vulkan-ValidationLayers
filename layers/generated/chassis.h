@@ -2782,6 +2782,23 @@ class ValidationObject {
             disabled = framework->disabled;
         }
 
+        virtual void InitDeviceValidationObject(bool add_obj, ValidationObject *inst_obj, ValidationObject *dev_obj) {
+            if (add_obj) {
+                dev_obj->object_dispatch.emplace_back(this);
+                device = dev_obj->device;
+                physical_device = dev_obj->physical_device;
+                instance = inst_obj->instance;
+                report_data = inst_obj->report_data;
+                device_dispatch_table = dev_obj->device_dispatch_table;
+                api_version = dev_obj->api_version;
+                disabled = inst_obj->disabled;
+                enabled = inst_obj->enabled;
+                instance_dispatch_table = inst_obj->instance_dispatch_table;
+                instance_extensions = inst_obj->instance_extensions;
+                device_extensions = dev_obj->device_extensions;
+            }
+        }
+
         ValidationObject* GetValidationObject(std::vector<ValidationObject*>& object_dispatch, LayerObjectTypeId object_type) {
             for (auto validation_object : object_dispatch) {
                 if (validation_object->container_type == object_type) {
