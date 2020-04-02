@@ -7948,7 +7948,7 @@ TEST_F(VkPositiveLayerTest, MultiplaneImageTests) {
 TEST_F(VkPositiveLayerTest, ApiVersionZero) {
     TEST_DESCRIPTION("Check that apiVersion = 0 is valid.");
     m_errorMonitor->ExpectSuccess();
-    app_info.apiVersion = 0U;
+    app_info_.apiVersion = 0U;
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     m_errorMonitor->VerifyNotFound();
 }

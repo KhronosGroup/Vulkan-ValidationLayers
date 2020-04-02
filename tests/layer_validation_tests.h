@@ -55,7 +55,12 @@
 #include <functional>
 #include <limits>
 #include <memory>
+#include <string>
 #include <unordered_set>
+#include <vector>
+
+using std::string;
+using std::vector;
 
 //--------------------------------------------------------------------------------------
 // Mesh and VertexFormat Data
@@ -226,6 +231,7 @@ T NearestSmaller(const T from) {
 class VkLayerTest : public VkRenderFramework {
   public:
     const char *kValidationLayerName = "VK_LAYER_KHRONOS_validation";
+
     void VKTriangleTest(BsoFailSelect failCase);
 
     void GenericDrawPreparation(VkCommandBufferObj *commandBuffer, VkPipelineObj &pipelineobj, VkDescriptorSetObj &descriptorSet,
@@ -423,13 +429,13 @@ struct CreatePipelineHelper {
         info_override(helper);
         helper.InitState();
 
-        for (const auto &error : errors) test.Monitor()->SetDesiredFailureMsg(flags, error);
+        for (const auto &error : errors) test.Monitor().SetDesiredFailureMsg(flags, error);
         helper.CreateGraphicsPipeline();
 
         if (positive_test) {
-            test.Monitor()->VerifyNotFound();
+            test.Monitor().VerifyNotFound();
         } else {
-            test.Monitor()->VerifyFound();
+            test.Monitor().VerifyFound();
         }
     }
 
@@ -479,13 +485,13 @@ struct CreateComputePipelineHelper {
         info_override(helper);
         helper.InitState();
 
-        for (const auto &error : errors) test.Monitor()->SetDesiredFailureMsg(flags, error);
+        for (const auto &error : errors) test.Monitor().SetDesiredFailureMsg(flags, error);
         helper.CreateComputePipeline();
 
         if (positive_test) {
-            test.Monitor()->VerifyNotFound();
+            test.Monitor().VerifyNotFound();
         } else {
-            test.Monitor()->VerifyFound();
+            test.Monitor().VerifyFound();
         }
     }
 
@@ -544,9 +550,9 @@ struct CreateNVRayTracingPipelineHelper {
         info_override(helper);
         helper.InitState();
 
-        for (const auto &error : errors) test.Monitor()->SetDesiredFailureMsg(flags, error);
+        for (const auto &error : errors) test.Monitor().SetDesiredFailureMsg(flags, error);
         helper.CreateNVRayTracingPipeline();
-        test.Monitor()->VerifyFound();
+        test.Monitor().VerifyFound();
     }
 
     template <typename Test, typename OverrideFunc, typename Error>
@@ -561,9 +567,9 @@ struct CreateNVRayTracingPipelineHelper {
         info_override(helper);
         helper.InitState();
 
-        test.Monitor()->ExpectSuccess(message_flag_mask);
+        test.Monitor().ExpectSuccess(message_flag_mask);
         ASSERT_VK_SUCCESS(helper.CreateNVRayTracingPipeline());
-        test.Monitor()->VerifyNotFound();
+        test.Monitor().VerifyNotFound();
     }
 };
 

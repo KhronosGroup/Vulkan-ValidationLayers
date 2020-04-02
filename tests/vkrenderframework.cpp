@@ -22,12 +22,27 @@
  */
 
 #include "vkrenderframework.h"
+
+#include <algorithm>
+#include <cassert>
+#include <cstring>
+#include <utility>
+#include <vector>
+
 #include "vk_format_utils.h"
 
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+using std::string;
+using std::strncmp;
+using std::vector;
+
+template <typename C, typename F>
+typename C::iterator RemoveIf(C &container, F &&fn) {
+    return container.erase(std::remove_if(container.begin(), container.end(), std::forward<F>(fn)), container.end());
+}
 
 ErrorMonitor::ErrorMonitor() {
     test_platform_thread_create_mutex(&mutex_);
+    // TODO: why even lock in constructor
     test_platform_thread_lock_mutex(&mutex_);
     Reset();
     test_platform_thread_unlock_mutex(&mutex_);
@@ -36,6 +51,7 @@ ErrorMonitor::ErrorMonitor() {
 ErrorMonitor::~ErrorMonitor() NOEXCEPT { test_platform_thread_delete_mutex(&mutex_); }
 
 void ErrorMonitor::Reset() {
+    // TODO: thread lock?
     message_flags_ = 0;
     bailout_ = NULL;
     message_found_ = VK_FALSE;
@@ -46,9 +62,7 @@ void ErrorMonitor::Reset() {
     other_messages_.clear();
 }
 
-void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msgFlags, const std::string msg) {
-    SetDesiredFailureMsg(msgFlags, msg.c_str());
-}
+void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msgFlags, const string msg) { SetDesiredFailureMsg(msgFlags, msg.c_str()); }
 
 void ErrorMonitor::SetDesiredFailureMsg(const VkFlags msgFlags, const char *const msgString) {
     test_platform_thread_lock_mutex(&mutex_);
@@ -141,9 +155,9 @@ void ErrorMonitor::SetBailout(bool *bailout) { bailout_ = bailout; }
 void ErrorMonitor::DumpFailureMsgs() const {
     vector<string> otherMsgs = GetOtherFailureMsgs();
     if (otherMsgs.size()) {
-        cout << "Other error messages logged for this test were:" << endl;
+        std::cout << "Other error messages logged for this test were:" << std::endl;
         for (auto iter = otherMsgs.begin(); iter != otherMsgs.end(); iter++) {
-            cout << "     " << *iter << endl;
+            std::cout << "     " << *iter << std::endl;
         }
     }
 }
@@ -196,18 +210,60 @@ void ErrorMonitor::VerifyNotFound() {
     Reset();
 }
 
-bool ErrorMonitor::IgnoreMessage(std::string const &msg) const {
+bool ErrorMonitor::IgnoreMessage(string const &msg) const {
     if (ignore_message_strings_.empty()) {
         return false;
     }
 
-    return std::find_if(ignore_message_strings_.begin(), ignore_message_strings_.end(), [&msg](std::string const &str) {
-               return msg.find(str) != std::string::npos;
-           }) != ignore_message_strings_.end();
+    return std::find_if(ignore_message_strings_.begin(), ignore_message_strings_.end(),
+                        [&msg](string const &str) { return msg.find(str) != string::npos; }) != ignore_message_strings_.end();
+}
+
+void DebugReporter::Create(VkInstance instance) NOEXCEPT {
+    assert(instance);
+    assert(!debug_obj_);
+
+    // TODO: the lvl loader should perhaps do this
+    auto DebugCreate = reinterpret_cast<DebugCreateFnType>(vk::GetInstanceProcAddr(instance, debug_create_fn_name_));
+    if (!DebugCreate) return;
+
+    const VkResult err = DebugCreate(instance, &debug_create_info_, nullptr, &debug_obj_);
+    if (err) debug_obj_ = VK_NULL_HANDLE;
+}
+
+void DebugReporter::Destroy(VkInstance instance) NOEXCEPT {
+    assert(instance);
+    assert(debug_obj_);  // valid to call with null object, but probably bug
+
+    auto DebugDestroy = reinterpret_cast<DebugDestroyFnType>(vk::GetInstanceProcAddr(instance, debug_destroy_fn_name_));
+    assert(DebugDestroy);
+
+    DebugDestroy(instance, debug_obj_, nullptr);
+    debug_obj_ = VK_NULL_HANDLE;
+}
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+VKAPI_ATTR VkBool32 VKAPI_CALL DebugReporter::DebugCallback(VkDebugReportFlagsEXT message_flags, VkDebugReportObjectTypeEXT,
+                                                            uint64_t, size_t, int32_t, const char *, const char *message,
+                                                            void *user_data) {
+#else
+VKAPI_ATTR VkBool32 VKAPI_CALL DebugReporter::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+                                                            VkDebugUtilsMessageTypeFlagsEXT message_types,
+                                                            const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
+                                                            void *user_data) {
+    const auto message_flags = DebugAnnotFlagsToReportFlags(message_severity, message_types);
+    const char *message = callback_data->pMessage;
+#endif
+    ErrorMonitor *errMonitor = (ErrorMonitor *)user_data;
+
+    if (message_flags & errMonitor->GetMessageFlags()) {
+        return errMonitor->CheckForDesiredMsg(message);
+    }
+    return VK_FALSE;
 }
 
 VkRenderFramework::VkRenderFramework()
-    : inst(VK_NULL_HANDLE),
+    : instance_(NULL),
       m_device(NULL),
       m_commandPool(VK_NULL_HANDLE),
       m_commandBuffer(NULL),
@@ -223,17 +279,9 @@ VkRenderFramework::VkRenderFramework()
       m_clear_via_load_op(true),
       m_depth_clear_color(1.0),
       m_stencil_clear_color(0),
-      m_depthStencil(NULL),
-      m_CreateDebugReportCallback(VK_NULL_HANDLE),
-      m_DestroyDebugReportCallback(VK_NULL_HANDLE),
-      m_globalMsgCallback(VK_NULL_HANDLE),
-      m_CreateDebugUtilsCallback(VK_NULL_HANDLE),
-      m_DestroyDebugUtilsCallback(VK_NULL_HANDLE),
-      m_global_message_callback(VK_NULL_HANDLE) {
+      m_depthStencil(NULL) {
     memset(&m_renderPassBeginInfo, 0, sizeof(m_renderPassBeginInfo));
     m_renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-
-    m_errorMonitor = new ErrorMonitor;
 
     // clear the back buffer to dark grey
     m_clear_color.float32[0] = 0.25f;
@@ -245,40 +293,48 @@ VkRenderFramework::VkRenderFramework()
 VkRenderFramework::~VkRenderFramework() { ShutdownFramework(); }
 
 VkPhysicalDevice VkRenderFramework::gpu() {
-    EXPECT_NE((VkInstance)0, inst);  // Invalid to request gpu before instance exists
-    return objs[0];
+    EXPECT_NE((VkInstance)0, instance_);  // Invalid to request gpu before instance exists
+    return gpu_;
 }
 
 // Return true if layer name is found and spec+implementation values are >= requested values
-bool VkRenderFramework::InstanceLayerSupported(const char *name, uint32_t spec, uint32_t implementation) {
-    uint32_t layer_count = 0;
-    std::vector<VkLayerProperties> layer_props;
+bool VkRenderFramework::InstanceLayerSupported(const char *const layer_name, const uint32_t spec_version,
+                                               const uint32_t impl_version) {
+    const auto layers = vk_testing::GetGlobalLayers();
 
-    VkResult res = vk::EnumerateInstanceLayerProperties(&layer_count, NULL);
-    if (VK_SUCCESS != res) return false;
-    if (0 == layer_count) return false;
-
-    layer_props.resize(layer_count);
-    res = vk::EnumerateInstanceLayerProperties(&layer_count, layer_props.data());
-    if (VK_SUCCESS != res) return false;
-
-    for (auto &it : layer_props) {
-        if (0 == strncmp(name, it.layerName, VK_MAX_EXTENSION_NAME_SIZE)) {
-            return ((it.specVersion >= spec) && (it.implementationVersion >= implementation));
+    for (const auto &layer : layers) {
+        if (0 == strncmp(layer_name, layer.layerName, VK_MAX_EXTENSION_NAME_SIZE)) {
+            return layer.specVersion >= spec_version && layer.implementationVersion >= impl_version;
         }
     }
     return false;
+}
+
+// Return true if extension name is found and spec value is >= requested spec value
+// WARNING: for simplicity, does not cover layers' extensions
+bool VkRenderFramework::InstanceExtensionSupported(const char *const extension_name, const uint32_t spec_version) {
+    // WARNING: assume debug extensions are always supported, which are usually provided by layers
+    if (0 == strncmp(extension_name, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) return true;
+    if (0 == strncmp(extension_name, VK_EXT_DEBUG_REPORT_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) return true;
+
+    const auto extensions = vk_testing::GetGlobalExtensions();
+
+    const auto IsTheQueriedExtension = [extension_name, spec_version](const VkExtensionProperties &extension) {
+        return strncmp(extension_name, extension.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0 &&
+               extension.specVersion >= spec_version;
+    };
+
+    return std::any_of(extensions.begin(), extensions.end(), IsTheQueriedExtension);
 }
 
 // Enable device profile as last layer on stack overriding devsim if there, or return if not available
 bool VkRenderFramework::EnableDeviceProfileLayer() {
     if (InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api")) {
         if (VkTestFramework::m_devsim_layer) {
-            assert(0 == strcmp(m_instance_layer_names.back(), "VK_LAYER_LUNARG_device_simulation"));
-            m_instance_layer_names.pop_back();
-            m_instance_layer_names.push_back("VK_LAYER_LUNARG_device_profile_api");
+            assert(0 == strncmp(instance_layers_.back(), "VK_LAYER_LUNARG_device_simulation", VK_MAX_EXTENSION_NAME_SIZE));
+            instance_layers_.back() = "VK_LAYER_LUNARG_device_profile_api";
         } else {
-            m_instance_layer_names.push_back("VK_LAYER_LUNARG_device_profile_api");
+            instance_layers_.push_back("VK_LAYER_LUNARG_device_profile_api");
         }
     } else {
         printf("             Did not find VK_LAYER_LUNARG_device_profile_api layer; skipped.\n");
@@ -287,54 +343,24 @@ bool VkRenderFramework::EnableDeviceProfileLayer() {
     return true;
 }
 
-// Return true if extension name is found and spec value is >= requested spec value
-bool VkRenderFramework::InstanceExtensionSupported(const char *ext_name, uint32_t spec) {
-    // Debug utils is explicitly supported by the validation layer, no need to check for it
-    if (0 == strncmp(ext_name, VK_EXT_DEBUG_UTILS_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) {
-        return true;
-    }
-    uint32_t ext_count = 0;
-    std::vector<VkExtensionProperties> ext_props;
-    VkResult res = vk::EnumerateInstanceExtensionProperties(nullptr, &ext_count, nullptr);
-    if (VK_SUCCESS != res) return false;
-    if (0 == ext_count) return false;
-
-    ext_props.resize(ext_count);
-    res = vk::EnumerateInstanceExtensionProperties(nullptr, &ext_count, ext_props.data());
-    if (VK_SUCCESS != res) return false;
-
-    for (auto &it : ext_props) {
-        if (0 == strncmp(ext_name, it.extensionName, VK_MAX_EXTENSION_NAME_SIZE)) {
-            return (it.specVersion >= spec);
-        }
-    }
-    return false;
-}
-
 // Return true if instance exists and extension name is in the list
 bool VkRenderFramework::InstanceExtensionEnabled(const char *ext_name) {
-    if (!inst) return false;
+    if (!instance_) return false;
 
-    bool ext_found = false;
-    for (auto ext : m_instance_extension_names) {
-        if (!strcmp(ext, ext_name)) {
-            ext_found = true;
-            break;
-        }
-    }
-    return ext_found;
+    return std::any_of(instance_extensions_.begin(), instance_extensions_.end(),
+                       [ext_name](const char *e) { return 0 == strncmp(ext_name, e, VK_MAX_EXTENSION_NAME_SIZE); });
 }
 // Return true if extension name is found and spec value is >= requested spec value
 bool VkRenderFramework::DeviceExtensionSupported(const char *extension_name, const uint32_t spec_version) const {
-    if (!inst || !objs[0]) {
-        EXPECT_NE((VkInstance)0, inst);  // Complain, not cool without an instance
-        EXPECT_NE((VkPhysicalDevice)0, objs[0]);
+    if (!instance_ || !gpu_) {
+        EXPECT_NE((VkInstance)0, instance_);  // Complain, not cool without an instance
+        EXPECT_NE((VkPhysicalDevice)0, gpu_);
         return false;
     }
 
-    const vk_testing::PhysicalDevice device_obj(objs[0]);
+    const vk_testing::PhysicalDevice device_obj(gpu_);
 
-    const auto enabled_layers = m_instance_layer_names;  // assumes m_instance_layer_names contains enabled layers
+    const auto enabled_layers = instance_layers_;  // assumes instance_layers_ contains enabled layers
 
     auto extensions = device_obj.extensions();
     for (const auto &layer : enabled_layers) {
@@ -356,7 +382,7 @@ bool VkRenderFramework::DeviceExtensionEnabled(const char *ext_name) {
 
     bool ext_found = false;
     for (auto ext : m_device_extension_names) {
-        if (!strcmp(ext, ext_name)) {
+        if (!strncmp(ext, ext_name, VK_MAX_EXTENSION_NAME_SIZE)) {
             ext_found = true;
             break;
         }
@@ -368,7 +394,8 @@ bool VkRenderFramework::DeviceExtensionEnabled(const char *ext_name) {
 // this function dubious when DevSim is active.
 bool VkRenderFramework::DeviceIsMockICD() {
     VkPhysicalDeviceProperties props = vk_testing::PhysicalDevice(gpu()).properties();
-    if ((props.vendorID == 0xba5eba11) && (props.deviceID == 0xf005ba11) && (0 == strcmp("Vulkan Mock Device", props.deviceName))) {
+    if ((props.vendorID == 0xba5eba11) && (props.deviceID == 0xf005ba11) &&
+        (0 == strncmp("Vulkan Mock Device", props.deviceName, VK_MAX_PHYSICAL_DEVICE_NAME_SIZE))) {
         return true;
     }
     return false;
@@ -377,185 +404,72 @@ bool VkRenderFramework::DeviceIsMockICD() {
 // Some tests may need to be skipped if the devsim layer is in use.
 bool VkRenderFramework::DeviceSimulation() { return m_devsim_layer; }
 
-// Debug Report-based framework initialization
-void VkRenderFramework::InitFrameworkDebugReport(PFN_vkDebugReportCallbackEXT dbgFunction, void *userData, void *instance_pnext) {
-    // Only enable device profile layer by default if devsim is not enabled
-    if (!VkTestFramework::m_devsim_layer && InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api")) {
-        m_instance_layer_names.push_back("VK_LAYER_LUNARG_device_profile_api");
-    }
-
-    // Assert not already initialized
-    ASSERT_EQ((VkInstance)0, inst);
-
-    // Remove any unsupported layer names from list
-    for (auto layer = m_instance_layer_names.begin(); layer != m_instance_layer_names.end();) {
-        if (!InstanceLayerSupported(*layer)) {
-            ADD_FAILURE() << "InitFramework(): Requested layer " << *layer << " was not found. Disabled.";
-            layer = m_instance_layer_names.erase(layer);
-        } else {
-            ++layer;
-        }
-    }
-
-    // Remove any unsupported instance extension names from list
-    for (auto ext = m_instance_extension_names.begin(); ext != m_instance_extension_names.end();) {
-        if (!InstanceExtensionSupported(*ext)) {
-            ADD_FAILURE() << "InitFramework(): Requested extension " << *ext << " was not found. Disabled.";
-            ext = m_instance_extension_names.erase(ext);
-        } else {
-            ++ext;
-        }
-    }
-
-    VkInstanceCreateInfo instInfo = {};
-    instInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    instInfo.pNext = instance_pnext;
-    instInfo.pApplicationInfo = &app_info;
-    instInfo.enabledLayerCount = m_instance_layer_names.size();
-    instInfo.ppEnabledLayerNames = m_instance_layer_names.data();
-    instInfo.enabledExtensionCount = m_instance_extension_names.size();
-    instInfo.ppEnabledExtensionNames = m_instance_extension_names.data();
-
-    VkDebugReportCallbackCreateInfoEXT dbgCreateInfo;
-    if (dbgFunction) {
-        // Enable create time debug messages
-        memset(&dbgCreateInfo, 0, sizeof(dbgCreateInfo));
-        dbgCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-        dbgCreateInfo.flags = kErrorBit | kWarningBit | kPerformanceWarningBit;
-        dbgCreateInfo.pfnCallback = dbgFunction;
-        dbgCreateInfo.pUserData = userData;
-
-        dbgCreateInfo.pNext = instInfo.pNext;
-        instInfo.pNext = &dbgCreateInfo;
-    }
-
-    VkResult err;
-
-    err = vk::CreateInstance(&instInfo, NULL, &this->inst);
-    ASSERT_VK_SUCCESS(err);
-
-    err = vk::EnumeratePhysicalDevices(inst, &this->gpu_count, NULL);
-    ASSERT_LE(this->gpu_count, ARRAY_SIZE(objs)) << "Too many gpus";
-    ASSERT_VK_SUCCESS(err);
-    err = vk::EnumeratePhysicalDevices(inst, &this->gpu_count, objs);
-    ASSERT_VK_SUCCESS(err);
-    ASSERT_GE(this->gpu_count, (uint32_t)1) << "No GPU available";
-
-    if (dbgFunction) {
-        m_CreateDebugReportCallback =
-            (PFN_vkCreateDebugReportCallbackEXT)vk::GetInstanceProcAddr(this->inst, "vkCreateDebugReportCallbackEXT");
-        ASSERT_NE(m_CreateDebugReportCallback, (PFN_vkCreateDebugReportCallbackEXT)NULL)
-            << "Did not get function pointer for CreateDebugReportCallback";
-        if (m_CreateDebugReportCallback) {
-            dbgCreateInfo.pNext = nullptr;  // clean up from usage in CreateInstance above
-            err = m_CreateDebugReportCallback(this->inst, &dbgCreateInfo, NULL, &m_globalMsgCallback);
-            ASSERT_VK_SUCCESS(err);
-
-            m_DestroyDebugReportCallback =
-                (PFN_vkDestroyDebugReportCallbackEXT)vk::GetInstanceProcAddr(this->inst, "vkDestroyDebugReportCallbackEXT");
-            ASSERT_NE(m_DestroyDebugReportCallback, (PFN_vkDestroyDebugReportCallbackEXT)NULL)
-                << "Did not get function pointer for DestroyDebugReportCallback";
-        }
-    }
+VkInstanceCreateInfo VkRenderFramework::GetInstanceCreateInfo() const {
+    return {
+        VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+        &debug_reporter_.debug_create_info_,
+        0,
+        &app_info_,
+        static_cast<uint32_t>(instance_layers_.size()),
+        instance_layers_.data(),
+        static_cast<uint32_t>(instance_extensions_.size()),
+        instance_extensions_.data(),
+    };
 }
 
-// Debug Utils-based framework initialization
-void VkRenderFramework::InitFrameworkDebugUtils(PFN_vkDebugUtilsMessengerCallbackEXT debug_function, void *userData,
-                                                void *instance_pnext) {
-    // Only enable device profile layer by default if devsim is not enabled
-    if (!VkTestFramework::m_devsim_layer && InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api")) {
-        m_instance_layer_names.push_back("VK_LAYER_LUNARG_device_profile_api");
-    }
+void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/, void *instance_pnext) {
+    ASSERT_EQ((VkInstance)0, instance_);
 
-    // Assert not already initialized
-    ASSERT_EQ((VkInstance)0, inst);
-
-    // Remove any unsupported layer names from list
-    for (auto layer = m_instance_layer_names.begin(); layer != m_instance_layer_names.end();) {
-        if (!InstanceLayerSupported(*layer)) {
-            ADD_FAILURE() << "InitFramework(): Requested layer " << *layer << " was not found. Disabled.";
-            layer = m_instance_layer_names.erase(layer);
-        } else {
-            ++layer;
+    const auto LayerNotSupportedWithReporting = [](const char *layer) {
+        if (InstanceLayerSupported(layer))
+            return false;
+        else {
+            ADD_FAILURE() << "InitFramework(): Requested layer \"" << layer << "\" is not supported. It will be disabled.";
+            return true;
         }
-    }
-
-    // Remove any unsupported instance extension names from list
-    for (auto ext = m_instance_extension_names.begin(); ext != m_instance_extension_names.end();) {
-        if (!InstanceExtensionSupported(*ext)) {
-            ADD_FAILURE() << "InitFramework(): Requested extension " << *ext << " was not found. Disabled.";
-            ext = m_instance_extension_names.erase(ext);
-        } else {
-            ++ext;
+    };
+    const auto ExtensionNotSupportedWithReporting = [](const char *extension) {
+        if (InstanceExtensionSupported(extension))
+            return false;
+        else {
+            ADD_FAILURE() << "InitFramework(): Requested extension \"" << extension << "\" is not supported. It will be disabled.";
+            return true;
         }
+    };
+
+    RemoveIf(instance_layers_, LayerNotSupportedWithReporting);
+    RemoveIf(instance_extensions_, ExtensionNotSupportedWithReporting);
+
+    auto ici = GetInstanceCreateInfo();
+
+    // concatenate pNexts
+    // TODO: There HAS to be some utility function for this somewhere
+    void *last_pnext = nullptr;
+    if (instance_pnext) {
+        last_pnext = instance_pnext;
+        while (reinterpret_cast<const VkBaseOutStructure *>(last_pnext)->pNext)
+            last_pnext = reinterpret_cast<VkBaseOutStructure *>(last_pnext)->pNext;
+
+        void *&link = reinterpret_cast<void *&>(reinterpret_cast<VkBaseOutStructure *>(last_pnext)->pNext);
+        link = const_cast<void *>(ici.pNext);
+        ici.pNext = instance_pnext;
     }
 
-    VkInstanceCreateInfo instInfo = {};
-    instInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    instInfo.pNext = instance_pnext;
-    instInfo.pApplicationInfo = &app_info;
-    instInfo.enabledLayerCount = m_instance_layer_names.size();
-    instInfo.ppEnabledLayerNames = m_instance_layer_names.data();
-    instInfo.enabledExtensionCount = m_instance_extension_names.size();
-    instInfo.ppEnabledExtensionNames = m_instance_extension_names.data();
+    ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &instance_));
+    if (instance_pnext) reinterpret_cast<VkBaseOutStructure *>(last_pnext)->pNext = nullptr;  // reset back borrowed pNext chain
 
-    VkDebugUtilsMessengerCreateInfoEXT debug_create_info{};
-    if (debug_function) {
-        // Enable create time debug messages
-        debug_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        debug_create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
-                                            VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                                            VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
-        debug_create_info.messageType =
-            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        debug_create_info.pfnUserCallback = debug_function;
-        debug_create_info.pUserData = userData;
+    uint32_t gpu_count = 1;
+    ASSERT_VK_SUCCESS(vk::EnumeratePhysicalDevices(instance_, &gpu_count, &gpu_));
+    ASSERT_GT(gpu_count, (uint32_t)0) << "No GPU (i.e. VkPhysicalDevice) available";
 
-        debug_create_info.pNext = instInfo.pNext;
-        instInfo.pNext = &debug_create_info;
-    }
-
-    VkResult err;
-
-    err = vk::CreateInstance(&instInfo, NULL, &this->inst);
-    ASSERT_VK_SUCCESS(err);
-
-    err = vk::EnumeratePhysicalDevices(inst, &this->gpu_count, NULL);
-    ASSERT_LE(this->gpu_count, ARRAY_SIZE(objs)) << "Too many gpus";
-    ASSERT_VK_SUCCESS(err);
-    err = vk::EnumeratePhysicalDevices(inst, &this->gpu_count, objs);
-    ASSERT_VK_SUCCESS(err);
-    ASSERT_GE(this->gpu_count, (uint32_t)1) << "No GPU available";
-
-    if (debug_function) {
-        m_CreateDebugUtilsCallback =
-            (PFN_vkCreateDebugUtilsMessengerEXT)vk::GetInstanceProcAddr(this->inst, "vkCreateDebugUtilsMessengerEXT");
-        ASSERT_NE(m_CreateDebugUtilsCallback, (PFN_vkCreateDebugUtilsMessengerEXT)NULL)
-            << "Did not get function pointer for CreateDebugUtilsMessengerEXT";
-        if (m_CreateDebugUtilsCallback) {
-            debug_create_info.pNext = nullptr;  // clean up from usage in CreateInstance above
-            err = m_CreateDebugUtilsCallback(this->inst, &debug_create_info, NULL, &m_global_message_callback);
-            ASSERT_VK_SUCCESS(err);
-
-            m_DestroyDebugUtilsCallback =
-                (PFN_vkDestroyDebugUtilsMessengerEXT)vk::GetInstanceProcAddr(this->inst, "vkDestroyDebugUtilsMessengerEXT");
-            ASSERT_NE(m_DestroyDebugUtilsCallback, (PFN_vkDestroyDebugUtilsMessengerEXT)NULL)
-                << "Did not get function pointer for DestroyDebugUtilsMessengerEXT";
-        }
-    }
-}
-
-void VkRenderFramework::InitFramework(void *userData, void *instance_pnext) {
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-    InitFrameworkDebugReport(LvtDebugReportFunc, userData, instance_pnext);
-#else
-    InitFrameworkDebugUtils(LvtDebugUtilsFunc, userData, instance_pnext);
-#endif
+    debug_reporter_.Create(instance_);
 }
 
 void VkRenderFramework::ShutdownFramework() {
+    debug_reporter_.error_monitor_.Reset();
+
     // Nothing to shut down without a VkInstance
-    if (!this->inst) return;
+    if (!instance_) return;
 
     delete m_commandBuffer;
     m_commandBuffer = nullptr;
@@ -566,12 +480,6 @@ void VkRenderFramework::ShutdownFramework() {
     if (m_renderPass) vk::DestroyRenderPass(device(), m_renderPass, NULL);
     m_renderPass = VK_NULL_HANDLE;
 
-    if (m_globalMsgCallback) m_DestroyDebugReportCallback(this->inst, m_globalMsgCallback, NULL);
-    m_globalMsgCallback = VK_NULL_HANDLE;
-
-    if (m_global_message_callback) m_DestroyDebugUtilsCallback(this->inst, m_global_message_callback, NULL);
-    m_global_message_callback = VK_NULL_HANDLE;
-
     m_renderTargets.clear();
 
     delete m_depthStencil;
@@ -581,16 +489,17 @@ void VkRenderFramework::ShutdownFramework() {
     delete m_device;
     m_device = nullptr;
 
-    if (this->inst) vk::DestroyInstance(this->inst, NULL);
-    delete m_errorMonitor;
-    this->inst = (VkInstance)0;  // In case we want to re-initialize
+    debug_reporter_.Destroy(instance_);
+
+    vk::DestroyInstance(instance_, nullptr);
+    instance_ = NULL;  // In case we want to re-initialize
 }
 
-ErrorMonitor *VkRenderFramework::Monitor() { return m_errorMonitor; }
+ErrorMonitor &VkRenderFramework::Monitor() { return debug_reporter_.error_monitor_; }
 
 void VkRenderFramework::GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *features) {
     if (NULL == m_device) {
-        VkDeviceObj *temp_device = new VkDeviceObj(0, objs[0], m_device_extension_names);
+        VkDeviceObj *temp_device = new VkDeviceObj(0, gpu_, m_device_extension_names);
         *features = temp_device->phy().features();
         delete (temp_device);
     } else {
@@ -604,33 +513,28 @@ void VkRenderFramework::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *
 
 void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *create_device_pnext,
                                   const VkCommandPoolCreateFlags flags) {
-    // Remove any unsupported device extension names from list
-    for (auto ext = m_device_extension_names.begin(); ext != m_device_extension_names.end();) {
-        if (!DeviceExtensionSupported(objs[0], nullptr, *ext)) {
-            bool found = false;
-            for (auto layer = m_instance_layer_names.begin(); layer != m_instance_layer_names.end(); ++layer) {
-                if (DeviceExtensionSupported(objs[0], *layer, *ext)) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                ADD_FAILURE() << "InitState(): The requested device extension " << *ext << " was not found. Disabled.";
-                ext = m_device_extension_names.erase(ext);
-            } else {
-                ++ext;
-            }
-        } else {
-            ++ext;
+    const auto ExtensionNotSupportedWithReporting = [this](const char *extension) {
+        // TODO: could be simplified with better DeviceExtensionSupported()
+        std::vector<const char *> layers = {nullptr};
+        layers.insert(layers.end(), instance_layers_.begin(), instance_layers_.end());
+        if (std::any_of(layers.begin(), layers.end(),
+                        [this, extension](const char *l) { return DeviceExtensionSupported(gpu(), l, extension); }))
+            return false;
+        else {
+            ADD_FAILURE() << "InitState(): Requested device extension \"" << extension
+                          << "\" is not supported. It will be disabled.";
+            return true;
         }
-    }
+    };
 
-    m_device = new VkDeviceObj(0, objs[0], m_device_extension_names, features, create_device_pnext);
+    RemoveIf(m_device_extension_names, ExtensionNotSupportedWithReporting);
+
+    m_device = new VkDeviceObj(0, gpu_, m_device_extension_names, features, create_device_pnext);
     m_device->SetDeviceQueue();
 
     m_depthStencil = new VkDepthStencilObj(m_device);
 
-    m_render_target_fmt = VkTestFramework::GetFormat(inst, m_device);
+    m_render_target_fmt = VkTestFramework::GetFormat(instance_, m_device);
 
     m_lineWidth = 1.0f;
 
@@ -761,7 +665,7 @@ bool VkRenderFramework::InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags i
 
     uint32_t format_count;
     vk::GetPhysicalDeviceSurfaceFormatsKHR(m_device->phy().handle(), surface, &format_count, nullptr);
-    std::vector<VkSurfaceFormatKHR> formats;
+    vector<VkSurfaceFormatKHR> formats;
     if (format_count != 0) {
         formats.resize(format_count);
         vk::GetPhysicalDeviceSurfaceFormatsKHR(m_device->phy().handle(), surface, &format_count, formats.data());
@@ -769,7 +673,7 @@ bool VkRenderFramework::InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags i
 
     uint32_t present_mode_count;
     vk::GetPhysicalDeviceSurfacePresentModesKHR(m_device->phy().handle(), surface, &present_mode_count, nullptr);
-    std::vector<VkPresentModeKHR> present_modes;
+    vector<VkPresentModeKHR> present_modes;
     if (present_mode_count != 0) {
         present_modes.resize(present_mode_count);
         vk::GetPhysicalDeviceSurfacePresentModesKHR(m_device->phy().handle(), surface, &present_mode_count, present_modes.data());
@@ -802,7 +706,7 @@ bool VkRenderFramework::InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags i
     }
     uint32_t imageCount = 0;
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &imageCount, nullptr);
-    std::vector<VkImage> swapchainImages;
+    vector<VkImage> swapchainImages;
     swapchainImages.resize(imageCount);
     vk::GetSwapchainImagesKHR(device(), m_swapchain, &imageCount, swapchainImages.data());
     return true;
@@ -826,9 +730,9 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets) { InitRenderTarget(ta
 void VkRenderFramework::InitRenderTarget(VkImageView *dsBinding) { InitRenderTarget(1, dsBinding); }
 
 void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBinding) {
-    std::vector<VkAttachmentDescription> attachments;
-    std::vector<VkAttachmentReference> color_references;
-    std::vector<VkImageView> bindings;
+    vector<VkAttachmentDescription> attachments;
+    vector<VkAttachmentReference> color_references;
+    vector<VkImageView> bindings;
     attachments.reserve(targets + 1);  // +1 for dsBinding
     color_references.reserve(targets);
     bindings.reserve(targets + 1);  // +1 for dsBinding
@@ -987,7 +891,7 @@ VkDeviceObj::VkDeviceObj(uint32_t id, VkPhysicalDevice obj) : vk_testing::Device
     queue_props = phy().queue_properties();
 }
 
-VkDeviceObj::VkDeviceObj(uint32_t id, VkPhysicalDevice obj, std::vector<const char *> &extension_names,
+VkDeviceObj::VkDeviceObj(uint32_t id, VkPhysicalDevice obj, vector<const char *> &extension_names,
                          VkPhysicalDeviceFeatures *features, void *create_device_pnext)
     : vk_testing::Device(obj), id(id) {
     init(extension_names, features, create_device_pnext);
@@ -1024,7 +928,7 @@ VkQueueObj *VkDeviceObj::GetDefaultComputeQueue() {
 }
 
 VkDescriptorSetLayoutObj::VkDescriptorSetLayoutObj(const VkDeviceObj *device,
-                                                   const std::vector<VkDescriptorSetLayoutBinding> &descriptor_set_bindings,
+                                                   const vector<VkDescriptorSetLayoutBinding> &descriptor_set_bindings,
                                                    VkDescriptorSetLayoutCreateFlags flags, void *pNext) {
     VkDescriptorSetLayoutCreateInfo dsl_ci = {};
     dsl_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -1149,7 +1053,7 @@ void VkDescriptorSetObj::CreateVKDescriptorSet(VkCommandBufferObj *commandBuffer
 
         // build the update array
         size_t imageSamplerCount = 0;
-        for (std::vector<VkWriteDescriptorSet>::iterator it = m_writes.begin(); it != m_writes.end(); it++) {
+        for (vector<VkWriteDescriptorSet>::iterator it = m_writes.begin(); it != m_writes.end(); it++) {
             it->dstSet = m_set->handle();
             if (it->descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
                 it->pImageInfo = &m_imageSamplerDescriptors[imageSamplerCount++];
@@ -1364,7 +1268,7 @@ bool VkImageObj::IsCompatible(const VkImageUsageFlags usages, const VkFormatFeat
 
 void VkImageObj::InitNoLayout(uint32_t const width, uint32_t const height, uint32_t const mipLevels, VkFormat const format,
                               VkFlags const usage, VkImageTiling const requested_tiling, VkMemoryPropertyFlags const reqs,
-                              const std::vector<uint32_t> *queue_families, bool memory) {
+                              const vector<uint32_t> *queue_families, bool memory) {
     VkFormatProperties image_fmt;
     VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
 
@@ -1414,7 +1318,7 @@ void VkImageObj::InitNoLayout(uint32_t const width, uint32_t const height, uint3
 
 void VkImageObj::Init(uint32_t const width, uint32_t const height, uint32_t const mipLevels, VkFormat const format,
                       VkFlags const usage, VkImageTiling const requested_tiling, VkMemoryPropertyFlags const reqs,
-                      const std::vector<uint32_t> *queue_families, bool memory) {
+                      const vector<uint32_t> *queue_families, bool memory) {
     InitNoLayout(width, height, mipLevels, format, usage, requested_tiling, reqs, queue_families, memory);
 
     if (!initialized() || !memory) return;  // We don't have a valid handle from early stage init, and thus SetLayout will fail
@@ -1721,7 +1625,7 @@ VkShaderObj::VkShaderObj(VkDeviceObj *device, const char *shader_code, VkShaderS
     m_stage_info.pName = name;
     m_stage_info.pSpecializationInfo = specInfo;
 
-    std::vector<unsigned int> spv;
+    vector<unsigned int> spv;
     framework->GLSLtoSPV(&device->props.limits, stage, shader_code, spv, debug, spirv_minor_version);
 
     VkShaderModuleCreateInfo moduleCreateInfo = {};
@@ -1733,8 +1637,8 @@ VkShaderObj::VkShaderObj(VkDeviceObj *device, const char *shader_code, VkShaderS
     m_stage_info.module = handle();
 }
 
-VkShaderObj::VkShaderObj(VkDeviceObj *device, const std::string spv_source, VkShaderStageFlagBits stage,
-                         VkRenderFramework *framework, char const *name, VkSpecializationInfo *specInfo) {
+VkShaderObj::VkShaderObj(VkDeviceObj *device, const string spv_source, VkShaderStageFlagBits stage, VkRenderFramework *framework,
+                         char const *name, VkSpecializationInfo *specInfo) {
     m_device = device;
     m_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     m_stage_info.pNext = nullptr;
@@ -1744,7 +1648,7 @@ VkShaderObj::VkShaderObj(VkDeviceObj *device, const std::string spv_source, VkSh
     m_stage_info.pName = name;
     m_stage_info.pSpecializationInfo = specInfo;
 
-    std::vector<unsigned int> spv;
+    vector<unsigned int> spv;
     framework->ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, spv_source.data(), spv);
 
     VkShaderModuleCreateInfo moduleCreateInfo = {};
@@ -1756,9 +1660,8 @@ VkShaderObj::VkShaderObj(VkDeviceObj *device, const std::string spv_source, VkSh
     m_stage_info.module = handle();
 }
 
-VkPipelineLayoutObj::VkPipelineLayoutObj(VkDeviceObj *device,
-                                         const std::vector<const VkDescriptorSetLayoutObj *> &descriptor_layouts,
-                                         const std::vector<VkPushConstantRange> &push_constant_ranges) {
+VkPipelineLayoutObj::VkPipelineLayoutObj(VkDeviceObj *device, const vector<const VkDescriptorSetLayoutObj *> &descriptor_layouts,
+                                         const vector<VkPushConstantRange> &push_constant_ranges) {
     VkPipelineLayoutCreateInfo pl_ci = {};
     pl_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pl_ci.pushConstantRangeCount = static_cast<uint32_t>(push_constant_ranges.size());

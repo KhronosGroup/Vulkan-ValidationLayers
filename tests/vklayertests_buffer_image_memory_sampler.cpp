@@ -24,6 +24,8 @@
  * Author: John Zulauf <jzulauf@lunarg.com>
  */
 
+#include <type_traits>
+
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
 
@@ -6898,7 +6900,7 @@ TEST_F(VkLayerTest, CreateImageMinLimitsViolation) {
 
     enum Dimension { kWidth = 0x1, kHeight = 0x2, kDepth = 0x4 };
 
-    for (underlying_type<Dimension>::type bad_dimensions = 0x1; bad_dimensions < 0x8; ++bad_dimensions) {
+    for (std::underlying_type<Dimension>::type bad_dimensions = 0x1; bad_dimensions < 0x8; ++bad_dimensions) {
         VkExtent3D extent = {1, 1, 1};
 
         if (bad_dimensions & kWidth) {

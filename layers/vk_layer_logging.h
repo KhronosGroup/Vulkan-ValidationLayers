@@ -468,23 +468,19 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
     return bail;
 }
 
-static inline void DebugAnnotFlagsToReportFlags(VkDebugUtilsMessageSeverityFlagBitsEXT da_severity,
-                                                VkDebugUtilsMessageTypeFlagsEXT da_type, VkDebugReportFlagsEXT *dr_flags) {
-    *dr_flags = 0;
-
-    if ((da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0) {
-        *dr_flags |= VK_DEBUG_REPORT_ERROR_BIT_EXT;
-    } else if ((da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0) {
-        if ((da_type & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) != 0) {
-            *dr_flags |= VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-        } else {
-            *dr_flags |= VK_DEBUG_REPORT_WARNING_BIT_EXT;
-        }
-    } else if ((da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) != 0) {
-        *dr_flags |= VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
-    } else if ((da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) != 0) {
-        *dr_flags |= VK_DEBUG_REPORT_DEBUG_BIT_EXT;
+static inline VkDebugReportFlagsEXT DebugAnnotFlagsToReportFlags(VkDebugUtilsMessageSeverityFlagBitsEXT da_severity,
+                                                                 VkDebugUtilsMessageTypeFlagsEXT da_type) {
+    if (da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) return VK_DEBUG_REPORT_ERROR_BIT_EXT;
+    if (da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+        if (da_type & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)
+            return VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
+        else
+            return VK_DEBUG_REPORT_WARNING_BIT_EXT;
     }
+    if (da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) return VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
+    if (da_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) return VK_DEBUG_REPORT_DEBUG_BIT_EXT;
+
+    return 0;
 }
 
 static inline LogMessageTypeFlags DebugAnnotFlagsToMsgTypeFlags(VkDebugUtilsMessageSeverityFlagBitsEXT da_severity,

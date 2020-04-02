@@ -104,20 +104,21 @@ VkPhysicalDeviceFeatures PhysicalDevice::features() const {
  */
 std::vector<VkLayerProperties> GetGlobalLayers() {
     VkResult err;
-    std::vector<VkLayerProperties> layers;
     uint32_t layer_count;
+    std::vector<VkLayerProperties> layers;
 
     do {
-        layer_count = 0;
-        err = vk::EnumerateInstanceLayerProperties(&layer_count, NULL);
+        err = vk::EnumerateInstanceLayerProperties(&layer_count, nullptr);
+        assert(!err);
+        if (err || 0 == layer_count) return {};
 
-        if (err == VK_SUCCESS) {
-            layers.reserve(layer_count);
-            err = vk::EnumerateInstanceLayerProperties(&layer_count, layers.data());
-        }
-    } while (err == VK_INCOMPLETE);
+        layers.resize(layer_count);
+        err = vk::EnumerateInstanceLayerProperties(&layer_count, layers.data());
+    } while (VK_INCOMPLETE == err);
 
-    assert(err == VK_SUCCESS);
+    assert(!err);
+    if (err) return {};
+    layers.resize(layer_count);
 
     return layers;
 }
@@ -125,7 +126,7 @@ std::vector<VkLayerProperties> GetGlobalLayers() {
 /*
  * Return list of Global extensions provided by the ICD / Loader
  */
-std::vector<VkExtensionProperties> GetGlobalExtensions() { return GetGlobalExtensions(NULL); }
+std::vector<VkExtensionProperties> GetGlobalExtensions() { return GetGlobalExtensions(nullptr); }
 
 /*
  * Return list of Global extensions provided by the specified layer
@@ -133,23 +134,24 @@ std::vector<VkExtensionProperties> GetGlobalExtensions() { return GetGlobalExten
  * ICDs
  */
 std::vector<VkExtensionProperties> GetGlobalExtensions(const char *pLayerName) {
-    std::vector<VkExtensionProperties> exts;
-    uint32_t ext_count;
     VkResult err;
+    uint32_t extension_count;
+    std::vector<VkExtensionProperties> extensions;
 
     do {
-        ext_count = 0;
-        err = vk::EnumerateInstanceExtensionProperties(pLayerName, &ext_count, NULL);
+        err = vk::EnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr);
+        assert(!err);
+        if (err || 0 == extension_count) return {};
 
-        if (err == VK_SUCCESS) {
-            exts.resize(ext_count);
-            err = vk::EnumerateInstanceExtensionProperties(pLayerName, &ext_count, exts.data());
-        }
-    } while (err == VK_INCOMPLETE);
+        extensions.resize(extension_count);
+        err = vk::EnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data());
+    } while (VK_INCOMPLETE == err);
 
-    assert(err == VK_SUCCESS);
+    assert(!err);
+    if (err) return {};
+    extensions.resize(extension_count);
 
-    return exts;
+    return extensions;
 }
 
 /*
