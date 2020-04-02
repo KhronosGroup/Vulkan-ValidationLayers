@@ -32,9 +32,9 @@ Replaces: vulkan-loader,
  libvulkan1 (<< 1.1.82.0),
 Multi-Arch: same
 Description: Vulkan validation layers
- This project provides the Khronos official Vulkan validation layers.
- .
- This package includes the loader library.
+ This project provides Vulkan validation layers that can
+ be enabled to assist development by enabling developers
+ to verify their applications correct use of the Vulkan API.
 
 Package: vulkan-validationlayers-dev
 Section: libdevel
@@ -48,6 +48,6 @@ Replaces:
  libvulkan-dev (<< 1.1.82.0),
 Multi-Arch: same
 Description: Vulkan validation layers -- development files
- This project provides the Khronos official Vulkan validation layers.
- .
- This package includes files needed for development.
+ This project provides Vulkan validation layers that can
+ be enabled to assist development by enabling developers
+ to verify their applications correct use of the Vulkan API.
