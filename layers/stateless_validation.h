@@ -792,7 +792,7 @@ class StatelessValidation : public ValidationObject {
 
         // Check against the required list in the info
         std::vector<const char *> missing;
-        for (const auto &req : info.requires) {
+        for (const auto &req : info.requirements) {
             if (!(extensions.*(req.enabled))) {
                 missing.push_back(req.name);
             }
