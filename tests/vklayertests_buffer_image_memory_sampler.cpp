@@ -4445,6 +4445,104 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
     conc_test(color_vuid);
 
+    // Test multip-planar image
+    if (mp_extensions) {
+        PFN_vkBindImageMemory2KHR vkBindImageMemory2Function = nullptr;
+        PFN_vkGetImageMemoryRequirements2KHR vkGetImageMemoryRequirements2Function = nullptr;
+        if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+            vkBindImageMemory2Function = vk::BindImageMemory2;
+            vkGetImageMemoryRequirements2Function = vk::GetImageMemoryRequirements2;
+        } else {
+            vkBindImageMemory2Function =
+                (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+            vkGetImageMemoryRequirements2Function =
+                (PFN_vkGetImageMemoryRequirements2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR");
+        }
+
+        VkFormatProperties format_properties;
+        VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+        vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), mp_format, &format_properties);
+        if (0 !=
+            (format_properties.optimalTilingFeatures & (VK_FORMAT_FEATURE_DISJOINT_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT))) {
+            VkImageCreateInfo image_create_info = {};
+            image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+            image_create_info.pNext = NULL;
+            image_create_info.imageType = VK_IMAGE_TYPE_2D;
+            image_create_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+            image_create_info.extent.width = 64;
+            image_create_info.extent.height = 64;
+            image_create_info.extent.depth = 1;
+            image_create_info.mipLevels = 1;
+            image_create_info.arrayLayers = 1;
+            image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+            image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+            image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+            image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
+
+            VkImage mp_image;
+            VkDeviceMemory plane_0_memory;
+            VkDeviceMemory plane_1_memory;
+            ASSERT_VK_SUCCESS(vk::CreateImage(m_device->device(), &image_create_info, NULL, &mp_image));
+
+            VkImagePlaneMemoryRequirementsInfo image_plane_req = {VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO};
+            image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
+
+            VkImageMemoryRequirementsInfo2 mem_req_info2 = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2};
+            mem_req_info2.pNext = &image_plane_req;
+            mem_req_info2.image = mp_image;
+            VkMemoryRequirements2 mem_req2 = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
+            vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
+
+            // Find a valid memory type index to memory to be allocated from
+            VkMemoryAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+            alloc_info.allocationSize = mem_req2.memoryRequirements.size;
+            ASSERT_TRUE(m_device->phy().set_memory_type(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0));
+            ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &plane_0_memory));
+
+            image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
+            vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
+            alloc_info.allocationSize = mem_req2.memoryRequirements.size;
+            ASSERT_TRUE(m_device->phy().set_memory_type(mem_req2.memoryRequirements.memoryTypeBits, &alloc_info, 0));
+            ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &alloc_info, NULL, &plane_1_memory));
+
+            VkBindImagePlaneMemoryInfo plane_0_memory_info = {VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO};
+            plane_0_memory_info.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
+            VkBindImagePlaneMemoryInfo plane_1_memory_info = {VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO};
+            plane_1_memory_info.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
+
+            VkBindImageMemoryInfo bind_image_info[2];
+            bind_image_info[0].sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
+            bind_image_info[0].pNext = &plane_0_memory_info;
+            bind_image_info[0].image = mp_image;
+            bind_image_info[0].memory = plane_0_memory;
+            bind_image_info[0].memoryOffset = 0;
+            bind_image_info[1] = bind_image_info[0];
+            bind_image_info[1].pNext = &plane_1_memory_info;
+            bind_image_info[1].memory = plane_1_memory;
+            vkBindImageMemory2Function(device(), 2, bind_image_info);
+
+            conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+            conc_test.image_barrier_.image = mp_image;
+
+            // Test valid usage first
+            conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
+            conc_test("", "", VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, true);
+
+            conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
+            conc_test("VUID-VkImageMemoryBarrier-image-01672");
+
+            conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_2_BIT;
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageAspect");
+            conc_test("VUID-VkImageMemoryBarrier-image-01673");
+
+            vk::FreeMemory(device(), plane_0_memory, NULL);
+            vk::FreeMemory(device(), plane_1_memory, NULL);
+            vk::DestroyImage(m_device->device(), mp_image, nullptr);
+        }
+    }
+
     // A barrier's new and old VkImageLayout must be compatible with an image's VkImageUsageFlags.
     {
         VkImageObj img_color(m_device);
