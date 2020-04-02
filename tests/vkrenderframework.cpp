@@ -324,29 +324,33 @@ bool VkRenderFramework::InstanceExtensionEnabled(const char *ext_name) {
     }
     return ext_found;
 }
-
 // Return true if extension name is found and spec value is >= requested spec value
-bool VkRenderFramework::DeviceExtensionSupported(VkPhysicalDevice dev, const char *layer, const char *ext_name, uint32_t spec) {
-    if (!inst) {
+bool VkRenderFramework::DeviceExtensionSupported(const char *extension_name, const uint32_t spec_version) const {
+    if (!inst || !objs[0]) {
         EXPECT_NE((VkInstance)0, inst);  // Complain, not cool without an instance
+        EXPECT_NE((VkPhysicalDevice)0, objs[0]);
         return false;
     }
-    uint32_t ext_count = 0;
-    std::vector<VkExtensionProperties> ext_props;
-    VkResult res = vk::EnumerateDeviceExtensionProperties(dev, layer, &ext_count, nullptr);
-    if (VK_SUCCESS != res) return false;
-    if (0 == ext_count) return false;
 
-    ext_props.resize(ext_count);
-    res = vk::EnumerateDeviceExtensionProperties(dev, layer, &ext_count, ext_props.data());
-    if (VK_SUCCESS != res) return false;
+    const vk_testing::PhysicalDevice device_obj(objs[0]);
 
-    for (auto &it : ext_props) {
-        if (0 == strncmp(ext_name, it.extensionName, VK_MAX_EXTENSION_NAME_SIZE)) {
-            return (it.specVersion >= spec);
-        }
+    // TODO: cannot enumare enabled layers because MockICD does not support that, so use m_instance_layer_names instead
+    // EXPECT_GE(VK_VERSION_PATCH(device_obj.properties().apiVersion), (uint32_t)13);  // assume device layers are deprecated
+    // const auto enabled_layers = device_obj.layers();
+    const auto enabled_layers = m_instance_layer_names;
+
+    auto extensions = device_obj.extensions();
+    for (const auto &layer : enabled_layers) {
+        const auto layer_extensions = device_obj.extensions(layer);
+        extensions.insert(extensions.end(), layer_extensions.begin(), layer_extensions.end());
     }
-    return false;
+
+    const auto IsTheQueriedExtension = [extension_name, spec_version](const VkExtensionProperties &extension) {
+        return strncmp(extension_name, extension.extensionName, VK_MAX_EXTENSION_NAME_SIZE) == 0 &&
+               extension.specVersion >= spec_version;
+    };
+
+    return std::any_of(extensions.begin(), extensions.end(), IsTheQueriedExtension);
 }
 
 // Return true if device is created and extension name is found in the list

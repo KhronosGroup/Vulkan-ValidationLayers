@@ -218,7 +218,11 @@ class VkRenderFramework : public VkTestFramework {
     bool EnableDeviceProfileLayer();
     bool InstanceExtensionSupported(const char *name, uint32_t specVersion = 0);
     bool InstanceExtensionEnabled(const char *name);
-    bool DeviceExtensionSupported(VkPhysicalDevice dev, const char *layer, const char *name, uint32_t specVersion = 0);
+    bool DeviceExtensionSupported(const char *extension_name, uint32_t spec_version = 0) const;
+    bool DeviceExtensionSupported(VkPhysicalDevice, const char *, const char *name,
+                                  uint32_t spec_version = 0) const {  // deprecated
+        return DeviceExtensionSupported(name, spec_version);
+    }
     bool DeviceExtensionEnabled(const char *name);
     bool DeviceIsMockICD();
     bool DeviceSimulation();
