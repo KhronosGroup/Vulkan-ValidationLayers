@@ -104,9 +104,9 @@ struct InstanceExtensions {
     };
     typedef std::vector<InstanceReq> InstanceReqVec;
     struct InstanceInfo {
-       InstanceInfo(ExtEnabled InstanceExtensions::* state_, const InstanceReqVec requires_): state(state_), requires(requires_) {}
+       InstanceInfo(ExtEnabled InstanceExtensions::* state_, const InstanceReqVec requirements_): state(state_), requirements(requirements_) {}
        ExtEnabled InstanceExtensions::* state;
-       InstanceReqVec requires;
+       InstanceReqVec requirements;
     };
 
     typedef std::unordered_map<std::string,InstanceInfo> InstanceInfoMap;
@@ -493,9 +493,9 @@ struct DeviceExtensions : public InstanceExtensions {
     };
     typedef std::vector<DeviceReq> DeviceReqVec;
     struct DeviceInfo {
-       DeviceInfo(ExtEnabled DeviceExtensions::* state_, const DeviceReqVec requires_): state(state_), requires(requires_) {}
+       DeviceInfo(ExtEnabled DeviceExtensions::* state_, const DeviceReqVec requirements_): state(state_), requirements(requirements_) {}
        ExtEnabled DeviceExtensions::* state;
-       DeviceReqVec requires;
+       DeviceReqVec requirements;
     };
 
     typedef std::unordered_map<std::string,DeviceInfo> DeviceInfoMap;
