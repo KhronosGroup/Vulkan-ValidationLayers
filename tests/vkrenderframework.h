@@ -45,24 +45,7 @@ class VkImageObj;
 #include <vector>
 #include <unordered_set>
 
-// Validation debug report callback prototype
-extern VKAPI_ATTR VkBool32 VKAPI_CALL LvtDebugReportFunc(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType, uint64_t srcObject,
-                                                         size_t location, int32_t msgCode, const char *pLayerPrefix,
-                                                         const char *pMsg, void *pUserData);
-
-// Validation debug utils callback prototype
-extern VKAPI_ATTR VkBool32 VKAPI_CALL LvtDebugUtilsFunc(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                                        VkDebugUtilsMessageTypeFlagsEXT messageTypes,
-                                                        const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData);
-
-using namespace std;
-
 using vk_testing::MakeVkHandles;
-
-typedef struct {
-    PFN_vkDebugReportCallbackEXT LvtDebugReportFunction;
-    PFN_vkDebugUtilsMessengerCallbackEXT LvtDebugUtilsFunction;
-} DebugCallbackFunctions;
 
 template <class Dst, class Src>
 std::vector<Dst *> MakeTestbindingHandles(const std::vector<Src *> &v) {
@@ -138,7 +121,7 @@ class ErrorMonitor {
     void SetAllowedFailureMsg(const char *const msg);
 
     VkBool32 CheckForDesiredMsg(const char *const msgString);
-    vector<string> GetOtherFailureMsgs() const;
+    std::vector<std::string> GetOtherFailureMsgs() const;
     VkDebugReportFlagsEXT GetMessageFlags() const;
     bool AnyDesiredMsgFound() const;
     bool AllDesiredMsgsFound() const;
@@ -164,10 +147,53 @@ class ErrorMonitor {
     std::unordered_multiset<std::string> failure_message_strings_;
     std::vector<std::string> ignore_message_strings_;
     std::vector<std::string> allowed_message_strings_;
-    vector<string> other_messages_;
+    std::vector<std::string> other_messages_;
     test_platform_thread_mutex mutex_;
     bool *bailout_;
     bool message_found_;
+};
+
+struct DebugReporter {
+    void Create(VkInstance instance) NOEXCEPT;
+    void Destroy(VkInstance instance) NOEXCEPT;
+
+    ErrorMonitor error_monitor_;
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugReportFlagsEXT message_flags, VkDebugReportObjectTypeEXT, uint64_t,
+                                                        size_t, int32_t, const char *, const char *msg, void *user_data);
+
+    const char *debug_extension_name = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
+    VkDebugReportCallbackCreateInfoEXT debug_create_info_ = {
+        VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT, nullptr,
+        VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
+        &DebugCallback, &error_monitor_};
+    using DebugCreateFnType = PFN_vkCreateDebugReportCallbackEXT;
+    const char *debug_create_fn_name_ = "vkCreateDebugReportCallbackEXT";
+    using DebugDestroyFnType = PFN_vkDestroyDebugReportCallbackEXT;
+    const char *debug_destroy_fn_name_ = "vkDestroyDebugReportCallbackEXT";
+    VkDebugReportCallbackEXT debug_obj_ = VK_NULL_HANDLE;
+#else
+    static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+                                                        VkDebugUtilsMessageTypeFlagsEXT message_types,
+                                                        const VkDebugUtilsMessengerCallbackDataEXT *callback_data, void *user_data);
+
+    const char *debug_extension_name = VK_EXT_DEBUG_UTILS_EXTENSION_NAME;
+    VkDebugUtilsMessengerCreateInfoEXT debug_create_info_ = {
+        VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+        nullptr,
+        0,
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT,
+        VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
+        &DebugCallback,
+        &error_monitor_};
+    using DebugCreateFnType = PFN_vkCreateDebugUtilsMessengerEXT;
+    const char *debug_create_fn_name_ = "vkCreateDebugUtilsMessengerEXT";
+    using DebugDestroyFnType = PFN_vkDestroyDebugUtilsMessengerEXT;
+    const char *debug_destroy_fn_name_ = "vkDestroyDebugUtilsMessengerEXT";
+    VkDebugUtilsMessengerEXT debug_obj_ = VK_NULL_HANDLE;
+#endif
 };
 
 class VkCommandPoolObj;
@@ -176,14 +202,21 @@ class VkDepthStencilObj;
 
 class VkRenderFramework : public VkTestFramework {
   public:
-    VkInstance instance() { return inst; }
+    VkInstance instance() { return instance_; }
     VkDevice device() { return m_device->device(); }
     VkDeviceObj *DeviceObj() const { return m_device; }
     VkPhysicalDevice gpu();
     VkRenderPass renderPass() { return m_renderPass; }
     const VkRenderPassCreateInfo &RenderPassInfo() const { return renderPass_info_; };
     VkFramebuffer framebuffer() { return m_framebuffer; }
-    ErrorMonitor *Monitor();
+    ErrorMonitor &Monitor();
+
+    static bool InstanceLayerSupported(const char *layer_name, uint32_t spec_version = 0, uint32_t impl_version = 0);
+    static bool InstanceExtensionSupported(const char *extension_name, uint32_t spec_version = 0);
+
+    VkInstanceCreateInfo GetInstanceCreateInfo() const;
+    void InitFramework(void * /*unused compatibility parameter*/ = NULL, void *instance_pnext = NULL);
+    void ShutdownFramework();
 
     void InitViewport(float width, float height);
     void InitViewport();
@@ -200,13 +233,6 @@ class VkRenderFramework : public VkTestFramework {
     void InitRenderTarget(uint32_t targets, VkImageView *dsBinding);
     void DestroyRenderTarget();
 
-    void InitFrameworkDebugReport(PFN_vkDebugReportCallbackEXT = NULL, void *userData = NULL, void *instance_pnext = NULL);
-
-    void InitFrameworkDebugUtils(PFN_vkDebugUtilsMessengerCallbackEXT = NULL, void *userData = NULL, void *instance_pnext = NULL);
-
-    void InitFramework(void *userData = NULL, void *instance_pnext = NULL);
-
-    void ShutdownFramework();
     void GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *features);
     void GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *props);
     void InitState(VkPhysicalDeviceFeatures *features = nullptr, void *create_device_pnext = nullptr,
@@ -214,9 +240,7 @@ class VkRenderFramework : public VkTestFramework {
 
     const VkRenderPassBeginInfo &renderPassBeginInfo() const { return m_renderPassBeginInfo; }
 
-    bool InstanceLayerSupported(const char *name, uint32_t specVersion = 0, uint32_t implementationVersion = 0);
     bool EnableDeviceProfileLayer();
-    bool InstanceExtensionSupported(const char *name, uint32_t specVersion = 0);
     bool InstanceExtensionEnabled(const char *name);
     bool DeviceExtensionSupported(const char *extension_name, uint32_t spec_version = 0) const;
     bool DeviceExtensionSupported(VkPhysicalDevice, const char *, const char *name,
@@ -231,10 +255,16 @@ class VkRenderFramework : public VkTestFramework {
     VkRenderFramework();
     virtual ~VkRenderFramework() = 0;
 
-    VkApplicationInfo app_info;
-    VkInstance inst;
-    VkPhysicalDevice objs[16];
-    uint32_t gpu_count;
+    DebugReporter debug_reporter_;
+    ErrorMonitor *m_errorMonitor = &debug_reporter_.error_monitor_;  // compatibility alias name
+
+    VkApplicationInfo app_info_;
+    std::vector<const char *> instance_layers_;
+    std::vector<const char *> instance_extensions_;
+    std::vector<const char *> &m_instance_extension_names = instance_extensions_;  // compatibility alias name
+    VkInstance instance_;
+    VkPhysicalDevice gpu_;
+
     VkDeviceObj *m_device;
     VkCommandPoolObj *m_commandPool;
     VkCommandBufferObj *m_commandBuffer;
@@ -243,7 +273,6 @@ class VkRenderFramework : public VkTestFramework {
     VkFramebuffer m_framebuffer;
     VkSurfaceKHR m_surface;
     VkSwapchainKHR m_swapchain;
-    ErrorMonitor *m_errorMonitor = {};
     std::vector<VkViewport> m_viewports;
     std::vector<VkRect2D> m_scissors;
     float m_lineWidth;
@@ -259,7 +288,7 @@ class VkRenderFramework : public VkTestFramework {
     bool m_addRenderPassSelfDependency;
     std::vector<VkClearValue> m_renderPassClearValues;
     VkRenderPassBeginInfo m_renderPassBeginInfo;
-    vector<std::unique_ptr<VkImageObj>> m_renderTargets;
+    std::vector<std::unique_ptr<VkImageObj>> m_renderTargets;
     float m_width, m_height;
     VkFormat m_render_target_fmt;
     VkFormat m_depth_stencil_fmt;
@@ -269,18 +298,6 @@ class VkRenderFramework : public VkTestFramework {
     uint32_t m_stencil_clear_color;
     VkDepthStencilObj *m_depthStencil;
 
-    // Debug Report Data
-    PFN_vkCreateDebugReportCallbackEXT m_CreateDebugReportCallback;
-    PFN_vkDestroyDebugReportCallbackEXT m_DestroyDebugReportCallback;
-    VkDebugReportCallbackEXT m_globalMsgCallback;
-
-    // Debug Utils Data
-    PFN_vkCreateDebugUtilsMessengerEXT m_CreateDebugUtilsCallback;
-    PFN_vkDestroyDebugUtilsMessengerEXT m_DestroyDebugUtilsCallback;
-    VkDebugUtilsMessengerEXT m_global_message_callback;
-
-    std::vector<const char *> m_instance_layer_names;
-    std::vector<const char *> m_instance_extension_names;
     std::vector<const char *> m_device_extension_names;
 };
 
@@ -304,9 +321,9 @@ class VkCommandBufferObj : public vk_testing::CommandBuffer {
                          uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
                          const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
                          const VkImageMemoryBarrier *pImageMemoryBarriers);
-    void ClearAllBuffers(const vector<std::unique_ptr<VkImageObj>> &color_objs, VkClearColorValue clear_color,
+    void ClearAllBuffers(const std::vector<std::unique_ptr<VkImageObj>> &color_objs, VkClearColorValue clear_color,
                          VkDepthStencilObj *depth_stencil_obj, float depth_clear_value, uint32_t stencil_clear_value);
-    void PrepareAttachments(const vector<std::unique_ptr<VkImageObj>> &color_atts, VkDepthStencilObj *depth_stencil_att);
+    void PrepareAttachments(const std::vector<std::unique_ptr<VkImageObj>> &color_atts, VkDepthStencilObj *depth_stencil_att);
     void BindDescriptorSet(VkDescriptorSetObj &descriptorSet);
     void BindIndexBuffer(VkBufferObj *indexBuffer, VkDeviceSize offset, VkIndexType indexType);
     void BindVertexBuffer(VkConstantBufferObj *vertexBuffer, VkDeviceSize offset, uint32_t binding);
@@ -504,8 +521,8 @@ class VkDescriptorSetObj : public vk_testing::DescriptorPool {
     std::map<VkDescriptorType, int> m_type_counts;
     int m_nextSlot;
 
-    vector<VkDescriptorImageInfo> m_imageSamplerDescriptors;
-    vector<VkWriteDescriptorSet> m_writes;
+    std::vector<VkDescriptorImageInfo> m_imageSamplerDescriptors;
+    std::vector<VkWriteDescriptorSet> m_writes;
 
     vk_testing::DescriptorSetLayout m_layout;
     vk_testing::PipelineLayout m_pipeline_layout;
@@ -564,8 +581,8 @@ class VkPipelineObj : public vk_testing::Pipeline {
     void SetInputAssembly(const VkPipelineInputAssemblyStateCreateInfo *ia_state);
     void SetRasterization(const VkPipelineRasterizationStateCreateInfo *rs_state);
     void SetTessellation(const VkPipelineTessellationStateCreateInfo *te_state);
-    void SetViewport(const vector<VkViewport> viewports);
-    void SetScissor(const vector<VkRect2D> scissors);
+    void SetViewport(const std::vector<VkViewport> viewports);
+    void SetScissor(const std::vector<VkRect2D> scissors);
     void SetLineState(const VkPipelineRasterizationLineStateCreateInfoEXT *line_state);
 
     void InitGraphicsPipelineCreateInfo(VkGraphicsPipelineCreateInfo *gp_ci);
@@ -583,12 +600,12 @@ class VkPipelineObj : public vk_testing::Pipeline {
     VkPipelineTessellationStateCreateInfo const *m_te_state;
     VkPipelineDynamicStateCreateInfo m_pd_state;
     VkPipelineRasterizationLineStateCreateInfoEXT m_line_state;
-    vector<VkDynamicState> m_dynamic_state_enables;
-    vector<VkViewport> m_viewports;
-    vector<VkRect2D> m_scissors;
+    std::vector<VkDynamicState> m_dynamic_state_enables;
+    std::vector<VkViewport> m_viewports;
+    std::vector<VkRect2D> m_scissors;
     VkDeviceObj *m_device;
-    vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
-    vector<VkPipelineColorBlendAttachmentState> m_colorAttachments;
+    std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
+    std::vector<VkPipelineColorBlendAttachmentState> m_colorAttachments;
 };
 
 #endif  // VKRENDERFRAMEWORK_H

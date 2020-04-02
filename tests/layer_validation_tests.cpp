@@ -126,27 +126,6 @@ bool ImageFormatAndFeaturesSupported(const VkInstance inst, const VkPhysicalDevi
     return true;
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL LvtDebugReportFunc(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType, uint64_t srcObject,
-                                                  size_t location, int32_t msgCode, const char *pLayerPrefix, const char *pMsg,
-                                                  void *pUserData) {
-    ErrorMonitor *errMonitor = (ErrorMonitor *)pUserData;
-    if (msgFlags & errMonitor->GetMessageFlags()) {
-        return errMonitor->CheckForDesiredMsg(pMsg);
-    }
-    return VK_FALSE;
-}
-
-VKAPI_ATTR VkBool32 VKAPI_CALL LvtDebugUtilsFunc(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                                 VkDebugUtilsMessageTypeFlagsEXT messageTypes,
-                                                 const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData) {
-    ErrorMonitor *errMonitor = (ErrorMonitor *)pUserData;
-    auto msg_flags = DebugAnnotFlagsToMsgTypeFlags(messageSeverity, messageTypes);
-    if (msg_flags & errMonitor->GetMessageFlags()) {
-        return errMonitor->CheckForDesiredMsg(pCallbackData->pMessage);
-    }
-    return VK_FALSE;
-}
-
 VkPhysicalDevicePushDescriptorPropertiesKHR GetPushDescriptorProperties(VkInstance instance, VkPhysicalDevice gpu) {
     // Find address of extension call and make the call -- assumes needed extensions are enabled.
     PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
@@ -535,15 +514,15 @@ void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *pCreateInfo
     VkResult err;
     VkSampler sampler = VK_NULL_HANDLE;
     if (code.length())
-        test.Monitor()->SetDesiredFailureMsg(kErrorBit | kWarningBit, code);
+        test.Monitor().SetDesiredFailureMsg(kErrorBit | kWarningBit, code);
     else
-        test.Monitor()->ExpectSuccess();
+        test.Monitor().ExpectSuccess();
 
     err = vk::CreateSampler(test.device(), pCreateInfo, NULL, &sampler);
     if (code.length())
-        test.Monitor()->VerifyFound();
+        test.Monitor().VerifyFound();
     else
-        test.Monitor()->VerifyNotFound();
+        test.Monitor().VerifyNotFound();
 
     if (VK_SUCCESS == err) {
         vk::DestroySampler(test.device(), sampler, NULL);
@@ -554,15 +533,15 @@ void CreateBufferTest(VkLayerTest &test, const VkBufferCreateInfo *pCreateInfo, 
     VkResult err;
     VkBuffer buffer = VK_NULL_HANDLE;
     if (code.length())
-        test.Monitor()->SetDesiredFailureMsg(kErrorBit, code);
+        test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
     else
-        test.Monitor()->ExpectSuccess();
+        test.Monitor().ExpectSuccess();
 
     err = vk::CreateBuffer(test.device(), pCreateInfo, NULL, &buffer);
     if (code.length())
-        test.Monitor()->VerifyFound();
+        test.Monitor().VerifyFound();
     else
-        test.Monitor()->VerifyNotFound();
+        test.Monitor().VerifyNotFound();
 
     if (VK_SUCCESS == err) {
         vk::DestroyBuffer(test.device(), buffer, NULL);
@@ -573,15 +552,15 @@ void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *pCreateInfo, st
     VkResult err;
     VkImage image = VK_NULL_HANDLE;
     if (code.length())
-        test.Monitor()->SetDesiredFailureMsg(kErrorBit, code);
+        test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
     else
-        test.Monitor()->ExpectSuccess();
+        test.Monitor().ExpectSuccess();
 
     err = vk::CreateImage(test.device(), pCreateInfo, NULL, &image);
     if (code.length())
-        test.Monitor()->VerifyFound();
+        test.Monitor().VerifyFound();
     else
-        test.Monitor()->VerifyNotFound();
+        test.Monitor().VerifyNotFound();
 
     if (VK_SUCCESS == err) {
         vk::DestroyImage(test.device(), image, NULL);
@@ -592,16 +571,15 @@ void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *pCrea
     VkResult err;
     VkBufferView view = VK_NULL_HANDLE;
     if (codes.size())
-        std::for_each(codes.begin(), codes.end(),
-                      [&](const std::string &s) { test.Monitor()->SetDesiredFailureMsg(kErrorBit, s); });
+        std::for_each(codes.begin(), codes.end(), [&](const std::string &s) { test.Monitor().SetDesiredFailureMsg(kErrorBit, s); });
     else
-        test.Monitor()->ExpectSuccess();
+        test.Monitor().ExpectSuccess();
 
     err = vk::CreateBufferView(test.device(), pCreateInfo, NULL, &view);
     if (codes.size())
-        test.Monitor()->VerifyFound();
+        test.Monitor().VerifyFound();
     else
-        test.Monitor()->VerifyNotFound();
+        test.Monitor().VerifyNotFound();
 
     if (VK_SUCCESS == err) {
         vk::DestroyBufferView(test.device(), view, NULL);
@@ -612,15 +590,15 @@ void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *pCreate
     VkResult err;
     VkImageView view = VK_NULL_HANDLE;
     if (code.length())
-        test.Monitor()->SetDesiredFailureMsg(kErrorBit, code);
+        test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
     else
-        test.Monitor()->ExpectSuccess();
+        test.Monitor().ExpectSuccess();
 
     err = vk::CreateImageView(test.device(), pCreateInfo, NULL, &view);
     if (code.length())
-        test.Monitor()->VerifyFound();
+        test.Monitor().VerifyFound();
     else
-        test.Monitor()->VerifyNotFound();
+        test.Monitor().VerifyNotFound();
 
     if (VK_SUCCESS == err) {
         vk::DestroyImageView(test.device(), view, NULL);
@@ -937,32 +915,32 @@ VkCommandBufferObj *VkLayerTest::CommandBuffer() { return m_commandBuffer; }
 VkLayerTest::VkLayerTest() {
     m_enableWSI = false;
 
-    m_instance_layer_names.clear();
-    m_instance_extension_names.clear();
-    m_device_extension_names.clear();
+    // TODO: not quite sure why most of this is here instead of in super
 
     // Add default instance extensions to the list
-    m_instance_extension_names.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-    m_instance_extension_names.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    instance_extensions_.push_back(debug_reporter_.debug_extension_name);
 
-    m_instance_layer_names.push_back("VK_LAYER_KHRONOS_validation");
+    instance_layers_.push_back(kValidationLayerName);
 
     if (VkTestFramework::m_devsim_layer) {
         if (InstanceLayerSupported("VK_LAYER_LUNARG_device_simulation")) {
-            m_instance_layer_names.push_back("VK_LAYER_LUNARG_device_simulation");
+            instance_layers_.push_back("VK_LAYER_LUNARG_device_simulation");
         } else {
             VkTestFramework::m_devsim_layer = false;
             printf("             Did not find VK_LAYER_LUNARG_device_simulation layer so it will not be enabled.\n");
         }
+    } else {
+        if (InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api"))
+            instance_layers_.push_back("VK_LAYER_LUNARG_device_profile_api");
     }
 
-    this->app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    this->app_info.pNext = NULL;
-    this->app_info.pApplicationName = "layer_tests";
-    this->app_info.applicationVersion = 1;
-    this->app_info.pEngineName = "unittest";
-    this->app_info.engineVersion = 1;
-    this->app_info.apiVersion = VK_API_VERSION_1_0;
+    app_info_.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    app_info_.pNext = NULL;
+    app_info_.pApplicationName = "layer_tests";
+    app_info_.applicationVersion = 1;
+    app_info_.pEngineName = "unittest";
+    app_info_.engineVersion = 1;
+    app_info_.apiVersion = VK_API_VERSION_1_0;
 
     // Find out what version the instance supports and record the default target instance
     auto enumerateInstanceVersion = (PFN_vkEnumerateInstanceVersion)vk::GetInstanceProcAddr(nullptr, "vkEnumerateInstanceVersion");
@@ -971,7 +949,7 @@ VkLayerTest::VkLayerTest() {
     } else {
         m_instance_api_version = VK_API_VERSION_1_0;
     }
-    m_target_api_version = app_info.apiVersion;
+    m_target_api_version = app_info_.apiVersion;
 }
 
 bool VkLayerTest::AddSurfaceInstanceExtension() {
@@ -980,7 +958,7 @@ bool VkLayerTest::AddSurfaceInstanceExtension() {
         printf("%s %s extension not supported\n", kSkipPrefix, VK_KHR_SURFACE_EXTENSION_NAME);
         return false;
     }
-    m_instance_extension_names.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+    instance_extensions_.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
 
     bool bSupport = false;
 #if defined(VK_USE_PLATFORM_WIN32_KHR)
@@ -988,7 +966,7 @@ bool VkLayerTest::AddSurfaceInstanceExtension() {
         printf("%s %s extension not supported\n", kSkipPrefix, VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
         return false;
     }
-    m_instance_extension_names.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+    instance_extensions_.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
     bSupport = true;
 #endif
 
@@ -997,7 +975,7 @@ bool VkLayerTest::AddSurfaceInstanceExtension() {
         printf("%s %s extension not supported\n", kSkipPrefix, VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
         return false;
     }
-    m_instance_extension_names.push_back(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
+    instance_extensions_.push_back(VK_KHR_ANDROID_SURFACE_EXTENSION_NAME);
     bSupport = true;
 #endif
 
@@ -1007,7 +985,7 @@ bool VkLayerTest::AddSurfaceInstanceExtension() {
         return false;
     }
     if (XOpenDisplay(NULL)) {
-        m_instance_extension_names.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
+        instance_extensions_.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
         bSupport = true;
     }
 #endif
@@ -1018,7 +996,7 @@ bool VkLayerTest::AddSurfaceInstanceExtension() {
         return false;
     }
     if (!bSupport && xcb_connect(NULL, NULL)) {
-        m_instance_extension_names.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
+        instance_extensions_.push_back(VK_KHR_XCB_SURFACE_EXTENSION_NAME);
         bSupport = true;
     }
 #endif
@@ -1041,7 +1019,7 @@ uint32_t VkLayerTest::SetTargetApiVersion(uint32_t target_api_version) {
     if (target_api_version == 0) target_api_version = VK_API_VERSION_1_0;
     if (target_api_version <= m_instance_api_version) {
         m_target_api_version = target_api_version;
-        app_info.apiVersion = m_target_api_version;
+        app_info_.apiVersion = m_target_api_version;
     }
     return m_target_api_version;
 }
@@ -1895,9 +1873,9 @@ BarrierQueueFamilyTestHelper::QueueFamilyObjs *BarrierQueueFamilyTestHelper::Get
 
 void BarrierQueueFamilyTestHelper::operator()(std::string img_err, std::string buf_err, uint32_t src, uint32_t dst, bool positive,
                                               uint32_t queue_family_index, Modifier mod) {
-    auto monitor = context_->layer_test->Monitor();
-    if (img_err.length()) monitor->SetDesiredFailureMsg(kErrorBit | kWarningBit, img_err);
-    if (buf_err.length()) monitor->SetDesiredFailureMsg(kErrorBit | kWarningBit, buf_err);
+    auto &monitor = context_->layer_test->Monitor();
+    if (img_err.length()) monitor.SetDesiredFailureMsg(kErrorBit | kWarningBit, img_err);
+    if (buf_err.length()) monitor.SetDesiredFailureMsg(kErrorBit | kWarningBit, buf_err);
 
     image_barrier_.srcQueueFamilyIndex = src;
     image_barrier_.dstQueueFamilyIndex = dst;
@@ -1927,9 +1905,9 @@ void BarrierQueueFamilyTestHelper::operator()(std::string img_err, std::string b
     }
 
     if (positive) {
-        monitor->VerifyNotFound();
+        monitor.VerifyNotFound();
     } else {
-        monitor->VerifyFound();
+        monitor.VerifyFound();
     }
     context_->Reset();
 };
