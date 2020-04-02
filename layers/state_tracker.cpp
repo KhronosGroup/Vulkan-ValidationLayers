@@ -44,6 +44,14 @@ using std::unordered_map;
 using std::unordered_set;
 using std::vector;
 
+void ValidationStateTracker::InitDeviceValidationObject(bool add_obj, ValidationObject *inst_obj, ValidationObject *dev_obj) {
+    if (add_obj) {
+        instance_state = reinterpret_cast<ValidationStateTracker *>(GetValidationObject(inst_obj->object_dispatch, container_type));
+        // Call base class
+        ValidationObject::InitDeviceValidationObject(add_obj, inst_obj, dev_obj);
+    }
+}
+
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 // Android-specific validation that uses types defined only with VK_USE_PLATFORM_ANDROID_KHR
 // This could also move into a seperate core_validation_android.cpp file... ?

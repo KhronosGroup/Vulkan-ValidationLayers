@@ -383,6 +383,23 @@ class ValidationObject {
             disabled = framework->disabled;
         }
 
+        virtual void InitDeviceValidationObject(bool add_obj, ValidationObject *inst_obj, ValidationObject *dev_obj) {
+            if (add_obj) {
+                dev_obj->object_dispatch.emplace_back(this);
+                device = dev_obj->device;
+                physical_device = dev_obj->physical_device;
+                instance = inst_obj->instance;
+                report_data = inst_obj->report_data;
+                device_dispatch_table = dev_obj->device_dispatch_table;
+                api_version = dev_obj->api_version;
+                disabled = inst_obj->disabled;
+                enabled = inst_obj->enabled;
+                instance_dispatch_table = inst_obj->instance_dispatch_table;
+                instance_extensions = inst_obj->instance_extensions;
+                device_extensions = dev_obj->device_extensions;
+            }
+        }
+
         ValidationObject* GetValidationObject(std::vector<ValidationObject*>& object_dispatch, LayerObjectTypeId object_type) {
             for (auto validation_object : object_dispatch) {
                 if (validation_object->container_type == object_type) {
@@ -646,7 +663,6 @@ bool wrap_handles = true;
 // Include layer validation object definitions
 #include "best_practices_validation.h"
 #include "core_validation.h"
-#include "command_counter.h"
 #include "gpu_validation.h"
 #include "object_lifetime_validation.h"
 #include "debug_printf.h"
@@ -1210,71 +1226,30 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     device_interceptor->instance = instance_interceptor->instance;
     device_interceptor->report_data = instance_interceptor->report_data;
 
-    // Note that this defines the order in which the layer validation objects are called
-    auto thread_safety = new ThreadSafety(reinterpret_cast<ThreadSafety *>(instance_interceptor->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeThreading)));
-    thread_safety->container_type = LayerObjectTypeThreading;
-    if (!instance_interceptor->disabled.thread_safety) {
-        device_interceptor->object_dispatch.emplace_back(thread_safety);
-    }
-    auto stateless_validation = new StatelessValidation;
-    stateless_validation->container_type = LayerObjectTypeParameterValidation;
-    if (!instance_interceptor->disabled.stateless_checks) {
-        device_interceptor->object_dispatch.emplace_back(stateless_validation);
-    }
-    auto object_tracker = new ObjectLifetimes;
-    object_tracker->container_type = LayerObjectTypeObjectTracker;
-    if (!instance_interceptor->disabled.object_tracking) {
-        device_interceptor->object_dispatch.emplace_back(object_tracker);
-    }
-    auto core_checks = new CoreChecks;
-    core_checks->container_type = LayerObjectTypeCoreValidation;
-    core_checks->instance_state = reinterpret_cast<CoreChecks *>(
-        core_checks->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeCoreValidation));
-    if (!instance_interceptor->disabled.core_checks) {
-        // Only enable the command counters when needed.
-        if (device_extensions.vk_khr_performance_query) {
-            auto command_counter = new CommandCounter(core_checks);
-            command_counter->container_type = LayerObjectTypeDevice;
-            device_interceptor->object_dispatch.emplace_back(command_counter);
-        }
-        device_interceptor->object_dispatch.emplace_back(core_checks);
-    }
-    auto best_practices = new BestPractices;
-    best_practices->container_type = LayerObjectTypeBestPractices;
-    best_practices->instance_state = reinterpret_cast<BestPractices *>(
-        best_practices->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeBestPractices));
-    if (instance_interceptor->enabled.best_practices) {
-        device_interceptor->object_dispatch.emplace_back(best_practices);
-    }
-    auto gpu_assisted = new GpuAssisted;
-    gpu_assisted->container_type = LayerObjectTypeGpuAssisted;
-    gpu_assisted->instance_state = reinterpret_cast<GpuAssisted *>(
-        gpu_assisted->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeGpuAssisted));
-    if (instance_interceptor->enabled.gpu_validation) {
-        device_interceptor->object_dispatch.emplace_back(gpu_assisted);
-    }
-    auto debug_printf = new DebugPrintf;
-    debug_printf->container_type = LayerObjectTypeDebugPrintf;
-    debug_printf->instance_state = reinterpret_cast<DebugPrintf *>(
-        debug_printf->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeDebugPrintf));
-    if (instance_interceptor->enabled.debug_printf) {
-        device_interceptor->object_dispatch.emplace_back(debug_printf);
-    }
+    // Note that this DEFINES THE ORDER IN WHICH THE LAYER VALIDATION OBJECTS ARE CALLED
+    auto disables = instance_interceptor->disabled;
+    auto enables = instance_interceptor->enabled;
 
-    // Set per-intercept common data items
-    for (auto dev_intercept : device_interceptor->object_dispatch) {
-        dev_intercept->device = *pDevice;
-        dev_intercept->physical_device = gpu;
-        dev_intercept->instance = instance_interceptor->instance;
-        dev_intercept->report_data = device_interceptor->report_data;
-        dev_intercept->device_dispatch_table = device_interceptor->device_dispatch_table;
-        dev_intercept->api_version = device_interceptor->api_version;
-        dev_intercept->disabled = instance_interceptor->disabled;
-        dev_intercept->enabled = instance_interceptor->enabled;
-        dev_intercept->instance_dispatch_table = instance_interceptor->instance_dispatch_table;
-        dev_intercept->instance_extensions = instance_interceptor->instance_extensions;
-        dev_intercept->device_extensions = device_interceptor->device_extensions;
-    }
+    auto thread_safety = new ThreadSafety(reinterpret_cast<ThreadSafety *>(instance_interceptor->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeThreading)));
+    thread_safety->InitDeviceValidationObject(!disables.thread_safety, instance_interceptor, device_interceptor);
+
+    auto stateless_validation = new StatelessValidation;
+    stateless_validation->InitDeviceValidationObject(!disables.stateless_checks, instance_interceptor, device_interceptor);
+
+    auto object_tracker = new ObjectLifetimes;
+    object_tracker->InitDeviceValidationObject(!disables.object_tracking, instance_interceptor, device_interceptor);
+
+    auto core_checks = new CoreChecks;
+    core_checks->InitDeviceValidationObject(!disables.core_checks, instance_interceptor, device_interceptor);
+
+    auto best_practices = new BestPractices;
+    best_practices->InitDeviceValidationObject(enables.best_practices, instance_interceptor, device_interceptor);
+
+    auto gpu_assisted = new GpuAssisted;
+    gpu_assisted->InitDeviceValidationObject(enables.gpu_validation, instance_interceptor, device_interceptor);
+
+    auto debug_printf = new DebugPrintf;
+    debug_printf->InitDeviceValidationObject(enables.debug_printf, instance_interceptor, device_interceptor);
 
     for (auto intercept : instance_interceptor->object_dispatch) {
         auto lock = intercept->write_lock();

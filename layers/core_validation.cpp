@@ -61,6 +61,7 @@
 #include "buffer_validation.h"
 #include "shader_validation.h"
 #include "vk_layer_utils.h"
+#include "command_counter.h"
 
 // Array of command names indexed by CMD_TYPE enum
 static const std::array<const char *, CMD_RANGE_SIZE> command_name_list = {{VUID_CMD_NAME_LIST}};
@@ -195,6 +196,17 @@ void AddInitialLayoutintoImageLayoutMap(const IMAGE_STATE &image_state, GlobalIm
     auto range_gen = subresource_adapter::RangeGenerator(image_state.range_encoder, image_state.full_range);
     for (; range_gen->non_empty(); ++range_gen) {
         range_map->insert(range_map->end(), std::make_pair(*range_gen, image_state.createInfo.initialLayout));
+    }
+}
+
+// Override base class, we have some extra work to do here
+void CoreChecks::InitDeviceValidationObject(bool add_obj, ValidationObject *inst_obj, ValidationObject *dev_obj) {
+    if (add_obj) {
+        if (dev_obj->device_extensions.vk_khr_performance_query) {
+            auto command_counter = new CommandCounter(this);
+            dev_obj->object_dispatch.emplace_back(command_counter);
+        }
+        ValidationStateTracker::InitDeviceValidationObject(add_obj, inst_obj, dev_obj);
     }
 }
 
