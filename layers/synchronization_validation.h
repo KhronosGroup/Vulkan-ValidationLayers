@@ -258,6 +258,9 @@ class AccessTrackerContext {
     // Would need to add a "hint" overload to parallel_iterator::invalidate_[AB] call, if so.
     void ResolvePreviousAccess(const VulkanTypedHandle &handle, const ResourceAccessRange &range,
                                ResourceAccessRangeMap *descent_map, const ResourceAccessState *infill_state) const;
+    void ResolvePreviousAccess(const CMD_BUFFER_STATE &cmd_state, const IMAGE_STATE &image_state,
+                               const VkImageSubresourceRange &subresource_range, ResourceAccessRangeMap *descent_map,
+                               const ResourceAccessState *infill_state) const;
     void ResolveTrackBack(const VulkanTypedHandle &handle, const ResourceAccessRange &range,
                           const AccessTrackerContext::TrackBack &track_back, ResourceAccessRangeMap *descent_map,
                           const ResourceAccessState *infill_state, bool recur_to_infill = true) const;
