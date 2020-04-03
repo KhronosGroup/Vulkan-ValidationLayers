@@ -42,7 +42,6 @@ typename C::iterator RemoveIf(C &container, F &&fn) {
 
 ErrorMonitor::ErrorMonitor() {
     test_platform_thread_create_mutex(&mutex_);
-    // TODO: why even lock in constructor
     test_platform_thread_lock_mutex(&mutex_);
     Reset();
     test_platform_thread_unlock_mutex(&mutex_);
@@ -51,7 +50,6 @@ ErrorMonitor::ErrorMonitor() {
 ErrorMonitor::~ErrorMonitor() NOEXCEPT { test_platform_thread_delete_mutex(&mutex_); }
 
 void ErrorMonitor::Reset() {
-    // TODO: thread lock?
     message_flags_ = 0;
     bailout_ = NULL;
     message_found_ = VK_FALSE;
@@ -223,7 +221,6 @@ void DebugReporter::Create(VkInstance instance) NOEXCEPT {
     assert(instance);
     assert(!debug_obj_);
 
-    // TODO: the lvl loader should perhaps do this
     auto DebugCreate = reinterpret_cast<DebugCreateFnType>(vk::GetInstanceProcAddr(instance, debug_create_fn_name_));
     if (!DebugCreate) return;
 
@@ -443,7 +440,6 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
     auto ici = GetInstanceCreateInfo();
 
     // concatenate pNexts
-    // TODO: There HAS to be some utility function for this somewhere
     void *last_pnext = nullptr;
     if (instance_pnext) {
         last_pnext = instance_pnext;
@@ -514,7 +510,6 @@ void VkRenderFramework::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *
 void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *create_device_pnext,
                                   const VkCommandPoolCreateFlags flags) {
     const auto ExtensionNotSupportedWithReporting = [this](const char *extension) {
-        // TODO: could be simplified with better DeviceExtensionSupported()
         std::vector<const char *> layers = {nullptr};
         layers.insert(layers.end(), instance_layers_.begin(), instance_layers_.end());
         if (std::any_of(layers.begin(), layers.end(),
