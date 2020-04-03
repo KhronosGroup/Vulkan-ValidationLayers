@@ -94,4 +94,4 @@ See the gpu_validation document for more information
 ### Debug Printf Test / Example
 
 There is a positive layer validation test that demonstrates simple use of Debug Printf.
-It is called "GpuDebugPrintf" and is in vkpositivelayertests.cpp in the Vulkan-ValidationLayers repository.
+It is called "GpuDebugPrintf" and is in vklayertests_gpu.cpp in the Vulkan-ValidationLayers repository.
