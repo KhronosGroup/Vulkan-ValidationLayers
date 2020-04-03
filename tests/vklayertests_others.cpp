@@ -1350,7 +1350,13 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore) {
         printf("%s surface extensions not supported, skipping test\n", kSkipPrefix);
         return;
     }
-
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     if (!AddSwapchainDeviceExtension()) {
@@ -1358,7 +1364,10 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
+        printf("%s Timeline semaphore not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
     ASSERT_TRUE(InitSwapchain());
 
     VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info{};
@@ -1386,6 +1395,13 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore2KHR) {
 
     TEST_DESCRIPTION("Test vkAcquireNextImage2KHR with VK_NULL_HANDLE semaphore and fence");
     SetTargetApiVersion(VK_API_VERSION_1_1);
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
 
     bool extension_dependency_satisfied = false;
     if (InstanceExtensionSupported(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
@@ -1415,7 +1431,11 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore2KHR) {
         return;
     }
 
-    ASSERT_NO_FATAL_FAILURE(InitState());
+    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
+        printf("%s Timeline semaphore not supported, skipping test\n", kSkipPrefix);
+        return;
+    }
+
     ASSERT_TRUE(InitSwapchain());
 
     VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info{};
@@ -7197,18 +7217,10 @@ TEST_F(VkLayerTest, QueueSubmitNoTimelineSemaphoreInfo) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
-    auto timelinefeatures = lvl_init_struct<VkPhysicalDeviceTimelineSemaphoreFeaturesKHR>();
-    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&timelinefeatures);
-    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
-    if (!timelinefeatures.timelineSemaphore) {
-        printf("%s Timeline semaphores are not supported.\n", kSkipPrefix);
+    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
+        printf("%s Timeline semaphore not supported, skipping test\n", kSkipPrefix);
         return;
     }
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info{};
     semaphore_type_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
@@ -7272,14 +7284,8 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreBadValue) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
-    auto timelinefeatures = lvl_init_struct<VkPhysicalDeviceTimelineSemaphoreFeaturesKHR>();
-    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&timelinefeatures);
-    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
-    if (!timelinefeatures.timelineSemaphore) {
-        printf("%s Timeline semaphores are not supported.\n", kSkipPrefix);
+    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
+        printf("%s Timeline semaphore not supported, skipping test\n", kSkipPrefix);
         return;
     }
 
@@ -7289,8 +7295,6 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreBadValue) {
     auto timelineproperties = lvl_init_struct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
     auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &prop2);
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info{};
     semaphore_type_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
@@ -7469,18 +7473,10 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreOutOfOrder) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
-    auto timelinefeatures = lvl_init_struct<VkPhysicalDeviceTimelineSemaphoreFeaturesKHR>();
-    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&timelinefeatures);
-    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
-    if (!timelinefeatures.timelineSemaphore) {
-        printf("%s Timeline semaphores are not supported.\n", kSkipPrefix);
+    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
+        printf("%s Timeline semaphore not supported, skipping test\n", kSkipPrefix);
         return;
     }
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
 
     // We need two queues for this
     uint32_t queue_count;
@@ -7522,6 +7518,11 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreOutOfOrder) {
     dev_info.enabledLayerCount = 0;
     dev_info.enabledExtensionCount = m_device_extension_names.size();
     dev_info.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    auto timeline_semaphore_features = lvl_init_struct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    timeline_semaphore_features.timelineSemaphore = true;
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&timeline_semaphore_features);
+    dev_info.pNext = &features2;
 
     VkDevice dev;
     ASSERT_VK_SUCCESS(vk::CreateDevice(gpu(), &dev_info, nullptr, &dev));
@@ -7569,6 +7570,7 @@ TEST_F(VkLayerTest, QueueSubmitTimelineSemaphoreOutOfOrder) {
 
     vk::DeviceWaitIdle(dev);
     vk::DestroySemaphore(dev, semaphore, nullptr);
+    vk::DestroyDevice(dev, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidExternalSemaphore) {
@@ -7644,18 +7646,10 @@ TEST_F(VkLayerTest, InvalidWaitSemaphoresType) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
-    auto timelinefeatures = lvl_init_struct<VkPhysicalDeviceTimelineSemaphoreFeaturesKHR>();
-    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&timelinefeatures);
-    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
-    if (!timelinefeatures.timelineSemaphore) {
-        printf("%s Timeline semaphores are not supported.\n", kSkipPrefix);
+    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
+        printf("%s Timeline semaphore not supported, skipping test\n", kSkipPrefix);
         return;
     }
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info{};
     semaphore_type_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
@@ -7757,14 +7751,8 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreValue) {
         return;
     }
 
-    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
-        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
-    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
-    auto timelinefeatures = lvl_init_struct<VkPhysicalDeviceTimelineSemaphoreFeaturesKHR>();
-    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&timelinefeatures);
-    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
-    if (!timelinefeatures.timelineSemaphore) {
-        printf("%s Timeline semaphores are not supported.\n", kSkipPrefix);
+    if (!CheckTimelineSemaphoreSupportAndInitState(this)) {
+        printf("%s Timeline semaphore not supported, skipping test\n", kSkipPrefix);
         return;
     }
 
@@ -7774,8 +7762,6 @@ TEST_F(VkLayerTest, InvalidSignalSemaphoreValue) {
     auto timelineproperties = lvl_init_struct<VkPhysicalDeviceTimelineSemaphorePropertiesKHR>();
     auto prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&timelineproperties);
     vkGetPhysicalDeviceProperties2KHR(gpu(), &prop2);
-
-    ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkSemaphoreTypeCreateInfoKHR semaphore_type_create_info{};
     semaphore_type_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;

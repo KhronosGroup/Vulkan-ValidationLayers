@@ -5949,7 +5949,7 @@ TEST_F(VkLayerTest, DSUsageBitsErrors) {
     dsl_bindings[0].binding = 0;
     dsl_bindings[0].descriptorType = VkDescriptorType(0);
     dsl_bindings[0].descriptorCount = 1;
-    dsl_bindings[0].stageFlags = VK_SHADER_STAGE_ALL;
+    dsl_bindings[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     dsl_bindings[0].pImmutableSamplers = NULL;
 
     // Create arrays of layout and descriptor objects
@@ -6359,9 +6359,10 @@ TEST_F(VkLayerTest, DSAspectBitsErrors) {
     if (!depth_format) {
         printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
     } else {
-        OneOffDescriptorSet descriptor_set(m_device, {
-                                                         {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                     });
+        OneOffDescriptorSet descriptor_set(m_device,
+                                           {
+                                               {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                           });
 
         // Create an image to be used for invalid updates
         VkImageObj image_obj(m_device);
@@ -8096,10 +8097,11 @@ TEST_F(VkLayerTest, InlineUniformBlockEXT) {
 TEST_F(VkLayerTest, WrongdstArrayElement) {
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    OneOffDescriptorSet descriptor_set(m_device, {
-                                                     {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                     {1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                 });
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                       });
     VkImageObj image(m_device);
     image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
     VkImageView view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
@@ -8128,10 +8130,11 @@ TEST_F(VkLayerTest, WrongdstArrayElement) {
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 
-    OneOffDescriptorSet descriptor_set2(m_device, {
-                                                      {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_ALL, nullptr},
-                                                      {1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                  });
+    OneOffDescriptorSet descriptor_set2(m_device,
+                                        {
+                                            {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                            {1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                        });
 
     descriptor_set2.image_infos.emplace_back(image_info);
     descriptor_set2.image_infos.emplace_back(image_info);

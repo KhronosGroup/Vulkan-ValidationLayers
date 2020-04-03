@@ -9195,9 +9195,11 @@ TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = NULL;
     vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
+    vk::ResetFences(m_device->device(), 1, &fence);
     m_errorMonitor->ExpectSuccess();
-    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, fence);
     m_errorMonitor->VerifyNotFound();
+    vk::WaitForFences(m_device->device(), 1, &fence, VK_TRUE, UINT64_MAX);
 
     free(swapchainImages);
     vk::DestroyFramebuffer(m_device->device(), fb1, NULL);
@@ -9206,6 +9208,7 @@ TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
     vk::DestroyRenderPass(m_device->device(), rp2, NULL);
     vk::DestroyFence(m_device->device(), fence, NULL);
     vk::DestroyImageView(m_device->device(), view, NULL);
+    DestroySwapchain();
 }
 
 TEST_F(VkPositiveLayerTest, PipelineStageConditionalRendering) {
