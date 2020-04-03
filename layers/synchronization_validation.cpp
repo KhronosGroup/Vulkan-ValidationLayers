@@ -251,24 +251,11 @@ void AccessTrackerContext::ResolveTrackBack(const VulkanTypedHandle &handle, con
             *descent_map, access_tracker->GetCurrentAccessMap(), range.begin);
         while (current->range.non_empty()) {
             if (current->pos_B->valid) {
-                auto access_with_barrier = current->pos_B->lower_bound->second;
+                const auto &src_pos = current->pos_B->lower_bound;
+                auto access_with_barrier = src_pos->second;
                 access_with_barrier.ApplyBarrier(track_back.barrier);
                 if (current->pos_A->valid) {
-                    // split A to match B's range
-                    const auto &dst_range = current->pos_A->lower_bound->first;
-                    const auto split_range = current->range & dst_range;
-                    auto dst_pos = current->pos_A->lower_bound;
-
-                    if (split_range.begin != dst_range.begin) {
-                        dst_pos = descent_map->split(dst_pos, split_range.begin, sparse_container::split_op_keep_both());
-                        ++dst_pos;
-                    }
-                    if (split_range.end != dst_range.end) {
-                        dst_pos = descent_map->split(dst_pos, split_range.end, sparse_container::split_op_keep_both());
-                    }
-                    if (split_range != dst_range) {
-                        current.invalidate_A();  // Update the parallel iterator to point at the correct segment after split(s)
-                    }
+                    current.trim_A();
                     current->pos_A->lower_bound->second.Resolve(access_with_barrier);
                 } else {
                     descent_map->insert(current->pos_A->lower_bound, std::make_pair(current->range, access_with_barrier));
@@ -277,7 +264,7 @@ void AccessTrackerContext::ResolveTrackBack(const VulkanTypedHandle &handle, con
             } else {
                 // we have to descend to fill this gap
                 if (recur_to_infill) {
-                    track_back.context->ResolvePreviousAccess(handle, range, descent_map, infill_state);
+                    track_back.context->ResolvePreviousAccess(handle, current->range, descent_map, infill_state);
                     current.invalidate_A();  // Update the parallel iterator to point at the correct segment after recursion.
                 }
                 if (!current->pos_A->valid && infill_state) {
@@ -289,6 +276,8 @@ void AccessTrackerContext::ResolveTrackBack(const VulkanTypedHandle &handle, con
             }
             ++current;
         }
+    } else if (recur_to_infill) {
+        track_back.context->ResolvePreviousAccess(handle, range, descent_map, infill_state);
     }
 }
 
@@ -308,6 +297,19 @@ void AccessTrackerContext::ResolvePreviousAccess(const VulkanTypedHandle &handle
         if (src_external_.context) {
             ResolveTrackBack(handle, range, src_external_, descent_map, infill_state);
         }
+    }
+}
+
+void AccessTrackerContext::ResolvePreviousAccess(const CMD_BUFFER_STATE &cmd_state, const IMAGE_STATE &image_state,
+                                                 const VkImageSubresourceRange &subresource_range_arg,
+                                                 ResourceAccessRangeMap *descent_map,
+                                                 const ResourceAccessState *infill_state) const {
+    const VulkanTypedHandle image_handle(image_state.image, kVulkanObjectTypeImage);
+    auto subresource_range = NormalizeSubresourceRange(image_state.createInfo, subresource_range_arg);
+    subresource_adapter::ImageRangeEncoder encoder(cmd_state.device, image_state);
+    subresource_adapter::ImageRangeGenerator range_gen(encoder, subresource_range, {0, 0, 0}, image_state.createInfo.extent);
+    for (; range_gen->non_empty(); ++range_gen) {
+        ResolvePreviousAccess(image_handle, *range_gen, descent_map, infill_state);
     }
 }
 
