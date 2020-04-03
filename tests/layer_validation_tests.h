@@ -242,6 +242,7 @@ class VkLayerTest : public VkRenderFramework {
     bool AddSurfaceInstanceExtension();
     bool AddSwapchainDeviceExtension();
     VkCommandBufferObj *CommandBuffer();
+    void OOBRayTracingShadersTestBody(bool gpu_assisted);
 
   protected:
     uint32_t m_instance_api_version = 0;
@@ -281,6 +282,20 @@ class VkWsiEnabledLayerTest : public VkLayerTest {
   public:
   protected:
     VkWsiEnabledLayerTest() { m_enableWSI = true; }
+};
+
+class VkGpuAssistedLayerTest : public VkLayerTest {
+  public:
+    bool InitGpuAssistedFramework(bool request_descriptor_indexing);
+
+  protected:
+};
+
+class VkDebugPrintfTest : public VkLayerTest {
+  public:
+    void InitDebugPrintfFramework();
+
+  protected:
 };
 
 class VkBufferTest {
@@ -736,6 +751,14 @@ void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *pCreateInfo, st
 void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *pCreateInfo, const std::vector<std::string> &codes);
 
 void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *pCreateInfo, std::string code = "");
+
+bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, bool isKHR,
+                                    std::vector<const char *> &instance_extension_names,
+                                    std::vector<const char *> &device_extension_names, void *user_data,
+                                    bool need_gpu_validation = false, bool need_push_descriptors = false);
+
+void GetSimpleGeometryForAccelerationStructureTests(const VkDeviceObj &device, VkBufferObj *vbo, VkBufferObj *ibo,
+                                                    VkGeometryNV *geometry);
 
 void print_android(const char *c);
 #endif  // VKLAYERTEST_H
