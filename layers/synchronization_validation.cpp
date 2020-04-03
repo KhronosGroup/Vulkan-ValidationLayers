@@ -2427,3 +2427,209 @@ void SyncValidator::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkI
         }
     }
 }
+
+bool SyncValidator::DetectDescriptorSetHazard(const CMD_BUFFER_STATE &cmd, VkPipelineBindPoint pipelineBindPoint,
+                                              const char *function) const {
+    bool skip = false;
+
+    const auto last_bound_it = cmd.lastBound.find(pipelineBindPoint);
+    if (last_bound_it == cmd.lastBound.cend()) {
+        return skip;
+    }
+    auto const &state = last_bound_it->second;
+    const auto *pPipe = state.pipeline_state;
+    if (!pPipe) {
+        return skip;
+    }
+
+    const auto *cb_access_context = GetAccessContext(cmd.commandBuffer);
+    assert(cb_access_context);
+    if (!cb_access_context) return skip;
+
+    const auto *context = cb_access_context->GetCurrentAccessContext();
+    assert(context);
+    if (!context) return skip;
+
+    using DescriptorClass = cvdescriptorset::DescriptorClass;
+    using BufferDescriptor = cvdescriptorset::BufferDescriptor;
+    using ImageDescriptor = cvdescriptorset::ImageDescriptor;
+    using ImageSamplerDescriptor = cvdescriptorset::ImageSamplerDescriptor;
+    using TexelDescriptor = cvdescriptorset::TexelDescriptor;
+
+    for (const auto &set_binding_pair : pPipe->active_slots) {
+        uint32_t setIndex = set_binding_pair.first;
+        cvdescriptorset::DescriptorSet *descriptor_set = state.per_set[setIndex].bound_descriptor_set;
+        for (auto binding_pair : set_binding_pair.second) {
+            auto binding = binding_pair.first;
+            cvdescriptorset::DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(),
+                                                                                  binding_pair.first);
+            const auto descriptor_type = binding_it.GetType();
+            cvdescriptorset::IndexRange index_range = binding_it.GetGlobalIndexRange();
+            auto array_idx = 0;
+
+            if (binding_it.IsVariableDescriptorCount()) {
+                index_range.end = index_range.start + descriptor_set->GetVariableDescriptorCount();
+            }
+            for (uint32_t i = index_range.start; i < index_range.end; ++i, ++array_idx) {
+                uint32_t index = i - index_range.start;
+                const auto *descriptor = descriptor_set->GetDescriptorFromGlobalIndex(i);
+                if (descriptor->GetClass() == DescriptorClass::ImageSampler || descriptor->GetClass() == DescriptorClass::Image) {
+                    const IMAGE_VIEW_STATE *img_view_state = nullptr;
+                    if (descriptor->GetClass() == DescriptorClass::ImageSampler) {
+                        img_view_state = static_cast<const ImageSamplerDescriptor *>(descriptor)->GetImageViewState();
+                    } else {
+                        img_view_state = static_cast<const ImageDescriptor *>(descriptor)->GetImageViewState();
+                    }
+                    if (!img_view_state) continue;
+                    SyncStageAccessIndex sync_index;
+                    if (descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
+                        sync_index = SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ;
+                    } else {
+                        sync_index = SYNC_VERTEX_SHADER_SHADER_READ;
+                    }
+                    const IMAGE_STATE *img_state = img_view_state->image_state.get();
+                    auto hazard = context->DetectHazard(*img_state, sync_index, img_view_state->create_info.subresourceRange,
+                                                        {0, 0, 0}, img_state->createInfo.extent);
+                    if (hazard.hazard) {
+                        skip |= LogError(img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
+                                         "%s: Hazard %s for %s in %s and %s binding #%d index %d", function,
+                                         string_SyncHazard(hazard.hazard),
+                                         report_data->FormatHandle(img_view_state->image_view).c_str(),
+                                         report_data->FormatHandle(cmd.commandBuffer).c_str(),
+                                         report_data->FormatHandle(descriptor_set->GetSet()).c_str(), binding, index);
+                    }
+                } else if (descriptor->GetClass() == DescriptorClass::TexelBuffer) {
+                    auto buf_view_state = static_cast<const TexelDescriptor *>(descriptor)->GetBufferViewState();
+                    if (!buf_view_state) continue;
+                    const BUFFER_STATE *buf_state = buf_view_state->buffer_state.get();
+                    ResourceAccessRange range =
+                        MakeRange(buf_view_state->create_info.offset,
+                                  GetRealWholeSize(buf_view_state->create_info.offset, buf_view_state->create_info.range,
+                                                   buf_state->createInfo.size));
+                    auto hazard = context->DetectHazard(*buf_state, SYNC_VERTEX_SHADER_SHADER_READ, range);
+                    if (hazard.hazard) {
+                        skip |= LogError(buf_view_state->buffer_view, string_SyncHazardVUID(hazard.hazard),
+                                         "%s: Hazard %s for %s in %s and %s binding #%d index %d", function,
+                                         string_SyncHazard(hazard.hazard),
+                                         report_data->FormatHandle(buf_view_state->buffer_view).c_str(),
+                                         report_data->FormatHandle(cmd.commandBuffer).c_str(),
+                                         report_data->FormatHandle(descriptor_set->GetSet()).c_str(), binding, index);
+                    }
+                } else if (descriptor->GetClass() == DescriptorClass::GeneralBuffer) {
+                    auto buf_state = static_cast<const BufferDescriptor *>(descriptor)->GetBufferState();
+                    if (!buf_state) continue;
+                    ResourceAccessRange range = MakeRange(0, buf_state->createInfo.size);
+                    SyncStageAccessIndex sync_index;
+                    if (descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
+                        descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
+                        sync_index = SYNC_VERTEX_SHADER_UNIFORM_READ;
+                    } else {
+                        sync_index = SYNC_VERTEX_SHADER_SHADER_READ;
+                    }
+                    auto hazard = context->DetectHazard(*buf_state, sync_index, range);
+                    if (hazard.hazard) {
+                        skip |= LogError(buf_state->buffer, string_SyncHazardVUID(hazard.hazard),
+                                         "%s: Hazard %s for %s in %s and %s binding #%d index %d", function,
+                                         string_SyncHazard(hazard.hazard), report_data->FormatHandle(buf_state->buffer).c_str(),
+                                         report_data->FormatHandle(cmd.commandBuffer).c_str(),
+                                         report_data->FormatHandle(descriptor_set->GetSet()).c_str(), binding, index);
+                    }
+                }
+            }
+        }
+    }
+    return skip;
+}
+
+void SyncValidator::UpdateDescriptorSetAccessState(const CMD_BUFFER_STATE &cmd, CMD_TYPE command,
+                                                   VkPipelineBindPoint pipelineBindPoint) {
+    const auto last_bound_it = cmd.lastBound.find(pipelineBindPoint);
+    if (last_bound_it == cmd.lastBound.cend()) {
+        return;
+    }
+    auto const &state = last_bound_it->second;
+    const auto *pPipe = state.pipeline_state;
+    if (!pPipe) {
+        return;
+    }
+
+    auto *cb_access_context = GetAccessContext(cmd.commandBuffer);
+    assert(cb_access_context);
+    const auto tag = cb_access_context->NextCommandTag(command);
+    auto *context = cb_access_context->GetCurrentAccessContext();
+    assert(context);
+
+    using DescriptorClass = cvdescriptorset::DescriptorClass;
+    using BufferDescriptor = cvdescriptorset::BufferDescriptor;
+    using ImageDescriptor = cvdescriptorset::ImageDescriptor;
+    using ImageSamplerDescriptor = cvdescriptorset::ImageSamplerDescriptor;
+    using TexelDescriptor = cvdescriptorset::TexelDescriptor;
+
+    for (const auto &set_binding_pair : pPipe->active_slots) {
+        uint32_t setIndex = set_binding_pair.first;
+        const cvdescriptorset::DescriptorSet *descriptor_set = state.per_set[setIndex].bound_descriptor_set;
+        for (auto binding_pair : set_binding_pair.second) {
+            cvdescriptorset::DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(),
+                                                                                  binding_pair.first);
+            const auto descriptor_type = binding_it.GetType();
+            cvdescriptorset::IndexRange index_range = binding_it.GetGlobalIndexRange();
+            auto array_idx = 0;
+
+            if (binding_it.IsVariableDescriptorCount()) {
+                index_range.end = index_range.start + descriptor_set->GetVariableDescriptorCount();
+            }
+
+            for (uint32_t i = index_range.start; i < index_range.end; ++i, ++array_idx) {
+                const auto *descriptor = descriptor_set->GetDescriptorFromGlobalIndex(i);
+                if (descriptor->GetClass() == DescriptorClass::ImageSampler || descriptor->GetClass() == DescriptorClass::Image) {
+                    const IMAGE_VIEW_STATE *img_view_state = nullptr;
+                    if (descriptor->GetClass() == DescriptorClass::ImageSampler) {
+                        img_view_state = static_cast<const ImageSamplerDescriptor *>(descriptor)->GetImageViewState();
+                    } else {
+                        img_view_state = static_cast<const ImageDescriptor *>(descriptor)->GetImageViewState();
+                    }
+                    if (!img_view_state) continue;
+                    SyncStageAccessIndex sync_index;
+                    if (descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
+                        sync_index = SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ;
+                    } else {
+                        sync_index = SYNC_VERTEX_SHADER_SHADER_READ;
+                    }
+                    const IMAGE_STATE *img_state = img_view_state->image_state.get();
+                    context->UpdateAccessState(*img_state, sync_index, img_view_state->create_info.subresourceRange, {0, 0, 0},
+                                               img_state->createInfo.extent, tag);
+
+                } else if (descriptor->GetClass() == DescriptorClass::TexelBuffer) {
+                    auto buf_view_state = static_cast<const TexelDescriptor *>(descriptor)->GetBufferViewState();
+                    if (!buf_view_state) continue;
+                    const BUFFER_STATE *buf_state = buf_view_state->buffer_state.get();
+                    ResourceAccessRange range = MakeRange(buf_view_state->create_info.offset, buf_view_state->create_info.range);
+                    context->UpdateAccessState(*buf_state, SYNC_VERTEX_SHADER_SHADER_READ, range, tag);
+
+                } else if (descriptor->GetClass() == DescriptorClass::GeneralBuffer) {
+                    auto buf_state = static_cast<const BufferDescriptor *>(descriptor)->GetBufferState();
+                    if (!buf_state) continue;
+                    SyncStageAccessIndex sync_index;
+                    if (descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
+                        descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
+                        sync_index = SYNC_VERTEX_SHADER_UNIFORM_READ;
+                    } else {
+                        sync_index = SYNC_VERTEX_SHADER_SHADER_READ;
+                    }
+                    ResourceAccessRange range = MakeRange(0, buf_state->createInfo.size);
+                    context->UpdateAccessState(*buf_state, sync_index, range, tag);
+                }
+            }
+        }
+    }
+}
+
+bool SyncValidator::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) const {
+    const auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    return DetectDescriptorSetHazard(*cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, "vkCmdDispatch");
+}
+
+void SyncValidator::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
+    const auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
+    UpdateDescriptorSetAccessState(*cb_state, CMD_DISPATCH, VK_PIPELINE_BIND_POINT_COMPUTE);
+}
