@@ -3383,7 +3383,7 @@ bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirem
 
     if ((0 == (image_state->createInfo.flags & VK_IMAGE_CREATE_DISJOINT_BIT)) && (image_plane_info != nullptr)) {
         skip |= LogError(pInfo->image, "VUID-VkImageMemoryRequirementsInfo2-image-01590",
-                         "vkGetImageMemoryRequirements2: %s image was created not created with VK_IMAGE_CREATE_DISJOINT_BIT,"
+                         "vkGetImageMemoryRequirements2: %s image was not created with VK_IMAGE_CREATE_DISJOINT_BIT,"
                          "but the current pNext includes a VkImagePlaneMemoryRequirementsInfo struct",
                          report_data->FormatHandle(pInfo->image).c_str());
     }
