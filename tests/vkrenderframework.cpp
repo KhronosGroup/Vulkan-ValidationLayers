@@ -334,10 +334,7 @@ bool VkRenderFramework::DeviceExtensionSupported(const char *extension_name, con
 
     const vk_testing::PhysicalDevice device_obj(objs[0]);
 
-    // TODO: cannot enumare enabled layers because MockICD does not support that, so use m_instance_layer_names instead
-    // EXPECT_GE(VK_VERSION_PATCH(device_obj.properties().apiVersion), (uint32_t)13);  // assume device layers are deprecated
-    // const auto enabled_layers = device_obj.layers();
-    const auto enabled_layers = m_instance_layer_names;
+    const auto enabled_layers = m_instance_layer_names;  // assumes m_instance_layer_names contains enabled layers
 
     auto extensions = device_obj.extensions();
     for (const auto &layer : enabled_layers) {
