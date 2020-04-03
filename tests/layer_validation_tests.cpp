@@ -699,6 +699,20 @@ bool CheckDescriptorIndexingSupportAndInitFramework(VkRenderFramework *renderFra
     return false;
 }
 
+bool CheckTimelineSemaphoreSupportAndInitState(VkRenderFramework *renderFramework) {
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(renderFramework->instance(),
+                                                                     "vkGetPhysicalDeviceFeatures2KHR");
+    auto timeline_semaphore_features = lvl_init_struct<VkPhysicalDeviceTimelineSemaphoreFeatures>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&timeline_semaphore_features);
+    vkGetPhysicalDeviceFeatures2KHR(renderFramework->gpu(), &features2);
+    if (!timeline_semaphore_features.timelineSemaphore) {
+        return false;
+    }
+    renderFramework->InitState(nullptr, &features2);
+    return true;
+}
+
 void VkLayerTest::VKTriangleTest(BsoFailSelect failCase) {
     ASSERT_TRUE(m_device && m_device->initialized());  // VKTriangleTest assumes Init() has finished
 

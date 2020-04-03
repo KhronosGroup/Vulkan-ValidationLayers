@@ -1577,11 +1577,8 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
             err = vk::CreateImage(device(), &image_create_info, NULL, &image);
             ASSERT_VK_SUCCESS(err);
 
-            VkImagePlaneMemoryRequirementsInfo image_plane_req = {VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO};
-            image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
-
             VkImageMemoryRequirementsInfo2 mem_req_info2 = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2};
-            mem_req_info2.pNext = &image_plane_req;
+            mem_req_info2.pNext = NULL;
             mem_req_info2.image = image;
             VkMemoryRequirements2 mem_req2 = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
             vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mem_req2);
@@ -4231,6 +4228,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
         mp_extensions = false;
     }
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    bool rp2Supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
@@ -4241,7 +4239,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
         m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     }
-    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) {
+    if (rp2Supported && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
     }
 
@@ -8791,7 +8789,7 @@ TEST_F(VkLayerTest, DedicatedAllocation) {
     VkBufferCreateInfo buffer_create_info = {};
     buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     buffer_create_info.pNext = NULL;
-    buffer_create_info.usage = 0;
+    buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     buffer_create_info.size = 2048;
     buffer_create_info.queueFamilyIndexCount = 0;
     buffer_create_info.pQueueFamilyIndices = NULL;
@@ -8809,7 +8807,7 @@ TEST_F(VkLayerTest, DedicatedAllocation) {
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = 0;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.flags = 0;
 
     // Create Images and Buffers without any memory backing
@@ -8875,12 +8873,18 @@ TEST_F(VkLayerTest, DedicatedAllocation) {
     }
 
     if (disjoint_support == true) {
-        VkMemoryRequirements disjoint_image_memory_req;
-        vk::GetImageMemoryRequirements(device(), disjoint_image, &disjoint_image_memory_req);
+        VkImagePlaneMemoryRequirementsInfo image_plane_req = {VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO};
+        image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
+        VkImageMemoryRequirementsInfo2 mem_req_info2 = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2};
+        mem_req_info2.pNext = &image_plane_req;
+        mem_req_info2.image = disjoint_image;
+        VkMemoryRequirements2 mem_req2 = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2};
+
+        vk::GetImageMemoryRequirements2(m_device->device(), &mem_req_info2, &mem_req2);
 
         dedicated_allocate_info.image = disjoint_image;
         dedicated_allocate_info.buffer = VK_NULL_HANDLE;
-        memory_allocate_info.allocationSize = disjoint_image_memory_req.size;
+        memory_allocate_info.allocationSize = mem_req2.memoryRequirements.size;
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-image-01797");
         vk::AllocateMemory(m_device->device(), &memory_allocate_info, NULL, &device_memory);
         m_errorMonitor->VerifyFound();
