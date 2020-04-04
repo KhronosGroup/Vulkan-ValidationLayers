@@ -31,6 +31,29 @@
 //
 // These tests do not expect to encounter ANY validation errors pass only if this is true
 
+TEST_F(VkPositiveLayerTest, TwoInstances) {
+    TEST_DESCRIPTION("Create two instances before destroy");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    VkInstance i1, i2, i3;
+
+    VkInstanceCreateInfo ici = {};
+    ici.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    ici.enabledLayerCount = m_instance_layer_names.size();
+    ici.ppEnabledLayerNames = m_instance_layer_names.data();
+
+    ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &i1));
+
+    ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &i2));
+    ASSERT_NO_FATAL_FAILURE(vk::DestroyInstance(i2, nullptr));
+
+    ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &i3));
+    ASSERT_NO_FATAL_FAILURE(vk::DestroyInstance(i3, nullptr));
+
+    ASSERT_NO_FATAL_FAILURE(vk::DestroyInstance(i1, nullptr));
+}
+
 TEST_F(VkPositiveLayerTest, ToolingExtension) {
     TEST_DESCRIPTION("Call Tooling Extension and verify layer results");
 
