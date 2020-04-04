@@ -755,11 +755,6 @@ bool VkRenderFramework::InitSwapchain(VkImageUsageFlags imageUsage, VkSurfaceTra
 
 bool VkRenderFramework::InitSwapchain(VkSurfaceKHR &surface, VkImageUsageFlags imageUsage,
                                       VkSurfaceTransformFlagBitsKHR preTransform) {
-    for (size_t i = 0; i < m_device->queue_props.size(); ++i) {
-        VkBool32 presentSupport = false;
-        vk::GetPhysicalDeviceSurfaceSupportKHR(m_device->phy().handle(), i, surface, &presentSupport);
-    }
-
     VkSurfaceCapabilitiesKHR capabilities;
     vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(m_device->phy().handle(), surface, &capabilities);
 
