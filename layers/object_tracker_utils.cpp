@@ -193,10 +193,17 @@ bool ObjectLifetimes::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, 
         (desc->descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) ||
         (desc->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC)) {
         for (uint32_t idx4 = 0; idx4 < desc->descriptorCount; ++idx4) {
-            if (desc->pBufferInfo[idx4].buffer) {
-                skip |= ValidateObject(desc->pBufferInfo[idx4].buffer, kVulkanObjectTypeBuffer, false,
-                                       "VUID-VkDescriptorBufferInfo-buffer-parameter", kVUIDUndefined);
-            }
+            skip |= ValidateObject(desc->pBufferInfo[idx4].buffer, kVulkanObjectTypeBuffer, false,
+                                   "VUID-VkDescriptorBufferInfo-buffer-parameter", kVUIDUndefined);
+        }
+    }
+
+    if (desc->descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
+        const auto *accInfo = lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureKHR>(desc->pNext);
+        for (uint32_t idx5 = 0; idx5 < desc->descriptorCount; ++idx5) {
+            skip |= ValidateObject(accInfo->pAccelerationStructures[idx5], kVulkanObjectTypeAccelerationStructureKHR, false,
+                                   "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-parameter",
+                                   kVUIDUndefined);
         }
     }
 
