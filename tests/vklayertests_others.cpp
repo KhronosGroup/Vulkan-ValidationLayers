@@ -5539,6 +5539,51 @@ TEST_F(VkLayerTest, ValidateBindAccelerationStructureNV) {
     }
 }
 
+TEST_F(VkLayerTest, ValidateWriteDescriptorSetAccelerationStructureNV) {
+    TEST_DESCRIPTION("Validate acceleration structure descriptor writing.");
+    if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
+        return;
+    }
+
+    OneOffDescriptorSet ds(m_device,
+                           {
+                               {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, 1, VK_SHADER_STAGE_RAYGEN_BIT_NV, nullptr},
+                           });
+
+    VkWriteDescriptorSet descriptor_write = {};
+    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_write.dstSet = ds.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
+
+    VkAccelerationStructureNV badHandle = (VkAccelerationStructureNV)12345678;
+    VkWriteDescriptorSetAccelerationStructureKHR acc = {};
+    acc.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV;
+    acc.accelerationStructureCount = 1;
+    acc.pAccelerationStructures = &badHandle;
+    descriptor_write.pNext = &acc;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-parameter");
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    m_errorMonitor->VerifyFound();
+
+    VkAccelerationStructureCreateInfoNV top_level_as_create_info = {};
+    top_level_as_create_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
+    top_level_as_create_info.info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
+    top_level_as_create_info.info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
+    top_level_as_create_info.info.instanceCount = 1;
+    top_level_as_create_info.info.geometryCount = 0;
+
+    VkAccelerationStructureObj top_level_as(*m_device, top_level_as_create_info);
+
+    acc.pAccelerationStructures = &top_level_as.handle();
+    m_errorMonitor->ExpectSuccess();
+    vk::UpdateDescriptorSets(m_device->device(), 1, &descriptor_write, 0, NULL);
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructureNV) {
     TEST_DESCRIPTION("Validate acceleration structure building.");
     if (!InitFrameworkForRayTracingTest(this, false, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
