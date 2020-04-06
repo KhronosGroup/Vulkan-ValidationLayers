@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2019 The Khronos Group Inc.
- * Copyright (c) 2015-2019 Valve Corporation
- * Copyright (c) 2015-2019 LunarG, Inc.
- * Copyright (C) 2015-2019 Google Inc.
+/* Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
+ * Copyright (C) 2015-2020 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -241,7 +241,8 @@ static const char DECORATE_UNUSED *kVUID_Core_PushDescriptorUpdate_TemplateType 
 static const char DECORATE_UNUSED *kVUID_Core_PushDescriptorUpdate_Template_SetMismatched = "UNASSIGNED-CoreValidation-vkCmdPushDescriptorSetWithTemplateKHR-set";
 static const char DECORATE_UNUSED *kVUID_Core_PushDescriptorUpdate_Template_LayoutMismatched = "UNASSIGNED-CoreValidation-vkCmdPushDescriptorSetWithTemplateKHR-layout";
 
-static const char DECORATE_UNUSED *kVUID_Core_BindImage_InvalidMemReqQuery = "UNASSIGNED-CoreValidation-vkBindImageMemory-invalid-requirements";
+// Previously defined but unused - uncomment as needed
+// static const char DECORATE_UNUSED *kVUID_Core_BindImage_InvalidMemReqQuery = "UNASSIGNED-CoreValidation-vkBindImageMemory-invalid-requirements";
 static const char DECORATE_UNUSED *kVUID_Core_BindImage_NoMemReqQuery = "UNASSIGNED-CoreValidation-vkBindImageMemory-memory-requirements";
 static const char DECORATE_UNUSED *kVUID_Core_BindBuffer_NoMemReqQuery = "UNASSIGNED-CoreValidation-vkBindBufferMemory-memory-requirements";
 

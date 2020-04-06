@@ -380,7 +380,7 @@ class IMAGE_STATE : public BINDABLE {
     bool get_sparse_reqs_called;         // Track if GetImageSparseMemoryRequirements() has been called for this image
     bool sparse_metadata_required;       // Track if sparse metadata aspect is required for this image
     bool sparse_metadata_bound;          // Track if sparse metadata aspect is bound to this image
-    bool imported_ahb;                   // True if image was imported from an Android Hardware Buffer
+    bool external_ahb;                   // True if image will be imported/exported from/to an Android Hardware Buffer
     bool has_ahb_format;                 // True if image was created with an external Android format
     bool is_swapchain_image;             // True if image is a swapchain image
     uint64_t ahb_format;                 // External Android format, if provided
@@ -396,10 +396,6 @@ class IMAGE_STATE : public BINDABLE {
     bool plane1_memory_requirements_checked = false;
     VkMemoryRequirements plane2_requirements;
     bool plane2_memory_requirements_checked = false;
-
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-    uint64_t external_format_android;
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
 
     std::vector<VkSparseImageMemoryRequirements> sparse_requirements;
     IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo);

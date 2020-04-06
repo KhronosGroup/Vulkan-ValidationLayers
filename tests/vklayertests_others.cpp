@@ -4144,6 +4144,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
         // ERROR: AHardwareBuffer_allocate() with MIPMAP_COMPLETE fails. It returns -12, NO_MEMORY.
         // The problem seems to happen in Pixel 2, not Pixel 3.
         printf("%s AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE not supported, skipping tests\n", kSkipPrefix);
+        return;
     }
 
     // Dedicated allocation with mis-matched dimension
@@ -4151,6 +4152,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
     ahb_desc.height = 32;
     ahb_desc.width = 128;
     recreate_ahb();
+    mai.allocationSize = ahb_props.allocationSize;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-02388");
     vk::AllocateMemory(dev, &mai, NULL, &mem_handle);
     m_errorMonitor->VerifyFound();
@@ -4161,6 +4163,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
     ahb_desc.height = 64;
     ahb_desc.width = 64;
     recreate_ahb();
+    mai.allocationSize = ahb_props.allocationSize;
     ici.mipLevels = 1;
     ici.format = VK_FORMAT_B8G8R8A8_UNORM;
     ici.pNext = NULL;
@@ -4203,6 +4206,8 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
     // Export with allocation size non-zero
     ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE;
     recreate_ahb();
+    mai.allocationSize = ahb_props.allocationSize;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-image-02964");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-01874");
     vk::AllocateMemory(dev, &mai, NULL, &mem_handle);
     m_errorMonitor->VerifyFound();
@@ -4369,9 +4374,15 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     pfn_GetAHBProps(dev, ahb, &ahb_props);
     AHardwareBuffer_release(ahb);
 
+    VkExternalMemoryImageCreateInfo emici = {};
+    emici.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
+    emici.pNext = nullptr;
+    emici.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+
     // Give image an external format
     VkExternalFormatANDROID efa = {};
     efa.sType = VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID;
+    efa.pNext = (void *)&emici;
     efa.externalFormat = ahb_fmt_props.externalFormat;
 
     ahb_desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
@@ -4393,6 +4404,13 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     VkExternalFormatANDROID efa_Ycbcr = {};
     efa_Ycbcr.sType = VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID;
     efa_Ycbcr.externalFormat = ahb_fmt_props_Ycbcr.externalFormat;
+
+    // Need to make sure format has sample bit needed for image usage
+    if ((ahb_fmt_props_Ycbcr.formatFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) == 0) {
+        printf("%s VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT feature bit not supported for format %" PRIu64 ".", kSkipPrefix,
+               ahb_fmt_props_Ycbcr.externalFormat);
+        return;
+    }
 
     // Create the image
     VkImage img = VK_NULL_HANDLE;
@@ -4418,12 +4436,12 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     mai.memoryTypeIndex = 0;
     vk::AllocateMemory(dev, &mai, NULL, &img_mem);
 
-    // It shouldn't use vk::GetImageMemoryRequirements for AndroidHardwareBuffer.
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-CoreValidation-vkBindImageMemory-invalid-requirements");
+    // It shouldn't use vk::GetImageMemoryRequirements for imported AndroidHardwareBuffer when memory isn't bound yet
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkGetImageMemoryRequirements-image");
     VkMemoryRequirements img_mem_reqs = {};
     vk::GetImageMemoryRequirements(m_device->device(), img, &img_mem_reqs);
-    vk::BindImageMemory(dev, img, img_mem, 0);
     m_errorMonitor->VerifyFound();
+    vk::BindImageMemory(dev, img, img_mem, 0);
 
     // Bind image to memory
     vk::DestroyImage(dev, img, NULL);

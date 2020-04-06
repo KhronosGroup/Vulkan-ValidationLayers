@@ -59,7 +59,7 @@ void ValidationStateTracker::InitDeviceValidationObject(bool add_obj, Validation
 void ValidationStateTracker::RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE *is_node) {
     const VkExternalMemoryImageCreateInfo *emici = lvl_find_in_chain<VkExternalMemoryImageCreateInfo>(create_info->pNext);
     if (emici && (emici->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
-        is_node->imported_ahb = true;
+        is_node->external_ahb = true;
     }
     const VkExternalFormatANDROID *ext_fmt_android = lvl_find_in_chain<VkExternalFormatANDROID>(create_info->pNext);
     if (ext_fmt_android && (0 != ext_fmt_android->externalFormat)) {
@@ -112,15 +112,9 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
         is_node->create_from_swapchain = swapchain_info->swapchain;
     }
 
-    bool pre_fetch_memory_reqs = true;
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-    if (is_node->external_format_android) {
-        // Do not fetch requirements for external memory images
-        pre_fetch_memory_reqs = false;
-    }
-#endif
     // Record the memory requirements in case they won't be queried
-    if (pre_fetch_memory_reqs) {
+    // External AHB memory can't be quired until after memory is bound
+    if (is_node->external_ahb == false) {
         if ((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) == 0) {
             DispatchGetImageMemoryRequirements(device, *pImage, &is_node->requirements);
         } else {
