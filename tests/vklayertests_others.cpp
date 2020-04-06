@@ -7952,3 +7952,102 @@ TEST_F(VkLayerTest, InvalidSemaphoreCounterType) {
 
     vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
 }
+
+TEST_F(VkLayerTest, ImageDrmFormatModifer) {
+    TEST_DESCRIPTION("General testing of VK_EXT_image_drm_format_modifier");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix, VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME);
+        return;
+    }
+
+    PFN_vkGetImageDrmFormatModifierPropertiesEXT vkGetImageDrmFormatModifierPropertiesEXT =
+        (PFN_vkGetImageDrmFormatModifierPropertiesEXT)vk::GetInstanceProcAddr(instance(),
+                                                                              "vkGetImageDrmFormatModifierPropertiesEXT");
+    ASSERT_TRUE(vkGetImageDrmFormatModifierPropertiesEXT != nullptr);
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    const uint64_t dummy_modifiers[2] = {0, 1};
+
+    VkImageCreateInfo image_info = {};
+    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_info.pNext = nullptr;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.arrayLayers = 1;
+    image_info.extent = {64, 64, 1};
+    image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_info.mipLevels = 1;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+    image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    VkImageFormatProperties2 image_format_prop = {};
+    image_format_prop.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2;
+    VkPhysicalDeviceImageFormatInfo2 image_format_info = {};
+    image_format_info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2;
+    image_format_info.format = image_info.format;
+    image_format_info.tiling = image_info.tiling;
+    image_format_info.type = image_info.imageType;
+    image_format_info.usage = image_info.usage;
+    VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_mod_info = {};
+    drm_format_mod_info.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_DRM_FORMAT_MODIFIER_INFO_EXT;
+    drm_format_mod_info.pNext = nullptr;
+    drm_format_mod_info.drmFormatModifier = dummy_modifiers[0];
+    drm_format_mod_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    drm_format_mod_info.queueFamilyIndexCount = 0;
+    image_format_info.pNext = (void *)&drm_format_mod_info;
+    vk::GetPhysicalDeviceImageFormatProperties2(m_device->phy().handle(), &image_format_info, &image_format_prop);
+
+    VkSubresourceLayout dummyPlaneLayout = {0, 0, 0, 0, 0};
+
+    VkImageDrmFormatModifierListCreateInfoEXT drm_format_mod_list = {};
+    drm_format_mod_list.sType = VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_LIST_CREATE_INFO_EXT;
+    drm_format_mod_list.pNext = nullptr;
+    drm_format_mod_list.drmFormatModifierCount = 2;
+    drm_format_mod_list.pDrmFormatModifiers = dummy_modifiers;
+
+    VkImageDrmFormatModifierExplicitCreateInfoEXT drm_format_mod_explicit = {};
+    drm_format_mod_explicit.sType = VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT;
+    drm_format_mod_explicit.pNext = nullptr;
+    drm_format_mod_explicit.drmFormatModifierPlaneCount = 1;
+    drm_format_mod_explicit.pPlaneLayouts = &dummyPlaneLayout;
+
+    VkImage image = VK_NULL_HANDLE;
+
+    // No pNext
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-tiling-02261");
+    vk::CreateImage(device(), &image_info, nullptr, &image);
+    m_errorMonitor->VerifyFound();
+
+    // Postive check if only 1
+    image_info.pNext = (void *)&drm_format_mod_list;
+    m_errorMonitor->ExpectSuccess();
+    vk::CreateImage(device(), &image_info, nullptr, &image);
+    vk::DestroyImage(device(), image, nullptr);
+    m_errorMonitor->VerifyNotFound();
+
+    image_info.pNext = (void *)&drm_format_mod_explicit;
+    m_errorMonitor->ExpectSuccess();
+    vk::CreateImage(device(), &image_info, nullptr, &image);
+    vk::DestroyImage(device(), image, nullptr);
+    m_errorMonitor->VerifyNotFound();
+
+    // Having both in pNext
+    drm_format_mod_explicit.pNext = (void *)&drm_format_mod_list;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-tiling-02261");
+    vk::CreateImage(device(), &image_info, nullptr, &image);
+    m_errorMonitor->VerifyFound();
+
+    // Only 1 pNext but wrong tiling
+    image_info.pNext = (void *)&drm_format_mod_list;
+    image_info.tiling = VK_IMAGE_TILING_LINEAR;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-02262");
+    vk::CreateImage(device(), &image_info, nullptr, &image);
+    m_errorMonitor->VerifyFound();
+}
