@@ -44,7 +44,6 @@ struct DrawDispatchVuid {
 class CoreChecks : public ValidationStateTracker {
   public:
     using StateTracker = ValidationStateTracker;
-    std::unordered_set<uint64_t> ahb_ext_formats_set;
     GlobalQFOTransferBarrierMap<VkImageMemoryBarrier> qfo_release_image_barrier_map;
     GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> qfo_release_buffer_barrier_map;
     GlobalImageLayoutMap imageLayoutMap;
@@ -436,6 +435,8 @@ class CoreChecks : public ValidationStateTracker {
                                  const VkPhysicalDeviceLimits* device_limits) const;
     bool ValidateBufferViewBuffer(const BUFFER_STATE* buffer_state, const VkBufferViewCreateInfo* pCreateInfo) const;
 
+    bool ValidateImageFormatFeatures(const VkImageCreateInfo* pCreateInfo) const;
+
     bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                     VkImage* pImage) const;
 
@@ -584,7 +585,7 @@ class CoreChecks : public ValidationStateTracker {
                                  char const* func_name, char const* usage_string) const;
 
     bool ValidateImageFormatFeatureFlags(IMAGE_STATE const* image_state, VkFormatFeatureFlags desired, char const* func_name,
-                                         const char* linear_vuid, const char* optimal_vuid) const;
+                                         const char* vuid) const;
 
     bool ValidateImageSubresourceLayers(const CMD_BUFFER_STATE* cb_node, const VkImageSubresourceLayers* subresource_layers,
                                         char const* func_name, char const* member, uint32_t i) const;
@@ -612,6 +613,9 @@ class CoreChecks : public ValidationStateTracker {
 
     bool ValidateImageBarrierSubresourceRange(const IMAGE_STATE* image_state, const VkImageSubresourceRange& subresourceRange,
                                               const char* cmd_name, const char* param_name) const;
+
+    bool ValidateImageViewFormatFeatures(const IMAGE_STATE* image_state, const VkFormat view_format,
+                                         const VkImageUsageFlags image_usage) const;
 
     bool PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkImageView* pView) const;
@@ -1133,9 +1137,6 @@ class CoreChecks : public ValidationStateTracker {
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     bool PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
                                                                   VkAndroidHardwareBufferPropertiesANDROID* pProperties) const;
-    void PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
-                                                                 VkAndroidHardwareBufferPropertiesANDROID* pProperties,
-                                                                 VkResult result);
     bool PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice device,
                                                               const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
                                                               struct AHardwareBuffer** pBuffer) const;

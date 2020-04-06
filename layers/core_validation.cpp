@@ -2357,16 +2357,6 @@ bool CoreChecks::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(
     return skip;
 }
 
-void CoreChecks::PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer *buffer,
-                                                                         VkAndroidHardwareBufferPropertiesANDROID *pProperties,
-                                                                         VkResult result) {
-    if (VK_SUCCESS != result) return;
-    auto ahb_format_props = lvl_find_in_chain<VkAndroidHardwareBufferFormatPropertiesANDROID>(pProperties->pNext);
-    if (ahb_format_props) {
-        ahb_ext_formats_set.insert(ahb_format_props->externalFormat);
-    }
-}
-
 bool CoreChecks::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(VkDevice device,
                                                                       const VkMemoryGetAndroidHardwareBufferInfoANDROID *pInfo,
                                                                       struct AHardwareBuffer **pBuffer) const {

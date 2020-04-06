@@ -244,6 +244,7 @@ class ValidationStateTracker : public ValidationObject {
     std::unordered_set<VkQueue> queues;  // All queues under given device
     QueryMap queryToStateMap;
     unordered_map<VkSamplerYcbcrConversion, uint64_t> ycbcr_conversion_ahb_fmt_map;
+    unordered_map<uint64_t, VkFormatFeatureFlags> ahb_ext_formats_map;
 
     // Traits for State function resolution.  Specializations defined in the macro.
     // NOTE: The Dummy argument allows for *partial* specialization at class scope, as full specialization at class scope
@@ -973,6 +974,11 @@ class ValidationStateTracker : public ValidationObject {
                                          VkQueryPool queryPool, uint32_t slot);
     void PreCallRecordCmdSetViewportWScalingNV(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
                                                const VkViewportWScalingNV* pViewportWScalings);
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    void PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
+                                                                 VkAndroidHardwareBufferPropertiesANDROID* pProperties,
+                                                                 VkResult result);
+#endif  // VK_USE_PLATFORM_ANDROID_KHR
 
     // WSI
     void PostCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
