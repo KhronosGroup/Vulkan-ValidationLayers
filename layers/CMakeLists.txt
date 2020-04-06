@@ -164,6 +164,7 @@ set(CHASSIS_LIBRARY_FILES
     generated/layer_chassis_dispatch.cpp
     generated/command_counter_helper.cpp
     state_tracker.cpp
+    state_tracker.h
     image_layout_map.cpp
     image_layout_map.h
     range_vector.h
@@ -172,18 +173,25 @@ set(CHASSIS_LIBRARY_FILES
 
 set(CORE_VALIDATION_LIBRARY_FILES
     core_validation.cpp
+    core_validation.h
+    core_validation_error_enums.h
+    core_validation_types.h
     drawdispatch.cpp
     convert_to_renderpass2.cpp
     descriptor_sets.cpp
+    descriptor_sets.h
     buffer_validation.cpp
+    buffer_validation.h
     shader_validation.cpp
+    shader_validation.h
     gpu_validation.cpp
     xxhash.c)
 
 set(OBJECT_LIFETIMES_LIBRARY_FILES
     generated/object_tracker.cpp
     generated/object_tracker.h
-    object_tracker_utils.cpp)
+    object_tracker_utils.cpp
+    object_lifetime_validation.h)
 
 set(THREAD_SAFETY_LIBRARY_FILES
     generated/thread_safety.cpp
@@ -192,13 +200,15 @@ set(THREAD_SAFETY_LIBRARY_FILES
 set(STATELESS_VALIDATION_LIBRARY_FILES
     generated/parameter_validation.cpp
     generated/parameter_validation.h
-    parameter_validation_utils.cpp)
+    parameter_validation_utils.cpp
+    stateless_validation.h)
 
 set(BEST_PRACTICES_LIBRARY_FILES
     best_practices_utils.cpp
     generated/best_practices.cpp
     generated/best_practices.h
-    best_practices_validation.h)
+    best_practices_validation.h
+    best_practices_error_enums.h)
 
 set(GPU_ASSISTED_LIBRARY_FILES
     gpu_validation.cpp
