@@ -251,6 +251,8 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, co
                      report_data->FormatHandle(image_state->create_from_swapchain).c_str(),
                      report_data->FormatHandle(image_state->bind_swapchain).c_str());
         }
+    } else if (image_state->external_ahb) {
+        // TODO look into how to properly check for a valid bound memory for an external AHB
     } else if (0 == (static_cast<uint32_t>(image_state->createInfo.flags) & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
         result = VerifyBoundMemoryIsValid(image_state->binding.mem_state.get(), image_state->image,
                                           VulkanTypedHandle(image_state->image, kVulkanObjectTypeImage), api_name, error_code);
@@ -2637,15 +2639,20 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
     return skip;
 }
 
-bool CoreChecks::ValidateGetImageMemoryRequirements2ANDROID(const VkImage image) const {
+bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const char *func_name) const {
     bool skip = false;
 
     const IMAGE_STATE *image_state = GetImageState(image);
-    if (image_state->imported_ahb && (0 == image_state->GetBoundMemory().size())) {
-        skip |= LogError(image, "VUID-VkImageMemoryRequirementsInfo2-image-01897",
-                         "vkGetImageMemoryRequirements2: Attempt to query layout from an image created with "
+    if (image_state->external_ahb && (0 == image_state->GetBoundMemory().size())) {
+        // TODO update when new VUID comes out
+        const char *vuid = strcmp(func_name, "vkGetImageMemoryRequirements()") == 0
+                               ? "UNASSIGNED-vkGetImageMemoryRequirements-image"
+                               : "VUID-VkImageMemoryRequirementsInfo2-image-01897";
+        skip |= LogError(image, vuid,
+                         "%s: Attempt get image memory requirements for an image created with a "
                          "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID handleType, which has not yet been "
-                         "bound to memory.");
+                         "bound to memory.",
+                         func_name);
     }
     return skip;
 }
@@ -2698,7 +2705,7 @@ bool CoreChecks::ValidateCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbc
     return false;
 }
 
-bool CoreChecks::ValidateGetImageMemoryRequirements2ANDROID(const VkImage image) const { return false; }
+bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const char *func_name) const { return false; }
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
@@ -2755,6 +2762,15 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
         }
     }
 
+    bool imported_ahb = false;
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    //  "memory is not an imported Android Hardware Buffer" refers to VkImportAndroidHardwareBufferInfoANDROID with a non-NULL
+    //  buffer value. Memory imported has another VUID to check size and allocationSize match up
+    auto imported_ahb_info = lvl_find_in_chain<VkImportAndroidHardwareBufferInfoANDROID>(pAllocateInfo->pNext);
+    if (imported_ahb_info != nullptr) {
+        imported_ahb = imported_ahb_info->buffer != nullptr;
+    }
+#endif
     auto dedicated_allocate_info = lvl_find_in_chain<VkMemoryDedicatedAllocateInfo>(pAllocateInfo->pNext);
     if (dedicated_allocate_info) {
         if ((dedicated_allocate_info->buffer != VK_NULL_HANDLE) && (dedicated_allocate_info->image != VK_NULL_HANDLE)) {
@@ -2769,12 +2785,14 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                                  "VK_IMAGE_CREATE_DISJOINT_BIT",
                                  report_data->FormatHandle(dedicated_allocate_info->image).c_str());
             } else {
-                if (pAllocateInfo->allocationSize != image_state->requirements.size) {
-                    skip |=
-                        LogError(device, "VUID-VkMemoryDedicatedAllocateInfo-image-01433",
-                                 "Allocation Size (%u) needs to be equal to VkImage %s VkMemoryRequirements::size (%u)",
-                                 pAllocateInfo->allocationSize, report_data->FormatHandle(dedicated_allocate_info->image).c_str(),
-                                 image_state->requirements.size);
+                if ((pAllocateInfo->allocationSize != image_state->requirements.size) && (imported_ahb == false)) {
+                    const char *vuid = (device_extensions.vk_android_external_memory_android_hardware_buffer)
+                                           ? "VUID-VkMemoryDedicatedAllocateInfo-image-02964"
+                                           : "VUID-VkMemoryDedicatedAllocateInfo-image-01433";
+                    skip |= LogError(
+                        device, vuid, "Allocation Size (%u) needs to be equal to VkImage %s VkMemoryRequirements::size (%u)",
+                        pAllocateInfo->allocationSize, report_data->FormatHandle(dedicated_allocate_info->image).c_str(),
+                        image_state->requirements.size);
                 }
                 if ((image_state->createInfo.flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0) {
                     skip |= LogError(device, "VUID-VkMemoryDedicatedAllocateInfo-image-01434",
@@ -2786,11 +2804,14 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
         } else if (dedicated_allocate_info->buffer != VK_NULL_HANDLE) {
             // Dedicated VkBuffer
             const BUFFER_STATE *buffer_state = GetBufferState(dedicated_allocate_info->buffer);
-            if (pAllocateInfo->allocationSize != buffer_state->requirements.size) {
-                skip |= LogError(device, "VUID-VkMemoryDedicatedAllocateInfo-buffer-01435",
-                                 "Allocation Size (%u) needs to be equal to VkBuffer %s VkMemoryRequirements::size (%u)",
-                                 pAllocateInfo->allocationSize, report_data->FormatHandle(dedicated_allocate_info->buffer).c_str(),
-                                 buffer_state->requirements.size);
+            if ((pAllocateInfo->allocationSize != buffer_state->requirements.size) && (imported_ahb == false)) {
+                const char *vuid = (device_extensions.vk_android_external_memory_android_hardware_buffer)
+                                       ? "VUID-VkMemoryDedicatedAllocateInfo-buffer-02965"
+                                       : "VUID-VkMemoryDedicatedAllocateInfo-buffer-01435";
+                skip |=
+                    LogError(device, vuid, "Allocation Size (%u) needs to be equal to VkBuffer %s VkMemoryRequirements::size (%u)",
+                             pAllocateInfo->allocationSize, report_data->FormatHandle(dedicated_allocate_info->buffer).c_str(),
+                             buffer_state->requirements.size);
             }
             if ((buffer_state->createInfo.flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0) {
                 skip |= LogError(device, "VUID-VkMemoryDedicatedAllocateInfo-buffer-01436",
@@ -3299,14 +3320,18 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements(VkDevice device, VkIm
                 "%s must not have been created with the VK_IMAGE_CREATE_DISJOINT_BIT (need to use vkGetImageMemoryRequirements2).",
                 report_data->FormatHandle(image).c_str());
         }
+
+        if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
+            skip |= ValidateGetImageMemoryRequirementsANDROID(image, "vkGetImageMemoryRequirements()");
+        }
     }
     return skip;
 }
 
-bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2 *pInfo) const {
+bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirementsInfo2 *pInfo, const char *func_name) const {
     bool skip = false;
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
-        skip |= ValidateGetImageMemoryRequirements2ANDROID(pInfo->image);
+        skip |= ValidateGetImageMemoryRequirementsANDROID(pInfo->image, func_name);
     }
 
     const IMAGE_STATE *image_state = GetImageState(pInfo->image);
@@ -3318,26 +3343,26 @@ bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirem
     if ((FormatIsMultiplane(image_format)) && (0 != (image_state->createInfo.flags & VK_IMAGE_CREATE_DISJOINT_BIT)) &&
         (image_plane_info == nullptr)) {
         skip |= LogError(pInfo->image, "VUID-VkImageMemoryRequirementsInfo2-image-01589",
-                         "vkGetImageMemoryRequirements2: %s image was created with a multi-planar format (%s) and "
+                         "%s: %s image was created with a multi-planar format (%s) and "
                          "VK_IMAGE_CREATE_DISJOINT_BIT, but the current pNext doesn't include a "
                          "VkImagePlaneMemoryRequirementsInfo struct",
-                         report_data->FormatHandle(pInfo->image).c_str(), string_VkFormat(image_format));
+                         func_name, report_data->FormatHandle(pInfo->image).c_str(), string_VkFormat(image_format));
     }
 
     if ((0 == (image_state->createInfo.flags & VK_IMAGE_CREATE_DISJOINT_BIT)) && (image_plane_info != nullptr)) {
         skip |= LogError(pInfo->image, "VUID-VkImageMemoryRequirementsInfo2-image-01590",
-                         "vkGetImageMemoryRequirements2: %s image was not created with VK_IMAGE_CREATE_DISJOINT_BIT,"
+                         "%s: %s image was not created with VK_IMAGE_CREATE_DISJOINT_BIT,"
                          "but the current pNext includes a VkImagePlaneMemoryRequirementsInfo struct",
-                         report_data->FormatHandle(pInfo->image).c_str());
+                         func_name, report_data->FormatHandle(pInfo->image).c_str());
     }
 
     if ((FormatIsMultiplane(image_format) == false) && (image_tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) &&
         (image_plane_info != nullptr)) {
         skip |= LogError(pInfo->image, "VUID-VkImageMemoryRequirementsInfo2-image-02280",
-                         "vkGetImageMemoryRequirements2: %s image is a single-plane format (%s) and does not have tiling of "
+                         "%s: %s image is a single-plane format (%s) and does not have tiling of "
                          "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT,"
                          "but the current pNext includes a VkImagePlaneMemoryRequirementsInfo struct",
-                         report_data->FormatHandle(pInfo->image).c_str(), string_VkFormat(image_format));
+                         func_name, report_data->FormatHandle(pInfo->image).c_str(), string_VkFormat(image_format));
     }
 
     if (image_plane_info != nullptr) {
@@ -3348,17 +3373,17 @@ bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirem
             if ((2 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT)) {
                 skip |= LogError(
                     pInfo->image, "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02281",
-                    "Image %s VkImagePlaneMemoryRequirementsInfo::planeAspect is %s but can only be VK_IMAGE_ASPECT_PLANE_0_BIT"
+                    "%s: Image %s VkImagePlaneMemoryRequirementsInfo::planeAspect is %s but can only be VK_IMAGE_ASPECT_PLANE_0_BIT"
                     "or VK_IMAGE_ASPECT_PLANE_1_BIT.",
-                    report_data->FormatHandle(image_state->image).c_str(), string_VkImageAspectFlags(aspect).c_str());
+                    func_name, report_data->FormatHandle(image_state->image).c_str(), string_VkImageAspectFlags(aspect).c_str());
             }
             if ((3 == planes) && (aspect != VK_IMAGE_ASPECT_PLANE_0_BIT) && (aspect != VK_IMAGE_ASPECT_PLANE_1_BIT) &&
                 (aspect != VK_IMAGE_ASPECT_PLANE_2_BIT)) {
                 skip |= LogError(
                     pInfo->image, "VUID-VkImagePlaneMemoryRequirementsInfo-planeAspect-02281",
-                    "Image %s VkImagePlaneMemoryRequirementsInfo::planeAspect is %s but can only be VK_IMAGE_ASPECT_PLANE_0_BIT"
+                    "%s: Image %s VkImagePlaneMemoryRequirementsInfo::planeAspect is %s but can only be VK_IMAGE_ASPECT_PLANE_0_BIT"
                     "or VK_IMAGE_ASPECT_PLANE_1_BIT or VK_IMAGE_ASPECT_PLANE_2_BIT.",
-                    report_data->FormatHandle(image_state->image).c_str(), string_VkImageAspectFlags(aspect).c_str());
+                    func_name, report_data->FormatHandle(image_state->image).c_str(), string_VkImageAspectFlags(aspect).c_str());
             }
         }
     }
@@ -3367,12 +3392,12 @@ bool CoreChecks::ValidateGetImageMemoryRequirements2(const VkImageMemoryRequirem
 
 bool CoreChecks::PreCallValidateGetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2 *pInfo,
                                                             VkMemoryRequirements2 *pMemoryRequirements) const {
-    return ValidateGetImageMemoryRequirements2(pInfo);
+    return ValidateGetImageMemoryRequirements2(pInfo, "vkGetImageMemoryRequirements2()");
 }
 
 bool CoreChecks::PreCallValidateGetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2 *pInfo,
                                                                VkMemoryRequirements2 *pMemoryRequirements) const {
-    return ValidateGetImageMemoryRequirements2(pInfo);
+    return ValidateGetImageMemoryRequirements2(pInfo, "vkGetImageMemoryRequirements2KHR()");
 }
 
 bool CoreChecks::PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
@@ -9264,17 +9289,11 @@ bool CoreChecks::ValidateBindImageMemory(const VkBindImageMemoryInfo &bindInfo, 
     if (image_state) {
         // Track objects tied to memory
         skip = ValidateSetMemBinding(bindInfo.memory, VulkanTypedHandle(bindInfo.image, kVulkanObjectTypeImage), api_name);
-#ifdef VK_USE_PLATFORM_ANDROID_KHR
-        if (image_state->external_format_android) {
-            if (image_state->memory_requirements_checked) {
-                skip |= LogError(bindInfo.image, kVUID_Core_BindImage_InvalidMemReqQuery,
-                                 "%s: Must not call vkGetImageMemoryRequirements on %s that will be bound to an external "
-                                 "Android hardware buffer.",
-                                 api_name, report_data->FormatHandle(bindInfo.image).c_str());
-            }
+
+        if (image_state->external_ahb) {
+            // TODO check what is valid to cover with external AHB below
             return skip;
         }
-#endif  // VK_USE_PLATFORM_ANDROID_KHR
 
         const auto plane_info = lvl_find_in_chain<VkBindImagePlaneMemoryInfo>(bindInfo.pNext);
         const auto mem_info = GetDevMemState(bindInfo.memory);

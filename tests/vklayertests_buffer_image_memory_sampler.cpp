@@ -9267,14 +9267,26 @@ TEST_F(VkLayerTest, DedicatedAllocation) {
     memory_allocate_info.allocationSize = normal_image_memory_req.size - 1;
     dedicated_allocate_info.image = normal_image;
     dedicated_allocate_info.buffer = VK_NULL_HANDLE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-image-01433");
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    const char *image_vuid = DeviceExtensionEnabled(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)
+                                 ? "VUID-VkMemoryDedicatedAllocateInfo-image-02964"
+                                 : "VUID-VkMemoryDedicatedAllocateInfo-image-01433";
+    const char *buffer_vuid = DeviceExtensionEnabled(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)
+                                  ? "VUID-VkMemoryDedicatedAllocateInfo-buffer-02965"
+                                  : "VUID-VkMemoryDedicatedAllocateInfo-buffer-01435";
+#else
+    const char *image_vuid = "VUID-VkMemoryDedicatedAllocateInfo-image-01433";
+    const char *buffer_vuid = "VUID-VkMemoryDedicatedAllocateInfo-buffer-01435";
+#endif
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, image_vuid);
     vk::AllocateMemory(m_device->device(), &memory_allocate_info, NULL, &device_memory);
     m_errorMonitor->VerifyFound();
 
     memory_allocate_info.allocationSize = normal_buffer_memory_req.size - 1;
     dedicated_allocate_info.image = VK_NULL_HANDLE;
     dedicated_allocate_info.buffer = normal_buffer;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryDedicatedAllocateInfo-buffer-01435");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, buffer_vuid);
     vk::AllocateMemory(m_device->device(), &memory_allocate_info, NULL, &device_memory);
     m_errorMonitor->VerifyFound();
 
