@@ -1,7 +1,8 @@
 /*
  *
- * Copyright (c) 2016-2017 Valve Corporation
- * Copyright (c) 2016-2017 LunarG, Inc.
+ * Copyright (c) 2016-2020 Valve Corporation
+ * Copyright (c) 2016-2020 LunarG, Inc.
+ * Copyright (c) 2016-2020 The Khronos Group Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +41,10 @@ typedef void(VKAPI_PTR *PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT)(VkPh
                                                                             const VkFormatProperties *properties);
 typedef void(VKAPI_PTR *PFN_vkSetPhysicalDeviceFormatPropertiesEXT)(VkPhysicalDevice physicalDevice, VkFormat format,
                                                                     const VkFormatProperties newProperties);
+typedef void(VKAPI_PTR *PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT)(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                             const VkFormatProperties2 *properties);
+typedef void(VKAPI_PTR *PFN_vkSetPhysicalDeviceFormatProperties2EXT)(VkPhysicalDevice physicalDevice, VkFormat format,
+                                                                     const VkFormatProperties2 newProperties);
 #ifdef __cplusplus
 }  // extern "C"
 #endif  // __cplusplus
