@@ -389,6 +389,7 @@ class IMAGE_STATE : public BINDABLE {
     VkSwapchainKHR bind_swapchain;
     uint32_t bind_swapchain_imageIndex;
     image_layout_map::Encoder range_encoder;
+    VkFormatFeatureFlags format_features;
     // Need to memory requirments for each plane if image is disjoint
     VkMemoryRequirements plane0_requirements;
     bool plane0_memory_requirements_checked = false;
@@ -461,6 +462,7 @@ class IMAGE_VIEW_STATE : public BASE_NODE {
     VkSampleCountFlagBits samples;
     unsigned descriptor_format_bits;
     VkSamplerYcbcrConversion samplerConversion;  // Handle of the ycbcr sampler conversion the image was created with, if any
+    VkFormatFeatureFlags format_features;
     std::shared_ptr<IMAGE_STATE> image_state;
     IMAGE_VIEW_STATE(const std::shared_ptr<IMAGE_STATE> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci);
     IMAGE_VIEW_STATE(const IMAGE_VIEW_STATE &rh_obj) = delete;

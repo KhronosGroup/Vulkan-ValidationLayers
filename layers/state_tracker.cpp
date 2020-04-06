@@ -65,6 +65,11 @@ void ValidationStateTracker::RecordCreateImageANDROID(const VkImageCreateInfo *c
     if (ext_fmt_android && (0 != ext_fmt_android->externalFormat)) {
         is_node->has_ahb_format = true;
         is_node->ahb_format = ext_fmt_android->externalFormat;
+        // VUID 01894 will catch if not found in map
+        auto it = ahb_ext_formats_map.find(ext_fmt_android->externalFormat);
+        if (it != ahb_ext_formats_map.end()) {
+            is_node->format_features = it->second;
+        }
     }
 }
 
@@ -79,6 +84,15 @@ void ValidationStateTracker::RecordCreateSamplerYcbcrConversionANDROID(const VkS
 void ValidationStateTracker::RecordDestroySamplerYcbcrConversionANDROID(VkSamplerYcbcrConversion ycbcr_conversion) {
     ycbcr_conversion_ahb_fmt_map.erase(ycbcr_conversion);
 };
+
+void ValidationStateTracker::PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(
+    VkDevice device, const struct AHardwareBuffer *buffer, VkAndroidHardwareBufferPropertiesANDROID *pProperties, VkResult result) {
+    if (VK_SUCCESS != result) return;
+    auto ahb_format_props = lvl_find_in_chain<VkAndroidHardwareBufferFormatPropertiesANDROID>(pProperties->pNext);
+    if (ahb_format_props) {
+        ahb_ext_formats_map.insert({ahb_format_props->externalFormat, ahb_format_props->formatFeatures});
+    }
+}
 
 #else
 
@@ -142,6 +156,39 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
             }
         }
     }
+
+    // Add feature support according to Image Format Features (vkspec.html#resources-image-format-features)
+    // if format is AHB external format then the features are already set
+    if (is_node->has_ahb_format == false) {
+        const VkImageTiling image_tiling = pCreateInfo->tiling;
+        const VkFormat image_format = pCreateInfo->format;
+        if (image_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+            // Parameter validation should catch if this is used without VK_EXT_image_drm_format_modifier
+            assert(device_extensions.vk_ext_image_drm_format_modifier);
+            VkImageDrmFormatModifierPropertiesEXT drm_format_properties = {
+                VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT, nullptr};
+            DispatchGetImageDrmFormatModifierPropertiesEXT(device, *pImage, &drm_format_properties);
+
+            VkFormatProperties2 format_properties_2 = {VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2, nullptr};
+            VkDrmFormatModifierPropertiesListEXT drm_properties_list = {VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT,
+                                                                        nullptr};
+            format_properties_2.pNext = (void *)&drm_properties_list;
+            DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_format, &format_properties_2);
+
+            for (uint32_t i = 0; i < drm_properties_list.drmFormatModifierCount; i++) {
+                if ((drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifier &
+                     drm_format_properties.drmFormatModifier) != 0) {
+                    is_node->format_features |= drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
+                }
+            }
+        } else {
+            VkFormatProperties format_properties;
+            DispatchGetPhysicalDeviceFormatProperties(physical_device, image_format, &format_properties);
+            is_node->format_features = (image_tiling == VK_IMAGE_TILING_LINEAR) ? format_properties.linearTilingFeatures
+                                                                                : format_properties.optimalTilingFeatures;
+        }
+    }
+
     imageMap.insert(std::make_pair(*pImage, std::move(is_node)));
 }
 
@@ -251,7 +298,42 @@ void ValidationStateTracker::PostCallRecordCreateImageView(VkDevice device, cons
                                                            VkResult result) {
     if (result != VK_SUCCESS) return;
     auto image_state = GetImageShared(pCreateInfo->image);
-    imageViewMap[*pView] = std::make_shared<IMAGE_VIEW_STATE>(image_state, *pView, pCreateInfo);
+    auto image_view_state = std::make_shared<IMAGE_VIEW_STATE>(image_state, *pView, pCreateInfo);
+
+    // Add feature support according to Image View Format Features (vkspec.html#resources-image-view-format-features)
+    const VkImageTiling image_tiling = image_state->createInfo.tiling;
+    const VkFormat image_view_format = pCreateInfo->format;
+    if (image_state->has_ahb_format == true) {
+        // The ImageView uses same Image's format feature since they share same AHB
+        image_view_state->format_features = image_state->format_features;
+    } else if (image_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+        // Parameter validation should catch if this is used without VK_EXT_image_drm_format_modifier
+        assert(device_extensions.vk_ext_image_drm_format_modifier);
+        VkImageDrmFormatModifierPropertiesEXT drm_format_properties = {VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT,
+                                                                       nullptr};
+        DispatchGetImageDrmFormatModifierPropertiesEXT(device, image_state->image, &drm_format_properties);
+
+        VkFormatProperties2 format_properties_2 = {VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2, nullptr};
+        VkDrmFormatModifierPropertiesListEXT drm_properties_list = {VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT,
+                                                                    nullptr};
+        format_properties_2.pNext = (void *)&drm_properties_list;
+        DispatchGetPhysicalDeviceFormatProperties2(physical_device, image_view_format, &format_properties_2);
+
+        for (uint32_t i = 0; i < drm_properties_list.drmFormatModifierCount; i++) {
+            if ((drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifier & drm_format_properties.drmFormatModifier) !=
+                0) {
+                image_view_state->format_features |=
+                    drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
+            }
+        }
+    } else {
+        VkFormatProperties format_properties;
+        DispatchGetPhysicalDeviceFormatProperties(physical_device, image_view_format, &format_properties);
+        image_view_state->format_features = (image_tiling == VK_IMAGE_TILING_LINEAR) ? format_properties.linearTilingFeatures
+                                                                                     : format_properties.optimalTilingFeatures;
+    }
+
+    imageViewMap.insert(std::make_pair(*pView, std::move(image_view_state)));
 }
 
 void ValidationStateTracker::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
