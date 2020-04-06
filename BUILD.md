@@ -424,7 +424,7 @@ repository to other Linux distributions.
     sudo apt-get install git build-essential libx11-xcb-dev \
         libxkbcommon-dev libwayland-dev libxrandr-dev \
         libegl1-mesa-dev
-		
+
 ##### Required package for Ubuntu 18.04 users
 
 For python2 users
@@ -683,6 +683,8 @@ tools.
     cd build-android
     ./build_all.sh
 
+> **NOTE:** By default, the `build_all.sh` script will build for all Android ABI variations. To **speed up the build time** if you know your target(s), set `APP_ABI` in both [build-android/jni/Application.mk](build-android/jni/Application.mk) and [build-android/jni/shaderc/Application.mk](build-android/jni/shaderc/Application.mk) to the desired [Android ABI](https://developer.android.com/ndk/guides/application_mk#app_abi)
+
 Resulting validation layer binaries will be in build-android/libs. Test and
 demo APKs can be installed on production devices with:
 
@@ -729,6 +731,10 @@ Alternatively, you can use the test_APK script to install and run the layer
 validation tests:
 
     test_APK.sh -s <serial number> -p <plaform name> -f <gtest_filter>
+
+To view to logging while running in a separate terminal run
+
+    adb logcat -c && adb logcat *:S VulkanLayerValidationTests
 
 ## Building on MacOS
 
