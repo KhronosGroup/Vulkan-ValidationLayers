@@ -1055,6 +1055,24 @@ bool VkLayerTest::LoadDeviceProfileLayer(
     return 1;
 }
 
+bool VkLayerTest::LoadDeviceProfileLayer(
+    PFN_vkSetPhysicalDeviceFormatProperties2EXT &fpvkSetPhysicalDeviceFormatProperties2EXT,
+    PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT &fpvkGetOriginalPhysicalDeviceFormatProperties2EXT) {
+    // Load required functions
+    fpvkSetPhysicalDeviceFormatProperties2EXT =
+        (PFN_vkSetPhysicalDeviceFormatProperties2EXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceFormatProperties2EXT");
+    fpvkGetOriginalPhysicalDeviceFormatProperties2EXT =
+        (PFN_vkGetOriginalPhysicalDeviceFormatProperties2EXT)vk::GetInstanceProcAddr(
+            instance(), "vkGetOriginalPhysicalDeviceFormatProperties2EXT");
+
+    if (!(fpvkSetPhysicalDeviceFormatProperties2EXT) || !(fpvkGetOriginalPhysicalDeviceFormatProperties2EXT)) {
+        printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
+        return false;
+    }
+
+    return true;
+}
+
 bool VkBufferTest::GetTestConditionValid(VkDeviceObj *aVulkanDevice, eTestEnFlags aTestFlag, VkBufferUsageFlags aBufferUsage) {
     if (eInvalidDeviceOffset != aTestFlag && eInvalidMemoryOffset != aTestFlag) {
         return true;
