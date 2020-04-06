@@ -739,6 +739,26 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                              "vkCreateImage(): usage contains VK_IMAGE_USAGE_STORAGE_BIT and the multisampled storage images "
                              "feature is not enabled, image samples must be VK_SAMPLE_COUNT_1_BIT");
         }
+
+        if (device_extensions.vk_ext_image_drm_format_modifier) {
+            const auto drm_format_mod_list = lvl_find_in_chain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
+            const auto drm_format_mod_explict =
+                lvl_find_in_chain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
+            if (pCreateInfo->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+                if (((drm_format_mod_list != nullptr) && (drm_format_mod_explict != nullptr)) ||
+                    ((drm_format_mod_list == nullptr) && (drm_format_mod_explict == nullptr))) {
+                    skip |= LogError(device, "VUID-VkImageCreateInfo-tiling-02261",
+                                     "vkCreateImage(): Tiling is VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT but pNext must have "
+                                     "either VkImageDrmFormatModifierListCreateInfoEXT or "
+                                     "VkImageDrmFormatModifierExplicitCreateInfoEXT in the pNext chain");
+                }
+            } else if ((drm_format_mod_list != nullptr) || (drm_format_mod_explict != nullptr)) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-02262",
+                                 "vkCreateImage(): Tiling is not VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT but there is a "
+                                 "VkImageDrmFormatModifierListCreateInfoEXT or VkImageDrmFormatModifierExplicitCreateInfoEXT "
+                                 "in the pNext chain");
+            }
+        }
     }
 
     return skip;
