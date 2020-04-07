@@ -415,6 +415,8 @@ class BothRangeMap {
         }
         bool operator!=(const IteratorImpl& other) const { return !(*this == other); }
         IteratorImpl() : small_it_(), big_it_(), mode_(BothRangeMapMode::kTristate) {}
+        IteratorImpl(const IteratorImpl& original)
+            : small_it_(original.small_it_), big_it_(original.big_it_), mode_(original.mode_) {}
 
       private:
         IteratorImpl(BothRangeMapMode mode) : small_it_(), big_it_(), mode_(mode) {}

@@ -111,6 +111,7 @@ struct range {
 
     range() : begin(), end() {}
     range(const index_type &begin_, const index_type &end_) : begin(begin_), end(end_) {}
+    range(const range &other) : begin(other.begin), end(other.end) {}
 };
 
 template <typename Range>
@@ -472,6 +473,10 @@ class range_map {
         friend range_map;
 
       public:
+        const_iterator &operator=(const const_iterator &other) {
+            Base::operator=(other);
+            return *this;
+        }
         const_iterator(const const_iterator &other) : Base(other){};
         const_iterator(const iterator &it) : Base(ImplConstIterator(it.get_pos())) {}
         const_iterator() : Base() {}
@@ -712,6 +717,7 @@ class small_range_map {
 
         // At end()
         IteratorImpl() : map_(nullptr), pos_(N) {}
+        IteratorImpl(const IteratorImpl &other) : map_(other.map_), pos_(other.pos_) {}
 
         // Raw getters to allow for const_iterator conversion below
         Map *get_map() const { return map_; }
