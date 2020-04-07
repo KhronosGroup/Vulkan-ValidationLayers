@@ -343,8 +343,9 @@ class ImageRangeEncoder : public RangeEncoder {
 
     inline const VkDeviceSize& ElementSize() const { return element_size_; }
     inline const VkSubresourceLayout& SubresourceLayout() const { return current_subres_layout_; }
+    // TODO: This next call should work in a const way...
     const VkSubresourceLayout& SubresourceLayout(const VkImageSubresource& subres);
-    inline VkExtent3D SubresourceExtent(int mip_level) { return subres_extents_[mip_level]; }
+    inline VkExtent3D SubresourceExtent(int mip_level) const { return subres_extents_[mip_level]; }
 
   private:
     VkDeviceSize element_size_;
@@ -369,6 +370,7 @@ class ImageRangeGenerator {
     void SetPos();
 
   private:
+    // TODO encoder should be const
     ImageRangeEncoder* encoder_;
     const VkImageSubresourceRange subres_range_;
     const VkOffset3D offset_;
