@@ -1318,4 +1318,22 @@ class ValidationStateTracker : public ValidationObject {
             DispatchGetPhysicalDeviceProperties2KHR(gpu, &prop2);
         }
     }
+
+  private:
+    // Simple base address allocator allow allow VkDeviceMemory allocations to appear to exist in a common address space.
+    // At 256GB allocated/sec  ( > 8GB at 30Hz), will overflow in just over 2 years
+    class FakeAllocator {
+      public:
+        void Free(VkDeviceSize fake_address){};  // Define the interface just in case we ever need to be cleverer.
+        VkDeviceSize Alloc(VkDeviceSize size) {
+            const auto alloc = free_;
+            assert(std::numeric_limits<VkDeviceSize>::max() - size >= free_);  //  776.722963 days later...
+            free_ = free_ + size;
+            return alloc;
+        }
+
+      private:
+        VkDeviceSize free_ = 0;
+    };
+    FakeAllocator fake_memory;
 };
