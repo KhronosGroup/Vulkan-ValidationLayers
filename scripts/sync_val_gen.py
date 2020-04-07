@@ -590,6 +590,9 @@ def CreateStageAccessCombinations(config, stage_order, stage_access_types):
             mini_stage = mini_stage.replace("VK_PIPELINE_STAGE_", "")
         mini_stage = mini_stage.replace("_BIT", "")
 
+        # Because access_stage_table's elements order might be different sometimes.
+        # It causes the generator creates different code. It needs to be sorted.
+        stage_access_types[stage].sort();
         for access in stage_access_types[stage]:
             mini_access = access.replace("VK_ACCESS_", "").replace("_BIT", "")
             stage_access = "_".join((mini_stage,mini_access))
@@ -711,11 +714,13 @@ def DoubleCrossReferenceTable(table_name, table_desc, stage_keys, access_keys, s
     table.append('static std::map<{vk_stage_flags}, std::map<{vk_access_flags}, {ordinal_name}>> {var_prefix}{} = {{'.format(table_name, **config))
     sep = ' },\n' + indent * 2 + '{ '
 
-    for stage, access_map in stage_access_stage_access_map.items():
-        if len(access_map.keys()) == 0: continue
-        accesses = [ '{}, {}'.format(access, index) for access, index in access_map.items() ]
+    # Because stage_access_stage_access_map's elements order might be different sometimes.
+    # It causes the generator creates different code. It needs to be sorted.
+    for i in sorted(stage_access_stage_access_map):
+        if len(stage_access_stage_access_map[i].keys()) == 0: continue
+        accesses = [ '{}, {}'.format(access, index) for access, index in sorted(stage_access_stage_access_map[i].items()) ]
         entry_format = '{tab}{{ {key}, {{\n{tab}{tab}{{ {val} }}\n{tab}}} }},'
-        table.append( entry_format.format(key=stage, val=sep.join(accesses), tab=indent))
+        table.append( entry_format.format(key=i, val=sep.join(accesses), tab=indent))
     table.append('};')
     table.append('')
 
