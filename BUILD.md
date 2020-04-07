@@ -173,6 +173,10 @@ specific requirements for configuring and building these components.
 
 - You may need to adjust some of the CMake options based on your platform. See
   the platform-specific sections later in this document.
+- When using update_deps.py to change architectures, for example, from x64 to Win32,
+  it is strongly recommended to add the '--clean-repo' parameter. This avoids
+  architecture incompatibilities among dependent components.
+  dependent components will produce consistent build artifacts.
 - The `update_deps.py` script fetches and builds the dependent repositories in
   the current directory when it is invoked. In this case, they are built in
   the `build` directory.
