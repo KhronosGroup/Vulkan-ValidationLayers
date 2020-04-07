@@ -2170,7 +2170,7 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                          "pCreateInfos->basePipelineHandle is not VK_NULL_HANDLE.");
                     }
                 } else {
-                    if (static_cast<const uint32_t>(pCreateInfos[i].basePipelineIndex) >= createInfoCount) {
+                    if (static_cast<uint32_t>(pCreateInfos[i].basePipelineIndex) >= createInfoCount) {
                         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-00723",
                                          "vkCreateGraphicsPipelines parameter pCreateInfos->basePipelineIndex (%d) must be a valid"
                                          "index into the pCreateInfos array, of size %d.",

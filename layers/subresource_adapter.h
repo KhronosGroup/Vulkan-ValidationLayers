@@ -287,7 +287,7 @@ class SubresourceGenerator : public Subresource {
     // General purpose and slow, when we have no other information to update the generator
     void Seek(IndexType index) {
         // skip forward past discontinuities
-        *static_cast<Subresource* const>(this) = encoder_->Decode(index);
+        *static_cast<Subresource*>(this) = encoder_->Decode(index);
     }
 
     const VkImageSubresource& operator*() const { return *this; }
