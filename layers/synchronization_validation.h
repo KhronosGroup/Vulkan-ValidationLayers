@@ -167,38 +167,23 @@ class ResourceAccessState : public SyncStageAccess {
 using ResourceAccessRangeMap = sparse_container::range_map<uint64_t, ResourceAccessState>;
 using ResourceAccessRange = typename ResourceAccessRangeMap::key_type;
 
-class AccessTrackerContext;
+class AccessContext;
 // This class owns none of the objects pointed to.
 class AccessTracker {
   public:
-    AccessTracker(AccessTrackerContext *context) : accesses_() {}
+    AccessTracker(AccessContext *context) : accesses_() {}
     ResourceAccessRangeMap &GetCurrentAccessMap() { return accesses_; }
     const ResourceAccessRangeMap &GetCurrentAccessMap() const { return accesses_; }
-    void UpdateAccessState(SyncStageAccessIndex current_usage, const ResourceAccessRange &range, const ResourceUsageTag &tag);
-    void UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
-                           const VkImageSubresourceLayers &subresource, const VkOffset3D &offset, const VkExtent3D &extent,
-                           const ResourceUsageTag &tag);
 
   private:
     ResourceAccessRangeMap accesses_;
-// TODO: Cache the track back tree to save on repeated map lookups
-#if 0
-    struct TrackBack {
-        const VkSubpassDependency2 *barrier;
-        AccessTracker *tracker;
-    };
-    std::vector<TrackBack> prev_;
-    std::vector<AccessTracker *> async_;
-    TrackBack external_;
-    AccessTrackerContext *context_;
-#endif
 };
 
-class AccessTrackerContext {
+class AccessContext {
   protected:
     // TODO -- hide the details of the implementation..
     template <typename Map, typename Key>
-    static typename Map::mapped_type *GetImpl(Map *map, Key key, AccessTrackerContext *context) {
+    static typename Map::mapped_type *GetImpl(Map *map, Key key, AccessContext *context) {
         auto find_it = map->find(key);
         if (find_it == map->end()) {
             if (!context) return nullptr;
@@ -221,31 +206,21 @@ class AccessTrackerContext {
     using AccessTrackerMap = std::unordered_map<VulkanTypedHandle, AccessTracker>;
     struct TrackBack {
         SyncBarrier barrier;
-        AccessTrackerContext *context;
-        TrackBack(AccessTrackerContext *context_, VkQueueFlags queue_flags_, const VkSubpassDependency2 &subpass_barrier_)
+        AccessContext *context;
+        TrackBack(AccessContext *context_, VkQueueFlags queue_flags_, const VkSubpassDependency2 &subpass_barrier_)
             : barrier(queue_flags_, subpass_barrier_), context(context_) {}
         TrackBack &operator=(const TrackBack &) = default;
         TrackBack() = default;
     };
 
-    AccessTracker *GetAccessTracker(const VulkanTypedHandle &handle) { return GetImpl(&access_tracker_map_, handle, this); }
-    AccessTracker *GetAccessTrackerNoInsert(const VulkanTypedHandle &handle) {
-        return GetImpl(&access_tracker_map_, handle, nullptr);
-    }
-    const AccessTracker *GetAccessTracker(const VulkanTypedHandle &handle) const {
-        return GetConstImpl(&access_tracker_map_, handle);
-    }
     HazardResult DetectHazard(const VulkanTypedHandle &handle, SyncStageAccessIndex usage_index,
                               const ResourceAccessRange &range) const;
     HazardResult DetectBarrierHazard(const VulkanTypedHandle &handle, SyncStageAccessIndex current_usage,
                                      VkPipelineStageFlags src_exec_scope, SyncStageAccessFlags src_access_scope,
                                      const ResourceAccessRange &range) const;
-    HazardResult DetectHazard(const CMD_BUFFER_STATE &cmd, const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
+    HazardResult DetectHazard(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
                               const VkImageSubresourceLayers &subresource, const VkOffset3D &offset,
                               const VkExtent3D &extent) const;
-
-    const AccessTrackerMap &GetAccessTrackerMap() const { return access_tracker_map_; }
-    AccessTrackerMap &GetAccessTrackerMap() { return access_tracker_map_; }
 
     const TrackBack &GetDstExternalTrackBack() const { return dst_external_; }
     void Reset() {
@@ -258,22 +233,31 @@ class AccessTrackerContext {
     // Would need to add a "hint" overload to parallel_iterator::invalidate_[AB] call, if so.
     void ResolvePreviousAccess(const VulkanTypedHandle &handle, const ResourceAccessRange &range,
                                ResourceAccessRangeMap *descent_map, const ResourceAccessState *infill_state) const;
-    void ResolvePreviousAccess(const CMD_BUFFER_STATE &cmd_state, const IMAGE_STATE &image_state,
-                               const VkImageSubresourceRange &subresource_range, ResourceAccessRangeMap *descent_map,
-                               const ResourceAccessState *infill_state) const;
+    void ResolvePreviousAccess(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range,
+                               ResourceAccessRangeMap *descent_map, const ResourceAccessState *infill_state) const;
     void ResolveTrackBack(const VulkanTypedHandle &handle, const ResourceAccessRange &range,
-                          const AccessTrackerContext::TrackBack &track_back, ResourceAccessRangeMap *descent_map,
+                          const AccessContext::TrackBack &track_back, ResourceAccessRangeMap *descent_map,
                           const ResourceAccessState *infill_state, bool recur_to_infill = true) const;
     void UpdateAccessState(const VulkanTypedHandle &handle, SyncStageAccessIndex current_usage, const ResourceAccessRange &range,
                            const ResourceUsageTag &tag);
-    void UpdateAccessState(const CMD_BUFFER_STATE &cmd, const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
+    void UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
                            const VkImageSubresourceLayers &subresource, const VkOffset3D &offset, const VkExtent3D &extent,
                            const ResourceUsageTag &tag);
 
-    AccessTrackerContext(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyGraphNode> &dependencies,
-                         const std::vector<AccessTrackerContext> &contexts, AccessTrackerContext *external_context);
+    void ResolveChildContexts(const std::vector<AccessContext> &contexts);
 
-    AccessTrackerContext() { Reset(); }
+    template <typename Action>
+    void UpdateMemoryAccess(const BUFFER_STATE &buffer, const ResourceAccessRange &range, const Action action);
+    template <typename Action>
+    void UpdateMemoryAccess(const IMAGE_STATE &image, const VkImageSubresourceRange &subresource_range, const Action action);
+
+    template <typename Action>
+    void ApplyGlobalBarriers(const Action &barrier_action);
+
+    AccessContext(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyGraphNode> &dependencies,
+                  const std::vector<AccessContext> &contexts, AccessContext *external_context);
+
+    AccessContext() { Reset(); }
 
   private:
     template <typename Detector>
@@ -284,33 +268,42 @@ class AccessTrackerContext {
     template <typename Detector>
     HazardResult DetectPreviousHazard(const VulkanTypedHandle &handle, const Detector &detector,
                                       const ResourceAccessRange &range) const;
+    AccessTracker *GetAccessTracker(const VulkanTypedHandle &handle) { return GetImpl(&access_tracker_map_, handle, this); }
+    AccessTracker *GetAccessTrackerNoInsert(const VulkanTypedHandle &handle) {
+        return GetImpl(&access_tracker_map_, handle, nullptr);
+    }
+    const AccessTracker *GetAccessTracker(const VulkanTypedHandle &handle) const {
+        return GetConstImpl(&access_tracker_map_, handle);
+    }
+    const AccessTrackerMap &GetAccessTrackerMap() const { return access_tracker_map_; }
+    AccessTrackerMap &GetAccessTrackerMap() { return access_tracker_map_; }
 
     AccessTrackerMap access_tracker_map_;
 
     std::vector<TrackBack> prev_;
-    std::vector<AccessTrackerContext *> async_;
+    std::vector<AccessContext *> async_;
     TrackBack src_external_;
     TrackBack dst_external_;
 };
 
 struct RenderPassAccessContext {
     uint32_t current_subpass_;
-    std::vector<AccessTrackerContext> subpass_contexts_;
+    std::vector<AccessContext> subpass_contexts_;
     const std::vector<SubpassDependencyGraphNode> *dependencies_;
     RenderPassAccessContext(VkQueueFlags queue_flags, const std::vector<SubpassDependencyGraphNode> *dependencies,
-                            AccessTrackerContext *external_context)
+                            AccessContext *external_context)
         : current_subpass_(0), dependencies_(dependencies) {
         if (dependencies_) {
             subpass_contexts_.emplace_back(0, queue_flags, *dependencies_, subpass_contexts_, external_context);
         }
     }
-    void NextSubpass(VkQueueFlags queue_flags, AccessTrackerContext *external_context) {
+    void NextSubpass(VkQueueFlags queue_flags, AccessContext *external_context) {
         current_subpass_++;
         subpass_contexts_.emplace_back(current_subpass_, queue_flags, *dependencies_, subpass_contexts_, external_context);
         assert(subpass_contexts_.size() == (current_subpass_ + 1));
     }
-    AccessTrackerContext &CurrentContext() { return subpass_contexts_[current_subpass_]; }
-    const AccessTrackerContext &CurrentContext() const { return subpass_contexts_[current_subpass_]; }
+    AccessContext &CurrentContext() { return subpass_contexts_[current_subpass_]; }
+    const AccessContext &CurrentContext() const { return subpass_contexts_[current_subpass_]; }
 };
 
 class CommandBufferAccessContext {
@@ -335,8 +328,8 @@ class CommandBufferAccessContext {
         current_renderpass_context_ = nullptr;
     }
 
-    AccessTrackerContext *GetCurrentAccessContext() { return current_context_; }
-    const AccessTrackerContext *GetCurrentAccessContext() const { return current_context_; }
+    AccessContext *GetCurrentAccessContext() { return current_context_; }
+    const AccessContext *GetCurrentAccessContext() const { return current_context_; }
     void BeginRenderPass(const RENDER_PASS_STATE &render_pass);
     void NextRenderPass(const RENDER_PASS_STATE &render_pass);
     void EndRenderPass(const RENDER_PASS_STATE &render_pass);
@@ -346,8 +339,8 @@ class CommandBufferAccessContext {
 
   private:
     std::vector<RenderPassAccessContext> render_pass_contexts_;
-    AccessTrackerContext cb_tracker_context_;
-    AccessTrackerContext *current_context_;
+    AccessContext cb_tracker_context_;
+    AccessContext *current_context_;
     RenderPassAccessContext *current_renderpass_context_;
     std::shared_ptr<CMD_BUFFER_STATE> cb_state_;
     VkQueueFlags queue_flags_;
@@ -390,15 +383,15 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
         return found_it->second.get();
     }
 
-    void ApplyGlobalBarriers(AccessTrackerContext *context, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+    void ApplyGlobalBarriers(AccessContext *context, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
                              SyncStageAccessFlags src_stage_scope, SyncStageAccessFlags dst_stage_scope,
                              uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers);
-    void ApplyBufferBarriers(AccessTrackerContext *context, VkPipelineStageFlags src_stage_mask,
-                             SyncStageAccessFlags src_stage_scope, VkPipelineStageFlags dst_stage_mask,
-                             SyncStageAccessFlags dst_stage_scope, uint32_t barrier_count, const VkBufferMemoryBarrier *barriers);
-    void ApplyImageBarriers(const CMD_BUFFER_STATE &cmd, AccessTrackerContext *context, VkPipelineStageFlags src_stage_mask,
-                            SyncStageAccessFlags src_stage_scope, VkPipelineStageFlags dst_stage_mask,
-                            SyncStageAccessFlags dst_stage_scope, uint32_t barrier_count, const VkImageMemoryBarrier *barriers);
+    void ApplyBufferBarriers(AccessContext *context, VkPipelineStageFlags src_stage_mask, SyncStageAccessFlags src_stage_scope,
+                             VkPipelineStageFlags dst_stage_mask, SyncStageAccessFlags dst_stage_scope, uint32_t barrier_count,
+                             const VkBufferMemoryBarrier *barriers);
+    void ApplyImageBarriers(AccessContext *context, VkPipelineStageFlags src_stage_mask, SyncStageAccessFlags src_stage_scope,
+                            VkPipelineStageFlags dst_stage_mask, SyncStageAccessFlags dst_stage_scope, uint32_t barrier_count,
+                            const VkImageMemoryBarrier *barriers);
 
     void ResetCommandBuffer(VkCommandBuffer command_buffer);
     void RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
