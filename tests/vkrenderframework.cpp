@@ -455,7 +455,8 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
     if (instance_pnext) reinterpret_cast<VkBaseOutStructure *>(last_pnext)->pNext = nullptr;  // reset back borrowed pNext chain
 
     uint32_t gpu_count = 1;
-    ASSERT_VK_SUCCESS(vk::EnumeratePhysicalDevices(instance_, &gpu_count, &gpu_));
+    const VkResult err = vk::EnumeratePhysicalDevices(instance_, &gpu_count, &gpu_);
+    ASSERT_TRUE(err == VK_SUCCESS || err == VK_INCOMPLETE) << vk_result_string(err);
     ASSERT_GT(gpu_count, (uint32_t)0) << "No GPU (i.e. VkPhysicalDevice) available";
 
     debug_reporter_.Create(instance_);
