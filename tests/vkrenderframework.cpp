@@ -511,10 +511,7 @@ void VkRenderFramework::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *
 void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *create_device_pnext,
                                   const VkCommandPoolCreateFlags flags) {
     const auto ExtensionNotSupportedWithReporting = [this](const char *extension) {
-        std::vector<const char *> layers = {nullptr};
-        layers.insert(layers.end(), instance_layers_.begin(), instance_layers_.end());
-        if (std::any_of(layers.begin(), layers.end(),
-                        [this, extension](const char *l) { return DeviceExtensionSupported(gpu(), l, extension); }))
+        if (DeviceExtensionSupported(extension))
             return false;
         else {
             ADD_FAILURE() << "InitState(): Requested device extension \"" << extension
