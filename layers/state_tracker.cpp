@@ -1922,12 +1922,18 @@ void ValidationStateTracker::RetireTimelineSemaphore(VkSemaphore semaphore, uint
     if (pSemaphore) {
         for (auto &pair : queueMap) {
             QUEUE_STATE &queueState = pair.second;
+            uint64_t max_seq = 0;
             for (const auto &submission : queueState.submissions) {
                 for (const auto &signalSemaphore : submission.signalSemaphores) {
                     if (signalSemaphore.semaphore == semaphore && signalSemaphore.payload <= until_payload) {
-                        RetireWorkOnQueue(&queueState, signalSemaphore.seq);
+                        if (signalSemaphore.seq > max_seq) {
+                            max_seq = signalSemaphore.seq;
+                        }
                     }
                 }
+            }
+            if (max_seq) {
+                RetireWorkOnQueue(&queueState, max_seq);
             }
         }
     }
