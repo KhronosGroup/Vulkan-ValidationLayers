@@ -220,7 +220,7 @@ const InitialLayoutState* ImageSubresourceLayoutMap::GetSubresourceInitialLayout
 
 // TODO: make sure this paranoia check is sufficient and not too much.
 uintptr_t ImageSubresourceLayoutMap::CompatibilityKey() const {
-    return (reinterpret_cast<const uintptr_t>(&image_state_) ^ encoder_.AspectMask());
+    return (reinterpret_cast<uintptr_t>(&image_state_) ^ encoder_.AspectMask());
 }
 
 bool ImageSubresourceLayoutMap::UpdateFrom(const ImageSubresourceLayoutMap& other) {
