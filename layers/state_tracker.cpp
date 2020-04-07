@@ -646,7 +646,8 @@ BINDABLE *ValidationStateTracker::GetObjectMemBinding(const VulkanTypedHandle &t
 void ValidationStateTracker::AddMemObjInfo(void *object, const VkDeviceMemory mem, const VkMemoryAllocateInfo *pAllocateInfo) {
     assert(object != NULL);
 
-    memObjMap[mem] = std::make_shared<DEVICE_MEMORY_STATE>(object, mem, pAllocateInfo);
+    auto fake_address = fake_memory.Alloc(pAllocateInfo->allocationSize);
+    memObjMap[mem] = std::make_shared<DEVICE_MEMORY_STATE>(object, mem, pAllocateInfo, fake_address);
     auto mem_info = memObjMap[mem].get();
 
     auto dedicated = lvl_find_in_chain<VkMemoryDedicatedAllocateInfoKHR>(pAllocateInfo->pNext);
@@ -1986,6 +1987,7 @@ void ValidationStateTracker::PreCallRecordFreeMemory(VkDevice device, VkDeviceMe
     InvalidateCommandBuffers(mem_info->cb_bindings, obj_struct);
     RemoveAliasingImages(mem_info->bound_images);
     mem_info->destroyed = true;
+    fake_memory.Free(mem_info->fake_base_address);
     memObjMap.erase(mem);
 }
 
