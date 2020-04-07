@@ -219,8 +219,10 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
     uint64_t shadow_pad_size;  // Size of the guard-band data before and after actual data. It MUST be a
                                // multiple of limits.minMemoryMapAlignment
     void *p_driver_data;       // Pointer to application's actual memory
+    VkDeviceSize fake_base_address;  // To allow a unified view of allocations, useful to Synchronization Validation
 
-    DEVICE_MEMORY_STATE(void *disp_object, const VkDeviceMemory in_mem, const VkMemoryAllocateInfo *p_alloc_info)
+    DEVICE_MEMORY_STATE(void *disp_object, const VkDeviceMemory in_mem, const VkMemoryAllocateInfo *p_alloc_info,
+                        uint64_t fake_address)
         : object(disp_object),
           mem(in_mem),
           alloc_info(p_alloc_info),
@@ -233,7 +235,8 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
           shadow_copy_base(0),
           shadow_copy(0),
           shadow_pad_size(0),
-          p_driver_data(0){};
+          p_driver_data(0),
+          fake_base_address(fake_address){};
 };
 
 // Generic memory binding struct to track objects bound to objects
