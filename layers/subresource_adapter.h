@@ -333,37 +333,32 @@ class RangeGenerator {
 class ImageRangeEncoder : public RangeEncoder {
   public:
     // The default constructor for default iterators
-    ImageRangeEncoder() : device_(), image_(nullptr) {}
+    ImageRangeEncoder() : image_(nullptr) {}
 
     ImageRangeEncoder(const VkDevice device, const IMAGE_STATE& image, const AspectParameters* param);
     ImageRangeEncoder(const VkDevice device, const IMAGE_STATE& image);
     ImageRangeEncoder(const ImageRangeEncoder& from) = default;
 
-    inline IndexType Encode(uint32_t layer, VkOffset3D offset) const;
-    void Decode(const IndexType& encode, uint32_t& out_layer, VkOffset3D& out_offset) const;
+    inline IndexType Encode(const VkImageSubresource& subres, uint32_t layer, VkOffset3D offset) const;
+    void Decode(const VkImageSubresource& subres, const IndexType& encode, uint32_t& out_layer, VkOffset3D& out_offset) const;
 
-    inline const VkDeviceSize& ElementSize() const { return element_size_; }
-    inline const VkSubresourceLayout& SubresourceLayout() const { return current_subres_layout_; }
-    // TODO: This next call should work in a const way...
-    const VkSubresourceLayout& SubresourceLayout(const VkImageSubresource& subres);
-    inline VkExtent3D SubresourceExtent(int mip_level) const { return subres_extents_[mip_level]; }
+    const VkSubresourceLayout& SubresourceLayout(const VkImageSubresource& subres) const;
+    inline const VkExtent3D& SubresourceExtent(int mip_level) const { return subres_extents_[mip_level]; }
+    inline const uint32_t& ElementSize(int aspect_index) const { return element_sizes_[aspect_index]; }
 
   private:
-    VkDeviceSize element_size_;
-    const VkDevice device_;
     const IMAGE_STATE* image_;
+    std::vector<uint32_t> element_sizes_;
     std::vector<VkExtent3D> subres_extents_;
-    std::vector<VkSubresourceLayout> optimal_subres_layouts_;
-    VkImageSubresource current_subres_;
-    VkSubresourceLayout current_subres_layout_;
+    std::vector<VkSubresourceLayout> subres_layouts_;
 };
 
 class ImageRangeGenerator {
   public:
     ImageRangeGenerator() : encoder_(nullptr), subres_range_(), offset_(), extent_() {}
     bool operator!=(const ImageRangeGenerator& rhs) { return (pos_ != rhs.pos_) || (&encoder_ != &rhs.encoder_); }
-    ImageRangeGenerator(ImageRangeEncoder& encoder);
-    ImageRangeGenerator(ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range, const VkOffset3D& offset,
+    ImageRangeGenerator(const ImageRangeEncoder& encoder);
+    ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range, const VkOffset3D& offset,
                         const VkExtent3D& extent);
     inline const IndexRange& operator*() const { return pos_; }
     inline const IndexRange* operator->() const { return &pos_; }
@@ -371,8 +366,7 @@ class ImageRangeGenerator {
     void SetPos();
 
   private:
-    // TODO encoder should be const
-    ImageRangeEncoder* encoder_;
+    const ImageRangeEncoder* encoder_;
     const VkImageSubresourceRange subres_range_;
     const VkOffset3D offset_;
     const VkExtent3D extent_;
@@ -388,6 +382,7 @@ class ImageRangeGenerator {
     uint32_t arrayLayer_index_;
     uint32_t layer_count_;
     uint32_t mip_level_index_;
+    const VkSubresourceLayout* subres_layout_;
 };
 
 // Designed for use with RangeMap of MappedType

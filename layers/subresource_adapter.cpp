@@ -270,8 +270,10 @@ ImageRangeEncoder::ImageRangeEncoder(const VkDevice device, const IMAGE_STATE& i
     : ImageRangeEncoder(device, image, AspectParameters::Get(image.full_range.aspectMask)) {}
 
 ImageRangeEncoder::ImageRangeEncoder(const VkDevice device, const IMAGE_STATE& image, const AspectParameters* param)
-    : RangeEncoder(image.full_range, param), device_(device), image_(&image) {
+    : RangeEncoder(image.full_range, param), image_(&image) {
     VkSubresourceLayout layout = {};
+    VkImageSubresource subres = {};
+    VkExtent2D divisors = {};
     VkImageSubresourceLayers subres_layers = {limits_.aspectMask, 0, 0, limits_.arrayLayer};
 
     for (uint32_t mip_index = 0; mip_index < limits_.mipLevel; ++mip_index) {
@@ -280,58 +282,58 @@ ImageRangeEncoder::ImageRangeEncoder(const VkDevice device, const IMAGE_STATE& i
         subres_extents_.push_back(subres_extent);
 
         for (uint32_t aspect_index = 0; aspect_index < limits_.aspect_index; ++aspect_index) {
-            element_size_ = FormatElementSize(image.createInfo.format, AspectBit(aspect_index));
-            auto divisors = FindMultiplaneExtentDivisors(image.createInfo.format, AspectBit(aspect_index));
-            layout.offset += layout.size;
-            layout.rowPitch = subres_extent.width * element_size_ / divisors.width;
-            layout.arrayPitch = layout.rowPitch * subres_extent.height / divisors.height;
-            layout.depthPitch = layout.arrayPitch;
-            layout.size = layout.arrayPitch * limits_.arrayLayer;
-            optimal_subres_layouts_.push_back(layout);
+            VkImageAspectFlagBits aspectBit = AspectBit(aspect_index);
+            if (mip_index == 0) {
+                element_sizes_.push_back(FormatElementSize(image.createInfo.format, aspectBit));
+            }
+            switch (image_->createInfo.tiling) {
+                case VK_IMAGE_TILING_OPTIMAL:
+                    divisors = FindMultiplaneExtentDivisors(image.createInfo.format, aspectBit);
+                    layout.offset += layout.size;
+                    layout.rowPitch = subres_extent.width * element_sizes_[aspect_index] / divisors.width;
+                    layout.arrayPitch = layout.rowPitch * subres_extent.height / divisors.height;
+                    layout.depthPitch = layout.arrayPitch;
+                    layout.size = layout.arrayPitch * limits_.arrayLayer;
+                    subres_layouts_.push_back(layout);
+                    break;
+                case VK_IMAGE_TILING_LINEAR:
+                case VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT:
+                    subres = {VkImageAspectFlags(aspectBit), mip_index, 0};
+                    DispatchGetImageSubresourceLayout(device, image_->image, &subres, &layout);
+                    subres_layouts_.push_back(layout);
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }
 
-IndexType ImageRangeEncoder::Encode(uint32_t layer, VkOffset3D offset) const {
-    return layer * current_subres_layout_.arrayPitch + offset.z * current_subres_layout_.depthPitch +
-           offset.y * current_subres_layout_.rowPitch + offset.x * element_size_ + current_subres_layout_.offset;
+IndexType ImageRangeEncoder::Encode(const VkImageSubresource& subres, uint32_t layer, VkOffset3D offset) const {
+    const auto& subres_layout = SubresourceLayout(subres);
+    return layer * subres_layout.arrayPitch + offset.z * subres_layout.depthPitch + offset.y * subres_layout.rowPitch +
+           offset.x * element_sizes_[LowerBoundFromMask(subres.aspectMask)] + subres_layout.offset;
 }
 
-void ImageRangeEncoder::Decode(const IndexType& encode, uint32_t& out_layer, VkOffset3D& out_offset) const {
-    IndexType decode = encode - current_subres_layout_.offset;
-    out_layer = static_cast<uint32_t>(decode / current_subres_layout_.arrayPitch);
-    decode -= (out_layer * current_subres_layout_.arrayPitch);
-    out_offset.z = static_cast<int32_t>(decode / current_subres_layout_.depthPitch);
-    decode -= (out_offset.z * current_subres_layout_.depthPitch);
-    out_offset.y = static_cast<int32_t>(decode / current_subres_layout_.rowPitch);
-    decode -= (out_offset.y * current_subres_layout_.rowPitch);
-    out_offset.x = static_cast<int32_t>(decode / element_size_);
+void ImageRangeEncoder::Decode(const VkImageSubresource& subres, const IndexType& encode, uint32_t& out_layer,
+                               VkOffset3D& out_offset) const {
+    const auto& subres_layout = SubresourceLayout(subres);
+    IndexType decode = encode - subres_layout.offset;
+    out_layer = static_cast<uint32_t>(decode / subres_layout.arrayPitch);
+    decode -= (out_layer * subres_layout.arrayPitch);
+    out_offset.z = static_cast<int32_t>(decode / subres_layout.depthPitch);
+    decode -= (out_offset.z * subres_layout.depthPitch);
+    out_offset.y = static_cast<int32_t>(decode / subres_layout.rowPitch);
+    decode -= (out_offset.y * subres_layout.rowPitch);
+    out_offset.x = static_cast<int32_t>(decode / element_sizes_[LowerBoundFromMask(subres.aspectMask)]);
 }
 
-const VkSubresourceLayout& ImageRangeEncoder::SubresourceLayout(const VkImageSubresource& subres) {
-    current_subres_ = subres;
-    element_size_ = FormatElementSize(image_->createInfo.format, current_subres_.aspectMask);
-    auto subres_extent = SubresourceExtent(subres.mipLevel);
-    if (subres_extent.depth > 1) {
-        limits_.arrayLayer = subres_extent.depth;
-    }
-    int optimal_index = 0;
-    switch (image_->createInfo.tiling) {
-        case VK_IMAGE_TILING_OPTIMAL:
-            optimal_index = subres.mipLevel * limits_.aspect_index + LowerBoundFromMask(subres.aspectMask);
-            current_subres_layout_ = optimal_subres_layouts_[optimal_index];
-            break;
-        case VK_IMAGE_TILING_LINEAR:
-        case VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT:
-            DispatchGetImageSubresourceLayout(device_, image_->image, &current_subres_, &current_subres_layout_);
-            break;
-        default:
-            break;
-    }
-    return current_subres_layout_;
+const VkSubresourceLayout& ImageRangeEncoder::SubresourceLayout(const VkImageSubresource& subres) const {
+    uint32_t subres_layouts_index = subres.mipLevel * limits_.aspect_index + LowerBoundFromMask(subres.aspectMask);
+    return subres_layouts_[subres_layouts_index];
 }
 
-ImageRangeGenerator::ImageRangeGenerator(ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range,
+ImageRangeGenerator::ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range,
                                          const VkOffset3D& offset, const VkExtent3D& extent)
     : encoder_(&encoder), subres_range_(subres_range), offset_(offset), extent_(extent) {
     assert(IsValid(*encoder_, subres_range));
@@ -343,10 +345,11 @@ ImageRangeGenerator::ImageRangeGenerator(ImageRangeEncoder& encoder, const VkIma
 void ImageRangeGenerator::SetPos() {
     VkImageSubresource subres = {VkImageAspectFlags(encoder_->AspectBit(aspect_index_)),
                                  subres_range_.baseMipLevel + mip_level_index_, subres_range_.baseArrayLayer};
-    encoder_->SubresourceLayout(subres);
-    pos_.begin = encoder_->Encode(subres_range_.baseArrayLayer, offset_);
-    VkExtent3D subres_extent = encoder_->SubresourceExtent(subres.mipLevel);
-    pos_.end = pos_.begin + encoder_->ElementSize() * ((extent_.width < subres_extent.width) ? extent_.width : subres_extent.width);
+    subres_layout_ = &(encoder_->SubresourceLayout(subres));
+    pos_.begin = encoder_->Encode(subres, subres_range_.baseArrayLayer, offset_);
+    const auto& subres_extent = encoder_->SubresourceExtent(subres.mipLevel);
+    pos_.end = pos_.begin +
+               encoder_->ElementSize(aspect_index_) * ((extent_.width < subres_extent.width) ? extent_.width : subres_extent.width);
     offset_layer_base_ = pos_;
     offset_offset_y_base_ = pos_;
     arrayLayer_index_ = 0;
@@ -368,13 +371,13 @@ ImageRangeGenerator* ImageRangeGenerator::operator++() {
     offset_y_index_++;
 
     if (offset_y_index_ < offset_y_count_) {
-        offset_offset_y_base_ += encoder_->SubresourceLayout().rowPitch;
+        offset_offset_y_base_ += subres_layout_->rowPitch;
         pos_ = offset_offset_y_base_;
     } else {
         offset_y_index_ = 0;
         arrayLayer_index_++;
         if (arrayLayer_index_ < layer_count_) {
-            offset_layer_base_ += encoder_->SubresourceLayout().arrayPitch;
+            offset_layer_base_ += subres_layout_->arrayPitch;
             offset_offset_y_base_ = offset_layer_base_;
             pos_ = offset_layer_base_;
         } else {
