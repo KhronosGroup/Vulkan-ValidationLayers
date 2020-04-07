@@ -185,7 +185,7 @@ ImageSubresourceLayoutMap *GetImageSubresourceLayoutMap(CMD_BUFFER_STATE *cb_sta
 
 void AddInitialLayoutintoImageLayoutMap(const IMAGE_STATE &image_state, GlobalImageLayoutMap &image_layout_map) {
     auto *range_map = GetLayoutRangeMap(&image_layout_map, image_state);
-    auto range_gen = subresource_adapter::RangeGenerator(image_state.range_encoder, image_state.full_range);
+    auto range_gen = subresource_adapter::RangeGenerator(image_state.subresource_encoder, image_state.full_range);
     for (; range_gen->non_empty(); ++range_gen) {
         range_map->insert(range_map->end(), std::make_pair(*range_gen, image_state.createInfo.initialLayout));
     }
