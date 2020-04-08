@@ -49,9 +49,6 @@ TEST_F(VkLayerTest, InstanceExtensionDependencies) {
     const auto ici = GetInstanceCreateInfo();
     vk::CreateInstance(&ici, nullptr, &dummy_instance);
     Monitor().VerifyFound();
-
-    // WORKAROUND: Subsequent tests crash when this is not called. MockICD or Loader bug?
-    vk::DestroyInstance(dummy_instance, nullptr);
 }
 
 TEST_F(VkLayerTest, InstanceBadStype) {
@@ -63,9 +60,6 @@ TEST_F(VkLayerTest, InstanceBadStype) {
     ici.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     vk::CreateInstance(&ici, nullptr, &dummy_instance);
     Monitor().VerifyFound();
-
-    // WORKAROUND: Subsequent tests crash when this is not called. MockICD or Loader bug?
-    vk::DestroyInstance(dummy_instance, nullptr);
 }
 
 TEST_F(VkLayerTest, InstanceDuplicatePnextStype) {
@@ -85,9 +79,6 @@ TEST_F(VkLayerTest, InstanceDuplicatePnextStype) {
     ici.pNext = &first_pnext;
     vk::CreateInstance(&ici, nullptr, &dummy_instance);
     Monitor().VerifyFound();
-
-    // WORKAROUND: Subsequent tests crash when this is not called. MockICD or Loader bug?
-    vk::DestroyInstance(dummy_instance, nullptr);
 }
 
 TEST_F(VkLayerTest, InstanceFlags) {
@@ -99,9 +90,6 @@ TEST_F(VkLayerTest, InstanceFlags) {
     ici.flags = (VkInstanceCreateFlags)1;
     vk::CreateInstance(&ici, nullptr, &dummy_instance);
     Monitor().VerifyFound();
-
-    // WORKAROUND: Subsequent tests crash when this is not called. MockICD or Loader bug?
-    vk::DestroyInstance(dummy_instance, nullptr);
 }
 
 TEST_F(VkLayerTest, InstanceAppInfoBadStype) {
@@ -117,9 +105,6 @@ TEST_F(VkLayerTest, InstanceAppInfoBadStype) {
     Monitor().SetDesiredFailureMsg(kErrorBit, "VUID-VkApplicationInfo-sType-sType");
     vk::CreateInstance(&ici, nullptr, &dummy_instance);
     Monitor().VerifyFound();
-
-    // WORKAROUND: Subsequent tests crash when this is not called. MockICD or Loader bug?
-    vk::DestroyInstance(dummy_instance, nullptr);
 }
 
 TEST_F(VkLayerTest, InstanceValidationFeaturesBadFlags) {
@@ -154,7 +139,6 @@ TEST_F(VkLayerTest, InstanceValidationFeaturesBadFlags) {
         Monitor().SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-UnrecognizedValue");
         vk::CreateInstance(&ici, nullptr, &dummy_instance);
         Monitor().VerifyFound();
-        vk::DestroyInstance(dummy_instance, nullptr);  // WORKAROUND
     }
 
     {
@@ -168,7 +152,6 @@ TEST_F(VkLayerTest, InstanceValidationFeaturesBadFlags) {
         Monitor().SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-UnrecognizedValue");
         vk::CreateInstance(&ici, nullptr, &dummy_instance);
         Monitor().VerifyFound();
-        vk::DestroyInstance(dummy_instance, nullptr);  // WORKAROUND
     }
 }
 
@@ -204,7 +187,6 @@ TEST_F(VkLayerTest, InstanceBadValidationFlags) {
         Monitor().SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-GeneralParameterError-UnrecognizedValue");
         vk::CreateInstance(&ici, nullptr, &dummy_instance);
         Monitor().VerifyFound();
-        vk::DestroyInstance(dummy_instance, nullptr);  // WORKAROUND
     }
 
     {
@@ -216,7 +198,6 @@ TEST_F(VkLayerTest, InstanceBadValidationFlags) {
         Monitor().SetDesiredFailureMsg(kErrorBit, "parameter disabledValidationCheckCount must be greater than 0");
         vk::CreateInstance(&ici, nullptr, &dummy_instance);
         Monitor().VerifyFound();
-        vk::DestroyInstance(dummy_instance, nullptr);  // WORKAROUND
     }
 }
 
