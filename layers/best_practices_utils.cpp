@@ -613,10 +613,15 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
     bool skip = false;
     const IMAGE_STATE* image_state = GetImageState(image);
 
-    if (!image_state->memory_requirements_checked && !image_state->external_memory_handle) {
-        skip |= LogWarning(device, kVUID_BestPractices_ImageMemReqNotCalled,
-                           "%s: Binding memory to %s but vkGetImageMemoryRequirements() has not been called on that image.",
-                           api_name, report_data->FormatHandle(image).c_str());
+    if ((image_state->createInfo.flags & VK_IMAGE_CREATE_DISJOINT_BIT) == 0) {
+        if (!image_state->memory_requirements_checked && !image_state->external_memory_handle) {
+            skip |= LogWarning(device, kVUID_BestPractices_ImageMemReqNotCalled,
+                               "%s: Binding memory to %s but vkGetImageMemoryRequirements() has not been called on that image.",
+                               api_name, report_data->FormatHandle(image).c_str());
+        }
+    } else {
+        // TODO If binding disjoint image then this needs to check that VkImagePlaneMemoryRequirementsInfo was called for each
+        // plane.
     }
 
     const DEVICE_MEMORY_STATE* mem_state = GetDevMemState(memory);

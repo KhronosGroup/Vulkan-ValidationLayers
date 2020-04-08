@@ -121,7 +121,32 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
 #endif
     // Record the memory requirements in case they won't be queried
     if (pre_fetch_memory_reqs) {
-        DispatchGetImageMemoryRequirements(device, *pImage, &is_node->requirements);
+        if ((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) == 0) {
+            DispatchGetImageMemoryRequirements(device, *pImage, &is_node->requirements);
+        } else {
+            uint32_t plane_count = FormatPlaneCount(pCreateInfo->format);
+            VkImagePlaneMemoryRequirementsInfo image_plane_req = {VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO, nullptr};
+            VkMemoryRequirements2 mem_reqs2 = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, nullptr};
+            VkImageMemoryRequirementsInfo2 mem_req_info2 = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2};
+            mem_req_info2.pNext = &image_plane_req;
+            mem_req_info2.image = *pImage;
+
+            assert(plane_count != 0);  // assumes each format has at least first plane
+            image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
+            DispatchGetImageMemoryRequirements2(device, &mem_req_info2, &mem_reqs2);
+            is_node->plane0_requirements = mem_reqs2.memoryRequirements;
+
+            if (plane_count >= 2) {
+                image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
+                DispatchGetImageMemoryRequirements2(device, &mem_req_info2, &mem_reqs2);
+                is_node->plane1_requirements = mem_reqs2.memoryRequirements;
+            }
+            if (plane_count >= 3) {
+                image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;
+                DispatchGetImageMemoryRequirements2(device, &mem_req_info2, &mem_reqs2);
+                is_node->plane2_requirements = mem_reqs2.memoryRequirements;
+            }
+        }
     }
     imageMap.insert(std::make_pair(*pImage, std::move(is_node)));
 }
@@ -2031,11 +2056,8 @@ void ValidationStateTracker::PreCallRecordDestroyQueryPool(VkDevice device, VkQu
 //  Track the newly bound memory range with given memoryOffset
 //  Also scan any previous ranges, track aliased ranges with new range, and flag an error if a linear
 //  and non-linear range incorrectly overlap.
-// Return true if an error is flagged and the user callback returns "true", otherwise false
-// is_image indicates an image object, otherwise handle is for a buffer
-// is_linear indicates a buffer or linear image
 void ValidationStateTracker::InsertMemoryRange(const VulkanTypedHandle &typed_handle, DEVICE_MEMORY_STATE *mem_info,
-                                               VkDeviceSize memoryOffset, VkMemoryRequirements memRequirements, bool is_linear) {
+                                               VkDeviceSize memoryOffset) {
     if (typed_handle.type == kVulkanObjectTypeImage) {
         mem_info->bound_images.insert(typed_handle.Cast<VkImage>());
     } else if (typed_handle.type == kVulkanObjectTypeBuffer) {
@@ -2048,19 +2070,17 @@ void ValidationStateTracker::InsertMemoryRange(const VulkanTypedHandle &typed_ha
     }
 }
 
-void ValidationStateTracker::InsertImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE *mem_info, VkDeviceSize mem_offset,
-                                                    VkMemoryRequirements mem_reqs, bool is_linear) {
-    InsertMemoryRange(VulkanTypedHandle(image, kVulkanObjectTypeImage), mem_info, mem_offset, mem_reqs, is_linear);
+void ValidationStateTracker::InsertImageMemoryRange(VkImage image, DEVICE_MEMORY_STATE *mem_info, VkDeviceSize mem_offset) {
+    InsertMemoryRange(VulkanTypedHandle(image, kVulkanObjectTypeImage), mem_info, mem_offset);
 }
 
-void ValidationStateTracker::InsertBufferMemoryRange(VkBuffer buffer, DEVICE_MEMORY_STATE *mem_info, VkDeviceSize mem_offset,
-                                                     const VkMemoryRequirements &mem_reqs) {
-    InsertMemoryRange(VulkanTypedHandle(buffer, kVulkanObjectTypeBuffer), mem_info, mem_offset, mem_reqs, true);
+void ValidationStateTracker::InsertBufferMemoryRange(VkBuffer buffer, DEVICE_MEMORY_STATE *mem_info, VkDeviceSize mem_offset) {
+    InsertMemoryRange(VulkanTypedHandle(buffer, kVulkanObjectTypeBuffer), mem_info, mem_offset);
 }
 
 void ValidationStateTracker::InsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, DEVICE_MEMORY_STATE *mem_info,
-                                                                    VkDeviceSize mem_offset, const VkMemoryRequirements &mem_reqs) {
-    InsertMemoryRange(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureNV), mem_info, mem_offset, mem_reqs, true);
+                                                                    VkDeviceSize mem_offset) {
+    InsertMemoryRange(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureNV), mem_info, mem_offset);
 }
 
 // This function will remove the handle-to-index mapping from the appropriate map.
@@ -2095,7 +2115,7 @@ void ValidationStateTracker::UpdateBindBufferMemoryState(VkBuffer buffer, VkDevi
         // Track bound memory range information
         auto mem_info = GetDevMemState(mem);
         if (mem_info) {
-            InsertBufferMemoryRange(buffer, mem_info, memoryOffset, buffer_state->requirements);
+            InsertBufferMemoryRange(buffer, mem_info, memoryOffset);
         }
         // Track objects tied to memory
         SetMemBinding(mem, buffer_state, memoryOffset, VulkanTypedHandle(buffer, kVulkanObjectTypeBuffer));
@@ -2147,28 +2167,48 @@ void ValidationStateTracker::PostCallRecordGetBufferMemoryRequirements2KHR(VkDev
     RecordGetBufferMemoryRequirementsState(pInfo->buffer, &pMemoryRequirements->memoryRequirements);
 }
 
-void ValidationStateTracker::RecordGetImageMemoryRequiementsState(VkImage image, VkMemoryRequirements *pMemoryRequirements) {
+void ValidationStateTracker::RecordGetImageMemoryRequirementsState(VkImage image, const VkImageMemoryRequirementsInfo2 *pInfo,
+                                                                   VkMemoryRequirements *pMemoryRequirements) {
+    const VkImagePlaneMemoryRequirementsInfo *plane_info =
+        (pInfo == nullptr) ? nullptr : lvl_find_in_chain<VkImagePlaneMemoryRequirementsInfo>(pInfo->pNext);
+    // TODO does the VkMemoryRequirements need to be saved here if PostCallRecordCreateImage tracks it regardless
     IMAGE_STATE *image_state = GetImageState(image);
     if (image_state) {
-        image_state->requirements = *pMemoryRequirements;
-        image_state->memory_requirements_checked = true;
+        if (plane_info != nullptr) {
+            // Multi-plane image
+            image_state->memory_requirements_checked = false;  // Each image plane needs to be checked itself
+            if (plane_info->planeAspect == VK_IMAGE_ASPECT_PLANE_0_BIT) {
+                image_state->plane0_memory_requirements_checked = true;
+                image_state->plane0_requirements = *pMemoryRequirements;
+            } else if (plane_info->planeAspect == VK_IMAGE_ASPECT_PLANE_1_BIT) {
+                image_state->plane1_memory_requirements_checked = true;
+                image_state->plane1_requirements = *pMemoryRequirements;
+            } else if (plane_info->planeAspect == VK_IMAGE_ASPECT_PLANE_2_BIT) {
+                image_state->plane2_memory_requirements_checked = true;
+                image_state->plane2_requirements = *pMemoryRequirements;
+            }
+        } else {
+            // Single Plane image
+            image_state->requirements = *pMemoryRequirements;
+            image_state->memory_requirements_checked = true;
+        }
     }
 }
 
 void ValidationStateTracker::PostCallRecordGetImageMemoryRequirements(VkDevice device, VkImage image,
                                                                       VkMemoryRequirements *pMemoryRequirements) {
-    RecordGetImageMemoryRequiementsState(image, pMemoryRequirements);
+    RecordGetImageMemoryRequirementsState(image, nullptr, pMemoryRequirements);
 }
 
 void ValidationStateTracker::PostCallRecordGetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2 *pInfo,
                                                                        VkMemoryRequirements2 *pMemoryRequirements) {
-    RecordGetImageMemoryRequiementsState(pInfo->image, &pMemoryRequirements->memoryRequirements);
+    RecordGetImageMemoryRequirementsState(pInfo->image, pInfo, &pMemoryRequirements->memoryRequirements);
 }
 
 void ValidationStateTracker::PostCallRecordGetImageMemoryRequirements2KHR(VkDevice device,
                                                                           const VkImageMemoryRequirementsInfo2 *pInfo,
                                                                           VkMemoryRequirements2 *pMemoryRequirements) {
-    RecordGetImageMemoryRequiementsState(pInfo->image, &pMemoryRequirements->memoryRequirements);
+    RecordGetImageMemoryRequirementsState(pInfo->image, pInfo, &pMemoryRequirements->memoryRequirements);
 }
 
 static void RecordGetImageSparseMemoryRequirementsState(IMAGE_STATE *image_state,
@@ -3087,8 +3127,7 @@ void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryCommon
             // Track bound memory range information
             auto mem_info = GetDevMemState(info.memory);
             if (mem_info) {
-                InsertAccelerationStructureMemoryRange(info.accelerationStructure, mem_info, info.memoryOffset,
-                                                       as_state->requirements);
+                InsertAccelerationStructureMemoryRange(info.accelerationStructure, mem_info, info.memoryOffset);
             }
             // Track objects tied to memory
             SetMemBinding(info.memory, as_state, info.memoryOffset,
@@ -3882,8 +3921,7 @@ void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryI
             // Track bound memory range information
             auto mem_info = GetDevMemState(bindInfo.memory);
             if (mem_info) {
-                InsertImageMemoryRange(bindInfo.image, mem_info, bindInfo.memoryOffset, image_state->requirements,
-                                       image_state->createInfo.tiling == VK_IMAGE_TILING_LINEAR);
+                InsertImageMemoryRange(bindInfo.image, mem_info, bindInfo.memoryOffset);
             }
 
             // Track objects tied to memory

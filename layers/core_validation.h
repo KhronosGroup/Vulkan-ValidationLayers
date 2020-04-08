@@ -194,15 +194,13 @@ class CoreChecks : public ValidationStateTracker {
                              const char* caller, VkQueueFlags queue_flags) const;
     bool ValidateCmdNextSubpass(RenderPassCreateVersion rp_version, VkCommandBuffer commandBuffer) const;
     bool ValidateInsertMemoryRange(const VulkanTypedHandle& typed_handle, const DEVICE_MEMORY_STATE* mem_info,
-                                   VkDeviceSize memoryOffset, const VkMemoryRequirements& memRequirements, bool is_linear,
-                                   const char* api_name) const;
+                                   VkDeviceSize memoryOffset, const char* api_name) const;
     bool ValidateInsertImageMemoryRange(VkImage image, const DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset,
-                                        const VkMemoryRequirements& mem_reqs, bool is_linear, const char* api_name) const;
+                                        const char* api_name) const;
     bool ValidateInsertBufferMemoryRange(VkBuffer buffer, const DEVICE_MEMORY_STATE* mem_info, VkDeviceSize mem_offset,
-                                         const VkMemoryRequirements& mem_reqs, const char* api_name) const;
+                                         const char* api_name) const;
     bool ValidateInsertAccelerationStructureMemoryRange(VkAccelerationStructureNV as, const DEVICE_MEMORY_STATE* mem_info,
-                                                        VkDeviceSize mem_offset, const VkMemoryRequirements& mem_reqs,
-                                                        const char* api_name) const;
+                                                        VkDeviceSize mem_offset, const char* api_name) const;
 
     bool ValidateMemoryTypes(const DEVICE_MEMORY_STATE* mem_info, const uint32_t memory_type_bits, const char* funcName,
                              const char* msgCode) const;
