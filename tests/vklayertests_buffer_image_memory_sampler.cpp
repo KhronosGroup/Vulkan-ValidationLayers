@@ -1546,6 +1546,9 @@ TEST_F(VkLayerTest, BindInvalidMemory) {
 
             // Set invalid planeAspect
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImagePlaneMemoryInfo-planeAspect-02283");
+            // Might happen as plane2 wasn't queried for its memroy type
+            m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01619");
+            m_errorMonitor->SetUnexpectedError("VUID-VkBindImageMemoryInfo-pNext-01621");
             vkBindImageMemory2Function(device(), 1, &bind_image_info);
             m_errorMonitor->VerifyFound();
 

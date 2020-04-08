@@ -389,6 +389,13 @@ class IMAGE_STATE : public BINDABLE {
     VkSwapchainKHR bind_swapchain;
     uint32_t bind_swapchain_imageIndex;
     image_layout_map::Encoder range_encoder;
+    // Need to memory requirments for each plane if image is disjoint
+    VkMemoryRequirements plane0_requirements;
+    bool plane0_memory_requirements_checked = false;
+    VkMemoryRequirements plane1_requirements;
+    bool plane1_memory_requirements_checked = false;
+    VkMemoryRequirements plane2_requirements;
+    bool plane2_memory_requirements_checked = false;
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     uint64_t external_format_android;
