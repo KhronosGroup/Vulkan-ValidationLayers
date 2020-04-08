@@ -249,6 +249,98 @@ TEST_F(VkLayerTest, DisabledIndependentBlend) {
     vk::DestroyRenderPass(m_device->device(), renderpass, NULL);
 }
 
+TEST_F(VkLayerTest, BlendingOnFormatWithoutBlendingSupport) {
+    TEST_DESCRIPTION("Test that blending is not enabled with a format not support blending");
+    VkPhysicalDeviceFeatures features = {};
+    features.independentBlend = VK_FALSE;
+    ASSERT_NO_FATAL_FAILURE(Init(&features));
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-blendEnable-02023");
+
+    VkFormat non_blending_format = VK_FORMAT_UNDEFINED;
+    for (uint32_t i = 1; i <= VK_FORMAT_END_RANGE; i++) {
+        VkFormatProperties format_props = m_device->format_properties(static_cast<VkFormat>(i));
+        if ((format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) &&
+            !(format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)) {
+            non_blending_format = static_cast<VkFormat>(i);
+            break;
+        }
+    }
+
+    if (non_blending_format == VK_FORMAT_UNDEFINED) {
+        printf("%s Unable to find a color attachment format with no blending support. Skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    VkDescriptorSetObj descriptorSet(m_device);
+    descriptorSet.AppendDummy();
+    descriptorSet.CreateVKDescriptorSet(m_commandBuffer);
+
+    VkPipelineObj pipeline(m_device);
+    // Create a renderPass with two color attachments
+    VkAttachmentReference attachment = {};
+    attachment.layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.pColorAttachments = &attachment;
+    subpass.colorAttachmentCount = 1;
+
+    VkRenderPassCreateInfo rpci = {};
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    rpci.attachmentCount = 1;
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = non_blending_format;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    rpci.pAttachments = &attach_desc;
+    rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+
+    VkRenderPass rp;
+    vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    pipeline.AddShader(&vs);
+
+    VkPipelineColorBlendAttachmentState att_state = {};
+    att_state.dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
+    att_state.blendEnable = VK_TRUE;
+    pipeline.AddColorAttachment(0, att_state);
+    pipeline.CreateVKPipeline(descriptorSet.GetPipelineLayout(), rp);
+
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, non_blending_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    VkImageView imageView = image.targetView(non_blending_format);
+
+    VkFramebufferCreateInfo fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp, 1, &imageView, 32, 32, 1};
+    VkFramebuffer fb;
+    vk::CreateFramebuffer(m_device->device(), &fbci, nullptr, &fb);
+
+    VkRenderPassBeginInfo rpbi = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+                                  nullptr,
+                                  rp,
+                                  fb,
+                                  {{
+                                       0,
+                                       0,
+                                   },
+                                   {32, 32}},
+                                  0,
+                                  nullptr};
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(rpbi);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle());
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+
+    m_errorMonitor->VerifyFound();
+    vk::DestroyRenderPass(m_device->device(), rp, NULL);
+    vk::DestroyFramebuffer(m_device->device(), fb, NULL);
+}
+
 // Is the Pipeline compatible with the expectations of the Renderpass/subpasses?
 TEST_F(VkLayerTest, PipelineRenderpassCompatibility) {
     TEST_DESCRIPTION(
