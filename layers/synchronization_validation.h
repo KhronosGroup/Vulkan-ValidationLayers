@@ -164,46 +164,17 @@ class ResourceAccessState : public SyncStageAccess {
     SyncStageAccessFlagBits last_write;  // only the most recent write
 };
 
-using ResourceAccessRangeMap = sparse_container::range_map<uint64_t, ResourceAccessState>;
+using ResourceAccessRangeMap = sparse_container::range_map<VkDeviceSize, ResourceAccessState>;
 using ResourceAccessRange = typename ResourceAccessRangeMap::key_type;
 
-class AccessContext;
-// This class owns none of the objects pointed to.
-class AccessTracker {
-  public:
-    AccessTracker(AccessContext *context) : accesses_() {}
-    ResourceAccessRangeMap &GetCurrentAccessMap() { return accesses_; }
-    const ResourceAccessRangeMap &GetCurrentAccessMap() const { return accesses_; }
-
-  private:
-    ResourceAccessRangeMap accesses_;
-};
-
 class AccessContext {
-  protected:
-    // TODO -- hide the details of the implementation..
-    template <typename Map, typename Key>
-    static typename Map::mapped_type *GetImpl(Map *map, Key key, AccessContext *context) {
-        auto find_it = map->find(key);
-        if (find_it == map->end()) {
-            if (!context) return nullptr;
-            auto insert_pair = map->insert(std::make_pair(key, typename Map::mapped_type(context)));
-            find_it = insert_pair.first;
-        }
-        return &find_it->second;
-    }
-
-    template <typename Map, typename Key>
-    static const typename Map::mapped_type *GetConstImpl(const Map *map, Key key) {
-        auto find_it = map->find(key);
-        if (find_it == map->cend()) {
-            return nullptr;
-        }
-        return &find_it->second;
-    }
-
   public:
-    using AccessTrackerMap = std::unordered_map<VulkanTypedHandle, AccessTracker>;
+    enum AddressType : int {
+        kLinearAddress = 0,
+        kIdealizedAddress = 1,
+        kMaxAddressType = 1
+    };
+
     struct TrackBack {
         SyncBarrier barrier;
         AccessContext *context;
@@ -213,33 +184,34 @@ class AccessContext {
         TrackBack() = default;
     };
 
-    HazardResult DetectHazard(const VulkanTypedHandle &handle, SyncStageAccessIndex usage_index,
-                              const ResourceAccessRange &range) const;
-    HazardResult DetectBarrierHazard(const VulkanTypedHandle &handle, SyncStageAccessIndex current_usage,
-                                     VkPipelineStageFlags src_exec_scope, SyncStageAccessFlags src_access_scope,
-                                     const ResourceAccessRange &range) const;
+    HazardResult DetectHazard(const BUFFER_STATE & buffer, SyncStageAccessIndex usage_index,
+                              const ResourceAccessRange & range) const;
     HazardResult DetectHazard(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
                               const VkImageSubresourceLayers &subresource, const VkOffset3D &offset,
                               const VkExtent3D &extent) const;
+    HazardResult DetectImageBarrierHazard(const IMAGE_STATE & image, VkPipelineStageFlags src_exec_scope,
+                                          SyncStageAccessFlags src_stage_accesses,
+                                          const VkImageMemoryBarrier & barrier) const;
 
     const TrackBack &GetDstExternalTrackBack() const { return dst_external_; }
     void Reset() {
-        access_tracker_map_.clear();
         prev_.clear();
         async_.clear();
         src_external_ = TrackBack();
+        for (auto &map : access_state_maps_) {
+            map.clear();
+        }
     }
     // TODO: See if returning the lower_bound would be useful from a performance POV -- look at the lower_bound overhead
     // Would need to add a "hint" overload to parallel_iterator::invalidate_[AB] call, if so.
-    void ResolvePreviousAccess(const VulkanTypedHandle &handle, const ResourceAccessRange &range,
+    void ResolvePreviousAccess(AddressType type, const ResourceAccessRange &range,
                                ResourceAccessRangeMap *descent_map, const ResourceAccessState *infill_state) const;
     void ResolvePreviousAccess(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range,
-                               ResourceAccessRangeMap *descent_map, const ResourceAccessState *infill_state) const;
-    void ResolveTrackBack(const VulkanTypedHandle &handle, const ResourceAccessRange &range,
-                          const AccessContext::TrackBack &track_back, ResourceAccessRangeMap *descent_map,
+                               AddressType address_type, ResourceAccessRangeMap *descent_map, const ResourceAccessState *infill_state) const;
+    void ResolveTrackBack(AddressType type, const ResourceAccessRange &range,
+                          const TrackBack &track_back, ResourceAccessRangeMap *descent_map,
                           const ResourceAccessState *infill_state, bool recur_to_infill = true) const;
-    void UpdateAccessState(const VulkanTypedHandle &handle, SyncStageAccessIndex current_usage, const ResourceAccessRange &range,
-                           const ResourceUsageTag &tag);
+    void UpdateAccessState(const BUFFER_STATE & buffer, SyncStageAccessIndex current_usage, const ResourceAccessRange & range, const ResourceUsageTag & tag);
     void UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
                            const VkImageSubresourceLayers &subresource, const VkOffset3D &offset, const VkExtent3D &extent,
                            const ResourceUsageTag &tag);
@@ -254,32 +226,44 @@ class AccessContext {
     template <typename Action>
     void ApplyGlobalBarriers(const Action &barrier_action);
 
+    static AddressType ImageAddressType(const IMAGE_STATE &image);
+    static VkDeviceSize ResourceBaseAddress(const BINDABLE & bindable);
+
     AccessContext(uint32_t subpass, VkQueueFlags queue_flags, const std::vector<SubpassDependencyGraphNode> &dependencies,
                   const std::vector<AccessContext> &contexts, AccessContext *external_context);
 
     AccessContext() { Reset(); }
 
+    ResourceAccessRangeMap &GetAccessStateMap(AddressType type) { return access_state_maps_[type]; }
+    const ResourceAccessRangeMap &GetAccessStateMap(AddressType type) const { return access_state_maps_[type]; }
+    ResourceAccessRangeMap &GetLinearMap() { return GetAccessStateMap(AddressType::kLinearAddress); }
+    const ResourceAccessRangeMap &GetLinearMap() const { return GetAccessStateMap(AddressType::kLinearAddress); }
+    ResourceAccessRangeMap &GetIdealizedMap() { return GetAccessStateMap(AddressType::kIdealizedAddress); }
+    const ResourceAccessRangeMap &GetIdealizedMap() const { return GetAccessStateMap(AddressType::kIdealizedAddress); }
+
+
+
   private:
+    using ParallelMapIterator = sparse_container::parallel_iterator<ResourceAccessRangeMap, const ResourceAccessRangeMap>;
+
+    HazardResult DetectHazard(AddressType type, SyncStageAccessIndex usage_index,
+                              const ResourceAccessRange &range) const;
+    HazardResult DetectBarrierHazard(AddressType type, SyncStageAccessIndex current_usage,
+                                     VkPipelineStageFlags src_exec_scope, SyncStageAccessFlags src_access_scope,
+                                     const ResourceAccessRange &range) const;
     template <typename Detector>
-    HazardResult DetectHazard(const VulkanTypedHandle &handle, const Detector &detector, const ResourceAccessRange &range) const;
+    HazardResult DetectHazard(AddressType type, const Detector &detector, const ResourceAccessRange &range) const;
     template <typename Detector>
-    HazardResult DetectAsyncHazard(const VulkanTypedHandle &handle, const Detector &detector,
+    HazardResult DetectAsyncHazard(AddressType type, const Detector &detector,
                                    const ResourceAccessRange &range) const;
     template <typename Detector>
-    HazardResult DetectPreviousHazard(const VulkanTypedHandle &handle, const Detector &detector,
+    HazardResult DetectPreviousHazard(AddressType type, const Detector &detector,
                                       const ResourceAccessRange &range) const;
-    AccessTracker *GetAccessTracker(const VulkanTypedHandle &handle) { return GetImpl(&access_tracker_map_, handle, this); }
-    AccessTracker *GetAccessTrackerNoInsert(const VulkanTypedHandle &handle) {
-        return GetImpl(&access_tracker_map_, handle, nullptr);
-    }
-    const AccessTracker *GetAccessTracker(const VulkanTypedHandle &handle) const {
-        return GetConstImpl(&access_tracker_map_, handle);
-    }
-    const AccessTrackerMap &GetAccessTrackerMap() const { return access_tracker_map_; }
-    AccessTrackerMap &GetAccessTrackerMap() { return access_tracker_map_; }
-
-    AccessTrackerMap access_tracker_map_;
-
+    void UpdateAccessState(AddressType type, SyncStageAccessIndex current_usage, const ResourceAccessRange &range,
+                           const ResourceUsageTag &tag);
+    constexpr static int kAddressTypeCount = AddressType::kMaxAddressType + 1;
+    static const std::array<AddressType, kAddressTypeCount> kAddressTypes;
+    std::array<ResourceAccessRangeMap, kAddressTypeCount> access_state_maps_;
     std::vector<TrackBack> prev_;
     std::vector<AccessContext *> async_;
     TrackBack src_external_;
