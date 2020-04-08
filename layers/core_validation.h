@@ -132,6 +132,7 @@ class CoreChecks : public ValidationStateTracker {
                                       const BUFFER_STATE* state_data) const;
     bool ValidateCreateSwapchain(const char* func_name, VkSwapchainCreateInfoKHR const* pCreateInfo,
                                  const SURFACE_STATE* surface_state, const SWAPCHAIN_NODE* old_swapchain_state) const;
+    bool ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE* cb_state, const PIPELINE_STATE* pipeline_state) const;
     bool ValidatePipelineBindPoint(const CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint bind_point, const char* func_name,
                                    const std::map<VkPipelineBindPoint, std::string>& bind_errors) const;
     bool ValidateMemoryIsMapped(const char* funcName, uint32_t memRangeCount, const VkMappedMemoryRange* pMemRanges) const;

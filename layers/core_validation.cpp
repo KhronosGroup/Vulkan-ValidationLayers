@@ -4628,6 +4628,57 @@ static const char *GetPipelineTypeName(VkPipelineBindPoint pipelineBindPoint) {
     }
 }
 
+bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_state, const PIPELINE_STATE *pipeline_state) const {
+    bool skip = false;
+    const FRAMEBUFFER_STATE *fb_state = GetFramebufferState(cb_state->activeFramebuffer);
+
+    if (fb_state) {
+        auto subpass_desc = &pipeline_state->rp_state->createInfo.pSubpasses[pipeline_state->graphicsPipelineCI.subpass];
+
+        for (size_t i = 0; i < pipeline_state->attachments.size(); i++) {
+            const auto attachment = subpass_desc->pColorAttachments[i].attachment;
+            if (attachment == VK_ATTACHMENT_UNUSED) continue;
+
+            const IMAGE_VIEW_STATE *imageview_state = GetImageViewState(fb_state->createInfo.pAttachments[attachment]);
+            if (!imageview_state) continue;
+
+            const IMAGE_STATE *image_state = GetImageState(imageview_state->create_info.image);
+            if (!image_state) continue;
+
+            VkImageTiling tiling = image_state->createInfo.tiling;
+            VkFormat format = pipeline_state->rp_state->createInfo.pAttachments[attachment].format;
+
+            VkFormatProperties properties = GetPDFormatProperties(format);
+            VkFormatFeatureFlags format_features;
+
+            switch (tiling) {
+                case VK_IMAGE_TILING_OPTIMAL:
+                case VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT:
+                    format_features = properties.optimalTilingFeatures;
+                    break;
+                case VK_IMAGE_TILING_LINEAR:
+                    format_features = properties.linearTilingFeatures;
+                    break;
+                default:
+                    // Invalid tiling
+                    continue;
+            }
+
+            if (pipeline_state->graphicsPipelineCI.pRasterizationState &&
+                !pipeline_state->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable &&
+                pipeline_state->attachments[i].blendEnable && !(format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-blendEnable-02023",
+                                 "vkCreateGraphicsPipelines(): pipeline.pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
+                                 "].blendEnable is VK_TRUE but format %s associated with this attachment does "
+                                 "not support VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT.",
+                                 i, string_VkFormat(format));
+            }
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                 VkPipeline pipeline) const {
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
@@ -4662,6 +4713,9 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                              "Cannot bind a pipeline of type %s to the ray-tracing pipeline bind point",
                              GetPipelineTypeName(pipeline_state_bind_point));
         }
+    } else {
+        if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS)
+            skip |= ValidateGraphicsPipelineBindPoint(cb_state, pipeline_state);
     }
 
     return skip;
