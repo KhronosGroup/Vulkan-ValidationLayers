@@ -263,7 +263,10 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             # Matching logic in parameter validation and ValidityOutputGenerator.isHandleOptional
             optString = param.attrib.get('noautovalidity')
             if optString and optString == 'true':
-                isoptional = True;
+                if param.attrib.get('len'):
+                    isoptional = [True, True]
+                else:
+                    isoptional = True
         return isoptional
     #
     # Get VUID identifier from implicit VUID tag
@@ -790,10 +793,17 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             if member.iscreate and first_level_param and member == members[-1]:
                 continue
             if member.type in self.handle_types:
-                count_name = member.len
-                if (count_name is not None):
+                if member.len:
                     count_name = '%s%s' % (prefix, member.len)
-                null_allowed = member.isoptional
+                    # isoptional may be a list for array types: [the array, the array elements]
+                    if type(member.isoptional) == list:
+                        null_allowed = member.isoptional[1]
+                    else:
+                        # Default to false if a value is not provided for the array elements
+                        null_allowed = False
+                else:
+                    count_name = None
+                    null_allowed = member.isoptional
                 tmp_pre = self.outputObjects(member.type, member.name, count_name, prefix, index, indent, disp_name, parent_name, str(null_allowed).lower(), first_level_param)
                 pre_code += tmp_pre
             # Handle Structs that contain objects at some level
