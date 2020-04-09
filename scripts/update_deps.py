@@ -420,9 +420,12 @@ class GoodRepo(object):
         # Use the CMake -A option to select the platform architecture
         # without needing a Visual Studio generator.
         if platform.system() == 'Windows':
-            if self._args.arch == '64' or self._args.arch == 'x64' or self._args.arch == 'win64':
+            if self._args.arch.lower() == '64' or self._args.arch == 'x64' or self._args.arch == 'win64':
                 cmake_cmd.append('-A')
                 cmake_cmd.append('x64')
+            else:
+                cmake_cmd.append('-A')
+                cmake_cmd.append('Win32')
 
         # Apply a generator, if one is specified.  This can be used to supply
         # a specific generator for the dependent repositories to match
