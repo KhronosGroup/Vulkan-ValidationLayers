@@ -2426,11 +2426,17 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
             uint64_t ahb_equiv_usage_bits = AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT |
                                             AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP | AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE |
                                             AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT;
-            if ((0 == (ahb_desc.usage & ahb_equiv_usage_bits)) || (0 == ahb_format_map_a2v.count(ahb_desc.format))) {
-                skip |= LogError(device, "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01881",
-                                 "vkAllocateMemory: The AHardwareBuffer_Desc's format ( %u ) and/or usage ( 0x%" PRIx64
-                                 " ) are not compatible with Vulkan.",
-                                 ahb_desc.format, ahb_desc.usage);
+            if (0 == (ahb_desc.usage & ahb_equiv_usage_bits)) {
+                skip |=
+                    LogError(device, "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01881",
+                             "vkAllocateMemory: The AHardwareBuffer_Desc's usage (0x%" PRIx64 ") is not compatible with Vulkan.",
+                             ahb_desc.usage);
+            }
+            if (0 == ahb_format_map_a2v.count(ahb_desc.format)) {
+                skip |=
+                    LogError(device, "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01881",
+                             "vkAllocateMemory: The AHardwareBuffer_Desc's format (0x%" PRIx32 ") is not compatible with Vulkan.",
+                             ahb_desc.format);
             }
         }
 
@@ -2599,23 +2605,24 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
                 skip |=
                     LogError(device, "VUID-VkMemoryAllocateInfo-pNext-02390",
                              "vkAllocateMemory: VkMemoryAllocateInfo struct with chained VkImportAndroidHardwareBufferInfoANDROID, "
-                             "dedicated image usage bits include one or more with no AHardwareBuffer equivalent.");
+                             "dedicated image usage bits (0x%" PRIx64
+                             ") include an issue not listed in the AHardwareBuffer Usage Equivalence table.",
+                             ici->usage);
             }
 
-            bool illegal_usage = false;
             std::vector<VkImageUsageFlags> usages = {VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
                                                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT};
             for (VkImageUsageFlags ubit : usages) {
                 if (ici->usage & ubit) {
                     uint64_t ahb_usage = ahb_usage_map_v2a[ubit];
-                    if (0 == (ahb_usage & ahb_desc.usage)) illegal_usage = true;
+                    if (0 == (ahb_usage & ahb_desc.usage)) {
+                        skip |= LogError(
+                            device, "VUID-VkMemoryAllocateInfo-pNext-02390",
+                            "vkAllocateMemory: VkMemoryAllocateInfo struct with chained VkImportAndroidHardwareBufferInfoANDROID, "
+                            "The dedicated image usage bit %s equivalent is not in AHardwareBuffer_Desc.usage (0x%" PRIx64 ") ",
+                            string_VkImageUsageFlags(ubit).c_str(), ahb_desc.usage);
+                    }
                 }
-            }
-            if (illegal_usage) {
-                skip |= LogError(device, "VUID-VkMemoryAllocateInfo-pNext-02390",
-                                 "vkAllocateMemory: VkMemoryAllocateInfo struct with chained "
-                                 "VkImportAndroidHardwareBufferInfoANDROID, one or more AHardwareBuffer usage bits equivalent to "
-                                 "the provided image's usage bits are missing from AHardwareBuffer_Desc.usage.");
             }
         }
     } else {  // Not an import
@@ -2676,18 +2683,21 @@ bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
     return skip;
 }
 
-bool CoreChecks::ValidateCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo *create_info) const {
+bool CoreChecks::ValidateCreateSamplerYcbcrConversionANDROID(const char *func_name,
+                                                             const VkSamplerYcbcrConversionCreateInfo *create_info) const {
     const VkExternalFormatANDROID *ext_format_android = lvl_find_in_chain<VkExternalFormatANDROID>(create_info->pNext);
     if ((nullptr != ext_format_android) && (0 != ext_format_android->externalFormat)) {
         if (VK_FORMAT_UNDEFINED != create_info->format) {
             return LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-format-01904",
-                            "vkCreateSamplerYcbcrConversion[KHR]: CreateInfo format is not VK_FORMAT_UNDEFINED while "
-                            "there is a chained VkExternalFormatANDROID struct.");
+                            "%s: CreateInfo format is not VK_FORMAT_UNDEFINED while "
+                            "there is a chained VkExternalFormatANDROID struct with a non-zero externalFormat.",
+                            func_name);
         }
     } else if (VK_FORMAT_UNDEFINED == create_info->format) {
         return LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-format-01904",
-                        "vkCreateSamplerYcbcrConversion[KHR]: CreateInfo format is VK_FORMAT_UNDEFINED with no chained "
-                        "VkExternalFormatANDROID struct.");
+                        "%s: CreateInfo format is VK_FORMAT_UNDEFINED with no chained "
+                        "VkExternalFormatANDROID struct with a non-zero externalFormat.",
+                        func_name);
     }
     return false;
 }
@@ -2701,7 +2711,8 @@ bool CoreChecks::ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(
     return false;
 }
 
-bool CoreChecks::ValidateCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo *create_info) const {
+bool CoreChecks::ValidateCreateSamplerYcbcrConversionANDROID(const char *func_name,
+                                                             const VkSamplerYcbcrConversionCreateInfo *create_info) const {
     return false;
 }
 
@@ -10762,7 +10773,7 @@ bool CoreChecks::ValidateCreateSamplerYcbcrConversion(const char *func_name,
                                                       const VkSamplerYcbcrConversionCreateInfo *create_info) const {
     bool skip = false;
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
-        skip |= ValidateCreateSamplerYcbcrConversionANDROID(create_info);
+        skip |= ValidateCreateSamplerYcbcrConversionANDROID(func_name, create_info);
     } else {  // Not android hardware buffer
         if (VK_FORMAT_UNDEFINED == create_info->format) {
             skip |= LogError(device, "VUID-VkSamplerYcbcrConversionCreateInfo-format-01649",
