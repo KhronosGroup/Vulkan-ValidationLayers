@@ -250,6 +250,7 @@ import platform
 import multiprocessing
 import shlex
 import shutil
+import stat
 
 KNOWN_GOOD_FILE_NAME = 'known_good.json'
 
@@ -264,6 +265,14 @@ VERBOSE = False
 
 DEVNULL = open(os.devnull, 'wb')
 
+
+def on_rm_error( func, path, exc_info):
+    """Error handler for recursively removing a directory. The
+    shutil.rmtree function can fail on Windows due to read-only files.
+    This handler will change the permissions for tha file and continue.
+    """
+    os.chmod( path, stat.S_IWRITE )
+    os.unlink( path )
 
 def command_output(cmd, directory, fail_ok=False):
     """Runs a command in a directory and returns its standard output stream.
@@ -343,7 +352,7 @@ class GoodRepo(object):
     def Checkout(self):
         print('Checking out {n} in {d}'.format(n=self.name, d=self.repo_dir))
         if self._args.do_clean_repo:
-            shutil.rmtree(self.repo_dir, ignore_errors=True)
+            shutil.rmtree(self.repo_dir, onerror = on_rm_error)
         if not os.path.exists(os.path.join(self.repo_dir, '.git')):
             self.Clone()
         self.Fetch()
