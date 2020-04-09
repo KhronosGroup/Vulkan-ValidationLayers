@@ -4569,7 +4569,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
 
     // Allocate an AHardwareBuffer
     ahb_desc.format = AHARDWAREBUFFER_FORMAT_BLOB;
-    ahb_desc.usage = AHARDWAREBUFFER_USAGE_SENSOR_DIRECT_DATA;
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_SENSOR_DIRECT_DATA;  // non USAGE_GPU_*
     ahb_desc.width = 512;
     ahb_desc.height = 1;
     ahb_desc.layers = 1;

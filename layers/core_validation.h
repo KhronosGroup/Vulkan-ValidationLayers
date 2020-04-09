@@ -671,7 +671,8 @@ class CoreChecks : public ValidationStateTracker {
                                bool optional) const;
     bool ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo* alloc_info) const;
     bool ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const char* func_name) const;
-    bool ValidateCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo* create_info) const;
+    bool ValidateCreateSamplerYcbcrConversionANDROID(const char* func_name,
+                                                     const VkSamplerYcbcrConversionCreateInfo* create_info) const;
     bool ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                 const VkImageFormatProperties2* pImageFormatProperties) const;
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,

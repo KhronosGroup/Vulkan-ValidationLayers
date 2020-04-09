@@ -1,7 +1,7 @@
-/* Copyright (c) 2018-2019 The Khronos Group Inc.
- * Copyright (c) 2018-2019 Valve Corporation
- * Copyright (c) 2018-2019 LunarG, Inc.
- * Copyright (C) 2018-2019 Google Inc.
+/* Copyright (c) 2018-2020 The Khronos Group Inc.
+ * Copyright (c) 2018-2020 Valve Corporation
+ * Copyright (c) 2018-2020 LunarG, Inc.
+ * Copyright (C) 2018-2020 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,11 @@
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 
 // All eums referenced by VK_ANDROID_external_memory_android_hardware_buffer are present in
-// the platform-28 (Android P) versions of the header files.  A partial set exists in the
+// the platform-29 (Android Q) versions of the header files.  A partial set exists in the
 // platform-26 (O) headers, where hardware_buffer.h first appears in the NDK.
 //
-// Building Vulkan validation with NDK header files prior to platform-26 is not supported.
+// Building Vulkan validation with NDK header files prior to platform-26 is not supported due to
+// Android 24 and 25 devices do not support Android Hardware Buffers.
 //
 // Decoder ring for Android compile symbols found here: https://github.com/android-ndk/ndk/issues/407
 
@@ -77,7 +78,7 @@ typedef enum AHardwareBufferFormat {
 
 typedef enum AHardwareBufferUsage {
     AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE = 0x100,
-    AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT = 0x200,
+    AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT = 0x200,  // alias to AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER
     AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP = 0x2000000,
     AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE = 0x4000000,
     AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT = 0x4000,
