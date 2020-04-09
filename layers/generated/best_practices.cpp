@@ -716,6 +716,8 @@ void BestPractices::PostCallRecordvkResetCommandBuffer(
     }
 }
 
+// Skipping vkEnumerateInstanceVersion for autogen as it has a manually created custom function or ignored.
+
 void BestPractices::PostCallRecordvkBindBufferMemory2(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
