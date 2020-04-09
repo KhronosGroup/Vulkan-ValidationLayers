@@ -246,9 +246,9 @@ typedef struct _debug_report_data {
             handle_name = DebugReportGetMarkerObjectName(handle);
         }
 
-        std::string ret;
-        string_sprintf(&ret, "%s 0x%" PRIxLEAST64 "[%s]", handle_type_name, handle, handle_name.c_str());
-        return ret;
+        std::ostringstream str;
+        str << handle_type_name << " 0x" << std::hex << handle << "[" << handle_name.c_str() << "]";
+        return str.str();
     }
 
     std::string FormatHandle(const VulkanTypedHandle &handle) const {
