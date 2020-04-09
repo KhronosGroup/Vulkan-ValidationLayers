@@ -555,11 +555,13 @@ void PerformUpdateDescriptorSets(ValidationStateTracker *, uint32_t, const VkWri
 // TODO: migrate out of descriptor_set.cpp/h
 // For a particular binding starting at offset and having update_count descriptors
 // updated, verify that for any binding boundaries crossed, the update is consistent
-bool VerifyUpdateConsistency(DescriptorSetLayout::ConstBindingIterator current_binding, uint32_t offset, uint32_t update_count,
-                             const char *type, const VkDescriptorSet set, std::string *error_msg);
+bool VerifyUpdateConsistency(debug_report_data *report_data, DescriptorSetLayout::ConstBindingIterator current_binding,
+                             uint32_t offset, uint32_t update_count, const char *type, const VkDescriptorSet set,
+                             std::string *error_msg);
 
 // Validate buffer descriptor update info
-bool ValidateBufferUsage(BUFFER_STATE const *buffer_node, VkDescriptorType type, std::string *error_code, std::string *error_msg);
+bool ValidateBufferUsage(debug_report_data *report_data, BUFFER_STATE const *buffer_node, VkDescriptorType type,
+                         std::string *error_code, std::string *error_msg);
 
 // Helper class to encapsulate the descriptor update template decoding logic
 struct DecodedTemplateUpdate {
