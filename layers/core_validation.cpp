@@ -6949,7 +6949,12 @@ bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2KHR *att
                         if (view_state) {
                             const VkImageCreateInfo *ici = &GetImageState(view_state->create_info.image)->createInfo;
                             if (ici != nullptr) {
-                                if ((ici->usage & usage_flag) == 0) {
+                                auto creation_usage = ici->usage;
+                                const auto stencil_usage_info = lvl_find_in_chain<VkImageStencilUsageCreateInfo>(ici->pNext);
+                                if (stencil_usage_info) {
+                                    creation_usage |= stencil_usage_info->stencilUsage;
+                                }
+                                if ((creation_usage & usage_flag) == 0) {
                                     skip |= LogError(device, error_code,
                                                      "vkCreateFramebuffer:  Framebuffer Attachment (%d) conflicts with the image's "
                                                      "IMAGE_USAGE flags (%s).",
