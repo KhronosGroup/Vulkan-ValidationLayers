@@ -187,8 +187,6 @@ struct LoggingLabelState {
     }
 };
 
-static inline int string_sprintf(std::string *output, const char *fmt, ...);
-
 typedef struct _debug_report_data {
     std::vector<VkLayerDbgFunctionState> debug_callback_list;
     VkDebugUtilsMessageSeverityFlagsEXT active_severities{0};
@@ -613,25 +611,6 @@ static inline void DeactivateInstanceDebugCallbacks(debug_report_data *debug_dat
     for (auto item : instance_report_callback_handles) {
         layer_destroy_callback(debug_data, item, nullptr);
     }
-}
-
-#ifndef WIN32
-static inline int string_sprintf(std::string *output, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
-#endif
-static inline int string_sprintf(std::string *output, const char *fmt, ...) {
-    std::string &formatted = *output;
-    va_list argptr;
-    va_start(argptr, fmt);
-    int reserve = vsnprintf(nullptr, 0, fmt, argptr);
-    va_end(argptr);
-    formatted.reserve(reserve + 1);  // Set the storage length long enough to hold the output + null
-    formatted.resize(reserve);       // Set the *logical* length to be what vsprintf will write
-    va_start(argptr, fmt);
-    int result = vsnprintf((char *)formatted.data(), formatted.capacity(), fmt, argptr);
-    va_end(argptr);
-    assert(result == reserve);
-    assert((formatted.size() == strlen(formatted.c_str())));
-    return result;
 }
 
 #ifdef WIN32
