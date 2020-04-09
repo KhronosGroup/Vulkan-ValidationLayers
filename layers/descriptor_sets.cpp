@@ -747,7 +747,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                     if (!buffer_node || buffer_node->destroyed) {
                         std::stringstream error_str;
                         error_str << "Descriptor in binding #" << binding << " index " << index << " is using buffer "
-                                  << report_data->FormatHandle(buffer).c_str() << " that is invalid or has been destroyed.";
+                                  << report_data->FormatHandle(buffer) << " that is invalid or has been destroyed.";
                         *error = error_str.str();
                         return false;
                     } else if (!buffer_node->sparse) {
@@ -810,7 +810,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                         //  as "invalid" (updated = false) at DestroyImageView() time and detect this error at bind time
                         std::stringstream error_str;
                         error_str << "Descriptor in binding #" << binding << " index " << index << " is using imageView "
-                                  << report_data->FormatHandle(image_view).c_str() << " that is invalid or has been destroyed.";
+                                  << report_data->FormatHandle(image_view) << " that is invalid or has been destroyed.";
                         *error = error_str.str();
                         return false;
                     }
@@ -1453,7 +1453,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
             if ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != VK_IMAGE_ASPECT_COLOR_BIT) {
                 std::stringstream error_str;
                 error_str
-                    << "ImageView (" << report_data->FormatHandle(image_view).c_str()
+                    << "ImageView (" << report_data->FormatHandle(image_view)
                     << ") uses layout VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL but does not have VK_IMAGE_ASPECT_COLOR_BIT set.";
                 *error_msg = error_str.str();
                 return false;
@@ -1461,7 +1461,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
             // format must NOT be DS
             if (ds) {
                 std::stringstream error_str;
-                error_str << "ImageView (" << report_data->FormatHandle(image_view).c_str()
+                error_str << "ImageView (" << report_data->FormatHandle(image_view)
                           << ") uses layout VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL but the image format is "
                           << string_VkFormat(format) << " which is not a color format.";
                 *error_msg = error_str.str();
@@ -1475,7 +1475,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
                 if (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) {
                     // both  must NOT be set
                     std::stringstream error_str;
-                    error_str << "ImageView (" << report_data->FormatHandle(image_view).c_str()
+                    error_str << "ImageView (" << report_data->FormatHandle(image_view)
                               << ") has both STENCIL and DEPTH aspects set";
                     *error_msg = error_str.str();
                     return false;
@@ -1483,7 +1483,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
             } else if (!(aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT)) {
                 // Neither were set
                 std::stringstream error_str;
-                error_str << "ImageView (" << report_data->FormatHandle(image_view).c_str() << ") has layout "
+                error_str << "ImageView (" << report_data->FormatHandle(image_view) << ") has layout "
                           << string_VkImageLayout(image_layout) << " but does not have STENCIL or DEPTH aspects set";
                 *error_msg = error_str.str();
                 return false;
@@ -1491,7 +1491,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
             // format must be DS
             if (!ds) {
                 std::stringstream error_str;
-                error_str << "ImageView (" << report_data->FormatHandle(image_view).c_str() << ") has layout "
+                error_str << "ImageView (" << report_data->FormatHandle(image_view) << ") has layout "
                           << string_VkImageLayout(image_layout) << " but the image format is " << string_VkFormat(format)
                           << " which is not a depth/stencil format.";
                 *error_msg = error_str.str();
@@ -1505,7 +1505,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
                     if (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) {
                         // both  must NOT be set
                         std::stringstream error_str;
-                        error_str << "ImageView (" << report_data->FormatHandle(image_view).c_str() << ") has layout "
+                        error_str << "ImageView (" << report_data->FormatHandle(image_view) << ") has layout "
                                   << string_VkImageLayout(image_layout) << " and is using depth/stencil image of format "
                                   << string_VkFormat(format)
                                   << " but it has both STENCIL and DEPTH aspects set, which is illegal. When using a depth/stencil "
@@ -1545,7 +1545,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
                 // TODO : Need to create custom enum error codes for these cases
                 if (image_node->shared_presentable) {
                     if (VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR != image_layout) {
-                        error_str << "ImageView (" << report_data->FormatHandle(image_view).c_str()
+                        error_str << "ImageView (" << report_data->FormatHandle(image_view)
                                   << ") of VK_DESCRIPTOR_TYPE_STORAGE_IMAGE type with a front-buffered image is being updated with "
                                      "layout "
                                   << string_VkImageLayout(image_layout)
@@ -1556,7 +1556,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
                         return false;
                     }
                 } else if (VK_IMAGE_LAYOUT_GENERAL != image_layout) {
-                    error_str << "ImageView (" << report_data->FormatHandle(image_view).c_str()
+                    error_str << "ImageView (" << report_data->FormatHandle(image_view)
                               << ") of VK_DESCRIPTOR_TYPE_STORAGE_IMAGE type is being updated with layout "
                               << string_VkImageLayout(image_layout)
                               << " but according to spec section 13.1 Descriptor Types, 'Load and store operations on storage "
@@ -1579,9 +1579,9 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     }
     if (error_usage_bit) {
         std::stringstream error_str;
-        error_str << "ImageView (" << report_data->FormatHandle(image_view).c_str() << ") with usage mask " << std::hex
-                  << std::showbase << usage << " being used for a descriptor update of type " << string_VkDescriptorType(type)
-                  << " does not have " << error_usage_bit << " set.";
+        error_str << "ImageView (" << report_data->FormatHandle(image_view) << ") with usage mask " << std::hex << std::showbase
+                  << usage << " being used for a descriptor update of type " << string_VkDescriptorType(type) << " does not have "
+                  << error_usage_bit << " set.";
         *error_msg = error_str.str();
         return false;
     }
@@ -1613,8 +1613,7 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
             std::stringstream error_str;
             error_str << "Descriptor update with descriptorType " << string_VkDescriptorType(type)
                       << " is being updated with invalid imageLayout " << string_VkImageLayout(image_layout) << " for image "
-                      << report_data->FormatHandle(image).c_str() << " in imageView "
-                      << report_data->FormatHandle(image_view).c_str()
+                      << report_data->FormatHandle(image) << " in imageView " << report_data->FormatHandle(image_view)
                       << ". Allowed layouts are: VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, "
                       << "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL";
             for (auto &ext_layout : extended_layouts) {
@@ -2720,7 +2719,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const DescriptorSet *dest_set, const 
                         error_str << "image " << report_data->FormatHandle(image_state->image)
                                   << " combined image sampler is a multi-planar "
                                   << "format and " << report_data->FormatHandle(iv_state->image_view)
-                                  << " aspectMask must only include " << string_VkImageAspectFlags(legal_aspect_flags).c_str();
+                                  << " aspectMask must only include " << string_VkImageAspectFlags(legal_aspect_flags);
                         *error_msg = error_str.str();
                         return false;
                     }
