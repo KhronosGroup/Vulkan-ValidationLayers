@@ -155,14 +155,6 @@ GlobalQFOTransferBarrierMap<VkBufferMemoryBarrier> &CoreChecks::GetGlobalQFORele
     return qfo_release_buffer_barrier_map;
 }
 
-std::string FormatDebugLabel(const char *prefix, const LoggingLabel &label) {
-    if (label.Empty()) return std::string();
-    std::string out;
-    string_sprintf(&out, "%sVkDebugUtilsLabel(name='%s' color=[%g, %g %g, %g])", prefix, label.name.c_str(), label.color[0],
-                   label.color[1], label.color[2], label.color[3]);
-    return out;
-}
-
 static std::unique_ptr<ImageSubresourceLayoutMap> LayoutMapFactory(const IMAGE_STATE &image_state) {
     std::unique_ptr<ImageSubresourceLayoutMap> map(new ImageSubresourceLayoutMap(image_state));
     return map;
@@ -1381,21 +1373,24 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                                 attachment_is_valid = true;
                                 break;
                             default:
-                                string_sprintf(&error_detail, "references an attachment with an invalid format (%s).",
-                                               string_VkFormat(color_attachment.format));
+                                std::ostringstream str;
+                                str << "references an attachment with an invalid format ("
+                                    << string_VkFormat(color_attachment.format) << ").";
+                                error_detail = str.str();
                                 break;
                         }
                     } else {
-                        string_sprintf(&error_detail,
-                                       "references an invalid attachment. The subpass pColorAttachments[%" PRIu32
-                                       "].attachment has the value "
-                                       "VK_ATTACHMENT_UNUSED.",
-                                       coverage_to_color_state->coverageToColorLocation);
+                        std::ostringstream str;
+                        str << "references an invalid attachment. The subpass pColorAttachments["
+                            << coverage_to_color_state->coverageToColorLocation
+                            << "].attachment has the value VK_ATTACHMENT_UNUSED.";
+                        error_detail = str.str();
                     }
                 } else {
-                    string_sprintf(&error_detail,
-                                   "references an non-existing attachment since the subpass colorAttachmentCount is %" PRIu32 ".",
-                                   subpass_desc->colorAttachmentCount);
+                    std::ostringstream str;
+                    str << "references an non-existing attachment since the subpass colorAttachmentCount is "
+                        << subpass_desc->colorAttachmentCount << ".";
+                    error_detail = str.str();
                 }
 
                 if (!attachment_is_valid) {
@@ -1486,7 +1481,9 @@ bool CoreChecks::ReportInvalidCommandBuffer(const CMD_BUFFER_STATE *cb_state, co
     for (auto obj : cb_state->broken_bindings) {
         const char *cause_str = GetCauseStr(obj);
         string VUID;
-        string_sprintf(&VUID, "%s-%s", kVUID_Core_DrawState_InvalidCommandBuffer, object_string[obj.type]);
+        std::ostringstream str;
+        str << kVUID_Core_DrawState_InvalidCommandBuffer << "-" << object_string[obj.type];
+        VUID = str.str();
         LogObjectList objlist(cb_state->commandBuffer);
         objlist.add(obj);
         skip |=

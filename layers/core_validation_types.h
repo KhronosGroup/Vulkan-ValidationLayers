@@ -510,8 +510,6 @@ class SWAPCHAIN_NODE : public BASE_NODE {
         : createInfo(pCreateInfo), swapchain(swapchain) {}
 };
 
-std::string FormatDebugLabel(const char *prefix, const LoggingLabel &label);
-
 extern bool ImageLayoutMatches(const VkImageAspectFlags aspect_mask, VkImageLayout a, VkImageLayout b);
 
 // Store the DAG.

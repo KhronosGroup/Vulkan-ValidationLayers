@@ -3448,17 +3448,15 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const G
                 assert(initial_layout_state);  // There's no way we should have an initial layout without matching state...
                 bool matches = ImageLayoutMatches(initial_layout_state->aspect_mask, image_layout, initial_layout);
                 if (!matches) {
-                    std::string formatted_label = FormatDebugLabel(" ", pCB->debug_label);
                     // We can report all the errors for the intersected range directly
                     for (auto index : sparse_container::range_view<decltype(intersected_range)>(intersected_range)) {
                         const auto subresource = image_state->range_encoder.Decode(index);
                         skip |= LogError(
                             pCB->commandBuffer, kVUID_Core_DrawState_InvalidImageLayout,
                             "Submitted command buffer expects %s (subresource: aspectMask 0x%X array layer %u, mip level %u) "
-                            "to be in layout %s--instead, current layout is %s.%s",
+                            "to be in layout %s--instead, current layout is %s.",
                             report_data->FormatHandle(image).c_str(), subresource.aspectMask, subresource.arrayLayer,
-                            subresource.mipLevel, string_VkImageLayout(initial_layout), string_VkImageLayout(image_layout),
-                            formatted_label.c_str());
+                            subresource.mipLevel, string_VkImageLayout(initial_layout), string_VkImageLayout(image_layout));
                     }
                 }
             }
