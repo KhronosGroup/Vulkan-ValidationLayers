@@ -9132,7 +9132,7 @@ TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
         printf("%s Cannot create surface or swapchain, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
         return;
     }
-    uint32_t image_index = 0, image_count;
+    uint32_t image_index, image_count;
     PFN_vkGetSwapchainImagesKHR fpGetSwapchainImagesKHR =
         (PFN_vkGetSwapchainImagesKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetSwapchainImagesKHR");
     fpGetSwapchainImagesKHR(m_device->handle(), m_swapchain, &image_count, NULL);
@@ -9142,9 +9142,7 @@ TEST_F(VkPositiveLayerTest, SwapchainImageLayout) {
     VkFence fence;
     VkResult ret = vk::CreateFence(m_device->device(), &fenceci, nullptr, &fence);
     ASSERT_VK_SUCCESS(ret);
-    PFN_vkAcquireNextImageKHR fpAcquireNextImageKHR =
-        (PFN_vkAcquireNextImageKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkAcquireNextImageKHR");
-    ret = fpAcquireNextImageKHR(m_device->handle(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fence, &image_index);
+    ret = vk::AcquireNextImageKHR(m_device->handle(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fence, &image_index);
     ASSERT_VK_SUCCESS(ret);
     VkAttachmentDescription attach[] = {
         {0, VK_FORMAT_B8G8R8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,

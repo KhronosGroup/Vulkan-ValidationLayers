@@ -1483,7 +1483,7 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages) {
     std::vector<VkFenceObj> fences(acquirable_count);
     for (uint32_t i = 0; i < acquirable_count; ++i) {
         fences[i].init(*m_device, VkFenceObj::create_info());
-        uint32_t image_i = i;  // WORKAROUND: MockICD does not modify the value, so we have to or the validator state gets corrupted
+        uint32_t image_i;
         const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fences[i].handle(), &image_i);
         ASSERT_TRUE(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
     }
@@ -1536,7 +1536,7 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
     std::vector<VkFenceObj> fences(acquirable_count);
     for (uint32_t i = 0; i < acquirable_count; ++i) {
         fences[i].init(*m_device, VkFenceObj::create_info());
-        uint32_t image_i = i;  // WORKAROUND: MockICD does not modify the value, so we have to or the validator state gets corrupted
+        uint32_t image_i;
         const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fences[i].handle(), &image_i);
         ASSERT_TRUE(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
     }
@@ -1702,7 +1702,7 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
 
     if (support_surface) {
         // Test VkAcquireNextImageInfoKHR
-        uint32_t imageIndex = 0;
+        uint32_t imageIndex;
         VkAcquireNextImageInfoKHR acquire_next_image_info = {};
         acquire_next_image_info.sType = VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR;
         acquire_next_image_info.semaphore = semaphore;
