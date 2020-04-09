@@ -341,6 +341,10 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(RenderPass
     }
 
     auto image_usage = image_state->createInfo.usage;
+    const auto stencil_usage_info = lvl_find_in_chain<VkImageStencilUsageCreateInfo>(image_state->createInfo.pNext);
+    if (stencil_usage_info) {
+        image_usage |= stencil_usage_info->stencilUsage;
+    }
 
     // Check for layouts that mismatch image usages in the framebuffer
     if (layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {

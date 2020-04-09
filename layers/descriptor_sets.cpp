@@ -1425,6 +1425,10 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
 
     format = image_node->createInfo.format;
     usage = image_node->createInfo.usage;
+    const auto stencil_usage_info = lvl_find_in_chain<VkImageStencilUsageCreateInfo>(image_node->createInfo.pNext);
+    if (stencil_usage_info) {
+        usage |= stencil_usage_info->stencilUsage;
+    }
     // Validate that memory is bound to image
     // TODO: This should have its own valid usage id apart from 2524 which is from CreateImageView case. The only
     //  the error here occurs is if memory bound to a created imageView has been freed.
