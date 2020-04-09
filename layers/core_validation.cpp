@@ -6689,6 +6689,15 @@ bool CoreChecks::ValidatePerformanceQuery(const ValidationStateTracker *state_da
                                      state_data->report_data->FormatHandle(commandBuffer).c_str());
     }
 
+    QueryState command_buffer_state = state_data->GetQueryState(localQueryToStateMap, query_obj.pool, query_obj.query, perfPass);
+    if (command_buffer_state == QUERYSTATE_RESET) {
+        skip |= state_data->LogError(
+            commandBuffer, query_obj.indexed ? "VUID-vkCmdBeginQueryIndexedEXT-None-02863" : "VUID-vkCmdBeginQuery-None-02863",
+            "VkQuery begin command recorded in a command buffer that, either directly or "
+            "through secondary command buffers, also contains a vkCmdResetQueryPool command "
+            "affecting the same query.");
+    }
+
     if (firstPerfQueryPool != VK_NULL_HANDLE) {
         if (firstPerfQueryPool != query_obj.pool &&
             !state_data->enabled_features.performance_query_features.performanceCounterMultipleQueryPools) {
