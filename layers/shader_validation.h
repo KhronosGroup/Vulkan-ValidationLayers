@@ -301,9 +301,11 @@ class ValidationCache {
         // Convert sha1_str from a hex string to binary. We only need VK_UUID_SIZE bytes of
         // output, so pad with zeroes if the input string is shorter than that, and truncate
         // if it's longer.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
         char padded_sha1_str[2 * VK_UUID_SIZE + 1] = {};  // 2 hex digits == 1 byte
         std::strncpy(padded_sha1_str, sha1_str, 2 * VK_UUID_SIZE);
-
+#pragma GCC diagnostic pop
         for (uint32_t i = 0; i < VK_UUID_SIZE; ++i) {
             const char byte_str[] = {padded_sha1_str[2 * i + 0], padded_sha1_str[2 * i + 1], '\0'};
             uuid[i] = static_cast<uint8_t>(std::strtoul(byte_str, nullptr, 16));
