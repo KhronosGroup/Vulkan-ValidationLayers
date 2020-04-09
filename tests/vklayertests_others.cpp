@@ -6911,6 +6911,27 @@ TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
     }
 
     {
+        m_commandBuffer->reset();
+        m_commandBuffer->begin();
+        vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
+        m_commandBuffer->end();
+
+        VkSubmitInfo submit_info;
+        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit_info.pNext = NULL;
+        submit_info.waitSemaphoreCount = 0;
+        submit_info.pWaitSemaphores = NULL;
+        submit_info.pWaitDstStageMask = NULL;
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &m_commandBuffer->handle();
+        submit_info.signalSemaphoreCount = 0;
+        submit_info.pSignalSemaphores = NULL;
+
+        vk::QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+        vk::QueueWaitIdle(queue);
+    }
+
+    {
         VkBufferCreateInfo buf_info = {};
         buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -6931,6 +6952,7 @@ TEST_F(VkLayerTest, QueryPerformanceReleaseProfileLockBeforeSubmit) {
         ASSERT_VK_SUCCESS(err);
         vk::BindBufferMemory(device(), buffer, mem, 0);
 
+        m_commandBuffer->reset();
         m_commandBuffer->begin();
 
         vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
@@ -7131,7 +7153,7 @@ TEST_F(VkLayerTest, QueryPerformanceIncompletePasses) {
         command_buffer_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         command_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-        fpvkResetQueryPoolEXT(m_device->device(), query_pool, 0, 0);
+        fpvkResetQueryPoolEXT(m_device->device(), query_pool, 0, 1);
 
         m_commandBuffer->begin(&command_buffer_begin_info);
         vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
