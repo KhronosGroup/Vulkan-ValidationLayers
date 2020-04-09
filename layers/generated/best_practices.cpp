@@ -521,7 +521,7 @@ void BestPractices::PostCallRecordvkCreateGraphicsPipelines(
     ValidationStateTracker::PostCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, state_data);
     if (result != VK_SUCCESS) {
         static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_INVALID_SHADER_NV};
-        static const std::vector<VkResult> success_codes = {};
+        static const std::vector<VkResult> success_codes = {VK_PIPELINE_COMPILE_REQUIRED_EXT};
         ValidateReturnCodes("vkCreateGraphicsPipelines", result, error_codes, success_codes);
     }
 }
@@ -538,7 +538,7 @@ void BestPractices::PostCallRecordvkCreateComputePipelines(
     ValidationStateTracker::PostCallRecordCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, state_data);
     if (result != VK_SUCCESS) {
         static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_INVALID_SHADER_NV};
-        static const std::vector<VkResult> success_codes = {};
+        static const std::vector<VkResult> success_codes = {VK_PIPELINE_COMPILE_REQUIRED_EXT};
         ValidateReturnCodes("vkCreateComputePipelines", result, error_codes, success_codes);
     }
 }
@@ -1773,6 +1773,19 @@ void BestPractices::PostCallRecordvkDebugMarkerSetObjectNameEXT(
     }
 }
 
+void BestPractices::PostCallRecordvkGetImageViewAddressNVX(
+    VkDevice                                    device,
+    VkImageView                                 imageView,
+    VkImageViewAddressPropertiesNVX*            pProperties,
+    VkResult                                    result) {
+    ValidationStateTracker::PostCallRecordGetImageViewAddressNVX(device, imageView, pProperties, result);
+    if (result != VK_SUCCESS) {
+        static const std::vector<VkResult> error_codes = {VK_ERROR_UNKNOWN};
+        static const std::vector<VkResult> success_codes = {};
+        ValidateReturnCodes("vkGetImageViewAddressNVX", result, error_codes, success_codes);
+    }
+}
+
 void BestPractices::PostCallRecordvkGetShaderInfoAMD(
     VkDevice                                    device,
     VkPipeline                                  pipeline,
@@ -2100,7 +2113,7 @@ void BestPractices::PostCallRecordvkCreateRayTracingPipelinesNV(
     ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, state_data);
     if (result != VK_SUCCESS) {
         static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_INVALID_SHADER_NV};
-        static const std::vector<VkResult> success_codes = {};
+        static const std::vector<VkResult> success_codes = {VK_PIPELINE_COMPILE_REQUIRED_EXT};
         ValidateReturnCodes("vkCreateRayTracingPipelinesNV", result, error_codes, success_codes);
     }
 }
@@ -2593,7 +2606,7 @@ void BestPractices::PostCallRecordvkCreateRayTracingPipelinesKHR(
     ValidationStateTracker::PostCallRecordCreateRayTracingPipelinesKHR(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, state_data);
     if (result != VK_SUCCESS) {
         static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY,VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS};
-        static const std::vector<VkResult> success_codes = {VK_OPERATION_DEFERRED_KHR,VK_OPERATION_NOT_DEFERRED_KHR};
+        static const std::vector<VkResult> success_codes = {VK_OPERATION_DEFERRED_KHR,VK_OPERATION_NOT_DEFERRED_KHR,VK_PIPELINE_COMPILE_REQUIRED_EXT};
         ValidateReturnCodes("vkCreateRayTracingPipelinesKHR", result, error_codes, success_codes);
     }
 }

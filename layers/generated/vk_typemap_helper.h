@@ -2210,6 +2210,15 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMAGE_VIEW_HANDLE_INFO_NVX> {
     typedef VkImageViewHandleInfoNVX Type;
 };
 
+// Map type VkImageViewAddressPropertiesNVX to id VK_STRUCTURE_TYPE_IMAGE_VIEW_ADDRESS_PROPERTIES_NVX
+template <> struct LvlTypeMap<VkImageViewAddressPropertiesNVX> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_IMAGE_VIEW_ADDRESS_PROPERTIES_NVX;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_IMAGE_VIEW_ADDRESS_PROPERTIES_NVX> {
+    typedef VkImageViewAddressPropertiesNVX Type;
+};
+
 // Map type VkTextureLODGatherFormatPropertiesAMD to id VK_STRUCTURE_TYPE_TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD
 template <> struct LvlTypeMap<VkTextureLODGatherFormatPropertiesAMD> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD;
@@ -3237,12 +3246,12 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_INITIALIZE_PERFORMANCE_API_INFO
     typedef VkInitializePerformanceApiInfoINTEL Type;
 };
 
-// Map type VkQueryPoolPerformanceQueryCreateInfoINTEL to id VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO_INTEL
+// Map type VkQueryPoolPerformanceQueryCreateInfoINTEL to id VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL
 template <> struct LvlTypeMap<VkQueryPoolPerformanceQueryCreateInfoINTEL> {
-    static const VkStructureType kSType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO_INTEL;
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL;
 };
 
-template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO_INTEL> {
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL> {
     typedef VkQueryPoolPerformanceQueryCreateInfoINTEL Type;
 };
 

@@ -4997,6 +4997,23 @@ void ThreadSafety::PostCallRecordGetImageViewHandleNVX(
     FinishReadObjectParentInstance(device, "vkGetImageViewHandleNVX");
 }
 
+void ThreadSafety::PreCallRecordGetImageViewAddressNVX(
+    VkDevice                                    device,
+    VkImageView                                 imageView,
+    VkImageViewAddressPropertiesNVX*            pProperties) {
+    StartReadObjectParentInstance(device, "vkGetImageViewAddressNVX");
+    StartReadObject(imageView, "vkGetImageViewAddressNVX");
+}
+
+void ThreadSafety::PostCallRecordGetImageViewAddressNVX(
+    VkDevice                                    device,
+    VkImageView                                 imageView,
+    VkImageViewAddressPropertiesNVX*            pProperties,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkGetImageViewAddressNVX");
+    FinishReadObject(imageView, "vkGetImageViewAddressNVX");
+}
+
 void ThreadSafety::PreCallRecordCmdDrawIndirectCountAMD(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,

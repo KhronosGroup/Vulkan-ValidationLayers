@@ -4453,6 +4453,22 @@ struct safe_VkImageViewHandleInfoNVX {
     VkImageViewHandleInfoNVX const *ptr() const { return reinterpret_cast<VkImageViewHandleInfoNVX const *>(this); }
 };
 
+struct safe_VkImageViewAddressPropertiesNVX {
+    VkStructureType sType;
+    void* pNext;
+    VkDeviceAddress deviceAddress;
+    VkDeviceSize size;
+    safe_VkImageViewAddressPropertiesNVX(const VkImageViewAddressPropertiesNVX* in_struct);
+    safe_VkImageViewAddressPropertiesNVX(const safe_VkImageViewAddressPropertiesNVX& copy_src);
+    safe_VkImageViewAddressPropertiesNVX& operator=(const safe_VkImageViewAddressPropertiesNVX& copy_src);
+    safe_VkImageViewAddressPropertiesNVX();
+    ~safe_VkImageViewAddressPropertiesNVX();
+    void initialize(const VkImageViewAddressPropertiesNVX* in_struct);
+    void initialize(const safe_VkImageViewAddressPropertiesNVX* copy_src);
+    VkImageViewAddressPropertiesNVX *ptr() { return reinterpret_cast<VkImageViewAddressPropertiesNVX *>(this); }
+    VkImageViewAddressPropertiesNVX const *ptr() const { return reinterpret_cast<VkImageViewAddressPropertiesNVX const *>(this); }
+};
+
 struct safe_VkTextureLODGatherFormatPropertiesAMD {
     VkStructureType sType;
     void* pNext;
@@ -7105,7 +7121,7 @@ struct safe_VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT {
 
 struct safe_VkPhysicalDeviceDeviceGeneratedCommandsPropertiesNV {
     VkStructureType sType;
-    const void* pNext;
+    void* pNext;
     uint32_t maxGraphicsShaderGroupCount;
     uint32_t maxIndirectSequenceCount;
     uint32_t maxIndirectCommandsTokenCount;

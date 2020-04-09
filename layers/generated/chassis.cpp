@@ -7567,6 +7567,29 @@ VKAPI_ATTR uint32_t VKAPI_CALL GetImageViewHandleNVX(
     return result;
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL GetImageViewAddressNVX(
+    VkDevice                                    device,
+    VkImageView                                 imageView,
+    VkImageViewAddressPropertiesNVX*            pProperties) {
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    bool skip = false;
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->read_lock();
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateGetImageViewAddressNVX(device, imageView, pProperties);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+    }
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PreCallRecordGetImageViewAddressNVX(device, imageView, pProperties);
+    }
+    VkResult result = DispatchGetImageViewAddressNVX(device, imageView, pProperties);
+    for (auto intercept : layer_data->object_dispatch) {
+        auto lock = intercept->write_lock();
+        intercept->PostCallRecordGetImageViewAddressNVX(device, imageView, pProperties, result);
+    }
+    return result;
+}
+
 
 VKAPI_ATTR void VKAPI_CALL CmdDrawIndirectCountAMD(
     VkCommandBuffer                             commandBuffer,
@@ -9936,6 +9959,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyIndirectCommandsLayoutNV(
 
 
 
+
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(
@@ -10674,6 +10698,7 @@ const std::unordered_map<std::string, function_data> name_to_funcptr_map = {
     {"vkCmdEndQueryIndexedEXT", {kFuncTypeDev, (void*)CmdEndQueryIndexedEXT}},
     {"vkCmdDrawIndirectByteCountEXT", {kFuncTypeDev, (void*)CmdDrawIndirectByteCountEXT}},
     {"vkGetImageViewHandleNVX", {kFuncTypeDev, (void*)GetImageViewHandleNVX}},
+    {"vkGetImageViewAddressNVX", {kFuncTypeDev, (void*)GetImageViewAddressNVX}},
     {"vkCmdDrawIndirectCountAMD", {kFuncTypeDev, (void*)CmdDrawIndirectCountAMD}},
     {"vkCmdDrawIndexedIndirectCountAMD", {kFuncTypeDev, (void*)CmdDrawIndexedIndirectCountAMD}},
     {"vkGetShaderInfoAMD", {kFuncTypeDev, (void*)GetShaderInfoAMD}},

@@ -5723,6 +5723,21 @@ uint32_t DispatchGetImageViewHandleNVX(
     return result;
 }
 
+VkResult DispatchGetImageViewAddressNVX(
+    VkDevice                                    device,
+    VkImageView                                 imageView,
+    VkImageViewAddressPropertiesNVX*            pProperties)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetImageViewAddressNVX(device, imageView, pProperties);
+    {
+        imageView = layer_data->Unwrap(imageView);
+    }
+    VkResult result = layer_data->device_dispatch_table.GetImageViewAddressNVX(device, imageView, pProperties);
+
+    return result;
+}
+
 void DispatchCmdDrawIndirectCountAMD(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,

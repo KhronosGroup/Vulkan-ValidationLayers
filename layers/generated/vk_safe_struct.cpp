@@ -19592,6 +19592,63 @@ void safe_VkImageViewHandleInfoNVX::initialize(const safe_VkImageViewHandleInfoN
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkImageViewAddressPropertiesNVX::safe_VkImageViewAddressPropertiesNVX(const VkImageViewAddressPropertiesNVX* in_struct) :
+    sType(in_struct->sType),
+    deviceAddress(in_struct->deviceAddress),
+    size(in_struct->size)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkImageViewAddressPropertiesNVX::safe_VkImageViewAddressPropertiesNVX() :
+    pNext(nullptr)
+{}
+
+safe_VkImageViewAddressPropertiesNVX::safe_VkImageViewAddressPropertiesNVX(const safe_VkImageViewAddressPropertiesNVX& copy_src)
+{
+    sType = copy_src.sType;
+    deviceAddress = copy_src.deviceAddress;
+    size = copy_src.size;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkImageViewAddressPropertiesNVX& safe_VkImageViewAddressPropertiesNVX::operator=(const safe_VkImageViewAddressPropertiesNVX& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    deviceAddress = copy_src.deviceAddress;
+    size = copy_src.size;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkImageViewAddressPropertiesNVX::~safe_VkImageViewAddressPropertiesNVX()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkImageViewAddressPropertiesNVX::initialize(const VkImageViewAddressPropertiesNVX* in_struct)
+{
+    sType = in_struct->sType;
+    deviceAddress = in_struct->deviceAddress;
+    size = in_struct->size;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkImageViewAddressPropertiesNVX::initialize(const safe_VkImageViewAddressPropertiesNVX* copy_src)
+{
+    sType = copy_src->sType;
+    deviceAddress = copy_src->deviceAddress;
+    size = copy_src->size;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkTextureLODGatherFormatPropertiesAMD::safe_VkTextureLODGatherFormatPropertiesAMD(const VkTextureLODGatherFormatPropertiesAMD* in_struct) :
     sType(in_struct->sType),
     supportsTextureGatherLODBiasAMD(in_struct->supportsTextureGatherLODBiasAMD)
@@ -33593,7 +33650,7 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_FUNCTIONS_2_FEATURES_INTEL:
             safe_pNext = new safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL(reinterpret_cast<const VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL *>(pNext));
             break;
-        case VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO_INTEL:
+        case VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL:
             safe_pNext = new safe_VkQueryPoolPerformanceQueryCreateInfoINTEL(reinterpret_cast<const VkQueryPoolPerformanceQueryCreateInfoINTEL *>(pNext));
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT:
@@ -34321,7 +34378,7 @@ void FreePnextChain(const void *pNext) {
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_FUNCTIONS_2_FEATURES_INTEL:
             delete reinterpret_cast<const safe_VkPhysicalDeviceShaderIntegerFunctions2FeaturesINTEL *>(header);
             break;
-        case VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO_INTEL:
+        case VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL:
             delete reinterpret_cast<const safe_VkQueryPoolPerformanceQueryCreateInfoINTEL *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT:

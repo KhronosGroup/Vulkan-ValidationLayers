@@ -3126,12 +3126,6 @@ bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkIm
                              "vkCmdBlitImage(): source image type must be VK_IMAGE_TYPE_3D when cubic filtering is specified.");
         }
 
-        if ((VK_SAMPLE_COUNT_1_BIT != src_image_state->createInfo.samples) ||
-            (VK_SAMPLE_COUNT_1_BIT != dst_image_state->createInfo.samples)) {
-            skip |= LogError(cb_node->commandBuffer, "VUID-vkCmdBlitImage-srcImage-00228",
-                             "vkCmdBlitImage(): source or dest image has sample count other than VK_SAMPLE_COUNT_1_BIT.");
-        }
-
         // Validate consistency for unsigned formats
         if (FormatIsUInt(src_format) != FormatIsUInt(dst_format)) {
             std::stringstream ss;

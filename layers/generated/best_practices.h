@@ -1015,6 +1015,13 @@ void PostCallRecordvkDebugMarkerSetObjectNameEXT(
     VkResult                                    result);
 
 
+void PostCallRecordvkGetImageViewAddressNVX(
+    VkDevice                                    device,
+    VkImageView                                 imageView,
+    VkImageViewAddressPropertiesNVX*            pProperties,
+    VkResult                                    result);
+
+
 void PostCallRecordvkGetShaderInfoAMD(
     VkDevice                                    device,
     VkPipeline                                  pipeline,

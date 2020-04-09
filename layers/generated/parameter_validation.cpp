@@ -27,7 +27,7 @@
 
 #include "stateless_validation.h"
 
-const uint32_t GeneratedVulkanHeaderVersion = 135;
+const uint32_t GeneratedVulkanHeaderVersion = 137;
 
 const DECORATE_UNUSED VkAccessFlags AllVkAccessFlagBits = VK_ACCESS_INDIRECT_COMMAND_READ_BIT|VK_ACCESS_INDEX_READ_BIT|VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT|VK_ACCESS_UNIFORM_READ_BIT|VK_ACCESS_INPUT_ATTACHMENT_READ_BIT|VK_ACCESS_SHADER_READ_BIT|VK_ACCESS_SHADER_WRITE_BIT|VK_ACCESS_COLOR_ATTACHMENT_READ_BIT|VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT|VK_ACCESS_TRANSFER_READ_BIT|VK_ACCESS_TRANSFER_WRITE_BIT|VK_ACCESS_HOST_READ_BIT|VK_ACCESS_HOST_WRITE_BIT|VK_ACCESS_MEMORY_READ_BIT|VK_ACCESS_MEMORY_WRITE_BIT|VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT|VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT|VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT|VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR|VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV|VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV|VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT|VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV|VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV;
 const DECORATE_UNUSED VkAttachmentDescriptionFlags AllVkAttachmentDescriptionFlagBits = VK_ATTACHMENT_DESCRIPTION_MAY_ALIAS_BIT;
@@ -121,7 +121,7 @@ const DECORATE_UNUSED VkIndirectStateFlagsNV AllVkIndirectStateFlagBitsNV = VK_I
 const DECORATE_UNUSED VkDeviceDiagnosticsConfigFlagsNV AllVkDeviceDiagnosticsConfigFlagBitsNV = VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_SHADER_DEBUG_INFO_BIT_NV|VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_RESOURCE_TRACKING_BIT_NV|VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_AUTOMATIC_CHECKPOINTS_BIT_NV;
 
 const std::vector<VkPipelineCacheHeaderVersion> AllVkPipelineCacheHeaderVersionEnums = {VK_PIPELINE_CACHE_HEADER_VERSION_ONE, };
-const std::vector<VkResult> AllVkResultEnums = {VK_SUCCESS, VK_NOT_READY, VK_TIMEOUT, VK_EVENT_SET, VK_EVENT_RESET, VK_INCOMPLETE, VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_DEVICE_LOST, VK_ERROR_MEMORY_MAP_FAILED, VK_ERROR_LAYER_NOT_PRESENT, VK_ERROR_EXTENSION_NOT_PRESENT, VK_ERROR_FEATURE_NOT_PRESENT, VK_ERROR_INCOMPATIBLE_DRIVER, VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_FORMAT_NOT_SUPPORTED, VK_ERROR_FRAGMENTED_POOL, VK_ERROR_UNKNOWN, VK_ERROR_OUT_OF_POOL_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE, VK_ERROR_FRAGMENTATION, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS, VK_ERROR_SURFACE_LOST_KHR, VK_ERROR_NATIVE_WINDOW_IN_USE_KHR, VK_SUBOPTIMAL_KHR, VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_INCOMPATIBLE_DISPLAY_KHR, VK_ERROR_VALIDATION_FAILED_EXT, VK_ERROR_INVALID_SHADER_NV, VK_ERROR_OUT_OF_POOL_MEMORY_KHR, VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR, VK_ERROR_INCOMPATIBLE_VERSION_KHR, VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT, VK_ERROR_FRAGMENTATION_EXT, VK_ERROR_NOT_PERMITTED_EXT, VK_ERROR_INVALID_DEVICE_ADDRESS_EXT, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR, VK_THREAD_IDLE_KHR, VK_THREAD_DONE_KHR, VK_OPERATION_DEFERRED_KHR, VK_OPERATION_NOT_DEFERRED_KHR, VK_ERROR_PIPELINE_COMPILE_REQUIRED_EXT, };
+const std::vector<VkResult> AllVkResultEnums = {VK_SUCCESS, VK_NOT_READY, VK_TIMEOUT, VK_EVENT_SET, VK_EVENT_RESET, VK_INCOMPLETE, VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY, VK_ERROR_INITIALIZATION_FAILED, VK_ERROR_DEVICE_LOST, VK_ERROR_MEMORY_MAP_FAILED, VK_ERROR_LAYER_NOT_PRESENT, VK_ERROR_EXTENSION_NOT_PRESENT, VK_ERROR_FEATURE_NOT_PRESENT, VK_ERROR_INCOMPATIBLE_DRIVER, VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_FORMAT_NOT_SUPPORTED, VK_ERROR_FRAGMENTED_POOL, VK_ERROR_UNKNOWN, VK_ERROR_OUT_OF_POOL_MEMORY, VK_ERROR_INVALID_EXTERNAL_HANDLE, VK_ERROR_FRAGMENTATION, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS, VK_ERROR_SURFACE_LOST_KHR, VK_ERROR_NATIVE_WINDOW_IN_USE_KHR, VK_SUBOPTIMAL_KHR, VK_ERROR_OUT_OF_DATE_KHR, VK_ERROR_INCOMPATIBLE_DISPLAY_KHR, VK_ERROR_VALIDATION_FAILED_EXT, VK_ERROR_INVALID_SHADER_NV, VK_ERROR_OUT_OF_POOL_MEMORY_KHR, VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR, VK_ERROR_INCOMPATIBLE_VERSION_KHR, VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT, VK_ERROR_FRAGMENTATION_EXT, VK_ERROR_NOT_PERMITTED_EXT, VK_ERROR_INVALID_DEVICE_ADDRESS_EXT, VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT, VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR, VK_THREAD_IDLE_KHR, VK_THREAD_DONE_KHR, VK_OPERATION_DEFERRED_KHR, VK_OPERATION_NOT_DEFERRED_KHR, VK_PIPELINE_COMPILE_REQUIRED_EXT, VK_ERROR_PIPELINE_COMPILE_REQUIRED_EXT, };
 const std::vector<VkSystemAllocationScope> AllVkSystemAllocationScopeEnums = {VK_SYSTEM_ALLOCATION_SCOPE_COMMAND, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT, VK_SYSTEM_ALLOCATION_SCOPE_CACHE, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE, };
 const std::vector<VkInternalAllocationType> AllVkInternalAllocationTypeEnums = {VK_INTERNAL_ALLOCATION_TYPE_EXECUTABLE, };
 const std::vector<VkFormat> AllVkFormatEnums = {VK_FORMAT_UNDEFINED, VK_FORMAT_R4G4_UNORM_PACK8, VK_FORMAT_R4G4B4A4_UNORM_PACK16, VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_FORMAT_R5G6B5_UNORM_PACK16, VK_FORMAT_B5G6R5_UNORM_PACK16, VK_FORMAT_R5G5B5A1_UNORM_PACK16, VK_FORMAT_B5G5R5A1_UNORM_PACK16, VK_FORMAT_A1R5G5B5_UNORM_PACK16, VK_FORMAT_R8_UNORM, VK_FORMAT_R8_SNORM, VK_FORMAT_R8_USCALED, VK_FORMAT_R8_SSCALED, VK_FORMAT_R8_UINT, VK_FORMAT_R8_SINT, VK_FORMAT_R8_SRGB, VK_FORMAT_R8G8_UNORM, VK_FORMAT_R8G8_SNORM, VK_FORMAT_R8G8_USCALED, VK_FORMAT_R8G8_SSCALED, VK_FORMAT_R8G8_UINT, VK_FORMAT_R8G8_SINT, VK_FORMAT_R8G8_SRGB, VK_FORMAT_R8G8B8_UNORM, VK_FORMAT_R8G8B8_SNORM, VK_FORMAT_R8G8B8_USCALED, VK_FORMAT_R8G8B8_SSCALED, VK_FORMAT_R8G8B8_UINT, VK_FORMAT_R8G8B8_SINT, VK_FORMAT_R8G8B8_SRGB, VK_FORMAT_B8G8R8_UNORM, VK_FORMAT_B8G8R8_SNORM, VK_FORMAT_B8G8R8_USCALED, VK_FORMAT_B8G8R8_SSCALED, VK_FORMAT_B8G8R8_UINT, VK_FORMAT_B8G8R8_SINT, VK_FORMAT_B8G8R8_SRGB, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_SNORM, VK_FORMAT_R8G8B8A8_USCALED, VK_FORMAT_R8G8B8A8_SSCALED, VK_FORMAT_R8G8B8A8_UINT, VK_FORMAT_R8G8B8A8_SINT, VK_FORMAT_R8G8B8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM, VK_FORMAT_B8G8R8A8_USCALED, VK_FORMAT_B8G8R8A8_SSCALED, VK_FORMAT_B8G8R8A8_UINT, VK_FORMAT_B8G8R8A8_SINT, VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_A8B8G8R8_UNORM_PACK32, VK_FORMAT_A8B8G8R8_SNORM_PACK32, VK_FORMAT_A8B8G8R8_USCALED_PACK32, VK_FORMAT_A8B8G8R8_SSCALED_PACK32, VK_FORMAT_A8B8G8R8_UINT_PACK32, VK_FORMAT_A8B8G8R8_SINT_PACK32, VK_FORMAT_A8B8G8R8_SRGB_PACK32, VK_FORMAT_A2R10G10B10_UNORM_PACK32, VK_FORMAT_A2R10G10B10_SNORM_PACK32, VK_FORMAT_A2R10G10B10_USCALED_PACK32, VK_FORMAT_A2R10G10B10_SSCALED_PACK32, VK_FORMAT_A2R10G10B10_UINT_PACK32, VK_FORMAT_A2R10G10B10_SINT_PACK32, VK_FORMAT_A2B10G10R10_UNORM_PACK32, VK_FORMAT_A2B10G10R10_SNORM_PACK32, VK_FORMAT_A2B10G10R10_USCALED_PACK32, VK_FORMAT_A2B10G10R10_SSCALED_PACK32, VK_FORMAT_A2B10G10R10_UINT_PACK32, VK_FORMAT_A2B10G10R10_SINT_PACK32, VK_FORMAT_R16_UNORM, VK_FORMAT_R16_SNORM, VK_FORMAT_R16_USCALED, VK_FORMAT_R16_SSCALED, VK_FORMAT_R16_UINT, VK_FORMAT_R16_SINT, VK_FORMAT_R16_SFLOAT, VK_FORMAT_R16G16_UNORM, VK_FORMAT_R16G16_SNORM, VK_FORMAT_R16G16_USCALED, VK_FORMAT_R16G16_SSCALED, VK_FORMAT_R16G16_UINT, VK_FORMAT_R16G16_SINT, VK_FORMAT_R16G16_SFLOAT, VK_FORMAT_R16G16B16_UNORM, VK_FORMAT_R16G16B16_SNORM, VK_FORMAT_R16G16B16_USCALED, VK_FORMAT_R16G16B16_SSCALED, VK_FORMAT_R16G16B16_UINT, VK_FORMAT_R16G16B16_SINT, VK_FORMAT_R16G16B16_SFLOAT, VK_FORMAT_R16G16B16A16_UNORM, VK_FORMAT_R16G16B16A16_SNORM, VK_FORMAT_R16G16B16A16_USCALED, VK_FORMAT_R16G16B16A16_SSCALED, VK_FORMAT_R16G16B16A16_UINT, VK_FORMAT_R16G16B16A16_SINT, VK_FORMAT_R16G16B16A16_SFLOAT, VK_FORMAT_R32_UINT, VK_FORMAT_R32_SINT, VK_FORMAT_R32_SFLOAT, VK_FORMAT_R32G32_UINT, VK_FORMAT_R32G32_SINT, VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32B32_UINT, VK_FORMAT_R32G32B32_SINT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32A32_UINT, VK_FORMAT_R32G32B32A32_SINT, VK_FORMAT_R32G32B32A32_SFLOAT, VK_FORMAT_R64_UINT, VK_FORMAT_R64_SINT, VK_FORMAT_R64_SFLOAT, VK_FORMAT_R64G64_UINT, VK_FORMAT_R64G64_SINT, VK_FORMAT_R64G64_SFLOAT, VK_FORMAT_R64G64B64_UINT, VK_FORMAT_R64G64B64_SINT, VK_FORMAT_R64G64B64_SFLOAT, VK_FORMAT_R64G64B64A64_UINT, VK_FORMAT_R64G64B64A64_SINT, VK_FORMAT_R64G64B64A64_SFLOAT, VK_FORMAT_B10G11R11_UFLOAT_PACK32, VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, VK_FORMAT_D16_UNORM, VK_FORMAT_X8_D24_UNORM_PACK32, VK_FORMAT_D32_SFLOAT, VK_FORMAT_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_BC1_RGB_UNORM_BLOCK, VK_FORMAT_BC1_RGB_SRGB_BLOCK, VK_FORMAT_BC1_RGBA_UNORM_BLOCK, VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_FORMAT_BC2_UNORM_BLOCK, VK_FORMAT_BC2_SRGB_BLOCK, VK_FORMAT_BC3_UNORM_BLOCK, VK_FORMAT_BC3_SRGB_BLOCK, VK_FORMAT_BC4_UNORM_BLOCK, VK_FORMAT_BC4_SNORM_BLOCK, VK_FORMAT_BC5_UNORM_BLOCK, VK_FORMAT_BC5_SNORM_BLOCK, VK_FORMAT_BC6H_UFLOAT_BLOCK, VK_FORMAT_BC6H_SFLOAT_BLOCK, VK_FORMAT_BC7_UNORM_BLOCK, VK_FORMAT_BC7_SRGB_BLOCK, VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK, VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK, VK_FORMAT_ETC2_R8G8B8A1_UNORM_BLOCK, VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK, VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK, VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK, VK_FORMAT_EAC_R11_UNORM_BLOCK, VK_FORMAT_EAC_R11_SNORM_BLOCK, VK_FORMAT_EAC_R11G11_UNORM_BLOCK, VK_FORMAT_EAC_R11G11_SNORM_BLOCK, VK_FORMAT_ASTC_4x4_UNORM_BLOCK, VK_FORMAT_ASTC_4x4_SRGB_BLOCK, VK_FORMAT_ASTC_5x4_UNORM_BLOCK, VK_FORMAT_ASTC_5x4_SRGB_BLOCK, VK_FORMAT_ASTC_5x5_UNORM_BLOCK, VK_FORMAT_ASTC_5x5_SRGB_BLOCK, VK_FORMAT_ASTC_6x5_UNORM_BLOCK, VK_FORMAT_ASTC_6x5_SRGB_BLOCK, VK_FORMAT_ASTC_6x6_UNORM_BLOCK, VK_FORMAT_ASTC_6x6_SRGB_BLOCK, VK_FORMAT_ASTC_8x5_UNORM_BLOCK, VK_FORMAT_ASTC_8x5_SRGB_BLOCK, VK_FORMAT_ASTC_8x6_UNORM_BLOCK, VK_FORMAT_ASTC_8x6_SRGB_BLOCK, VK_FORMAT_ASTC_8x8_UNORM_BLOCK, VK_FORMAT_ASTC_8x8_SRGB_BLOCK, VK_FORMAT_ASTC_10x5_UNORM_BLOCK, VK_FORMAT_ASTC_10x5_SRGB_BLOCK, VK_FORMAT_ASTC_10x6_UNORM_BLOCK, VK_FORMAT_ASTC_10x6_SRGB_BLOCK, VK_FORMAT_ASTC_10x8_UNORM_BLOCK, VK_FORMAT_ASTC_10x8_SRGB_BLOCK, VK_FORMAT_ASTC_10x10_UNORM_BLOCK, VK_FORMAT_ASTC_10x10_SRGB_BLOCK, VK_FORMAT_ASTC_12x10_UNORM_BLOCK, VK_FORMAT_ASTC_12x10_SRGB_BLOCK, VK_FORMAT_ASTC_12x12_UNORM_BLOCK, VK_FORMAT_ASTC_12x12_SRGB_BLOCK, VK_FORMAT_G8B8G8R8_422_UNORM, VK_FORMAT_B8G8R8G8_422_UNORM, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM, VK_FORMAT_G8_B8R8_2PLANE_422_UNORM, VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM, VK_FORMAT_R10X6_UNORM_PACK16, VK_FORMAT_R10X6G10X6_UNORM_2PACK16, VK_FORMAT_R10X6G10X6B10X6A10X6_UNORM_4PACK16, VK_FORMAT_G10X6B10X6G10X6R10X6_422_UNORM_4PACK16, VK_FORMAT_B10X6G10X6R10X6G10X6_422_UNORM_4PACK16, VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_420_UNORM_3PACK16, VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16, VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_422_UNORM_3PACK16, VK_FORMAT_G10X6_B10X6R10X6_2PLANE_422_UNORM_3PACK16, VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_444_UNORM_3PACK16, VK_FORMAT_R12X4_UNORM_PACK16, VK_FORMAT_R12X4G12X4_UNORM_2PACK16, VK_FORMAT_R12X4G12X4B12X4A12X4_UNORM_4PACK16, VK_FORMAT_G12X4B12X4G12X4R12X4_422_UNORM_4PACK16, VK_FORMAT_B12X4G12X4R12X4G12X4_422_UNORM_4PACK16, VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_420_UNORM_3PACK16, VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16, VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_422_UNORM_3PACK16, VK_FORMAT_G12X4_B12X4R12X4_2PLANE_422_UNORM_3PACK16, VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_444_UNORM_3PACK16, VK_FORMAT_G16B16G16R16_422_UNORM, VK_FORMAT_B16G16R16G16_422_UNORM, VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM, VK_FORMAT_G16_B16R16_2PLANE_420_UNORM, VK_FORMAT_G16_B16_R16_3PLANE_422_UNORM, VK_FORMAT_G16_B16R16_2PLANE_422_UNORM, VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM, VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG, VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG, VK_FORMAT_PVRTC2_2BPP_UNORM_BLOCK_IMG, VK_FORMAT_PVRTC2_4BPP_UNORM_BLOCK_IMG, VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG, VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG, VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG, VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG, VK_FORMAT_ASTC_4x4_SFLOAT_BLOCK_EXT, VK_FORMAT_ASTC_5x4_SFLOAT_BLOCK_EXT, VK_FORMAT_ASTC_5x5_SFLOAT_BLOCK_EXT, VK_FORMAT_ASTC_6x5_SFLOAT_BLOCK_EXT, VK_FORMAT_ASTC_6x6_SFLOAT_BLOCK_EXT, VK_FORMAT_ASTC_8x5_SFLOAT_BLOCK_EXT, VK_FORMAT_ASTC_8x6_SFLOAT_BLOCK_EXT, VK_FORMAT_ASTC_8x8_SFLOAT_BLOCK_EXT, VK_FORMAT_ASTC_10x5_SFLOAT_BLOCK_EXT, VK_FORMAT_ASTC_10x6_SFLOAT_BLOCK_EXT, VK_FORMAT_ASTC_10x8_SFLOAT_BLOCK_EXT, VK_FORMAT_ASTC_10x10_SFLOAT_BLOCK_EXT, VK_FORMAT_ASTC_12x10_SFLOAT_BLOCK_EXT, VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK_EXT, VK_FORMAT_G8B8G8R8_422_UNORM_KHR, VK_FORMAT_B8G8R8G8_422_UNORM_KHR, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM_KHR, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM_KHR, VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM_KHR, VK_FORMAT_G8_B8R8_2PLANE_422_UNORM_KHR, VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM_KHR, VK_FORMAT_R10X6_UNORM_PACK16_KHR, VK_FORMAT_R10X6G10X6_UNORM_2PACK16_KHR, VK_FORMAT_R10X6G10X6B10X6A10X6_UNORM_4PACK16_KHR, VK_FORMAT_G10X6B10X6G10X6R10X6_422_UNORM_4PACK16_KHR, VK_FORMAT_B10X6G10X6R10X6G10X6_422_UNORM_4PACK16_KHR, VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_420_UNORM_3PACK16_KHR, VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16_KHR, VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_422_UNORM_3PACK16_KHR, VK_FORMAT_G10X6_B10X6R10X6_2PLANE_422_UNORM_3PACK16_KHR, VK_FORMAT_G10X6_B10X6_R10X6_3PLANE_444_UNORM_3PACK16_KHR, VK_FORMAT_R12X4_UNORM_PACK16_KHR, VK_FORMAT_R12X4G12X4_UNORM_2PACK16_KHR, VK_FORMAT_R12X4G12X4B12X4A12X4_UNORM_4PACK16_KHR, VK_FORMAT_G12X4B12X4G12X4R12X4_422_UNORM_4PACK16_KHR, VK_FORMAT_B12X4G12X4R12X4G12X4_422_UNORM_4PACK16_KHR, VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_420_UNORM_3PACK16_KHR, VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16_KHR, VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_422_UNORM_3PACK16_KHR, VK_FORMAT_G12X4_B12X4R12X4_2PLANE_422_UNORM_3PACK16_KHR, VK_FORMAT_G12X4_B12X4_R12X4_3PLANE_444_UNORM_3PACK16_KHR, VK_FORMAT_G16B16G16R16_422_UNORM_KHR, VK_FORMAT_B16G16R16G16_422_UNORM_KHR, VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM_KHR, VK_FORMAT_G16_B16R16_2PLANE_420_UNORM_KHR, VK_FORMAT_G16_B16_R16_3PLANE_422_UNORM_KHR, VK_FORMAT_G16_B16R16_2PLANE_422_UNORM_KHR, VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM_KHR, };
@@ -149,7 +149,7 @@ const std::vector<VkSamplerAddressMode> AllVkSamplerAddressModeEnums = {VK_SAMPL
 const std::vector<VkBorderColor> AllVkBorderColorEnums = {VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK, VK_BORDER_COLOR_INT_TRANSPARENT_BLACK, VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK, VK_BORDER_COLOR_INT_OPAQUE_BLACK, VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE, VK_BORDER_COLOR_INT_OPAQUE_WHITE, };
 const std::vector<VkDescriptorType> AllVkDescriptorTypeEnums = {VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK_EXT, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, };
 const std::vector<VkAttachmentLoadOp> AllVkAttachmentLoadOpEnums = {VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_LOAD_OP_DONT_CARE, };
-const std::vector<VkAttachmentStoreOp> AllVkAttachmentStoreOpEnums = {VK_ATTACHMENT_STORE_OP_STORE, VK_ATTACHMENT_STORE_OP_DONT_CARE, };
+const std::vector<VkAttachmentStoreOp> AllVkAttachmentStoreOpEnums = {VK_ATTACHMENT_STORE_OP_STORE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_NONE_QCOM, };
 const std::vector<VkPipelineBindPoint> AllVkPipelineBindPointEnums = {VK_PIPELINE_BIND_POINT_GRAPHICS, VK_PIPELINE_BIND_POINT_COMPUTE, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, };
 const std::vector<VkCommandBufferLevel> AllVkCommandBufferLevelEnums = {VK_COMMAND_BUFFER_LEVEL_PRIMARY, VK_COMMAND_BUFFER_LEVEL_SECONDARY, };
 const std::vector<VkIndexType> AllVkIndexTypeEnums = {VK_INDEX_TYPE_UINT16, VK_INDEX_TYPE_UINT32, VK_INDEX_TYPE_NONE_KHR, VK_INDEX_TYPE_NONE_NV, VK_INDEX_TYPE_UINT8_EXT, };
@@ -578,16 +578,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             skip |= validate_bool32("VkPhysicalDeviceVulkan11Features", "shaderDrawParameters", structure->shaderDrawParameters);
         } break;
 
-        // Validation code for VkPhysicalDeviceVulkan11Properties structure members
-        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES: {
-            VkPhysicalDeviceVulkan11Properties *structure = (VkPhysicalDeviceVulkan11Properties *) header;
-            skip |= validate_bool32("VkPhysicalDeviceVulkan11Properties", "deviceLUIDValid", structure->deviceLUIDValid);
-
-            skip |= validate_ranged_enum("VkPhysicalDeviceVulkan11Properties", "pointClippingBehavior", "VkPointClippingBehavior", AllVkPointClippingBehaviorEnums, structure->pointClippingBehavior, "VUID-VkPhysicalDeviceVulkan11Properties-pointClippingBehavior-parameter");
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan11Properties", "protectedNoFault", structure->protectedNoFault);
-        } break;
-
         // Validation code for VkPhysicalDeviceVulkan12Features structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES: {
             VkPhysicalDeviceVulkan12Features *structure = (VkPhysicalDeviceVulkan12Features *) header;
@@ -684,74 +674,6 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
             skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "shaderOutputLayer", structure->shaderOutputLayer);
 
             skip |= validate_bool32("VkPhysicalDeviceVulkan12Features", "subgroupBroadcastDynamicId", structure->subgroupBroadcastDynamicId);
-        } break;
-
-        // Validation code for VkPhysicalDeviceVulkan12Properties structure members
-        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES: {
-            VkPhysicalDeviceVulkan12Properties *structure = (VkPhysicalDeviceVulkan12Properties *) header;
-            skip |= validate_ranged_enum("VkPhysicalDeviceVulkan12Properties", "driverID", "VkDriverId", AllVkDriverIdEnums, structure->driverID, "VUID-VkPhysicalDeviceVulkan12Properties-driverID-parameter");
-
-            skip |= validate_ranged_enum("VkPhysicalDeviceVulkan12Properties", "denormBehaviorIndependence", "VkShaderFloatControlsIndependence", AllVkShaderFloatControlsIndependenceEnums, structure->denormBehaviorIndependence, "VUID-VkPhysicalDeviceVulkan12Properties-denormBehaviorIndependence-parameter");
-
-            skip |= validate_ranged_enum("VkPhysicalDeviceVulkan12Properties", "roundingModeIndependence", "VkShaderFloatControlsIndependence", AllVkShaderFloatControlsIndependenceEnums, structure->roundingModeIndependence, "VUID-VkPhysicalDeviceVulkan12Properties-roundingModeIndependence-parameter");
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "shaderSignedZeroInfNanPreserveFloat16", structure->shaderSignedZeroInfNanPreserveFloat16);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "shaderSignedZeroInfNanPreserveFloat32", structure->shaderSignedZeroInfNanPreserveFloat32);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "shaderSignedZeroInfNanPreserveFloat64", structure->shaderSignedZeroInfNanPreserveFloat64);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "shaderDenormPreserveFloat16", structure->shaderDenormPreserveFloat16);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "shaderDenormPreserveFloat32", structure->shaderDenormPreserveFloat32);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "shaderDenormPreserveFloat64", structure->shaderDenormPreserveFloat64);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "shaderDenormFlushToZeroFloat16", structure->shaderDenormFlushToZeroFloat16);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "shaderDenormFlushToZeroFloat32", structure->shaderDenormFlushToZeroFloat32);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "shaderDenormFlushToZeroFloat64", structure->shaderDenormFlushToZeroFloat64);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "shaderRoundingModeRTEFloat16", structure->shaderRoundingModeRTEFloat16);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "shaderRoundingModeRTEFloat32", structure->shaderRoundingModeRTEFloat32);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "shaderRoundingModeRTEFloat64", structure->shaderRoundingModeRTEFloat64);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "shaderRoundingModeRTZFloat16", structure->shaderRoundingModeRTZFloat16);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "shaderRoundingModeRTZFloat32", structure->shaderRoundingModeRTZFloat32);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "shaderRoundingModeRTZFloat64", structure->shaderRoundingModeRTZFloat64);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "shaderUniformBufferArrayNonUniformIndexingNative", structure->shaderUniformBufferArrayNonUniformIndexingNative);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "shaderSampledImageArrayNonUniformIndexingNative", structure->shaderSampledImageArrayNonUniformIndexingNative);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "shaderStorageBufferArrayNonUniformIndexingNative", structure->shaderStorageBufferArrayNonUniformIndexingNative);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "shaderStorageImageArrayNonUniformIndexingNative", structure->shaderStorageImageArrayNonUniformIndexingNative);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "shaderInputAttachmentArrayNonUniformIndexingNative", structure->shaderInputAttachmentArrayNonUniformIndexingNative);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "robustBufferAccessUpdateAfterBind", structure->robustBufferAccessUpdateAfterBind);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "quadDivergentImplicitLod", structure->quadDivergentImplicitLod);
-
-            skip |= validate_flags("VkPhysicalDeviceVulkan12Properties", "supportedDepthResolveModes", "VkResolveModeFlagBits", AllVkResolveModeFlagBits, structure->supportedDepthResolveModes, kRequiredFlags, "VUID-VkPhysicalDeviceVulkan12Properties-supportedDepthResolveModes-parameter", "VUID-VkPhysicalDeviceVulkan12Properties-supportedDepthResolveModes-requiredbitmask");
-
-            skip |= validate_flags("VkPhysicalDeviceVulkan12Properties", "supportedStencilResolveModes", "VkResolveModeFlagBits", AllVkResolveModeFlagBits, structure->supportedStencilResolveModes, kRequiredFlags, "VUID-VkPhysicalDeviceVulkan12Properties-supportedStencilResolveModes-parameter", "VUID-VkPhysicalDeviceVulkan12Properties-supportedStencilResolveModes-requiredbitmask");
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "independentResolveNone", structure->independentResolveNone);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "independentResolve", structure->independentResolve);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "filterMinmaxSingleComponentFormats", structure->filterMinmaxSingleComponentFormats);
-
-            skip |= validate_bool32("VkPhysicalDeviceVulkan12Properties", "filterMinmaxImageComponentMapping", structure->filterMinmaxImageComponentMapping);
-
-            skip |= validate_flags("VkPhysicalDeviceVulkan12Properties", "framebufferIntegerColorSampleCounts", "VkSampleCountFlagBits", AllVkSampleCountFlagBits, structure->framebufferIntegerColorSampleCounts, kOptionalFlags, "VUID-VkPhysicalDeviceVulkan12Properties-framebufferIntegerColorSampleCounts-parameter");
         } break;
 
         // Validation code for VkImageFormatListCreateInfo structure members
@@ -1649,7 +1571,7 @@ bool StatelessValidation::ValidatePnextStructContents(const char *api_name, cons
         } break;
 
         // Validation code for VkQueryPoolPerformanceQueryCreateInfoINTEL structure members
-        case VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO_INTEL: {
+        case VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL: {
             VkQueryPoolPerformanceQueryCreateInfoINTEL *structure = (VkQueryPoolPerformanceQueryCreateInfoINTEL *) header;
             skip |= validate_ranged_enum("VkQueryPoolPerformanceQueryCreateInfoINTEL", "performanceCountersSampling", "VkQueryPoolSamplingModeINTEL", AllVkQueryPoolSamplingModeINTELEnums, structure->performanceCountersSampling, "VUID-VkQueryPoolPerformanceQueryCreateInfoINTEL-performanceCountersSampling-parameter");
         } break;
@@ -2909,7 +2831,7 @@ bool StatelessValidation::PreCallValidateCreateQueryPool(
     skip |= validate_struct_type("vkCreateQueryPool", "pCreateInfo", "VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO", pCreateInfo, VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO, true, "VUID-vkCreateQueryPool-pCreateInfo-parameter", "VUID-VkQueryPoolCreateInfo-sType-sType");
     if (pCreateInfo != NULL)
     {
-        const VkStructureType allowed_structs_VkQueryPoolCreateInfo[] = { VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR, VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO_INTEL };
+        const VkStructureType allowed_structs_VkQueryPoolCreateInfo[] = { VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_CREATE_INFO_KHR, VK_STRUCTURE_TYPE_QUERY_POOL_PERFORMANCE_QUERY_CREATE_INFO_INTEL };
 
         skip |= validate_struct_pnext("vkCreateQueryPool", "pCreateInfo->pNext", "VkQueryPoolPerformanceCreateInfoKHR, VkQueryPoolPerformanceQueryCreateInfoINTEL", pCreateInfo->pNext, ARRAY_SIZE(allowed_structs_VkQueryPoolCreateInfo), allowed_structs_VkQueryPoolCreateInfo, GeneratedVulkanHeaderVersion, "VUID-VkQueryPoolCreateInfo-pNext-pNext", "VUID-VkQueryPoolCreateInfo-sType-unique");
 
@@ -9014,6 +8936,21 @@ bool StatelessValidation::PreCallValidateGetImageViewHandleNVX(
     return skip;
 }
 
+bool StatelessValidation::PreCallValidateGetImageViewAddressNVX(
+    VkDevice                                    device,
+    VkImageView                                 imageView,
+    VkImageViewAddressPropertiesNVX*            pProperties) const {
+    bool skip = false;
+    if (!device_extensions.vk_nvx_image_view_handle) skip |= OutputExtensionError("vkGetImageViewAddressNVX", VK_NVX_IMAGE_VIEW_HANDLE_EXTENSION_NAME);
+    skip |= validate_required_handle("vkGetImageViewAddressNVX", "imageView", imageView);
+    skip |= validate_struct_type("vkGetImageViewAddressNVX", "pProperties", "VK_STRUCTURE_TYPE_IMAGE_VIEW_ADDRESS_PROPERTIES_NVX", pProperties, VK_STRUCTURE_TYPE_IMAGE_VIEW_ADDRESS_PROPERTIES_NVX, true, "VUID-vkGetImageViewAddressNVX-pProperties-parameter", "VUID-VkImageViewAddressPropertiesNVX-sType-sType");
+    if (pProperties != NULL)
+    {
+        skip |= validate_struct_pnext("vkGetImageViewAddressNVX", "pProperties->pNext", NULL, pProperties->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkImageViewAddressPropertiesNVX-pNext-pNext", kVUIDUndefined);
+    }
+    return skip;
+}
+
 
 
 bool StatelessValidation::PreCallValidateCmdDrawIndirectCountAMD(
@@ -9652,8 +9589,6 @@ bool StatelessValidation::PreCallValidateSetDebugUtilsObjectNameEXT(
         skip |= validate_struct_pnext("vkSetDebugUtilsObjectNameEXT", "pNameInfo->pNext", NULL, pNameInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsObjectNameInfoEXT-pNext-pNext", kVUIDUndefined);
 
         skip |= validate_ranged_enum("vkSetDebugUtilsObjectNameEXT", "pNameInfo->objectType", "VkObjectType", AllVkObjectTypeEnums, pNameInfo->objectType, "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-parameter");
-
-        skip |= validate_required_pointer("vkSetDebugUtilsObjectNameEXT", "pNameInfo->pObjectName", pNameInfo->pObjectName, "VUID-VkDebugUtilsObjectNameInfoEXT-pObjectName-parameter");
     }
     if (!skip) skip |= manual_PreCallValidateSetDebugUtilsObjectNameEXT(device, pNameInfo);
     return skip;
@@ -9878,8 +9813,6 @@ bool StatelessValidation::PreCallValidateSubmitDebugUtilsMessageEXT(
                 skip |= validate_struct_pnext("vkSubmitDebugUtilsMessageEXT", ParameterName("pCallbackData->pObjects[%i].pNext", ParameterName::IndexVector{ objectIndex }), NULL, pCallbackData->pObjects[objectIndex].pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkDebugUtilsObjectNameInfoEXT-pNext-pNext", kVUIDUndefined);
 
                 skip |= validate_ranged_enum("vkSubmitDebugUtilsMessageEXT", ParameterName("pCallbackData->pObjects[%i].objectType", ParameterName::IndexVector{ objectIndex }), "VkObjectType", AllVkObjectTypeEnums, pCallbackData->pObjects[objectIndex].objectType, "VUID-VkDebugUtilsObjectNameInfoEXT-objectType-parameter");
-
-                skip |= validate_required_pointer("vkSubmitDebugUtilsMessageEXT", ParameterName("pCallbackData->pObjects[%i].pObjectName", ParameterName::IndexVector{ objectIndex }), pCallbackData->pObjects[objectIndex].pObjectName, "VUID-VkDebugUtilsObjectNameInfoEXT-pObjectName-parameter");
             }
         }
     }
@@ -11304,6 +11237,12 @@ bool StatelessValidation::PreCallValidateGetGeneratedCommandsMemoryRequirementsN
     if (pInfo != NULL)
     {
         skip |= validate_struct_pnext("vkGetGeneratedCommandsMemoryRequirementsNV", "pInfo->pNext", NULL, pInfo->pNext, 0, NULL, GeneratedVulkanHeaderVersion, "VUID-VkGeneratedCommandsMemoryRequirementsInfoNV-pNext-pNext", kVUIDUndefined);
+
+        skip |= validate_ranged_enum("vkGetGeneratedCommandsMemoryRequirementsNV", "pInfo->pipelineBindPoint", "VkPipelineBindPoint", AllVkPipelineBindPointEnums, pInfo->pipelineBindPoint, "VUID-VkGeneratedCommandsMemoryRequirementsInfoNV-pipelineBindPoint-parameter");
+
+        skip |= validate_required_handle("vkGetGeneratedCommandsMemoryRequirementsNV", "pInfo->pipeline", pInfo->pipeline);
+
+        skip |= validate_required_handle("vkGetGeneratedCommandsMemoryRequirementsNV", "pInfo->indirectCommandsLayout", pInfo->indirectCommandsLayout);
     }
     skip |= validate_struct_type("vkGetGeneratedCommandsMemoryRequirementsNV", "pMemoryRequirements", "VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2", pMemoryRequirements, VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, true, "VUID-vkGetGeneratedCommandsMemoryRequirementsNV-pMemoryRequirements-parameter", "VUID-VkMemoryRequirements2-sType-sType");
     if (pMemoryRequirements != NULL)
@@ -11484,6 +11423,8 @@ bool StatelessValidation::PreCallValidateDestroyIndirectCommandsLayoutNV(
     }
     return skip;
 }
+
+
 
 
 
