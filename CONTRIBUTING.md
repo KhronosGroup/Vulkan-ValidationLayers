@@ -100,6 +100,8 @@ that to be accepted into the repository, the pull request must [pass all tests](
 
 * Feel free to subject your code changes to other tests as well!
 
+* Take a look at the [overview for creating tests](docs/creating_tests.md).
+
 #### **GitHub Cloud CI Testing**
 Pull Requests to GitHub are tested in the cloud on Linux and Windows VMs. The Linux VMs use [Travis CI](https://travis-ci.org/KhronosGroup/Vulkan-ValidationLayers) with the sequence of commands driven by the [.travis.yml](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/.travis.yml) file. The Windows VMs use [AppVeyor](https://ci.appveyor.com/project/Khronoswebmaster/vulkan-validationlayers/branch/master) with the sequence of commands driven by the [.appveyor.yml](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/.appveyor.yml) file.
 
