@@ -1040,19 +1040,21 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
     // Verify dst layout still valid
     if (dst_layout->destroyed) {
         *error_code = "VUID-VkCopyDescriptorSet-dstSet-parameter";
-        string_sprintf(error_msg, "Cannot call %s to perform copy update on dstSet %s created with destroyed %s.", func_name,
-                       report_data->FormatHandle(dst_set->GetSet()).c_str(),
-                       report_data->FormatHandle(dst_layout->GetDescriptorSetLayout()).c_str());
+        std::ostringstream str;
+        str << "Cannot call " << func_name << " to perform copy update on dstSet " << report_data->FormatHandle(dst_set->GetSet())
+            << " created with destroyed " << report_data->FormatHandle(dst_layout->GetDescriptorSetLayout()) << ".";
+        *error_msg = str.str();
         return false;
     }
 
     // Verify src layout still valid
     if (src_layout->destroyed) {
         *error_code = "VUID-VkCopyDescriptorSet-srcSet-parameter";
-        string_sprintf(error_msg, "Cannot call %s to perform copy update of dstSet %s from srcSet %s created with destroyed %s.",
-                       func_name, report_data->FormatHandle(dst_set->GetSet()).c_str(),
-                       report_data->FormatHandle(src_set->GetSet()).c_str(),
-                       report_data->FormatHandle(src_layout->GetDescriptorSetLayout()).c_str());
+        std::ostringstream str;
+        str << "Cannot call " << func_name << " to perform copy update on dstSet " << report_data->FormatHandle(dst_set->GetSet())
+            << " from srcSet " << report_data->FormatHandle(src_set->GetSet()) << " created with destroyed "
+            << report_data->FormatHandle(src_layout->GetDescriptorSetLayout()) << ".";
+        *error_msg = str.str();
         return false;
     }
 
@@ -1998,12 +2000,14 @@ std::string cvdescriptorset::DescriptorSet::StringifySetAndLayout() const {
     std::string out;
     auto layout_handle = p_layout_->GetDescriptorSetLayout();
     if (IsPushDescriptor()) {
-        string_sprintf(&out, "Push Descriptors defined with VkDescriptorSetLayout %s",
-                       state_data_->report_data->FormatHandle(layout_handle).c_str());
+        std::ostringstream str;
+        str << "Push Descriptors defined with VkDescriptorSetLayout " << state_data_->report_data->FormatHandle(layout_handle);
+        out = str.str();
     } else {
-        string_sprintf(&out, "VkDescriptorSet %s allocated with VkDescriptorSetLayout %s",
-                       state_data_->report_data->FormatHandle(set_).c_str(),
-                       state_data_->report_data->FormatHandle(layout_handle).c_str());
+        std::ostringstream str;
+        str << "VkDescriptorSet " << state_data_->report_data->FormatHandle(set_) << " allocated with VkDescriptorSetLayout "
+            << state_data_->report_data->FormatHandle(layout_handle);
+        out = str.str();
     }
     return out;
 };
@@ -2483,8 +2487,10 @@ bool CoreChecks::ValidateWriteUpdate(const DescriptorSet *dest_set, const VkWrit
     // Verify dst layout still valid
     if (dest_layout->destroyed) {
         *error_code = "VUID-VkWriteDescriptorSet-dstSet-00320";
-        string_sprintf(error_msg, "Cannot call %s to perform write update on %s which has been destroyed", func_name,
-                       dest_set->StringifySetAndLayout().c_str());
+        std::ostringstream str;
+        str << "Cannot call " << func_name << " to perform write update on " << dest_set->StringifySetAndLayout()
+            << " which has been destroyed";
+        *error_msg = str.str();
         return false;
     }
     // Verify dst binding exists
