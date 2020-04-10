@@ -1069,7 +1069,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
     if (!src_set->HasBinding(update->srcBinding)) {
         *error_code = "VUID-VkCopyDescriptorSet-srcBinding-00345";
         std::stringstream error_str;
-        error_str << "DescriptorSet " << report_data->FormatHandle(dst_set->GetSet())
+        error_str << "DescriptorSet " << report_data->FormatHandle(src_set->GetSet())
                   << " does not have copy update src binding of " << update->srcBinding;
         *error_msg = error_str.str();
         return false;
@@ -1121,6 +1121,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
     auto src_type = src_set->GetTypeFromBinding(update->srcBinding);
     auto dst_type = dst_layout->GetTypeFromBinding(update->dstBinding);
     if (src_type != dst_type) {
+        *error_code = "VUID-VkCopyDescriptorSet-dstBinding-02632";
         std::stringstream error_str;
         error_str << "Attempting copy update to descriptorSet " << report_data->FormatHandle(dst_set->GetSet()) << " binding #"
                   << update->dstBinding << " with type " << string_VkDescriptorType(dst_type) << " from descriptorSet "
