@@ -44,6 +44,8 @@ Debug Printf will be disabled if GPU Assisted Validation is enabled.
 The strings resulting from a Debug Printf will be sent to the debug callback which is either specified by the app, or by default sent to stdout.
 It is sent at the INFO or DEBUG level
 
+When using Debug Printf with the debug callback, it is recommended to disable validation, as the debug level of INFO or DEBUG causes the validation layers to produce many messages unrelated to Debug Printf, making it difficult to find the desired output.
+
 ### Debug Printf Requirements
 
 * Validation Layers version: 1.2.135.0
