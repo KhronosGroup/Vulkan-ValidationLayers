@@ -1067,7 +1067,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
     if (!src_set->HasBinding(update->srcBinding)) {
         *error_code = "VUID-VkCopyDescriptorSet-srcBinding-00345";
         std::stringstream error_str;
-        error_str << "DescriptorSet " << dst_set->GetSet() << " does not have copy update src binding of " << update->srcBinding;
+        error_str << "DescriptorSet " << src_set->GetSet() << " does not have copy update src binding of " << update->srcBinding;
         *error_msg = error_str.str();
         return false;
     }
@@ -1112,10 +1112,11 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
     // Check that types match
     // TODO : Base default error case going from here is "VUID-VkAcquireNextImageInfoKHR-semaphore-parameter"2ba which covers all
     // consistency issues, need more fine-grained error codes
-    *error_code = "VUID-VkCopyDescriptorSet-srcSet-00349";
+    *error_code = "VUID-VkCopyDescriptorSet-dstBinding-02632";
     auto src_type = src_set->GetTypeFromBinding(update->srcBinding);
     auto dst_type = dst_layout->GetTypeFromBinding(update->dstBinding);
     if (src_type != dst_type) {
+        *error_code = "VUID-VkCopyDescriptorSet-srcSet-00349";
         std::stringstream error_str;
         error_str << "Attempting copy update to descriptorSet " << dst_set->GetSet() << " binding #" << update->dstBinding
                   << " with type " << string_VkDescriptorType(dst_type) << " from descriptorSet " << src_set->GetSet()
