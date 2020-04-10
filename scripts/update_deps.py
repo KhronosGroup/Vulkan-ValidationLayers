@@ -352,7 +352,8 @@ class GoodRepo(object):
     def Checkout(self):
         print('Checking out {n} in {d}'.format(n=self.name, d=self.repo_dir))
         if self._args.do_clean_repo:
-            shutil.rmtree(self.repo_dir, onerror = on_rm_error)
+            if os.path.isdir(self.repo_dir):
+                shutil.rmtree(self.repo_dir, onerror = on_rm_error)
         if not os.path.exists(os.path.join(self.repo_dir, '.git')):
             self.Clone()
         self.Fetch()
