@@ -40,8 +40,8 @@ TEST_F(VkPositiveLayerTest, TwoInstances) {
 
     VkInstanceCreateInfo ici = {};
     ici.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    ici.enabledLayerCount = m_instance_layer_names.size();
-    ici.ppEnabledLayerNames = m_instance_layer_names.data();
+    ici.enabledLayerCount = instance_layers_.size();
+    ici.ppEnabledLayerNames = instance_layers_.data();
 
     ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &i1));
 
