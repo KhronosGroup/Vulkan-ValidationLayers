@@ -3882,6 +3882,77 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDe
                              "(=%" PRIu32 ") must equal VkRayTracingPipelineCreateInfoNV::stageCount(=%" PRIu32 ").",
                              i, feedback_struct->pipelineStageCreationFeedbackCount, pCreateInfos[i].stageCount);
         }
+        if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV) {
+            skip |=
+                LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-flags-02904",
+                         "vkCreateRayTracingPipelinesNV(): flags must not include VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV.");
+        }
+        if ((pCreateInfos[i].flags & VK_PIPELINE_CREATE_DEFER_COMPILE_BIT_NV) &&
+            (pCreateInfos[i].flags & VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT)) {
+            skip |=
+                LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-flags-02957",
+                         "vkCreateRayTracingPipelinesNV(): flags must not include both VK_PIPELINE_CREATE_DEFER_COMPILE_BIT_NV and"
+                         "VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT at the same time.");
+        }
+        if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
+            if (pCreateInfos[i].basePipelineIndex != -1) {
+                if (pCreateInfos[i].basePipelineHandle != VK_NULL_HANDLE) {
+                    skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-flags-03423",
+                                     "vkCreateRayTracingPipelinesNV parameter, pCreateInfos->basePipelineHandle, must be "
+                                     "VK_NULL_HANDLE if pCreateInfos->flags contains the VK_PIPELINE_CREATE_DERIVATIVE_BIT flag "
+                                     "and pCreateInfos->basePipelineIndex is not -1.");
+                }
+            }
+            if (pCreateInfos[i].basePipelineHandle == VK_NULL_HANDLE) {
+                if (static_cast<const uint32_t>(pCreateInfos[i].basePipelineIndex) >= createInfoCount) {
+                    skip |=
+                        LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-flags-03422",
+                                 "vkCreateRayTracingPipelinesNV if flags contains the VK_PIPELINE_CREATE_DERIVATIVE_BIT and"
+                                 "basePipelineHandle is VK_NULL_HANDLE, basePipelineIndex must be a valid index into the calling"
+                                 "commands pCreateInfos parameter.");
+                }
+            } else {
+                if (pCreateInfos[i].basePipelineIndex != -1) {
+                    skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-flags-03424",
+                                     "vkCreateRayTracingPipelinesNV if flags contains the VK_PIPELINE_CREATE_DERIVATIVE_BIT and"
+                                     "basePipelineHandle is not VK_NULL_HANDLE, basePipelineIndex must be -1.");
+                }
+            }
+        }
+        if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
+            skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-flags-03456",
+                             "vkCreateRayTracingPipelinesNV: flags must not include VK_PIPELINE_CREATE_LIBRARY_BIT_KHR.");
+        }
+        if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) {
+            skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-flags-03458",
+                             "vkCreateRayTracingPipelinesNV: flags must not include "
+                             "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR.");
+        }
+        if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR) {
+            skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-flags-03459",
+                             "vkCreateRayTracingPipelinesNV: flags must not include "
+                             "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR.");
+        }
+        if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR) {
+            skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-flags-03460",
+                             "vkCreateRayTracingPipelinesNV: flags must not include "
+                             "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR.");
+        }
+        if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR) {
+            skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-flags-03461",
+                             "vkCreateRayTracingPipelinesNV: flags must not include "
+                             "VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_INTERSECTION_SHADERS_BIT_KHR.");
+        }
+        if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR) {
+            skip |= LogError(
+                device, "VUID-VkRayTracingPipelineCreateInfoNV-flags-03462",
+                "vkCreateRayTracingPipelinesNV: flags must not include VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR.");
+        }
+        if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR) {
+            skip |= LogError(
+                device, "VUID-VkRayTracingPipelineCreateInfoNV-flags-03463",
+                "vkCreateRayTracingPipelinesNV: flags must not include VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR .");
+        }
     }
 
     return skip;
@@ -3902,6 +3973,79 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(VkD
                              "], VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount"
                              "(=%" PRIu32 ") must equal VkRayTracingPipelineCreateInfoKHR::stageCount(=%" PRIu32 ").",
                              i, feedback_struct->pipelineStageCreationFeedbackCount, pCreateInfos[i].stageCount);
+        }
+        if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV) {
+            skip |=
+                LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-02904",
+                         "vkCreateRayTracingPipelinesKHR(): flags must not include VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV.");
+        }
+        if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) {
+            if (pCreateInfos[i].pLibraryInterface == NULL)
+                skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03465",
+                                 "If flags includes VK_PIPELINE_CREATE_LIBRARY_BIT_KHR, pLibraryInterface must not be NULL.");
+        }
+        for (uint32_t group_index = 0; group_index < pCreateInfos[i].groupCount; ++group_index) {
+            if ((pCreateInfos[i].pGroups[group_index].type == VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR) ||
+                (pCreateInfos[i].pGroups[group_index].type == VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR)) {
+                if ((pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) &&
+                    (pCreateInfos[i].pGroups[group_index].anyHitShader == VK_SHADER_UNUSED_KHR)) {
+                    skip |= LogError(
+                        device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03470",
+                        "If flags includes VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR,"
+                        "for any element of pGroups with a type of VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR"
+                        "or VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR, the anyHitShader of that element "
+                        "must not be VK_SHADER_UNUSED_KHR");
+                }
+                if ((pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR) &&
+                    (pCreateInfos[i].pGroups[group_index].closestHitShader == VK_SHADER_UNUSED_KHR)) {
+                    skip |= LogError(
+                        device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03471",
+                        "If flags includes VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR,"
+                        "for any element of pGroups with a type of VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR"
+                        "or VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR, the closestHitShader of that "
+                        "element must not be VK_SHADER_UNUSED_KHR");
+                }
+            }
+        }
+        if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
+            if (pCreateInfos[i].basePipelineIndex != -1) {
+                if (pCreateInfos[i].basePipelineHandle != VK_NULL_HANDLE) {
+                    skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03423",
+                                     "vkCreateRayTracingPipelinesKHR parameter, pCreateInfos->basePipelineHandle, must be "
+                                     "VK_NULL_HANDLE if pCreateInfos->flags contains the VK_PIPELINE_CREATE_DERIVATIVE_BIT flag "
+                                     "and pCreateInfos->basePipelineIndex is not -1.");
+                }
+            }
+            if (pCreateInfos[i].basePipelineHandle == VK_NULL_HANDLE) {
+                if (static_cast<const uint32_t>(pCreateInfos[i].basePipelineIndex) >= createInfoCount) {
+                    skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03422",
+                                     "vkCreateRayTracingPipelinesKHR if flags contains the VK_PIPELINE_CREATE_DERIVATIVE_BIT and"
+                                     "basePipelineHandle is VK_NULL_HANDLE, basePipelineIndex (%d) must be a valid into the calling"
+                                     "commands pCreateInfos parameter %d.",
+                                     pCreateInfos[i].basePipelineIndex, createInfoCount);
+                }
+            } else {
+                if (pCreateInfos[i].basePipelineIndex != -1) {
+                    skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03424",
+                                     "vkCreateRayTracingPipelinesKHR if flags contains the VK_PIPELINE_CREATE_DERIVATIVE_BIT and"
+                                     "basePipelineHandle is not VK_NULL_HANDLE, basePipelineIndex must be -1.");
+                }
+            }
+        }
+        if (pCreateInfos[i].libraries.libraryCount == 0) {
+            if (pCreateInfos[i].stageCount == 0) {
+                skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-libraries-02958",
+                                 "If libraries.libraryCount is zero, then stageCount must not be zero .");
+            }
+            if (pCreateInfos[i].groupCount == 0) {
+                skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-libraries-02959",
+                                 "If libraries.libraryCount is zero, then groupCount must not be zero .");
+            }
+        } else {
+            if (pCreateInfos[i].pLibraryInterface == NULL) {
+                skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-libraryCount-03466",
+                                 "If the libraryCount member of libraries is greater than 0, pLibraryInterface must not be NULL.");
+            }
         }
     }
 
