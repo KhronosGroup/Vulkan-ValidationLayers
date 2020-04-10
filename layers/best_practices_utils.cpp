@@ -764,6 +764,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                                                            void* cgpl_state_data) const {
     bool skip = StateTracker::PreCallValidateCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos,
                                                                      pAllocator, pPipelines, cgpl_state_data);
+    create_graphics_pipeline_api_state* cgpl_state = reinterpret_cast<create_graphics_pipeline_api_state*>(cgpl_state_data);
 
     if ((createInfoCount > 1) && (!pipelineCache)) {
         skip |= LogPerformanceWarning(
@@ -775,20 +776,21 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
     for (uint32_t i = 0; i < createInfoCount; i++) {
         auto& createInfo = pCreateInfos[i];
 
-        auto& vertexInput = *createInfo.pVertexInputState;
-        uint32_t count = 0;
-        for (uint32_t j = 0; j < vertexInput.vertexBindingDescriptionCount; j++) {
-            if (vertexInput.pVertexBindingDescriptions[j].inputRate == VK_VERTEX_INPUT_RATE_INSTANCE) {
-                count++;
+        if (!(cgpl_state->pipe_state[i]->active_shaders & VK_SHADER_STAGE_MESH_BIT_NV)) {
+            auto& vertexInput = *createInfo.pVertexInputState;
+            uint32_t count = 0;
+            for (uint32_t j = 0; j < vertexInput.vertexBindingDescriptionCount; j++) {
+                if (vertexInput.pVertexBindingDescriptions[j].inputRate == VK_VERTEX_INPUT_RATE_INSTANCE) {
+                    count++;
+                }
             }
-        }
-
-        if (count > kMaxInstancedVertexBuffers) {
-            skip |= LogPerformanceWarning(
-                device, kVUID_BestPractices_CreatePipelines_TooManyInstancedVertexBuffers,
-                "The pipeline is using %u instanced vertex buffers (current limit: %u), but this can be inefficient on the "
-                "GPU. If using instanced vertex attributes prefer interleaving them in a single buffer.",
-                count, kMaxInstancedVertexBuffers);
+            if (count > kMaxInstancedVertexBuffers) {
+                skip |= LogPerformanceWarning(
+                    device, kVUID_BestPractices_CreatePipelines_TooManyInstancedVertexBuffers,
+                    "The pipeline is using %u instanced vertex buffers (current limit: %u), but this can be inefficient on the "
+                    "GPU. If using instanced vertex attributes prefer interleaving them in a single buffer.",
+                    count, kMaxInstancedVertexBuffers);
+            }
         }
 
         skip |= VendorCheckEnabled(kBPVendorArm) && ValidateMultisampledBlendingArm(createInfoCount, pCreateInfos);
