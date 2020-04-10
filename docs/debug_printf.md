@@ -38,7 +38,7 @@ Debug Printf can be enabled either through a vk_layer_settings.txt file that mus
 khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT or set VK_LAYER_ENABLES=VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT as an environment variable.
 
 Debug Printf has been implemented as a state tracker validation object, as a peer to GPU Assisted Validation.
-Because of this, and coupled with the philosophy that validation objects will not communicate with each other, one should never enable both gpu assisted validation and shader printf at the same time.
+Because of this, and coupled with the philosophy that validation objects will not communicate with each other, one should never enable both GPU Assisted Validation and Debug Printf at the same time.
 Debug Printf will be disabled if GPU Assisted Validation is enabled.
 
 The strings resulting from a Debug Printf will be sent to the debug callback which is either specified by the app, or by default sent to stdout.
@@ -57,10 +57,10 @@ When using Debug Printf with the debug callback, it is recommended to disable va
 
 * khronos_validation.printf_buffer_size =  size in bytes
 
-This setting allows you to specify the size of the per draw buffer, in bytes of device memory, for returning ebug Printf values.
+This setting allows you to specify the size of the per draw buffer, in bytes of device memory, for returning Debug Printf values.
 The default is 1024 bytes.
 Each printf will require 32 bytes for header information and an additonal 4 bytes for each 32 bit value being printed, and an additional 8 bytes for each 64 bit value.
-If printfs are truncated due to lack of memory, a warning will be sent to the vulkan debug callback.
+If printfs are truncated due to lack of memory, a warning will be sent to the Vulkan debug callback.
 
 * khronos_validation.printf_verbose = 'false' or 'true'
 
@@ -68,7 +68,7 @@ The default value is 'false'. Verbose output will contain stage, shader id, line
 
 * khronos_validation.printf_to_stdout = 'false' or 'true'
 
-By default, debug printf messages are sent to the debug callback, but this setting will instead send Debug Printf strings to stdout.
+By default, Debug Printf messages are sent to the debug callback, but this setting will instead send Debug Printf strings to stdout.
 This can also be enabled by setting the environment variable DEBUG_PRINTF_TO_STDOUT.
 
 ### Debug Printf Format String
