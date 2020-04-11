@@ -7489,39 +7489,78 @@ TEST_F(VkLayerTest, MultiplaneIncompatibleViewFormat) {
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    // Verify format
-    VkFormatFeatureFlags features = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+    const VkFormatFeatureFlags features = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
     bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
+    // Verify format 3 Plane format
     if (!supported) {
         printf("%s Multiplane image format not supported.  Skipping test.\n", kSkipPrefix);
-        return;
+    } else {
+        VkImageObj image_obj(m_device);
+        image_obj.init(&ci);
+        ASSERT_TRUE(image_obj.initialized());
+
+        VkImageViewCreateInfo ivci = {};
+        ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        ivci.image = image_obj.image();
+        ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        ivci.format = VK_FORMAT_R8_SNORM;  // Compat is VK_FORMAT_R8_UNORM
+        ivci.subresourceRange.layerCount = 1;
+        ivci.subresourceRange.baseMipLevel = 0;
+        ivci.subresourceRange.levelCount = 1;
+        ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
+
+        // Incompatible format error
+        CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01586");
+
+        // Correct format succeeds
+        ivci.format = VK_FORMAT_R8_UNORM;
+        CreateImageViewTest(*this, &ivci);
+
+        // Try a multiplane imageview
+        ivci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+        ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        CreateImageViewTest(*this, &ivci);
     }
 
-    VkImageObj image_obj(m_device);
-    image_obj.init(&ci);
-    ASSERT_TRUE(image_obj.initialized());
+    ci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+    supported = ImageFormatAndFeaturesSupported(instance(), gpu(), ci, features);
+    // Verify format 2 Plane format
+    if (!supported) {
+        printf("%s Multiplane image format not supported.  Skipping test.\n", kSkipPrefix);
+    } else {
+        VkImageObj image_obj(m_device);
+        image_obj.init(&ci);
+        ASSERT_TRUE(image_obj.initialized());
 
-    VkImageViewCreateInfo ivci = {};
-    ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    ivci.image = image_obj.image();
-    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    ivci.format = VK_FORMAT_R8_SNORM;  // Compat is VK_FORMAT_R8_UNORM
-    ivci.subresourceRange.layerCount = 1;
-    ivci.subresourceRange.baseMipLevel = 0;
-    ivci.subresourceRange.levelCount = 1;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
+        VkImageViewCreateInfo ivci = {};
+        ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        ivci.image = image_obj.image();
+        ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        ivci.subresourceRange.layerCount = 1;
+        ivci.subresourceRange.baseMipLevel = 0;
+        ivci.subresourceRange.levelCount = 1;
 
-    // Incompatible format error
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01586");
+        // Plane 0 is compatible with VK_FORMAT_R8_UNORM
+        // Plane 1 is compatible with VK_FORMAT_R8G8_UNORM
 
-    // Correct format succeeds
-    ivci.format = VK_FORMAT_R8_UNORM;
-    CreateImageViewTest(*this, &ivci);
+        // Correct format succeeds
+        ivci.format = VK_FORMAT_R8_UNORM;
+        ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
+        CreateImageViewTest(*this, &ivci);
 
-    // Try a multiplane imageview
-    ivci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    CreateImageViewTest(*this, &ivci);
+        ivci.format = VK_FORMAT_R8G8_UNORM;
+        ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
+        CreateImageViewTest(*this, &ivci);
+
+        // Incompatible format error
+        ivci.format = VK_FORMAT_R8_UNORM;
+        ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
+        CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01586");
+
+        ivci.format = VK_FORMAT_R8G8_UNORM;
+        ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
+        CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01586");
+    }
 }
 
 TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
