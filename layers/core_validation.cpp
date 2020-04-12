@@ -10271,7 +10271,7 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                 "VkQueuePresent: %s is not a VK_SEMAPHORE_TYPE_BINARY_KHR",
                 report_data->FormatHandle(pPresentInfo->pWaitSemaphores[i]).c_str());
         }
-        if (pSemaphore && (!pSemaphore->signaled || !SemaphoreWasSignaled(pPresentInfo->pWaitSemaphores[i]))) {
+        if (pSemaphore && !pSemaphore->signaled && !SemaphoreWasSignaled(pPresentInfo->pWaitSemaphores[i])) {
             LogObjectList objlist(queue);
             objlist.add(pPresentInfo->pWaitSemaphores[i]);
             skip |= LogError(objlist, "VUID-vkQueuePresentKHR-pWaitSemaphores-03268",
