@@ -1090,9 +1090,11 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     // Init dispatch array and call registration functions
     for (auto intercept : local_object_dispatch) {
+        auto lock = intercept->read_lock();
         (const_cast<const ValidationObject*>(intercept))->PreCallValidateCreateInstance(pCreateInfo, pAllocator, pInstance);
     }
     for (auto intercept : local_object_dispatch) {
+        auto lock = intercept->write_lock();
         intercept->PreCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance);
     }
 
@@ -1125,6 +1127,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     debug_printf->FinalizeInstanceValidationObject(framework);
 
     for (auto intercept : framework->object_dispatch) {
+        auto lock = intercept->write_lock();
         intercept->PostCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance, result);
     }
 
