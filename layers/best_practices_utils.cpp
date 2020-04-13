@@ -274,7 +274,7 @@ bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkS
     if ((pCreateInfo->queueFamilyIndexCount > 1) && (pCreateInfo->imageSharingMode == VK_SHARING_MODE_EXCLUSIVE)) {
         skip |=
             LogWarning(device, kVUID_BestPractices_SharingModeExclusive,
-                       "Warning: A Swapchain is being created which specifies a sharing mode of VK_SHARING_MODE_EXCULSIVE while "
+                       "Warning: A Swapchain is being created which specifies a sharing mode of VK_SHARING_MODE_EXCLUSIVE while "
                        "specifying multiple queues (queueFamilyIndexCount of %" PRIu32 ").",
                        pCreateInfo->queueFamilyIndexCount);
     }
