@@ -1089,9 +1089,11 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     }
 
     // Init dispatch array and call registration functions
+    bool skip = false;
     for (auto intercept : local_object_dispatch) {
         auto lock = intercept->read_lock();
-        (const_cast<const ValidationObject*>(intercept))->PreCallValidateCreateInstance(pCreateInfo, pAllocator, pInstance);
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateCreateInstance(pCreateInfo, pAllocator, pInstance);
+        if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
     for (auto intercept : local_object_dispatch) {
         auto lock = intercept->write_lock();
@@ -1141,9 +1143,11 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
     auto layer_data = GetLayerDataPtr(key, layer_data_map);
     ActivateInstanceDebugCallbacks(layer_data->report_data);
 
+    bool skip = false;
     """ + precallvalidate_loop + """
         auto lock = intercept->read_lock();
-        (const_cast<const ValidationObject*>(intercept))->PreCallValidateDestroyInstance(instance, pAllocator);
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateDestroyInstance(instance, pAllocator);
+        //if (skip) return; // WORKAROUD: does not currently work properly
     }
     """ + precallrecord_loop + """
         auto lock = intercept->write_lock();
@@ -1267,9 +1271,11 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
 VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     dispatch_key key = get_dispatch_key(device);
     auto layer_data = GetLayerDataPtr(key, layer_data_map);
+    bool skip = false;
     """ + precallvalidate_loop + """
         auto lock = intercept->read_lock();
-        (const_cast<const ValidationObject*>(intercept))->PreCallValidateDestroyDevice(device, pAllocator);
+        skip |= (const_cast<const ValidationObject*>(intercept))->PreCallValidateDestroyDevice(device, pAllocator);
+        if (skip) return;
     }
     """ + precallrecord_loop + """
         auto lock = intercept->write_lock();

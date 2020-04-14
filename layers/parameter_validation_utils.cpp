@@ -3010,9 +3010,10 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyImageToBuffer(VkCommandBu
 
     if (pRegions != nullptr) {
         if ((pRegions->imageSubresource.aspectMask & legal_aspect_flags) == 0) {
-            LogError(device, kVUID_PVError_UnrecognizedValue,
-                     "vkCmdCopyImageToBuffer parameter, VkImageAspect pRegions->imageSubresource.aspectMask, is an unrecognized "
-                     "enumerator");
+            skip |= LogError(
+                device, kVUID_PVError_UnrecognizedValue,
+                "vkCmdCopyImageToBuffer parameter, VkImageAspect pRegions->imageSubresource.aspectMask, is an unrecognized "
+                "enumerator");
         }
     }
     return skip;

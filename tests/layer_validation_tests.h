@@ -270,6 +270,9 @@ class VkBestPracticesLayerTest : public VkLayerTest {
     void InitBestPracticesFramework();
 
   protected:
+    VkValidationFeatureEnableEXT enables_[1] = {VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT};
+    VkValidationFeatureDisableEXT disables_[1] = {VK_VALIDATION_FEATURE_DISABLE_ALL_EXT};
+    VkValidationFeaturesEXT features_ = {VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT, nullptr, 1, enables_, 1, disables_};
 };
 
 class VkArmBestPracticesLayerTest : public VkBestPracticesLayerTest {};
