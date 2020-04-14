@@ -4327,6 +4327,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferPhysDevImageFormatProp2) {
     m_errorMonitor->VerifyFound();
 }
 
+#if DISABLEUNTILAHBWORKS
 TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer image view creation.");
 
@@ -4521,6 +4522,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     vk::DestroyImage(dev, img, NULL);
     vk::FreeMemory(dev, img_mem, NULL);
 }
+#endif // DISABLEUNTILAHBWORKS
 
 TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer import as buffer.");
