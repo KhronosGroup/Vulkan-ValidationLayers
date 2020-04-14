@@ -17,16 +17,6 @@
 #include "layer_validation_tests.h"
 
 void VkBestPracticesLayerTest::InitBestPracticesFramework() {
-    VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT};
-    VkValidationFeatureDisableEXT disables[] = {VK_VALIDATION_FEATURE_DISABLE_ALL_EXT};
-
-    VkValidationFeaturesEXT features = {};
-    features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-    features.enabledValidationFeatureCount = 1;
-    features.disabledValidationFeatureCount = 1;
-    features.pEnabledValidationFeatures = enables;
-    features.pDisabledValidationFeatures = disables;
-
     // Enable all vendor-specific checks
 #if defined(_WIN32)
     SetEnvironmentVariable("VK_LAYER_ENABLES", "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL;");
@@ -34,15 +24,15 @@ void VkBestPracticesLayerTest::InitBestPracticesFramework() {
     setenv("VK_LAYER_ENABLES", "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL:", true);
 #endif
 
-    InitFramework(m_errorMonitor, &features);
+    InitFramework(m_errorMonitor, &features_);
 }
 
-TEST_F(VkBestPracticesLayerTest, UseDeprecatedExtensions) {
-    TEST_DESCRIPTION("Create an instance and device with a deprecated extension.");
+TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
+    TEST_DESCRIPTION("Create an instance with a deprecated extension.");
 
-    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_2);
-    if (version <= VK_API_VERSION_1_0) {
-        printf("%s At least Vulkan version 1.1 is required for instance, skipping test.\n", kSkipPrefix);
+    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_1);
+    if (version < VK_API_VERSION_1_1) {
+        printf("%s At least Vulkan version 1.1 is required, skipping test.\n", kSkipPrefix);
         return;
     }
 
@@ -54,8 +44,32 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedExtensions) {
     }
 
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateInstance-deprecated-extension");
-    InitBestPracticesFramework();
+    VkInstance dummy;
+    auto features = features_;
+    auto ici = GetInstanceCreateInfo();
+    features.pNext = ici.pNext;
+    ici.pNext = &features;
+    vk::CreateInstance(&ici, nullptr, &dummy);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkBestPracticesLayerTest, UseDeprecatedDeviceExtensions) {
+    TEST_DESCRIPTION("Create a device with a deprecated extension.");
+
+    uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_2);
+    if (version < VK_API_VERSION_1_2) {
+        printf("%s At least Vulkan version 1.2 is required, skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find %s extension, skipped.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
 
     if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
         printf("%s At least Vulkan version 1.2 is required for device, skipping test\n", kSkipPrefix);

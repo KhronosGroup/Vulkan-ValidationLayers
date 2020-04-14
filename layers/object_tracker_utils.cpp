@@ -288,10 +288,9 @@ bool ObjectLifetimes::ReportLeakedDeviceObjects(VkDevice device, VulkanObjectTyp
 bool ObjectLifetimes::PreCallValidateDestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator) const {
     bool skip = false;
 
-    // We validate here for coverage, though we'd not have made it this for with a bad instance.
+    // We validate here for coverage, though we'd not have made it this far with a bad instance.
     skip |= ValidateObject(instance, kVulkanObjectTypeInstance, true, "VUID-vkDestroyInstance-instance-parameter", kVUIDUndefined);
 
-    // Validate that child devices have been destroyed
     auto snapshot = object_map[kVulkanObjectTypeDevice].snapshot();
     for (const auto &iit : snapshot) {
         auto pNode = iit.second;
@@ -313,9 +312,8 @@ bool ObjectLifetimes::PreCallValidateDestroyInstance(VkInstance instance, const 
                                       "VUID-vkDestroyInstance-instance-00631");
     }
 
-    // Throw errors if any instance objects created on this instance have not been destroyed
-    ValidateDestroyObject(instance, kVulkanObjectTypeInstance, pAllocator, "VUID-vkDestroyInstance-instance-00630",
-                          "VUID-vkDestroyInstance-instance-00631");
+    skip |= ValidateDestroyObject(instance, kVulkanObjectTypeInstance, pAllocator, "VUID-vkDestroyInstance-instance-00630",
+                                  "VUID-vkDestroyInstance-instance-00631");
 
     // Report any remaining instance objects
     skip |= ReportUndestroyedInstanceObjects(instance, "VUID-vkDestroyInstance-instance-00629");

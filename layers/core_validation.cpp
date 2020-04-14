@@ -216,14 +216,14 @@ bool CoreChecks::VerifyBoundMemoryIsValid(const DEVICE_MEMORY_STATE *mem_state, 
     bool result = false;
     auto type_name = object_string[typed_handle.type];
     if (!mem_state) {
-        result =
+        result |=
             LogError(object, error_code, "%s: %s used with no memory bound. Memory should be bound by calling vkBind%sMemory().",
                      api_name, report_data->FormatHandle(typed_handle).c_str(), type_name + 2);
     } else if (mem_state->destroyed) {
-        result = LogError(object, error_code,
-                          "%s: %s used with no memory bound and previously bound memory was freed. Memory must not be freed "
-                          "prior to this operation.",
-                          api_name, report_data->FormatHandle(typed_handle).c_str());
+        result |= LogError(object, error_code,
+                           "%s: %s used with no memory bound and previously bound memory was freed. Memory must not be freed "
+                           "prior to this operation.",
+                           api_name, report_data->FormatHandle(typed_handle).c_str());
     }
     return result;
 }
@@ -235,27 +235,29 @@ bool CoreChecks::ValidateMemoryIsBoundToImage(const IMAGE_STATE *image_state, co
         if (image_state->bind_swapchain == VK_NULL_HANDLE) {
             LogObjectList objlist(image_state->image);
             objlist.add(image_state->create_from_swapchain);
-            LogError(objlist, error_code,
-                     "%s: %s is created by %s, and the image should be bound by calling vkBindImageMemory2(), and the pNext chain "
-                     "includes VkBindImageMemorySwapchainInfoKHR.",
-                     api_name, report_data->FormatHandle(image_state->image).c_str(),
-                     report_data->FormatHandle(image_state->create_from_swapchain).c_str());
+            result |= LogError(
+                objlist, error_code,
+                "%s: %s is created by %s, and the image should be bound by calling vkBindImageMemory2(), and the pNext chain "
+                "includes VkBindImageMemorySwapchainInfoKHR.",
+                api_name, report_data->FormatHandle(image_state->image).c_str(),
+                report_data->FormatHandle(image_state->create_from_swapchain).c_str());
         } else if (image_state->create_from_swapchain != image_state->bind_swapchain) {
             LogObjectList objlist(image_state->image);
             objlist.add(image_state->create_from_swapchain);
             objlist.add(image_state->bind_swapchain);
-            LogError(objlist, error_code,
-                     "%s: %s is created by %s, but the image is bound by %s. The image should be created and bound by the same "
-                     "swapchain",
-                     api_name, report_data->FormatHandle(image_state->image).c_str(),
-                     report_data->FormatHandle(image_state->create_from_swapchain).c_str(),
-                     report_data->FormatHandle(image_state->bind_swapchain).c_str());
+            result |=
+                LogError(objlist, error_code,
+                         "%s: %s is created by %s, but the image is bound by %s. The image should be created and bound by the same "
+                         "swapchain",
+                         api_name, report_data->FormatHandle(image_state->image).c_str(),
+                         report_data->FormatHandle(image_state->create_from_swapchain).c_str(),
+                         report_data->FormatHandle(image_state->bind_swapchain).c_str());
         }
     } else if (image_state->external_ahb) {
         // TODO look into how to properly check for a valid bound memory for an external AHB
     } else if (0 == (static_cast<uint32_t>(image_state->createInfo.flags) & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
-        result = VerifyBoundMemoryIsValid(image_state->binding.mem_state.get(), image_state->image,
-                                          VulkanTypedHandle(image_state->image, kVulkanObjectTypeImage), api_name, error_code);
+        result |= VerifyBoundMemoryIsValid(image_state->binding.mem_state.get(), image_state->image,
+                                           VulkanTypedHandle(image_state->image, kVulkanObjectTypeImage), api_name, error_code);
     }
     return result;
 }
@@ -265,8 +267,8 @@ bool CoreChecks::ValidateMemoryIsBoundToBuffer(const BUFFER_STATE *buffer_state,
                                                const char *error_code) const {
     bool result = false;
     if (0 == (static_cast<uint32_t>(buffer_state->createInfo.flags) & VK_BUFFER_CREATE_SPARSE_BINDING_BIT)) {
-        result = VerifyBoundMemoryIsValid(buffer_state->binding.mem_state.get(), buffer_state->buffer,
-                                          VulkanTypedHandle(buffer_state->buffer, kVulkanObjectTypeBuffer), api_name, error_code);
+        result |= VerifyBoundMemoryIsValid(buffer_state->binding.mem_state.get(), buffer_state->buffer,
+                                           VulkanTypedHandle(buffer_state->buffer, kVulkanObjectTypeBuffer), api_name, error_code);
     }
     return result;
 }
@@ -787,7 +789,8 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
     auto const &state = last_bound_it->second;
 
     // First check flag states
-    if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point) result = ValidateDrawStateFlags(cb_node, pPipe, indexed, vuid.dynamic_state);
+    if (VK_PIPELINE_BIND_POINT_GRAPHICS == bind_point)
+        result |= ValidateDrawStateFlags(cb_node, pPipe, indexed, vuid.dynamic_state);
 
     // Now complete other state checks
     string errorString;
@@ -7874,9 +7877,9 @@ bool CoreChecks::AddAttachmentUse(RenderPassCreateVersion rp_version, uint32_t s
     if (uses & new_use) {
         if (attachment_layouts[attachment] != new_layout) {
             vuid = use_rp2 ? "VUID-VkSubpassDescription2-layout-02528" : "VUID-VkSubpassDescription-layout-02519";
-            LogError(device, vuid, "%s: subpass %u already uses attachment %u with a different image layout (%s vs %s).",
-                     function_name, subpass, attachment, string_VkImageLayout(attachment_layouts[attachment]),
-                     string_VkImageLayout(new_layout));
+            skip |= LogError(device, vuid, "%s: subpass %u already uses attachment %u with a different image layout (%s vs %s).",
+                             function_name, subpass, attachment, string_VkImageLayout(attachment_layouts[attachment]),
+                             string_VkImageLayout(new_layout));
         }
     } else if (uses & ~ATTACHMENT_INPUT || (uses && (new_use == ATTACHMENT_RESOLVE || new_use == ATTACHMENT_PRESERVE))) {
         /* Note: input attachments are assumed to be done first. */
@@ -9143,12 +9146,12 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                     layout_type = "initial";
                 }
                 if ((cb_layout != kInvalidLayout) && (cb_layout != sub_layout)) {
-                    LogError(pCommandBuffers[i], "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001",
-                             "%s: Executed secondary command buffer using %s (subresource: aspectMask 0x%X array layer %u, "
-                             "mip level %u) which expects layout %s--instead, image %s layout is %s.",
-                             "vkCmdExecuteCommands():", report_data->FormatHandle(image).c_str(), subresource.aspectMask,
-                             subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(sub_layout), layout_type,
-                             string_VkImageLayout(cb_layout));
+                    skip |= LogError(pCommandBuffers[i], "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001",
+                                     "%s: Executed secondary command buffer using %s (subresource: aspectMask 0x%X array layer %u, "
+                                     "mip level %u) which expects layout %s--instead, image %s layout is %s.",
+                                     "vkCmdExecuteCommands():", report_data->FormatHandle(image).c_str(), subresource.aspectMask,
+                                     subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(sub_layout), layout_type,
+                                     string_VkImageLayout(cb_layout));
                 }
             }
         }

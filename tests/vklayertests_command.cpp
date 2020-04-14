@@ -4162,12 +4162,6 @@ TEST_F(VkLayerTest, ExecuteSecondaryCBWithLayoutMismatch) {
     vk::CmdExecuteCommands(m_commandBuffer->handle(), 1, &secondary.handle());
     m_errorMonitor->VerifyFound();
 
-    // Validate that we've tracked the changes from the secondary CB correctly
-    m_errorMonitor->ExpectSuccess();
-    pipeline(*m_commandBuffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL);
-    m_errorMonitor->VerifyNotFound();
-    m_commandBuffer->end();
-
     m_commandBuffer->reset();
     secondary.reset();
 

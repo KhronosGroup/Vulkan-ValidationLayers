@@ -86,11 +86,11 @@ class ObjectLifetimes : public ValidationObject {
         if (!inserted) {
             // The object should not already exist. If we couldn't add it to the map, there was probably
             // a race condition in the app. Report an error and move on.
-            LogError(object, kVUID_ObjectTracker_Info,
-                     "Couldn't insert %s Object 0x%" PRIxLEAST64
-                     ", already existed. This should not happen and may indicate a "
-                     "race condition in the application.",
-                     object_string[object_type], object_handle);
+            (void)LogError(object, kVUID_ObjectTracker_Info,
+                           "Couldn't insert %s Object 0x%" PRIxLEAST64
+                           ", already existed. This should not happen and may indicate a "
+                           "race condition in the application.",
+                           object_string[object_type], object_handle);
         }
     }
 
@@ -210,10 +210,10 @@ class ObjectLifetimes : public ValidationObject {
         if (item == object_map[object_type].end()) {
             // We've already checked that the object exists. If we couldn't find and atomically remove it
             // from the map, there must have been a race condition in the app. Report an error and move on.
-            LogError(device, kVUID_ObjectTracker_Info,
-                     "Couldn't destroy %s Object 0x%" PRIxLEAST64
-                     ", not found. This should not happen and may indicate a race condition in the application.",
-                     object_string[object_type], object_handle);
+            (void)LogError(device, kVUID_ObjectTracker_Info,
+                           "Couldn't destroy %s Object 0x%" PRIxLEAST64
+                           ", not found. This should not happen and may indicate a race condition in the application.",
+                           object_string[object_type], object_handle);
 
             return;
         }
