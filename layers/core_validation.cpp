@@ -2987,8 +2987,16 @@ bool CoreChecks::PreCallValidateCreateSemaphore(VkDevice device, const VkSemapho
     return skip;
 }
 
+bool CoreChecks::PreCallValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfoKHR *pWaitInfo, uint64_t timeout) const {
+    return ValidateWaitSemaphores(device, pWaitInfo, timeout);
+}
+
 bool CoreChecks::PreCallValidateWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfoKHR *pWaitInfo,
                                                   uint64_t timeout) const {
+    return ValidateWaitSemaphores(device, pWaitInfo, timeout);
+}
+
+bool CoreChecks::ValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfoKHR *pWaitInfo, uint64_t timeout) const {
     bool skip = false;
 
     for (uint32_t i = 0; i < pWaitInfo->semaphoreCount; i++) {
