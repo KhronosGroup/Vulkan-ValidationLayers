@@ -1157,6 +1157,7 @@ class ValidationStateTracker : public ValidationObject {
     VkPhysicalDeviceVulkan11Properties phys_dev_props_core11 = {};
     VkPhysicalDeviceVulkan12Properties phys_dev_props_core12 = {};
     uint32_t physical_device_count;
+    uint32_t custom_border_color_sampler_count = 0;
 
     // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2KHR::pNext chain
     struct DeviceExtensionProperties {
@@ -1173,6 +1174,7 @@ class ValidationStateTracker : public ValidationObject {
         VkPhysicalDeviceFragmentDensityMapPropertiesEXT fragment_density_map_props;
         VkPhysicalDevicePerformanceQueryPropertiesKHR performance_query_props;
         VkPhysicalDeviceSampleLocationsPropertiesEXT sample_locations_props;
+        VkPhysicalDeviceCustomBorderColorPropertiesEXT custom_border_color_props;
     };
     DeviceExtensionProperties phys_dev_ext_props = {};
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties;

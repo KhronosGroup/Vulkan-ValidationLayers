@@ -1420,6 +1420,11 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.fragment_density_map_features = *fragment_density_map_features;
     }
 
+    const auto *custom_border_color_features = lvl_find_in_chain<VkPhysicalDeviceCustomBorderColorFeaturesEXT>(pCreateInfo->pNext);
+    if (custom_border_color_features) {
+        state_tracker->enabled_features.custom_border_color_features = *custom_border_color_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);
@@ -1510,6 +1515,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_fragment_density_map, &phys_dev_props->fragment_density_map_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_performance_query, &phys_dev_props->performance_query_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_sample_locations, &phys_dev_props->sample_locations_props);
+    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_custom_border_color, &phys_dev_props->custom_border_color_props);
 
     if (!state_tracker->device_extensions.vk_feature_version_1_2 && dev_ext.vk_khr_timeline_semaphore) {
         VkPhysicalDeviceTimelineSemaphorePropertiesKHR timeline_semaphore_props;
@@ -2435,6 +2441,10 @@ void ValidationStateTracker::PreCallRecordDestroySampler(VkDevice device, VkSamp
     }
     sampler_state->destroyed = true;
     samplerMap.erase(sampler);
+    if (sampler_state->createInfo.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
+        sampler_state->createInfo.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
+        custom_border_color_sampler_count--;
+    }
 }
 
 void ValidationStateTracker::PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
@@ -2782,6 +2792,8 @@ void ValidationStateTracker::PostCallRecordCreateSampler(VkDevice device, const 
                                                          const VkAllocationCallbacks *pAllocator, VkSampler *pSampler,
                                                          VkResult result) {
     samplerMap[*pSampler] = std::make_shared<SAMPLER_STATE>(pSampler, pCreateInfo);
+    if (pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT || pCreateInfo->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT)
+        custom_border_color_sampler_count++;
 }
 
 void ValidationStateTracker::PostCallRecordCreateDescriptorSetLayout(VkDevice device,

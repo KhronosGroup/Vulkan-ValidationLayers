@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2019 The Khronos Group Inc.
- * Copyright (c) 2015-2019 Valve Corporation
- * Copyright (c) 2015-2019 LunarG, Inc.
+/* Copyright (c) 2015-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2020 Valve Corporation
+ * Copyright (c) 2015-2020 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,6 +156,8 @@ VK_LAYER_EXPORT bool FormatIsFloat(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsSRGB(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsUScaled(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsSScaled(VkFormat format);
+VK_LAYER_EXPORT bool FormatIsSampledInt(VkFormat format);
+VK_LAYER_EXPORT bool FormatIsSampledFloat(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsCompressed(VkFormat format);
 VK_LAYER_EXPORT bool FormatIsPacked(VkFormat format);
 VK_LAYER_EXPORT bool FormatElementIsTexel(VkFormat format);

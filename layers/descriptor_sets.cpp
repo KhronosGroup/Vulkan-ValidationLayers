@@ -415,6 +415,21 @@ bool cvdescriptorset::ValidateDescriptorSetLayoutCreateInfo(
             }
         }
 
+        if ((binding_info.descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER ||
+             binding_info.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) &&
+            binding_info.pImmutableSamplers && device_extensions->vk_ext_custom_border_color) {
+            const CoreChecks *core_checks = reinterpret_cast<const CoreChecks *>(val_obj);
+            for (uint32_t j = 0; j < binding_info.descriptorCount; j++) {
+                const SAMPLER_STATE *sampler_state = core_checks->GetSamplerState(binding_info.pImmutableSamplers[j]);
+                if (sampler_state && (sampler_state->createInfo.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
+                                      sampler_state->createInfo.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT)) {
+                    skip |= val_obj->LogError(val_obj->device, "VUID-VkDescriptorSetLayoutBinding-pImmutableSamplers-04009",
+                                              "Sampler %" PRIu64 " presented as immutable has a custom border color",
+                                              binding_info.pImmutableSamplers[j]);
+                }
+            }
+        }
+
         total_descriptors += binding_info.descriptorCount;
     }
 
@@ -990,6 +1005,29 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                                             report_data->FormatHandle(sampler).c_str(),
                                             report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
                                             report_data->FormatHandle(sampler_state->samplerConversion).c_str());
+                        }
+                    }
+                    // TODO: Validate 04015 for DescriptorClass::PlainSampler
+                    if (descriptor_class == DescriptorClass::ImageSampler) {
+                        auto custom_color_info =
+                            lvl_find_in_chain<VkSamplerCustomBorderColorCreateInfoEXT>(sampler_state->createInfo.pNext);
+                        if (custom_color_info && custom_color_info->format == VK_FORMAT_UNDEFINED) {
+                            const IMAGE_VIEW_STATE *image_view_state;
+                            image_view_state = static_cast<const ImageSamplerDescriptor *>(descriptor)->GetImageViewState();
+                            if (image_view_state->create_info.format == VK_FORMAT_B4G4R4A4_UNORM_PACK16) {
+                                auto set = descriptor_set->GetSet();
+                                LogObjectList objlist(set);
+                                objlist.add(sampler);
+                                objlist.add(image_view_state->image_view);
+                                return LogError(objlist, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04015",
+                                                "%s encountered the following validation error at %s time: Sampler %s in "
+                                                "binding #%" PRIu32 " index %" PRIu32
+                                                " has a custom border color with format = VK_FORMAT_UNDEFINED and is used to "
+                                                "sample an image view %" PRIu64 " with format VK_FORMAT_B4G4R4A4_UNORM_PACK16",
+                                                report_data->FormatHandle(set).c_str(), caller,
+                                                report_data->FormatHandle(sampler).c_str(), binding, index,
+                                                report_data->FormatHandle(image_view_state->image_view).c_str());
+                            }
                         }
                     }
                 }
