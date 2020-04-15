@@ -1298,7 +1298,9 @@ bool CoreChecks::ValidateCreateImageANDROID(const debug_report_data *report_data
             if (0 != (~VK_IMAGE_USAGE_SAMPLED_BIT & create_info->usage)) {
                 skip |= LogError(device, "VUID-VkImageCreateInfo-pNext-02397",
                                  "vkCreateImage(): VkImageCreateInfo struct has a chained VkExternalFormatANDROID struct with "
-                                 "non-zero externalFormat, but usage includes bits other than VK_IMAGE_USAGE_SAMPLED_BIT.");
+                                 "non-zero externalFormat, but usage includes bits (0x%" PRIx64
+                                 ") other than VK_IMAGE_USAGE_SAMPLED_BIT.",
+                                 create_info->usage);
             }
 
             if (VK_IMAGE_TILING_OPTIMAL != create_info->tiling) {
@@ -1310,8 +1312,10 @@ bool CoreChecks::ValidateCreateImageANDROID(const debug_report_data *report_data
 
         if ((0 != ext_fmt_android->externalFormat) && (0 == ahb_ext_formats_set.count(ext_fmt_android->externalFormat))) {
             skip |= LogError(device, "VUID-VkExternalFormatANDROID-externalFormat-01894",
-                             "vkCreateImage(): Chained VkExternalFormatANDROID struct contains a non-zero externalFormat which has "
-                             "not been previously retrieved by vkGetAndroidHardwareBufferPropertiesANDROID().");
+                             "vkCreateImage(): Chained VkExternalFormatANDROID struct contains a non-zero externalFormat (%" PRIu64
+                             ") which has "
+                             "not been previously retrieved by vkGetAndroidHardwareBufferPropertiesANDROID().",
+                             ext_fmt_android->externalFormat);
         }
     }
 
@@ -1354,7 +1358,7 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *cre
         if (VK_FORMAT_UNDEFINED != create_info->format) {
             skip |= LogError(create_info->image, "VUID-VkImageViewCreateInfo-image-02399",
                              "vkCreateImageView(): VkImageViewCreateInfo struct has a chained VkExternalFormatANDROID struct, but "
-                             "format member is %s.",
+                             "format member is %s and must be VK_FORMAT_UNDEFINED.",
                              string_VkFormat(create_info->format));
         }
 
@@ -1371,15 +1375,22 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *cre
         }
         if ((!conv_found) || (external_format != image_state->ahb_format)) {
             skip |= LogError(create_info->image, "VUID-VkImageViewCreateInfo-image-02400",
-                             "vkCreateImageView(): VkImageViewCreateInfo struct has a chained VkExternalFormatANDROID struct, but "
-                             "without a chained VkSamplerYcbcrConversionInfo struct with the same external format.");
+                             "vkCreateImageView(): VkImageViewCreateInfo struct has a chained VkExternalFormatANDROID struct with "
+                             "an externalFormat (%" PRIu64
+                             ") but needs a chained VkSamplerYcbcrConversionInfo struct with a VkSamplerYcbcrConversion created "
+                             "with the same external format.",
+                             image_state->ahb_format);
         }
 
         // Errors in create_info swizzles
-        if ((create_info->components.r != VK_COMPONENT_SWIZZLE_IDENTITY) ||
-            (create_info->components.g != VK_COMPONENT_SWIZZLE_IDENTITY) ||
-            (create_info->components.b != VK_COMPONENT_SWIZZLE_IDENTITY) ||
-            (create_info->components.a != VK_COMPONENT_SWIZZLE_IDENTITY)) {
+        if (((create_info->components.r != VK_COMPONENT_SWIZZLE_IDENTITY) &&
+             (create_info->components.r != VK_COMPONENT_SWIZZLE_R)) ||
+            ((create_info->components.g != VK_COMPONENT_SWIZZLE_IDENTITY) &&
+             (create_info->components.g != VK_COMPONENT_SWIZZLE_G)) ||
+            ((create_info->components.b != VK_COMPONENT_SWIZZLE_IDENTITY) &&
+             (create_info->components.b != VK_COMPONENT_SWIZZLE_B)) ||
+            ((create_info->components.a != VK_COMPONENT_SWIZZLE_IDENTITY) &&
+             (create_info->components.a != VK_COMPONENT_SWIZZLE_A))) {
             skip |= LogError(create_info->image, "VUID-VkImageViewCreateInfo-image-02401",
                              "vkCreateImageView(): VkImageViewCreateInfo struct has a chained VkExternalFormatANDROID struct, but "
                              "includes one or more non-identity component swizzles.");

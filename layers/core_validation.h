@@ -132,6 +132,7 @@ class CoreChecks : public ValidationStateTracker {
                                       const BUFFER_STATE* state_data) const;
     bool ValidateCreateSwapchain(const char* func_name, VkSwapchainCreateInfoKHR const* pCreateInfo,
                                  const SURFACE_STATE* surface_state, const SWAPCHAIN_NODE* old_swapchain_state) const;
+    bool ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE* cb_state, const PIPELINE_STATE* pipeline_state) const;
     bool ValidatePipelineBindPoint(const CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint bind_point, const char* func_name,
                                    const std::map<VkPipelineBindPoint, std::string>& bind_errors) const;
     bool ValidateMemoryIsMapped(const char* funcName, uint32_t memRangeCount, const VkMappedMemoryRange* pMemRanges) const;
@@ -632,6 +633,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateImageArrayLayerRange(const CMD_BUFFER_STATE* cb_node, const IMAGE_STATE* img, const uint32_t base_layer,
                                       const uint32_t layer_count, const uint32_t i, const char* function, const char* member,
                                       const char* vuid) const;
+    bool ValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfoKHR* pWaitInfo, uint64_t timeout) const;
 
     void PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions);
@@ -670,7 +672,8 @@ class CoreChecks : public ValidationStateTracker {
                                bool optional) const;
     bool ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo* alloc_info) const;
     bool ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const char* func_name) const;
-    bool ValidateCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo* create_info) const;
+    bool ValidateCreateSamplerYcbcrConversionANDROID(const char* func_name,
+                                                     const VkSamplerYcbcrConversionCreateInfo* create_info) const;
     bool ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                 const VkImageFormatProperties2* pImageFormatProperties) const;
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
@@ -766,6 +769,7 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateDeviceWaitIdle(VkDevice device) const;
     bool PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkSemaphore* pSemaphore) const;
+    bool PreCallValidateWaitSemaphores(VkDevice device, const VkSemaphoreWaitInfoKHR* pWaitInfo, uint64_t timeout) const;
     bool PreCallValidateWaitSemaphoresKHR(VkDevice device, const VkSemaphoreWaitInfoKHR* pWaitInfo, uint64_t timeout) const;
     bool PreCallValidateDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator) const;
     bool PreCallValidateDestroySemaphore(VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks* pAllocator) const;

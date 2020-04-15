@@ -1483,7 +1483,7 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages) {
     std::vector<VkFenceObj> fences(acquirable_count);
     for (uint32_t i = 0; i < acquirable_count; ++i) {
         fences[i].init(*m_device, VkFenceObj::create_info());
-        uint32_t image_i = i;  // WORKAROUND: MockICD does not modify the value, so we have to or the validator state gets corrupted
+        uint32_t image_i;
         const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fences[i].handle(), &image_i);
         ASSERT_TRUE(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
     }
@@ -1536,7 +1536,7 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
     std::vector<VkFenceObj> fences(acquirable_count);
     for (uint32_t i = 0; i < acquirable_count; ++i) {
         fences[i].init(*m_device, VkFenceObj::create_info());
-        uint32_t image_i = i;  // WORKAROUND: MockICD does not modify the value, so we have to or the validator state gets corrupted
+        uint32_t image_i;
         const auto res = vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fences[i].handle(), &image_i);
         ASSERT_TRUE(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
     }
@@ -1702,7 +1702,7 @@ TEST_F(VkLayerTest, InvalidDeviceMask) {
 
     if (support_surface) {
         // Test VkAcquireNextImageInfoKHR
-        uint32_t imageIndex = 0;
+        uint32_t imageIndex;
         VkAcquireNextImageInfoKHR acquire_next_image_info = {};
         acquire_next_image_info.sType = VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR;
         acquire_next_image_info.semaphore = semaphore;
@@ -4327,6 +4327,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferPhysDevImageFormatProp2) {
     m_errorMonitor->VerifyFound();
 }
 
+#if DISABLEUNTILAHBWORKS
 TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer image view creation.");
 
@@ -4521,6 +4522,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     vk::DestroyImage(dev, img, NULL);
     vk::FreeMemory(dev, img_mem, NULL);
 }
+#endif // DISABLEUNTILAHBWORKS
 
 TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer import as buffer.");
@@ -4567,7 +4569,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
 
     // Allocate an AHardwareBuffer
     ahb_desc.format = AHARDWAREBUFFER_FORMAT_BLOB;
-    ahb_desc.usage = AHARDWAREBUFFER_USAGE_SENSOR_DIRECT_DATA;
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_SENSOR_DIRECT_DATA;  // non USAGE_GPU_*
     ahb_desc.width = 512;
     ahb_desc.height = 1;
     ahb_desc.layers = 1;
