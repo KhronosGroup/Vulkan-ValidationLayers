@@ -377,7 +377,8 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                             VkPipelineStageFlags dst_stage_mask, SyncStageAccessFlags dst_stage_scope, uint32_t barrier_count,
                             const VkImageMemoryBarrier *barriers);
 
-    void ResetCommandBuffer(VkCommandBuffer command_buffer);
+    void ResetCommandBufferCallback(VkCommandBuffer command_buffer);
+    void FreeCommandBufferCallback(VkCommandBuffer command_buffer);
     void RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                   const VkSubpassBeginInfo *pSubpassBeginInfo);
     void RecordCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
