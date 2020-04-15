@@ -1014,6 +1014,16 @@ bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
         for (uint32_t semaphore = 0; semaphore < pSubmits[submit].waitSemaphoreCount; semaphore++) {
             skip |= CheckPipelineStageFlags("vkQueueSubmit", pSubmits[submit].pWaitDstStageMask[semaphore]);
         }
+
+        for (uint32_t cmd_buf = 0; cmd_buf < pSubmits[submit].commandBufferCount; cmd_buf++) {
+            // Run any enqueued functions for the command buffers to check for pipeline bubbles
+            auto enqueued_fn = enqueued_fn_map.find(pSubmits[submit].pCommandBuffers[cmd_buf]);
+            if (enqueued_fn != enqueued_fn_map.end()) {
+                for (auto& fn : enqueued_fn->second) {
+                    skip |= fn(queue);
+                }
+            }
+        }
     }
 
     return skip;
@@ -1098,6 +1108,33 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuf
     skip |= CheckPipelineStageFlags("vkCmdPipelineBarrier", dstStageMask);
 
     return skip;
+}
+
+void BestPractices::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
+                                                    VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
+                                                    uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                                    uint32_t bufferMemoryBarrierCount,
+                                                    const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                                    uint32_t imageMemoryBarrierCount,
+                                                    const VkImageMemoryBarrier* pImageMemoryBarriers) {
+    enqueued_fn_map[commandBuffer].push_back([this, srcStageMask, dstStageMask](VkQueue queue) {
+        bool skip = false;
+
+        auto src = srcStageMask;
+        auto dst = dstStageMask;
+
+        if (dst & VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT) {
+            dst |= VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+        }
+        if (src & VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT) {
+            src |= VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+        }
+
+        auto& tracker = queue_tracker_map[queue];
+        tracker.pipelineBarrier(QueueTracker::vkStagesToTracker(src), QueueTracker::vkStagesToTracker(dst));
+
+        return skip;
+    });
 }
 
 bool BestPractices::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
@@ -1260,8 +1297,73 @@ bool BestPractices::PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBu
     return skip;
 }
 
-void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
-                                             const VkRenderPassBeginInfo* pRenderPassBegin) {
+void BestPractices::RecordCmdBeginRenderPassArmBarriers(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
+                                                        const VkRenderPassBeginInfo* pRenderPassBegin) {
+    auto rp_state = GetRenderPassState(pRenderPassBegin->renderPass);
+
+    if (!rp_state) {
+        return;
+    }
+
+    QueueTracker::StageFlags src = 0;
+    QueueTracker::StageFlags dst = 0;
+
+    auto vkStagesToTracker = [](VkPipelineStageFlags stages) {
+        QueueTracker::StageFlags flags = 0;
+        if (stages & (VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                      VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT))
+            flags |= QueueTracker::STAGE_FRAGMENT_BIT;
+
+        if (stages & (VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_VERTEX_INPUT_BIT |
+                      VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |
+                      VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT))
+            flags |= QueueTracker::STAGE_GEOMETRY_BIT;
+
+        if (stages & VK_PIPELINE_STAGE_TRANSFER_BIT) flags |= QueueTracker::STAGE_TRANSFER_BIT;
+
+        if (stages & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT) flags |= QueueTracker::STAGE_COMPUTE_BIT;
+
+        if (stages & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) flags |= QueueTracker::STAGE_ALL_BITS;
+
+        if (stages & VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT)
+            flags |= QueueTracker::STAGE_GEOMETRY_BIT | QueueTracker::STAGE_FRAGMENT_BIT;
+
+        return flags;
+    };
+
+    // Handle implicit barriers before the render pass.
+    for (uint32_t i = 0; i < rp_state->createInfo.dependencyCount; i++) {
+        auto& dependency = rp_state->createInfo.pDependencies[i];
+        if (dependency.srcSubpass == VK_SUBPASS_EXTERNAL) {
+            auto srcMask = dependency.srcStageMask;
+            if (srcMask & VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT) {
+                srcMask |= VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+            }
+            src |= vkStagesToTracker(srcMask);
+
+            auto dstMask = dependency.dstStageMask;
+            if (dstMask & VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT) {
+                dstMask |= VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+            }
+            dst |= vkStagesToTracker(dstMask);
+        }
+    }
+
+    enqueued_fn_map[commandBuffer].push_back([this, src, dst](VkQueue queue) {
+        bool skip = false;
+
+        auto& tracker = queue_tracker_map[queue];
+        tracker.pipelineBarrier(src, dst);
+        skip |= tracker.pushWork(*this, QueueTracker::STAGE_GEOMETRY);
+        tracker.pipelineBarrier(QueueTracker::STAGE_GEOMETRY_BIT, QueueTracker::STAGE_FRAGMENT_BIT);
+        skip |= tracker.pushWork(*this, QueueTracker::STAGE_FRAGMENT);
+
+        return skip;
+    });
+}
+
+void BestPractices::RecordCmdBeginRenderPassArmPrePassState(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
+                                                            const VkRenderPassBeginInfo* pRenderPassBegin) {
     auto prepass_state = cbDepthPrePassStates.find(commandBuffer);
 
     // add the tracking state if it doesn't exist
@@ -1291,20 +1393,51 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rend
 void BestPractices::PostCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                                      VkSubpassContents contents) {
     StateTracker::PostCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
-    RecordCmdBeginRenderPass(commandBuffer, RENDER_PASS_VERSION_1, pRenderPassBegin);
+    if (VendorCheckEnabled(kBPVendorArm)) {
+        RecordCmdBeginRenderPassArmPrePassState(commandBuffer, RENDER_PASS_VERSION_1, pRenderPassBegin);
+    }
 }
 
 void BestPractices::PostCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                                       const VkSubpassBeginInfo* pSubpassBeginInfo) {
     StateTracker::PostCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
-    RecordCmdBeginRenderPass(commandBuffer, RENDER_PASS_VERSION_2, pRenderPassBegin);
+    if (VendorCheckEnabled(kBPVendorArm)) {
+        RecordCmdBeginRenderPassArmPrePassState(commandBuffer, RENDER_PASS_VERSION_2, pRenderPassBegin);
+    }
 }
 
 void BestPractices::PostCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
                                                          const VkRenderPassBeginInfo* pRenderPassBegin,
                                                          const VkSubpassBeginInfo* pSubpassBeginInfo) {
     StateTracker::PostCallRecordCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
-    RecordCmdBeginRenderPass(commandBuffer, RENDER_PASS_VERSION_2, pRenderPassBegin);
+    if (VendorCheckEnabled(kBPVendorArm)) {
+        RecordCmdBeginRenderPassArmPrePassState(commandBuffer, RENDER_PASS_VERSION_2, pRenderPassBegin);
+    }
+}
+
+void BestPractices::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                                    VkSubpassContents contents) {
+    ValidationStateTracker::PreCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents);
+    if (VendorCheckEnabled(kBPVendorArm)) {
+        RecordCmdBeginRenderPassArmBarriers(commandBuffer, RENDER_PASS_VERSION_1, pRenderPassBegin);
+    }
+}
+
+void BestPractices::PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
+                                                        const VkRenderPassBeginInfo* pRenderPassBegin,
+                                                        const VkSubpassBeginInfoKHR* pSubpassBeginInfo) {
+    ValidationStateTracker::PreCallRecordCmdBeginRenderPass2KHR(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
+    if (VendorCheckEnabled(kBPVendorArm)) {
+        RecordCmdBeginRenderPassArmBarriers(commandBuffer, RENDER_PASS_VERSION_2, pRenderPassBegin);
+    }
+}
+
+void BestPractices::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                                     const VkSubpassBeginInfoKHR* pSubpassBeginInfo) {
+    ValidationStateTracker::PreCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo);
+    if (VendorCheckEnabled(kBPVendorArm)) {
+        RecordCmdBeginRenderPassArmBarriers(commandBuffer, RENDER_PASS_VERSION_2, pRenderPassBegin);
+    }
 }
 
 // Generic function to handle validation for all CmdDraw* type functions
@@ -1382,7 +1515,7 @@ bool BestPractices::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer,
         (cmd_state->small_indexed_draw_call_count == kMaxSmallIndexedDrawcalls - 1)) {
         skip |= VendorCheckEnabled(kBPVendorArm) &&
                 LogPerformanceWarning(device, kVUID_BestPractices_CmdDrawIndexed_ManySmallIndexedDrawcalls,
-                                      "The command buffer contains many small indexed drawcalls "
+                                      "%s The command buffer contains many small indexed drawcalls "
                                       "(at least %u drawcalls with less than %u indices each). This may cause pipeline bubbles. "
                                       "You can try batching drawcalls or instancing when applicable.",
                                       VendorSpecificTag(kBPVendorArm), kMaxSmallIndexedDrawcalls, kSmallIndexedDrawcallIndices);
@@ -2098,4 +2231,126 @@ bool BestPractices::PostTransformLRUCacheModel::query_cache(uint32_t value) {
     }
     iteration++;
     return false;
+}
+
+bool BestPractices::QueueTracker::pushWork(BestPractices& tracker, Stage dstStage) {
+    bool skip = false;
+
+    if (tracker.VendorCheckEnabled(kBPVendorArm)) {
+        skip |= pushWorkArm(tracker, dstStage);
+    }
+
+    stages[dstStage].index++;
+
+    return skip;
+}
+
+bool BestPractices::QueueTracker::pushWorkArm(BestPractices& tracker, Stage dstStage) {
+    bool skip = false;
+
+    static const char* stageNames[STAGE_COUNT] = {
+        "COMPUTE",
+        "GEOMETRY",
+        "FRAGMENT",
+        "TRANSFER",
+    };
+
+    for (unsigned i = 0; i < STAGE_COUNT; i++) {
+        if (dstStage == i) continue;
+
+        // If we're waiting for all submitted work for a stage, there might be a bubble; otherwise we can skip.
+        if (stages[dstStage].waitList[i] != stages[i].index) continue;
+
+        // If no work has been submitted to this stage yet, we can skip as there's nothing which can cause bubbles.
+        if (!stages[dstStage].index) continue;
+
+        // GEOMETRY and COMPUTE do not run concurrently in Vulkan for Arm GPUs, so bubbles between them don't matter.
+        if (((1 << i) | (1 << dstStage)) == (STAGE_GEOMETRY_BIT | STAGE_COMPUTE_BIT)) continue;
+
+        // Say we have pipeline stages A and B. If A depends on work from B, and B depends on the last work submitted to A (a
+        // cycle), then we have a bubble. This is because A must go idle before B can begin executing.
+        // Only consider this a bubble if work has been submitted to the stage which might cause our bubble.
+
+        // For example:
+        // FRAGMENT -> TRANSFER barrier.
+        // TRANSFER -> FRAGMENT barrier,
+        // is effectively just a FRAGMENT -> FRAGMENT barrier,
+        // no bubble.
+
+        // FRAGMENT -> TRANSFER barrier (lastDstStageIndex is latched here),
+        // TRANSFER work,
+        // TRANSFER -> FRAGMENT,
+        // is a bubble.
+        if (stages[i].waitList[dstStage] == stages[dstStage].index && stages[i].index != stages[i].lastDstStageIndex[dstStage]) {
+            skip |= tracker.VendorCheckEnabled(kBPVendorArm) &&
+                    tracker.LogPerformanceWarning(
+                        tracker.device, kVUID_BestPractices_PipelineBubble,
+                        "%s Pipeline bubble detected in stage %s. Work in stage %s will block execution in stage %s.",
+                        VendorSpecificTag(kBPVendorArm), stageNames[dstStage], stageNames[i], stageNames[dstStage]);
+        }
+    }
+
+    return skip;
+}
+
+void BestPractices::QueueTracker::pipelineBarrier(StageFlags srcStages, StageFlags dstStages) {
+    if (srcStages == 0) return;
+
+    for (unsigned dstStage = 0; dstStage < STAGE_COUNT; dstStage++) {
+        if (!(dstStages & (1u << dstStage))) continue;
+
+        for (unsigned srcStage = 0; srcStage < STAGE_COUNT; srcStage++) {
+            if (!(srcStages & (1u << srcStage))) continue;
+
+            // If we're waiting for new work from a stage, store the current work index for our stage.
+            // This way, we can track if the dependency ends up purely transitive or if it's a true bubble.
+            if (stages[srcStage].index > stages[dstStage].waitList[srcStage]) {
+                stages[dstStage].waitList[srcStage] = stages[srcStage].index;
+                stages[dstStage].lastDstStageIndex[srcStage] = stages[dstStage].index;
+            }
+
+            // Inherit dependencies from our srcStages.
+            for (unsigned stage = 0; stage < STAGE_COUNT; stage++) {
+                // If we're waiting for new work from a stage, store the current work index for our stage.
+                // This way, we can track if the dependency ends up purely transitive or if it's a true bubble.
+                if (stages[srcStage].waitList[stage] > stages[dstStage].waitList[stage]) {
+                    stages[dstStage].waitList[stage] = stages[srcStage].waitList[stage];
+                    stages[dstStage].lastDstStageIndex[stage] = stages[dstStage].index;
+                }
+            }
+        }
+    }
+}
+
+BestPractices::QueueTracker::StageFlags BestPractices::QueueTracker::vkStagesToTracker(VkPipelineStageFlags stages) {
+    QueueTracker::StageFlags flags = 0;
+
+    if (stages & (VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                  VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT)) {
+        flags |= QueueTracker::STAGE_FRAGMENT_BIT;
+    }
+
+    if (stages & (VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT | VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                  VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
+                  VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT)) {
+        flags |= QueueTracker::STAGE_GEOMETRY_BIT;
+    }
+
+    if (stages & VK_PIPELINE_STAGE_TRANSFER_BIT) {
+        flags |= QueueTracker::STAGE_TRANSFER_BIT;
+    }
+
+    if (stages & VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT) {
+        flags |= QueueTracker::STAGE_COMPUTE_BIT;
+    }
+
+    if (stages & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) {
+        flags |= QueueTracker::STAGE_ALL_BITS;
+    }
+
+    if (stages & VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT) {
+        flags |= QueueTracker::STAGE_GEOMETRY_BIT | QueueTracker::STAGE_FRAGMENT_BIT;
+    }
+
+    return flags;
 }

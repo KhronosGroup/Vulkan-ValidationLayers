@@ -164,6 +164,11 @@ class BestPractices : public ValidationStateTracker {
                                            uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
                                            uint32_t imageMemoryBarrierCount,
                                            const VkImageMemoryBarrier* pImageMemoryBarriers) const;
+    void PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
+                                         VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
+                                         uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                         uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                         uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers);
     bool PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                           VkQueryPool queryPool, uint32_t query) const;
     void PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline);
@@ -175,8 +180,16 @@ class BestPractices : public ValidationStateTracker {
                                                const VkSubpassBeginInfoKHR* pSubpassBeginInfo) const;
     bool PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                             const VkSubpassBeginInfoKHR* pSubpassBeginInfo) const;
-    void RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
-                                  const VkRenderPassBeginInfo* pRenderPassBegin);
+    void RecordCmdBeginRenderPassArmBarriers(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
+                                             const VkRenderPassBeginInfo* pRenderPassBegin);
+    void RecordCmdBeginRenderPassArmPrePassState(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
+                                                 const VkRenderPassBeginInfo* pRenderPassBegin);
+    void PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                         VkSubpassContents contents);
+    void PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                             const VkSubpassBeginInfoKHR* pSubpassBeginInfo);
+    void PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
+                                          const VkSubpassBeginInfoKHR* pSubpassBeginInfo);
     void PostCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                           VkSubpassContents contents);
     void PostCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
@@ -304,4 +317,40 @@ class BestPractices : public ValidationStateTracker {
 
     // used to track depth pre-pass heuristic data per command buffer
     std::unordered_map<VkCommandBuffer, DepthPrePassState> cbDepthPrePassStates = {};
+
+    class QueueTracker {
+      public:
+        enum Stage { STAGE_COMPUTE = 0, STAGE_GEOMETRY = 1, STAGE_FRAGMENT = 2, STAGE_TRANSFER = 3, STAGE_COUNT };
+
+        enum StageFlagBits {
+            STAGE_COMPUTE_BIT = 1 << 0,
+            STAGE_GEOMETRY_BIT = 1 << 1,
+            STAGE_FRAGMENT_BIT = 1 << 2,
+            STAGE_TRANSFER_BIT = 1 << 3,
+            STAGE_ALL_BITS = STAGE_COMPUTE_BIT | STAGE_GEOMETRY_BIT | STAGE_FRAGMENT_BIT | STAGE_TRANSFER_BIT
+        };
+        using StageFlags = uint32_t;
+
+        bool pushWork(BestPractices& tracker, Stage stage);
+        bool pushWorkArm(BestPractices& tracker, Stage stage);
+        void pipelineBarrier(StageFlags srcStages, StageFlags dstStages);
+        static StageFlags vkStagesToTracker(VkPipelineStageFlags stages);
+
+      private:
+        struct StageStatus {
+            // Waits for work associated with an index to complete in other stages.
+            uint64_t waitList[STAGE_COUNT] = {};
+
+            // The number of work items pushed to this pipeline stage so far.
+            uint64_t index = 0;
+
+            // The index when this stage was last used as a dstStageMask.
+            uint64_t lastDstStageIndex[STAGE_COUNT] = {};
+        };
+        StageStatus stages[STAGE_COUNT];
+    };
+    std::unordered_map<VkQueue, QueueTracker> queue_tracker_map;
+
+    using EnqueuedFunctions = std::vector<std::function<bool(VkQueue)>>;
+    std::unordered_map<VkCommandBuffer, EnqueuedFunctions> enqueued_fn_map;
 };

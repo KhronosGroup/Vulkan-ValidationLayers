@@ -140,5 +140,6 @@ static const char DECORATE_UNUSED *kVUID_BestPractices_CreateDevice_RobustBuffer
     "UNASSIGNED-BestPractices-vkCreateDevice-RobustBufferAccess";
 static const char DECORATE_UNUSED *kVUID_BestPractices_EndRenderPass_DepthPrePassUsage =
     "UNASSIGNED-BestPractices-vkCmdEndRenderPass-depth-pre-pass-usage";
+static const char DECORATE_UNUSED *kVUID_BestPractices_PipelineBubble = "UNASSIGNED-BestPractices-pipeline-bubble";
 
 #endif
