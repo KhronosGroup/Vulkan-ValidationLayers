@@ -863,10 +863,18 @@ void ResourceAccessState::ApplyMemoryAccessBarrier(VkPipelineStageFlags src_exec
     }
 }
 
-void SyncValidator::ResetCommandBuffer(VkCommandBuffer command_buffer) {
+void SyncValidator::ResetCommandBufferCallback(VkCommandBuffer command_buffer) {
     auto *access_context = GetAccessContextNoInsert(command_buffer);
     if (access_context) {
         access_context->Reset();
+    }
+}
+
+void SyncValidator::FreeCommandBufferCallback(VkCommandBuffer command_buffer) {
+    auto access_found = cb_access_state.find(command_buffer);
+    if (access_found != cb_access_state.end()) {
+        access_found->second->Reset();
+        cb_access_state.erase(access_found);
     }
 }
 
@@ -1126,8 +1134,12 @@ void SyncValidator::PostCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDev
     ValidationObject *validation_data = GetValidationObject(device_object->object_dispatch, LayerObjectTypeSyncValidation);
     SyncValidator *sync_device_state = static_cast<SyncValidator *>(validation_data);
 
-    sync_device_state->SetCommandBufferResetCallback(
-        [sync_device_state](VkCommandBuffer command_buffer) -> void { sync_device_state->ResetCommandBuffer(command_buffer); });
+    sync_device_state->SetCommandBufferResetCallback([sync_device_state](VkCommandBuffer command_buffer) -> void {
+        sync_device_state->ResetCommandBufferCallback(command_buffer);
+    });
+    sync_device_state->SetCommandBufferFreeCallback([sync_device_state](VkCommandBuffer command_buffer) -> void {
+        sync_device_state->FreeCommandBufferCallback(command_buffer);
+    });
 }
 
 void SyncValidator::PostCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo,

@@ -2594,6 +2594,11 @@ void ValidationStateTracker::PreCallRecordDestroyDescriptorPool(VkDevice device,
 void ValidationStateTracker::FreeCommandBufferStates(COMMAND_POOL_STATE *pool_state, const uint32_t command_buffer_count,
                                                      const VkCommandBuffer *command_buffers) {
     for (uint32_t i = 0; i < command_buffer_count; i++) {
+        // Allow any derived class to clean up command buffer state
+        if (command_buffer_free_callback) {
+            (*command_buffer_free_callback)(command_buffers[i]);
+        }
+
         auto cb_state = GetCBState(command_buffers[i]);
         // Remove references to command buffer's state and delete
         if (cb_state) {
