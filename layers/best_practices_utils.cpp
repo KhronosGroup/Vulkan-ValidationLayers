@@ -2354,3 +2354,87 @@ BestPractices::QueueTracker::StageFlags BestPractices::QueueTracker::vkStagesToT
 
     return flags;
 }
+
+void BestPractices::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                                 VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                 const VkImageResolve* pRegions) {
+    enqueued_fn_map[commandBuffer].push_back(
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+}
+
+void BestPractices::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
+                                               uint32_t regionCount, const VkBufferCopy* pRegions) {
+    enqueued_fn_map[commandBuffer].push_back(
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+}
+
+void BestPractices::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                              VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                              const VkImageCopy* pRegions) {
+    enqueued_fn_map[commandBuffer].push_back(
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+}
+
+void BestPractices::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                                      VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                      const VkBufferImageCopy* pRegions) {
+    enqueued_fn_map[commandBuffer].push_back(
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+}
+
+void BestPractices::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                                      VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions) {
+    enqueued_fn_map[commandBuffer].push_back(
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+}
+
+void BestPractices::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                              VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                              const VkImageBlit* pRegions, VkFilter filter) {
+    enqueued_fn_map[commandBuffer].push_back(
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+}
+
+void BestPractices::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                               VkDeviceSize size, uint32_t data) {
+    enqueued_fn_map[commandBuffer].push_back(
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+}
+
+void BestPractices::PreCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                                 VkDeviceSize dataSize, const void* pData) {
+    enqueued_fn_map[commandBuffer].push_back(
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+}
+
+void BestPractices::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                    const VkClearColorValue* pColor, uint32_t rangeCount,
+                                                    const VkImageSubresourceRange* pRanges) {
+    enqueued_fn_map[commandBuffer].push_back(
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+}
+
+void BestPractices::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                           const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
+                                                           const VkImageSubresourceRange* pRanges) {
+    enqueued_fn_map[commandBuffer].push_back(
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+}
+
+void BestPractices::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
+                                                         uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                                         VkDeviceSize stride, VkQueryResultFlags flags) {
+    enqueued_fn_map[commandBuffer].push_back(
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_TRANSFER); });
+}
+
+void BestPractices::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
+                                             uint32_t groupCountZ) {
+    enqueued_fn_map[commandBuffer].push_back(
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_COMPUTE); });
+}
+
+void BestPractices::PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
+    enqueued_fn_map[commandBuffer].push_back(
+        [this](VkQueue queue) { return queue_tracker_map[queue].pushWork(*this, QueueTracker::STAGE_COMPUTE); });
+}
