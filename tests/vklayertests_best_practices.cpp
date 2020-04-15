@@ -1586,3 +1586,36 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocalityTest) {
     test_spatial_locality(pipe, compute_sampler_1d_64_1_1.GetStageCreateInfo(), false);
     test_spatial_locality(pipe, compute_sampler_2d_64_1_1.GetStageCreateInfo(), true);
 }
+
+TEST_F(VkArmBestPracticesLayerTest, PipelineBubble) {
+    InitBestPracticesFramework();
+    InitState();
+
+    // Expect two pipeline bubble warnings
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "UNASSIGNED-BestPractices-pipeline-bubble");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "UNASSIGNED-BestPractices-pipeline-bubble");
+
+    // This test may also trigger other warnings
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkAllocateMemory-small-allocation");
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-BestPractices-vkBindMemory-small-dedicated-allocation");
+
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    m_commandBuffer->begin();
+
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_commandBuffer->EndRenderPass();
+
+    m_commandBuffer->PipelineBarrier(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0,
+                                     nullptr, 0, nullptr, 0, nullptr);
+
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    m_commandBuffer->EndRenderPass();
+
+    m_commandBuffer->end();
+
+    m_commandBuffer->QueueCommandBuffer(false);
+
+    m_errorMonitor->VerifyFound();
+}
