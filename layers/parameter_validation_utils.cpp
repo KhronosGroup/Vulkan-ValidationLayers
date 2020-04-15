@@ -2601,6 +2601,34 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
         }
     }
 
+    if (pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
+        pCreateInfo->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
+        if (!device_extensions.vk_ext_custom_border_color) {
+            skip |= LogError(device, kVUID_PVError_ExtensionNotEnabled,
+                             "VkSamplerCreateInfo->borderColor is %s but %s is not enabled.\n",
+                             string_VkBorderColor(pCreateInfo->borderColor), VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
+        }
+        auto custom_create_info = lvl_find_in_chain<VkSamplerCustomBorderColorCreateInfoEXT>(pCreateInfo->pNext);
+        if (!custom_create_info) {
+            skip |=
+                LogError(device, "VUID-VkSamplerCreateInfo-borderColor-04011",
+                         "VkSamplerCreateInfo->borderColor is set to %s but there is no VkSamplerCustomBorderColorCreateInfoEXT "
+                         "struct in pNext chain.\n",
+                         string_VkBorderColor(pCreateInfo->borderColor));
+        } else {
+            if ((custom_create_info->format != VK_FORMAT_UNDEFINED) &&
+                ((pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT && !FormatIsSampledInt(custom_create_info->format)) ||
+                 (pCreateInfo->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT &&
+                  !FormatIsSampledFloat(custom_create_info->format)))) {
+                skip |= LogError(device, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04013",
+                                 "VkSamplerCreateInfo->borderColor is %s but VkSamplerCustomBorderColorCreateInfoEXT.format = %s "
+                                 "whose type does not match\n",
+                                 string_VkBorderColor(pCreateInfo->borderColor), string_VkFormat(custom_create_info->format));
+                ;
+            }
+        }
+    }
+
     return skip;
 }
 

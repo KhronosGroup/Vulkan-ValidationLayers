@@ -896,6 +896,13 @@ VK_LAYER_EXPORT bool FormatIsSScaled(VkFormat format) {
     return is_sscaled;
 }
 
+// Types from "Interpretation of Numeric Format" table
+VK_LAYER_EXPORT bool FormatIsSampledInt(VkFormat format) { return FormatIsInt(format); }
+VK_LAYER_EXPORT bool FormatIsSampledFloat(VkFormat format) {
+    return (FormatIsUNorm(format) || FormatIsSNorm(format) || FormatIsUScaled(format) || FormatIsSScaled(format) ||
+            FormatIsFloat(format) || FormatIsSRGB(format));
+}
+
 // Return texel block sizes for all formats
 // Uncompressed formats return {1, 1, 1}
 // Compressed formats return the compression block extents

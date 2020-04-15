@@ -361,10 +361,13 @@ struct SAMPLER_STATE : public BASE_NODE {
     VkSampler sampler;
     VkSamplerCreateInfo createInfo;
     VkSamplerYcbcrConversion samplerConversion = VK_NULL_HANDLE;
+    VkSamplerCustomBorderColorCreateInfoEXT customCreateInfo = {};
 
     SAMPLER_STATE(const VkSampler *ps, const VkSamplerCreateInfo *pci) : sampler(*ps), createInfo(*pci) {
         auto *conversionInfo = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(pci->pNext);
         if (conversionInfo) samplerConversion = conversionInfo->conversion;
+        auto cbci = lvl_find_in_chain<VkSamplerCustomBorderColorCreateInfoEXT>(pci->pNext);
+        if (cbci) customCreateInfo = *cbci;
     }
 };
 
@@ -1251,6 +1254,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceRayTracingFeaturesKHR ray_tracing_features;
     VkPhysicalDeviceRobustness2FeaturesEXT robustness2_features;
     VkPhysicalDeviceFragmentDensityMapFeaturesEXT fragment_density_map_features;
+    VkPhysicalDeviceCustomBorderColorFeaturesEXT custom_border_color_features;
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };
