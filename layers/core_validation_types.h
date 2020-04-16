@@ -408,7 +408,7 @@ class IMAGE_STATE : public BINDABLE {
     bool plane2_memory_requirements_checked;
 
     const image_layout_map::Encoder subresource_encoder;            // Subresource resolution encoder
-    const subresource_adapter::ImageRangeEncoder fragment_encoder;  // Fragment resolution encoder
+    std::unique_ptr<const subresource_adapter::ImageRangeEncoder> fragment_encoder;  // Fragment resolution encoder
     const VkDevice store_device_as_workaround;                      // TODO REMOVE WHEN encoder can be const
 
     std::vector<VkSparseImageMemoryRequirements> sparse_requirements;
