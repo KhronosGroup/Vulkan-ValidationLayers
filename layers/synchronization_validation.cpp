@@ -306,7 +306,7 @@ void AccessContext::ResolvePreviousAccess(const IMAGE_STATE &image_state, const 
     if (!SimpleBinding(image_state)) return;
 
     auto subresource_range = NormalizeSubresourceRange(image_state.createInfo, subresource_range_arg);
-    subresource_adapter::ImageRangeGenerator range_gen(image_state.fragment_encoder, subresource_range, {0, 0, 0},
+    subresource_adapter::ImageRangeGenerator range_gen(*image_state.fragment_encoder.get(), subresource_range, {0, 0, 0},
                                                        image_state.createInfo.extent);
     const auto base_address = ResourceBaseAddress(image_state);
     for (; range_gen->non_empty(); ++range_gen) {
@@ -344,7 +344,7 @@ HazardResult AccessContext::DetectHazard(const IMAGE_STATE &image, SyncStageAcce
     // TODO: replace the encoder/generator with offset3D/extent3D aware versions
     VkImageSubresourceRange subresource_range = {subresource.aspectMask, subresource.mipLevel, 1, subresource.baseArrayLayer,
                                                  subresource.layerCount};
-    subresource_adapter::ImageRangeGenerator range_gen(image.fragment_encoder, subresource_range, offset, extent);
+    subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, offset, extent);
     const auto address_type = ImageAddressType(image);
     const auto base_address = ResourceBaseAddress(image);
     for (; range_gen->non_empty(); ++range_gen) {
@@ -388,7 +388,7 @@ HazardResult AccessContext::DetectImageBarrierHazard(const IMAGE_STATE &image, V
     auto subresource_range = NormalizeSubresourceRange(image.createInfo, barrier.subresourceRange);
     const VulkanTypedHandle image_handle(image.image, kVulkanObjectTypeImage);
     const auto src_access_scope = SyncStageAccess::AccessScope(src_stage_accesses, barrier.srcAccessMask);
-    subresource_adapter::ImageRangeGenerator range_gen(image.fragment_encoder, subresource_range, {0, 0, 0},
+    subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, {0, 0, 0},
                                                        image.createInfo.extent);
     const auto address_type = ImageAddressType(image);
     const auto base_address = ResourceBaseAddress(image);
@@ -564,7 +564,7 @@ void AccessContext::UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessI
     // TODO: replace the encoder/generator with offset3D aware versions
     VkImageSubresourceRange subresource_range = {subresource.aspectMask, subresource.mipLevel, 1, subresource.baseArrayLayer,
                                                  subresource.layerCount};
-    subresource_adapter::ImageRangeGenerator range_gen(image.fragment_encoder, subresource_range, offset, extent);
+    subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, offset, extent);
     const VulkanTypedHandle handle(image.image, kVulkanObjectTypeImage);
     const auto address_type = ImageAddressType(image);
     const auto base_address = ResourceBaseAddress(image);
@@ -588,7 +588,7 @@ void AccessContext::UpdateMemoryAccess(const IMAGE_STATE &image, const VkImageSu
     const auto address_type = ImageAddressType(image);
     auto *accesses = &GetAccessStateMap(address_type);
 
-    subresource_adapter::ImageRangeGenerator range_gen(image.fragment_encoder, subresource_range, {0, 0, 0},
+    subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, {0, 0, 0},
                                                        image.createInfo.extent);
 
     const auto base_address = ResourceBaseAddress(image);
