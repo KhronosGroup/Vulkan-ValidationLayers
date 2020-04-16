@@ -4325,6 +4325,10 @@ void ValidationStateTracker::PreCallRecordUnmapMemory(VkDevice device, VkDeviceM
 void ValidationStateTracker::UpdateBindImageMemoryState(const VkBindImageMemoryInfo &bindInfo) {
     IMAGE_STATE *image_state = GetImageState(bindInfo.image);
     if (image_state) {
+        // An Android sepcial image cannot get VkSubresourceLayout until the image binds a memory.
+        // See: VUID-vkGetImageSubresourceLayout-image-01895
+        image_state->fragment_encoder =
+            std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*image_state));
         const auto swapchain_info = lvl_find_in_chain<VkBindImageMemorySwapchainInfoKHR>(bindInfo.pNext);
         if (swapchain_info) {
             auto swapchain = GetSwapchainState(swapchain_info->swapchain);
