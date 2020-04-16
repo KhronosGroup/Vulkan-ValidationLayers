@@ -1283,8 +1283,8 @@ VK_LAYER_EXPORT uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags a
 
 // Return the size in bytes of one texel of given foramt
 // For compressed or multi-plane, this may be a fractional number
-VK_LAYER_EXPORT double FormatTexelSize(VkFormat format) {
-    double texel_size = static_cast<double>(FormatElementSize(format));
+VK_LAYER_EXPORT double FormatTexelSize(VkFormat format, VkImageAspectFlags aspectMask) {
+    double texel_size = static_cast<double>(FormatElementSize(format, aspectMask));
     VkExtent3D block_extent = FormatTexelBlockExtent(format);
     uint32_t texels_per_block = block_extent.width * block_extent.height * block_extent.depth;
     if (1 < texels_per_block) {
