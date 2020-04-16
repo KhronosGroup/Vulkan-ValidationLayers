@@ -100,6 +100,8 @@ def main():
     if platform.system() == 'Windows':
         relative_path_prefix = r'..\\'  # json-escaped, hence two backslashes.
         file_type_suffix = '.dll'
+    elif platform.system() == 'Darwin':
+        file_type_suffix = '.dylib'
 
     # For each *.json.in template files in source dir generate actual json file
     # in target dir
