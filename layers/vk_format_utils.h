@@ -172,7 +172,7 @@ VK_LAYER_EXPORT uint32_t FormatPlaneCount(VkFormat format);
 VK_LAYER_EXPORT uint32_t FormatChannelCount(VkFormat format);
 VK_LAYER_EXPORT VkExtent3D FormatTexelBlockExtent(VkFormat format);
 VK_LAYER_EXPORT uint32_t FormatElementSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
-VK_LAYER_EXPORT double FormatTexelSize(VkFormat format);
+VK_LAYER_EXPORT double FormatTexelSize(VkFormat format, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT);
 VK_LAYER_EXPORT VkFormatCompatibilityClass FormatCompatibilityClass(VkFormat format);
 VK_LAYER_EXPORT VkDeviceSize SafeModulo(VkDeviceSize dividend, VkDeviceSize divisor);
 VK_LAYER_EXPORT VkDeviceSize SafeDivision(VkDeviceSize dividend, VkDeviceSize divisor);
