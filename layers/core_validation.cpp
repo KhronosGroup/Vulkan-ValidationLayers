@@ -904,8 +904,8 @@ bool CoreChecks::ValidatePipelineLocked(std::vector<std::shared_ptr<PIPELINE_STA
         const PIPELINE_STATE *pBasePipeline = nullptr;
         if (!((pPipeline->graphicsPipelineCI.basePipelineHandle != VK_NULL_HANDLE) ^
               (pPipeline->graphicsPipelineCI.basePipelineIndex != -1))) {
-            // This check is a superset of "VUID-VkGraphicsPipelineCreateInfo-flags-00724" and
-            // "VUID-VkGraphicsPipelineCreateInfo-flags-00725"
+            // TODO: This check is a superset of VUID-VkGraphicsPipelineCreateInfo-flags-00724 and
+            // TODO: VUID-VkGraphicsPipelineCreateInfo-flags-00725
             skip |= LogError(device, kVUID_Core_DrawState_InvalidPipelineCreateState,
                              "Invalid Pipeline CreateInfo: exactly one of base pipeline index and handle must be specified");
         } else if (pPipeline->graphicsPipelineCI.basePipelineIndex != -1) {
@@ -1947,14 +1947,14 @@ bool CoreChecks::ValidateFenceForSubmit(const FENCE_STATE *pFence) const {
     if (pFence && pFence->scope == kSyncScopeInternal) {
         if (pFence->state == FENCE_INFLIGHT) {
             // TODO: opportunities for "VUID-vkQueueSubmit-fence-00064", "VUID-vkQueueBindSparse-fence-01114",
-            // "VUID-vkAcquireNextImageKHR-fence-01287"
+            // TODO:  "VUID-vkAcquireNextImageKHR-fence-01287"
             skip |= LogError(pFence->fence, kVUID_Core_DrawState_InvalidFence, "%s is already in use by another submission.",
                              report_data->FormatHandle(pFence->fence).c_str());
         }
 
         else if (pFence->state == FENCE_RETIRED) {
             // TODO: opportunities for "VUID-vkQueueSubmit-fence-00063", "VUID-vkQueueBindSparse-fence-01113",
-            // "VUID-vkAcquireNextImageKHR-fence-01287"
+            // TODO: "VUID-vkAcquireNextImageKHR-fence-01287"
             skip |= LogError(pFence->fence, kVUID_Core_MemTrack_FenceState,
                              "%s submitted in SIGNALED state.  Fences must be reset before being submitted",
                              report_data->FormatHandle(pFence->fence).c_str());
@@ -6986,7 +6986,6 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
             if ((offset >= range.offset) && (offset + size <= range.offset + range.size)) {
                 VkShaderStageFlags matching_stages = range.stageFlags & stageFlags;
                 if (matching_stages != range.stageFlags) {
-                    // "VUID-vkCmdPushConstants-offset-01796" VUID-vkCmdPushConstants-offset-01796
                     skip |= LogError(commandBuffer, "VUID-vkCmdPushConstants-offset-01796",
                                      "vkCmdPushConstants(): stageFlags (0x%" PRIx32 ", offset (%" PRIu32 "), and size (%" PRIu32
                                      "),  must contain all stages in overlapping VkPushConstantRange stageFlags (0x%" PRIx32
@@ -7000,7 +6999,6 @@ bool CoreChecks::PreCallValidateCmdPushConstants(VkCommandBuffer commandBuffer, 
             }
         }
         if (found_stages != stageFlags) {
-            // "VUID-vkCmdPushConstants-offset-01795" VUID-vkCmdPushConstants-offset-01795
             uint32_t missing_stages = ~found_stages & stageFlags;
             skip |= LogError(commandBuffer, "VUID-vkCmdPushConstants-offset-01795",
                              "vkCmdPushConstants(): stageFlags = 0x%" PRIx32
@@ -10271,11 +10269,10 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
         const auto pSemaphore = GetSemaphoreState(pPresentInfo->pWaitSemaphores[i]);
         if (pSemaphore && pSemaphore->type != VK_SEMAPHORE_TYPE_BINARY_KHR) {
-            skip |= LogError(
-                pPresentInfo->pWaitSemaphores[i],
-                "VUID-vkQueuePresentKHR-pWaitSemaphores-03267",  // VUID-VkPresentInfoKHR-pWaitSemaphores-03269 could fit also!!
-                "VkQueuePresent: %s is not a VK_SEMAPHORE_TYPE_BINARY_KHR",
-                report_data->FormatHandle(pPresentInfo->pWaitSemaphores[i]).c_str());
+            // TODO: VUID-VkPresentInfoKHR-pWaitSemaphores-03269 could fit also!!
+            skip |= LogError(pPresentInfo->pWaitSemaphores[i], "VUID-vkQueuePresentKHR-pWaitSemaphores-03267",
+                             "VkQueuePresent: %s is not a VK_SEMAPHORE_TYPE_BINARY_KHR",
+                             report_data->FormatHandle(pPresentInfo->pWaitSemaphores[i]).c_str());
         }
         if (pSemaphore && !pSemaphore->signaled && !SemaphoreWasSignaled(pPresentInfo->pWaitSemaphores[i])) {
             LogObjectList objlist(queue);
