@@ -2225,36 +2225,33 @@ void ValidationStateTracker::PostCallRecordBindBufferMemory2KHR(VkDevice device,
     }
 }
 
-void ValidationStateTracker::RecordGetBufferMemoryRequirementsState(VkBuffer buffer, VkMemoryRequirements *pMemoryRequirements) {
+void ValidationStateTracker::RecordGetBufferMemoryRequirementsState(VkBuffer buffer) {
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     if (buffer_state) {
-        buffer_state->requirements = *pMemoryRequirements;
         buffer_state->memory_requirements_checked = true;
     }
 }
 
 void ValidationStateTracker::PostCallRecordGetBufferMemoryRequirements(VkDevice device, VkBuffer buffer,
                                                                        VkMemoryRequirements *pMemoryRequirements) {
-    RecordGetBufferMemoryRequirementsState(buffer, pMemoryRequirements);
+    RecordGetBufferMemoryRequirementsState(buffer);
 }
 
 void ValidationStateTracker::PostCallRecordGetBufferMemoryRequirements2(VkDevice device,
                                                                         const VkBufferMemoryRequirementsInfo2KHR *pInfo,
                                                                         VkMemoryRequirements2KHR *pMemoryRequirements) {
-    RecordGetBufferMemoryRequirementsState(pInfo->buffer, &pMemoryRequirements->memoryRequirements);
+    RecordGetBufferMemoryRequirementsState(pInfo->buffer);
 }
 
 void ValidationStateTracker::PostCallRecordGetBufferMemoryRequirements2KHR(VkDevice device,
                                                                            const VkBufferMemoryRequirementsInfo2KHR *pInfo,
                                                                            VkMemoryRequirements2KHR *pMemoryRequirements) {
-    RecordGetBufferMemoryRequirementsState(pInfo->buffer, &pMemoryRequirements->memoryRequirements);
+    RecordGetBufferMemoryRequirementsState(pInfo->buffer);
 }
 
-void ValidationStateTracker::RecordGetImageMemoryRequirementsState(VkImage image, const VkImageMemoryRequirementsInfo2 *pInfo,
-                                                                   VkMemoryRequirements *pMemoryRequirements) {
+void ValidationStateTracker::RecordGetImageMemoryRequirementsState(VkImage image, const VkImageMemoryRequirementsInfo2 *pInfo) {
     const VkImagePlaneMemoryRequirementsInfo *plane_info =
         (pInfo == nullptr) ? nullptr : lvl_find_in_chain<VkImagePlaneMemoryRequirementsInfo>(pInfo->pNext);
-    // TODO does the VkMemoryRequirements need to be saved here if PostCallRecordCreateImage tracks it regardless
     IMAGE_STATE *image_state = GetImageState(image);
     if (image_state) {
         if (plane_info != nullptr) {
@@ -2262,17 +2259,13 @@ void ValidationStateTracker::RecordGetImageMemoryRequirementsState(VkImage image
             image_state->memory_requirements_checked = false;  // Each image plane needs to be checked itself
             if (plane_info->planeAspect == VK_IMAGE_ASPECT_PLANE_0_BIT) {
                 image_state->plane0_memory_requirements_checked = true;
-                image_state->plane0_requirements = *pMemoryRequirements;
             } else if (plane_info->planeAspect == VK_IMAGE_ASPECT_PLANE_1_BIT) {
                 image_state->plane1_memory_requirements_checked = true;
-                image_state->plane1_requirements = *pMemoryRequirements;
             } else if (plane_info->planeAspect == VK_IMAGE_ASPECT_PLANE_2_BIT) {
                 image_state->plane2_memory_requirements_checked = true;
-                image_state->plane2_requirements = *pMemoryRequirements;
             }
         } else {
             // Single Plane image
-            image_state->requirements = *pMemoryRequirements;
             image_state->memory_requirements_checked = true;
         }
     }
@@ -2280,18 +2273,18 @@ void ValidationStateTracker::RecordGetImageMemoryRequirementsState(VkImage image
 
 void ValidationStateTracker::PostCallRecordGetImageMemoryRequirements(VkDevice device, VkImage image,
                                                                       VkMemoryRequirements *pMemoryRequirements) {
-    RecordGetImageMemoryRequirementsState(image, nullptr, pMemoryRequirements);
+    RecordGetImageMemoryRequirementsState(image, nullptr);
 }
 
 void ValidationStateTracker::PostCallRecordGetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2 *pInfo,
                                                                        VkMemoryRequirements2 *pMemoryRequirements) {
-    RecordGetImageMemoryRequirementsState(pInfo->image, pInfo, &pMemoryRequirements->memoryRequirements);
+    RecordGetImageMemoryRequirementsState(pInfo->image, pInfo);
 }
 
 void ValidationStateTracker::PostCallRecordGetImageMemoryRequirements2KHR(VkDevice device,
                                                                           const VkImageMemoryRequirementsInfo2 *pInfo,
                                                                           VkMemoryRequirements2 *pMemoryRequirements) {
-    RecordGetImageMemoryRequirementsState(pInfo->image, pInfo, &pMemoryRequirements->memoryRequirements);
+    RecordGetImageMemoryRequirementsState(pInfo->image, pInfo);
 }
 
 static void RecordGetImageSparseMemoryRequirementsState(IMAGE_STATE *image_state,
