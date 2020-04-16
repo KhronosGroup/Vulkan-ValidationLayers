@@ -238,7 +238,8 @@ class ValidationSource:
                 for line in f:
                     line_num = line_num + 1
                     if True in [line.strip().startswith(comment) for comment in ['//', '/*']]:
-                        continue
+                        if 'VUID-' not in line or 'TODO:' in line:
+                            continue
                     # Find vuid strings
                     if prepend is not None:
                         line = prepend[:-2] + line.lstrip().lstrip('"') # join lines skipping CR, whitespace and trailing/leading quote char
