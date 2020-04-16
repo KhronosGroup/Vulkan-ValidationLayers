@@ -290,7 +290,7 @@ void AccessContext::ResolvePreviousAccess(AddressType type, const ResourceAccess
 }
 
 AccessContext::AddressType AccessContext::ImageAddressType(const IMAGE_STATE &image) {
-    return (image.createInfo.tiling == VK_IMAGE_TILING_LINEAR) ? AddressType::kLinearAddress : AddressType::kIdealizedAddress;
+    return (image.fragment_encoder->IsLinearImage()) ? AddressType::kLinearAddress : AddressType::kIdealizedAddress;
 }
 
 VkDeviceSize AccessContext::ResourceBaseAddress(const BINDABLE &bindable) {
