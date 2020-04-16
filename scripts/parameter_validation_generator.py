@@ -376,7 +376,7 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                     protect = self.struct_feature_protect[item]
                     pnext_case += '#ifdef %s\n' % protect
                 pnext_case += '        // Validation code for %s structure members\n' % item
-                pnext_case += '        case %s: {\n' % self.structTypes[item]
+                pnext_case += '        case %s: { // Covers VUID-%s-sType-sType\n' % (self.structTypes[item], item)
                 pnext_case += '            %s *structure = (%s *) header;\n' % (item, item)
                 expr = self.expandStructCode(item, item, 'structure->', '', '            ', [], postProcSpec)
                 struct_validation_source = self.ScrubStructCode(expr)
@@ -387,6 +387,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
                 # Skip functions containing no validation
                 if struct_validation_source:
                     pnext_handler += pnext_case;
+                else:
+                    pnext_handler += '\n        // No Validation code for %s structure members  -- Covers VUID-%s-sType-sType\n' % (item, item)
             pnext_handler += '        default:\n'
             pnext_handler += '            skip = false;\n'
             pnext_handler += '    }\n'
