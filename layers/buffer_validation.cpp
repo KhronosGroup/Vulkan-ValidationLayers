@@ -1517,9 +1517,10 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
         if (!lvl_find_in_chain<VkExternalFormatANDROID>(pCreateInfo->pNext))
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-            skip |=
-                LogError(device, kVUIDUndefined, "vkCreateImage(): Format %s is not supported for this combination of parameters.",
-                         string_VkFormat(pCreateInfo->format));
+            skip |= LogError(device, kVUID_Core_Image_FormatNotSupported,
+                             "vkCreateImage(): Format %s is not supported for this combination of parameters and "
+                             "VkGetPhysicalDeviceImageFormatProperties returned back VK_ERROR_FORMAT_NOT_SUPPORTED.",
+                             string_VkFormat(pCreateInfo->format));
     } else {
         if (pCreateInfo->mipLevels > format_limits.maxMipLevels) {
             const char *format_string = string_VkFormat(pCreateInfo->format);

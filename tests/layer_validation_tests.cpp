@@ -551,10 +551,13 @@ void CreateBufferTest(VkLayerTest &test, const VkBufferCreateInfo *pCreateInfo, 
 void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *pCreateInfo, std::string code) {
     VkResult err;
     VkImage image = VK_NULL_HANDLE;
-    if (code.length())
+    if (code.length()) {
         test.Monitor().SetDesiredFailureMsg(kErrorBit, code);
-    else
+        // Very possible a test didn't check for VK_ERROR_FORMAT_NOT_SUPPORTED
+        test.Monitor().SetUnexpectedError("UNASSIGNED-CoreValidation-Image-FormatNotSupported");
+    } else {
         test.Monitor().ExpectSuccess();
+    }
 
     err = vk::CreateImage(test.device(), pCreateInfo, NULL, &image);
     if (code.length())
