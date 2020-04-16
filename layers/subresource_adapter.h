@@ -335,8 +335,8 @@ class ImageRangeEncoder : public RangeEncoder {
     // The default constructor for default iterators
     ImageRangeEncoder() : image_(nullptr) {}
 
-    ImageRangeEncoder(const VkDevice device, const IMAGE_STATE& image, const AspectParameters* param);
-    ImageRangeEncoder(const VkDevice device, const IMAGE_STATE& image);
+    ImageRangeEncoder(const IMAGE_STATE& image, const AspectParameters* param);
+    ImageRangeEncoder(const IMAGE_STATE& image);
     ImageRangeEncoder(const ImageRangeEncoder& from) = default;
 
     inline IndexType Encode(const VkImageSubresource& subres, uint32_t layer, VkOffset3D offset) const;

@@ -85,7 +85,7 @@ IMAGE_STATE::IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCr
       plane1_memory_requirements_checked(false),
       plane2_memory_requirements_checked(false),
       subresource_encoder(full_range),
-      fragment_encoder(dev, *this),
+      fragment_encoder(nullptr),
       store_device_as_workaround(dev),  // TODO REMOVE WHEN encoder can be const
       sparse_requirements{} {
     if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
