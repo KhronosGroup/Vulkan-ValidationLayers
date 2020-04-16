@@ -2309,7 +2309,6 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const VkImage
         }
 
         // Do all checks on source image
-        //
         if (src_state->createInfo.imageType == VK_IMAGE_TYPE_1D) {
             if ((0 != region.srcOffset.y) || (1 != src_copy_extent.height)) {
                 skip |=
@@ -2320,7 +2319,6 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const VkImage
             }
         }
 
-        // VUID-VkImageCopy-srcImage-01785
         if ((src_state->createInfo.imageType == VK_IMAGE_TYPE_1D) && ((0 != region.srcOffset.z) || (1 != src_copy_extent.depth))) {
             skip |= LogError(src_state->image, "VUID-VkImageCopy-srcImage-01785",
                              "vkCmdCopyImage(): pRegion[%d] srcOffset.z is %d and extent.depth is %d. For 1D images "
@@ -2328,7 +2326,6 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const VkImage
                              i, region.srcOffset.z, src_copy_extent.depth);
         }
 
-        // VUID-VkImageCopy-srcImage-01787
         if ((src_state->createInfo.imageType == VK_IMAGE_TYPE_2D) && (0 != region.srcOffset.z)) {
             skip |= LogError(src_state->image, "VUID-VkImageCopy-srcImage-01787",
                              "vkCmdCopyImage(): pRegion[%d] srcOffset.z is %d. For 2D images the z-offset must be 0.", i,
@@ -2408,7 +2405,6 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const VkImage
         }  // Compressed
 
         // Do all checks on dest image
-        //
         if (dst_state->createInfo.imageType == VK_IMAGE_TYPE_1D) {
             if ((0 != region.dstOffset.y) || (1 != dst_copy_extent.height)) {
                 skip |= LogError(dst_state->image, "VUID-VkImageCopy-dstImage-00152",
@@ -2418,7 +2414,6 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const VkImage
             }
         }
 
-        // VUID-VkImageCopy-dstImage-01786
         if ((dst_state->createInfo.imageType == VK_IMAGE_TYPE_1D) && ((0 != region.dstOffset.z) || (1 != dst_copy_extent.depth))) {
             skip |=
                 LogError(dst_state->image, "VUID-VkImageCopy-dstImage-01786",
@@ -2427,7 +2422,6 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const VkImage
                          i, region.dstOffset.z, dst_copy_extent.depth);
         }
 
-        // VUID-VkImageCopy-dstImage-01788
         if ((dst_state->createInfo.imageType == VK_IMAGE_TYPE_2D) && (0 != region.dstOffset.z)) {
             skip |= LogError(dst_state->image, "VUID-VkImageCopy-dstImage-01788",
                              "vkCmdCopyImage(): pRegion[%d] dstOffset.z is %d. For 2D images the z-offset must be 0.", i,
