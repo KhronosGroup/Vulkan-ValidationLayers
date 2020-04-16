@@ -23,6 +23,7 @@
 #include "vk_format_utils.h"
 #include "state_tracker.h"
 #include "core_validation_types.h"
+#include <cmath>
 
 namespace subresource_adapter {
 Subresource::Subresource(const RangeEncoder& encoder, const VkImageSubresource& subres)
@@ -294,7 +295,7 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
         for (uint32_t aspect_index = 0; aspect_index < limits_.aspect_index; ++aspect_index) {
             subres.aspectMask = static_cast<VkImageAspectFlags>(AspectBit(aspect_index));
             if (mip_index == 0) {
-                element_sizes_.push_back(FormatElementSize(image.createInfo.format, subres.aspectMask));
+                texel_sizes_.push_back(FormatTexelSize(image.createInfo.format, subres.aspectMask));
             }
             if (linear_image) {
                 DispatchGetImageSubresourceLayout(image_->store_device_as_workaround, image_->image, &subres, &layout);
@@ -302,7 +303,8 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
             } else {
                 divisors = FindMultiplaneExtentDivisors(image.createInfo.format, subres.aspectMask);
                 layout.offset += layout.size;
-                layout.rowPitch = subres_extent.width * element_sizes_[aspect_index] / divisors.width;
+                layout.rowPitch =
+                    static_cast<VkDeviceSize>(ceil(subres_extent.width * texel_sizes_[aspect_index] / divisors.width));
                 layout.arrayPitch = layout.rowPitch * subres_extent.height / divisors.height;
                 layout.depthPitch = layout.arrayPitch;
                 layout.size = layout.arrayPitch * limits_.arrayLayer;
@@ -314,8 +316,9 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
 
 IndexType ImageRangeEncoder::Encode(const VkImageSubresource& subres, uint32_t layer, VkOffset3D offset) const {
     const auto& subres_layout = SubresourceLayout(subres);
-    return layer * subres_layout.arrayPitch + offset.z * subres_layout.depthPitch + offset.y * subres_layout.rowPitch +
-           offset.x * element_sizes_[LowerBoundFromMask(subres.aspectMask)] + subres_layout.offset;
+    return static_cast<IndexType>(ceil(layer * subres_layout.arrayPitch + offset.z * subres_layout.depthPitch +
+                                       offset.y * subres_layout.rowPitch +
+                                       offset.x * texel_sizes_[LowerBoundFromMask(subres.aspectMask)] + subres_layout.offset));
 }
 
 void ImageRangeEncoder::Decode(const VkImageSubresource& subres, const IndexType& encode, uint32_t& out_layer,
@@ -328,7 +331,7 @@ void ImageRangeEncoder::Decode(const VkImageSubresource& subres, const IndexType
     decode -= (out_offset.z * subres_layout.depthPitch);
     out_offset.y = static_cast<int32_t>(decode / subres_layout.rowPitch);
     decode -= (out_offset.y * subres_layout.rowPitch);
-    out_offset.x = static_cast<int32_t>(decode / element_sizes_[LowerBoundFromMask(subres.aspectMask)]);
+    out_offset.x = static_cast<int32_t>(decode / texel_sizes_[LowerBoundFromMask(subres.aspectMask)]);
 }
 
 const VkSubresourceLayout& ImageRangeEncoder::SubresourceLayout(const VkImageSubresource& subres) const {
@@ -350,16 +353,14 @@ void ImageRangeGenerator::SetPos() {
                                  subres_range_.baseMipLevel + mip_level_index_, subres_range_.baseArrayLayer};
     subres_layout_ = &(encoder_->SubresourceLayout(subres));
     pos_.begin = encoder_->Encode(subres, subres_range_.baseArrayLayer, offset_);
-    const auto& subres_extent = encoder_->SubresourceExtent(subres.mipLevel);
-    pos_.end = pos_.begin +
-               encoder_->ElementSize(aspect_index_) * ((extent_.width < subres_extent.width) ? extent_.width : subres_extent.width);
+    pos_.end = static_cast<IndexType>(ceil(pos_.begin + encoder_->TexelSize(aspect_index_) * extent_.width));
     offset_layer_base_ = pos_;
     offset_offset_y_base_ = pos_;
     arrayLayer_index_ = 0;
     offset_y_index_ = 0;
     Subresource limits = encoder_->Limits();
     aspect_count_ = limits.aspect_index;
-    offset_y_count_ = static_cast<int32_t>((extent_.height < subres_extent.height) ? extent_.height : subres_extent.height);
+    offset_y_count_ = static_cast<int32_t>(extent_.height);
 
     if ((offset_.z + extent_.depth) == 1) {
         layer_count_ = limits.arrayLayer - subres_range_.baseArrayLayer;
