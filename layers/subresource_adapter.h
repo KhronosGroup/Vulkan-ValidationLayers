@@ -344,8 +344,10 @@ class ImageRangeEncoder : public RangeEncoder {
     const VkSubresourceLayout& SubresourceLayout(const VkImageSubresource& subres) const;
     inline const VkExtent3D& SubresourceExtent(int mip_level) const { return subres_extents_[mip_level]; }
     inline const uint32_t& ElementSize(int aspect_index) const { return element_sizes_[aspect_index]; }
+    inline bool IsLinearImage() const { return linear_image; }
 
   private:
+    bool linear_image;
     const IMAGE_STATE* image_;
     std::vector<uint32_t> element_sizes_;
     std::vector<VkExtent3D> subres_extents_;
