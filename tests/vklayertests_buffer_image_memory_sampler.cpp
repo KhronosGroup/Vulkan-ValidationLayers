@@ -3420,7 +3420,11 @@ TEST_F(VkLayerTest, InvalidCmdBufferBufferViewDestroyed) {
         pipe.InitState();
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
         pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
-        pipe.CreateGraphicsPipeline();
+        err = pipe.CreateGraphicsPipeline();
+        if (err != VK_SUCCESS) {
+            printf("%s Unable to compile shader, skipping.\n", kSkipPrefix);
+            return;
+        }
 
         m_commandBuffer->begin();
         m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
