@@ -1984,6 +1984,271 @@ TEST_F(VkLayerTest, BindInvalidMemory2Disjoint) {
     }
 }
 
+TEST_F(VkLayerTest, BindInvalidMemoryNoCheck) {
+    TEST_DESCRIPTION("Tests case were no call to memory requirements was made prior to binding");
+
+    // Enable KHR YCbCr req'd extensions for Disjoint Bit
+    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (mp_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    if (mp_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // first test buffer
+    {
+        VkBufferCreateInfo buffer_create_info = {};
+        buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        buffer_create_info.pNext = NULL;
+        buffer_create_info.flags = 0;
+        buffer_create_info.size = 1024;
+        buffer_create_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        // Create 2 buffers, one that is checked and one that isn't by GetBufferMemoryRequirements
+        VkBuffer buffer = VK_NULL_HANDLE;
+        VkBuffer unchecked_buffer = VK_NULL_HANDLE;
+        VkDeviceMemory buffer_mem = VK_NULL_HANDLE;
+        VkDeviceMemory unchecked_buffer_mem = VK_NULL_HANDLE;
+        ASSERT_VK_SUCCESS(vk::CreateBuffer(device(), &buffer_create_info, NULL, &buffer));
+        ASSERT_VK_SUCCESS(vk::CreateBuffer(device(), &buffer_create_info, NULL, &unchecked_buffer));
+
+        VkMemoryRequirements buffer_mem_reqs = {};
+        vk::GetBufferMemoryRequirements(device(), buffer, &buffer_mem_reqs);
+        VkMemoryAllocateInfo buffer_alloc_info = {};
+        buffer_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        // Leave some extra space for alignment wiggle room
+        buffer_alloc_info.allocationSize = buffer_mem_reqs.size + buffer_mem_reqs.alignment;
+        ASSERT_TRUE(m_device->phy().set_memory_type(buffer_mem_reqs.memoryTypeBits, &buffer_alloc_info, 0));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &buffer_mem));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &buffer_alloc_info, NULL, &unchecked_buffer_mem));
+
+        if (buffer_mem_reqs.alignment > 1) {
+            VkDeviceSize buffer_offset = 1;
+
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memoryOffset-01036");
+            vk::BindBufferMemory(device(), buffer, buffer_mem, buffer_offset);
+            m_errorMonitor->VerifyFound();
+
+            // Should trigger same VUID even when image was never checked
+            // this makes an assumption that the driver will return the same image requirements for same createImageInfo where even
+            // being close to running out of heap space
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindBufferMemory-memoryOffset-01036");
+            vk::BindBufferMemory(device(), unchecked_buffer, unchecked_buffer_mem, buffer_offset);
+            m_errorMonitor->VerifyFound();
+        }
+
+        vk::DestroyBuffer(device(), buffer, NULL);
+        vk::DestroyBuffer(device(), unchecked_buffer, NULL);
+        vk::FreeMemory(device(), buffer_mem, NULL);
+        vk::FreeMemory(device(), unchecked_buffer_mem, NULL);
+    }
+
+    // Next test is a single-plane image
+    {
+        VkImageCreateInfo image_create_info = {};
+        image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        image_create_info.pNext = NULL;
+        image_create_info.imageType = VK_IMAGE_TYPE_2D;
+        image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+        image_create_info.extent.width = 256;
+        image_create_info.extent.height = 256;
+        image_create_info.extent.depth = 1;
+        image_create_info.mipLevels = 1;
+        image_create_info.arrayLayers = 1;
+        image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+        image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+        image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+        image_create_info.flags = 0;
+
+        // Create 2 images, one that is checked and one that isn't by GetImageMemoryRequirements
+        VkImage image = VK_NULL_HANDLE;
+        VkImage unchecked_image = VK_NULL_HANDLE;
+        VkDeviceMemory image_mem = VK_NULL_HANDLE;
+        VkDeviceMemory unchecked_image_mem = VK_NULL_HANDLE;
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, NULL, &image));
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, NULL, &unchecked_image));
+
+        VkMemoryRequirements image_mem_reqs = {};
+        vk::GetImageMemoryRequirements(device(), image, &image_mem_reqs);
+        VkMemoryAllocateInfo image_alloc_info = {};
+        image_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        // Leave some extra space for alignment wiggle room
+        image_alloc_info.allocationSize = image_mem_reqs.size + image_mem_reqs.alignment;
+        ASSERT_TRUE(m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, NULL, &image_mem));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, NULL, &unchecked_image_mem));
+
+        // single-plane image
+        if (image_mem_reqs.alignment > 1) {
+            VkDeviceSize image_offset = 1;
+
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memoryOffset-01048");
+            vk::BindImageMemory(device(), image, image_mem, image_offset);
+            m_errorMonitor->VerifyFound();
+
+            // Should trigger same VUID even when image was never checked
+            // this makes an assumption that the driver will return the same image requirements for same createImageInfo where even
+            // being close to running out of heap space
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory-memoryOffset-01048");
+            vk::BindImageMemory(device(), unchecked_image, unchecked_image_mem, image_offset);
+            m_errorMonitor->VerifyFound();
+        }
+
+        vk::DestroyImage(device(), image, NULL);
+        vk::DestroyImage(device(), unchecked_image, NULL);
+        vk::FreeMemory(device(), image_mem, NULL);
+        vk::FreeMemory(device(), unchecked_image_mem, NULL);
+    }
+
+    // Same style test but with a multi-planar disjoint image
+    // Test doesn't check either of the planes for the unchecked image
+    if (mp_extensions == false) {
+        printf("%s Rest of test rely on YCbCr Multi-planar support.\n", kSkipPrefix);
+        return;
+    } else {
+        // Check for support of format used by all multi-planar tests
+        const VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+        VkFormatProperties mp_format_properties;
+        vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), mp_format, &mp_format_properties);
+        if (0 ==
+            (mp_format_properties.optimalTilingFeatures & (VK_FORMAT_FEATURE_DISJOINT_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT))) {
+            printf("%s Rest of test rely on a supported disjoint format.\n", kSkipPrefix);
+            return;
+        }
+
+        VkImageCreateInfo mp_image_create_info = {};
+        mp_image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        mp_image_create_info.pNext = NULL;
+        mp_image_create_info.imageType = VK_IMAGE_TYPE_2D;
+        mp_image_create_info.format = mp_format;
+        mp_image_create_info.extent.width = 256;
+        mp_image_create_info.extent.height = 256;
+        mp_image_create_info.extent.depth = 1;
+        mp_image_create_info.mipLevels = 1;
+        mp_image_create_info.arrayLayers = 1;
+        mp_image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+        mp_image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+        mp_image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+        mp_image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
+
+        // Create aliased function pointers for 1.0 and 1.1 contexts
+        PFN_vkBindImageMemory2KHR vkBindImageMemory2Function = nullptr;
+        PFN_vkGetImageMemoryRequirements2KHR vkGetImageMemoryRequirements2Function = nullptr;
+
+        if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+            vkBindImageMemory2Function = vk::BindImageMemory2;
+            vkGetImageMemoryRequirements2Function = vk::GetImageMemoryRequirements2;
+        } else {
+            vkGetImageMemoryRequirements2Function =
+                (PFN_vkGetImageMemoryRequirements2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR");
+            vkBindImageMemory2Function =
+                (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+        }
+
+        VkImage mp_image = VK_NULL_HANDLE;
+        VkImage mp_unchecked_image = VK_NULL_HANDLE;
+        // Array represent planes for disjoint images
+        VkDeviceMemory mp_image_mem[2] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
+        VkDeviceMemory mp_unchecked_image_mem[2] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
+        VkMemoryRequirements2 mp_image_mem_reqs2[2];
+        VkMemoryAllocateInfo mp_image_alloc_info[2];
+
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &mp_image_create_info, NULL, &mp_image));
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &mp_image_create_info, NULL, &mp_unchecked_image));
+
+        VkImagePlaneMemoryRequirementsInfo image_plane_req = {VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO};
+        image_plane_req.pNext = nullptr;
+        image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
+
+        VkImageMemoryRequirementsInfo2 mem_req_info2 = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2};
+        mem_req_info2.pNext = (void *)&image_plane_req;
+        mem_req_info2.image = mp_image;
+        mp_image_mem_reqs2[0].sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+        mp_image_mem_reqs2[0].pNext = nullptr;
+        vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mp_image_mem_reqs2[0]);
+
+        image_plane_req.planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
+        mp_image_mem_reqs2[1].sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+        mp_image_mem_reqs2[1].pNext = nullptr;
+        vkGetImageMemoryRequirements2Function(device(), &mem_req_info2, &mp_image_mem_reqs2[1]);
+
+        mp_image_alloc_info[0].sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        mp_image_alloc_info[0].pNext = nullptr;
+        mp_image_alloc_info[1].sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        mp_image_alloc_info[1].pNext = nullptr;
+
+        mp_image_alloc_info[0].allocationSize = mp_image_mem_reqs2[0].memoryRequirements.size;
+        ASSERT_TRUE(
+            m_device->phy().set_memory_type(mp_image_mem_reqs2[0].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[0], 0));
+        // Leave some extra space for alignment wiggle room
+        mp_image_alloc_info[1].allocationSize =
+            mp_image_mem_reqs2[1].memoryRequirements.size + mp_image_mem_reqs2[1].memoryRequirements.alignment;
+        ASSERT_TRUE(
+            m_device->phy().set_memory_type(mp_image_mem_reqs2[1].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[1], 0));
+
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &mp_image_alloc_info[0], NULL, &mp_image_mem[0]));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &mp_image_alloc_info[1], NULL, &mp_image_mem[1]));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &mp_image_alloc_info[0], NULL, &mp_unchecked_image_mem[0]));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &mp_image_alloc_info[1], NULL, &mp_unchecked_image_mem[1]));
+
+        // Sets an invalid offset to plane 1
+        if (mp_image_mem_reqs2[1].memoryRequirements.alignment > 1) {
+            VkBindImagePlaneMemoryInfo plane_memory_info[2];
+            plane_memory_info[0].sType = VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO;
+            plane_memory_info[0].pNext = nullptr;
+            plane_memory_info[0].planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
+            plane_memory_info[1].sType = VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO;
+            plane_memory_info[1].pNext = nullptr;
+            plane_memory_info[1].planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
+
+            VkBindImageMemoryInfo bind_image_info[2];
+            bind_image_info[0].sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
+            bind_image_info[0].pNext = (void *)&plane_memory_info[0];
+            bind_image_info[0].image = mp_image;
+            bind_image_info[0].memory = mp_image_mem[0];
+            bind_image_info[0].memoryOffset = 0;
+            bind_image_info[1].sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
+            bind_image_info[1].pNext = (void *)&plane_memory_info[1];
+            bind_image_info[1].image = mp_image;
+            bind_image_info[1].memory = mp_image_mem[1];
+            bind_image_info[1].memoryOffset = 1;  // off alignment
+
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01620");
+            vkBindImageMemory2Function(device(), 2, bind_image_info);
+            m_errorMonitor->VerifyFound();
+
+            // Should trigger same VUID even when image was never checked
+            // this makes an assumption that the driver will return the same image requirements for same createImageInfo where even
+            // being close to running out of heap space
+            bind_image_info[0].image = mp_unchecked_image;
+            bind_image_info[0].memory = mp_unchecked_image_mem[0];
+            bind_image_info[1].image = mp_unchecked_image;
+            bind_image_info[1].memory = mp_unchecked_image_mem[1];
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBindImageMemoryInfo-pNext-01620");
+            vkBindImageMemory2Function(device(), 2, bind_image_info);
+            m_errorMonitor->VerifyFound();
+        }
+
+        vk::DestroyImage(device(), mp_image, NULL);
+        vk::DestroyImage(device(), mp_unchecked_image, NULL);
+        vk::FreeMemory(device(), mp_image_mem[0], NULL);
+        vk::FreeMemory(device(), mp_image_mem[1], NULL);
+        vk::FreeMemory(device(), mp_unchecked_image_mem[0], NULL);
+        vk::FreeMemory(device(), mp_unchecked_image_mem[1], NULL);
+    }
+}
+
 TEST_F(VkLayerTest, BindMemoryToDestroyedObject) {
     VkResult err;
     bool pass;
