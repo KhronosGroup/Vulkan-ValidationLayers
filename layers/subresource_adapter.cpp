@@ -275,35 +275,38 @@ ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParam
     VkImageSubresource subres = {};
     VkExtent2D divisors = {};
     VkImageSubresourceLayers subres_layers = {limits_.aspectMask, 0, 0, limits_.arrayLayer};
+    linear_image = false;
+
+    // WORKAROUND for dev_sim and mock_icd not containing valid VkSubresourceLayout yet. Treat it as optimal image.
+    if (image_->createInfo.tiling != VK_IMAGE_TILING_OPTIMAL) {
+        subres = {static_cast<VkImageAspectFlags>(AspectBit(0)), 0, 0};
+        DispatchGetImageSubresourceLayout(image_->store_device_as_workaround, image_->image, &subres, &layout);
+        if (layout.size > 0) {
+            linear_image = true;
+        }
+    }
 
     for (uint32_t mip_index = 0; mip_index < limits_.mipLevel; ++mip_index) {
         subres_layers.mipLevel = mip_index;
         auto subres_extent = GetImageSubresourceExtent(image_, &subres_layers);
         subres_extents_.push_back(subres_extent);
-
+        subres.mipLevel = mip_index;
         for (uint32_t aspect_index = 0; aspect_index < limits_.aspect_index; ++aspect_index) {
-            VkImageAspectFlagBits aspectBit = AspectBit(aspect_index);
+            subres.aspectMask = static_cast<VkImageAspectFlags>(AspectBit(aspect_index));
             if (mip_index == 0) {
-                element_sizes_.push_back(FormatElementSize(image.createInfo.format, aspectBit));
+                element_sizes_.push_back(FormatElementSize(image.createInfo.format, subres.aspectMask));
             }
-            switch (image_->createInfo.tiling) {
-                case VK_IMAGE_TILING_OPTIMAL:
-                    divisors = FindMultiplaneExtentDivisors(image.createInfo.format, aspectBit);
-                    layout.offset += layout.size;
-                    layout.rowPitch = subres_extent.width * element_sizes_[aspect_index] / divisors.width;
-                    layout.arrayPitch = layout.rowPitch * subres_extent.height / divisors.height;
-                    layout.depthPitch = layout.arrayPitch;
-                    layout.size = layout.arrayPitch * limits_.arrayLayer;
-                    subres_layouts_.push_back(layout);
-                    break;
-                case VK_IMAGE_TILING_LINEAR:
-                case VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT:
-                    subres = {VkImageAspectFlags(aspectBit), mip_index, 0};
-                    DispatchGetImageSubresourceLayout(image_->store_device_as_workaround, image_->image, &subres, &layout);
-                    subres_layouts_.push_back(layout);
-                    break;
-                default:
-                    break;
+            if (linear_image) {
+                DispatchGetImageSubresourceLayout(image_->store_device_as_workaround, image_->image, &subres, &layout);
+                subres_layouts_.push_back(layout);
+            } else {
+                divisors = FindMultiplaneExtentDivisors(image.createInfo.format, subres.aspectMask);
+                layout.offset += layout.size;
+                layout.rowPitch = subres_extent.width * element_sizes_[aspect_index] / divisors.width;
+                layout.arrayPitch = layout.rowPitch * subres_extent.height / divisors.height;
+                layout.depthPitch = layout.arrayPitch;
+                layout.size = layout.arrayPitch * limits_.arrayLayer;
+                subres_layouts_.push_back(layout);
             }
         }
     }
