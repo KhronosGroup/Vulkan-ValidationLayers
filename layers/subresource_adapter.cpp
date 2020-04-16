@@ -266,10 +266,10 @@ RangeGenerator& RangeGenerator::operator++() {
     return *this;
 }
 
-ImageRangeEncoder::ImageRangeEncoder(const VkDevice device, const IMAGE_STATE& image)
-    : ImageRangeEncoder(device, image, AspectParameters::Get(image.full_range.aspectMask)) {}
+ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image)
+    : ImageRangeEncoder(image, AspectParameters::Get(image.full_range.aspectMask)) {}
 
-ImageRangeEncoder::ImageRangeEncoder(const VkDevice device, const IMAGE_STATE& image, const AspectParameters* param)
+ImageRangeEncoder::ImageRangeEncoder(const IMAGE_STATE& image, const AspectParameters* param)
     : RangeEncoder(image.full_range, param), image_(&image) {
     VkSubresourceLayout layout = {};
     VkImageSubresource subres = {};
@@ -299,7 +299,7 @@ ImageRangeEncoder::ImageRangeEncoder(const VkDevice device, const IMAGE_STATE& i
                 case VK_IMAGE_TILING_LINEAR:
                 case VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT:
                     subres = {VkImageAspectFlags(aspectBit), mip_index, 0};
-                    DispatchGetImageSubresourceLayout(device, image_->image, &subres, &layout);
+                    DispatchGetImageSubresourceLayout(image_->store_device_as_workaround, image_->image, &subres, &layout);
                     subres_layouts_.push_back(layout);
                     break;
                 default:
