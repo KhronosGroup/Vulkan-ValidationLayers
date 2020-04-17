@@ -1134,59 +1134,63 @@ void VkImageObj::SetLayout(VkCommandBufferObj *cmd_buf, VkImageAspectFlags aspec
     const VkFlags all_cache_inputs = VK_ACCESS_HOST_READ_BIT | VK_ACCESS_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_INDEX_READ_BIT |
                                      VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
                                      VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                                     VK_ACCESS_MEMORY_READ_BIT;
+                                     VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_MEMORY_READ_BIT;
+
+    const VkFlags shader_read_inputs = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_MEMORY_READ_BIT;
 
     if (image_layout == m_descriptorImageInfo.imageLayout) {
         return;
     }
 
+    // Attempt to narrow the src_mask, by what the image could have validly been used for in it's current layout
+    switch (m_descriptorImageInfo.imageLayout) {
+        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+            src_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+            src_mask = shader_read_inputs;
+            break;
+        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+            src_mask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+            src_mask = VK_ACCESS_TRANSFER_READ_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_UNDEFINED:
+            src_mask = 0;
+            break;
+        default:
+            src_mask = all_cache_outputs;  // Only need to worry about writes, as the stage mask will protect reads
+    }
+
+    // Narrow the dst mask by the valid accesss for the new layout
     switch (image_layout) {
         case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-            if (m_descriptorImageInfo.imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-                src_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            else
-                src_mask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            // NOTE: not sure why shader read is here...
             dst_mask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
             break;
 
         case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-            if (m_descriptorImageInfo.imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-                src_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            else if (m_descriptorImageInfo.imageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-                src_mask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
-            else
-                src_mask = VK_ACCESS_TRANSFER_WRITE_BIT;
             dst_mask = VK_ACCESS_TRANSFER_WRITE_BIT;
             break;
 
         case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-            if (m_descriptorImageInfo.imageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-                src_mask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            else
-                src_mask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
-            dst_mask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_MEMORY_READ_BIT;
+            dst_mask = shader_read_inputs;
             break;
 
         case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-            if (m_descriptorImageInfo.imageLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
-                src_mask = VK_ACCESS_TRANSFER_READ_BIT;
-            else
-                src_mask = 0;
             dst_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
             break;
 
         case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
             dst_mask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-            src_mask = all_cache_outputs;
             break;
 
         default:
-            src_mask = all_cache_outputs;
-            dst_mask = all_cache_inputs;
+            // Must wait all read and write operations for the completion of the layout tranisition
+            dst_mask = all_cache_inputs | all_cache_outputs;
             break;
     }
-
-    if (m_descriptorImageInfo.imageLayout == VK_IMAGE_LAYOUT_UNDEFINED) src_mask = 0;
 
     ImageMemoryBarrier(cmd_buf, aspect, src_mask, dst_mask, image_layout);
     m_descriptorImageInfo.imageLayout = image_layout;
