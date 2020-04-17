@@ -7390,6 +7390,9 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoKHR) {
         uint64_t fake_pipeline_id = 0xCADECADE;
         VkPipeline fake_pipeline_handle = reinterpret_cast<VkPipeline &>(fake_pipeline_id);
         pipeline_ci.basePipelineHandle = fake_pipeline_handle;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03421");
+        vkCreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
         pipeline_ci.basePipelineHandle = VK_NULL_HANDLE;
         pipeline_ci.basePipelineIndex = 10;
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-03422");
