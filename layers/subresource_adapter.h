@@ -371,6 +371,9 @@ class ImageRangeGenerator {
     const VkImageSubresourceRange subres_range_;
     const VkOffset3D offset_;
     const VkExtent3D extent_;
+    uint32_t range_arraylayer_base_;
+    uint32_t range_layer_count_;
+
     IndexRange pos_;
     IndexRange offset_offset_y_base_;
     IndexRange offset_layer_base_;
@@ -383,6 +386,7 @@ class ImageRangeGenerator {
     uint32_t arrayLayer_index_;
     uint32_t layer_count_;
     uint32_t mip_level_index_;
+    uint32_t mip_count_;
     const VkSubresourceLayout* subres_layout_;
 };
 

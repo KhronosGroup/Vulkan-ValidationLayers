@@ -345,30 +345,68 @@ ImageRangeGenerator::ImageRangeGenerator(const ImageRangeEncoder& encoder, const
     assert(IsValid(*encoder_, subres_range));
     mip_level_index_ = 0;
     aspect_index_ = encoder_->LowerBoundFromMask(subres_range.aspectMask);
+    if ((offset_.z + extent_.depth) == 1) {
+        range_arraylayer_base_ = subres_range.baseArrayLayer;
+        range_layer_count_ = subres_range_.layerCount;
+    } else {
+        range_arraylayer_base_ = offset_.z;
+        range_layer_count_ = extent_.depth;
+    }
     SetPos();
 }
 
 void ImageRangeGenerator::SetPos() {
-    VkImageSubresource subres = {VkImageAspectFlags(encoder_->AspectBit(aspect_index_)),
-                                 subres_range_.baseMipLevel + mip_level_index_, subres_range_.baseArrayLayer};
+    VkImageSubresource subres = {static_cast<VkImageAspectFlags>(encoder_->AspectBit(aspect_index_)),
+                                 subres_range_.baseMipLevel + mip_level_index_,
+                                 subres_range_.baseArrayLayer};
     subres_layout_ = &(encoder_->SubresourceLayout(subres));
+    const VkExtent3D& subres_extent = encoder_->SubresourceExtent(subres.mipLevel);
+    Subresource limits = encoder_->Limits();
+
+    offset_y_count_ = static_cast<int32_t>(extent_.height);
+    layer_count_ = range_layer_count_;
+    mip_count_ = subres_range_.levelCount;
+    aspect_count_ = limits.aspect_index;
     pos_.begin = encoder_->Encode(subres, subres_range_.baseArrayLayer, offset_);
-    pos_.end = static_cast<IndexType>(ceil(pos_.begin + encoder_->TexelSize(aspect_index_) * extent_.width));
+    pos_.end = pos_.begin;
+
+    if (offset_.x == 0 && extent_.width == subres_extent.width) {
+        if (offset_.y == 0 && extent_.height == subres_extent.height) {
+            offset_y_count_ = 1;
+            if (range_arraylayer_base_ == 0 && range_layer_count_ == limits.arrayLayer) {
+                layer_count_ = 1;
+                if (subres_range_.baseMipLevel == 0 && subres_range_.levelCount == limits.mipLevel) {
+                    mip_count_ = 1;
+                    for (uint32_t aspect_index = aspect_index_; aspect_index < aspect_count_;) {
+                        subres.aspectMask = static_cast<VkImageAspectFlags>(encoder_->AspectBit(aspect_index));
+                        for (uint32_t mip_index = 0; mip_index < limits.mipLevel; ++mip_index) {
+                            subres.mipLevel = mip_index;
+                            const VkSubresourceLayout& subres_layout = encoder_->SubresourceLayout(subres);
+                            pos_.end += subres_layout.size;
+                        }
+                        aspect_index = encoder_->LowerBoundFromMask(subres_range_.aspectMask, aspect_index + 1);
+                    }
+                    aspect_count_ = 1;
+                } else {
+                    for (uint32_t mip_index = mip_level_index_; mip_index < subres_range_.levelCount; ++mip_index) {
+                        const VkSubresourceLayout& subres_layout = encoder_->SubresourceLayout(subres);
+                        pos_.end += subres_layout.size;
+                        subres.mipLevel++;
+                    }
+                }
+            } else {
+                pos_.end += subres_layout_->arrayPitch * range_layer_count_;
+            }
+        } else {
+            pos_.end += (subres_layout_->rowPitch * offset_y_count_);
+        }
+    } else {
+        pos_.end += static_cast<IndexType>(ceil(encoder_->TexelSize(aspect_index_) * extent_.width));
+    }
     offset_layer_base_ = pos_;
     offset_offset_y_base_ = pos_;
     arrayLayer_index_ = 0;
     offset_y_index_ = 0;
-    Subresource limits = encoder_->Limits();
-    aspect_count_ = limits.aspect_index;
-    offset_y_count_ = static_cast<int32_t>(extent_.height);
-
-    if ((offset_.z + extent_.depth) == 1) {
-        layer_count_ = limits.arrayLayer - subres_range_.baseArrayLayer;
-        layer_count_ = (layer_count_ < subres_range_.layerCount) ? layer_count_ : subres_range_.layerCount;
-    } else {
-        layer_count_ = limits.arrayLayer - offset_.z;
-        layer_count_ = (layer_count_ < extent_.depth) ? layer_count_ : extent_.depth;
-    }
 }
 
 ImageRangeGenerator* ImageRangeGenerator::operator++() {
