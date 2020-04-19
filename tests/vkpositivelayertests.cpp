@@ -24,6 +24,8 @@
  * Author: John Zulauf <jzulauf@lunarg.com>
  */
 
+#include <memory>
+
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
 //
@@ -2787,9 +2789,6 @@ TEST_F(VkPositiveLayerTest, PushDescriptorSetUpdatingSetNumber) {
 
 // This is a positive test. No failures are expected.
 TEST_F(VkPositiveLayerTest, TestAliasedMemoryTracking) {
-    VkResult err;
-    bool pass;
-
     TEST_DESCRIPTION(
         "Create a buffer, allocate memory, bind memory, destroy the buffer, create an image, and bind the same memory to it");
 
@@ -2797,120 +2796,58 @@ TEST_F(VkPositiveLayerTest, TestAliasedMemoryTracking) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    VkBuffer buffer;
-    VkImage image;
-    VkDeviceMemory mem;
-    VkMemoryRequirements mem_reqs;
+    auto buffer = std::unique_ptr<VkBufferObj>(new VkBufferObj());
+    VkDeviceSize buff_size = 256;
+    buffer->init_no_mem(*DeviceObj(), VkBufferObj::create_info(buff_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT));
 
-    VkBufferCreateInfo buf_info = {};
-    buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    buf_info.pNext = NULL;
-    buf_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    buf_info.size = 256;
-    buf_info.queueFamilyIndexCount = 0;
-    buf_info.pQueueFamilyIndices = NULL;
-    buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    buf_info.flags = 0;
-    err = vk::CreateBuffer(m_device->device(), &buf_info, NULL, &buffer);
-    ASSERT_VK_SUCCESS(err);
-
-    vk::GetBufferMemoryRequirements(m_device->device(), buffer, &mem_reqs);
-
-    VkMemoryAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    alloc_info.pNext = NULL;
-    alloc_info.memoryTypeIndex = 0;
-
-    // Ensure memory is big enough for both bindings
-    alloc_info.allocationSize = 0x10000;
-
-    pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    if (!pass) {
-        printf("%s Failed to allocate memory.\n", kSkipPrefix);
-        vk::DestroyBuffer(m_device->device(), buffer, NULL);
-        return;
-    }
-
-    err = vk::AllocateMemory(m_device->device(), &alloc_info, NULL, &mem);
-    ASSERT_VK_SUCCESS(err);
-
-    uint8_t *pData;
-    err = vk::MapMemory(m_device->device(), mem, 0, mem_reqs.size, 0, (void **)&pData);
-    ASSERT_VK_SUCCESS(err);
-
-    memset(pData, 0xCADECADE, static_cast<size_t>(mem_reqs.size));
-
-    vk::UnmapMemory(m_device->device(), mem);
-
-    err = vk::BindBufferMemory(m_device->device(), buffer, mem, 0);
-    ASSERT_VK_SUCCESS(err);
-
-    // NOW, destroy the buffer. Obviously, the resource no longer occupies this
-    // memory. In fact, it was never used by the GPU.
-    // Just be sure, wait for idle.
-    vk::DestroyBuffer(m_device->device(), buffer, NULL);
-    vk::DeviceWaitIdle(m_device->device());
-
-    // Use optimal as some platforms report linear support but then fail image creation
-    VkImageTiling image_tiling = VK_IMAGE_TILING_OPTIMAL;
-    VkImageFormatProperties image_format_properties;
-    vk::GetPhysicalDeviceImageFormatProperties(gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TYPE_2D, image_tiling,
-                                               VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 0, &image_format_properties);
-    if (image_format_properties.maxExtent.width == 0) {
-        printf("%s Image format not supported; skipped.\n", kSkipPrefix);
-        vk::FreeMemory(m_device->device(), mem, NULL);
-        return;
-    }
     VkImageCreateInfo image_create_info = {};
     image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    image_create_info.pNext = NULL;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_create_info.extent.width = 64;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;  // mandatory format
+    image_create_info.extent.width = 64;                  // at least 4096x4096 is supported
     image_create_info.extent.height = 64;
     image_create_info.extent.depth = 1;
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = image_tiling;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    image_create_info.queueFamilyIndexCount = 0;
-    image_create_info.pQueueFamilyIndices = NULL;
-    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    image_create_info.flags = 0;
+    VkImageObj image(DeviceObj());
+    image.init_no_mem(*DeviceObj(), image_create_info);
 
-    /* Create a mappable image.  It will be the texture if linear images are OK
-     * to be textures or it will be the staging image if they are not.
-     */
-    err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &image);
-    ASSERT_VK_SUCCESS(err);
+    const auto buffer_memory_requirements = buffer->memory_requirements();
+    const auto image_memory_requirements = image.memory_requirements();
 
-    vk::GetImageMemoryRequirements(m_device->device(), image, &mem_reqs);
-
-    VkMemoryAllocateInfo mem_alloc = {};
-    mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    mem_alloc.pNext = NULL;
-    mem_alloc.allocationSize = 0;
-    mem_alloc.memoryTypeIndex = 0;
-    mem_alloc.allocationSize = mem_reqs.size;
-
-    pass = m_device->phy().set_memory_type(mem_reqs.memoryTypeBits, &mem_alloc, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    if (!pass) {
-        printf("%s Failed to allocate memory.\n", kSkipPrefix);
-        vk::FreeMemory(m_device->device(), mem, NULL);
-        vk::DestroyImage(m_device->device(), image, NULL);
+    vk_testing::DeviceMemory mem;
+    VkMemoryAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.allocationSize = (std::max)(buffer_memory_requirements.size, image_memory_requirements.size);
+    bool has_memtype =
+        m_device->phy().set_memory_type(buffer_memory_requirements.memoryTypeBits & image_memory_requirements.memoryTypeBits,
+                                        &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    if (!has_memtype) {
+        printf("%s Failed to find a host visible memory type for both a buffer and an image. Test skipped.\n", kSkipPrefix);
         return;
     }
+    mem.init(*DeviceObj(), alloc_info);
+
+    auto pData = mem.map();
+    std::memset(pData, 0xCADECADE, static_cast<size_t>(buff_size));
+    mem.unmap();
+
+    buffer->bind_memory(mem, 0);
+
+    // NOW, destroy the buffer. Obviously, the resource no longer occupies this
+    // memory. In fact, it was never used by the GPU.
+    // Just be sure, wait for idle.
+    buffer.reset(nullptr);
+    vk::DeviceWaitIdle(m_device->device());
 
     // VALIDATION FAILURE:
-    err = vk::BindImageMemory(m_device->device(), image, mem, 0);
-    ASSERT_VK_SUCCESS(err);
+    image.bind_memory(mem, 0);
 
     m_errorMonitor->VerifyNotFound();
-
-    vk::FreeMemory(m_device->device(), mem, NULL);
-    vk::DestroyImage(m_device->device(), image, NULL);
 }
 
 // This is a positive test. No failures are expected.
