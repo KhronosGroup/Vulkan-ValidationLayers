@@ -1017,6 +1017,8 @@ class ValidationStateTracker : public ValidationObject {
     void PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, const VkXlibSurfaceCreateInfoKHR* pCreateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result);
 #endif  // VK_USE_PLATFORM_XLIB_KHR
+    void PostCallRecordCreateHeadlessSurfaceEXT(VkInstance instance, const VkHeadlessSurfaceCreateInfoEXT* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface, VkResult result);
 
     // State Utilty functions
     bool AddCommandBufferMem(small_unordered_map<CMD_BUFFER_STATE*, int, 8>& cb_bindings, VkDeviceMemory obj,

@@ -4452,6 +4452,12 @@ void ValidationStateTracker::PostCallRecordCreateXlibSurfaceKHR(VkInstance insta
     RecordVulkanSurface(pSurface);
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
+void ValidationStateTracker::PostCallRecordCreateHeadlessSurfaceEXT(VkInstance instance, const VkHeadlessSurfaceCreateInfoEXT *pCreateInfo,
+                                                                    const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
+                                                                    VkResult result) {
+    if (VK_SUCCESS != result) return;
+    RecordVulkanSurface(pSurface);
+}
 
 void ValidationStateTracker::PostCallRecordGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice,
                                                                      VkPhysicalDeviceFeatures *pFeatures) {
