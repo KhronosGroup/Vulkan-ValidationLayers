@@ -769,16 +769,24 @@ bool StatelessValidation::manual_PreCallValidateCreateImageView(VkDevice device,
     bool skip = false;
 
     if (pCreateInfo != nullptr) {
+        // Validate feature set if using CUBE_ARRAY
+        if ((pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) && (physical_device_features.imageCubeArray == false)) {
+            skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-viewType-01004",
+                             "vkCreateImageView(): pCreateInfo->viewType can't be VK_IMAGE_VIEW_TYPE_CUBE_ARRAY without "
+                             "enabling the imageCubeArray feature.");
+        }
+
         if (pCreateInfo->subresourceRange.layerCount != VK_REMAINING_ARRAY_LAYERS) {
             if (pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_CUBE && pCreateInfo->subresourceRange.layerCount != 6) {
                 skip |= LogError(device, "VUID-VkImageViewCreateInfo-viewType-02960",
-                                 "vkCreateImageView(): subresourceRange.layerCount (%d) must be 6",
+                                 "vkCreateImageView(): subresourceRange.layerCount (%d) must be 6 or VK_REMAINING_ARRAY_LAYERS.",
                                  pCreateInfo->subresourceRange.layerCount);
             }
             if (pCreateInfo->viewType == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY && (pCreateInfo->subresourceRange.layerCount % 6) != 0) {
-                skip |= LogError(device, "VUID-VkImageViewCreateInfo-viewType-02961",
-                                 "vkCreateImageView(): subresourceRange.layerCount (%d) must be a multiple of 6",
-                                 pCreateInfo->subresourceRange.layerCount);
+                skip |= LogError(
+                    device, "VUID-VkImageViewCreateInfo-viewType-02961",
+                    "vkCreateImageView(): subresourceRange.layerCount (%d) must be a multiple of 6 or VK_REMAINING_ARRAY_LAYERS.",
+                    pCreateInfo->subresourceRange.layerCount);
             }
         }
     }
