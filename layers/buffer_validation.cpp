@@ -1479,7 +1479,14 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo *pCreateInf
                                                                    : format_properties.optimalTilingFeatures;
     }
 
-    // TODO add VUID-VkImageCreateInfo-imageCreateFormatFeatures-02260 support here
+    // Lack of disjoint format feature support while using the flag
+    if (FormatIsMultiplane(image_format) && ((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) &&
+        ((tiling_features & VK_FORMAT_FEATURE_DISJOINT_BIT) == 0)) {
+        skip |= LogError(device, "VUID-VkImageCreateInfo-imageCreateFormatFeatures-02260",
+                         "vkCreateImage(): can't use VK_IMAGE_CREATE_DISJOINT_BIT because %s doesn't support "
+                         "VK_FORMAT_FEATURE_DISJOINT_BIT based on imageCreateFormatFeatures.",
+                         string_VkFormat(pCreateInfo->format));
+    }
 
     return skip;
 }
