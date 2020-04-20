@@ -8797,6 +8797,11 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
 TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
     TEST_DESCRIPTION("Creating images with Ycbcr Formats.");
 
+    if (!EnableDeviceProfileLayer()) {
+        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
+        return;
+    }
+
     // Enable KHR multiplane req'd extensions
     bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, 1);
     if (mp_extensions) {
@@ -8825,7 +8830,22 @@ TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
     ASSERT_NO_FATAL_FAILURE(InitState());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkFormat mp_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
+
+    // Load required functions
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
+        printf("%s Failed to device profile layer.\n", kSkipPrefix);
+        return;
+    }
+
+    // Set format features as needed for tests
+    VkFormatProperties formatProps;
+    const VkFormat mp_format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), mp_format, &formatProps);
+    formatProps.optimalTilingFeatures |= (VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
+    formatProps.optimalTilingFeatures = formatProps.optimalTilingFeatures & ~VK_FORMAT_FEATURE_DISJOINT_BIT;
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), mp_format, formatProps);
 
     // Create ycbcr image with all valid values
     // Each test changes needed values and returns them back after
@@ -8841,12 +8861,7 @@ TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.arrayLayers = 1;
-
-    bool supported = ImageFormatAndFeaturesSupported(instance(), gpu(), image_create_info, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
-    if (!supported) {
-        printf("%s Multiplane image format not supported.  Skipping test.\n", kSkipPrefix);
-        return;
-    }
+    VkImageCreateInfo reset_create_info = image_create_info;
 
     VkImageFormatProperties img_limits;
     ASSERT_VK_SUCCESS(GPDIFPHelper(gpu(), &image_create_info, &img_limits));
@@ -8859,7 +8874,7 @@ TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
         const char *error_vuid =
             (ycbcr_array_extension) ? "VUID-VkImageCreateInfo-format-02653" : "VUID-VkImageCreateInfo-format-02564";
         CreateImageTest(*this, &image_create_info, error_vuid);
-        image_create_info.arrayLayers = 1;
+        image_create_info = reset_create_info;
     }
 
     // invalid mipLevels
@@ -8871,7 +8886,7 @@ TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
         // if up the depth the VU for IMAGE_TYPE_2D and depth != 1 hits
         image_create_info.mipLevels = 2;
         CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02561");
-        image_create_info.mipLevels = 1;
+        image_create_info = reset_create_info;
     }
 
     // invalid samples count
@@ -8884,14 +8899,18 @@ TEST_F(VkLayerTest, CreateImageYcbcrFormats) {
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-samples-02258");
     }
     CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02562");
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info = reset_create_info;
 
     // invalid imageType
     image_create_info.extent.height = 1;  // to satisfy 1D requriments
     image_create_info.imageType = VK_IMAGE_TYPE_1D;
     CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02563");
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.extent.height = 32;
+    image_create_info = reset_create_info;
+
+    // Test using a format that doesn't support disjoint
+    image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-imageCreateFormatFeatures-02260");
+    image_create_info = reset_create_info;
 }
 
 TEST_F(VkLayerTest, BindImageMemorySwapchain) {
