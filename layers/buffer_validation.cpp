@@ -4771,13 +4771,6 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             }
         }
 
-        // Validate feature set if using CUBE_ARRAY
-        if ((view_type == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY) && (enabled_features.core.imageCubeArray == false)) {
-            skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-viewType-01004",
-                             "vkCreateImageView(): pCreateInfo->viewType can't be VK_IMAGE_VIEW_TYPE_CUBE_ARRAY without "
-                             "enabling the imageCubeArray feature.");
-        }
-
         // Validate correct image aspect bits for desired formats and format consistency
         skip |= ValidateImageAspectMask(image_state->image, image_format, aspect_mask, "vkCreateImageView()");
 
