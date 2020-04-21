@@ -150,7 +150,11 @@ bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pC
 void BestPractices::PreCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                                 VkInstance* pInstance) {
     ValidationStateTracker::PreCallRecordCreateInstance(pCreateInfo, pAllocator, pInstance);
-    instance_api_version = pCreateInfo->pApplicationInfo->apiVersion;
+
+    if (pCreateInfo != nullptr && pCreateInfo->pApplicationInfo != nullptr)
+        instance_api_version = pCreateInfo->pApplicationInfo->apiVersion;
+    else
+        instance_api_version = 0;
 }
 
 bool BestPractices::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
