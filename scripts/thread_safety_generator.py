@@ -258,7 +258,7 @@ public:
     vl_concurrent_unordered_map<T, std::shared_ptr<ObjectUseData>, 6> object_table;
 
     void CreateObject(T object) {
-        object_table.insert_or_assign(object, std::make_shared<ObjectUseData>());
+        object_table.insert(object, std::make_shared<ObjectUseData>());
     }
 
     void DestroyObject(T object) {
