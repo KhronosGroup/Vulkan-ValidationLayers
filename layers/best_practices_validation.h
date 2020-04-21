@@ -216,7 +216,7 @@ class BestPractices : public ValidationStateTracker {
 #include "best_practices.h"
 
   private:
-    uint32_t instance_api_version;
+    uint32_t instance_api_version = 0;
     uint32_t num_mem_objects = 0;
 
     // Check that vendor-specific checks are enabled for at least one of the vendors
