@@ -24,10 +24,16 @@
  * Author: John Zulauf <jzulauf@lunarg.com>
  */
 
+#include "layer_validation_tests.h"
+
+#include <array>
+#include <chrono>
 #include <memory>
+#include <mutex>
+#include <thread>
 
 #include "cast_utils.h"
-#include "layer_validation_tests.h"
+
 //
 // POSITIVE VALIDATION TESTS
 //
@@ -9803,4 +9809,69 @@ TEST_F(VkPositiveLayerTest, ImagelessLayoutTracking) {
     vk::DestroyRenderPass(m_device->device(), renderPass, nullptr);
     vk::DestroySemaphore(m_device->device(), image_acquired, nullptr);
     vk::DestroyFramebuffer(m_device->device(), framebuffer, nullptr);
+}
+
+TEST_F(VkPositiveLayerTest, QueueThreading) {
+    TEST_DESCRIPTION("Test concurrent Queue access from vkGet and vkSubmit");
+
+    using namespace std::chrono;
+    using std::thread;
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    const auto queue_family = DeviceObj()->GetDefaultQueue()->get_family_index();
+    constexpr uint32_t queue_index = 0;
+    VkCommandPoolObj command_pool(DeviceObj(), queue_family);
+
+    const VkDevice device_h = device();
+    VkQueue queue_h;
+    vk::GetDeviceQueue(device(), queue_family, queue_index, &queue_h);
+    VkQueueObj queue_o(queue_h, queue_family);
+
+    const VkCommandBufferAllocateInfo cbai = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, command_pool.handle(),
+                                              VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1};
+    vk_testing::CommandBuffer mock_cmdbuff(*DeviceObj(), cbai);
+    const VkCommandBufferBeginInfo cbbi{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
+                                        VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, nullptr};
+    mock_cmdbuff.begin(&cbbi);
+    mock_cmdbuff.end();
+
+    std::mutex queue_mutex;
+
+    constexpr auto test_duration = seconds{2};
+    const auto timer_begin = steady_clock::now();
+
+    const auto &testing_thread1 = [&]() {
+        for (auto timer_now = steady_clock::now(); timer_now - timer_begin < test_duration; timer_now = steady_clock::now()) {
+            VkQueue dummy_q;
+            vk::GetDeviceQueue(device_h, queue_family, queue_index, &dummy_q);
+        }
+    };
+
+    const auto &testing_thread2 = [&]() {
+        for (auto timer_now = steady_clock::now(); timer_now - timer_begin < test_duration; timer_now = steady_clock::now()) {
+            VkSubmitInfo si = {};
+            si.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            si.commandBufferCount = 1;
+            si.pCommandBuffers = &mock_cmdbuff.handle();
+            queue_mutex.lock();
+            ASSERT_VK_SUCCESS(vk::QueueSubmit(queue_h, 1, &si, VK_NULL_HANDLE));
+            queue_mutex.unlock();
+        }
+    };
+
+    const auto &testing_thread3 = [&]() {
+        for (auto timer_now = steady_clock::now(); timer_now - timer_begin < test_duration; timer_now = steady_clock::now()) {
+            queue_mutex.lock();
+            ASSERT_VK_SUCCESS(vk::QueueWaitIdle(queue_h));
+            queue_mutex.unlock();
+        }
+    };
+
+    Monitor().ExpectSuccess();
+    std::array<thread, 3> threads = {thread(testing_thread1), thread(testing_thread2), thread(testing_thread3)};
+    for (auto &t : threads) t.join();
+    Monitor().VerifyNotFound();
+
+    vk::QueueWaitIdle(queue_h);
 }
