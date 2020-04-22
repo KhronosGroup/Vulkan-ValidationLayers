@@ -4638,33 +4638,17 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_st
             const IMAGE_STATE *image_state = GetImageState(imageview_state->create_info.image);
             if (!image_state) continue;
 
-            VkImageTiling tiling = image_state->createInfo.tiling;
-            VkFormat format = pipeline_state->rp_state->createInfo.pAttachments[attachment].format;
-
-            VkFormatProperties properties = GetPDFormatProperties(format);
-            VkFormatFeatureFlags format_features;
-
-            switch (tiling) {
-                case VK_IMAGE_TILING_OPTIMAL:
-                case VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT:
-                    format_features = properties.optimalTilingFeatures;
-                    break;
-                case VK_IMAGE_TILING_LINEAR:
-                    format_features = properties.linearTilingFeatures;
-                    break;
-                default:
-                    // Invalid tiling
-                    continue;
-            }
+            const VkFormat format = pipeline_state->rp_state->createInfo.pAttachments[attachment].format;
 
             if (pipeline_state->graphicsPipelineCI.pRasterizationState &&
                 !pipeline_state->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable &&
-                pipeline_state->attachments[i].blendEnable && !(format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)) {
+                pipeline_state->attachments[i].blendEnable &&
+                !(image_state->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)) {
                 skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-blendEnable-02023",
                                  "vkCreateGraphicsPipelines(): pipeline.pColorBlendState.pAttachments[" PRINTF_SIZE_T_SPECIFIER
-                                 "].blendEnable is VK_TRUE but format %s associated with this attachment does "
+                                 "].blendEnable is VK_TRUE but format %s associated with this attached image (%s) does "
                                  "not support VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT.",
-                                 i, string_VkFormat(format));
+                                 i, report_data->FormatHandle(image_state->image).c_str(), string_VkFormat(format));
             }
         }
     }
