@@ -45,17 +45,24 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 find_package(PythonInterp 3 QUIET)
 
-if (TARGET Vulkan::Headers)
-    message(STATUS "Using Vulkan headers from Vulkan::Headers target")
+# Find Vulkan::Headers target
+if(DEFINED VULKAN_HEADERS_INSTALL_DIR)
+    set(VulkanHeaders_DIR "${VULKAN_HEADERS_INSTALL_DIR}/share/cmake/VulkanHeaders")
+    message(STATUS "VULKAN_HEADERS_INSTALL_DIR is set. Using it to set VulkanHeaders_DIR to '${VulkanHeaders_DIR}'")
+endif()
+find_package(VulkanHeaders CONFIG REQUIRED)
+# Check if required version information is set
+if("${VulkanHeaders_VERSION}" STREQUAL "")
+    message(FATAL_ERROR "VulkanHeaders found, but required variable VulkanHeaders_VERSION not defined!")
+endif()
+message(STATUS "Found VulkanHeaders version ${VulkanHeaders_VERSION}")
+if("${VulkanHeaders_INCLUDE_DIRS}" STREQUAL "")
+    # no Headers include directory set, get it from target
     get_target_property(VulkanHeaders_INCLUDE_DIRS Vulkan::Headers INTERFACE_INCLUDE_DIRECTORIES)
+endif()
+if("${VulkanRegistry_DIR}" STREQUAL "")
+    # no Registry directory set, get it from target
     get_target_property(VulkanRegistry_DIR Vulkan::Registry INTERFACE_INCLUDE_DIRECTORIES)
-else()
-    find_package(VulkanHeaders REQUIRED)
-
-    # xxxnsubtil: this should eventually be replaced by exported targets
-    add_library(Vulkan-Headers INTERFACE)
-    target_include_directories(Vulkan-Headers INTERFACE ${VulkanHeaders_INCLUDE_DIRS})
-    add_library(Vulkan::Headers ALIAS Vulkan-Headers)
 endif()
 
 option(USE_CCACHE "Use ccache" OFF)
@@ -336,18 +343,6 @@ if(NOT TARGET uninstall)
                    @ONLY)
     add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
     set_target_properties(uninstall PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
-endif()
-
-# Fetch header version from vulkan_core.h ----------------------------------------------------------------------------------------
-file(STRINGS "${VulkanHeaders_INCLUDE_DIRS}/vulkan/vulkan_core.h" lines REGEX "^#define VK_HEADER_VERSION [0-9]+")
-list(LENGTH lines len)
-if(${len} EQUAL 1)
-    string(REGEX MATCHALL
-                 "[0-9]+"
-                 vk_header_version
-                 ${lines})
-else()
-    message(FATAL_ERROR "Unable to fetch version from vulkan_core.h")
 endif()
 
 # Optional codegen target --------------------------------------------------------------------------------------------------------
