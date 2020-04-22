@@ -40,7 +40,8 @@ before_build:
   - cd %APPVEYOR_BUILD_FOLDER%/external/googletest
   - git checkout tags/release-1.8.1
   - cd %APPVEYOR_BUILD_FOLDER%
-  - python scripts/update_deps.py --dir=external --arch=%PLATFORM% --config=%CONFIGURATION%
+  # WIP: always use master branch of VulkanHeaders
+  - python scripts/update_deps.py --dir=external --arch=%PLATFORM% --config=%CONFIGURATION% --ref=master
   - echo Verifying consistency between source file generators and output
   - python scripts/generate_source.py --verify external/Vulkan-Headers/registry
   - echo Generating Vulkan-ValidationLayers CMake files for %PLATFORM% %CONFIGURATION%

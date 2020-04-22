@@ -16,11 +16,11 @@
     },
     {
       "name": "Vulkan-Headers",
-      "url": "https://github.com/KhronosGroup/Vulkan-Headers.git",
+      "url" : "https://github.com/NeroBurner/Vulkan-Headers.git",
       "sub_dir": "Vulkan-Headers",
       "build_dir": "Vulkan-Headers/build",
       "install_dir": "Vulkan-Headers/build/install",
-      "commit": "v1.2.140"
+      "commit" : "cmake_install"
     },
     {
       "name": "SPIRV-Headers",
