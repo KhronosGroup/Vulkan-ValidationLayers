@@ -8587,6 +8587,11 @@ TEST_F(VkLayerTest, ImageStencilCreate) {
 TEST_F(VkLayerTest, CreateYCbCrSampler) {
     TEST_DESCRIPTION("Verify YCbCr sampler creation.");
 
+    if (!EnableDeviceProfileLayer()) {
+        printf("%s Test requires DeviceProfileLayer, unavailable - skipped.\n", kSkipPrefix);
+        return;
+    }
+
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     } else {
@@ -8594,16 +8599,12 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
-
-    // Test requires API 1.1 or (API 1.0 + SamplerYCbCr extension). Request API 1.1
-    SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
         (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
     ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
 
-    // In case we don't have API 1.1+, try enabling the extension directly (and it's dependencies)
     if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
@@ -8622,17 +8623,29 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
     ycbcr_features.samplerYcbcrConversion = VK_TRUE;
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
-    VkDevice dev = m_device->device();
+
+    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
+
+    // Load required functions
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
+        printf("%s Required extensions are not avaiable.\n", kSkipPrefix);
+        return;
+    }
 
     PFN_vkCreateSamplerYcbcrConversionKHR vkCreateSamplerYcbcrConversionFunction = nullptr;
+    PFN_vkDestroySamplerYcbcrConversionKHR vkDestroySamplerYcbcrConversionFunction = nullptr;
     if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
         vkCreateSamplerYcbcrConversionFunction = vk::CreateSamplerYcbcrConversion;
+        vkDestroySamplerYcbcrConversionFunction = vk::DestroySamplerYcbcrConversion;
     } else {
         vkCreateSamplerYcbcrConversionFunction =
             (PFN_vkCreateSamplerYcbcrConversionKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCreateSamplerYcbcrConversionKHR");
+        vkDestroySamplerYcbcrConversionFunction =
+            (PFN_vkDestroySamplerYcbcrConversionKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkDestroySamplerYcbcrConversionKHR");
     }
 
-    if (!vkCreateSamplerYcbcrConversionFunction) {
+    if (!vkCreateSamplerYcbcrConversionFunction || !vkDestroySamplerYcbcrConversionFunction) {
         printf("%s Did not find required device support for YcbcrSamplerConversion; test skipped.\n", kSkipPrefix);
         return;
     }
@@ -8652,10 +8665,97 @@ TEST_F(VkLayerTest, CreateYCbCrSampler) {
     sycci.format = VK_FORMAT_UNDEFINED;
     sycci.ycbcrModel = VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY;
     sycci.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
+    sycci.forceExplicitReconstruction = VK_FALSE;
+    sycci.chromaFilter = VK_FILTER_NEAREST;
+    sycci.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
 
+    // test non external conversion with a VK_FORMAT_UNDEFINED
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-format-01649");
-    vkCreateSamplerYcbcrConversionFunction(dev, &sycci, NULL, &ycbcr_conv);
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
+
+    // Force the multi-planar format support desired format features
+    VkFormat mp_format = VK_FORMAT_G16_B16_R16_3PLANE_420_UNORM;
+    VkFormatProperties formatProps;
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), mp_format, &formatProps);
+    formatProps.linearTilingFeatures = 0;
+    formatProps.optimalTilingFeatures = 0;
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), mp_format, formatProps);
+
+    // Check that errors are caught when format feature don't exist
+    sycci.format = mp_format;
+
+    // No Chroma Sampler Bit set
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-format-01650");
+    // 01651 set off twice for both xChromaOffset and yChromaOffset
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651");
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    m_errorMonitor->VerifyFound();
+
+    // Cosited feature supported, but midpoint samples set
+    formatProps.linearTilingFeatures = 0;
+    formatProps.optimalTilingFeatures = VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT;
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), mp_format, formatProps);
+    sycci.xChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
+    sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652");
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    m_errorMonitor->VerifyFound();
+
+    // Moving support to Linear to test that it checks either linear or optimal
+    formatProps.linearTilingFeatures = VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT;
+    formatProps.optimalTilingFeatures = 0;
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), mp_format, formatProps);
+    sycci.xChromaOffset = VK_CHROMA_LOCATION_MIDPOINT;
+    sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01652");
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    m_errorMonitor->VerifyFound();
+
+    // Using forceExplicitReconstruction without feature bit
+    sycci.forceExplicitReconstruction = VK_TRUE;
+    sycci.xChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    sycci.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-forceExplicitReconstruction-01656");
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    m_errorMonitor->VerifyFound();
+
+    // Linear chroma filtering without feature bit
+    sycci.forceExplicitReconstruction = VK_FALSE;
+    sycci.chromaFilter = VK_FILTER_LINEAR;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-chromaFilter-01657");
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    m_errorMonitor->VerifyFound();
+
+    // Add linear feature bit so can create valid SamplerYcbcrConversion
+    formatProps.linearTilingFeatures = VK_FORMAT_FEATURE_COSITED_CHROMA_SAMPLES_BIT;
+    formatProps.optimalTilingFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT;
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), mp_format, formatProps);
+    m_errorMonitor->ExpectSuccess();
+    vkCreateSamplerYcbcrConversionFunction(device(), &sycci, NULL, &ycbcr_conv);
+    m_errorMonitor->VerifyNotFound();
+
+    // Try to create a Sampler with non-matching filters without feature bit set
+    VkSamplerYcbcrConversionInfo sampler_ycbcr_info = {VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO, nullptr, ycbcr_conv};
+    VkSampler sampler;
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    sampler_info.minFilter = VK_FILTER_NEAREST;  // Different than chromaFilter
+    sampler_info.magFilter = VK_FILTER_LINEAR;
+    sampler_info.pNext = (void *)&sampler_ycbcr_info;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-minFilter-01645");
+    vk::CreateSampler(device(), &sampler_info, nullptr, &sampler);
+    m_errorMonitor->VerifyFound();
+
+    sampler_info.magFilter = VK_FILTER_NEAREST;
+    sampler_info.minFilter = VK_FILTER_LINEAR;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-minFilter-01645");
+    vk::CreateSampler(device(), &sampler_info, nullptr, &sampler);
+    m_errorMonitor->VerifyFound();
+
+    vkDestroySamplerYcbcrConversionFunction(device(), ycbcr_conv, nullptr);
 }
 
 TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
