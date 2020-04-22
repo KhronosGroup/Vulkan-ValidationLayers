@@ -74,10 +74,16 @@ void ValidationStateTracker::RecordCreateImageANDROID(const VkImageCreateInfo *c
 }
 
 void ValidationStateTracker::RecordCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo *create_info,
-                                                                       VkSamplerYcbcrConversion ycbcr_conversion) {
+                                                                       VkSamplerYcbcrConversion ycbcr_conversion,
+                                                                       SAMPLER_YCBCR_CONVERSION_STATE *ycbcr_state) {
     const VkExternalFormatANDROID *ext_format_android = lvl_find_in_chain<VkExternalFormatANDROID>(create_info->pNext);
     if (ext_format_android && (0 != ext_format_android->externalFormat)) {
         ycbcr_conversion_ahb_fmt_map.emplace(ycbcr_conversion, ext_format_android->externalFormat);
+        // VUID 01894 will catch if not found in map
+        auto it = ahb_ext_formats_map.find(ext_format_android->externalFormat);
+        if (it != ahb_ext_formats_map.end()) {
+            ycbcr_state->format_features = it->second;
+        }
     }
 };
 
@@ -99,7 +105,8 @@ void ValidationStateTracker::PostCallRecordGetAndroidHardwareBufferPropertiesAND
 void ValidationStateTracker::RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE *is_node) {}
 
 void ValidationStateTracker::RecordCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo *create_info,
-                                                                       VkSamplerYcbcrConversion ycbcr_conversion){};
+                                                                       VkSamplerYcbcrConversion ycbcr_conversion,
+                                                                       SAMPLER_YCBCR_CONVERSION_STATE *ycbcr_state){};
 
 void ValidationStateTracker::RecordDestroySamplerYcbcrConversionANDROID(VkSamplerYcbcrConversion ycbcr_conversion){};
 
@@ -934,6 +941,30 @@ BASE_NODE *ValidationStateTracker::GetStateStructPtrFromObject(const VulkanTyped
             break;
     }
     return base_ptr;
+}
+
+VkFormatFeatureFlags ValidationStateTracker::GetPotentialFormatFeatures(VkFormat format) const {
+    VkFormatFeatureFlags format_features = 0;
+
+    if (format != VK_FORMAT_UNDEFINED) {
+        VkFormatProperties format_properties;
+        DispatchGetPhysicalDeviceFormatProperties(physical_device, format, &format_properties);
+        format_features |= format_properties.linearTilingFeatures;
+        format_features |= format_properties.optimalTilingFeatures;
+        if (device_extensions.vk_ext_image_drm_format_modifier) {
+            // VK_KHR_get_physical_device_properties2 is required in this case
+            VkFormatProperties2 format_properties_2 = {VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2};
+            VkDrmFormatModifierPropertiesListEXT drm_properties_list = {VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT,
+                                                                        nullptr};
+            format_properties_2.pNext = (void *)&drm_properties_list;
+            DispatchGetPhysicalDeviceFormatProperties2(physical_device, format, &format_properties_2);
+            for (uint32_t i = 0; i < drm_properties_list.drmFormatModifierCount; i++) {
+                format_features |= drm_properties_list.pDrmFormatModifierProperties[i].drmFormatModifierTilingFeatures;
+            }
+        }
+    }
+
+    return format_features;
 }
 
 // Tie the VulkanTypedHandle to the cmd buffer which includes:
@@ -4815,9 +4846,22 @@ void ValidationStateTracker::PostCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer
 
 void ValidationStateTracker::RecordCreateSamplerYcbcrConversionState(const VkSamplerYcbcrConversionCreateInfo *create_info,
                                                                      VkSamplerYcbcrConversion ycbcr_conversion) {
+    auto ycbcr_state = std::make_shared<SAMPLER_YCBCR_CONVERSION_STATE>();
+
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
-        RecordCreateSamplerYcbcrConversionANDROID(create_info, ycbcr_conversion);
+        RecordCreateSamplerYcbcrConversionANDROID(create_info, ycbcr_conversion, ycbcr_state.get());
     }
+
+    const VkFormat conversion_format = create_info->format;
+
+    if (conversion_format != VK_FORMAT_UNDEFINED) {
+        // If format is VK_FORMAT_UNDEFINED, will be set by external AHB features
+        ycbcr_state->format_features = GetPotentialFormatFeatures(conversion_format);
+    }
+
+    ycbcr_state->chromaFilter = create_info->chromaFilter;
+    ycbcr_state->format = conversion_format;
+    samplerYcbcrConversionMap[ycbcr_conversion] = std::move(ycbcr_state);
 }
 
 void ValidationStateTracker::PostCallRecordCreateSamplerYcbcrConversion(VkDevice device,
@@ -4838,21 +4882,27 @@ void ValidationStateTracker::PostCallRecordCreateSamplerYcbcrConversionKHR(VkDev
     RecordCreateSamplerYcbcrConversionState(pCreateInfo, *pYcbcrConversion);
 }
 
+void ValidationStateTracker::RecordDestroySamplerYcbcrConversionState(VkSamplerYcbcrConversion ycbcr_conversion) {
+    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
+        RecordDestroySamplerYcbcrConversionANDROID(ycbcr_conversion);
+    }
+
+    auto ycbcr_state = GetSamplerYcbcrConversionState(ycbcr_conversion);
+    ycbcr_state->destroyed = true;
+    samplerYcbcrConversionMap.erase(ycbcr_conversion);
+}
+
 void ValidationStateTracker::PostCallRecordDestroySamplerYcbcrConversion(VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
                                                                          const VkAllocationCallbacks *pAllocator) {
     if (!ycbcrConversion) return;
-    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
-        RecordDestroySamplerYcbcrConversionANDROID(ycbcrConversion);
-    }
+    RecordDestroySamplerYcbcrConversionState(ycbcrConversion);
 }
 
 void ValidationStateTracker::PostCallRecordDestroySamplerYcbcrConversionKHR(VkDevice device,
                                                                             VkSamplerYcbcrConversion ycbcrConversion,
                                                                             const VkAllocationCallbacks *pAllocator) {
     if (!ycbcrConversion) return;
-    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
-        RecordDestroySamplerYcbcrConversionANDROID(ycbcrConversion);
-    }
+    RecordDestroySamplerYcbcrConversionState(ycbcrConversion);
 }
 
 void ValidationStateTracker::RecordResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery,
