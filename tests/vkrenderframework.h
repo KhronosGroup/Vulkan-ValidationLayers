@@ -200,6 +200,24 @@ class VkCommandPoolObj;
 class VkCommandBufferObj;
 class VkDepthStencilObj;
 
+typedef enum {
+    kGalaxyS10,
+    kPixel3,
+    kPixelC,
+    kNexusPlayer,
+    kShieldTV,
+    kPixel3aXL,
+} PlatformType;
+
+const std::unordered_map<PlatformType, std::string, std::hash<int>> vk_gpu_table = {
+    {kGalaxyS10, "Mali-G76"},
+    {kPixel3, "Adreno (TM) 630"},
+    {kPixelC, "NVIDIA Tegra X1"},
+    {kNexusPlayer, "PowerVR Rogue G6430"},
+    {kShieldTV, "NVIDIA Tegra X1 (nvgpu)"},
+    {kPixel3aXL, "Adreno (TM) 615"},
+};
+
 class VkRenderFramework : public VkTestFramework {
   public:
     VkInstance instance() { return instance_; }
@@ -234,6 +252,7 @@ class VkRenderFramework : public VkTestFramework {
     void InitRenderTarget(uint32_t targets, VkImageView *dsBinding);
     void DestroyRenderTarget();
 
+    bool IsPlatform(PlatformType platform);
     void GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *features);
     void GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *props);
     void InitState(VkPhysicalDeviceFeatures *features = nullptr, void *create_device_pnext = nullptr,
