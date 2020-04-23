@@ -210,6 +210,7 @@ class VkRenderFramework : public VkTestFramework {
     const VkRenderPassCreateInfo &RenderPassInfo() const { return m_renderPass_info; };
     VkFramebuffer framebuffer() { return m_framebuffer; }
     ErrorMonitor &Monitor();
+    VkPhysicalDeviceProperties physDevProps();
 
     static bool InstanceLayerSupported(const char *layer_name, uint32_t spec_version = 0, uint32_t impl_version = 0);
     static bool InstanceExtensionSupported(const char *extension_name, uint32_t spec_version = 0);
@@ -264,6 +265,7 @@ class VkRenderFramework : public VkTestFramework {
     std::vector<const char *> &m_instance_extension_names = instance_extensions_;  // compatibility alias name
     VkInstance instance_;
     VkPhysicalDevice gpu_;
+    VkPhysicalDeviceProperties physDevProps_;
 
     VkDeviceObj *m_device;
     VkCommandPoolObj *m_commandPool;

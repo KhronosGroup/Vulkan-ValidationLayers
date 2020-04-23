@@ -295,6 +295,11 @@ VkPhysicalDevice VkRenderFramework::gpu() {
     return gpu_;
 }
 
+VkPhysicalDeviceProperties VkRenderFramework::physDevProps() {
+    EXPECT_NE((VkPhysicalDevice)0, gpu_);  // Invalid to request physical device properties before gpu
+    return physDevProps_;
+}
+
 // Return true if layer name is found and spec+implementation values are >= requested values
 bool VkRenderFramework::InstanceLayerSupported(const char *const layer_name, const uint32_t spec_version,
                                                const uint32_t impl_version) {
@@ -460,6 +465,7 @@ void VkRenderFramework::InitFramework(void * /*unused compatibility parameter*/,
     ASSERT_TRUE(err == VK_SUCCESS || err == VK_INCOMPLETE) << vk_result_string(err);
     ASSERT_GT(gpu_count, (uint32_t)0) << "No GPU (i.e. VkPhysicalDevice) available";
 
+    vk::GetPhysicalDeviceProperties(gpu_, &physDevProps_);
     debug_reporter_.Create(instance_);
 }
 
@@ -505,9 +511,7 @@ void VkRenderFramework::GetPhysicalDeviceFeatures(VkPhysicalDeviceFeatures *feat
     }
 }
 
-void VkRenderFramework::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *props) {
-    *props = vk_testing::PhysicalDevice(gpu()).properties();
-}
+void VkRenderFramework::GetPhysicalDeviceProperties(VkPhysicalDeviceProperties *props) { *props = physDevProps_; }
 
 void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *create_device_pnext,
                                   const VkCommandPoolCreateFlags flags) {
