@@ -95,6 +95,7 @@ class BestPractices : public ValidationStateTracker {
                                                   const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains) const;
     bool PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
                                          const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass) const;
+    bool ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uint32_t attachmentCount, const VkImageView* image_views) const;
     bool PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
                                           const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer) const;
     bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
