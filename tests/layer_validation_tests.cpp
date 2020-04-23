@@ -1054,9 +1054,7 @@ uint32_t VkLayerTest::SetTargetApiVersion(uint32_t target_api_version) {
 }
 uint32_t VkLayerTest::DeviceValidationVersion() {
     // The validation layers, assume the version we are validating to is the apiVersion unless the device apiVersion is lower
-    VkPhysicalDeviceProperties props;
-    GetPhysicalDeviceProperties(&props);
-    return std::min(m_target_api_version, props.apiVersion);
+    return std::min(m_target_api_version, physDevProps().apiVersion);
 }
 
 bool VkLayerTest::LoadDeviceProfileLayer(
