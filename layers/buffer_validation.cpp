@@ -2803,23 +2803,56 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
                              "dstSubresource.layerCount (%u)",
                              i, src_copy_extent.depth, region.dstSubresource.layerCount);
         }
+
+        // Check for multi-plane format compatiblity
+        if (FormatIsMultiplane(src_format) || FormatIsMultiplane(dst_format)) {
+            size_t src_format_size = 0;
+            size_t dst_format_size = 0;
+            if (FormatIsMultiplane(src_format)) {
+                const VkFormat planeFormat = FindMultiplaneCompatibleFormat(src_format, region.srcSubresource.aspectMask);
+                src_format_size = FormatElementSize(planeFormat);
+            } else {
+                src_format_size = FormatElementSize(src_format);
+            }
+            if (FormatIsMultiplane(dst_format)) {
+                const VkFormat planeFormat = FindMultiplaneCompatibleFormat(dst_format, region.dstSubresource.aspectMask);
+                dst_format_size = FormatElementSize(planeFormat);
+            } else {
+                dst_format_size = FormatElementSize(dst_format);
+            }
+            // If size is still zero, then format is invalid and will be caught in another VU
+            if ((src_format_size != dst_format_size) && (src_format_size != 0) && (dst_format_size != 0)) {
+                skip |=
+                    LogError(command_buffer, "VUID-vkCmdCopyImage-None-01549",
+                             "vkCmdCopyImage(): pRegions[%u] called with non-compatible image formats. "
+                             "The src format %s with aspectMask %s is not compatible with dst format %s aspectMask %s.",
+                             i, string_VkFormat(src_format), string_VkImageAspectFlags(region.srcSubresource.aspectMask).c_str(),
+                             string_VkFormat(dst_format), string_VkImageAspectFlags(region.dstSubresource.aspectMask).c_str());
+            }
+        }
     }
 
-    // The formats of src_image and dst_image must be compatible. Formats are considered compatible if their texel size in bytes
-    // is the same between both formats. For example, VK_FORMAT_R8G8B8A8_UNORM is compatible with VK_FORMAT_R32_UINT because
-    // because both texels are 4 bytes in size. Depth/stencil formats must match exactly.
-    if (FormatIsDepthOrStencil(src_format) || FormatIsDepthOrStencil(dst_format)) {
-        if (src_format != dst_format) {
-            char const str[] = "vkCmdCopyImage called with unmatched source and dest image depth/stencil formats.";
-            skip |= LogError(command_buffer, kVUID_Core_DrawState_MismatchedImageFormat, str);
-        }
-    } else {
-        if ((!FormatSizesAreEqual(src_format, dst_format, regionCount, pRegions)) && (!FormatIsMultiplane(src_format)) &&
-            (!FormatIsMultiplane(dst_format))) {
-            const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion) ? "VUID-vkCmdCopyImage-srcImage-01548"
-                                                                                   : "VUID-vkCmdCopyImage-srcImage-00135";
-            char const str[] = "vkCmdCopyImage called with unmatched source and dest image format sizes.";
-            skip |= LogError(command_buffer, vuid, "%s.", str);
+    // The formats of non-multiplane src_image and dst_image must be compatible. Formats are considered compatible if their texel
+    // size in bytes is the same between both formats. For example, VK_FORMAT_R8G8B8A8_UNORM is compatible with VK_FORMAT_R32_UINT
+    // because because both texels are 4 bytes in size.
+    if (!FormatIsMultiplane(src_format) && !FormatIsMultiplane(dst_format)) {
+        const char *compatible_vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion) ? "VUID-vkCmdCopyImage-srcImage-01548"
+                                                                                          : "VUID-vkCmdCopyImage-srcImage-00135";
+        // Depth/stencil formats must match exactly.
+        if (FormatIsDepthOrStencil(src_format) || FormatIsDepthOrStencil(dst_format)) {
+            if (src_format != dst_format) {
+                skip |= LogError(command_buffer, compatible_vuid,
+                                 "vkCmdCopyImage(): Depth/stencil formats must match exactly for src (%s) and dst (%s).",
+                                 string_VkFormat(src_format), string_VkFormat(dst_format));
+            }
+        } else {
+            if (!FormatSizesAreEqual(src_format, dst_format, regionCount, pRegions)) {
+                skip |= LogError(command_buffer, compatible_vuid,
+                                 "vkCmdCopyImage(): Unmatched image format sizes. "
+                                 "The src format %s has size of %zu and dst format %s has size of %zu.",
+                                 string_VkFormat(src_format), FormatElementSize(src_format), string_VkFormat(dst_format),
+                                 FormatElementSize(dst_format));
+            }
         }
     }
 
