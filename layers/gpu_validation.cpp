@@ -251,8 +251,8 @@ void GpuAssisted::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
     CreateAccelerationStructureBuildValidationState(device_gpu_assisted);
 }
 
-void GpuAssisted::PostCallRecordGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT *pInfo,
-                                                          VkDeviceAddress address) {
+void GpuAssisted::PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfoEXT *pInfo,
+                                                       VkDeviceAddress address) {
     BUFFER_STATE *buffer_state = GetBufferState(pInfo->buffer);
     // Validate against the size requested when the buffer was created
     if (buffer_state) {
@@ -261,14 +261,14 @@ void GpuAssisted::PostCallRecordGetBufferDeviceAddressEXT(VkDevice device, const
     }
 }
 
+void GpuAssisted::PostCallRecordGetBufferDeviceAddressEXT(VkDevice device, const VkBufferDeviceAddressInfoEXT *pInfo,
+                                                          VkDeviceAddress address) {
+    PostCallRecordGetBufferDeviceAddress(device, pInfo, address);
+}
+
 void GpuAssisted::PostCallRecordGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfoEXT *pInfo,
                                                           VkDeviceAddress address) {
-    BUFFER_STATE *buffer_state = GetBufferState(pInfo->buffer);
-    // Validate against the size requested when the buffer was created
-    if (buffer_state) {
-        buffer_map[address] = buffer_state->createInfo.size;
-        buffer_state->deviceAddress = address;
-    }
+    PostCallRecordGetBufferDeviceAddress(device, pInfo, address);
 }
 
 void GpuAssisted::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
