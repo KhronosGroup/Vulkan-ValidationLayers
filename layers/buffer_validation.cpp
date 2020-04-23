@@ -604,7 +604,7 @@ void CoreChecks::TransitionAttachmentRefLayout(CMD_BUFFER_STATE *pCB, FRAMEBUFFE
                 lvl_find_in_chain<VkRenderPassAttachmentBeginInfoKHR>(pCB->activeRenderPassBeginInfo.pNext);
             if (attachment_info) image_view = GetImageViewState(attachment_info->pAttachments[ref.attachment]);
         } else {
-            image_view = GetAttachmentImageViewState(pFramebuffer, ref.attachment);
+            image_view = GetAttachmentImageViewState(pCB, pFramebuffer, ref.attachment);
         }
         if (image_view) {
             VkImageLayout stencil_layout = kInvalidLayout;
@@ -650,7 +650,7 @@ void CoreChecks::TransitionBeginRenderPassLayouts(CMD_BUFFER_STATE *cb_state, co
                 lvl_find_in_chain<VkRenderPassAttachmentBeginInfoKHR>(cb_state->activeRenderPassBeginInfo.pNext);
             if (attachment_info) view_state = GetImageViewState(attachment_info->pAttachments[i]);
         } else {
-            view_state = GetAttachmentImageViewState(framebuffer_state, i);
+            view_state = GetAttachmentImageViewState(cb_state, framebuffer_state, i);
         }
         if (view_state) {
             VkImageLayout stencil_layout = kInvalidLayout;
@@ -1254,7 +1254,7 @@ void CoreChecks::TransitionFinalSubpassLayouts(CMD_BUFFER_STATE *pCB, const VkRe
                 const auto attachment_info = lvl_find_in_chain<VkRenderPassAttachmentBeginInfoKHR>(pRenderPassBegin->pNext);
                 if (attachment_info) view_state = GetImageViewState(attachment_info->pAttachments[i]);
             } else {
-                view_state = GetAttachmentImageViewState(framebuffer_state, i);
+                view_state = GetAttachmentImageViewState(pCB, framebuffer_state, i);
             }
             if (view_state) {
                 VkImageLayout stencil_layout = kInvalidLayout;

@@ -424,17 +424,25 @@ void ValidationStateTracker::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer c
 }
 
 // Get the image viewstate for a given framebuffer attachment
-IMAGE_VIEW_STATE *ValidationStateTracker::GetAttachmentImageViewState(FRAMEBUFFER_STATE *framebuffer, uint32_t index) {
-    if (framebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) return nullptr;
+IMAGE_VIEW_STATE *ValidationStateTracker::GetAttachmentImageViewState(CMD_BUFFER_STATE *cb, FRAMEBUFFER_STATE *framebuffer,
+                                                                      uint32_t index) {
+    if (framebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) {
+        assert(index < cb->imagelessFramebufferAttachments.size());
+        return cb->imagelessFramebufferAttachments[index];
+    }
     assert(framebuffer && (index < framebuffer->createInfo.attachmentCount));
     const VkImageView &image_view = framebuffer->createInfo.pAttachments[index];
     return GetImageViewState(image_view);
 }
 
 // Get the image viewstate for a given framebuffer attachment
-const IMAGE_VIEW_STATE *ValidationStateTracker::GetAttachmentImageViewState(const FRAMEBUFFER_STATE *framebuffer,
+const IMAGE_VIEW_STATE *ValidationStateTracker::GetAttachmentImageViewState(const CMD_BUFFER_STATE *cb,
+                                                                            const FRAMEBUFFER_STATE *framebuffer,
                                                                             uint32_t index) const {
-    if (framebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) return nullptr;
+    if (framebuffer->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) {
+        assert(index < cb->imagelessFramebufferAttachments.size());
+        return cb->imagelessFramebufferAttachments[index];
+    }
     assert(framebuffer && (index < framebuffer->createInfo.attachmentCount));
     const VkImageView &image_view = framebuffer->createInfo.pAttachments[index];
     return GetImageViewState(image_view);
@@ -2934,7 +2942,7 @@ void ValidationStateTracker::AddFramebufferBinding(CMD_BUFFER_STATE *cb_state, F
     if (fb_state->createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) return;
     const uint32_t attachmentCount = fb_state->createInfo.attachmentCount;
     for (uint32_t attachment = 0; attachment < attachmentCount; ++attachment) {
-        auto view_state = GetAttachmentImageViewState(fb_state, attachment);
+        auto view_state = GetAttachmentImageViewState(cb_state, fb_state, attachment);
         if (view_state) {
             AddCommandBufferBindingImageView(cb_state, view_state);
         }
@@ -3898,6 +3906,15 @@ void ValidationStateTracker::RecordCmdBeginRenderPassState(VkCommandBuffer comma
         } else {
             cb_state->active_render_pass_device_mask = cb_state->initial_device_mask;
         }
+
+        cb_state->imagelessFramebufferAttachments.clear();
+        auto attachment_info_struct = lvl_find_in_chain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
+        if (attachment_info_struct) {
+            for (uint32_t i = 0; i < attachment_info_struct->attachmentCount; i++) {
+                IMAGE_VIEW_STATE *img_view_state = GetImageViewState(attachment_info_struct->pAttachments[i]);
+                cb_state->imagelessFramebufferAttachments.push_back(img_view_state);
+            }
+        }
     }
 }
 
@@ -3946,6 +3963,7 @@ void ValidationStateTracker::RecordCmdEndRenderPassState(VkCommandBuffer command
     cb_state->activeRenderPass = nullptr;
     cb_state->activeSubpass = 0;
     cb_state->activeFramebuffer = VK_NULL_HANDLE;
+    cb_state->imagelessFramebufferAttachments.clear();
 }
 
 void ValidationStateTracker::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer) {

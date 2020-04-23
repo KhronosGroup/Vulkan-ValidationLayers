@@ -4731,7 +4731,7 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const CMD_BUFFER_STATE *cb_st
             const auto attachment = subpass_desc->pColorAttachments[i].attachment;
             if (attachment == VK_ATTACHMENT_UNUSED) continue;
 
-            const IMAGE_VIEW_STATE *imageview_state = GetImageViewState(fb_state->createInfo.pAttachments[attachment]);
+            const IMAGE_VIEW_STATE *imageview_state = GetAttachmentImageViewState(cb_state, fb_state, attachment);
             if (!imageview_state) continue;
 
             const IMAGE_STATE *image_state = GetImageState(imageview_state->create_info.image);
@@ -5771,7 +5771,7 @@ bool CoreChecks::ValidateImageBarrierAttachment(const char *funcName, CMD_BUFFER
     // Verify that a framebuffer image matches barrier image
     const auto attachmentCount = fb_state->createInfo.attachmentCount;
     for (uint32_t attachment = 0; attachment < attachmentCount; ++attachment) {
-        auto view_state = GetAttachmentImageViewState(fb_state, attachment);
+        auto view_state = GetAttachmentImageViewState(cb_state, fb_state, attachment);
         if (view_state && (img_bar_image == view_state->create_info.image)) {
             image_match = true;
             attach_index = attachment;

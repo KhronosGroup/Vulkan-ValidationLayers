@@ -489,8 +489,9 @@ class ValidationStateTracker : public ValidationObject {
     SURFACE_STATE* GetSurfaceState(VkSurfaceKHR surface) { return Get<SURFACE_STATE>(surface); }
 
     // Class Declarations for helper functions
-    IMAGE_VIEW_STATE* GetAttachmentImageViewState(FRAMEBUFFER_STATE* framebuffer, uint32_t index);
-    const IMAGE_VIEW_STATE* GetAttachmentImageViewState(const FRAMEBUFFER_STATE* framebuffer, uint32_t index) const;
+    IMAGE_VIEW_STATE* GetAttachmentImageViewState(CMD_BUFFER_STATE* cb, FRAMEBUFFER_STATE* framebuffer, uint32_t index);
+    const IMAGE_VIEW_STATE* GetAttachmentImageViewState(const CMD_BUFFER_STATE* cb, const FRAMEBUFFER_STATE* framebuffer,
+                                                        uint32_t index) const;
     const EVENT_STATE* GetEventState(VkEvent event) const;
     EVENT_STATE* GetEventState(VkEvent event);
     const QUEUE_STATE* GetQueueState(VkQueue queue) const;
