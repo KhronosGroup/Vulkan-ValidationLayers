@@ -2254,6 +2254,10 @@ TEST_F(VkLayerTest, RenderPassDestroyWhileInUse) {
     TEST_DESCRIPTION("Delete in-use renderPass.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
+    if (IsPlatform(kNexusPlayer)) {
+        printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
+        return;
+    }
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     // Create simple renderpass
