@@ -560,11 +560,12 @@ struct SubpassDependencyGraphNode {
 
 struct RENDER_PASS_STATE : public BASE_NODE {
     struct AttachmentTransition {
+        uint32_t prev_pass;
         uint32_t attachment;
         VkImageLayout old_layout;
         VkImageLayout new_layout;
-        AttachmentTransition(uint32_t attachment_, VkImageLayout old_layout_, VkImageLayout new_layout_)
-            : attachment(attachment_), old_layout(old_layout_), new_layout(new_layout_) {}
+        AttachmentTransition(uint32_t prev_pass_, uint32_t attachment_, VkImageLayout old_layout_, VkImageLayout new_layout_)
+            : prev_pass(prev_pass_), attachment(attachment_), old_layout(old_layout_), new_layout(new_layout_) {}
     };
 
     VkRenderPass renderPass;

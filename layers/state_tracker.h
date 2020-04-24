@@ -44,6 +44,8 @@
 uint32_t ResolveRemainingLevels(const VkImageSubresourceRange* range, uint32_t mip_levels);
 uint32_t ResolveRemainingLayers(const VkImageSubresourceRange* range, uint32_t layers);
 VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo& image_create_info, const VkImageSubresourceRange& range);
+std::pair<uint32_t, const VkImageView*> GetFramebufferAttachments(const VkRenderPassBeginInfo& rp_begin,
+                                                                  const FRAMEBUFFER_STATE& fb_state);
 VkImageSubresourceRange NormalizeSubresourceRange(const IMAGE_STATE& image_state, const VkImageSubresourceRange& range);
 
 enum SyncScope {
@@ -1181,6 +1183,9 @@ class ValidationStateTracker : public ValidationObject {
     void FreeCommandBufferStates(COMMAND_POOL_STATE* pool_state, const uint32_t command_buffer_count,
                                  const VkCommandBuffer* command_buffers);
     void FreeDescriptorSet(cvdescriptorset::DescriptorSet* descriptor_set);
+    std::vector<const IMAGE_VIEW_STATE*> GetAttachmentViews(const VkRenderPassBeginInfo& rp_begin,
+                                                            const FRAMEBUFFER_STATE& fb_state) const;
+    std::vector<const IMAGE_VIEW_STATE*> GetCurrentAttachmentViews(const CMD_BUFFER_STATE& cb_state) const;
     BASE_NODE* GetStateStructPtrFromObject(const VulkanTypedHandle& object_struct);
     VkFormatFeatureFlags GetPotentialFormatFeatures(VkFormat format) const;
     void IncrementBoundObjects(CMD_BUFFER_STATE const* cb_node);
