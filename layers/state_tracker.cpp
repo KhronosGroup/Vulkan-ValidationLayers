@@ -101,6 +101,51 @@ VkImageSubresourceRange NormalizeSubresourceRange(const IMAGE_STATE &image_state
     return NormalizeSubresourceRange(image_create_info, range);
 }
 
+// NOTE:  Beware the lifespan of the rp_begin when holding  the return.  If the rp_begin isn't a "safe" copy, "IMAGELESS"
+//        attachments won't persist past the API entry point exit.
+std::pair<uint32_t, const VkImageView *> GetFramebufferAttachments(const VkRenderPassBeginInfo &rp_begin,
+                                                                   const FRAMEBUFFER_STATE &fb_state) {
+    const VkImageView *attachments = fb_state.createInfo.pAttachments;
+    uint32_t count = fb_state.createInfo.attachmentCount;
+    if (fb_state.createInfo.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) {
+        const auto *framebuffer_attachments = lvl_find_in_chain<VkRenderPassAttachmentBeginInfo>(rp_begin.pNext);
+        if (framebuffer_attachments) {
+            attachments = framebuffer_attachments->pAttachments;
+            count = framebuffer_attachments->attachmentCount;
+        }
+    }
+    return std::make_pair(count, attachments);
+}
+
+std::vector<const IMAGE_VIEW_STATE *> ValidationStateTracker::GetAttachmentViews(const VkRenderPassBeginInfo &rp_begin,
+                                                                                 const FRAMEBUFFER_STATE &fb_state) const {
+    std::vector<const IMAGE_VIEW_STATE *> views;
+
+    const auto count_attachment = GetFramebufferAttachments(rp_begin, fb_state);
+    const auto attachment_count = count_attachment.first;
+    const auto *attachments = count_attachment.second;
+    views.resize(attachment_count, nullptr);
+    for (uint32_t i = 0; i < attachment_count; i++) {
+        if (attachments[i] != VK_NULL_HANDLE) {
+            views[i] = Get<IMAGE_VIEW_STATE>(attachments[i]);
+        }
+    }
+    return views;
+}
+
+std::vector<const IMAGE_VIEW_STATE *> ValidationStateTracker::GetCurrentAttachmentViews(const CMD_BUFFER_STATE &cb_state) const {
+    // Only valid *after* RecordBeginRenderPass and *before* RecordEndRenderpass as it relies on cb_state for the renderpass info.
+    std::vector<const IMAGE_VIEW_STATE *> views;
+
+    const auto *rp_state = cb_state.activeRenderPass;
+    if (!rp_state) return views;
+    const auto &rp_begin = *cb_state.activeRenderPassBeginInfo.ptr();
+    const auto *fb_state = Get<FRAMEBUFFER_STATE>(rp_begin.framebuffer);
+    if (!fb_state) return views;
+
+    return GetAttachmentViews(rp_begin, *fb_state);
+}
+
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 // Android-specific validation that uses types defined only with VK_USE_PLATFORM_ANDROID_KHR
 // This could also move into a seperate core_validation_android.cpp file... ?
@@ -4079,6 +4124,7 @@ void ValidationStateTracker::RecordCreateRenderPassState(RenderPassCreateVersion
         std::unordered_map<uint32_t, bool> &first_read;
         const uint32_t attachment_count;
         std::vector<VkImageLayout> attachment_layout;
+        std::vector<std::vector<VkImageLayout>> subpass_attachment_layout;
         AttachmentTracker(std::shared_ptr<RENDER_PASS_STATE> &render_pass)
             : rp(render_pass.get()),
               first(rp->attachment_first_subpass),
@@ -4086,11 +4132,17 @@ void ValidationStateTracker::RecordCreateRenderPassState(RenderPassCreateVersion
               subpass_transitions(rp->subpass_transitions),
               first_read(rp->attachment_first_read),
               attachment_count(rp->createInfo.attachmentCount),
-              attachment_layout() {
+              attachment_layout(),
+              subpass_attachment_layout() {
             first.resize(attachment_count, VK_SUBPASS_EXTERNAL);
             last.resize(attachment_count, VK_SUBPASS_EXTERNAL);
             subpass_transitions.resize(rp->createInfo.subpassCount + 1);  // Add an extra for EndRenderPass
             attachment_layout.reserve(attachment_count);
+            subpass_attachment_layout.resize(rp->createInfo.subpassCount);
+            for (auto &subpass_layouts : subpass_attachment_layout) {
+                subpass_layouts.resize(attachment_count, kInvalidLayout);
+            }
+
             for (uint32_t j = 0; j < attachment_count; j++) {
                 attachment_layout.push_back(rp->createInfo.pAttachments[j].initialLayout);
             }
@@ -4104,14 +4156,21 @@ void ValidationStateTracker::RecordCreateRenderPassState(RenderPassCreateVersion
                     const auto layout = attach_ref[j].layout;
                     // Take advantage of the fact that insert won't overwrite, so we'll only write the first time.
                     first_read.insert(std::make_pair(attachment, is_read));
-                    if (first[attachment] == VK_SUBPASS_EXTERNAL) first[attachment] = subpass;
+                    if (first[attachment] == VK_SUBPASS_EXTERNAL) {
+                        first[attachment] = subpass;
+                        const auto initial_layout = rp->createInfo.pAttachments[attachment].initialLayout;
+                        subpass_transitions[subpass].emplace_back(VK_SUBPASS_EXTERNAL, attachment, initial_layout, layout);
+                    }
                     last[attachment] = subpass;
 
-                    if (layout != attachment_layout[attachment]) {
-                        subpass_transitions[subpass].emplace_back(attachment, attachment_layout[attachment], layout);
-                        // TODO: Determine if this simple minded tracking is sufficient (it is for correct definitions)
-                        attachment_layout[attachment] = layout;
+                    for (const auto &prev : rp->subpass_dependencies[subpass].prev) {
+                        const auto prev_pass = prev.node->pass;
+                        const auto prev_layout = subpass_attachment_layout[prev_pass][attachment];
+                        if ((prev_layout != kInvalidLayout) && (prev_layout != layout)) {
+                            subpass_transitions[subpass].emplace_back(prev_pass, attachment, prev_layout, layout);
+                        }
                     }
+                    attachment_layout[attachment] = layout;
                 }
             }
         }
@@ -4120,8 +4179,9 @@ void ValidationStateTracker::RecordCreateRenderPassState(RenderPassCreateVersion
 
             for (uint32_t attachment = 0; attachment < attachment_count; ++attachment) {
                 const auto final_layout = rp->createInfo.pAttachments[attachment].finalLayout;
-                if (final_layout != attachment_layout[attachment]) {
-                    final_transitions.emplace_back(attachment, attachment_layout[attachment], final_layout);
+                // Add final transitions for attachments that were used and change layout.
+                if ((last[attachment] != VK_SUBPASS_EXTERNAL) && final_layout != attachment_layout[attachment]) {
+                    final_transitions.emplace_back(last[attachment], attachment, attachment_layout[attachment], final_layout);
                 }
             }
         }
