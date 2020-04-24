@@ -1279,10 +1279,12 @@ void VkVerticesObj::BindVertexBuffers(VkCommandBuffer aCommandBuffer, unsigned a
 
 OneOffDescriptorSet::OneOffDescriptorSet(VkDeviceObj *device, const Bindings &bindings,
                                          VkDescriptorSetLayoutCreateFlags layout_flags, void *layout_pnext,
-                                         VkDescriptorPoolCreateFlags poolFlags, void *allocate_pnext)
+                                         VkDescriptorPoolCreateFlags poolFlags, void *allocate_pnext, int buffer_info_size,
+                                         int image_info_size)
     : device_{device}, pool_{}, layout_(device, bindings, layout_flags, layout_pnext), set_{} {
     VkResult err;
-
+    buffer_infos.reserve(buffer_info_size);
+    image_infos.reserve(image_info_size);
     std::vector<VkDescriptorPoolSize> sizes;
     for (const auto &b : bindings) sizes.push_back({b.descriptorType, std::max(1u, b.descriptorCount)});
 
@@ -1312,7 +1314,6 @@ void OneOffDescriptorSet::WriteDescriptorBufferInfo(int blinding, VkBuffer buffe
     buffer_info.offset = 0;
     buffer_info.range = size;
     buffer_infos.emplace_back(buffer_info);
-    size_t index = buffer_infos.size() - 1;
 
     VkWriteDescriptorSet descriptor_write;
     memset(&descriptor_write, 0, sizeof(descriptor_write));
@@ -1321,7 +1322,7 @@ void OneOffDescriptorSet::WriteDescriptorBufferInfo(int blinding, VkBuffer buffe
     descriptor_write.dstBinding = blinding;
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = descriptorType;
-    descriptor_write.pBufferInfo = &buffer_infos[index];
+    descriptor_write.pBufferInfo = &buffer_infos.back();
     descriptor_write.pImageInfo = nullptr;
     descriptor_write.pTexelBufferView = nullptr;
 
@@ -1344,13 +1345,12 @@ void OneOffDescriptorSet::WriteDescriptorBufferView(int blinding, VkBufferView &
 }
 
 void OneOffDescriptorSet::WriteDescriptorImageInfo(int blinding, VkImageView image_view, VkSampler sampler,
-                                                   VkDescriptorType descriptorType) {
+                                                   VkDescriptorType descriptorType, VkImageLayout imageLayout) {
     VkDescriptorImageInfo image_info = {};
     image_info.imageView = image_view;
     image_info.sampler = sampler;
-    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_info.imageLayout = imageLayout;
     image_infos.emplace_back(image_info);
-    size_t index = image_infos.size() - 1;
 
     VkWriteDescriptorSet descriptor_write;
     memset(&descriptor_write, 0, sizeof(descriptor_write));
@@ -1359,7 +1359,7 @@ void OneOffDescriptorSet::WriteDescriptorImageInfo(int blinding, VkImageView ima
     descriptor_write.dstBinding = blinding;
     descriptor_write.descriptorCount = 1;
     descriptor_write.descriptorType = descriptorType;
-    descriptor_write.pImageInfo = &image_infos[index];
+    descriptor_write.pImageInfo = &image_infos.back();
     descriptor_write.pBufferInfo = nullptr;
     descriptor_write.pTexelBufferView = nullptr;
 
