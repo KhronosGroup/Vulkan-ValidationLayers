@@ -8310,48 +8310,219 @@ TEST_F(VkLayerTest, SamplerImageViewFormatUnsupportedFilter) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
 
-    VkImageTiling nonlinear_format_tiling = VK_IMAGE_TILING_LINEAR;
-    VkImageTiling noncubic_format_tiling = VK_IMAGE_TILING_LINEAR;
-    VkFormat nonlinear_format = VK_FORMAT_UNDEFINED;
-    VkFormat noncubic_format = VK_FORMAT_UNDEFINED;
-    for (uint32_t i = VK_FORMAT_R4G4_UNORM_PACK8; i <= VK_FORMAT_ASTC_12x12_SRGB_BLOCK; i++) {
-        VkFormatProperties props = {};
-        vk::GetPhysicalDeviceFormatProperties(gpu(), static_cast<VkFormat>(i), &props);
-        if (nonlinear_format == VK_FORMAT_UNDEFINED && props.linearTilingFeatures != 0 &&
-            !(props.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
-            nonlinear_format = static_cast<VkFormat>(i);
-        } else if (nonlinear_format == VK_FORMAT_UNDEFINED && props.optimalTilingFeatures != 0 &&
-                   !(props.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
-            nonlinear_format = static_cast<VkFormat>(i);
-            nonlinear_format_tiling = VK_IMAGE_TILING_OPTIMAL;
-        }
+    bool cubic_support = false;
+    if (DeviceExtensionSupported(gpu(), nullptr, "VK_IMG_filter_cubic")) {
+        m_device_extension_names.push_back("VK_IMG_filter_cubic");
+        cubic_support = true;
+    }
 
-        if (noncubic_format == VK_FORMAT_UNDEFINED && props.linearTilingFeatures != 0 &&
-            !(props.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT)) {
-            noncubic_format = static_cast<VkFormat>(i);
-        } else if (noncubic_format == VK_FORMAT_UNDEFINED && props.optimalTilingFeatures != 0 &&
-                   !(props.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT)) {
-            noncubic_format = static_cast<VkFormat>(i);
-            noncubic_format_tiling = VK_IMAGE_TILING_OPTIMAL;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, 0));
+
+    enum FormatTypes { FLOAT, SINT, UINT };
+
+    struct TestFilterType {
+        VkFilter filter = VK_FILTER_LINEAR;
+        VkFormatFeatureFlagBits required_format_feature = VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
+        VkImageTiling tiling = VK_IMAGE_TILING_LINEAR;
+        VkFormat format = VK_FORMAT_UNDEFINED;
+        FormatTypes format_type;
+        std::string err_msg;
+    };
+
+    std::vector<std::pair<VkFormat, FormatTypes>> formats_to_check({{VK_FORMAT_R8_UNORM, FLOAT},
+                                                                    {VK_FORMAT_R8_SNORM, FLOAT},
+                                                                    {VK_FORMAT_R8_SRGB, FLOAT},
+                                                                    {VK_FORMAT_R8G8_UNORM, FLOAT},
+                                                                    {VK_FORMAT_R8G8_SNORM, FLOAT},
+                                                                    {VK_FORMAT_R8G8_SRGB, FLOAT},
+                                                                    {VK_FORMAT_R8G8B8_UNORM, FLOAT},
+                                                                    {VK_FORMAT_R8G8B8_SNORM, FLOAT},
+                                                                    {VK_FORMAT_R8G8B8_SRGB, FLOAT},
+                                                                    {VK_FORMAT_R8G8B8A8_UNORM, FLOAT},
+                                                                    {VK_FORMAT_R8G8B8A8_SNORM, FLOAT},
+                                                                    {VK_FORMAT_R8G8B8A8_SRGB, FLOAT},
+                                                                    {VK_FORMAT_B8G8R8A8_UNORM, FLOAT},
+                                                                    {VK_FORMAT_B8G8R8A8_SNORM, FLOAT},
+                                                                    {VK_FORMAT_B8G8R8A8_SRGB, FLOAT},
+                                                                    {VK_FORMAT_R16_UNORM, FLOAT},
+                                                                    {VK_FORMAT_R16_SNORM, FLOAT},
+                                                                    {VK_FORMAT_R16_SFLOAT, FLOAT},
+                                                                    {VK_FORMAT_R16G16_UNORM, FLOAT},
+                                                                    {VK_FORMAT_R16G16_SNORM, FLOAT},
+                                                                    {VK_FORMAT_R16G16_SFLOAT, FLOAT},
+                                                                    {VK_FORMAT_R16G16B16_UNORM, FLOAT},
+                                                                    {VK_FORMAT_R16G16B16_SNORM, FLOAT},
+                                                                    {VK_FORMAT_R16G16B16_SFLOAT, FLOAT},
+                                                                    {VK_FORMAT_R16G16B16A16_UNORM, FLOAT},
+                                                                    {VK_FORMAT_R16G16B16A16_SNORM, FLOAT},
+                                                                    {VK_FORMAT_R16G16B16A16_SFLOAT, FLOAT},
+                                                                    {VK_FORMAT_R32_SFLOAT, FLOAT},
+                                                                    {VK_FORMAT_R32G32_SFLOAT, FLOAT},
+                                                                    {VK_FORMAT_R32G32B32_SFLOAT, FLOAT},
+                                                                    {VK_FORMAT_R32G32B32A32_SFLOAT, FLOAT},
+                                                                    {VK_FORMAT_R64_SFLOAT, FLOAT},
+                                                                    {VK_FORMAT_R64G64_SFLOAT, FLOAT},
+                                                                    {VK_FORMAT_R64G64B64_SFLOAT, FLOAT},
+                                                                    {VK_FORMAT_R64G64B64A64_SFLOAT, FLOAT},
+                                                                    {VK_FORMAT_R8_SINT, SINT},
+                                                                    {VK_FORMAT_R8G8_SINT, SINT},
+                                                                    {VK_FORMAT_R8G8B8_SINT, SINT},
+                                                                    {VK_FORMAT_R8G8B8A8_SINT, SINT},
+                                                                    {VK_FORMAT_B8G8R8A8_SINT, SINT},
+                                                                    {VK_FORMAT_R16_SINT, SINT},
+                                                                    {VK_FORMAT_R16G16_SINT, SINT},
+                                                                    {VK_FORMAT_R16G16B16_SINT, SINT},
+                                                                    {VK_FORMAT_R16G16B16A16_SINT, SINT},
+                                                                    {VK_FORMAT_R32_SINT, SINT},
+                                                                    {VK_FORMAT_R32G32_SINT, SINT},
+                                                                    {VK_FORMAT_R32G32B32_SINT, SINT},
+                                                                    {VK_FORMAT_R32G32B32A32_SINT, SINT},
+                                                                    {VK_FORMAT_R64_SINT, SINT},
+                                                                    {VK_FORMAT_R64G64_SINT, SINT},
+                                                                    {VK_FORMAT_R64G64B64_SINT, SINT},
+                                                                    {VK_FORMAT_R64G64B64A64_SINT, SINT},
+                                                                    {VK_FORMAT_R8_UINT, UINT},
+                                                                    {VK_FORMAT_R8G8_UINT, UINT},
+                                                                    {VK_FORMAT_R8G8B8_UINT, UINT},
+                                                                    {VK_FORMAT_R8G8B8A8_UINT, UINT},
+                                                                    {VK_FORMAT_B8G8R8A8_UINT, UINT},
+                                                                    {VK_FORMAT_R16_UINT, UINT},
+                                                                    {VK_FORMAT_R16G16_UINT, UINT},
+                                                                    {VK_FORMAT_R16G16B16_UINT, UINT},
+                                                                    {VK_FORMAT_R16G16B16A16_UINT, UINT},
+                                                                    {VK_FORMAT_R32_UINT, UINT},
+                                                                    {VK_FORMAT_R32G32_UINT, UINT},
+                                                                    {VK_FORMAT_R32G32B32_UINT, UINT},
+                                                                    {VK_FORMAT_R32G32B32A32_UINT, UINT},
+                                                                    {VK_FORMAT_R64_UINT, UINT},
+                                                                    {VK_FORMAT_R64G64_UINT, UINT},
+                                                                    {VK_FORMAT_R64G64B64_UINT, UINT},
+                                                                    {VK_FORMAT_R64G64B64A64_UINT, UINT}});
+
+    std::vector<struct TestFilterType> tests(2);
+    tests[0].err_msg = "VUID-vkCmdDraw-None-02690";
+
+    tests[1].filter = VK_FILTER_CUBIC_IMG;
+    tests[1].required_format_feature = VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG;
+    tests[1].err_msg = "VUID-vkCmdDraw-None-02692";
+
+    for (auto &test_struct : tests) {
+        for (std::pair<VkFormat, FormatTypes> cur_format_pair : formats_to_check) {
+            VkFormatProperties props = {};
+            vk::GetPhysicalDeviceFormatProperties(gpu(), cur_format_pair.first, &props);
+            if (test_struct.format == VK_FORMAT_UNDEFINED && props.linearTilingFeatures != 0 &&
+                (props.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) &&
+                !(props.linearTilingFeatures & test_struct.required_format_feature)) {
+                test_struct.format = cur_format_pair.first;
+                test_struct.format_type = cur_format_pair.second;
+            } else if (test_struct.format == VK_FORMAT_UNDEFINED && props.optimalTilingFeatures != 0 &&
+                       (props.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) &&
+                       !(props.optimalTilingFeatures & test_struct.required_format_feature)) {
+                test_struct.format = cur_format_pair.first;
+                test_struct.format_type = cur_format_pair.second;
+                test_struct.tiling = VK_IMAGE_TILING_OPTIMAL;
+            }
+
+            if (test_struct.format != VK_FORMAT_UNDEFINED) {
+                break;
+            }
         }
     }
+
+    const char bindStateFragiSamplerShaderText[] =
+        "#version 450\n"
+        "layout(set=0, binding=0) uniform isampler2D s;\n"
+        "layout(location=0) out vec4 x;\n"
+        "void main(){\n"
+        "   x = texture(s, vec2(1));\n"
+        "}\n";
+
+    const char bindStateFraguSamplerShaderText[] =
+        "#version 450\n"
+        "layout(set=0, binding=0) uniform usampler2D s;\n"
+        "layout(location=0) out vec4 x;\n"
+        "void main(){\n"
+        "   x = texture(s, vec2(1));\n"
+        "}\n";
 
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    VkImageCreateInfo ci = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-                            nullptr,
-                            0,
-                            VK_IMAGE_TYPE_2D,
-                            nonlinear_format,
-                            {128, 128, 1},
-                            1,
-                            1,
-                            VK_SAMPLE_COUNT_1_BIT,
-                            nonlinear_format_tiling,
-                            VK_IMAGE_USAGE_SAMPLED_BIT,
-                            VK_SHARING_MODE_EXCLUSIVE,
-                            VK_IMAGE_LAYOUT_UNDEFINED};
+    for (auto test_struct : tests) {
+        if (test_struct.format == VK_FORMAT_UNDEFINED) {
+            printf("%s Could not find a testable format for filter %d.  Skipping test for said filter.\n", kSkipPrefix,
+                   test_struct.filter);
+            continue;
+        }
+
+        VkSamplerCreateInfo sci = SafeSaneSamplerCreateInfo();
+
+        sci.magFilter = test_struct.filter;
+        sci.minFilter = test_struct.filter;
+
+        if (test_struct.filter == VK_FILTER_CUBIC_IMG) {
+            if (cubic_support) {
+                sci.anisotropyEnable = VK_FALSE;
+            } else {
+                printf("%s VK_FILTER_CUBIC_IMG not supported.  Skipping use of VK_FILTER_CUBIC_IMG this test.\n", kSkipPrefix);
+                continue;
+            }
+        }
+
+        VkSampler sampler;
+        VkResult err = vk::CreateSampler(m_device->device(), &sci, nullptr, &sampler);
+        ASSERT_VK_SUCCESS(err);
+
+        VkImageObj mpimage(m_device);
+        mpimage.Init(128, 128, 1, test_struct.format, VK_IMAGE_USAGE_SAMPLED_BIT, test_struct.tiling);
+        ASSERT_TRUE(mpimage.initialized());
+
+        VkImageView view = mpimage.targetView(test_struct.format);
+
+        CreatePipelineHelper pipe(*this);
+        VkShaderObj *fs = nullptr;
+
+        pipe.InitInfo();
+
+        if (test_struct.format_type == FLOAT) {
+            fs = new VkShaderObj(m_device, bindStateFragSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+        } else if (test_struct.format_type == SINT) {
+            fs = new VkShaderObj(m_device, bindStateFragiSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+        } else if (test_struct.format_type == UINT) {
+            fs = new VkShaderObj(m_device, bindStateFraguSamplerShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+        }
+
+        pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+        pipe.dsl_bindings_ = {
+            {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+        };
+        pipe.InitState();
+        pipe.CreateGraphicsPipeline();
+
+        pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+        pipe.descriptor_set_->UpdateDescriptorSets();
+
+        m_commandBuffer->begin();
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+        VkViewport viewport = {0, 0, 16, 16, 0, 1};
+        vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &viewport);
+        VkRect2D scissor = {{0, 0}, {16, 16}};
+        vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &scissor);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+        vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+                                  &pipe.descriptor_set_->set_, 0, nullptr);
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, test_struct.err_msg.c_str());
+        m_commandBuffer->Draw(1, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
+
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+
+        delete fs;
+        vk::DestroySampler(m_device->device(), sampler, nullptr);
+    }
 }
 
 TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
