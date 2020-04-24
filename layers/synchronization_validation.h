@@ -393,7 +393,6 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     using StateTracker = ValidationStateTracker;
 
     using StateTracker::AccessorTraitsTypes;
-    ResourceUsageTag tag;  // Find a better tagging scheme...
     std::unordered_map<VkCommandBuffer, std::unique_ptr<CommandBufferAccessContext>> cb_access_state;
     CommandBufferAccessContext *GetAccessContextImpl(VkCommandBuffer command_buffer, bool do_insert) {
         auto found_it = cb_access_state.find(command_buffer);
