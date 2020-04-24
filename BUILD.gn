@@ -130,6 +130,8 @@ thread_safety_sources = [
 unique_objects_sources = []
 
 best_practices_sources = [
+  "layers/generated/best_practices.cpp",
+  "layers/generated/best_practices.h",
   "layers/best_practices_utils.cpp",
   "layers/best_practices_validation.h",
   "layers/best_practices_error_enums.h",
