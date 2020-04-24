@@ -7510,18 +7510,27 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
             if ((pCreateInfo->flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR) == 0) {
                 // Verify correct attachment usage flags
                 for (uint32_t subpass = 0; subpass < rpci->subpassCount; subpass++) {
+                    const VkSubpassDescription2 &subpass_description = rpci->pSubpasses[subpass];
                     // Verify input attachments:
-                    skip |= MatchUsage(rpci->pSubpasses[subpass].inputAttachmentCount, rpci->pSubpasses[subpass].pInputAttachments,
-                                       pCreateInfo, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
-                                       "VUID-VkFramebufferCreateInfo-pAttachments-00879");
+                    skip |= MatchUsage(subpass_description.inputAttachmentCount, subpass_description.pInputAttachments, pCreateInfo,
+                                       VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-pAttachments-00879");
                     // Verify color attachments:
-                    skip |= MatchUsage(rpci->pSubpasses[subpass].colorAttachmentCount, rpci->pSubpasses[subpass].pColorAttachments,
-                                       pCreateInfo, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                       "VUID-VkFramebufferCreateInfo-pAttachments-00877");
+                    skip |= MatchUsage(subpass_description.colorAttachmentCount, subpass_description.pColorAttachments, pCreateInfo,
+                                       VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-pAttachments-00877");
                     // Verify depth/stencil attachments:
                     skip |=
-                        MatchUsage(1, rpci->pSubpasses[subpass].pDepthStencilAttachment, pCreateInfo,
+                        MatchUsage(1, subpass_description.pDepthStencilAttachment, pCreateInfo,
                                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, "VUID-VkFramebufferCreateInfo-pAttachments-02633");
+                    // Verify depth/stecnil resolve
+                    if (device_extensions.vk_khr_depth_stencil_resolve) {
+                        const VkSubpassDescriptionDepthStencilResolve *ds_resolve =
+                            lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolve>(subpass_description.pNext);
+                        if (ds_resolve) {
+                            skip |= MatchUsage(1, ds_resolve->pDepthStencilResolveAttachment, pCreateInfo,
+                                               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                                               "VUID-VkFramebufferCreateInfo-pAttachments-02634");
+                        }
+                    }
                 }
             }
 
