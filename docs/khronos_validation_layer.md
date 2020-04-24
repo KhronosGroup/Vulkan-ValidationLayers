@@ -75,11 +75,6 @@ Using the severity, type, and message ID, an application can easily filter the m
 
 **Refer to the Validation Features section of the Vulkan Specification for details on this feature.
 
-### <a name="validationfeatures"></a>VK\_EXT\_validation\_flags [DEPRECATED]
-One method for an app to control validation layer features is through the `VK_EXT_validation_flags` extension.
-**This extension has been deprecated and should not be used for new applications.**
-
-Refer to the Validation Flags extension section of the Vulkan Specification for additional details.
 
 
 
