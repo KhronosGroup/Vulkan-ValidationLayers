@@ -12510,3 +12510,135 @@ TEST_F(VkSyncValTest, SyncRenderPassBeginTransitionHazard) {
     m_commandBuffer->EndRenderPass();
     m_errorMonitor->VerifyNotFound();
 }
+
+TEST_F(VkLayerTest, SyncCmdHazards) {
+    // TODO: Add code to enable sync validation
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkImageUsageFlags image_usage_combine = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+                                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkImageObj image_c_a(m_device), image_c_b(m_device);
+    const auto image_c_ci = VkImageObj::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_combine, VK_IMAGE_TILING_OPTIMAL);
+    image_c_a.Init(image_c_ci);
+    image_c_b.Init(image_c_ci);
+
+    VkImageView imageview_c = image_c_a.targetView(format);
+
+    VkImageUsageFlags image_usage_storage =
+        VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    VkImageObj image_s_a(m_device), image_s_b(m_device);
+    const auto image_s_ci = VkImageObj::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_storage, VK_IMAGE_TILING_OPTIMAL);
+    image_s_a.Init(image_s_ci);
+    image_s_b.Init(image_s_ci);
+
+    VkImageView imageview_s = image_s_a.targetView(format);
+
+    VkSampler sampler_s, sampler_c;
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    VkResult err = vk::CreateSampler(m_device->device(), &sampler_ci, nullptr, &sampler_s);
+    ASSERT_VK_SUCCESS(err);
+    err = vk::CreateSampler(m_device->device(), &sampler_ci, nullptr, &sampler_c);
+    ASSERT_VK_SUCCESS(err);
+
+    VkBufferObj buffer_a, buffer_b;
+    VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT |
+                                      VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buffer_a.init(*m_device, buffer_a.create_info(2048, buffer_usage, nullptr), mem_prop);
+    buffer_b.init(*m_device, buffer_b.create_info(2048, buffer_usage, nullptr), mem_prop);
+
+    VkBufferView bufferview;
+    auto bvci = lvl_init_struct<VkBufferViewCreateInfo>();
+    bvci.buffer = buffer_a.handle();
+    bvci.format = VK_FORMAT_R32_SFLOAT;
+    bvci.offset = 0;
+    bvci.range = VK_WHOLE_SIZE;
+
+    err = vk::CreateBufferView(m_device->device(), &bvci, NULL, &bufferview);
+    ASSERT_VK_SUCCESS(err);
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {3, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_a.handle(), 2048);
+    descriptor_set.WriteDescriptorImageInfo(1, imageview_c, sampler_c, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.WriteDescriptorImageInfo(2, imageview_s, sampler_s, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.WriteDescriptorBufferView(3, bufferview);
+    descriptor_set.UpdateDescriptorSets();
+
+    std::string csSource =
+        "#version 450\n"
+        "layout(set=0, binding=0) uniform foo { int x; } ub0;\n"
+        "layout(set=0, binding=1) uniform sampler2D cis1;\n"
+        "layout(set=0, binding=2, rgba8) uniform image2D si2;\n"
+        "layout(set=0, binding=3, rgba8) uniform imageBuffer stb3;\n"
+        "void main(){\n"
+        "    int value = 0;\n"
+        "    vec4 vColor4;\n"
+        "    value = ub0.x;\n"
+        "    vColor4 = texture(cis1, vec2(0));\n"
+        "    imageStore(si2, ivec2(0), vec4(0));\n"
+        "    vColor4 = imageLoad(stb3, 0);\n"
+        "}\n";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.cs_.reset(new VkShaderObj(m_device, csSource.c_str(), VK_SHADER_STAGE_COMPUTE_BIT, this));
+    pipe.InitState();
+    pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&descriptor_set.layout_});
+    pipe.CreateComputePipeline();
+
+    m_commandBuffer->begin();
+
+    VkBufferCopy buffer_region = {0, 0, 2048};
+    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_b.handle(), buffer_a.handle(), 1, &buffer_region);
+
+    VkImageSubresourceLayers layer{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    VkOffset3D zero_offset{0, 0, 0};
+    VkExtent3D full_extent{16, 16, 1};
+    VkImageCopy image_region = {layer, zero_offset, layer, zero_offset, full_extent};
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_c_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &image_region);
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_s_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_s_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &image_region);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ_AFTER_WRITE");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ_AFTER_WRITE");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ_AFTER_WRITE");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-READ_AFTER_WRITE");
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+    m_commandBuffer->reset();
+    m_commandBuffer->begin();
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_);
+    vk::CmdBindDescriptorSets(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_commandBuffer->handle(), 1, 1, 1);
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
+    vk::CmdCopyBuffer(m_commandBuffer->handle(), buffer_b.handle(), buffer_a.handle(), 1, &buffer_region);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
+    vk::CmdCopyImage(m_commandBuffer->handle(), image_c_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c_a.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &image_region);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+}
