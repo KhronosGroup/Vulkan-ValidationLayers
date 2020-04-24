@@ -25,21 +25,21 @@
  ****************************************************************************/
 
 
-void PostCallRecordvkCreateInstance(
+void PostCallRecordCreateInstance(
     const VkInstanceCreateInfo*                 pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkInstance*                                 pInstance,
     VkResult                                    result);
 
 
-void PostCallRecordvkEnumeratePhysicalDevices(
+void PostCallRecordEnumeratePhysicalDevices(
     VkInstance                                  instance,
     uint32_t*                                   pPhysicalDeviceCount,
     VkPhysicalDevice*                           pPhysicalDevices,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPhysicalDeviceImageFormatProperties(
+void PostCallRecordGetPhysicalDeviceImageFormatProperties(
     VkPhysicalDevice                            physicalDevice,
     VkFormat                                    format,
     VkImageType                                 type,
@@ -50,7 +50,7 @@ void PostCallRecordvkGetPhysicalDeviceImageFormatProperties(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateDevice(
+void PostCallRecordCreateDevice(
     VkPhysicalDevice                            physicalDevice,
     const VkDeviceCreateInfo*                   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -58,14 +58,14 @@ void PostCallRecordvkCreateDevice(
     VkResult                                    result);
 
 
-void PostCallRecordvkEnumerateInstanceExtensionProperties(
+void PostCallRecordEnumerateInstanceExtensionProperties(
     const char*                                 pLayerName,
     uint32_t*                                   pPropertyCount,
     VkExtensionProperties*                      pProperties,
     VkResult                                    result);
 
 
-void PostCallRecordvkEnumerateDeviceExtensionProperties(
+void PostCallRecordEnumerateDeviceExtensionProperties(
     VkPhysicalDevice                            physicalDevice,
     const char*                                 pLayerName,
     uint32_t*                                   pPropertyCount,
@@ -73,20 +73,20 @@ void PostCallRecordvkEnumerateDeviceExtensionProperties(
     VkResult                                    result);
 
 
-void PostCallRecordvkEnumerateInstanceLayerProperties(
+void PostCallRecordEnumerateInstanceLayerProperties(
     uint32_t*                                   pPropertyCount,
     VkLayerProperties*                          pProperties,
     VkResult                                    result);
 
 
-void PostCallRecordvkEnumerateDeviceLayerProperties(
+void PostCallRecordEnumerateDeviceLayerProperties(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
     VkLayerProperties*                          pProperties,
     VkResult                                    result);
 
 
-void PostCallRecordvkQueueSubmit(
+void PostCallRecordQueueSubmit(
     VkQueue                                     queue,
     uint32_t                                    submitCount,
     const VkSubmitInfo*                         pSubmits,
@@ -94,17 +94,25 @@ void PostCallRecordvkQueueSubmit(
     VkResult                                    result);
 
 
-void PostCallRecordvkQueueWaitIdle(
+void PostCallRecordQueueWaitIdle(
     VkQueue                                     queue,
     VkResult                                    result);
 
 
-void PostCallRecordvkDeviceWaitIdle(
+void PostCallRecordDeviceWaitIdle(
     VkDevice                                    device,
     VkResult                                    result);
 
 
-void PostCallRecordvkMapMemory(
+void PostCallRecordAllocateMemory(
+    VkDevice                                    device,
+    const VkMemoryAllocateInfo*                 pAllocateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkDeviceMemory*                             pMemory,
+    VkResult                                    result);
+
+
+void PostCallRecordMapMemory(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
     VkDeviceSize                                offset,
@@ -114,21 +122,21 @@ void PostCallRecordvkMapMemory(
     VkResult                                    result);
 
 
-void PostCallRecordvkFlushMappedMemoryRanges(
+void PostCallRecordFlushMappedMemoryRanges(
     VkDevice                                    device,
     uint32_t                                    memoryRangeCount,
     const VkMappedMemoryRange*                  pMemoryRanges,
     VkResult                                    result);
 
 
-void PostCallRecordvkInvalidateMappedMemoryRanges(
+void PostCallRecordInvalidateMappedMemoryRanges(
     VkDevice                                    device,
     uint32_t                                    memoryRangeCount,
     const VkMappedMemoryRange*                  pMemoryRanges,
     VkResult                                    result);
 
 
-void PostCallRecordvkBindBufferMemory(
+void PostCallRecordBindBufferMemory(
     VkDevice                                    device,
     VkBuffer                                    buffer,
     VkDeviceMemory                              memory,
@@ -136,7 +144,7 @@ void PostCallRecordvkBindBufferMemory(
     VkResult                                    result);
 
 
-void PostCallRecordvkBindImageMemory(
+void PostCallRecordBindImageMemory(
     VkDevice                                    device,
     VkImage                                     image,
     VkDeviceMemory                              memory,
@@ -144,7 +152,15 @@ void PostCallRecordvkBindImageMemory(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateFence(
+void PostCallRecordQueueBindSparse(
+    VkQueue                                     queue,
+    uint32_t                                    bindInfoCount,
+    const VkBindSparseInfo*                     pBindInfo,
+    VkFence                                     fence,
+    VkResult                                    result);
+
+
+void PostCallRecordCreateFence(
     VkDevice                                    device,
     const VkFenceCreateInfo*                    pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -152,20 +168,20 @@ void PostCallRecordvkCreateFence(
     VkResult                                    result);
 
 
-void PostCallRecordvkResetFences(
+void PostCallRecordResetFences(
     VkDevice                                    device,
     uint32_t                                    fenceCount,
     const VkFence*                              pFences,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetFenceStatus(
+void PostCallRecordGetFenceStatus(
     VkDevice                                    device,
     VkFence                                     fence,
     VkResult                                    result);
 
 
-void PostCallRecordvkWaitForFences(
+void PostCallRecordWaitForFences(
     VkDevice                                    device,
     uint32_t                                    fenceCount,
     const VkFence*                              pFences,
@@ -174,7 +190,7 @@ void PostCallRecordvkWaitForFences(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateSemaphore(
+void PostCallRecordCreateSemaphore(
     VkDevice                                    device,
     const VkSemaphoreCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -182,7 +198,7 @@ void PostCallRecordvkCreateSemaphore(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateEvent(
+void PostCallRecordCreateEvent(
     VkDevice                                    device,
     const VkEventCreateInfo*                    pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -190,25 +206,25 @@ void PostCallRecordvkCreateEvent(
     VkResult                                    result);
 
 
-void PostCallRecordvkGetEventStatus(
+void PostCallRecordGetEventStatus(
     VkDevice                                    device,
     VkEvent                                     event,
     VkResult                                    result);
 
 
-void PostCallRecordvkSetEvent(
+void PostCallRecordSetEvent(
     VkDevice                                    device,
     VkEvent                                     event,
     VkResult                                    result);
 
 
-void PostCallRecordvkResetEvent(
+void PostCallRecordResetEvent(
     VkDevice                                    device,
     VkEvent                                     event,
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateQueryPool(
+void PostCallRecordCreateQueryPool(
     VkDevice                                    device,
     const VkQueryPoolCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -216,7 +232,7 @@ void PostCallRecordvkCreateQueryPool(
     VkResult                                    result);
 
 
-void PostCallRecordvkGetQueryPoolResults(
+void PostCallRecordGetQueryPoolResults(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
@@ -228,7 +244,7 @@ void PostCallRecordvkGetQueryPoolResults(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateBuffer(
+void PostCallRecordCreateBuffer(
     VkDevice                                    device,
     const VkBufferCreateInfo*                   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -236,7 +252,7 @@ void PostCallRecordvkCreateBuffer(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateBufferView(
+void PostCallRecordCreateBufferView(
     VkDevice                                    device,
     const VkBufferViewCreateInfo*               pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -244,7 +260,7 @@ void PostCallRecordvkCreateBufferView(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateImage(
+void PostCallRecordCreateImage(
     VkDevice                                    device,
     const VkImageCreateInfo*                    pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -252,7 +268,7 @@ void PostCallRecordvkCreateImage(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateImageView(
+void PostCallRecordCreateImageView(
     VkDevice                                    device,
     const VkImageViewCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -260,7 +276,7 @@ void PostCallRecordvkCreateImageView(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateShaderModule(
+void PostCallRecordCreateShaderModule(
     VkDevice                                    device,
     const VkShaderModuleCreateInfo*             pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -269,7 +285,7 @@ void PostCallRecordvkCreateShaderModule(
     void*                                       state_data);
 
 
-void PostCallRecordvkCreatePipelineCache(
+void PostCallRecordCreatePipelineCache(
     VkDevice                                    device,
     const VkPipelineCacheCreateInfo*            pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -277,7 +293,7 @@ void PostCallRecordvkCreatePipelineCache(
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPipelineCacheData(
+void PostCallRecordGetPipelineCacheData(
     VkDevice                                    device,
     VkPipelineCache                             pipelineCache,
     size_t*                                     pDataSize,
@@ -285,7 +301,7 @@ void PostCallRecordvkGetPipelineCacheData(
     VkResult                                    result);
 
 
-void PostCallRecordvkMergePipelineCaches(
+void PostCallRecordMergePipelineCaches(
     VkDevice                                    device,
     VkPipelineCache                             dstCache,
     uint32_t                                    srcCacheCount,
@@ -293,7 +309,7 @@ void PostCallRecordvkMergePipelineCaches(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateGraphicsPipelines(
+void PostCallRecordCreateGraphicsPipelines(
     VkDevice                                    device,
     VkPipelineCache                             pipelineCache,
     uint32_t                                    createInfoCount,
@@ -304,7 +320,7 @@ void PostCallRecordvkCreateGraphicsPipelines(
     void*                                       state_data);
 
 
-void PostCallRecordvkCreateComputePipelines(
+void PostCallRecordCreateComputePipelines(
     VkDevice                                    device,
     VkPipelineCache                             pipelineCache,
     uint32_t                                    createInfoCount,
@@ -315,7 +331,7 @@ void PostCallRecordvkCreateComputePipelines(
     void*                                       state_data);
 
 
-void PostCallRecordvkCreatePipelineLayout(
+void PostCallRecordCreatePipelineLayout(
     VkDevice                                    device,
     const VkPipelineLayoutCreateInfo*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -323,7 +339,7 @@ void PostCallRecordvkCreatePipelineLayout(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateSampler(
+void PostCallRecordCreateSampler(
     VkDevice                                    device,
     const VkSamplerCreateInfo*                  pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -331,7 +347,7 @@ void PostCallRecordvkCreateSampler(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateDescriptorSetLayout(
+void PostCallRecordCreateDescriptorSetLayout(
     VkDevice                                    device,
     const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -339,7 +355,7 @@ void PostCallRecordvkCreateDescriptorSetLayout(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateDescriptorPool(
+void PostCallRecordCreateDescriptorPool(
     VkDevice                                    device,
     const VkDescriptorPoolCreateInfo*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -347,7 +363,7 @@ void PostCallRecordvkCreateDescriptorPool(
     VkResult                                    result);
 
 
-void PostCallRecordvkAllocateDescriptorSets(
+void PostCallRecordAllocateDescriptorSets(
     VkDevice                                    device,
     const VkDescriptorSetAllocateInfo*          pAllocateInfo,
     VkDescriptorSet*                            pDescriptorSets,
@@ -355,7 +371,7 @@ void PostCallRecordvkAllocateDescriptorSets(
     void*                                       state_data);
 
 
-void PostCallRecordvkCreateFramebuffer(
+void PostCallRecordCreateFramebuffer(
     VkDevice                                    device,
     const VkFramebufferCreateInfo*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -363,7 +379,7 @@ void PostCallRecordvkCreateFramebuffer(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateRenderPass(
+void PostCallRecordCreateRenderPass(
     VkDevice                                    device,
     const VkRenderPassCreateInfo*               pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -371,7 +387,7 @@ void PostCallRecordvkCreateRenderPass(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateCommandPool(
+void PostCallRecordCreateCommandPool(
     VkDevice                                    device,
     const VkCommandPoolCreateInfo*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -379,66 +395,66 @@ void PostCallRecordvkCreateCommandPool(
     VkResult                                    result);
 
 
-void PostCallRecordvkResetCommandPool(
+void PostCallRecordResetCommandPool(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
     VkCommandPoolResetFlags                     flags,
     VkResult                                    result);
 
 
-void PostCallRecordvkAllocateCommandBuffers(
+void PostCallRecordAllocateCommandBuffers(
     VkDevice                                    device,
     const VkCommandBufferAllocateInfo*          pAllocateInfo,
     VkCommandBuffer*                            pCommandBuffers,
     VkResult                                    result);
 
 
-void PostCallRecordvkBeginCommandBuffer(
+void PostCallRecordBeginCommandBuffer(
     VkCommandBuffer                             commandBuffer,
     const VkCommandBufferBeginInfo*             pBeginInfo,
     VkResult                                    result);
 
 
-void PostCallRecordvkEndCommandBuffer(
+void PostCallRecordEndCommandBuffer(
     VkCommandBuffer                             commandBuffer,
     VkResult                                    result);
 
 
-void PostCallRecordvkResetCommandBuffer(
+void PostCallRecordResetCommandBuffer(
     VkCommandBuffer                             commandBuffer,
     VkCommandBufferResetFlags                   flags,
     VkResult                                    result);
 
 
-void PostCallRecordvkBindBufferMemory2(
+void PostCallRecordBindBufferMemory2(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
     const VkBindBufferMemoryInfo*               pBindInfos,
     VkResult                                    result);
 
 
-void PostCallRecordvkBindImageMemory2(
+void PostCallRecordBindImageMemory2(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
     const VkBindImageMemoryInfo*                pBindInfos,
     VkResult                                    result);
 
 
-void PostCallRecordvkEnumeratePhysicalDeviceGroups(
+void PostCallRecordEnumeratePhysicalDeviceGroups(
     VkInstance                                  instance,
     uint32_t*                                   pPhysicalDeviceGroupCount,
     VkPhysicalDeviceGroupProperties*            pPhysicalDeviceGroupProperties,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPhysicalDeviceImageFormatProperties2(
+void PostCallRecordGetPhysicalDeviceImageFormatProperties2(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceImageFormatInfo2*     pImageFormatInfo,
     VkImageFormatProperties2*                   pImageFormatProperties,
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateSamplerYcbcrConversion(
+void PostCallRecordCreateSamplerYcbcrConversion(
     VkDevice                                    device,
     const VkSamplerYcbcrConversionCreateInfo*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -446,7 +462,7 @@ void PostCallRecordvkCreateSamplerYcbcrConversion(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateDescriptorUpdateTemplate(
+void PostCallRecordCreateDescriptorUpdateTemplate(
     VkDevice                                    device,
     const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -454,7 +470,7 @@ void PostCallRecordvkCreateDescriptorUpdateTemplate(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateRenderPass2(
+void PostCallRecordCreateRenderPass2(
     VkDevice                                    device,
     const VkRenderPassCreateInfo2*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -462,27 +478,27 @@ void PostCallRecordvkCreateRenderPass2(
     VkResult                                    result);
 
 
-void PostCallRecordvkGetSemaphoreCounterValue(
+void PostCallRecordGetSemaphoreCounterValue(
     VkDevice                                    device,
     VkSemaphore                                 semaphore,
     uint64_t*                                   pValue,
     VkResult                                    result);
 
 
-void PostCallRecordvkWaitSemaphores(
+void PostCallRecordWaitSemaphores(
     VkDevice                                    device,
     const VkSemaphoreWaitInfo*                  pWaitInfo,
     uint64_t                                    timeout,
     VkResult                                    result);
 
 
-void PostCallRecordvkSignalSemaphore(
+void PostCallRecordSignalSemaphore(
     VkDevice                                    device,
     const VkSemaphoreSignalInfo*                pSignalInfo,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPhysicalDeviceSurfaceSupportKHR(
+void PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     VkSurfaceKHR                                surface,
@@ -490,14 +506,14 @@ void PostCallRecordvkGetPhysicalDeviceSurfaceSupportKHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+void PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     VkSurfaceCapabilitiesKHR*                   pSurfaceCapabilities,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPhysicalDeviceSurfaceFormatsKHR(
+void PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pSurfaceFormatCount,
@@ -505,7 +521,7 @@ void PostCallRecordvkGetPhysicalDeviceSurfaceFormatsKHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPhysicalDeviceSurfacePresentModesKHR(
+void PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pPresentModeCount,
@@ -513,7 +529,7 @@ void PostCallRecordvkGetPhysicalDeviceSurfacePresentModesKHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateSwapchainKHR(
+void PostCallRecordCreateSwapchainKHR(
     VkDevice                                    device,
     const VkSwapchainCreateInfoKHR*             pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -521,7 +537,7 @@ void PostCallRecordvkCreateSwapchainKHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkGetSwapchainImagesKHR(
+void PostCallRecordGetSwapchainImagesKHR(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     uint32_t*                                   pSwapchainImageCount,
@@ -529,7 +545,7 @@ void PostCallRecordvkGetSwapchainImagesKHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkAcquireNextImageKHR(
+void PostCallRecordAcquireNextImageKHR(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     uint64_t                                    timeout,
@@ -539,26 +555,26 @@ void PostCallRecordvkAcquireNextImageKHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkQueuePresentKHR(
+void PostCallRecordQueuePresentKHR(
     VkQueue                                     queue,
     const VkPresentInfoKHR*                     pPresentInfo,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetDeviceGroupPresentCapabilitiesKHR(
+void PostCallRecordGetDeviceGroupPresentCapabilitiesKHR(
     VkDevice                                    device,
     VkDeviceGroupPresentCapabilitiesKHR*        pDeviceGroupPresentCapabilities,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetDeviceGroupSurfacePresentModesKHR(
+void PostCallRecordGetDeviceGroupSurfacePresentModesKHR(
     VkDevice                                    device,
     VkSurfaceKHR                                surface,
     VkDeviceGroupPresentModeFlagsKHR*           pModes,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPhysicalDevicePresentRectanglesKHR(
+void PostCallRecordGetPhysicalDevicePresentRectanglesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pRectCount,
@@ -566,28 +582,28 @@ void PostCallRecordvkGetPhysicalDevicePresentRectanglesKHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkAcquireNextImage2KHR(
+void PostCallRecordAcquireNextImage2KHR(
     VkDevice                                    device,
     const VkAcquireNextImageInfoKHR*            pAcquireInfo,
     uint32_t*                                   pImageIndex,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPhysicalDeviceDisplayPropertiesKHR(
+void PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
     VkDisplayPropertiesKHR*                     pProperties,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPhysicalDeviceDisplayPlanePropertiesKHR(
+void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
     VkDisplayPlanePropertiesKHR*                pProperties,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetDisplayPlaneSupportedDisplaysKHR(
+void PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    planeIndex,
     uint32_t*                                   pDisplayCount,
@@ -595,7 +611,7 @@ void PostCallRecordvkGetDisplayPlaneSupportedDisplaysKHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkGetDisplayModePropertiesKHR(
+void PostCallRecordGetDisplayModePropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,
     uint32_t*                                   pPropertyCount,
@@ -603,7 +619,7 @@ void PostCallRecordvkGetDisplayModePropertiesKHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateDisplayModeKHR(
+void PostCallRecordCreateDisplayModeKHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,
     const VkDisplayModeCreateInfoKHR*           pCreateInfo,
@@ -612,7 +628,7 @@ void PostCallRecordvkCreateDisplayModeKHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkGetDisplayPlaneCapabilitiesKHR(
+void PostCallRecordGetDisplayPlaneCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayModeKHR                            mode,
     uint32_t                                    planeIndex,
@@ -620,7 +636,7 @@ void PostCallRecordvkGetDisplayPlaneCapabilitiesKHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateDisplayPlaneSurfaceKHR(
+void PostCallRecordCreateDisplayPlaneSurfaceKHR(
     VkInstance                                  instance,
     const VkDisplaySurfaceCreateInfoKHR*        pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -628,7 +644,7 @@ void PostCallRecordvkCreateDisplayPlaneSurfaceKHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateSharedSwapchainsKHR(
+void PostCallRecordCreateSharedSwapchainsKHR(
     VkDevice                                    device,
     uint32_t                                    swapchainCount,
     const VkSwapchainCreateInfoKHR*             pCreateInfos,
@@ -639,7 +655,7 @@ void PostCallRecordvkCreateSharedSwapchainsKHR(
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
 
-void PostCallRecordvkCreateXlibSurfaceKHR(
+void PostCallRecordCreateXlibSurfaceKHR(
     VkInstance                                  instance,
     const VkXlibSurfaceCreateInfoKHR*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -651,7 +667,7 @@ void PostCallRecordvkCreateXlibSurfaceKHR(
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
 
-void PostCallRecordvkCreateXcbSurfaceKHR(
+void PostCallRecordCreateXcbSurfaceKHR(
     VkInstance                                  instance,
     const VkXcbSurfaceCreateInfoKHR*            pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -663,7 +679,7 @@ void PostCallRecordvkCreateXcbSurfaceKHR(
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 
-void PostCallRecordvkCreateWaylandSurfaceKHR(
+void PostCallRecordCreateWaylandSurfaceKHR(
     VkInstance                                  instance,
     const VkWaylandSurfaceCreateInfoKHR*        pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -675,7 +691,7 @@ void PostCallRecordvkCreateWaylandSurfaceKHR(
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 
-void PostCallRecordvkCreateAndroidSurfaceKHR(
+void PostCallRecordCreateAndroidSurfaceKHR(
     VkInstance                                  instance,
     const VkAndroidSurfaceCreateInfoKHR*        pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -687,7 +703,7 @@ void PostCallRecordvkCreateAndroidSurfaceKHR(
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-void PostCallRecordvkCreateWin32SurfaceKHR(
+void PostCallRecordCreateWin32SurfaceKHR(
     VkInstance                                  instance,
     const VkWin32SurfaceCreateInfoKHR*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -697,14 +713,14 @@ void PostCallRecordvkCreateWin32SurfaceKHR(
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
-void PostCallRecordvkGetPhysicalDeviceImageFormatProperties2KHR(
+void PostCallRecordGetPhysicalDeviceImageFormatProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceImageFormatInfo2*     pImageFormatInfo,
     VkImageFormatProperties2*                   pImageFormatProperties,
     VkResult                                    result);
 
 
-void PostCallRecordvkEnumeratePhysicalDeviceGroupsKHR(
+void PostCallRecordEnumeratePhysicalDeviceGroupsKHR(
     VkInstance                                  instance,
     uint32_t*                                   pPhysicalDeviceGroupCount,
     VkPhysicalDeviceGroupProperties*            pPhysicalDeviceGroupProperties,
@@ -713,7 +729,7 @@ void PostCallRecordvkEnumeratePhysicalDeviceGroupsKHR(
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-void PostCallRecordvkGetMemoryWin32HandleKHR(
+void PostCallRecordGetMemoryWin32HandleKHR(
     VkDevice                                    device,
     const VkMemoryGetWin32HandleInfoKHR*        pGetWin32HandleInfo,
     HANDLE*                                     pHandle,
@@ -724,7 +740,7 @@ void PostCallRecordvkGetMemoryWin32HandleKHR(
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-void PostCallRecordvkGetMemoryWin32HandlePropertiesKHR(
+void PostCallRecordGetMemoryWin32HandlePropertiesKHR(
     VkDevice                                    device,
     VkExternalMemoryHandleTypeFlagBits          handleType,
     HANDLE                                      handle,
@@ -734,14 +750,14 @@ void PostCallRecordvkGetMemoryWin32HandlePropertiesKHR(
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
-void PostCallRecordvkGetMemoryFdKHR(
+void PostCallRecordGetMemoryFdKHR(
     VkDevice                                    device,
     const VkMemoryGetFdInfoKHR*                 pGetFdInfo,
     int*                                        pFd,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetMemoryFdPropertiesKHR(
+void PostCallRecordGetMemoryFdPropertiesKHR(
     VkDevice                                    device,
     VkExternalMemoryHandleTypeFlagBits          handleType,
     int                                         fd,
@@ -751,7 +767,7 @@ void PostCallRecordvkGetMemoryFdPropertiesKHR(
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-void PostCallRecordvkImportSemaphoreWin32HandleKHR(
+void PostCallRecordImportSemaphoreWin32HandleKHR(
     VkDevice                                    device,
     const VkImportSemaphoreWin32HandleInfoKHR*  pImportSemaphoreWin32HandleInfo,
     VkResult                                    result);
@@ -761,7 +777,7 @@ void PostCallRecordvkImportSemaphoreWin32HandleKHR(
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-void PostCallRecordvkGetSemaphoreWin32HandleKHR(
+void PostCallRecordGetSemaphoreWin32HandleKHR(
     VkDevice                                    device,
     const VkSemaphoreGetWin32HandleInfoKHR*     pGetWin32HandleInfo,
     HANDLE*                                     pHandle,
@@ -770,20 +786,20 @@ void PostCallRecordvkGetSemaphoreWin32HandleKHR(
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
-void PostCallRecordvkImportSemaphoreFdKHR(
+void PostCallRecordImportSemaphoreFdKHR(
     VkDevice                                    device,
     const VkImportSemaphoreFdInfoKHR*           pImportSemaphoreFdInfo,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetSemaphoreFdKHR(
+void PostCallRecordGetSemaphoreFdKHR(
     VkDevice                                    device,
     const VkSemaphoreGetFdInfoKHR*              pGetFdInfo,
     int*                                        pFd,
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateDescriptorUpdateTemplateKHR(
+void PostCallRecordCreateDescriptorUpdateTemplateKHR(
     VkDevice                                    device,
     const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -791,7 +807,7 @@ void PostCallRecordvkCreateDescriptorUpdateTemplateKHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateRenderPass2KHR(
+void PostCallRecordCreateRenderPass2KHR(
     VkDevice                                    device,
     const VkRenderPassCreateInfo2*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -799,7 +815,7 @@ void PostCallRecordvkCreateRenderPass2KHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkGetSwapchainStatusKHR(
+void PostCallRecordGetSwapchainStatusKHR(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     VkResult                                    result);
@@ -807,7 +823,7 @@ void PostCallRecordvkGetSwapchainStatusKHR(
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-void PostCallRecordvkImportFenceWin32HandleKHR(
+void PostCallRecordImportFenceWin32HandleKHR(
     VkDevice                                    device,
     const VkImportFenceWin32HandleInfoKHR*      pImportFenceWin32HandleInfo,
     VkResult                                    result);
@@ -817,7 +833,7 @@ void PostCallRecordvkImportFenceWin32HandleKHR(
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-void PostCallRecordvkGetFenceWin32HandleKHR(
+void PostCallRecordGetFenceWin32HandleKHR(
     VkDevice                                    device,
     const VkFenceGetWin32HandleInfoKHR*         pGetWin32HandleInfo,
     HANDLE*                                     pHandle,
@@ -826,20 +842,20 @@ void PostCallRecordvkGetFenceWin32HandleKHR(
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
-void PostCallRecordvkImportFenceFdKHR(
+void PostCallRecordImportFenceFdKHR(
     VkDevice                                    device,
     const VkImportFenceFdInfoKHR*               pImportFenceFdInfo,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetFenceFdKHR(
+void PostCallRecordGetFenceFdKHR(
     VkDevice                                    device,
     const VkFenceGetFdInfoKHR*                  pGetFdInfo,
     int*                                        pFd,
     VkResult                                    result);
 
 
-void PostCallRecordvkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
+void PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     uint32_t*                                   pCounterCount,
@@ -848,20 +864,20 @@ void PostCallRecordvkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersK
     VkResult                                    result);
 
 
-void PostCallRecordvkAcquireProfilingLockKHR(
+void PostCallRecordAcquireProfilingLockKHR(
     VkDevice                                    device,
     const VkAcquireProfilingLockInfoKHR*        pInfo,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPhysicalDeviceSurfaceCapabilities2KHR(
+void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
     VkSurfaceCapabilities2KHR*                  pSurfaceCapabilities,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPhysicalDeviceSurfaceFormats2KHR(
+void PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
     uint32_t*                                   pSurfaceFormatCount,
@@ -869,21 +885,21 @@ void PostCallRecordvkGetPhysicalDeviceSurfaceFormats2KHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPhysicalDeviceDisplayProperties2KHR(
+void PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
     VkDisplayProperties2KHR*                    pProperties,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPhysicalDeviceDisplayPlaneProperties2KHR(
+void PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
     VkDisplayPlaneProperties2KHR*               pProperties,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetDisplayModeProperties2KHR(
+void PostCallRecordGetDisplayModeProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,
     uint32_t*                                   pPropertyCount,
@@ -891,14 +907,14 @@ void PostCallRecordvkGetDisplayModeProperties2KHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkGetDisplayPlaneCapabilities2KHR(
+void PostCallRecordGetDisplayPlaneCapabilities2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkDisplayPlaneInfo2KHR*               pDisplayPlaneInfo,
     VkDisplayPlaneCapabilities2KHR*             pCapabilities,
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateSamplerYcbcrConversionKHR(
+void PostCallRecordCreateSamplerYcbcrConversionKHR(
     VkDevice                                    device,
     const VkSamplerYcbcrConversionCreateInfo*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -906,35 +922,35 @@ void PostCallRecordvkCreateSamplerYcbcrConversionKHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkBindBufferMemory2KHR(
+void PostCallRecordBindBufferMemory2KHR(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
     const VkBindBufferMemoryInfo*               pBindInfos,
     VkResult                                    result);
 
 
-void PostCallRecordvkBindImageMemory2KHR(
+void PostCallRecordBindImageMemory2KHR(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
     const VkBindImageMemoryInfo*                pBindInfos,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetSemaphoreCounterValueKHR(
+void PostCallRecordGetSemaphoreCounterValueKHR(
     VkDevice                                    device,
     VkSemaphore                                 semaphore,
     uint64_t*                                   pValue,
     VkResult                                    result);
 
 
-void PostCallRecordvkWaitSemaphoresKHR(
+void PostCallRecordWaitSemaphoresKHR(
     VkDevice                                    device,
     const VkSemaphoreWaitInfo*                  pWaitInfo,
     uint64_t                                    timeout,
     VkResult                                    result);
 
 
-void PostCallRecordvkSignalSemaphoreKHR(
+void PostCallRecordSignalSemaphoreKHR(
     VkDevice                                    device,
     const VkSemaphoreSignalInfo*                pSignalInfo,
     VkResult                                    result);
@@ -942,7 +958,7 @@ void PostCallRecordvkSignalSemaphoreKHR(
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-void PostCallRecordvkCreateDeferredOperationKHR(
+void PostCallRecordCreateDeferredOperationKHR(
     VkDevice                                    device,
     const VkAllocationCallbacks*                pAllocator,
     VkDeferredOperationKHR*                     pDeferredOperation,
@@ -953,7 +969,7 @@ void PostCallRecordvkCreateDeferredOperationKHR(
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-void PostCallRecordvkGetDeferredOperationResultKHR(
+void PostCallRecordGetDeferredOperationResultKHR(
     VkDevice                                    device,
     VkDeferredOperationKHR                      operation,
     VkResult                                    result);
@@ -963,7 +979,7 @@ void PostCallRecordvkGetDeferredOperationResultKHR(
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-void PostCallRecordvkDeferredOperationJoinKHR(
+void PostCallRecordDeferredOperationJoinKHR(
     VkDevice                                    device,
     VkDeferredOperationKHR                      operation,
     VkResult                                    result);
@@ -971,7 +987,7 @@ void PostCallRecordvkDeferredOperationJoinKHR(
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
-void PostCallRecordvkGetPipelineExecutablePropertiesKHR(
+void PostCallRecordGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
     const VkPipelineInfoKHR*                    pPipelineInfo,
     uint32_t*                                   pExecutableCount,
@@ -979,7 +995,7 @@ void PostCallRecordvkGetPipelineExecutablePropertiesKHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPipelineExecutableStatisticsKHR(
+void PostCallRecordGetPipelineExecutableStatisticsKHR(
     VkDevice                                    device,
     const VkPipelineExecutableInfoKHR*          pExecutableInfo,
     uint32_t*                                   pStatisticCount,
@@ -987,7 +1003,7 @@ void PostCallRecordvkGetPipelineExecutableStatisticsKHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPipelineExecutableInternalRepresentationsKHR(
+void PostCallRecordGetPipelineExecutableInternalRepresentationsKHR(
     VkDevice                                    device,
     const VkPipelineExecutableInfoKHR*          pExecutableInfo,
     uint32_t*                                   pInternalRepresentationCount,
@@ -995,7 +1011,7 @@ void PostCallRecordvkGetPipelineExecutableInternalRepresentationsKHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateDebugReportCallbackEXT(
+void PostCallRecordCreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -1003,26 +1019,26 @@ void PostCallRecordvkCreateDebugReportCallbackEXT(
     VkResult                                    result);
 
 
-void PostCallRecordvkDebugMarkerSetObjectTagEXT(
+void PostCallRecordDebugMarkerSetObjectTagEXT(
     VkDevice                                    device,
     const VkDebugMarkerObjectTagInfoEXT*        pTagInfo,
     VkResult                                    result);
 
 
-void PostCallRecordvkDebugMarkerSetObjectNameEXT(
+void PostCallRecordDebugMarkerSetObjectNameEXT(
     VkDevice                                    device,
     const VkDebugMarkerObjectNameInfoEXT*       pNameInfo,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetImageViewAddressNVX(
+void PostCallRecordGetImageViewAddressNVX(
     VkDevice                                    device,
     VkImageView                                 imageView,
     VkImageViewAddressPropertiesNVX*            pProperties,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetShaderInfoAMD(
+void PostCallRecordGetShaderInfoAMD(
     VkDevice                                    device,
     VkPipeline                                  pipeline,
     VkShaderStageFlagBits                       shaderStage,
@@ -1034,7 +1050,7 @@ void PostCallRecordvkGetShaderInfoAMD(
 
 #ifdef VK_USE_PLATFORM_GGP
 
-void PostCallRecordvkCreateStreamDescriptorSurfaceGGP(
+void PostCallRecordCreateStreamDescriptorSurfaceGGP(
     VkInstance                                  instance,
     const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -1044,7 +1060,7 @@ void PostCallRecordvkCreateStreamDescriptorSurfaceGGP(
 
 #endif // VK_USE_PLATFORM_GGP
 
-void PostCallRecordvkGetPhysicalDeviceExternalImageFormatPropertiesNV(
+void PostCallRecordGetPhysicalDeviceExternalImageFormatPropertiesNV(
     VkPhysicalDevice                            physicalDevice,
     VkFormat                                    format,
     VkImageType                                 type,
@@ -1058,7 +1074,7 @@ void PostCallRecordvkGetPhysicalDeviceExternalImageFormatPropertiesNV(
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-void PostCallRecordvkGetMemoryWin32HandleNV(
+void PostCallRecordGetMemoryWin32HandleNV(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
     VkExternalMemoryHandleTypeFlagsNV           handleType,
@@ -1070,7 +1086,7 @@ void PostCallRecordvkGetMemoryWin32HandleNV(
 
 #ifdef VK_USE_PLATFORM_VI_NN
 
-void PostCallRecordvkCreateViSurfaceNN(
+void PostCallRecordCreateViSurfaceNN(
     VkInstance                                  instance,
     const VkViSurfaceCreateInfoNN*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -1082,7 +1098,7 @@ void PostCallRecordvkCreateViSurfaceNN(
 
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
-void PostCallRecordvkAcquireXlibDisplayEXT(
+void PostCallRecordAcquireXlibDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     Display*                                    dpy,
     VkDisplayKHR                                display,
@@ -1091,14 +1107,14 @@ void PostCallRecordvkAcquireXlibDisplayEXT(
 
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
-void PostCallRecordvkGetPhysicalDeviceSurfaceCapabilities2EXT(
+void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     VkSurfaceCapabilities2EXT*                  pSurfaceCapabilities,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetSwapchainCounterEXT(
+void PostCallRecordGetSwapchainCounterEXT(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     VkSurfaceCounterFlagBitsEXT                 counter,
@@ -1106,14 +1122,14 @@ void PostCallRecordvkGetSwapchainCounterEXT(
     VkResult                                    result);
 
 
-void PostCallRecordvkGetRefreshCycleDurationGOOGLE(
+void PostCallRecordGetRefreshCycleDurationGOOGLE(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     VkRefreshCycleDurationGOOGLE*               pDisplayTimingProperties,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPastPresentationTimingGOOGLE(
+void PostCallRecordGetPastPresentationTimingGOOGLE(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     uint32_t*                                   pPresentationTimingCount,
@@ -1123,7 +1139,7 @@ void PostCallRecordvkGetPastPresentationTimingGOOGLE(
 
 #ifdef VK_USE_PLATFORM_IOS_MVK
 
-void PostCallRecordvkCreateIOSSurfaceMVK(
+void PostCallRecordCreateIOSSurfaceMVK(
     VkInstance                                  instance,
     const VkIOSSurfaceCreateInfoMVK*            pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -1135,7 +1151,7 @@ void PostCallRecordvkCreateIOSSurfaceMVK(
 
 #ifdef VK_USE_PLATFORM_MACOS_MVK
 
-void PostCallRecordvkCreateMacOSSurfaceMVK(
+void PostCallRecordCreateMacOSSurfaceMVK(
     VkInstance                                  instance,
     const VkMacOSSurfaceCreateInfoMVK*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -1145,19 +1161,19 @@ void PostCallRecordvkCreateMacOSSurfaceMVK(
 
 #endif // VK_USE_PLATFORM_MACOS_MVK
 
-void PostCallRecordvkSetDebugUtilsObjectNameEXT(
+void PostCallRecordSetDebugUtilsObjectNameEXT(
     VkDevice                                    device,
     const VkDebugUtilsObjectNameInfoEXT*        pNameInfo,
     VkResult                                    result);
 
 
-void PostCallRecordvkSetDebugUtilsObjectTagEXT(
+void PostCallRecordSetDebugUtilsObjectTagEXT(
     VkDevice                                    device,
     const VkDebugUtilsObjectTagInfoEXT*         pTagInfo,
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateDebugUtilsMessengerEXT(
+void PostCallRecordCreateDebugUtilsMessengerEXT(
     VkInstance                                  instance,
     const VkDebugUtilsMessengerCreateInfoEXT*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -1167,7 +1183,7 @@ void PostCallRecordvkCreateDebugUtilsMessengerEXT(
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 
-void PostCallRecordvkGetAndroidHardwareBufferPropertiesANDROID(
+void PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(
     VkDevice                                    device,
     const struct AHardwareBuffer*               buffer,
     VkAndroidHardwareBufferPropertiesANDROID*   pProperties,
@@ -1178,7 +1194,7 @@ void PostCallRecordvkGetAndroidHardwareBufferPropertiesANDROID(
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 
-void PostCallRecordvkGetMemoryAndroidHardwareBufferANDROID(
+void PostCallRecordGetMemoryAndroidHardwareBufferANDROID(
     VkDevice                                    device,
     const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
     struct AHardwareBuffer**                    pBuffer,
@@ -1187,7 +1203,7 @@ void PostCallRecordvkGetMemoryAndroidHardwareBufferANDROID(
 
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 
-void PostCallRecordvkCreateAccelerationStructureNV(
+void PostCallRecordCreateAccelerationStructureNV(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoNV*  pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -1195,21 +1211,21 @@ void PostCallRecordvkCreateAccelerationStructureNV(
     VkResult                                    result);
 
 
-void PostCallRecordvkBindAccelerationStructureMemoryKHR(
+void PostCallRecordBindAccelerationStructureMemoryKHR(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
     const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos,
     VkResult                                    result);
 
 
-void PostCallRecordvkBindAccelerationStructureMemoryNV(
+void PostCallRecordBindAccelerationStructureMemoryNV(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
     const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos,
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateRayTracingPipelinesNV(
+void PostCallRecordCreateRayTracingPipelinesNV(
     VkDevice                                    device,
     VkPipelineCache                             pipelineCache,
     uint32_t                                    createInfoCount,
@@ -1220,7 +1236,7 @@ void PostCallRecordvkCreateRayTracingPipelinesNV(
     void*                                       state_data);
 
 
-void PostCallRecordvkGetRayTracingShaderGroupHandlesKHR(
+void PostCallRecordGetRayTracingShaderGroupHandlesKHR(
     VkDevice                                    device,
     VkPipeline                                  pipeline,
     uint32_t                                    firstGroup,
@@ -1230,7 +1246,7 @@ void PostCallRecordvkGetRayTracingShaderGroupHandlesKHR(
     VkResult                                    result);
 
 
-void PostCallRecordvkGetRayTracingShaderGroupHandlesNV(
+void PostCallRecordGetRayTracingShaderGroupHandlesNV(
     VkDevice                                    device,
     VkPipeline                                  pipeline,
     uint32_t                                    firstGroup,
@@ -1240,7 +1256,7 @@ void PostCallRecordvkGetRayTracingShaderGroupHandlesNV(
     VkResult                                    result);
 
 
-void PostCallRecordvkGetAccelerationStructureHandleNV(
+void PostCallRecordGetAccelerationStructureHandleNV(
     VkDevice                                    device,
     VkAccelerationStructureKHR                  accelerationStructure,
     size_t                                      dataSize,
@@ -1248,14 +1264,14 @@ void PostCallRecordvkGetAccelerationStructureHandleNV(
     VkResult                                    result);
 
 
-void PostCallRecordvkCompileDeferredNV(
+void PostCallRecordCompileDeferredNV(
     VkDevice                                    device,
     VkPipeline                                  pipeline,
     uint32_t                                    shader,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetMemoryHostPointerPropertiesEXT(
+void PostCallRecordGetMemoryHostPointerPropertiesEXT(
     VkDevice                                    device,
     VkExternalMemoryHandleTypeFlagBits          handleType,
     const void*                                 pHostPointer,
@@ -1263,14 +1279,14 @@ void PostCallRecordvkGetMemoryHostPointerPropertiesEXT(
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPhysicalDeviceCalibrateableTimeDomainsEXT(
+void PostCallRecordGetPhysicalDeviceCalibrateableTimeDomainsEXT(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pTimeDomainCount,
     VkTimeDomainEXT*                            pTimeDomains,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetCalibratedTimestampsEXT(
+void PostCallRecordGetCalibratedTimestampsEXT(
     VkDevice                                    device,
     uint32_t                                    timestampCount,
     const VkCalibratedTimestampInfoEXT*         pTimestampInfos,
@@ -1279,50 +1295,50 @@ void PostCallRecordvkGetCalibratedTimestampsEXT(
     VkResult                                    result);
 
 
-void PostCallRecordvkInitializePerformanceApiINTEL(
+void PostCallRecordInitializePerformanceApiINTEL(
     VkDevice                                    device,
     const VkInitializePerformanceApiInfoINTEL*  pInitializeInfo,
     VkResult                                    result);
 
 
-void PostCallRecordvkCmdSetPerformanceMarkerINTEL(
+void PostCallRecordCmdSetPerformanceMarkerINTEL(
     VkCommandBuffer                             commandBuffer,
     const VkPerformanceMarkerInfoINTEL*         pMarkerInfo,
     VkResult                                    result);
 
 
-void PostCallRecordvkCmdSetPerformanceStreamMarkerINTEL(
+void PostCallRecordCmdSetPerformanceStreamMarkerINTEL(
     VkCommandBuffer                             commandBuffer,
     const VkPerformanceStreamMarkerInfoINTEL*   pMarkerInfo,
     VkResult                                    result);
 
 
-void PostCallRecordvkCmdSetPerformanceOverrideINTEL(
+void PostCallRecordCmdSetPerformanceOverrideINTEL(
     VkCommandBuffer                             commandBuffer,
     const VkPerformanceOverrideInfoINTEL*       pOverrideInfo,
     VkResult                                    result);
 
 
-void PostCallRecordvkAcquirePerformanceConfigurationINTEL(
+void PostCallRecordAcquirePerformanceConfigurationINTEL(
     VkDevice                                    device,
     const VkPerformanceConfigurationAcquireInfoINTEL* pAcquireInfo,
     VkPerformanceConfigurationINTEL*            pConfiguration,
     VkResult                                    result);
 
 
-void PostCallRecordvkReleasePerformanceConfigurationINTEL(
+void PostCallRecordReleasePerformanceConfigurationINTEL(
     VkDevice                                    device,
     VkPerformanceConfigurationINTEL             configuration,
     VkResult                                    result);
 
 
-void PostCallRecordvkQueueSetPerformanceConfigurationINTEL(
+void PostCallRecordQueueSetPerformanceConfigurationINTEL(
     VkQueue                                     queue,
     VkPerformanceConfigurationINTEL             configuration,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPerformanceParameterINTEL(
+void PostCallRecordGetPerformanceParameterINTEL(
     VkDevice                                    device,
     VkPerformanceParameterTypeINTEL             parameter,
     VkPerformanceValueINTEL*                    pValue,
@@ -1331,7 +1347,7 @@ void PostCallRecordvkGetPerformanceParameterINTEL(
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
 
-void PostCallRecordvkCreateImagePipeSurfaceFUCHSIA(
+void PostCallRecordCreateImagePipeSurfaceFUCHSIA(
     VkInstance                                  instance,
     const VkImagePipeSurfaceCreateInfoFUCHSIA*  pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -1343,7 +1359,7 @@ void PostCallRecordvkCreateImagePipeSurfaceFUCHSIA(
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
 
-void PostCallRecordvkCreateMetalSurfaceEXT(
+void PostCallRecordCreateMetalSurfaceEXT(
     VkInstance                                  instance,
     const VkMetalSurfaceCreateInfoEXT*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -1353,21 +1369,21 @@ void PostCallRecordvkCreateMetalSurfaceEXT(
 
 #endif // VK_USE_PLATFORM_METAL_EXT
 
-void PostCallRecordvkGetPhysicalDeviceToolPropertiesEXT(
+void PostCallRecordGetPhysicalDeviceToolPropertiesEXT(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pToolCount,
     VkPhysicalDeviceToolPropertiesEXT*          pToolProperties,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPhysicalDeviceCooperativeMatrixPropertiesNV(
+void PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesNV(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
     VkCooperativeMatrixPropertiesNV*            pProperties,
     VkResult                                    result);
 
 
-void PostCallRecordvkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(
+void PostCallRecordGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pCombinationCount,
     VkFramebufferMixedSamplesCombinationNV*     pCombinations,
@@ -1376,7 +1392,7 @@ void PostCallRecordvkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinatio
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-void PostCallRecordvkGetPhysicalDeviceSurfacePresentModes2EXT(
+void PostCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
     uint32_t*                                   pPresentModeCount,
@@ -1388,7 +1404,7 @@ void PostCallRecordvkGetPhysicalDeviceSurfacePresentModes2EXT(
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-void PostCallRecordvkAcquireFullScreenExclusiveModeEXT(
+void PostCallRecordAcquireFullScreenExclusiveModeEXT(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     VkResult                                    result);
@@ -1398,7 +1414,7 @@ void PostCallRecordvkAcquireFullScreenExclusiveModeEXT(
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-void PostCallRecordvkReleaseFullScreenExclusiveModeEXT(
+void PostCallRecordReleaseFullScreenExclusiveModeEXT(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     VkResult                                    result);
@@ -1408,7 +1424,7 @@ void PostCallRecordvkReleaseFullScreenExclusiveModeEXT(
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
-void PostCallRecordvkGetDeviceGroupSurfacePresentModes2EXT(
+void PostCallRecordGetDeviceGroupSurfacePresentModes2EXT(
     VkDevice                                    device,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
     VkDeviceGroupPresentModeFlagsKHR*           pModes,
@@ -1417,7 +1433,7 @@ void PostCallRecordvkGetDeviceGroupSurfacePresentModes2EXT(
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
-void PostCallRecordvkCreateHeadlessSurfaceEXT(
+void PostCallRecordCreateHeadlessSurfaceEXT(
     VkInstance                                  instance,
     const VkHeadlessSurfaceCreateInfoEXT*       pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -1425,7 +1441,7 @@ void PostCallRecordvkCreateHeadlessSurfaceEXT(
     VkResult                                    result);
 
 
-void PostCallRecordvkCreateIndirectCommandsLayoutNV(
+void PostCallRecordCreateIndirectCommandsLayoutNV(
     VkDevice                                    device,
     const VkIndirectCommandsLayoutCreateInfoNV* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -1435,7 +1451,7 @@ void PostCallRecordvkCreateIndirectCommandsLayoutNV(
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-void PostCallRecordvkCreateAccelerationStructureKHR(
+void PostCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
@@ -1447,7 +1463,7 @@ void PostCallRecordvkCreateAccelerationStructureKHR(
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-void PostCallRecordvkBuildAccelerationStructureKHR(
+void PostCallRecordBuildAccelerationStructureKHR(
     VkDevice                                    device,
     uint32_t                                    infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
@@ -1459,7 +1475,7 @@ void PostCallRecordvkBuildAccelerationStructureKHR(
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-void PostCallRecordvkCopyAccelerationStructureKHR(
+void PostCallRecordCopyAccelerationStructureKHR(
     VkDevice                                    device,
     const VkCopyAccelerationStructureInfoKHR*   pInfo,
     VkResult                                    result);
@@ -1469,7 +1485,7 @@ void PostCallRecordvkCopyAccelerationStructureKHR(
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-void PostCallRecordvkCopyAccelerationStructureToMemoryKHR(
+void PostCallRecordCopyAccelerationStructureToMemoryKHR(
     VkDevice                                    device,
     const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
     VkResult                                    result);
@@ -1479,7 +1495,7 @@ void PostCallRecordvkCopyAccelerationStructureToMemoryKHR(
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-void PostCallRecordvkCopyMemoryToAccelerationStructureKHR(
+void PostCallRecordCopyMemoryToAccelerationStructureKHR(
     VkDevice                                    device,
     const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo,
     VkResult                                    result);
@@ -1489,7 +1505,7 @@ void PostCallRecordvkCopyMemoryToAccelerationStructureKHR(
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-void PostCallRecordvkWriteAccelerationStructuresPropertiesKHR(
+void PostCallRecordWriteAccelerationStructuresPropertiesKHR(
     VkDevice                                    device,
     uint32_t                                    accelerationStructureCount,
     const VkAccelerationStructureKHR*           pAccelerationStructures,
@@ -1504,7 +1520,7 @@ void PostCallRecordvkWriteAccelerationStructuresPropertiesKHR(
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-void PostCallRecordvkCreateRayTracingPipelinesKHR(
+void PostCallRecordCreateRayTracingPipelinesKHR(
     VkDevice                                    device,
     VkPipelineCache                             pipelineCache,
     uint32_t                                    createInfoCount,
@@ -1519,7 +1535,7 @@ void PostCallRecordvkCreateRayTracingPipelinesKHR(
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-void PostCallRecordvkGetRayTracingCaptureReplayShaderGroupHandlesKHR(
+void PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(
     VkDevice                                    device,
     VkPipeline                                  pipeline,
     uint32_t                                    firstGroup,
@@ -1533,7 +1549,7 @@ void PostCallRecordvkGetRayTracingCaptureReplayShaderGroupHandlesKHR(
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-void PostCallRecordvkGetDeviceAccelerationStructureCompatibilityKHR(
+void PostCallRecordGetDeviceAccelerationStructureCompatibilityKHR(
     VkDevice                                    device,
     const VkAccelerationStructureVersionKHR*    version,
     VkResult                                    result);

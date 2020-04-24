@@ -442,10 +442,8 @@ bool BestPractices::PreCallValidateAllocateDescriptorSets(VkDevice device, const
     return skip;
 }
 
-void BestPractices::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                                         VkDescriptorSet* pDescriptorSets, VkResult result, void* ads_state) {
-    ValidationStateTracker::PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, result, ads_state);
-
+void BestPractices::ManualPostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                                               VkDescriptorSet* pDescriptorSets, VkResult result, void* ads_state) {
     if (result == VK_SUCCESS) {
         // find the free count for the pool we allocated into
         auto iter = descriptor_pool_freed_count.find(pAllocateInfo->descriptorPool);
@@ -498,10 +496,9 @@ bool BestPractices::PreCallValidateAllocateMemory(VkDevice device, const VkMemor
     return skip;
 }
 
-void BestPractices::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
-                                                 const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
-                                                 VkResult result) {
-    ValidationStateTracker::PostCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, result);
+void BestPractices::ManualPostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
+                                                       const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
+                                                       VkResult result) {
     if (result != VK_SUCCESS) {
         static std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY,
                                                     VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_INVALID_EXTERNAL_HANDLE,
@@ -834,8 +831,7 @@ bool BestPractices::CheckPipelineStageFlags(std::string api_name, const VkPipeli
     return skip;
 }
 
-void BestPractices::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkResult result) {
-    ValidationStateTracker::PostCallRecordQueuePresentKHR(queue, pPresentInfo, result);
+void BestPractices::ManualPostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkResult result) {
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
         auto swapchains_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : result;
         if (swapchains_result == VK_SUBOPTIMAL_KHR) {
@@ -1570,15 +1566,9 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
     return skip;
 }
 
-void BestPractices::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
-                                                  VkFence fence, VkResult result) {
-    ValidationStateTracker::PostCallRecordQueueBindSparse(queue, bindInfoCount, pBindInfo, fence, result);
-
+void BestPractices::ManualPostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
+                                                        VkFence fence, VkResult result) {
     if (result != VK_SUCCESS) {
-        static std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY,
-                                                    VK_ERROR_DEVICE_LOST};
-        static std::vector<VkResult> success_codes = {};
-        ValidateReturnCodes("vkReleaseFullScreenExclusiveModeEXT", result, error_codes, success_codes);
         return;
     }
 

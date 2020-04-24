@@ -99,14 +99,14 @@ class BestPractices : public ValidationStateTracker {
                                           const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer) const;
     bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                                VkDescriptorSet* pDescriptorSets, void* ads_state_data) const;
-    void PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                              VkDescriptorSet* pDescriptorSets, VkResult result, void* ads_state);
+    void ManualPostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                                    VkDescriptorSet* pDescriptorSets, VkResult result, void* ads_state);
     void PostCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
                                           const VkDescriptorSet* pDescriptorSets, VkResult result);
     bool PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory) const;
-    void PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
-                                      const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory, VkResult result);
+    void ManualPostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
+                                            const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory, VkResult result);
     void PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator);
     bool ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, const char* api_name) const;
     bool PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset) const;
@@ -198,8 +198,8 @@ class BestPractices : public ValidationStateTracker {
                                                           const VkBindAccelerationStructureMemoryInfoNV* pBindInfos) const;
     bool PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
                                         VkFence fence) const;
-    void PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo, VkFence fence,
-                                       VkResult result);
+    void ManualPostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
+                                             VkFence fence, VkResult result);
     bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                             const VkClearAttachment* pAttachments, uint32_t rectCount,
                                             const VkClearRect* pRects) const;
@@ -210,7 +210,7 @@ class BestPractices : public ValidationStateTracker {
                                         const VkImageResolve* pRegions) const;
     bool PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
                                       const VkAllocationCallbacks* pAllocator, VkSampler* pSampler) const;
-    void PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkResult result);
+    void ManualPostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkResult result);
 
 // Include code-generated functions
 #include "best_practices.h"
