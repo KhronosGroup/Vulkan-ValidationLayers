@@ -1063,6 +1063,7 @@ TEST_F(VkLayerTest, ImagelessFramebufferDepthStencilResolveAttachmentTests) {
     framebufferCreateInfo.layers = 1;
     framebufferCreateInfo.renderPass = renderPass;
     framebufferCreateInfo.attachmentCount = 2;
+    framebufferCreateInfo.pAttachments = nullptr;
     VkFramebuffer framebuffer = VK_NULL_HANDLE;
 
     // Color attachment, mismatched layer count
@@ -1094,6 +1095,48 @@ TEST_F(VkLayerTest, ImagelessFramebufferDepthStencilResolveAttachmentTests) {
         vk::DestroyFramebuffer(m_device->device(), framebuffer, nullptr);
     }
     framebufferAttachmentImageInfos[1].layerCount = 2;
+
+    // Try creating Framebuffer with images, but with invalid image create usage flags
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = NULL;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = attachmentFormat;
+    image_create_info.extent.width = attachmentWidth;
+    image_create_info.extent.height = attachmentHeight;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    image_create_info.flags = 0;
+    VkImageObj ds_image(m_device);
+    ds_image.init(&image_create_info);
+    ASSERT_TRUE(ds_image.initialized());
+
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.usage = 0;
+    VkImageObj ds_resolve_image(m_device);
+    ds_resolve_image.init(&image_create_info);
+    ASSERT_TRUE(ds_resolve_image.initialized());
+
+    VkImageView image_views[2];
+    image_views[0] = ds_image.targetView(attachmentFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+    image_views[1] = ds_resolve_image.targetView(attachmentFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    framebufferCreateInfo.pNext = nullptr;
+    framebufferCreateInfo.flags = 0;
+    framebufferCreateInfo.pAttachments = image_views;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-02634");
+    vk::CreateFramebuffer(m_device->device(), &framebufferCreateInfo, nullptr, &framebuffer);
+    m_errorMonitor->VerifyFound();
+    if (framebuffer != VK_NULL_HANDLE) {
+        vk::DestroyFramebuffer(m_device->device(), framebuffer, nullptr);
+    }
+    framebufferCreateInfo.pNext = &framebufferAttachmentsCreateInfo;
+    framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT_KHR;
+    framebufferCreateInfo.pAttachments = nullptr;
 
     vk::DestroyRenderPass(m_device->device(), renderPass, nullptr);
 }
