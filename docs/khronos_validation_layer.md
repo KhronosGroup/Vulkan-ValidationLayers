@@ -14,9 +14,9 @@
 [4]: https://creativecommons.org/licenses/by-nd/4.0/
 The `VK_LAYER_KHRONOS_validation` layer supports the following validation areas:
 
-- Thread safety validation. 
-- Stateless parameter validation. 
-- Object lifetime validation. 
+- Thread safety validation 
+- Stateless parameter validation 
+- Object lifetime validation 
 - Core validation checks
 - GPU-Assisted validation
 - Best practices validation
