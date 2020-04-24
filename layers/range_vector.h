@@ -1476,6 +1476,12 @@ class cached_lower_bound_impl {
         return *this;
     }
 
+    // For times when the application knows what it's done to the underlying map... (with assert in set_value)
+    cached_lower_bound_impl &invalidate(const iterator &hint, index_type index) {
+        set_value(index, hint);
+        return *this;
+    }
+
     cached_lower_bound_impl &invalidate() { return invalidate(index_); }
 
     // Allow a hint for a *valid* lower bound for current index
@@ -1645,15 +1651,31 @@ class parallel_iterator {
         seek(start);
         return *this;
     }
+
     parallel_iterator &invalidate_A() {
         const index_type index = range_.begin;
         pos_A_.invalidate(static_cast<index_type_A>(index));
         range_ = key_type(index, index + compute_delta());
         return *this;
     }
+
+    parallel_iterator &invalidate_A(const iterator_A &hint) {
+        const index_type index = range_.begin;
+        pos_A_.invalidate(hint, static_cast<index_type_A>(index));
+        range_ = key_type(index, index + compute_delta());
+        return *this;
+    }
+
     parallel_iterator &invalidate_B() {
         const index_type index = range_.begin;
         pos_B_.invalidate(static_cast<index_type_B>(index));
+        range_ = key_type(index, index + compute_delta());
+        return *this;
+    }
+
+    parallel_iterator &invalidate_B(const iterator_B &hint) {
+        const index_type index = range_.begin;
+        pos_B_.invalidate(hint, static_cast<index_type_B>(index));
         range_ = key_type(index, index + compute_delta());
         return *this;
     }
