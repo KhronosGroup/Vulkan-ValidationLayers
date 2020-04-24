@@ -380,7 +380,8 @@ struct OneOffDescriptorSet {
     std::vector<VkWriteDescriptorSet> descriptor_writes;
 
     OneOffDescriptorSet(VkDeviceObj *device, const Bindings &bindings, VkDescriptorSetLayoutCreateFlags layout_flags = 0,
-                        void *layout_pnext = NULL, VkDescriptorPoolCreateFlags poolFlags = 0, void *allocate_pnext = NULL);
+                        void *layout_pnext = NULL, VkDescriptorPoolCreateFlags poolFlags = 0, void *allocate_pnext = NULL,
+                        int buffer_info_size = 10, int image_info_size = 10);
     ~OneOffDescriptorSet();
     bool Initialized();
     void WriteDescriptorBufferInfo(int binding, VkBuffer buffer, VkDeviceSize size,
@@ -388,7 +389,8 @@ struct OneOffDescriptorSet {
     void WriteDescriptorBufferView(int binding, VkBufferView &buffer_view,
                                    VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
     void WriteDescriptorImageInfo(int binding, VkImageView image_view, VkSampler sampler,
-                                  VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+                                  VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                  VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     void UpdateDescriptorSets();
 };
 
