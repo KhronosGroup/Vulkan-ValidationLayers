@@ -7780,3 +7780,108 @@ TEST_F(VkLayerTest, ValidateNVDeviceDiagnosticCheckpoints) {
     vkCmdSetCheckpointNV(m_commandBuffer->handle(), &data);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, InvalidGetDeviceQueue) {
+    TEST_DESCRIPTION("General testing of vkGetDeviceQueue and general Device creation cases");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    VkDevice test_device;
+    VkQueue test_queue;
+    VkResult result;
+
+    // Use the first Physical device and queue family
+    // Makes test more portable as every driver has at least 1 queue with a queueCount of 1
+    uint32_t queue_family_count = 1;
+    uint32_t queue_family_index = 0;
+    VkQueueFamilyProperties queue_properties;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, &queue_properties);
+
+    float queue_priority = 1.0;
+    VkDeviceQueueCreateInfo queue_create_info = {};
+    queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queue_create_info.flags = VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT;
+    queue_create_info.pNext = nullptr;
+    queue_create_info.queueFamilyIndex = queue_family_index;
+    queue_create_info.queueCount = 1;
+    queue_create_info.pQueuePriorities = &queue_priority;
+
+    VkPhysicalDeviceProtectedMemoryFeatures protect_features = {};
+    protect_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES;
+    protect_features.pNext = nullptr;
+    protect_features.protectedMemory = VK_FALSE;  // Starting with it off
+
+    VkDeviceCreateInfo device_create_info = {};
+    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    device_create_info.pNext = &protect_features;
+    device_create_info.flags = 0;
+    device_create_info.pQueueCreateInfos = &queue_create_info;
+    device_create_info.queueCreateInfoCount = 1;
+    device_create_info.pEnabledFeatures = nullptr;
+    device_create_info.enabledLayerCount = 0;
+    device_create_info.enabledExtensionCount = 0;
+
+    // Protect feature not set
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkDeviceQueueCreateInfo-flags-02861");
+    vk::CreateDevice(gpu(), &device_create_info, nullptr, &test_device);
+    m_errorMonitor->VerifyFound();
+
+    VkPhysicalDeviceFeatures2 features2;
+    features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    features2.pNext = &protect_features;
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (protect_features.protectedMemory == VK_TRUE) {
+        result = vk::CreateDevice(gpu(), &device_create_info, nullptr, &test_device);
+        if (result != VK_SUCCESS) {
+            printf("%s CreateDevice returned back %s, skipping rest of tests\n", kSkipPrefix, string_VkResult(result));
+            return;
+        }
+
+        // TODO: Re-enable test when Vulkan-Loader issue #384 is resolved and upstream
+        // Try using GetDeviceQueue with a queue that has as flag
+        // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceQueue-flags-01841");
+        // vk::GetDeviceQueue(test_device, queue_family_index, 0, &test_queue);
+        // m_errorMonitor->VerifyFound();
+
+        vk::DestroyDevice(test_device, nullptr);
+    }
+
+    // Create device without protected queue
+    protect_features.protectedMemory = VK_FALSE;
+    queue_create_info.flags = 0;
+    result = vk::CreateDevice(gpu(), &device_create_info, nullptr, &test_device);
+    if (result != VK_SUCCESS) {
+        printf("%s CreateDevice returned back %s, skipping rest of tests\n", kSkipPrefix, string_VkResult(result));
+        return;
+    }
+
+    // TODO: Re-enable test when Vulkan-Loader issue #384 is resolved and upstream
+    // Set queueIndex 1 over size of queueCount
+    // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceQueue-queueIndex-00385");
+    // vk::GetDeviceQueue(test_device, queue_family_index, queue_properties.queueCount, &test_queue);
+    // m_errorMonitor->VerifyFound();
+
+    // Use an unknown queue family index
+    // m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetDeviceQueue-queueFamilyIndex-00384");
+    // vk::GetDeviceQueue(test_device, queue_family_index + 1, 0, &test_queue);
+    // m_errorMonitor->VerifyFound();
+
+    // Sanity check can still get the queue
+    m_errorMonitor->ExpectSuccess();
+    vk::GetDeviceQueue(test_device, queue_family_index, 0, &test_queue);
+    m_errorMonitor->VerifyNotFound();
+
+    vk::DestroyDevice(test_device, nullptr);
+}
