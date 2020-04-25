@@ -6137,6 +6137,32 @@ TEST_F(VkLayerTest, BadVertexBufferOffset) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkLayerTest, BadIndexBufferOffset) {
+    TEST_DESCRIPTION("Submit bad offsets binding the index buffer");
+
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    static const uint32_t ibo_data[3] = {0, 1, 2};
+    VkConstantBufferObj ibo(m_device, sizeof(ibo_data), (const void *)&ibo_data, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    VkMemoryRequirements mem_reqs;
+    vk::GetBufferMemoryRequirements(m_device->device(), ibo.handle(), &mem_reqs);
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    // Set offset over buffer size
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer-offset-00431");
+    m_commandBuffer->BindIndexBuffer(&ibo, mem_reqs.size + sizeof(uint32_t), VK_INDEX_TYPE_UINT32);
+    m_errorMonitor->VerifyFound();
+
+    // Set offset to be misaligned with index buffer UINT32 type
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer-offset-00432");
+    m_commandBuffer->BindIndexBuffer(&ibo, 1, VK_INDEX_TYPE_UINT32);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
 // INVALID_IMAGE_LAYOUT tests (one other case is hit by MapMemWithoutHostVisibleBit and not here)
 TEST_F(VkLayerTest, InvalidImageLayout) {
     TEST_DESCRIPTION(
