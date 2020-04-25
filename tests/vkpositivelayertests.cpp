@@ -575,7 +575,7 @@ TEST_F(VkPositiveLayerTest, RenderPassBeginStencilLoadOp) {
     VkImageObj destImage(m_device);
     destImage.Init(100, 100, 1, depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                    VK_IMAGE_TILING_OPTIMAL, 0);
-    fence.wait(VK_TRUE, UINT64_MAX);
+    fence.wait(UINT64_MAX);
     VkCommandBufferObj cmdbuf(m_device, m_commandPool);
     cmdbuf.begin();
 
@@ -9410,4 +9410,112 @@ TEST_F(VkPositiveLayerTest, QueueThreading) {
     Monitor().VerifyNotFound();
 
     vk::QueueWaitIdle(queue_h);
+}
+
+TEST_F(VkPositiveLayerTest, SwapchainImageFormatProps) {
+    TEST_DESCRIPTION("Try using special format props on a swapchain image");
+
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AddSwapchainDeviceExtension()) {
+        printf("%s swapchain extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    if (!InitSwapchain()) {
+        printf("%s Cannot create surface or swapchain, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
+        return;
+    }
+
+    // HACK: I know InitSwapchain() will pick first supported format
+    VkSurfaceFormatKHR format_tmp;
+    {
+        uint32_t format_count = 1;
+        const VkResult err = vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), m_surface, &format_count, &format_tmp);
+        ASSERT_TRUE(err == VK_SUCCESS || err == VK_INCOMPLETE) << vk_result_string(err);
+    }
+    const VkFormat format = format_tmp.format;
+
+    VkFormatProperties format_props;
+    vk::GetPhysicalDeviceFormatProperties(gpu(), format, &format_props);
+    if (!(format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)) {
+        printf("%s We need VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT feature. Skipping test.\n", kSkipPrefix);
+        return;
+    }
+
+    VkShaderObj vs(DeviceObj(), bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(DeviceObj(), bindStateFragShaderText, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+
+    VkPipelineLayoutObj pipeline_layout(DeviceObj());
+    VkRenderpassObj render_pass(DeviceObj(), format);
+
+    VkPipelineObj pipeline(DeviceObj());
+    pipeline.AddShader(&vs);
+    pipeline.AddShader(&fs);
+    VkPipelineColorBlendAttachmentState pcbas = {};
+    pcbas.blendEnable = VK_TRUE;  // !!!
+    pcbas.colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    pipeline.AddColorAttachment(0, pcbas);
+    pipeline.MakeDynamic(VK_DYNAMIC_STATE_VIEWPORT);
+    pipeline.MakeDynamic(VK_DYNAMIC_STATE_SCISSOR);
+
+    ASSERT_VK_SUCCESS(pipeline.CreateVKPipeline(pipeline_layout.handle(), render_pass.handle()));
+
+    uint32_t image_count;
+    ASSERT_VK_SUCCESS(vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, nullptr));
+    std::vector<VkImage> swapchain_images(image_count);
+    ASSERT_VK_SUCCESS(vk::GetSwapchainImagesKHR(device(), m_swapchain, &image_count, swapchain_images.data()));
+
+    VkFenceObj fence;
+    fence.init(*DeviceObj(), VkFenceObj::create_info());
+
+    uint32_t image_index;
+    ASSERT_VK_SUCCESS(vk::AcquireNextImageKHR(device(), m_swapchain, UINT64_MAX, VK_NULL_HANDLE, fence.handle(), &image_index));
+    fence.wait(UINT32_MAX);
+
+    VkImageViewCreateInfo ivci = {};
+    ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    ivci.image = swapchain_images[image_index];
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = format;
+    ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    VkImageView image_view;
+    ASSERT_VK_SUCCESS(vk::CreateImageView(device(), &ivci, nullptr, &image_view));
+
+    VkFramebufferCreateInfo fbci = {};
+    fbci.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    fbci.renderPass = render_pass.handle();
+    fbci.attachmentCount = 1;
+    fbci.pAttachments = &image_view;
+    fbci.width = 1;
+    fbci.height = 1;
+    fbci.layers = 1;
+    VkFramebuffer framebuffer;
+    ASSERT_VK_SUCCESS(vk::CreateFramebuffer(device(), &fbci, nullptr, &framebuffer));
+
+    VkCommandBufferObj cmdbuff(DeviceObj(), m_commandPool);
+    cmdbuff.begin();
+    VkRenderPassBeginInfo rpbi = {};
+    rpbi.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    rpbi.renderPass = render_pass.handle();
+    rpbi.framebuffer = framebuffer;
+    rpbi.renderArea = {{0, 0}, {1, 1}};
+    cmdbuff.BeginRenderPass(rpbi);
+
+    Monitor().ExpectSuccess();
+    vk::CmdBindPipeline(cmdbuff.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle());
+    Monitor().VerifyNotFound();
+
+    // teardown
+    vk::DestroyImageView(device(), image_view, nullptr);
+    vk::DestroyFramebuffer(device(), framebuffer, nullptr);
+    DestroySwapchain();
 }
