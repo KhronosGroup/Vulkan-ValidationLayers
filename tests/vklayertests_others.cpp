@@ -5124,6 +5124,18 @@ TEST_F(VkLayerTest, ValidateGeometryNV) {
         vkCreateAccelerationStructureNV(m_device->handle(), &as_create_info, nullptr, &as);
         m_errorMonitor->VerifyFound();
     }
+
+    // geometryType must be VK_GEOMETRY_TYPE_TRIANGLES_NV or VK_GEOMETRY_TYPE_AABBS_NV
+    {
+        VkGeometryNV geometry = valid_geometry_aabbs;
+        geometry.geometry.aabbs.stride = 1;
+        geometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+
+        VkAccelerationStructureCreateInfoNV as_create_info = GetCreateInfo(geometry);
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGeometryNV-geometryType-03503");
+        vkCreateAccelerationStructureNV(m_device->handle(), &as_create_info, nullptr, &as);
+        m_errorMonitor->VerifyFound();
+    }
 }
 
 TEST_F(VkLayerTest, ValidateCreateAccelerationStructureNV) {
@@ -5269,6 +5281,19 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHR) {
         m_errorMonitor->VerifyFound();
     }
 
+    // If type is VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR
+    // and compactedSize is 0, maxGeometryCount must be 1
+    {
+        VkAccelerationStructureCreateInfoKHR bad_top_level_create_info = as_create_info;
+        bad_top_level_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+        bad_top_level_create_info.maxGeometryCount = 0;
+        bad_top_level_create_info.compactedSize = 0;
+        m_errorMonitor->SetUnexpectedError("VUID-VkAccelerationStructureCreateInfoKHR-maxGeometryCount-arraylength");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAccelerationStructureCreateInfoKHR-type-03495");
+        vkCreateAccelerationStructureKHR(m_device->handle(), &bad_top_level_create_info, nullptr, &as);
+        m_errorMonitor->VerifyFound();
+    }
+
     // Bot level can not have instances
     {
         VkAccelerationStructureCreateInfoKHR bad_bot_level_create_info = as_create_info;
@@ -5326,6 +5351,36 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHR) {
 
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAccelerationStructureCreateInfoKHR-type-03498");
         vkCreateAccelerationStructureKHR(m_device->handle(), &mix_geometry_types_as_create_info, nullptr, &as);
+        m_errorMonitor->VerifyFound();
+    }
+    // If geometryType is VK_GEOMETRY_TYPE_TRIANGLES_KHR, indexType must be
+    // VK_INDEX_TYPE_UINT16, VK_INDEX_TYPE_UINT32, or VK_INDEX_TYPE_NONE_KHR
+    {
+        VkAccelerationStructureCreateGeometryTypeInfoKHR invalid_index = geometryInfo;
+        invalid_index.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+        invalid_index.indexType = VK_INDEX_TYPE_UINT8_EXT;
+        VkAccelerationStructureCreateInfoKHR invalid_index_geometry_types_as_create_info = as_create_info;
+        invalid_index_geometry_types_as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+        invalid_index_geometry_types_as_create_info.pGeometryInfos = &invalid_index;
+        invalid_index_geometry_types_as_create_info.maxGeometryCount = 1;
+        invalid_index_geometry_types_as_create_info.flags = 0;
+
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-VkAccelerationStructureCreateGeometryTypeInfoKHR-geometryType-03502");
+        vkCreateAccelerationStructureKHR(m_device->handle(), &invalid_index_geometry_types_as_create_info, nullptr, &as);
+        m_errorMonitor->VerifyFound();
+    }
+
+    // flags must be a valid combination of VkBuildAccelerationStructureFlagBitsNV
+    {
+        VkAccelerationStructureCreateInfoKHR invalid_flag = as_create_info;
+        invalid_flag.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+        invalid_flag.flags = VK_BUILD_ACCELERATION_STRUCTURE_FLAG_BITS_MAX_ENUM_KHR;
+        invalid_flag.pGeometryInfos = &geometryInfo;
+        invalid_flag.maxGeometryCount = 1;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-VkAccelerationStructureCreateInfoKHR-flags-parameter");
+        vkCreateAccelerationStructureKHR(m_device->handle(), &invalid_flag, nullptr, &as);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -5638,6 +5693,25 @@ TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructureNV) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBuildAccelerationStructureNV-update-02489");
     vkCmdBuildAccelerationStructureNV(m_commandBuffer->handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_TRUE,
                                       bot_level_as_updated.handle(), bot_level_as.handle(), bot_level_as_scratch.handle(), 0);
+    m_errorMonitor->VerifyFound();
+
+    // invalid scratch buff
+    VkBufferObj bot_level_as_invalid_scratch;
+    VkBufferCreateInfo create_info = {};
+    create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    // invalid usage
+    create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR;
+    bot_level_as.create_scratch_buffer(*m_device, &bot_level_as_invalid_scratch, &create_info);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureInfoNV-scratch-02781");
+    vkCmdBuildAccelerationStructureNV(m_commandBuffer->handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
+                                      bot_level_as.handle(), VK_NULL_HANDLE, bot_level_as_invalid_scratch.handle(), 0);
+    m_errorMonitor->VerifyFound();
+
+    // invalid instance data.
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureInfoNV-instanceData-02782");
+    vkCmdBuildAccelerationStructureNV(m_commandBuffer->handle(), &bot_level_as_create_info.info,
+                                      bot_level_as_invalid_scratch.handle(), 0, VK_FALSE, bot_level_as.handle(), VK_NULL_HANDLE,
+                                      bot_level_as_scratch.handle(), 0);
     m_errorMonitor->VerifyFound();
 }
 
