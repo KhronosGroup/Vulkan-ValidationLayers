@@ -2889,6 +2889,14 @@ bool StatelessValidation::manual_PreCallValidateCmdClearAttachments(VkCommandBuf
             skip |= LogError(commandBuffer, "VUID-vkCmdClearAttachments-layerCount-01934",
                              "CmdClearAttachments(): pRects[%d].layerCount is zero.", rect);
         }
+        if (pRects[rect].rect.extent.width == 0) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdClearAttachments-rect-02682",
+                             "CmdClearAttachments(): pRects[%d].rect.extent.width is zero.", rect);
+        }
+        if (pRects[rect].rect.extent.height == 0) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdClearAttachments-rect-02683",
+                             "CmdClearAttachments(): pRects[%d].rect.extent.height is zero.", rect);
+        }
     }
     return skip;
 }
