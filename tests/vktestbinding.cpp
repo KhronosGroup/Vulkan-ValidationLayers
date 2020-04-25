@@ -465,9 +465,9 @@ NON_DISPATCHABLE_HANDLE_DTOR(Fence, vk::DestroyFence)
 
 void Fence::init(const Device &dev, const VkFenceCreateInfo &info) { NON_DISPATCHABLE_HANDLE_INIT(vk::CreateFence, dev, &info); }
 
-VkResult Fence::wait(VkBool32 wait_all, uint64_t timeout) const {
+VkResult Fence::wait(uint64_t timeout) const {
     VkFence fence = handle();
-    return vk::WaitForFences(device(), 1, &fence, wait_all, timeout);
+    return vk::WaitForFences(device(), 1, &fence, VK_TRUE, timeout);
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(Semaphore, vk::DestroySemaphore)

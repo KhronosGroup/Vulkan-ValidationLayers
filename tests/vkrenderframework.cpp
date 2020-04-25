@@ -1057,7 +1057,7 @@ void VkDescriptorSetObj::CreateVKDescriptorSet(VkCommandBufferObj *commandBuffer
     }
 }
 
-VkRenderpassObj::VkRenderpassObj(VkDeviceObj *dev) {
+VkRenderpassObj::VkRenderpassObj(VkDeviceObj *dev, const VkFormat format) {
     // Create a renderPass with a single color attachment
     VkAttachmentReference attach = {};
     attach.layout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1072,7 +1072,7 @@ VkRenderpassObj::VkRenderpassObj(VkDeviceObj *dev) {
     rpci.attachmentCount = 1;
 
     VkAttachmentDescription attach_desc = {};
-    attach_desc.format = VK_FORMAT_B8G8R8A8_UNORM;
+    attach_desc.format = format;
     attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
     attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;

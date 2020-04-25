@@ -330,7 +330,7 @@ class Fence : public internal::NonDispHandle<VkFence> {
 
     // vkGetFenceStatus()
     VkResult status() const { return vk::GetFenceStatus(device(), handle()); }
-    VkResult wait(VkBool32 wait_all, uint64_t timeout) const;
+    VkResult wait(uint64_t timeout) const;
 
     static VkFenceCreateInfo create_info(VkFenceCreateFlags flags);
     static VkFenceCreateInfo create_info();
