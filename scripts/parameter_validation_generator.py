@@ -197,6 +197,12 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkImportSemaphoreFdKHR',
             'vkCmdBindVertexBuffers',
             'vkCreateImageView',
+            'vkCopyAccelerationStructureToMemoryKHR',
+            'vkCmdCopyAccelerationStructureToMemoryKHR',
+            'vkCopyAccelerationStructureKHR',
+            'vkCmdCopyAccelerationStructureKHR',
+            'vkCopyMemoryToAccelerationStructureKHR',
+            'vkCmdCopyMemoryToAccelerationStructureKHR',
             ]
 
         # Commands to ignore

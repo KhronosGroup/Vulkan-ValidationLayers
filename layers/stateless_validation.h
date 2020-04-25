@@ -51,7 +51,10 @@ extern const VkShaderStageFlags AllVkShaderStageFlagBits;
 extern const VkQueryControlFlags AllVkQueryControlFlagBits;
 extern const VkImageUsageFlags AllVkImageUsageFlagBits;
 extern const VkSampleCountFlags AllVkSampleCountFlagBits;
+extern const VkBuildAccelerationStructureFlagsNV AllVkBuildAccelerationStructureFlagBitsNV;
+extern const VkGeometryFlagsKHR AllVkGeometryFlagBitsKHR;
 
+extern const std::vector<VkGeometryTypeKHR> AllVkGeometryTypeKHREnums;
 extern const std::vector<VkCompareOp> AllVkCompareOpEnums;
 extern const std::vector<VkStencilOp> AllVkStencilOpEnums;
 extern const std::vector<VkBlendFactor> AllVkBlendFactorEnums;
@@ -62,6 +65,7 @@ extern const std::vector<VkImageLayout> AllVkImageLayoutEnums;
 extern const std::vector<VkFormat> AllVkFormatEnums;
 extern const std::vector<VkVertexInputRate> AllVkVertexInputRateEnums;
 extern const std::vector<VkPrimitiveTopology> AllVkPrimitiveTopologyEnums;
+extern const std::vector<VkIndexType> AllVkIndexTypeEnums;
 
 // String returned by string_VkStructureType for an unrecognized type.
 const std::string UnsupportedStructureTypeString = "Unhandled VkStructureType";
@@ -1402,5 +1406,24 @@ class StatelessValidation : public ValidationObject {
                                                                VkSamplerYcbcrConversion *pYcbcrConversion) const;
     bool manual_PreCallValidateImportSemaphoreFdKHR(VkDevice device,
                                                     const VkImportSemaphoreFdInfoKHR *pImportSemaphoreFdInfo) const;
+
+    bool manual_PreCallValidateCopyAccelerationStructureToMemoryKHR(VkDevice device,
+                                                                    const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo) const;
+
+    bool manual_PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(
+        VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo) const;
+
+    bool manual_PreCallValidateCopyAccelerationStructureKHR(VkDevice device, const VkCopyAccelerationStructureInfoKHR *pInfo) const;
+
+    bool manual_PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
+                                                               const VkCopyAccelerationStructureInfoKHR *pInfo) const;
+    bool ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR *pInfo, const char *api_name) const;
+    bool ValidateCopyMemoryToAccelerationStructureInfoKHR(const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo,
+                                                          const char *api_name) const;
+
+    bool manual_PreCallValidateCopyMemoryToAccelerationStructureKHR(VkDevice device,
+                                                                    const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo) const;
+    bool manual_PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
+        VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo) const;
 #include "parameter_validation.h"
 };  // Class StatelessValidation
