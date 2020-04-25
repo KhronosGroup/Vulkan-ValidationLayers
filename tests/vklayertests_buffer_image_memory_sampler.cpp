@@ -4879,6 +4879,10 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     if (rp2Supported && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
     }
+    bool maintaince2 = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    if (maintaince2) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
+    }
 
     // Set separate depth stencil feature bit
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
@@ -5244,23 +5248,38 @@ TEST_F(VkLayerTest, InvalidBarriers) {
             {img_xfer_src, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,             "VUID-VkImageMemoryBarrier-oldLayout-01213"},
             {img_sampled,  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,             "VUID-VkImageMemoryBarrier-oldLayout-01213"},
             {img_input,    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,             "VUID-VkImageMemoryBarrier-oldLayout-01213"},
+            // images _without_ VK_KHR_maintenance2 added layouts
+            {img_color,    VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, "VUID-VkImageMemoryBarrier-oldLayout-01658"},
+            {img_xfer_src, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, "VUID-VkImageMemoryBarrier-oldLayout-01658"},
+            {img_sampled,  VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, "VUID-VkImageMemoryBarrier-oldLayout-01658"},
+            {img_input,    VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL, "VUID-VkImageMemoryBarrier-oldLayout-01658"},
+            {img_color,    VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, "VUID-VkImageMemoryBarrier-oldLayout-01659"},
+            {img_xfer_src, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, "VUID-VkImageMemoryBarrier-oldLayout-01659"},
+            {img_sampled,  VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, "VUID-VkImageMemoryBarrier-oldLayout-01659"},
+            {img_input,    VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL, "VUID-VkImageMemoryBarrier-oldLayout-01659"},
             // clang-format on
         };
         const uint32_t layout_count = sizeof(bad_buffer_layouts) / sizeof(bad_buffer_layouts[0]);
 
         for (uint32_t i = 0; i < layout_count; ++i) {
+            const VkImageLayout bad_layout = bad_buffer_layouts[i].bad_layout;
+            // Skip layouts that require maintaince2 support
+            if ((maintaince2 == false) && ((bad_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) ||
+                                           (bad_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL))) {
+                continue;
+            }
             conc_test.image_barrier_.image = bad_buffer_layouts[i].image_obj.handle();
             const VkImageUsageFlags usage = bad_buffer_layouts[i].image_obj.usage();
             conc_test.image_barrier_.subresourceRange.aspectMask = (usage == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
                                                                        ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)
                                                                        : VK_IMAGE_ASPECT_COLOR_BIT;
 
-            conc_test.image_barrier_.oldLayout = bad_buffer_layouts[i].bad_layout;
+            conc_test.image_barrier_.oldLayout = bad_layout;
             conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
             conc_test(bad_buffer_layouts[i].msg_code);
 
             conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-            conc_test.image_barrier_.newLayout = bad_buffer_layouts[i].bad_layout;
+            conc_test.image_barrier_.newLayout = bad_layout;
             conc_test(bad_buffer_layouts[i].msg_code);
         }
 
