@@ -5607,6 +5607,12 @@ bool CoreChecks::PreCallValidateCmdBindIndexBuffer(VkCommandBuffer commandBuffer
                          "vkCmdBindIndexBuffer() offset (0x%" PRIxLEAST64 ") does not fall on alignment (%s) boundary.", offset,
                          string_VkIndexType(indexType));
     }
+    if (offset >= buffer_state->requirements.size) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBindIndexBuffer-offset-00431",
+                         "vkCmdBindIndexBuffer() offset (0x%" PRIxLEAST64 ") is not less than the size (0x%" PRIxLEAST64
+                         ") of buffer (%s).",
+                         offset, buffer_state->requirements.size, report_data->FormatHandle(buffer_state->buffer).c_str());
+    }
 
     return skip;
 }
