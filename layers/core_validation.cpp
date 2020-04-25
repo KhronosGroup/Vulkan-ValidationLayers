@@ -3034,26 +3034,29 @@ bool CoreChecks::PreCallValidateWaitForFences(VkDevice device, uint32_t fenceCou
     return skip;
 }
 
-bool CoreChecks::ValidateGetDeviceQueue(uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue *pQueue, const char *valid_qfi_vuid,
-                                        const char *qfi_in_range_vuid) const {
+bool CoreChecks::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex,
+                                               VkQueue *pQueue) const {
     bool skip = false;
 
-    skip |= ValidateDeviceQueueFamily(queueFamilyIndex, "vkGetDeviceQueue", "queueFamilyIndex", valid_qfi_vuid);
+    skip |= ValidateDeviceQueueFamily(queueFamilyIndex, "vkGetDeviceQueue", "queueFamilyIndex",
+                                      "VUID-vkGetDeviceQueue-queueFamilyIndex-00384");
     const auto &queue_data = queue_family_index_map.find(queueFamilyIndex);
-    if (queue_data != queue_family_index_map.end() && queue_data->second <= queueIndex) {
-        skip |= LogError(device, qfi_in_range_vuid,
+    if ((queue_data != queue_family_index_map.end()) && (queue_data->second <= queueIndex)) {
+        skip |= LogError(device, "VUID-vkGetDeviceQueue-queueIndex-00385",
                          "vkGetDeviceQueue: queueIndex (=%" PRIu32
                          ") is not less than the number of queues requested from queueFamilyIndex (=%" PRIu32
                          ") when the device was created (i.e. is not less than %" PRIu32 ").",
                          queueIndex, queueFamilyIndex, queue_data->second);
     }
-    return skip;
-}
 
-bool CoreChecks::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex, uint32_t queueIndex,
-                                               VkQueue *pQueue) const {
-    return ValidateGetDeviceQueue(queueFamilyIndex, queueIndex, pQueue, "VUID-vkGetDeviceQueue-queueFamilyIndex-00384",
-                                  "VUID-vkGetDeviceQueue-queueIndex-00385");
+    const auto &queue_flags = queue_family_create_flags_map.find(queueFamilyIndex);
+    if ((queue_flags != queue_family_create_flags_map.end()) && (queue_flags->second != 0)) {
+        skip |= LogError(device, "VUID-vkGetDeviceQueue-flags-01841",
+                         "vkGetDeviceQueue: queueIndex (=%" PRIu32
+                         ") was created with a non-zero VkDeviceQueueCreateFlags. Need to use vkGetDeviceQueue2 instead.",
+                         queueIndex);
+    }
+    return skip;
 }
 
 bool CoreChecks::PreCallValidateQueueWaitIdle(VkQueue queue) const {

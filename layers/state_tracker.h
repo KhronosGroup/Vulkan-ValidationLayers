@@ -1178,6 +1178,7 @@ class ValidationStateTracker : public ValidationObject {
 
     // Map for queue family index to queue count
     unordered_map<uint32_t, uint32_t> queue_family_index_map;
+    unordered_map<uint32_t, VkDeviceQueueCreateFlags> queue_family_create_flags_map;
     bool performance_lock_acquired = false;
 
     template <typename ExtProp>

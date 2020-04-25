@@ -235,7 +235,7 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         const auto *features2 = lvl_find_in_chain<VkPhysicalDeviceFeatures2KHR>(pCreateInfo->pNext);
         if (features2) {
             // Cannot include VkPhysicalDeviceFeatures2KHR and have non-null pEnabledFeatures
-            skip |= LogError(device, kVUID_PVError_InvalidUsage,
+            skip |= LogError(device, "VUID-VkDeviceCreateInfo-pNext-00373",
                              "VkDeviceCreateInfo->pNext includes a VkPhysicalDeviceFeatures2KHR struct when "
                              "pCreateInfo->pEnabledFeatures is non-NULL.");
         }
@@ -328,7 +328,8 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         std::unordered_set<uint32_t> set;
 
         for (uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i) {
-            const uint32_t requested_queue_family = pCreateInfo->pQueueCreateInfos[i].queueFamilyIndex;
+            const VkDeviceQueueCreateInfo &queue_create_info = pCreateInfo->pQueueCreateInfos[i];
+            const uint32_t requested_queue_family = queue_create_info.queueFamilyIndex;
             if (requested_queue_family == VK_QUEUE_FAMILY_IGNORED) {
                 skip |=
                     LogError(physicalDevice, "VUID-VkDeviceQueueCreateInfo-queueFamilyIndex-00381",
@@ -345,9 +346,9 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                 set.insert(requested_queue_family);
             }
 
-            if (pCreateInfo->pQueueCreateInfos[i].pQueuePriorities != nullptr) {
-                for (uint32_t j = 0; j < pCreateInfo->pQueueCreateInfos[i].queueCount; ++j) {
-                    const float queue_priority = pCreateInfo->pQueueCreateInfos[i].pQueuePriorities[j];
+            if (queue_create_info.pQueuePriorities != nullptr) {
+                for (uint32_t j = 0; j < queue_create_info.queueCount; ++j) {
+                    const float queue_priority = queue_create_info.pQueuePriorities[j];
                     if (!(queue_priority >= 0.f) || !(queue_priority <= 1.f)) {
                         skip |= LogError(physicalDevice, "VUID-VkDeviceQueueCreateInfo-pQueuePriorities-00383",
                                          "vkCreateDevice: pCreateInfo->pQueueCreateInfos[%" PRIu32 "].pQueuePriorities[%" PRIu32
@@ -355,6 +356,21 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                                          i, j, queue_priority);
                     }
                 }
+            }
+
+            // Need to know if protectedMemory feature is passed in preCall to creating the device
+            VkBool32 protectedMemory = VK_FALSE;
+            const VkPhysicalDeviceProtectedMemoryFeatures *protected_features =
+                lvl_find_in_chain<VkPhysicalDeviceProtectedMemoryFeatures>(pCreateInfo->pNext);
+            if (protected_features) {
+                protectedMemory = protected_features->protectedMemory;
+            } else if (vulkan_11_features) {
+                protectedMemory = vulkan_11_features->protectedMemory;
+            }
+            if ((queue_create_info.flags == VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT) && (protectedMemory == VK_FALSE)) {
+                skip |= LogError(physicalDevice, "VUID-VkDeviceQueueCreateInfo-flags-02861",
+                                 "vkCreateDevice: pCreateInfo->flags set to VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT without the "
+                                 "protectedMemory feature being set as well.");
             }
         }
     }
