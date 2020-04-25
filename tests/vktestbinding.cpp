@@ -620,7 +620,6 @@ VkMemoryRequirements2 AccelerationStructure::memory_requirements() const {
     memoryRequirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
     memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
     memoryRequirementsInfo.accelerationStructure = handle();
-
     VkMemoryRequirements2 memoryRequirements = {};
     vkGetAccelerationStructureMemoryRequirementsNV(device(), &memoryRequirementsInfo, &memoryRequirements);
     return memoryRequirements;
@@ -672,14 +671,19 @@ void AccelerationStructure::init(const Device &dev, const VkAccelerationStructur
     }
 }
 
-void AccelerationStructure::create_scratch_buffer(const Device &dev, Buffer *buffer) {
+void AccelerationStructure::create_scratch_buffer(const Device &dev, Buffer *buffer, VkBufferCreateInfo *pCreateInfo) {
     VkMemoryRequirements scratch_buffer_memory_requirements = build_scratch_memory_requirements().memoryRequirements;
 
     VkBufferCreateInfo create_info = {};
-    create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     create_info.size = scratch_buffer_memory_requirements.size;
-    create_info.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
-    return buffer->init(dev, create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    if (pCreateInfo) {
+        create_info.sType = pCreateInfo->sType;
+        create_info.usage = pCreateInfo->usage;
+    } else {
+        create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        create_info.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
+    }
+    buffer->init(dev, create_info, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
 
 NON_DISPATCHABLE_HANDLE_DTOR(ShaderModule, vk::DestroyShaderModule)

@@ -7157,12 +7157,24 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoNV) {
         printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_NV_RAY_TRACING_EXTENSION_NAME);
         return;
     }
-    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto pipleline_features = lvl_init_struct<VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&pipleline_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    // Set this to true as it is a required feature
+    pipleline_features.pipelineCreationCacheControl = VK_TRUE;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+
     const VkPipelineLayoutObj empty_pipeline_layout(m_device, {});
     const std::string empty_shader = R"glsl(#version 460
         #extension GL_NV_ray_tracing : require
         void main() {}
     )glsl";
+
     VkShaderObj rgen_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_RAYGEN_BIT_NV, this, "main");
     VkShaderObj ahit_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_ANY_HIT_BIT_NV, this, "main");
     VkShaderObj chit_shader(m_device, empty_shader.c_str(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV, this, "main");
