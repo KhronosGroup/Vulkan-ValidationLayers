@@ -728,6 +728,16 @@ bool CoreChecks::ValidateBarrierLayoutToImageUsage(const VkImageMemoryBarrier &i
                 msg_code = "VUID-VkImageMemoryBarrier-oldLayout-02088";
             }
             break;
+        case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
+            if ((usage_flags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+                msg_code = "VUID-VkImageMemoryBarrier-oldLayout-01658";
+            }
+            break;
+        case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
+            if ((usage_flags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0) {
+                msg_code = "VUID-VkImageMemoryBarrier-oldLayout-01659";
+            }
+            break;
         default:
             // Other VkImageLayout values do not have VUs defined in this context.
             break;
