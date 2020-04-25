@@ -389,7 +389,7 @@ class IMAGE_STATE : public BINDABLE {
     VkSwapchainKHR bind_swapchain;
     uint32_t bind_swapchain_imageIndex;
     image_layout_map::Encoder range_encoder;
-    VkFormatFeatureFlags format_features;
+    VkFormatFeatureFlags format_features = 0;
     // Need to memory requirments for each plane if image is disjoint
     VkMemoryRequirements plane0_requirements;
     bool plane0_memory_requirements_checked = false;
