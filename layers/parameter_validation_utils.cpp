@@ -3590,6 +3590,10 @@ bool StatelessValidation::manual_PreCallValidateCreateQueryPool(VkDevice device,
                              "pCreateInfo->pipelineStatistics must be a valid combination of VkQueryPipelineStatisticFlagBits "
                              "values.");
         }
+        if (pCreateInfo->queryCount == 0) {
+            skip |= LogError(device, "VUID-VkQueryPoolCreateInfo-queryCount-02763",
+                             "vkCreateQueryPool(): queryCount must be greater than zero.");
+        }
     }
     return skip;
 }
