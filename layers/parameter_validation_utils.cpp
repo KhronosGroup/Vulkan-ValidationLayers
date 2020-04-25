@@ -2624,9 +2624,39 @@ bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunct
                     }
                 }
             }
+            // pNext chain must be either NULL or a pointer to a valid instance of VkWriteDescriptorSetAccelerationStructureKHR
+            // or VkWriteDescriptorSetInlineUniformBlockEX
+            if (pDescriptorWrites[i].pNext) {
+                if (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
+                    const auto *pNext_struct =
+                        lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureKHR>(pDescriptorWrites[i].pNext);
+                    if (!pNext_struct || (pNext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount)) {
+                        skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-02382",
+                                         "%s(): If descriptorType is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, the pNext"
+                                         "chain must include a VkWriteDescriptorSetAccelerationStructureKHR structure whose "
+                                         "accelerationStructureCount %d member equals descriptorCount %d.",
+                                         vkCallingFunction, pNext_struct ? pNext_struct->accelerationStructureCount : -1,
+                                         pDescriptorWrites[i].descriptorCount);
+                    }
+                    // further checks only if we have right structtype
+                    if (pNext_struct) {
+                        if (pNext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount) {
+                            skip |= LogError(
+                                device, "VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-02236",
+                                "%s(): accelerationStructureCount %d must be equal to descriptorCount %d in the extended structure "
+                                ".",
+                                vkCallingFunction, pNext_struct->accelerationStructureCount, pDescriptorWrites[i].descriptorCount);
+                        }
+                        if (pNext_struct->accelerationStructureCount == 0) {
+                            skip |= LogError(
+                                device, "VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-arraylength",
+                                "%s(): accelerationStructureCount must be greater than 0 .");
+                        }
+                    }
+                }
+            }
         }
     }
-
     return skip;
 }
 
@@ -3796,6 +3826,17 @@ bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerati
             }
         }
     }
+    for (uint32_t geometry_index = 0; geometry_index < info.geometryCount; ++geometry_index) {
+        if (!(info.pGeometries[geometry_index].geometryType == VK_GEOMETRY_TYPE_TRIANGLES_NV ||
+              info.pGeometries[geometry_index].geometryType == VK_GEOMETRY_TYPE_AABBS_NV)) {
+            skip |= LogError(device, "VUID-VkGeometryNV-geometryType-03503",
+                             "VkGeometryNV: geometryType must be VK_GEOMETRY_TYPE_TRIANGLES_NV"
+                             "or VK_GEOMETRY_TYPE_AABBS_NV.");
+        }
+    }
+    skip |=
+        validate_flags(func_name, "info.flags", "VkBuildAccelerationStructureFlagBitsNV", AllVkBuildAccelerationStructureFlagBitsNV,
+                       info.flags, kOptionalFlags, "VUID-VkAccelerationStructureInfoNV-flags-03486");
     return skip;
 }
 
@@ -3803,7 +3844,6 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureNV(
     VkDevice device, const VkAccelerationStructureCreateInfoNV *pCreateInfo, const VkAllocationCallbacks *pAllocator,
     VkAccelerationStructureNV *pAccelerationStructure) const {
     bool skip = false;
-
     if (pCreateInfo) {
         if ((pCreateInfo->compactedSize != 0) &&
             ((pCreateInfo->info.geometryCount != 0) || (pCreateInfo->info.instanceCount != 0))) {
@@ -3816,7 +3856,6 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureNV(
         skip |= ValidateAccelerationStructureInfoNV(pCreateInfo->info, VkAccelerationStructureNV(0),
                                                     "vkCreateAccelerationStructureNV()");
     }
-
     return skip;
 }
 
@@ -3859,6 +3898,33 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
                                      i);
                 }
             }
+            if (pCreateInfo->pGeometryInfos[i].geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
+                if (!(pCreateInfo->pGeometryInfos[i].indexType == VK_INDEX_TYPE_UINT16 ||
+                      pCreateInfo->pGeometryInfos[i].indexType == VK_INDEX_TYPE_UINT32 ||
+                      pCreateInfo->pGeometryInfos[i].indexType == VK_INDEX_TYPE_NONE_KHR)) {
+                    skip |= LogError(
+                        device, "VUID-VkAccelerationStructureCreateGeometryTypeInfoKHR-geometryType-03502",
+                        "VkAccelerationStructureCreateInfoKHR: If geometryType is VK_GEOMETRY_TYPE_TRIANGLES_KHR, indexType"
+                        "must be VK_INDEX_TYPE_UINT16, VK_INDEX_TYPE_UINT32, or VK_INDEX_TYPE_NONE_KHR.");
+                }
+            }
+            if (pCreateInfo->type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR) {
+                if (pCreateInfo->pGeometryInfos[i].maxPrimitiveCount > phys_dev_ext_props.ray_tracing_propsKHR.maxInstanceCount) {
+                    skip |= LogError(device, "VUID-VkAccelerationStructureCreateInfoKHR-type-03492",
+                                     "VkAccelerationStructureCreateInfoKHR: If type is VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR"
+                                     "then pGeometryInfos->maxPrimitiveCount %d  must be less than or equal to "
+                                     "VkPhysicalDeviceRayTracingPropertiesKHR::maxInstanceCount %d.",
+                                     pCreateInfo->pGeometryInfos[i].maxPrimitiveCount,
+                                     phys_dev_ext_props.ray_tracing_propsKHR.maxInstanceCount);
+                }
+            }
+        }
+
+        if (pCreateInfo->type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR && pCreateInfo->compactedSize == 0 &&
+            pCreateInfo->maxGeometryCount != 1) {
+            skip |= LogError(device, "VUID-VkAccelerationStructureCreateInfoKHR-type-03495",
+                             "VkAccelerationStructureCreateInfoKHR: If type is VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR"
+                             "and compactedSize is 0, maxGeometryCount must be 1.");
         }
 
         if (pCreateInfo->flags & VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR &&
@@ -3888,8 +3954,24 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
                 }
             }
         }
+        if (pCreateInfo->type == VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR &&
+            (pCreateInfo->maxGeometryCount > phys_dev_ext_props.ray_tracing_propsKHR.maxGeometryCount)) {
+            skip |= LogError(device, "VUID-VkAccelerationStructureCreateInfoKHR-type-03491",
+                             "VkAccelerationStructureCreateInfoKHR: If type is VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR"
+                             "then maxGeometryCount %d must be less than or equal to VkPhysicalDeviceRayTracingPropertiesKHR "
+                             "maxGeometryCount %d.",
+                             pCreateInfo->maxGeometryCount, phys_dev_ext_props.ray_tracing_propsKHR.maxGeometryCount);
+        }
     }
-
+    const auto *raytracing_features = lvl_find_in_chain<VkPhysicalDeviceRayTracingFeaturesKHR>(device_createinfo_pnext);
+    if (!raytracing_features || raytracing_features->rayTracingAccelerationStructureCaptureReplay == VK_FALSE) {
+        if (pCreateInfo->deviceAddress != 0) {
+            skip |=
+                LogError(device, "VUID-VkAccelerationStructureCreateInfoKHR-deviceAddress-03500",
+                         "VkAccelerationStructureCreateInfoKHR: If deviceAddress is not 0, "
+                         "VkPhysicalDeviceRayTracingFeaturesKHR::rayTracingAccelerationStructureCaptureReplay must be VK_TRUE.");
+        }
+    }
     return skip;
 }
 
@@ -3920,6 +4002,19 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDe
                              "(=%" PRIu32 ") must equal VkRayTracingPipelineCreateInfoNV::stageCount(=%" PRIu32 ").",
                              i, feedback_struct->pipelineStageCreationFeedbackCount, pCreateInfos[i].stageCount);
         }
+
+        const auto *pipeline_cache_contol_features =
+            lvl_find_in_chain<VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT>(device_createinfo_pnext);
+        if (!pipeline_cache_contol_features || pipeline_cache_contol_features->pipelineCreationCacheControl == VK_FALSE) {
+            if (pCreateInfos[i].flags & (VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT |
+                                         VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT)) {
+                skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-pipelineCreationCacheControl-02905",
+                                 "vkCreateRayTracingPipelinesNV(): If the pipelineCreationCacheControl feature is not enabled,"
+                                 "flags must not include VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT or"
+                                 "VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT.");
+            }
+        }
+
         if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV) {
             skip |=
                 LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-flags-02904",
@@ -4012,6 +4107,31 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(VkD
                              "(=%" PRIu32 ") must equal VkRayTracingPipelineCreateInfoKHR::stageCount(=%" PRIu32 ").",
                              i, feedback_struct->pipelineStageCreationFeedbackCount, pCreateInfos[i].stageCount);
         }
+        const auto *pipeline_cache_contol_features =
+            lvl_find_in_chain<VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT>(device_createinfo_pnext);
+        if (!pipeline_cache_contol_features || pipeline_cache_contol_features->pipelineCreationCacheControl == VK_FALSE) {
+            if (pCreateInfos[i].flags & (VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT |
+                                         VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT)) {
+                skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pipelineCreationCacheControl-02905",
+                                 "vkCreateRayTracingPipelinesKHR(): If the pipelineCreationCacheControl feature is not enabled,"
+                                 "flags must not include VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT or"
+                                 "VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT.");
+            }
+        }
+        const auto *raytracing_features = lvl_find_in_chain<VkPhysicalDeviceRayTracingFeaturesKHR>(device_createinfo_pnext);
+        if (!raytracing_features || raytracing_features->rayTracingPrimitiveCulling == VK_FALSE) {
+            if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR) {
+                skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-rayTracingPrimitiveCulling-03472",
+                                 "vkCreateRayTracingPipelinesKHR(): If the rayTracingPrimitiveCulling feature is not enabled,"
+                                 "flags must not include VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR.");
+            }
+            if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR) {
+                skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-rayTracingPrimitiveCulling-03473",
+                                 "vkCreateRayTracingPipelinesKHR(): If the rayTracingPrimitiveCulling feature is not enabled,"
+                                 "flags must not include VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR .");
+            }
+        }
+
         if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_INDIRECT_BINDABLE_BIT_NV) {
             skip |=
                 LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-flags-02904",
@@ -4293,5 +4413,76 @@ bool StatelessValidation::manual_PreCallValidateImportSemaphoreFdKHR(
                          string_VkExternalSemaphoreHandleTypeFlagBits(pImportSemaphoreFdInfo->handleType),
                          string_VkExternalSemaphoreHandleTypeFlags(supported_handle_types).c_str());
     }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureToMemoryKHR(
+    VkDevice device, const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo) const {
+    bool skip = false;
+    if (pInfo->mode != VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR) {
+        skip |= LogError(device, "VUID-VkCopyAccelerationStructureToMemoryInfoKHR-mode-03412",
+                         "vkCopyAccelerationStructureToMemoryKHR: mode must be VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR.");
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(
+    VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo) const {
+    bool skip = false;
+    if (pInfo->mode != VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR) {
+        skip |=  // to update VUID to VkCmdCopyAccelerationStructureToMemoryInfoKHR after spec update
+            LogError(commandBuffer, "VUID-VkCopyAccelerationStructureToMemoryInfoKHR-mode-03412",
+                     "vkCmdCopyAccelerationStructureToMemoryKHR: mode must be VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR.");
+    }
+    return skip;
+}
+
+bool StatelessValidation::ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR *pInfo,
+                                                                   const char *api_name) const {
+    bool skip = false;
+    if (!(pInfo->mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR ||
+          pInfo->mode == VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR)) {
+        skip |= LogError(device, "VUID-VkCopyAccelerationStructureInfoKHR-mode-03410",
+                         "(%s): mode must be VK_COPY_ACCELERATION_STRUCTURE_MODE_COMPACT_KHR"
+                         "or VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR.",
+                         api_name);
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureKHR(
+    VkDevice device, const VkCopyAccelerationStructureInfoKHR *pInfo) const {
+    bool skip = false;
+    skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, "vkCopyAccelerationStructureKHR()");
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureKHR(
+    VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureInfoKHR *pInfo) const {
+    bool skip = false;
+    skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, "vkCmdCopyAccelerationStructureKHR()");
+    return skip;
+}
+
+bool StatelessValidation::ValidateCopyMemoryToAccelerationStructureInfoKHR(const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo,
+                                                                           const char *api_name) const {
+    bool skip = false;
+    if (pInfo->mode != VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR) {
+        skip |= LogError(device, "VUID-VkCopyMemoryToAccelerationStructureInfoKHR-mode-03413",
+                         "(%s): mode must be VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR.", api_name);
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCopyMemoryToAccelerationStructureKHR(
+    VkDevice device, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo) const {
+    bool skip = false;
+    skip |= ValidateCopyMemoryToAccelerationStructureInfoKHR(pInfo, "vkCopyMemoryToAccelerationStructureKHR()");
+    return skip;
+}
+bool StatelessValidation::manual_PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
+    VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo) const {
+    bool skip = false;
+    skip |= ValidateCopyMemoryToAccelerationStructureInfoKHR(pInfo, "vkCmdCopyMemoryToAccelerationStructureKHR()");
     return skip;
 }

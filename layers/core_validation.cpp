@@ -5049,6 +5049,35 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureHandleNV(VkDevice device
     return skip;
 }
 
+bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureKHR(
+    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
+    const VkAccelerationStructureBuildOffsetInfoKHR *const *ppOffsetInfos) const {
+    bool skip = false;
+    if (pInfos != NULL) {
+        for (uint32_t info_index = 0; info_index < infoCount; ++info_index) {
+            const ACCELERATION_STRUCTURE_STATE *src_as_state =
+                GetAccelerationStructureState(pInfos[info_index].srcAccelerationStructure);
+            if (pInfos[info_index].update == VK_TRUE) {
+                if (pInfos[info_index].srcAccelerationStructure == VK_NULL_HANDLE) {
+                    skip |= LogError(commandBuffer, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-update-03537",
+                                     "vkCmdBuildAccelerationStructureKHR(): If update is VK_TRUE, srcAccelerationStructure must "
+                                     "not be VK_NULL_HANDLE");
+                } else {
+                    if (src_as_state == nullptr || !src_as_state->built ||
+                        !(src_as_state->build_info.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR)) {
+                        skip |= LogError(
+                            commandBuffer, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-update-03538",
+                            "vkCmdBuildAccelerationStructureKHR(): If update is VK_TRUE, srcAccelerationStructure must have"
+                            "been built before with VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR set"
+                            "in VkAccelerationStructureBuildGeometryInfoKHR flags");
+                    }
+                }
+            }
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer,
                                                                 const VkAccelerationStructureInfoNV *pInfo, VkBuffer instanceData,
                                                                 VkDeviceSize instanceOffset, VkBool32 update,
@@ -5193,6 +5222,19 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
                              "VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV must be less than "
                              "or equal to the size of scratch minus scratchOffset");
         }
+    }
+    if (instanceData != VK_NULL_HANDLE) {
+        const auto buffer_state = GetBufferState(instanceData);
+        if (buffer_state != nullptr) {
+            skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, true,
+                                             "VUID-VkAccelerationStructureInfoNV-instanceData-02782",
+                                             "vkCmdBuildAccelerationStructureNV()", "VK_BUFFER_USAGE_RAY_TRACING_BIT_NV");
+        }
+    }
+    if (scratch_buffer_state != nullptr) {
+        skip |= ValidateBufferUsageFlags(scratch_buffer_state, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, true,
+                                         "VUID-VkAccelerationStructureInfoNV-scratch-02781", "vkCmdBuildAccelerationStructureNV()",
+                                         "VK_BUFFER_USAGE_RAY_TRACING_BIT_NV");
     }
     return skip;
 }

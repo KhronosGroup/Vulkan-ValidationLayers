@@ -863,6 +863,9 @@ class CoreChecks : public ValidationStateTracker {
                                                            const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos) const;
     bool PreCallValidateGetAccelerationStructureHandleNV(VkDevice device, VkAccelerationStructureNV accelerationStructure,
                                                          size_t dataSize, void* pData) const;
+    bool PreCallValidateCmdBuildAccelerationStructureKHR(
+        VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+        const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos) const;
     bool PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
                                                         VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
                                                         VkAccelerationStructureNV dst, VkAccelerationStructureNV src,

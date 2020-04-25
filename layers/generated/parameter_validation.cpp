@@ -11848,6 +11848,7 @@ bool StatelessValidation::PreCallValidateCopyAccelerationStructureKHR(
 
         skip |= validate_ranged_enum("vkCopyAccelerationStructureKHR", "pInfo->mode", "VkCopyAccelerationStructureModeKHR", AllVkCopyAccelerationStructureModeKHREnums, pInfo->mode, "VUID-VkCopyAccelerationStructureInfoKHR-mode-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateCopyAccelerationStructureKHR(device, pInfo);
     return skip;
 }
 
@@ -11875,6 +11876,7 @@ bool StatelessValidation::PreCallValidateCopyAccelerationStructureToMemoryKHR(
 
         skip |= validate_ranged_enum("vkCopyAccelerationStructureToMemoryKHR", "pInfo->mode", "VkCopyAccelerationStructureModeKHR", AllVkCopyAccelerationStructureModeKHREnums, pInfo->mode, "VUID-VkCopyAccelerationStructureToMemoryInfoKHR-mode-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateCopyAccelerationStructureToMemoryKHR(device, pInfo);
     return skip;
 }
 
@@ -11902,6 +11904,7 @@ bool StatelessValidation::PreCallValidateCopyMemoryToAccelerationStructureKHR(
 
         skip |= validate_ranged_enum("vkCopyMemoryToAccelerationStructureKHR", "pInfo->mode", "VkCopyAccelerationStructureModeKHR", AllVkCopyAccelerationStructureModeKHREnums, pInfo->mode, "VUID-VkCopyMemoryToAccelerationStructureInfoKHR-mode-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateCopyMemoryToAccelerationStructureKHR(device, pInfo);
     return skip;
 }
 
@@ -11951,6 +11954,7 @@ bool StatelessValidation::PreCallValidateCmdCopyAccelerationStructureKHR(
 
         skip |= validate_ranged_enum("vkCmdCopyAccelerationStructureKHR", "pInfo->mode", "VkCopyAccelerationStructureModeKHR", AllVkCopyAccelerationStructureModeKHREnums, pInfo->mode, "VUID-VkCopyAccelerationStructureInfoKHR-mode-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateCmdCopyAccelerationStructureKHR(commandBuffer, pInfo);
     return skip;
 }
 
@@ -11978,6 +11982,7 @@ bool StatelessValidation::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR
 
         skip |= validate_ranged_enum("vkCmdCopyAccelerationStructureToMemoryKHR", "pInfo->mode", "VkCopyAccelerationStructureModeKHR", AllVkCopyAccelerationStructureModeKHREnums, pInfo->mode, "VUID-VkCopyAccelerationStructureToMemoryInfoKHR-mode-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(commandBuffer, pInfo);
     return skip;
 }
 
@@ -12005,6 +12010,7 @@ bool StatelessValidation::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR
 
         skip |= validate_ranged_enum("vkCmdCopyMemoryToAccelerationStructureKHR", "pInfo->mode", "VkCopyAccelerationStructureModeKHR", AllVkCopyAccelerationStructureModeKHREnums, pInfo->mode, "VUID-VkCopyMemoryToAccelerationStructureInfoKHR-mode-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(commandBuffer, pInfo);
     return skip;
 }
 
