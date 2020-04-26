@@ -3813,6 +3813,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImageCreate) {
     // undefined format
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-01975");
     m_errorMonitor->SetUnexpectedError("VUID_Undefined");
+    m_errorMonitor->SetUnexpectedError("UNASSIGNED-CoreValidation-Image-FormatNotSupported");
     vk::CreateImage(dev, &ici, NULL, &img);
     m_errorMonitor->VerifyFound();
     reset_img();
@@ -4272,6 +4273,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateYCbCrSampler) {
     sycci.ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL;
 
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-format-01904");
+    m_errorMonitor->SetUnexpectedError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651");
     vk::CreateSamplerYcbcrConversion(dev, &sycci, NULL, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 
@@ -4281,6 +4283,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateYCbCrSampler) {
     sycci.format = VK_FORMAT_R8G8B8A8_UNORM;
     sycci.pNext = &efa;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerYcbcrConversionCreateInfo-format-01904");
+    m_errorMonitor->SetUnexpectedError("VUID-VkSamplerYcbcrConversionCreateInfo-xChromaOffset-01651");
     vk::CreateSamplerYcbcrConversion(dev, &sycci, NULL, &ycbcr_conv);
     m_errorMonitor->VerifyFound();
 }
@@ -4632,6 +4635,8 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
     }
 
     // Import as buffer requires format AHB_FMT_BLOB and usage AHB_USAGE_GPU_DATA_BUFFER
+    // VUID prints out once for invalid Format and invalid Usage
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01881");
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01881");
     // Also causes "non-dedicated allocation format/usage" error
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-02384");
