@@ -277,8 +277,9 @@ VkRenderFramework::VkRenderFramework()
       m_depth_clear_color(1.0),
       m_stencil_clear_color(0),
       m_depthStencil(NULL) {
-    memset(&m_renderPassBeginInfo, 0, sizeof(m_renderPassBeginInfo));
-    m_renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    m_framebuffer_info = lvl_init_struct<VkFramebufferCreateInfo>();
+    m_renderPass_info = lvl_init_struct<VkRenderPassCreateInfo>();
+    m_renderPassBeginInfo = lvl_init_struct<VkRenderPassBeginInfo>();
 
     // clear the back buffer to dark grey
     m_clear_color.float32[0] = 0.25f;
@@ -723,9 +724,9 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets) { InitRenderTarget(ta
 void VkRenderFramework::InitRenderTarget(VkImageView *dsBinding) { InitRenderTarget(1, dsBinding); }
 
 void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBinding) {
-    vector<VkAttachmentDescription> attachments;
+    vector<VkAttachmentDescription> &attachments = m_renderPass_attachments;
     vector<VkAttachmentReference> color_references;
-    vector<VkImageView> bindings;
+    vector<VkImageView> &bindings = m_framebuffer_attachments;
     attachments.reserve(targets + 1);  // +1 for dsBinding
     color_references.reserve(targets);
     bindings.reserve(targets + 1);  // +1 for dsBinding
@@ -737,7 +738,7 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
     att.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     att.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     att.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    att.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    att.initialLayout = (m_clear_via_load_op) ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_GENERAL;
     att.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkAttachmentReference ref = {};
@@ -777,7 +778,9 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
         m_renderTargets.push_back(std::move(img));
     }
 
-    VkSubpassDescription subpass = {};
+    m_renderPass_subpasses.clear();
+    m_renderPass_subpasses.resize(1);
+    VkSubpassDescription &subpass = m_renderPass_subpasses[0];
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.flags = 0;
     subpass.inputAttachmentCount = 0;
@@ -814,14 +817,17 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
     subpass.preserveAttachmentCount = 0;
     subpass.pPreserveAttachments = NULL;
 
-    VkRenderPassCreateInfo rp_info = {};
+    VkRenderPassCreateInfo &rp_info = m_renderPass_info;
     rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     rp_info.attachmentCount = attachments.size();
     rp_info.pAttachments = attachments.data();
-    rp_info.subpassCount = 1;
-    rp_info.pSubpasses = &subpass;
-    VkSubpassDependency subpass_dep = {};
+    rp_info.subpassCount = m_renderPass_subpasses.size();
+    rp_info.pSubpasses = m_renderPass_subpasses.data();
+
+    m_renderPass_dependencies.clear();
     if (m_addRenderPassSelfDependency) {
+        m_renderPass_dependencies.resize(1);
+        VkSubpassDependency &subpass_dep = m_renderPass_dependencies[0];
         // Add a subpass self-dependency to subpass 0 of default renderPass
         subpass_dep.srcSubpass = 0;
         subpass_dep.dstSubpass = 0;
@@ -844,13 +850,15 @@ void VkRenderFramework::InitRenderTarget(uint32_t targets, VkImageView *dsBindin
         subpass_dep.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
         rp_info.dependencyCount = 1;
         rp_info.pDependencies = &subpass_dep;
+    } else {
+        rp_info.dependencyCount = 0;
+        rp_info.pDependencies = nullptr;
     }
 
     vk::CreateRenderPass(device(), &rp_info, NULL, &m_renderPass);
-    renderPass_info_ = rp_info;  // Save away a copy for tests that need access to the render pass state
     // Create Framebuffer and RenderPass with color attachments and any
     // depth/stencil attachment
-    VkFramebufferCreateInfo fb_info = {};
+    VkFramebufferCreateInfo &fb_info = m_framebuffer_info;
     fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     fb_info.pNext = NULL;
     fb_info.renderPass = m_renderPass;
