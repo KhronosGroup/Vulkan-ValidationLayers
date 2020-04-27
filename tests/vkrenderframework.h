@@ -207,7 +207,7 @@ class VkRenderFramework : public VkTestFramework {
     VkDeviceObj *DeviceObj() const { return m_device; }
     VkPhysicalDevice gpu();
     VkRenderPass renderPass() { return m_renderPass; }
-    const VkRenderPassCreateInfo &RenderPassInfo() const { return renderPass_info_; };
+    const VkRenderPassCreateInfo &RenderPassInfo() const { return m_renderPass_info; };
     VkFramebuffer framebuffer() { return m_framebuffer; }
     ErrorMonitor &Monitor();
 
@@ -269,8 +269,15 @@ class VkRenderFramework : public VkTestFramework {
     VkCommandPoolObj *m_commandPool;
     VkCommandBufferObj *m_commandBuffer;
     VkRenderPass m_renderPass;
-    VkRenderPassCreateInfo renderPass_info_ = {};
+    VkRenderPassCreateInfo m_renderPass_info = {};
+    std::vector<VkAttachmentDescription> m_renderPass_attachments;
+    std::vector<VkSubpassDescription> m_renderPass_subpasses;
+    std::vector<VkSubpassDependency> m_renderPass_dependencies;
+
     VkFramebuffer m_framebuffer;
+    VkFramebufferCreateInfo m_framebuffer_info;
+    std::vector<VkImageView> m_framebuffer_attachments;
+
     VkSurfaceKHR m_surface;
     VkSwapchainKHR m_swapchain;
     std::vector<VkViewport> m_viewports;

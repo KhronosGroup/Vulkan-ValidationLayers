@@ -671,7 +671,7 @@ TEST_F(VkArmBestPracticesLayerTest, MultisampledBlending) {
     rp_info.pSubpasses = &subpass;
 
     vk::CreateRenderPass(m_device->device(), &rp_info, nullptr, &m_renderPass);
-    renderPass_info_ = rp_info;
+    m_renderPass_info = rp_info;
 
     VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
     pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
