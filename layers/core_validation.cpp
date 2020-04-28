@@ -11333,6 +11333,18 @@ bool CoreChecks::PreCallValidateReleaseProfilingLockKHR(VkDevice device) const {
     return skip;
 }
 
+bool CoreChecks::PreCallValidateCmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void *pCheckpointMarker) const {
+    {
+        const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+        assert(cb_state);
+        bool skip = ValidateCmdQueueFlags(cb_state, "vkCmdSetCheckpointNV()",
+                                          VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT,
+                                          "VUID-vkCmdSetCheckpointNV-commandBuffer-cmdpool");
+        skip |= ValidateCmd(cb_state, CMD_SETCHECKPOINTNV, "vkCmdSetCheckpointNV()");
+        return skip;
+    }
+}
+
 void PIPELINE_STATE::initGraphicsPipeline(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                                           std::shared_ptr<const RENDER_PASS_STATE> &&rpstate) {
     reset();
