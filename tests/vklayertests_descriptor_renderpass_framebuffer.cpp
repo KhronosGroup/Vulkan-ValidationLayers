@@ -720,6 +720,32 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentDescriptionInvalidFinalLayout) {
             attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
         }
     }
+
+    // Test invalid layouts for color formats
+    attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03280",
+                         "VUID-VkAttachmentDescription2-format-03294");
+
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03282",
+                         "VUID-VkAttachmentDescription2-format-03296");
+
+    // Test invalid layouts for depth/stencil format
+    if (depth_stencil_format) {
+        attach_desc.format = depth_stencil_format;
+        attach_desc.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03281",
+                             "VUID-VkAttachmentDescription2-format-03295");
+
+        attach_desc.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+        attach_desc.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, rp2Supported, "VUID-VkAttachmentDescription-format-03283",
+                             "VUID-VkAttachmentDescription2-format-03297");
+    }
 }
 
 TEST_F(VkLayerTest, RenderPassCreateAttachmentsMisc) {
