@@ -24,7 +24,7 @@
 #include "spirv-tools/libspirv.h"
 #include "spirv-tools/optimizer.hpp"
 #include "spirv-tools/instrument.hpp"
-#include <SPIRV/spirv.hpp>
+#include <spirv/unified1/spirv.hpp>
 #include <algorithm>
 #include <regex>
 

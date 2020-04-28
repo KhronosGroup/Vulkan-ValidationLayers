@@ -15,16 +15,25 @@
       ]
     },
     {
-      "name" : "Vulkan-Headers",
-      "url" : "https://github.com/KhronosGroup/Vulkan-Headers.git",
-      "sub_dir" : "Vulkan-Headers",
-      "build_dir" : "Vulkan-Headers/build",
-      "install_dir" : "Vulkan-Headers/build/install",
-      "commit" : "v1.2.137"
+      "name": "Vulkan-Headers",
+      "url": "https://github.com/KhronosGroup/Vulkan-Headers.git",
+      "sub_dir": "Vulkan-Headers",
+      "build_dir": "Vulkan-Headers/build",
+      "install_dir": "Vulkan-Headers/build/install",
+      "commit": "v1.2.137"
+    },
+    {
+      "name": "SPIRV-Headers",
+      "url": "https://github.com/KhronosGroup/SPIRV-Headers.git",
+      "sub_dir": "SPIRV-Headers",
+      "build_dir": "SPIRV-Headers/build",
+      "install_dir": "SPIRV-Headers/build/install",
+      "commit": "master"
     }
   ],
   "install_names" : {
       "glslang" : "GLSLANG_INSTALL_DIR",
-      "Vulkan-Headers" : "VULKAN_HEADERS_INSTALL_DIR"
-    }
+      "Vulkan-Headers" : "VULKAN_HEADERS_INSTALL_DIR",
+      "SPIRV-Headers" : "SPIRV_HEADERS_INSTALL_DIR"
+  }
 }
