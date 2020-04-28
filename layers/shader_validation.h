@@ -28,7 +28,7 @@
 #include <vector>
 
 #include "vulkan/vulkan.h"
-#include <SPIRV/spirv.hpp>
+#include <spirv/unified1/spirv.hpp>
 #include <generated/spirv_tools_commit_id.h>
 #include "spirv-tools/optimizer.hpp"
 #include "core_validation_types.h"

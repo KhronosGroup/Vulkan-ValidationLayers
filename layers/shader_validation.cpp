@@ -31,7 +31,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <SPIRV/spirv.hpp>
+#include <spirv/unified1/spirv.hpp>
 #include "vk_loader_platform.h"
 #include "vk_enum_string_helper.h"
 #include "vk_layer_data.h"
