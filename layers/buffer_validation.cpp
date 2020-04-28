@@ -2884,7 +2884,7 @@ bool CoreChecks::ValidateClearAttachmentExtent(VkCommandBuffer command_buffer, u
     bool skip = false;
     const IMAGE_VIEW_STATE *image_view_state = nullptr;
     if (framebuffer && (fb_attachment != VK_ATTACHMENT_UNUSED) && (fb_attachment < framebuffer->createInfo.attachmentCount)) {
-        image_view_state = GetImageViewState(framebuffer->createInfo.pAttachments[fb_attachment]);
+        image_view_state = GetAttachmentImageViewState(GetCBState(command_buffer), framebuffer, fb_attachment);
     }
 
     for (uint32_t j = 0; j < rect_count; j++) {
