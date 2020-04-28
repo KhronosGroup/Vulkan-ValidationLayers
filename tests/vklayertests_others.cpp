@@ -4542,7 +4542,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     vk::DestroyImage(dev, img, NULL);
     vk::FreeMemory(dev, img_mem, NULL);
 }
-#endif // DISABLEUNTILAHBWORKS
+#endif  // DISABLEUNTILAHBWORKS
 
 TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
     TEST_DESCRIPTION("Verify AndroidHardwareBuffer import as buffer.");
@@ -7650,5 +7650,40 @@ TEST_F(VkLayerTest, ImageDrmFormatModifer) {
     image_info.tiling = VK_IMAGE_TILING_LINEAR;
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-pNext-02262");
     vk::CreateImage(device(), &image_info, nullptr, &image);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, ValidateNVDeviceDiagnosticCheckpoints) {
+    TEST_DESCRIPTION("General testing of VK_NV_device_diagnostic_checkpoints");
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s not supported by device; skipped.\n", kSkipPrefix,
+               VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    auto vkGetQueueCheckpointDataNV =
+        (PFN_vkGetQueueCheckpointDataNV)vk::GetDeviceProcAddr(m_device->device(), "vkGetQueueCheckpointDataNV");
+
+    auto vkCmdSetCheckpointNV = (PFN_vkCmdSetCheckpointNV)vk::GetDeviceProcAddr(m_device->device(), "vkCmdSetCheckpointNV");
+
+    ASSERT_TRUE(vkGetQueueCheckpointDataNV != nullptr);
+    ASSERT_TRUE(vkCmdSetCheckpointNV != nullptr);
+
+    uint32_t data = 100;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetCheckpointNV-commandBuffer-recording");
+    vkCmdSetCheckpointNV(m_commandBuffer->handle(), &data);
     m_errorMonitor->VerifyFound();
 }
