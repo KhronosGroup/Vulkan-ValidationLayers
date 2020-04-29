@@ -2252,6 +2252,228 @@ TEST_F(VkLayerTest, BindInvalidMemoryNoCheck) {
     }
 }
 
+TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
+    TEST_DESCRIPTION("These tests deal with VK_KHR_bind_memory_2 and invalid VkBindImageMemoryInfo* pBindInfos");
+
+    // Enable KHR YCbCr req'd extensions for Disjoint Bit
+    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (mp_extensions) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+
+    bool bind_memory_2_extension = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+
+    if (mp_extensions) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    } else if (bind_memory_2_extension) {
+        // bind_memory_2 extension is subset of mp_extensions
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    } else {
+        printf("%s test requires VK_KHR_bind_memory2 extensions, not available.  Skipping.\n", kSkipPrefix);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // Create aliased function pointers for 1.0 and 1.1 contexts
+    PFN_vkBindImageMemory2KHR vkBindImageMemory2Function = nullptr;
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+        vkBindImageMemory2Function = vk::BindImageMemory2;
+    } else {
+        vkBindImageMemory2Function = (PFN_vkBindImageMemory2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkBindImageMemory2KHR");
+    }
+
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = NULL;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 256;
+    image_create_info.extent.height = 256;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_create_info.flags = 0;
+
+    {
+        // Create 2 image with 2 memory objects
+        VkImage image_a = VK_NULL_HANDLE;
+        VkImage image_b = VK_NULL_HANDLE;
+        VkDeviceMemory image_a_mem = VK_NULL_HANDLE;
+        VkDeviceMemory image_b_mem = VK_NULL_HANDLE;
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, NULL, &image_a));
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, NULL, &image_b));
+
+        VkMemoryRequirements image_mem_reqs = {};
+        vk::GetImageMemoryRequirements(device(), image_a, &image_mem_reqs);
+        VkMemoryAllocateInfo image_alloc_info = {};
+        image_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        image_alloc_info.allocationSize = image_mem_reqs.size;
+        ASSERT_TRUE(m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, NULL, &image_a_mem));
+        vk::GetImageMemoryRequirements(device(), image_b, &image_mem_reqs);
+        image_alloc_info.allocationSize = image_mem_reqs.size;
+        ASSERT_TRUE(m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, NULL, &image_b_mem));
+
+        // Try binding same image twice in array
+        VkBindImageMemoryInfo bind_image_info[3];
+        bind_image_info[0].sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
+        bind_image_info[0].pNext = nullptr;
+        bind_image_info[0].image = image_a;
+        bind_image_info[0].memory = image_a_mem;
+        bind_image_info[0].memoryOffset = 0;
+        bind_image_info[1].sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
+        bind_image_info[1].pNext = nullptr;
+        bind_image_info[1].image = image_b;
+        bind_image_info[1].memory = image_b_mem;
+        bind_image_info[1].memoryOffset = 0;
+        bind_image_info[2] = bind_image_info[0];  // duplicate bind
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkBindImageMemory2-duplicate");
+        vkBindImageMemory2Function(device(), 3, bind_image_info);
+        m_errorMonitor->VerifyFound();
+
+        // Bind same image to 2 different memory in same array
+        bind_image_info[1].image = image_a;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkBindImageMemory2-duplicate");
+        vkBindImageMemory2Function(device(), 2, bind_image_info);
+        m_errorMonitor->VerifyFound();
+
+        vk::FreeMemory(device(), image_a_mem, NULL);
+        vk::FreeMemory(device(), image_b_mem, NULL);
+        vk::DestroyImage(device(), image_a, NULL);
+        vk::DestroyImage(device(), image_b, NULL);
+    }
+
+    if (mp_extensions) {
+        const VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+
+        // Check for support of format used by all multi-planar tests
+        VkFormatProperties mp_format_properties;
+        vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), mp_format, &mp_format_properties);
+        if (0 ==
+            (mp_format_properties.optimalTilingFeatures & (VK_FORMAT_FEATURE_DISJOINT_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT))) {
+            printf("%s test requires disjoint support extensions, not available.  Skipping.\n", kSkipPrefix);
+            return;
+        }
+
+        PFN_vkGetImageMemoryRequirements2KHR vkGetImageMemoryRequirements2Function = nullptr;
+        if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
+            vkGetImageMemoryRequirements2Function = vk::GetImageMemoryRequirements2;
+        } else {
+            vkGetImageMemoryRequirements2Function =
+                (PFN_vkGetImageMemoryRequirements2KHR)vk::GetDeviceProcAddr(m_device->handle(), "vkGetImageMemoryRequirements2KHR");
+        }
+
+        // Creat 1 normal, not disjoint image
+        VkImage normal_image = VK_NULL_HANDLE;
+        VkDeviceMemory normal_image_mem = VK_NULL_HANDLE;
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &image_create_info, NULL, &normal_image));
+        VkMemoryRequirements image_mem_reqs = {};
+        vk::GetImageMemoryRequirements(device(), normal_image, &image_mem_reqs);
+        VkMemoryAllocateInfo image_alloc_info = {};
+        image_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        image_alloc_info.allocationSize = image_mem_reqs.size;
+        ASSERT_TRUE(m_device->phy().set_memory_type(image_mem_reqs.memoryTypeBits, &image_alloc_info, 0));
+        ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, NULL, &normal_image_mem));
+
+        // Create 2 disjoint images with memory backing each plane
+        VkImageCreateInfo mp_image_create_info = image_create_info;
+        mp_image_create_info.format = mp_format;
+        mp_image_create_info.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
+
+        VkImage mp_image_a = VK_NULL_HANDLE;
+        VkImage mp_image_b = VK_NULL_HANDLE;
+        VkDeviceMemory mp_image_a_mem[2] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
+        VkDeviceMemory mp_image_b_mem[2] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &mp_image_create_info, NULL, &mp_image_a));
+        ASSERT_VK_SUCCESS(vk::CreateImage(device(), &mp_image_create_info, NULL, &mp_image_b));
+
+        AllocateDisjointMemory(m_device, vkGetImageMemoryRequirements2Function, mp_image_a, &mp_image_a_mem[0],
+                               VK_IMAGE_ASPECT_PLANE_0_BIT);
+        AllocateDisjointMemory(m_device, vkGetImageMemoryRequirements2Function, mp_image_a, &mp_image_a_mem[1],
+                               VK_IMAGE_ASPECT_PLANE_1_BIT);
+        AllocateDisjointMemory(m_device, vkGetImageMemoryRequirements2Function, mp_image_b, &mp_image_b_mem[0],
+                               VK_IMAGE_ASPECT_PLANE_0_BIT);
+        AllocateDisjointMemory(m_device, vkGetImageMemoryRequirements2Function, mp_image_b, &mp_image_b_mem[1],
+                               VK_IMAGE_ASPECT_PLANE_1_BIT);
+
+        VkBindImagePlaneMemoryInfo plane_memory_info[2];
+        plane_memory_info[0].sType = VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO;
+        plane_memory_info[0].pNext = nullptr;
+        plane_memory_info[0].planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
+        plane_memory_info[1].sType = VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO;
+        plane_memory_info[1].pNext = nullptr;
+        plane_memory_info[1].planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
+
+        // set all sType and memoryOffset as they are the same
+        VkBindImageMemoryInfo bind_image_info[6];
+        for (int i = 0; i < 6; i++) {
+            bind_image_info[i].sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
+            bind_image_info[i].memoryOffset = 0;
+        }
+
+        // Try only binding part of image_b
+        bind_image_info[0].pNext = (void *)&plane_memory_info[0];
+        bind_image_info[0].image = mp_image_a;
+        bind_image_info[0].memory = mp_image_a_mem[0];
+        bind_image_info[1].pNext = (void *)&plane_memory_info[1];
+        bind_image_info[1].image = mp_image_a;
+        bind_image_info[1].memory = mp_image_a_mem[1];
+        bind_image_info[2].pNext = (void *)&plane_memory_info[0];
+        bind_image_info[2].image = mp_image_b;
+        bind_image_info[2].memory = mp_image_b_mem[0];
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory2-pBindInfos-02858");
+        vkBindImageMemory2Function(device(), 3, bind_image_info);
+        m_errorMonitor->VerifyFound();
+
+        // Same thing, but mix in a non-disjoint image
+        bind_image_info[3].pNext = nullptr;
+        bind_image_info[3].image = normal_image;
+        bind_image_info[3].memory = normal_image_mem;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory2-pBindInfos-02858");
+        vkBindImageMemory2Function(device(), 4, bind_image_info);
+        m_errorMonitor->VerifyFound();
+
+        // Try binding image_b plane 1 twice
+        // Valid case where binding disjoint and non-disjoint
+        bind_image_info[4].pNext = (void *)&plane_memory_info[1];
+        bind_image_info[4].image = mp_image_b;
+        bind_image_info[4].memory = mp_image_b_mem[1];
+        bind_image_info[5].pNext = (void *)&plane_memory_info[1];
+        bind_image_info[5].image = mp_image_b;
+        bind_image_info[5].memory = mp_image_b_mem[1];
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkBindImageMemory2-duplicate");
+        vkBindImageMemory2Function(device(), 6, bind_image_info);
+        m_errorMonitor->VerifyFound();
+
+        // Valid case of binding 2 disjoint image and normal image by removing duplicate
+        m_errorMonitor->ExpectSuccess();
+        vkBindImageMemory2Function(device(), 5, bind_image_info);
+        m_errorMonitor->VerifyNotFound();
+
+        vk::FreeMemory(device(), normal_image_mem, NULL);
+        vk::FreeMemory(device(), mp_image_a_mem[0], NULL);
+        vk::FreeMemory(device(), mp_image_a_mem[1], NULL);
+        vk::FreeMemory(device(), mp_image_b_mem[0], NULL);
+        vk::FreeMemory(device(), mp_image_b_mem[1], NULL);
+        vk::DestroyImage(device(), normal_image, NULL);
+        vk::DestroyImage(device(), mp_image_a, NULL);
+        vk::DestroyImage(device(), mp_image_b, NULL);
+    }
+}
+
 TEST_F(VkLayerTest, BindMemoryToDestroyedObject) {
     VkResult err;
     bool pass;
