@@ -57,7 +57,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
-    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         printf("%s GPU-Assisted validation test requires Vulkan 1.1+.\n", kSkipPrefix);
         return;
     }
@@ -528,7 +528,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     }
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
-    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         printf("%s GPU-Assisted validation test requires Vulkan 1.1+.\n", kSkipPrefix);
         return;
     }
@@ -1262,7 +1262,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
 
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2, pool_flags));
-    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         printf("%s GPU-Assisted validation test requires Vulkan 1.1+.\n", kSkipPrefix);
         return;
     }
@@ -1472,7 +1472,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintf) {
         return;
     }
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
-    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         printf("%s GPU-Assisted printf test requires Vulkan 1.1+.\n", kSkipPrefix);
         return;
     }

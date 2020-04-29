@@ -7582,7 +7582,7 @@ TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
     }
 
     // These tests rely on having the Maintenance1 extension not being enabled, and are invalid on all but version 1.0
-    if (m_device->props.apiVersion < VK_API_VERSION_1_1) {
+    if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         // Try baseArrayLayer >= image.arrayLayers with VK_REMAINING_ARRAY_LAYERS
         {
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, VK_REMAINING_ARRAY_LAYERS};

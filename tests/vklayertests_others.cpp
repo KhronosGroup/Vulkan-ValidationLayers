@@ -1309,7 +1309,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoSync2KHR) {
     if (InstanceExtensionSupported(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
         extension_dependency_satisfied = true;
-    } else if (m_instance_api_version < VK_API_VERSION_1_1) {
+    } else if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         printf("%s vkAcquireNextImage2KHR not supported, skipping test\n", kSkipPrefix);
         return;
     }
@@ -1417,7 +1417,7 @@ TEST_F(VkLayerTest, SwapchainAcquireImageNoBinarySemaphore2KHR) {
     if (InstanceExtensionSupported(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
         extension_dependency_satisfied = true;
-    } else if (m_instance_api_version < VK_API_VERSION_1_1) {
+    } else if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         printf("%s vkAcquireNextImage2KHR not supported, skipping test\n", kSkipPrefix);
         return;
     }
@@ -1518,7 +1518,7 @@ TEST_F(VkLayerTest, SwapchainAcquireTooManyImages2KHR) {
     if (InstanceExtensionSupported(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
         extension_dependency_satisfied = true;
-    } else if (m_instance_api_version < VK_API_VERSION_1_1) {
+    } else if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
         printf("%s vkAcquireNextImage2KHR not supported, skipping test\n", kSkipPrefix);
         return;
     }
@@ -4317,7 +4317,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferPhysDevImageFormatProp2) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    if ((m_instance_api_version < VK_API_VERSION_1_1) &&
+    if ((DeviceValidationVersion() < VK_API_VERSION_1_1) &&
         !InstanceExtensionEnabled(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         printf("%s %s extension not supported, skipping test\n", kSkipPrefix,
                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
