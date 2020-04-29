@@ -16,19 +16,52 @@ Debug Printf is implemented in the SPIR-V Tools optimizer and the `VK_LAYER_KHRO
 It allows developers to debug their shader code by "printing" any values of interest to the debug callback or stdout.
 This document covers the operation of the layer portion of the implementation.
 
+## Limitations
+
+Debug Printf is based on the GPU-assisted validation (GPU-AV) framework, and therefore shares a limitation with it: it requires an additional bound descriptor set. This limitation can make it difficult for mobile apps and other apps that fully subscribe their descriptor sets to use this feature. Some improvements to the GPU-AV interface are being planned in the near future that will make this feature (and GPU-AV in general) more usable for such apps.
+
 ## Basic Operation
 
 The basic operation of Debug Printf is comprised of instrumenting shader code to return any values used in a debugPrintfEXT operation when the shader is executed.
 The instrumentation is similiar to the process described in the GPU Assisted Validation documentation.
-The debugPrintfEXT operations in the shader are replaced with code to copy the values to be printed to a buffer provided by the validation layer.
-If the shader is executed without instrumentation, the driver will ignore all debugPrintfEXT operations.
+The Debug Printf instructions in the shader are replaced with code to copy the values to be printed to a buffer provided by the validation layer.
+If the shader is executed without instrumentation, the driver will ignore all Debug Printf instructions.
 After the shader is executed, the layer uses the values returned to construct a string and send the string in a message to the debug callback.
 
 Note that the printf will generate a string each time the shader containing it is run.
 A vertex shader running to draw a triangle will result in 3 messages from a single printf in the shader, unless care is taken in the shader to do otherwise.
 
+## Enabling Debug Printf in GLSL Shaders
 
-## Enabling Debug Printf
+A new extension and function have been added to GLSL to enable this capability for Vulkan. Documentation for  the GL_EXT_debug_printf  extension and the debugPrintfEXT() function can be found
+[here](https://github.com/KhronosGroup/GLSL/blob/master/extensions/ext/GLSL_EXT_debug_printf.txt)
+Essentially, the debugPrintfExt(format-string, value0, value1, ... ) function allows programmers to do a formatted print of any scalar or vector values in a shader, similar to the *printf() functions in C/C++.
+
+There is a positive layer validation test that demonstrates simple use of Debug Printf.
+It is called "GpuDebugPrintf" and is in
+[vklayertests_gpu.cpp](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/master/tests/vklayertests_gpu.cpp)
+in the Vulkan-ValidationLayers repository.
+
+## Enabling Debug Printf in SPIR-V Shaders
+
+A new extended instruction set has been added to SPIR-V to allow developers to directly code debug printfs in their shader. To execute debug printfs in a SPIR-V shader, a developer will need the following two instructions specified:
+
+OpExtension "SPV_KHR_non_semantic_info"  
+%N0 = OpExtInstImport  NonSemantic.DebugPrintf
+
+Debug printf operations can then be specified in any function with the following instruction:
+
+%NN = OpExtInst %void %N0 1 %N1 %N2 %N3 ...
+
+where:
+
+* N0 is the result id of the OpExtInstImport  NonSemantic.DebugPrintf
+* 1 is the opcode of the DebugPrintf instruction in NonSemantic.DebugPrintf
+* N1 is the result of an OpString containing the format for the debug printf
+* N2, N3, ... are result ids of scalar and vector values to be printed
+* NN is the result id of the debug printf operation. This value is undefined.
+
+## Enabling Debug Printf in Vulkan-ValidationLayers
 
 Debug Printf is an object in the KHRONOS_validation layer, so the VK_LAYER_KHRONOS_validation layer must be loaded.
 See the LAYER_CONFIGURATION document for information on enabling the VK_LAYER_KHRONOS_validation layer.
@@ -91,7 +124,3 @@ Format for vector specifier is "%"*precision*"v" [2, 3, or 4] [specifiers list a
 Analogous to GPU Assisted Validation, Debug Printf uses device memory and a descriptor set to allow the shader instrumentation code to return values to the layer.  
 See the gpu_validation document for more information
 
-### Debug Printf Test / Example
-
-There is a positive layer validation test that demonstrates simple use of Debug Printf.
-It is called "GpuDebugPrintf" and is in vklayertests_gpu.cpp in the Vulkan-ValidationLayers repository.
