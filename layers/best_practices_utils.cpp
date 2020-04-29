@@ -619,7 +619,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
     bool skip = false;
     const IMAGE_STATE* image_state = GetImageState(image);
 
-    if ((image_state->createInfo.flags & VK_IMAGE_CREATE_DISJOINT_BIT) == 0) {
+    if (image_state->disjoint == false) {
         if (!image_state->memory_requirements_checked && !image_state->external_memory_handle) {
             skip |= LogWarning(device, kVUID_BestPractices_ImageMemReqNotCalled,
                                "%s: Binding memory to %s but vkGetImageMemoryRequirements() has not been called on that image.",

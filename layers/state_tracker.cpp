@@ -158,6 +158,7 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
                                                        const VkAllocationCallbacks *pAllocator, VkImage *pImage, VkResult result) {
     if (VK_SUCCESS != result) return;
     auto is_node = std::make_shared<IMAGE_STATE>(*pImage, pCreateInfo);
+    is_node->disjoint = ((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0);
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
         RecordCreateImageANDROID(pCreateInfo, is_node.get());
     }
@@ -169,7 +170,7 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
     // Record the memory requirements in case they won't be queried
     // External AHB memory can't be quired until after memory is bound
     if (is_node->external_ahb == false) {
-        if ((pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT) == 0) {
+        if (is_node->disjoint == false) {
             DispatchGetImageMemoryRequirements(device, *pImage, &is_node->requirements);
         } else {
             uint32_t plane_count = FormatPlaneCount(pCreateInfo->format);
