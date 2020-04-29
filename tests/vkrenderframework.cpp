@@ -393,17 +393,6 @@ bool VkRenderFramework::DeviceExtensionEnabled(const char *ext_name) {
     return ext_found;
 }
 
-// WARNING:  The DevSim layer can override the properties that are tested here, making the result of
-// this function dubious when DevSim is active.
-bool VkRenderFramework::DeviceIsMockICD() {
-    VkPhysicalDeviceProperties props = vk_testing::PhysicalDevice(gpu()).properties();
-    if ((props.vendorID == 0xba5eba11) && (props.deviceID == 0xf005ba11) &&
-        (0 == strncmp("Vulkan Mock Device", props.deviceName, VK_MAX_PHYSICAL_DEVICE_NAME_SIZE))) {
-        return true;
-    }
-    return false;
-}
-
 // Some tests may need to be skipped if the devsim layer is in use.
 bool VkRenderFramework::DeviceSimulation() { return m_devsim_layer; }
 

@@ -4496,7 +4496,7 @@ TEST_F(VkLayerTest, InvalidTexelBufferAlignment) {
         }
     }
 
-    if (DeviceIsMockICD() || DeviceSimulation()) {
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s MockICD does not support this feature, skipping tests\n", kSkipPrefix);
         return;
     }
@@ -9033,7 +9033,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXT) {
         }
     }
 
-    if (DeviceIsMockICD() || DeviceSimulation()) {
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s MockICD does not support this feature, skipping tests\n", kSkipPrefix);
         return;
     }
@@ -9117,7 +9117,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressEXTDisabled) {
         }
     }
 
-    if (DeviceIsMockICD() || DeviceSimulation()) {
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s MockICD does not support this feature, skipping tests\n", kSkipPrefix);
         return;
     }
@@ -9180,7 +9180,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHR) {
         }
     }
 
-    if (DeviceIsMockICD() || DeviceSimulation()) {
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s MockICD does not support this feature, skipping tests\n", kSkipPrefix);
         return;
     }
@@ -9321,7 +9321,7 @@ TEST_F(VkLayerTest, BufferDeviceAddressKHRDisabled) {
         }
     }
 
-    if (DeviceIsMockICD() || DeviceSimulation()) {
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s MockICD does not support this feature, skipping tests\n", kSkipPrefix);
         return;
     }
@@ -9821,7 +9821,7 @@ TEST_F(VkLayerTest, DeviceCoherentMemoryDisabledAMD) {
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    if (DeviceIsMockICD() || DeviceSimulation()) {
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s MockICD does not support the necessary memory type, skipping test\n", kSkipPrefix);
         return;
     }

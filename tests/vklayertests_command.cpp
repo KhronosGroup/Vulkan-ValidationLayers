@@ -5244,7 +5244,7 @@ TEST_F(VkLayerTest, MeshShaderNV) {
         }
     }
 
-    if (DeviceIsMockICD() || DeviceSimulation()) {
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%sNot suppored by MockICD, skipping tests\n", kSkipPrefix);
         return;
     }

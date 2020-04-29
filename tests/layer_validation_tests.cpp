@@ -1965,7 +1965,7 @@ bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, bool isK
 
     renderFramework->InitFramework(user_data, enabled_features);
 
-    if (renderFramework->DeviceIsMockICD() || renderFramework->DeviceSimulation()) {
+    if (renderFramework->IsPlatform(kMockICD) || renderFramework->DeviceSimulation()) {
         printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
         return false;
     }
@@ -2057,7 +2057,7 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     bool descriptor_indexing = CheckDescriptorIndexingSupportAndInitFramework(
         this, m_instance_extension_names, m_device_extension_names, gpu_assisted ? &validation_features : nullptr, m_errorMonitor);
 
-    if (DeviceIsMockICD() || DeviceSimulation()) {
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
         return;
     }
