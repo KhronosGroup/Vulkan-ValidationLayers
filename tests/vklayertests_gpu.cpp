@@ -31,7 +31,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         return;
     }
 
-    if (DeviceIsMockICD() || DeviceSimulation()) {
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
         return;
     }
@@ -504,7 +504,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
     m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
     InitGpuAssistedFramework(false);
-    if (DeviceIsMockICD() || DeviceSimulation()) {
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
         return;
     }
@@ -1232,7 +1232,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     features.pEnabledValidationFeatures = enables;
     bool descriptor_indexing = CheckDescriptorIndexingSupportAndInitFramework(this, m_instance_extension_names,
                                                                               m_device_extension_names, &features, m_errorMonitor);
-    if (DeviceIsMockICD() || DeviceSimulation()) {
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
         return;
     }
@@ -1484,7 +1484,7 @@ TEST_F(VkDebugPrintfTest, GpuDebugPrintf) {
     ASSERT_NO_FATAL_FAILURE(InitViewport());
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
-    if (DeviceIsMockICD() || DeviceSimulation()) {
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s GPU-Assisted printf test requires a driver that can draw.\n", kSkipPrefix);
         return;
     }

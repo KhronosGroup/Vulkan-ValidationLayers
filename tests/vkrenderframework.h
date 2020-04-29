@@ -207,6 +207,7 @@ typedef enum {
     kNexusPlayer,
     kShieldTV,
     kPixel3aXL,
+    kMockICD,
 } PlatformType;
 
 const std::unordered_map<PlatformType, std::string, std::hash<int>> vk_gpu_table = {
@@ -216,6 +217,7 @@ const std::unordered_map<PlatformType, std::string, std::hash<int>> vk_gpu_table
     {kNexusPlayer, "PowerVR Rogue G6430"},
     {kShieldTV, "NVIDIA Tegra X1 (nvgpu)"},
     {kPixel3aXL, "Adreno (TM) 615"},
+    {kMockICD, "Vulkan Mock Device"},
 };
 
 class VkRenderFramework : public VkTestFramework {
@@ -268,7 +270,6 @@ class VkRenderFramework : public VkTestFramework {
         return DeviceExtensionSupported(name, spec_version);
     }
     bool DeviceExtensionEnabled(const char *name);
-    bool DeviceIsMockICD();
     bool DeviceSimulation();
 
   protected:

@@ -5530,7 +5530,7 @@ TEST_F(VkLayerTest, CooperativeMatrixNV) {
         }
     }
 
-    if (DeviceIsMockICD() || DeviceSimulation()) {
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
         return;
     }
@@ -5614,7 +5614,7 @@ TEST_F(VkLayerTest, SubgroupSupportedOperations) {
         return;
     }
 
-    if (DeviceIsMockICD() || DeviceSimulation()) {
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s DevSim doesn't support Vulkan 1.1, skipping tests\n", kSkipPrefix);
         return;
     }
@@ -5786,7 +5786,7 @@ TEST_F(VkLayerTest, SubgroupRequired) {
         return;
     }
 
-    if (DeviceIsMockICD() || DeviceSimulation()) {
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s DevSim doesn't support Vulkan 1.1, skipping tests\n", kSkipPrefix);
         return;
     }
@@ -6027,7 +6027,7 @@ TEST_F(VkLayerTest, GraphicsPipelineStageCreationFeedbackCount) {
                                       "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02668",
                                       true);
 
-    if (DeviceIsMockICD() || DeviceSimulation()) {
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s Driver data writeback check not supported by MockICD, skipping.\n", kSkipPrefix);
     } else {
         m_errorMonitor->ExpectSuccess();

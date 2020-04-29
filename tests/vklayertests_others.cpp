@@ -3440,7 +3440,7 @@ TEST_F(VkLayerTest, ShadingRateImageNV) {
         }
     }
 
-    if (DeviceIsMockICD() || DeviceSimulation()) {
+    if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s Test not supported by MockICD, skipping tests\n", kSkipPrefix);
         return;
     }
