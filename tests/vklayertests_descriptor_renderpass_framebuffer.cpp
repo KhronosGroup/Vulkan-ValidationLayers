@@ -345,7 +345,7 @@ TEST_F(VkLayerTest, RenderPassCreateAttachmentReadOnlyButCleared) {
 
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    if (m_device->props.apiVersion >= VK_API_VERSION_1_1) {
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
         maintenance2Supported = true;
     }
 
@@ -1444,7 +1444,7 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
     VkPhysicalDeviceFeatures features = {0};
     ASSERT_NO_FATAL_FAILURE(InitState(&features));
 
-    if (m_device->props.apiVersion >= VK_API_VERSION_1_1) {
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
         multiviewSupported = true;
     }
 
@@ -1862,7 +1862,7 @@ TEST_F(VkLayerTest, RenderPassBeginLayoutsFramebufferImageUsageMismatches) {
 
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
 
-    if (m_device->props.apiVersion >= VK_API_VERSION_1_1) {
+    if (DeviceValidationVersion() >= VK_API_VERSION_1_1) {
         maintenance2Supported = true;
     }
 
@@ -2372,7 +2372,7 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-attachmentCount-00876");
 
     bool rp2_supported = CheckCreateRenderPass2Support(this, m_device_extension_names);
-    bool multiviewSupported = rp2_supported || (m_device->props.apiVersion >= VK_API_VERSION_1_1);
+    bool multiviewSupported = rp2_supported || (DeviceValidationVersion() >= VK_API_VERSION_1_1);
 
     if (!multiviewSupported && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
