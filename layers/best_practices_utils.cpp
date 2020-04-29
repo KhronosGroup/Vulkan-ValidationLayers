@@ -515,8 +515,8 @@ void BestPractices::ManualPostCallRecordAllocateMemory(VkDevice device, const Vk
     num_mem_objects++;
 }
 
-void BestPractices::ValidateReturnCodes(const char* api_name, VkResult result, const std::vector<VkResult>& success_codes,
-                                        const std::vector<VkResult>& error_codes) const {
+void BestPractices::ValidateReturnCodes(const char* api_name, VkResult result, const std::vector<VkResult>& error_codes,
+                                        const std::vector<VkResult>& success_codes) const {
     auto error = std::find(error_codes.begin(), error_codes.end(), result);
     if (error != error_codes.end()) {
         LogWarning(instance, kVUID_BestPractices_NonSuccess_Result, "%s(): Returned error %s.", api_name, string_VkResult(result));
