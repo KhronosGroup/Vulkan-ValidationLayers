@@ -470,6 +470,32 @@ VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling, V
     return VK_FORMAT_UNDEFINED;
 }
 
+void AllocateDisjointMemory(VkDeviceObj *device, PFN_vkGetImageMemoryRequirements2KHR fp, VkImage mp_image,
+                            VkDeviceMemory *mp_image_mem, VkImageAspectFlagBits plane) {
+    VkImagePlaneMemoryRequirementsInfo image_plane_req = {};
+    image_plane_req.sType = VK_STRUCTURE_TYPE_IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO;
+    image_plane_req.pNext = nullptr;
+    image_plane_req.planeAspect = plane;
+
+    VkImageMemoryRequirementsInfo2 mem_req_info2 = {};
+    mem_req_info2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2;
+    mem_req_info2.pNext = (void *)&image_plane_req;
+    mem_req_info2.image = mp_image;
+
+    VkMemoryRequirements2 mp_image_mem_reqs2 = {};
+    mp_image_mem_reqs2.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+    mp_image_mem_reqs2.pNext = nullptr;
+
+    fp(device->device(), &mem_req_info2, &mp_image_mem_reqs2);
+
+    VkMemoryAllocateInfo mp_image_alloc_info;
+    mp_image_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    mp_image_alloc_info.pNext = nullptr;
+    mp_image_alloc_info.allocationSize = mp_image_mem_reqs2.memoryRequirements.size;
+    ASSERT_TRUE(device->phy().set_memory_type(mp_image_mem_reqs2.memoryRequirements.memoryTypeBits, &mp_image_alloc_info, 0));
+    ASSERT_VK_SUCCESS(vk::AllocateMemory(device->device(), &mp_image_alloc_info, NULL, mp_image_mem));
+}
+
 void NegHeightViewportTests(VkDeviceObj *m_device, VkCommandBufferObj *m_commandBuffer, ErrorMonitor *m_errorMonitor) {
     const auto &limits = m_device->props.limits;
 
