@@ -9519,3 +9519,79 @@ TEST_F(VkPositiveLayerTest, SwapchainImageFormatProps) {
     vk::DestroyFramebuffer(device(), framebuffer, nullptr);
     DestroySwapchain();
 }
+
+TEST_F(VkPositiveLayerTest, SwapchainExclusiveModeQueueFamilyPropertiesReferences) {
+    TEST_DESCRIPTION("Try using special format props on a swapchain image");
+
+    if (!AddSurfaceInstanceExtension()) {
+        printf("%s surface extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework());
+
+    if (!AddSwapchainDeviceExtension()) {
+        printf("%s swapchain extensions not supported, skipping CmdCopySwapchainImage test\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    if (InitSurface()) {
+        auto surface = m_surface;
+        VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        VkSurfaceTransformFlagBitsKHR preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+
+        VkSurfaceCapabilitiesKHR capabilities;
+        vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(m_device->phy().handle(), surface, &capabilities);
+
+        uint32_t format_count;
+        vk::GetPhysicalDeviceSurfaceFormatsKHR(m_device->phy().handle(), surface, &format_count, nullptr);
+        vector<VkSurfaceFormatKHR> formats;
+        if (format_count != 0) {
+            formats.resize(format_count);
+            vk::GetPhysicalDeviceSurfaceFormatsKHR(m_device->phy().handle(), surface, &format_count, formats.data());
+        }
+
+        uint32_t present_mode_count;
+        vk::GetPhysicalDeviceSurfacePresentModesKHR(m_device->phy().handle(), surface, &present_mode_count, nullptr);
+        vector<VkPresentModeKHR> present_modes;
+        if (present_mode_count != 0) {
+            present_modes.resize(present_mode_count);
+            vk::GetPhysicalDeviceSurfacePresentModesKHR(m_device->phy().handle(), surface, &present_mode_count,
+                                                        present_modes.data());
+        }
+
+        VkSwapchainCreateInfoKHR swapchain_create_info = {};
+        swapchain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        swapchain_create_info.pNext = 0;
+        swapchain_create_info.surface = surface;
+        swapchain_create_info.minImageCount = capabilities.minImageCount;
+        swapchain_create_info.imageFormat = formats[0].format;
+        swapchain_create_info.imageColorSpace = formats[0].colorSpace;
+        swapchain_create_info.imageExtent = {capabilities.minImageExtent.width, capabilities.minImageExtent.height};
+        swapchain_create_info.imageArrayLayers = 1;
+        swapchain_create_info.imageUsage = imageUsage;
+        swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        swapchain_create_info.preTransform = preTransform;
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+        swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
+#else
+        swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+#endif
+        swapchain_create_info.presentMode = present_modes[0];
+        swapchain_create_info.clipped = VK_FALSE;
+        swapchain_create_info.oldSwapchain = 0;
+
+        swapchain_create_info.queueFamilyIndexCount = 4094967295;  // This SHOULD get ignored
+        uint32_t bogus_int = 99;
+        swapchain_create_info.pQueueFamilyIndices = &bogus_int;
+
+        vk::CreateSwapchainKHR(device(), &swapchain_create_info, nullptr, &m_swapchain);
+
+        if (m_surface != VK_NULL_HANDLE) {
+            vk::DestroySurfaceKHR(instance(), m_surface, nullptr);
+            m_surface = VK_NULL_HANDLE;
+        }
+    }
+}
