@@ -83,6 +83,10 @@ IMAGE_STATE::IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
       bind_swapchain(VK_NULL_HANDLE),
       bind_swapchain_imageIndex(0),
       range_encoder(full_range),
+      disjoint(false),
+      plane0_memory_requirements_checked(false),
+      plane1_memory_requirements_checked(false),
+      plane2_memory_requirements_checked(false),
       sparse_requirements{} {
     if ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) && (createInfo.queueFamilyIndexCount > 0)) {
         uint32_t *pQueueFamilyIndices = new uint32_t[createInfo.queueFamilyIndexCount];
@@ -877,7 +881,7 @@ bool CoreChecks::ValidateBarriersToImages(const CMD_BUFFER_STATE *cb_state, uint
             // checks color format and (single-plane or non-disjoint)
             // if ycbcr extension is not supported then single-plane and non-disjoint are always both true
             if ((FormatIsColor(image_format) == true) &&
-                ((FormatIsMultiplane(image_format) == false) || ((image_create_info.flags & VK_IMAGE_CREATE_DISJOINT_BIT) == 0))) {
+                ((FormatIsMultiplane(image_format) == false) || (image_state->disjoint == false))) {
                 if (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT) {
                     const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion)
                                            ? "VUID-VkImageMemoryBarrier-image-01671"
@@ -892,7 +896,7 @@ bool CoreChecks::ValidateBarriersToImages(const CMD_BUFFER_STATE *cb_state, uint
 
             VkImageAspectFlags valid_disjoint_mask =
                 VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT | VK_IMAGE_ASPECT_COLOR_BIT;
-            if ((FormatIsMultiplane(image_format) == true) && ((image_create_info.flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) &&
+            if ((FormatIsMultiplane(image_format) == true) && (image_state->disjoint == true) &&
                 ((aspect_mask & valid_disjoint_mask) == 0)) {
                 skip |= LogError(img_barrier.image, "VUID-VkImageMemoryBarrier-image-01672",
                                  "%s: Image barrier %s references %s of format %s has aspectMask (0x%" PRIx32
@@ -4397,8 +4401,7 @@ bool CoreChecks::ValidateImageAspectMask(VkImage image, VkFormat format, VkImage
     const IMAGE_STATE *image_state = GetImageState(image);
     // checks color format and (single-plane or non-disjoint)
     // if ycbcr extension is not supported then single-plane and non-disjoint are always both true
-    if ((FormatIsColor(format)) &&
-        ((FormatIsMultiplane(format) == false) || ((image_state->createInfo.flags & VK_IMAGE_CREATE_DISJOINT_BIT) == 0))) {
+    if ((FormatIsColor(format)) && ((FormatIsMultiplane(format) == false) || (image_state->disjoint == false))) {
         if ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != VK_IMAGE_ASPECT_COLOR_BIT) {
             skip |= LogError(image, vuid, "%s: Color image formats must have the VK_IMAGE_ASPECT_COLOR_BIT set.", func_name);
         } else if ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) != aspect_mask) {
