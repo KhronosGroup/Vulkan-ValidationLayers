@@ -1431,7 +1431,13 @@ class HelperFileOutputGenerator(OutputGenerator):
                                 decorated_length = member.len
                                 for other_member in item.members:
                                     decorated_length = re.sub(r'\b({})\b'.format(other_member.name), r'in_struct->\1', decorated_length)
-                                construct_txt += '    if (in_struct->%s) {\n' % member.name
+                                concurrent_clause = ''
+                                sharing_mode_name = 's'
+                                if member.name == 'pQueueFamilyIndices':
+                                    if item.name == 'VkSwapchainCreateInfoKHR':
+                                        sharing_mode_name = 'imageS'
+                                    concurrent_clause = '(in_struct->%sharingMode == VK_SHARING_MODE_CONCURRENT) && ' % sharing_mode_name
+                                construct_txt += '    if (%sin_struct->%s) {\n' % (concurrent_clause, member.name)
                                 construct_txt += '        %s = new %s[%s];\n' % (member.name, m_type, decorated_length)
                                 construct_txt += '        memcpy ((void *)%s, (void *)in_struct->%s, sizeof(%s)*%s);\n' % (member.name, member.name, m_type, decorated_length)
                                 construct_txt += '    }\n'
