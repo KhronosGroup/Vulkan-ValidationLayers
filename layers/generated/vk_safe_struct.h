@@ -7349,6 +7349,39 @@ struct safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM {
     VkCommandBufferInheritanceRenderPassTransformInfoQCOM const *ptr() const { return reinterpret_cast<VkCommandBufferInheritanceRenderPassTransformInfoQCOM const *>(this); }
 };
 
+struct safe_VkPhysicalDeviceRobustness2FeaturesEXT {
+    VkStructureType sType;
+    void* pNext;
+    VkBool32 robustBufferAccess2;
+    VkBool32 robustImageAccess2;
+    VkBool32 nullDescriptor;
+    safe_VkPhysicalDeviceRobustness2FeaturesEXT(const VkPhysicalDeviceRobustness2FeaturesEXT* in_struct);
+    safe_VkPhysicalDeviceRobustness2FeaturesEXT(const safe_VkPhysicalDeviceRobustness2FeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceRobustness2FeaturesEXT& operator=(const safe_VkPhysicalDeviceRobustness2FeaturesEXT& copy_src);
+    safe_VkPhysicalDeviceRobustness2FeaturesEXT();
+    ~safe_VkPhysicalDeviceRobustness2FeaturesEXT();
+    void initialize(const VkPhysicalDeviceRobustness2FeaturesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceRobustness2FeaturesEXT* copy_src);
+    VkPhysicalDeviceRobustness2FeaturesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceRobustness2FeaturesEXT *>(this); }
+    VkPhysicalDeviceRobustness2FeaturesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceRobustness2FeaturesEXT const *>(this); }
+};
+
+struct safe_VkPhysicalDeviceRobustness2PropertiesEXT {
+    VkStructureType sType;
+    void* pNext;
+    VkDeviceSize robustStorageBufferAccessSizeAlignment;
+    VkDeviceSize robustUniformBufferAccessSizeAlignment;
+    safe_VkPhysicalDeviceRobustness2PropertiesEXT(const VkPhysicalDeviceRobustness2PropertiesEXT* in_struct);
+    safe_VkPhysicalDeviceRobustness2PropertiesEXT(const safe_VkPhysicalDeviceRobustness2PropertiesEXT& copy_src);
+    safe_VkPhysicalDeviceRobustness2PropertiesEXT& operator=(const safe_VkPhysicalDeviceRobustness2PropertiesEXT& copy_src);
+    safe_VkPhysicalDeviceRobustness2PropertiesEXT();
+    ~safe_VkPhysicalDeviceRobustness2PropertiesEXT();
+    void initialize(const VkPhysicalDeviceRobustness2PropertiesEXT* in_struct);
+    void initialize(const safe_VkPhysicalDeviceRobustness2PropertiesEXT* copy_src);
+    VkPhysicalDeviceRobustness2PropertiesEXT *ptr() { return reinterpret_cast<VkPhysicalDeviceRobustness2PropertiesEXT *>(this); }
+    VkPhysicalDeviceRobustness2PropertiesEXT const *ptr() const { return reinterpret_cast<VkPhysicalDeviceRobustness2PropertiesEXT const *>(this); }
+};
+
 struct safe_VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT {
     VkStructureType sType;
     void* pNext;

@@ -31276,6 +31276,125 @@ void safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM::initialize(cons
     pNext = SafePnextCopy(copy_src->pNext);
 }
 
+safe_VkPhysicalDeviceRobustness2FeaturesEXT::safe_VkPhysicalDeviceRobustness2FeaturesEXT(const VkPhysicalDeviceRobustness2FeaturesEXT* in_struct) :
+    sType(in_struct->sType),
+    robustBufferAccess2(in_struct->robustBufferAccess2),
+    robustImageAccess2(in_struct->robustImageAccess2),
+    nullDescriptor(in_struct->nullDescriptor)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceRobustness2FeaturesEXT::safe_VkPhysicalDeviceRobustness2FeaturesEXT() :
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceRobustness2FeaturesEXT::safe_VkPhysicalDeviceRobustness2FeaturesEXT(const safe_VkPhysicalDeviceRobustness2FeaturesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    robustBufferAccess2 = copy_src.robustBufferAccess2;
+    robustImageAccess2 = copy_src.robustImageAccess2;
+    nullDescriptor = copy_src.nullDescriptor;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceRobustness2FeaturesEXT& safe_VkPhysicalDeviceRobustness2FeaturesEXT::operator=(const safe_VkPhysicalDeviceRobustness2FeaturesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    robustBufferAccess2 = copy_src.robustBufferAccess2;
+    robustImageAccess2 = copy_src.robustImageAccess2;
+    nullDescriptor = copy_src.nullDescriptor;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceRobustness2FeaturesEXT::~safe_VkPhysicalDeviceRobustness2FeaturesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceRobustness2FeaturesEXT::initialize(const VkPhysicalDeviceRobustness2FeaturesEXT* in_struct)
+{
+    sType = in_struct->sType;
+    robustBufferAccess2 = in_struct->robustBufferAccess2;
+    robustImageAccess2 = in_struct->robustImageAccess2;
+    nullDescriptor = in_struct->nullDescriptor;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceRobustness2FeaturesEXT::initialize(const safe_VkPhysicalDeviceRobustness2FeaturesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    robustBufferAccess2 = copy_src->robustBufferAccess2;
+    robustImageAccess2 = copy_src->robustImageAccess2;
+    nullDescriptor = copy_src->nullDescriptor;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
+safe_VkPhysicalDeviceRobustness2PropertiesEXT::safe_VkPhysicalDeviceRobustness2PropertiesEXT(const VkPhysicalDeviceRobustness2PropertiesEXT* in_struct) :
+    sType(in_struct->sType),
+    robustStorageBufferAccessSizeAlignment(in_struct->robustStorageBufferAccessSizeAlignment),
+    robustUniformBufferAccessSizeAlignment(in_struct->robustUniformBufferAccessSizeAlignment)
+{
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+safe_VkPhysicalDeviceRobustness2PropertiesEXT::safe_VkPhysicalDeviceRobustness2PropertiesEXT() :
+    pNext(nullptr)
+{}
+
+safe_VkPhysicalDeviceRobustness2PropertiesEXT::safe_VkPhysicalDeviceRobustness2PropertiesEXT(const safe_VkPhysicalDeviceRobustness2PropertiesEXT& copy_src)
+{
+    sType = copy_src.sType;
+    robustStorageBufferAccessSizeAlignment = copy_src.robustStorageBufferAccessSizeAlignment;
+    robustUniformBufferAccessSizeAlignment = copy_src.robustUniformBufferAccessSizeAlignment;
+    pNext = SafePnextCopy(copy_src.pNext);
+}
+
+safe_VkPhysicalDeviceRobustness2PropertiesEXT& safe_VkPhysicalDeviceRobustness2PropertiesEXT::operator=(const safe_VkPhysicalDeviceRobustness2PropertiesEXT& copy_src)
+{
+    if (&copy_src == this) return *this;
+
+    if (pNext)
+        FreePnextChain(pNext);
+
+    sType = copy_src.sType;
+    robustStorageBufferAccessSizeAlignment = copy_src.robustStorageBufferAccessSizeAlignment;
+    robustUniformBufferAccessSizeAlignment = copy_src.robustUniformBufferAccessSizeAlignment;
+    pNext = SafePnextCopy(copy_src.pNext);
+
+    return *this;
+}
+
+safe_VkPhysicalDeviceRobustness2PropertiesEXT::~safe_VkPhysicalDeviceRobustness2PropertiesEXT()
+{
+    if (pNext)
+        FreePnextChain(pNext);
+}
+
+void safe_VkPhysicalDeviceRobustness2PropertiesEXT::initialize(const VkPhysicalDeviceRobustness2PropertiesEXT* in_struct)
+{
+    sType = in_struct->sType;
+    robustStorageBufferAccessSizeAlignment = in_struct->robustStorageBufferAccessSizeAlignment;
+    robustUniformBufferAccessSizeAlignment = in_struct->robustUniformBufferAccessSizeAlignment;
+    pNext = SafePnextCopy(in_struct->pNext);
+}
+
+void safe_VkPhysicalDeviceRobustness2PropertiesEXT::initialize(const safe_VkPhysicalDeviceRobustness2PropertiesEXT* copy_src)
+{
+    sType = copy_src->sType;
+    robustStorageBufferAccessSizeAlignment = copy_src->robustStorageBufferAccessSizeAlignment;
+    robustUniformBufferAccessSizeAlignment = copy_src->robustUniformBufferAccessSizeAlignment;
+    pNext = SafePnextCopy(copy_src->pNext);
+}
+
 safe_VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT::safe_VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT(const VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT* in_struct) :
     sType(in_struct->sType),
     pipelineCreationCacheControl(in_struct->pipelineCreationCacheControl)
@@ -33761,6 +33880,12 @@ void *SafePnextCopy(const void *pNext) {
         case VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDER_PASS_TRANSFORM_INFO_QCOM:
             safe_pNext = new safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM(reinterpret_cast<const VkCommandBufferInheritanceRenderPassTransformInfoQCOM *>(pNext));
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceRobustness2FeaturesEXT(reinterpret_cast<const VkPhysicalDeviceRobustness2FeaturesEXT *>(pNext));
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_PROPERTIES_EXT:
+            safe_pNext = new safe_VkPhysicalDeviceRobustness2PropertiesEXT(reinterpret_cast<const VkPhysicalDeviceRobustness2PropertiesEXT *>(pNext));
+            break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES_EXT:
             safe_pNext = new safe_VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT(reinterpret_cast<const VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT *>(pNext));
             break;
@@ -34488,6 +34613,12 @@ void FreePnextChain(const void *pNext) {
             break;
         case VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDER_PASS_TRANSFORM_INFO_QCOM:
             delete reinterpret_cast<const safe_VkCommandBufferInheritanceRenderPassTransformInfoQCOM *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceRobustness2FeaturesEXT *>(header);
+            break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_PROPERTIES_EXT:
+            delete reinterpret_cast<const safe_VkPhysicalDeviceRobustness2PropertiesEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES_EXT:
             delete reinterpret_cast<const safe_VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT *>(header);

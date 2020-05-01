@@ -620,6 +620,7 @@ void ThreadSafety::PreCallRecordDestroyInstance(
     const VkAllocationCallbacks*                pAllocator) {
     StartWriteObjectParentInstance(instance, "vkDestroyInstance");
     // Host access to instance must be externally synchronized
+    // all sname:VkPhysicalDevice objects enumerated from pname:instance must be externally synchronized between host accesses
 }
 
 void ThreadSafety::PostCallRecordDestroyInstance(
@@ -628,6 +629,7 @@ void ThreadSafety::PostCallRecordDestroyInstance(
     FinishWriteObjectParentInstance(instance, "vkDestroyInstance");
     DestroyObjectParentInstance(instance);
     // Host access to instance must be externally synchronized
+    // all sname:VkPhysicalDevice objects enumerated from pname:instance must be externally synchronized between host accesses
 }
 
 void ThreadSafety::PreCallRecordEnumeratePhysicalDevices(
@@ -3488,7 +3490,7 @@ void ThreadSafety::PreCallRecordCreateSwapchainKHR(
     StartReadObjectParentInstance(device, "vkCreateSwapchainKHR");
         StartWriteObjectParentInstance(pCreateInfo->surface, "vkCreateSwapchainKHR");
         StartWriteObject(pCreateInfo->oldSwapchain, "vkCreateSwapchainKHR");
-    // Host access to pCreateInfo.surface,pCreateInfo.oldSwapchain must be externally synchronized
+    // Host access to pCreateInfo->surface,pCreateInfo->oldSwapchain must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordCreateSwapchainKHR(
@@ -3503,7 +3505,7 @@ void ThreadSafety::PostCallRecordCreateSwapchainKHR(
     if (result == VK_SUCCESS) {
         CreateObject(*pSwapchain);
     }
-    // Host access to pCreateInfo.surface,pCreateInfo.oldSwapchain must be externally synchronized
+    // Host access to pCreateInfo->surface,pCreateInfo->oldSwapchain must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordAcquireNextImageKHR(
