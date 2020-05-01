@@ -81,6 +81,13 @@ static const char *string_SyncHazard(SyncHazard hazard) {
     return "INVALID HAZARD";
 }
 
+inline VkDeviceSize GetRealWholeSize(VkDeviceSize offset, VkDeviceSize size, VkDeviceSize whole_size) {
+    if (size == VK_WHOLE_SIZE) {
+        return (whole_size - offset);
+    }
+    return size;
+}
+
 template <typename T>
 static ResourceAccessRange MakeRange(const T &has_offset_and_size) {
     return ResourceAccessRange(has_offset_and_size.offset, (has_offset_and_size.offset + has_offset_and_size.size));
@@ -1139,9 +1146,10 @@ void SyncValidator::ApplyBufferBarriers(AccessContext *context, VkPipelineStageF
                                         const VkBufferMemoryBarrier *barriers) {
     // TODO Implement this at subresource/memory_range accuracy
     for (uint32_t index = 0; index < barrier_count; index++) {
-        const auto &barrier = barriers[index];
+        auto barrier = barriers[index];
         const auto *buffer = Get<BUFFER_STATE>(barrier.buffer);
         if (!buffer) continue;
+        barrier.size = GetRealWholeSize(barrier.offset, barrier.size, buffer->createInfo.size);
         ResourceAccessRange range = MakeRange(barrier);
         const auto src_access_scope = AccessScope(src_stage_accesses, barrier.srcAccessMask);
         const auto dst_access_scope = AccessScope(dst_stage_accesses, barrier.dstAccessMask);
@@ -1184,7 +1192,8 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         if (src_buffer) {
-            ResourceAccessRange src_range = MakeRange(copy_region.srcOffset, copy_region.size);
+            ResourceAccessRange src_range =
+                MakeRange(copy_region.srcOffset, GetRealWholeSize(copy_region.srcOffset, copy_region.size, src_buffer->createInfo.size));
             auto hazard = context->DetectHazard(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, src_range);
             if (hazard.hazard) {
                 // TODO -- add tag information to log msg when useful.
@@ -1194,7 +1203,8 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
             }
         }
         if (dst_buffer && !skip) {
-            ResourceAccessRange dst_range = MakeRange(copy_region.dstOffset, copy_region.size);
+            ResourceAccessRange dst_range =
+                MakeRange(copy_region.dstOffset, GetRealWholeSize(copy_region.dstOffset, copy_region.size, dst_buffer->createInfo.size));
             auto hazard = context->DetectHazard(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, dst_range);
             if (hazard.hazard) {
                 skip |= LogError(dstBuffer, string_SyncHazardVUID(hazard.hazard),
@@ -1220,11 +1230,13 @@ void SyncValidator::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, Vk
     for (uint32_t region = 0; region < regionCount; region++) {
         const auto &copy_region = pRegions[region];
         if (src_buffer) {
-            ResourceAccessRange src_range = MakeRange(copy_region.srcOffset, copy_region.size);
+            ResourceAccessRange src_range =
+                MakeRange(copy_region.srcOffset, GetRealWholeSize(copy_region.srcOffset, copy_region.size, src_buffer->createInfo.size));
             context->UpdateAccessState(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, src_range, tag);
         }
         if (dst_buffer) {
-            ResourceAccessRange dst_range = MakeRange(copy_region.dstOffset, copy_region.size);
+            ResourceAccessRange dst_range =
+                MakeRange(copy_region.dstOffset, GetRealWholeSize(copy_region.dstOffset, copy_region.size, dst_buffer->createInfo.size));
             context->UpdateAccessState(*dst_buffer, SYNC_TRANSFER_TRANSFER_WRITE, dst_range, tag);
         }
     }
