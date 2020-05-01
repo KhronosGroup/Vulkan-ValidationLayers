@@ -100,8 +100,8 @@ class GpuAssisted : public ValidationStateTracker {
     VkPhysicalDevice physicalDevice;
     uint32_t adjusted_max_desc_sets;
     uint32_t desc_set_bind_index;
-    VkDescriptorSetLayout debug_desc_layout;
-    VkDescriptorSetLayout dummy_desc_layout;
+    VkDescriptorSetLayout debug_desc_layout = VK_NULL_HANDLE;
+    VkDescriptorSetLayout dummy_desc_layout = VK_NULL_HANDLE;
     std::unique_ptr<UtilDescriptorSetManager> desc_set_manager;
     std::unordered_map<uint32_t, GpuAssistedShaderTracker> shader_map;
     PFN_vkSetDeviceLoaderData vkSetDeviceLoaderData;
