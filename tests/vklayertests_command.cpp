@@ -3231,8 +3231,10 @@ TEST_F(VkLayerTest, CopyImageMultiPlaneSizeExceeded) {
 }
 
 TEST_F(VkLayerTest, CopyImageFormatSizeMismatch) {
-    VkResult err;
-    bool pass;
+    if (!EnableDeviceProfileLayer()) {
+        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
+        return;
+    }
 
     // Enable KHR multiplane req'd extensions
     bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
@@ -3253,104 +3255,173 @@ TEST_F(VkLayerTest, CopyImageFormatSizeMismatch) {
     }
     ASSERT_NO_FATAL_FAILURE(InitState());
 
-    const char *vuid = (mp_extensions) ? "VUID-vkCmdCopyImage-srcImage-01548" : "VUID-vkCmdCopyImage-srcImage-00135";
+    PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceFormatPropertiesEXT fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT = nullptr;
 
-    // Create two images of different types and try to copy between them
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
-    VkImage srcImage;
-    VkImage dstImage;
-    VkDeviceMemory srcMem;
-    VkDeviceMemory destMem;
-    VkMemoryRequirements memReqs;
+    // Load required functions
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceFormatPropertiesEXT, fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT)) {
+        printf("%s Failed to device profile layer.\n", kSkipPrefix);
+        return;
+    }
+
+    // Set transfer for all potential used formats
+    VkFormatProperties format_props;
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R8_UNORM, &format_props);
+    format_props.optimalTilingFeatures |= (VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R8_UNORM, format_props);
+
+    fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R8_UINT, &format_props);
+    format_props.optimalTilingFeatures |= (VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R8_UINT, format_props);
 
     VkImageCreateInfo image_create_info = {};
     image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     image_create_info.pNext = NULL;
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
     image_create_info.extent.width = 32;
     image_create_info.extent.height = 32;
     image_create_info.extent.depth = 1;
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
-    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_create_info.flags = 0;
 
-    err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &srcImage);
-    ASSERT_VK_SUCCESS(err);
+    image_create_info.format = VK_FORMAT_R8_UNORM;
+    VkImageObj image_8b_unorm(m_device);
+    image_8b_unorm.init(&image_create_info);
 
-    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    // Introduce failure by creating second image with a different-sized format.
-    image_create_info.format = VK_FORMAT_R5G5B5A1_UNORM_PACK16;
-    VkFormatProperties properties;
-    vk::GetPhysicalDeviceFormatProperties(m_device->phy().handle(), image_create_info.format, &properties);
-    if ((properties.linearTilingFeatures & VK_FORMAT_R5G5B5A1_UNORM_PACK16) == 0) {
-        vk::DestroyImage(m_device->device(), srcImage, NULL);
-        printf("%s Image format not supported; skipped.\n", kSkipPrefix);
-        return;
+    image_create_info.format = VK_FORMAT_R8_UINT;
+    VkImageObj image_8b_uint(m_device);
+    image_8b_uint.init(&image_create_info);
+
+    // First try to test two single plane mismatch
+    {
+        fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R8G8B8A8_UNORM, &format_props);
+        format_props.optimalTilingFeatures |= (VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+        fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_R8G8B8A8_UNORM, format_props);
+
+        image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+        VkImageObj image_32b_unorm(m_device);
+        image_32b_unorm.init(&image_create_info);
+
+        m_commandBuffer->begin();
+        VkImageCopy copyRegion;
+        copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        copyRegion.srcSubresource.mipLevel = 0;
+        copyRegion.srcSubresource.baseArrayLayer = 0;
+        copyRegion.srcSubresource.layerCount = 1;
+        copyRegion.srcOffset.x = 0;
+        copyRegion.srcOffset.y = 0;
+        copyRegion.srcOffset.z = 0;
+        copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        copyRegion.dstSubresource.mipLevel = 0;
+        copyRegion.dstSubresource.baseArrayLayer = 0;
+        copyRegion.dstSubresource.layerCount = 1;
+        copyRegion.dstOffset.x = 0;
+        copyRegion.dstOffset.y = 0;
+        copyRegion.dstOffset.z = 0;
+        copyRegion.extent.width = 1;
+        copyRegion.extent.height = 1;
+        copyRegion.extent.depth = 1;
+
+        // Sanity check between two 8bit formats
+        m_errorMonitor->ExpectSuccess();
+        m_commandBuffer->CopyImage(image_8b_unorm.handle(), VK_IMAGE_LAYOUT_GENERAL, image_8b_uint.handle(),
+                                   VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+        m_errorMonitor->VerifyNotFound();
+
+        const char *vuid = (mp_extensions) ? "VUID-vkCmdCopyImage-srcImage-01548" : "VUID-vkCmdCopyImage-srcImage-00135";
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+        m_commandBuffer->CopyImage(image_8b_unorm.handle(), VK_IMAGE_LAYOUT_GENERAL, image_32b_unorm.handle(),
+                                   VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+        m_errorMonitor->VerifyFound();
+
+        // Swap src and dst
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
+        m_commandBuffer->CopyImage(image_32b_unorm.handle(), VK_IMAGE_LAYOUT_GENERAL, image_8b_unorm.handle(),
+                                   VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+        m_errorMonitor->VerifyFound();
+
+        m_commandBuffer->end();
     }
 
-    err = vk::CreateImage(m_device->device(), &image_create_info, NULL, &dstImage);
-    ASSERT_VK_SUCCESS(err);
+    // DstImage is a mismatched plane of a multi-planar format
+    if (mp_extensions == false) {
+        printf("%s No multi-planar support; section of tests skipped.\n", kSkipPrefix);
+    } else {
+        fpvkGetOriginalPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, &format_props);
+        format_props.optimalTilingFeatures |= (VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+        fpvkSetPhysicalDeviceFormatPropertiesEXT(gpu(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, format_props);
 
-    // Allocate memory
-    VkMemoryAllocateInfo memAlloc = {};
-    memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    memAlloc.pNext = NULL;
-    memAlloc.allocationSize = 0;
-    memAlloc.memoryTypeIndex = 0;
+        image_create_info.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+        VkImageObj image_8b_16b_420_unorm(m_device);
+        image_8b_16b_420_unorm.init(&image_create_info);
 
-    vk::GetImageMemoryRequirements(m_device->device(), srcImage, &memReqs);
-    memAlloc.allocationSize = memReqs.size;
-    pass = m_device->phy().set_memory_type(memReqs.memoryTypeBits, &memAlloc, 0);
-    ASSERT_TRUE(pass);
-    err = vk::AllocateMemory(m_device->device(), &memAlloc, NULL, &srcMem);
-    ASSERT_VK_SUCCESS(err);
+        m_commandBuffer->begin();
+        VkImageCopy copyRegion;
+        copyRegion.srcSubresource.mipLevel = 0;
+        copyRegion.srcSubresource.baseArrayLayer = 0;
+        copyRegion.srcSubresource.layerCount = 1;
+        copyRegion.srcOffset.x = 0;
+        copyRegion.srcOffset.y = 0;
+        copyRegion.srcOffset.z = 0;
+        copyRegion.dstSubresource.mipLevel = 0;
+        copyRegion.dstSubresource.baseArrayLayer = 0;
+        copyRegion.dstSubresource.layerCount = 1;
+        copyRegion.dstOffset.x = 0;
+        copyRegion.dstOffset.y = 0;
+        copyRegion.dstOffset.z = 0;
+        copyRegion.extent.width = 1;
+        copyRegion.extent.height = 1;
+        copyRegion.extent.depth = 1;
 
-    vk::GetImageMemoryRequirements(m_device->device(), dstImage, &memReqs);
-    memAlloc.allocationSize = memReqs.size;
-    pass = m_device->phy().set_memory_type(memReqs.memoryTypeBits, &memAlloc, 0);
-    ASSERT_TRUE(pass);
-    err = vk::AllocateMemory(m_device->device(), &memAlloc, NULL, &destMem);
-    ASSERT_VK_SUCCESS(err);
+        // First test single-plane -> multi-plan
+        copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
 
-    err = vk::BindImageMemory(m_device->device(), srcImage, srcMem, 0);
-    ASSERT_VK_SUCCESS(err);
-    err = vk::BindImageMemory(m_device->device(), dstImage, destMem, 0);
-    ASSERT_VK_SUCCESS(err);
+        // Plane 0 is VK_FORMAT_R8_UNORM so this should succeed
+        m_errorMonitor->ExpectSuccess();
+        m_commandBuffer->CopyImage(image_8b_unorm.handle(), VK_IMAGE_LAYOUT_GENERAL, image_8b_16b_420_unorm.handle(),
+                                   VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+        m_errorMonitor->VerifyNotFound();
 
-    m_commandBuffer->begin();
-    VkImageCopy copyRegion;
-    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copyRegion.srcSubresource.mipLevel = 0;
-    copyRegion.srcSubresource.baseArrayLayer = 0;
-    copyRegion.srcSubresource.layerCount = 1;
-    copyRegion.srcOffset.x = 0;
-    copyRegion.srcOffset.y = 0;
-    copyRegion.srcOffset.z = 0;
-    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copyRegion.dstSubresource.mipLevel = 0;
-    copyRegion.dstSubresource.baseArrayLayer = 0;
-    copyRegion.dstSubresource.layerCount = 1;
-    copyRegion.dstOffset.x = 0;
-    copyRegion.dstOffset.y = 0;
-    copyRegion.dstOffset.z = 0;
-    copyRegion.extent.width = 1;
-    copyRegion.extent.height = 1;
-    copyRegion.extent.depth = 1;
-    m_commandBuffer->CopyImage(srcImage, VK_IMAGE_LAYOUT_GENERAL, dstImage, VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
-    m_commandBuffer->end();
+        // Make sure no false postiives if Compatible format
+        m_errorMonitor->ExpectSuccess();
+        m_commandBuffer->CopyImage(image_8b_uint.handle(), VK_IMAGE_LAYOUT_GENERAL, image_8b_16b_420_unorm.handle(),
+                                   VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+        m_errorMonitor->VerifyNotFound();
 
-    m_errorMonitor->VerifyFound();
+        // Plane 1 is VK_FORMAT_R8G8_UNORM so this should fail
+        copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-None-01549");
+        m_commandBuffer->CopyImage(image_8b_unorm.handle(), VK_IMAGE_LAYOUT_GENERAL, image_8b_16b_420_unorm.handle(),
+                                   VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+        m_errorMonitor->VerifyFound();
 
-    vk::DestroyImage(m_device->device(), dstImage, NULL);
-    vk::FreeMemory(m_device->device(), destMem, NULL);
-    vk::DestroyImage(m_device->device(), srcImage, NULL);
-    vk::FreeMemory(m_device->device(), srcMem, NULL);
+        // Same tests but swap src and dst
+        copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
+        copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    // TODO: Add proper support for VUID 01549 to copy between single and multi-planar formats that are not compatible
+        m_errorMonitor->ExpectSuccess();
+        m_commandBuffer->CopyImage(image_8b_16b_420_unorm.handle(), VK_IMAGE_LAYOUT_GENERAL, image_8b_unorm.handle(),
+                                   VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+        m_errorMonitor->VerifyNotFound();
+
+        m_errorMonitor->ExpectSuccess();
+        m_commandBuffer->CopyImage(image_8b_16b_420_unorm.handle(), VK_IMAGE_LAYOUT_GENERAL, image_8b_uint.handle(),
+                                   VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+        m_errorMonitor->VerifyNotFound();
+
+        copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyImage-None-01549");
+        m_commandBuffer->CopyImage(image_8b_16b_420_unorm.handle(), VK_IMAGE_LAYOUT_GENERAL, image_8b_unorm.handle(),
+                                   VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
+        m_errorMonitor->VerifyFound();
+
+        m_commandBuffer->end();
+    }
 }
 
 TEST_F(VkLayerTest, CopyImageDepthStencilFormatMismatch) {
