@@ -14,9 +14,6 @@ max_jobs: 4
 os:
   - Visual Studio 2015
 
-init:
-  - git config --global core.autocrlf true
-
 environment:
   PYTHON_PATH: "C:/Python35"
   PYTHON_PACKAGE_PATH: "C:/Python35/Scripts"

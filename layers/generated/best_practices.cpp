@@ -2515,6 +2515,35 @@ void BestPractices::PostCallRecordCreateIndirectCommandsLayoutNV(
     }
 }
 
+void BestPractices::PostCallRecordCreatePrivateDataSlotEXT(
+    VkDevice                                    device,
+    const VkPrivateDataSlotCreateInfoEXT*       pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPrivateDataSlotEXT*                       pPrivateDataSlot,
+    VkResult                                    result) {
+    ValidationStateTracker::PostCallRecordCreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot, result);
+    if (result != VK_SUCCESS) {
+        static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY};
+        static const std::vector<VkResult> success_codes = {};
+        ValidateReturnCodes("vkCreatePrivateDataSlotEXT", result, error_codes, success_codes);
+    }
+}
+
+void BestPractices::PostCallRecordSetPrivateDataEXT(
+    VkDevice                                    device,
+    VkObjectType                                objectType,
+    uint64_t                                    objectHandle,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    uint64_t                                    data,
+    VkResult                                    result) {
+    ValidationStateTracker::PostCallRecordSetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data, result);
+    if (result != VK_SUCCESS) {
+        static const std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY};
+        static const std::vector<VkResult> success_codes = {};
+        ValidateReturnCodes("vkSetPrivateDataEXT", result, error_codes, success_codes);
+    }
+}
+
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void BestPractices::PostCallRecordCreateAccelerationStructureKHR(

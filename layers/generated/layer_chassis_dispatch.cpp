@@ -7459,6 +7459,72 @@ void DispatchDestroyIndirectCommandsLayoutNV(
 
 }
 
+VkResult DispatchCreatePrivateDataSlotEXT(
+    VkDevice                                    device,
+    const VkPrivateDataSlotCreateInfoEXT*       pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPrivateDataSlotEXT*                       pPrivateDataSlot)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.CreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot);
+    VkResult result = layer_data->device_dispatch_table.CreatePrivateDataSlotEXT(device, pCreateInfo, pAllocator, pPrivateDataSlot);
+    if (VK_SUCCESS == result) {
+        *pPrivateDataSlot = layer_data->WrapNew(*pPrivateDataSlot);
+    }
+    return result;
+}
+
+void DispatchDestroyPrivateDataSlotEXT(
+    VkDevice                                    device,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    const VkAllocationCallbacks*                pAllocator)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.DestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator);
+    uint64_t privateDataSlot_id = reinterpret_cast<uint64_t &>(privateDataSlot);
+    auto iter = unique_id_mapping.pop(privateDataSlot_id);
+    if (iter != unique_id_mapping.end()) {
+        privateDataSlot = (VkPrivateDataSlotEXT)iter->second;
+    } else {
+        privateDataSlot = (VkPrivateDataSlotEXT)0;
+    }
+    layer_data->device_dispatch_table.DestroyPrivateDataSlotEXT(device, privateDataSlot, pAllocator);
+
+}
+
+VkResult DispatchSetPrivateDataEXT(
+    VkDevice                                    device,
+    VkObjectType                                objectType,
+    uint64_t                                    objectHandle,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    uint64_t                                    data)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.SetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data);
+    {
+        privateDataSlot = layer_data->Unwrap(privateDataSlot);
+    }
+    VkResult result = layer_data->device_dispatch_table.SetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, data);
+
+    return result;
+}
+
+void DispatchGetPrivateDataEXT(
+    VkDevice                                    device,
+    VkObjectType                                objectType,
+    uint64_t                                    objectHandle,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    uint64_t*                                   pData)
+{
+    auto layer_data = GetLayerDataPtr(get_dispatch_key(device), layer_data_map);
+    if (!wrap_handles) return layer_data->device_dispatch_table.GetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
+    {
+        privateDataSlot = layer_data->Unwrap(privateDataSlot);
+    }
+    layer_data->device_dispatch_table.GetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
+
+}
+
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 VkResult DispatchCreateAccelerationStructureKHR(

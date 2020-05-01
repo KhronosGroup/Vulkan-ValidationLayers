@@ -363,6 +363,10 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdExecuteGeneratedCommandsNV(VkCommandBuf
 static VKAPI_ATTR void VKAPI_CALL StubCmdBindPipelineShaderGroupNV(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline, uint32_t groupIndex) {  };
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateIndirectCommandsLayoutNV(VkDevice device, const VkIndirectCommandsLayoutCreateInfoNV* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkIndirectCommandsLayoutNV* pIndirectCommandsLayout) { return VK_SUCCESS; };
 static VKAPI_ATTR void VKAPI_CALL StubDestroyIndirectCommandsLayoutNV(VkDevice device, VkIndirectCommandsLayoutNV indirectCommandsLayout, const VkAllocationCallbacks* pAllocator) {  };
+static VKAPI_ATTR VkResult VKAPI_CALL StubCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateDataSlotCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlotEXT* pPrivateDataSlot) { return VK_SUCCESS; };
+static VKAPI_ATTR void VKAPI_CALL StubDestroyPrivateDataSlotEXT(VkDevice device, VkPrivateDataSlotEXT privateDataSlot, const VkAllocationCallbacks* pAllocator) {  };
+static VKAPI_ATTR VkResult VKAPI_CALL StubSetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlotEXT privateDataSlot, uint64_t data) { return VK_SUCCESS; };
+static VKAPI_ATTR void VKAPI_CALL StubGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlotEXT privateDataSlot, uint64_t* pData) {  };
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateAccelerationStructureKHR(VkDevice                                           device, const VkAccelerationStructureCreateInfoKHR*        pCreateInfo, const VkAllocationCallbacks*       pAllocator, VkAccelerationStructureKHR*                        pAccelerationStructure) { return VK_SUCCESS; };
 #endif // VK_ENABLE_BETA_EXTENSIONS
@@ -507,6 +511,7 @@ const std::unordered_map<std::string, std::string> api_extension_map {
     {"vkCreateDescriptorUpdateTemplate", "VK_VERSION_1_1"},
     {"vkCreateDescriptorUpdateTemplateKHR", "VK_KHR_descriptor_update_template"},
     {"vkCreateIndirectCommandsLayoutNV", "VK_NV_device_generated_commands"},
+    {"vkCreatePrivateDataSlotEXT", "VK_EXT_private_data"},
     {"vkCreateRayTracingPipelinesKHR", "VK_KHR_ray_tracing"},
     {"vkCreateRayTracingPipelinesNV", "VK_NV_ray_tracing"},
     {"vkCreateRenderPass2", "VK_VERSION_1_2"},
@@ -525,6 +530,7 @@ const std::unordered_map<std::string, std::string> api_extension_map {
     {"vkDestroyDescriptorUpdateTemplate", "VK_VERSION_1_1"},
     {"vkDestroyDescriptorUpdateTemplateKHR", "VK_KHR_descriptor_update_template"},
     {"vkDestroyIndirectCommandsLayoutNV", "VK_NV_device_generated_commands"},
+    {"vkDestroyPrivateDataSlotEXT", "VK_EXT_private_data"},
     {"vkDestroySamplerYcbcrConversion", "VK_VERSION_1_1"},
     {"vkDestroySamplerYcbcrConversionKHR", "VK_KHR_sampler_ycbcr_conversion"},
     {"vkDestroySwapchainKHR", "VK_KHR_swapchain"},
@@ -578,6 +584,7 @@ const std::unordered_map<std::string, std::string> api_extension_map {
     {"vkGetPipelineExecutableInternalRepresentationsKHR", "VK_KHR_pipeline_executable_properties"},
     {"vkGetPipelineExecutablePropertiesKHR", "VK_KHR_pipeline_executable_properties"},
     {"vkGetPipelineExecutableStatisticsKHR", "VK_KHR_pipeline_executable_properties"},
+    {"vkGetPrivateDataEXT", "VK_EXT_private_data"},
     {"vkGetQueueCheckpointDataNV", "VK_NV_device_diagnostic_checkpoints"},
     {"vkGetRayTracingCaptureReplayShaderGroupHandlesKHR", "VK_KHR_ray_tracing"},
     {"vkGetRayTracingShaderGroupHandlesKHR", "VK_KHR_ray_tracing"},
@@ -617,6 +624,7 @@ const std::unordered_map<std::string, std::string> api_extension_map {
     {"vkSetDebugUtilsObjectTagEXT", "VK_EXT_debug_utils"},
     {"vkSetHdrMetadataEXT", "VK_EXT_hdr_metadata"},
     {"vkSetLocalDimmingAMD", "VK_AMD_display_native_hdr"},
+    {"vkSetPrivateDataEXT", "VK_EXT_private_data"},
     {"vkSignalSemaphore", "VK_VERSION_1_2"},
     {"vkSignalSemaphoreKHR", "VK_KHR_timeline_semaphore"},
     {"vkTrimCommandPool", "VK_VERSION_1_1"},
@@ -1174,6 +1182,14 @@ static inline void layer_init_device_dispatch_table(VkDevice device, VkLayerDisp
     if (table->CreateIndirectCommandsLayoutNV == nullptr) { table->CreateIndirectCommandsLayoutNV = (PFN_vkCreateIndirectCommandsLayoutNV)StubCreateIndirectCommandsLayoutNV; }
     table->DestroyIndirectCommandsLayoutNV = (PFN_vkDestroyIndirectCommandsLayoutNV) gpa(device, "vkDestroyIndirectCommandsLayoutNV");
     if (table->DestroyIndirectCommandsLayoutNV == nullptr) { table->DestroyIndirectCommandsLayoutNV = (PFN_vkDestroyIndirectCommandsLayoutNV)StubDestroyIndirectCommandsLayoutNV; }
+    table->CreatePrivateDataSlotEXT = (PFN_vkCreatePrivateDataSlotEXT) gpa(device, "vkCreatePrivateDataSlotEXT");
+    if (table->CreatePrivateDataSlotEXT == nullptr) { table->CreatePrivateDataSlotEXT = (PFN_vkCreatePrivateDataSlotEXT)StubCreatePrivateDataSlotEXT; }
+    table->DestroyPrivateDataSlotEXT = (PFN_vkDestroyPrivateDataSlotEXT) gpa(device, "vkDestroyPrivateDataSlotEXT");
+    if (table->DestroyPrivateDataSlotEXT == nullptr) { table->DestroyPrivateDataSlotEXT = (PFN_vkDestroyPrivateDataSlotEXT)StubDestroyPrivateDataSlotEXT; }
+    table->SetPrivateDataEXT = (PFN_vkSetPrivateDataEXT) gpa(device, "vkSetPrivateDataEXT");
+    if (table->SetPrivateDataEXT == nullptr) { table->SetPrivateDataEXT = (PFN_vkSetPrivateDataEXT)StubSetPrivateDataEXT; }
+    table->GetPrivateDataEXT = (PFN_vkGetPrivateDataEXT) gpa(device, "vkGetPrivateDataEXT");
+    if (table->GetPrivateDataEXT == nullptr) { table->GetPrivateDataEXT = (PFN_vkGetPrivateDataEXT)StubGetPrivateDataEXT; }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR) gpa(device, "vkCreateAccelerationStructureKHR");
     if (table->CreateAccelerationStructureKHR == nullptr) { table->CreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)StubCreateAccelerationStructureKHR; }

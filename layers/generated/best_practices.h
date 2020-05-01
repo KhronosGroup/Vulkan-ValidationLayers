@@ -1449,6 +1449,23 @@ void PostCallRecordCreateIndirectCommandsLayoutNV(
     VkResult                                    result);
 
 
+void PostCallRecordCreatePrivateDataSlotEXT(
+    VkDevice                                    device,
+    const VkPrivateDataSlotCreateInfoEXT*       pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPrivateDataSlotEXT*                       pPrivateDataSlot,
+    VkResult                                    result);
+
+
+void PostCallRecordSetPrivateDataEXT(
+    VkDevice                                    device,
+    VkObjectType                                objectType,
+    uint64_t                                    objectHandle,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    uint64_t                                    data,
+    VkResult                                    result);
+
+
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 void PostCallRecordCreateAccelerationStructureKHR(

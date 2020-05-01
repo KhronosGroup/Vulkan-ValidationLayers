@@ -620,6 +620,7 @@ void ThreadSafety::PreCallRecordDestroyInstance(
     const VkAllocationCallbacks*                pAllocator) {
     StartWriteObjectParentInstance(instance, "vkDestroyInstance");
     // Host access to instance must be externally synchronized
+    // all sname:VkPhysicalDevice objects enumerated from pname:instance must be externally synchronized between host accesses
 }
 
 void ThreadSafety::PostCallRecordDestroyInstance(
@@ -628,6 +629,7 @@ void ThreadSafety::PostCallRecordDestroyInstance(
     FinishWriteObjectParentInstance(instance, "vkDestroyInstance");
     DestroyObjectParentInstance(instance);
     // Host access to instance must be externally synchronized
+    // all sname:VkPhysicalDevice objects enumerated from pname:instance must be externally synchronized between host accesses
 }
 
 void ThreadSafety::PreCallRecordEnumeratePhysicalDevices(
@@ -3488,7 +3490,7 @@ void ThreadSafety::PreCallRecordCreateSwapchainKHR(
     StartReadObjectParentInstance(device, "vkCreateSwapchainKHR");
         StartWriteObjectParentInstance(pCreateInfo->surface, "vkCreateSwapchainKHR");
         StartWriteObject(pCreateInfo->oldSwapchain, "vkCreateSwapchainKHR");
-    // Host access to pCreateInfo.surface,pCreateInfo.oldSwapchain must be externally synchronized
+    // Host access to pCreateInfo->surface,pCreateInfo->oldSwapchain must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordCreateSwapchainKHR(
@@ -3503,7 +3505,7 @@ void ThreadSafety::PostCallRecordCreateSwapchainKHR(
     if (result == VK_SUCCESS) {
         CreateObject(*pSwapchain);
     }
-    // Host access to pCreateInfo.surface,pCreateInfo.oldSwapchain must be externally synchronized
+    // Host access to pCreateInfo->surface,pCreateInfo->oldSwapchain must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordAcquireNextImageKHR(
@@ -4647,7 +4649,8 @@ void ThreadSafety::PreCallRecordDestroyDeferredOperationKHR(
     VkDeferredOperationKHR                      operation,
     const VkAllocationCallbacks*                pAllocator) {
     StartReadObjectParentInstance(device, "vkDestroyDeferredOperationKHR");
-    StartReadObject(operation, "vkDestroyDeferredOperationKHR");
+    StartWriteObject(operation, "vkDestroyDeferredOperationKHR");
+    // Host access to operation must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordDestroyDeferredOperationKHR(
@@ -4655,7 +4658,9 @@ void ThreadSafety::PostCallRecordDestroyDeferredOperationKHR(
     VkDeferredOperationKHR                      operation,
     const VkAllocationCallbacks*                pAllocator) {
     FinishReadObjectParentInstance(device, "vkDestroyDeferredOperationKHR");
-    FinishReadObject(operation, "vkDestroyDeferredOperationKHR");
+    FinishWriteObject(operation, "vkDestroyDeferredOperationKHR");
+    DestroyObject(operation);
+    // Host access to operation must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordGetDeferredOperationMaxConcurrencyKHR(
@@ -5815,7 +5820,8 @@ void ThreadSafety::PreCallRecordDestroyAccelerationStructureKHR(
     VkAccelerationStructureKHR                  accelerationStructure,
     const VkAllocationCallbacks*                pAllocator) {
     StartReadObjectParentInstance(device, "vkDestroyAccelerationStructureKHR");
-    StartReadObject(accelerationStructure, "vkDestroyAccelerationStructureKHR");
+    StartWriteObject(accelerationStructure, "vkDestroyAccelerationStructureKHR");
+    // Host access to accelerationStructure must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordDestroyAccelerationStructureKHR(
@@ -5823,7 +5829,9 @@ void ThreadSafety::PostCallRecordDestroyAccelerationStructureKHR(
     VkAccelerationStructureKHR                  accelerationStructure,
     const VkAllocationCallbacks*                pAllocator) {
     FinishReadObjectParentInstance(device, "vkDestroyAccelerationStructureKHR");
-    FinishReadObject(accelerationStructure, "vkDestroyAccelerationStructureKHR");
+    FinishWriteObject(accelerationStructure, "vkDestroyAccelerationStructureKHR");
+    DestroyObject(accelerationStructure);
+    // Host access to accelerationStructure must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordDestroyAccelerationStructureNV(
@@ -5831,7 +5839,8 @@ void ThreadSafety::PreCallRecordDestroyAccelerationStructureNV(
     VkAccelerationStructureKHR                  accelerationStructure,
     const VkAllocationCallbacks*                pAllocator) {
     StartReadObjectParentInstance(device, "vkDestroyAccelerationStructureNV");
-    StartReadObject(accelerationStructure, "vkDestroyAccelerationStructureNV");
+    StartWriteObject(accelerationStructure, "vkDestroyAccelerationStructureNV");
+    // Host access to accelerationStructure must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordDestroyAccelerationStructureNV(
@@ -5839,7 +5848,9 @@ void ThreadSafety::PostCallRecordDestroyAccelerationStructureNV(
     VkAccelerationStructureKHR                  accelerationStructure,
     const VkAllocationCallbacks*                pAllocator) {
     FinishReadObjectParentInstance(device, "vkDestroyAccelerationStructureNV");
-    FinishReadObject(accelerationStructure, "vkDestroyAccelerationStructureNV");
+    FinishWriteObject(accelerationStructure, "vkDestroyAccelerationStructureNV");
+    DestroyObject(accelerationStructure);
+    // Host access to accelerationStructure must be externally synchronized
 }
 
 void ThreadSafety::PreCallRecordGetAccelerationStructureMemoryRequirementsNV(
@@ -6720,7 +6731,8 @@ void ThreadSafety::PreCallRecordDestroyIndirectCommandsLayoutNV(
     VkIndirectCommandsLayoutNV                  indirectCommandsLayout,
     const VkAllocationCallbacks*                pAllocator) {
     StartReadObjectParentInstance(device, "vkDestroyIndirectCommandsLayoutNV");
-    StartReadObject(indirectCommandsLayout, "vkDestroyIndirectCommandsLayoutNV");
+    StartWriteObject(indirectCommandsLayout, "vkDestroyIndirectCommandsLayoutNV");
+    // Host access to indirectCommandsLayout must be externally synchronized
 }
 
 void ThreadSafety::PostCallRecordDestroyIndirectCommandsLayoutNV(
@@ -6728,7 +6740,89 @@ void ThreadSafety::PostCallRecordDestroyIndirectCommandsLayoutNV(
     VkIndirectCommandsLayoutNV                  indirectCommandsLayout,
     const VkAllocationCallbacks*                pAllocator) {
     FinishReadObjectParentInstance(device, "vkDestroyIndirectCommandsLayoutNV");
-    FinishReadObject(indirectCommandsLayout, "vkDestroyIndirectCommandsLayoutNV");
+    FinishWriteObject(indirectCommandsLayout, "vkDestroyIndirectCommandsLayoutNV");
+    DestroyObject(indirectCommandsLayout);
+    // Host access to indirectCommandsLayout must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordCreatePrivateDataSlotEXT(
+    VkDevice                                    device,
+    const VkPrivateDataSlotCreateInfoEXT*       pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPrivateDataSlotEXT*                       pPrivateDataSlot) {
+    StartReadObjectParentInstance(device, "vkCreatePrivateDataSlotEXT");
+}
+
+void ThreadSafety::PostCallRecordCreatePrivateDataSlotEXT(
+    VkDevice                                    device,
+    const VkPrivateDataSlotCreateInfoEXT*       pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPrivateDataSlotEXT*                       pPrivateDataSlot,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkCreatePrivateDataSlotEXT");
+    if (result == VK_SUCCESS) {
+        CreateObject(*pPrivateDataSlot);
+    }
+}
+
+void ThreadSafety::PreCallRecordDestroyPrivateDataSlotEXT(
+    VkDevice                                    device,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    const VkAllocationCallbacks*                pAllocator) {
+    StartReadObjectParentInstance(device, "vkDestroyPrivateDataSlotEXT");
+    StartWriteObject(privateDataSlot, "vkDestroyPrivateDataSlotEXT");
+    // Host access to privateDataSlot must be externally synchronized
+}
+
+void ThreadSafety::PostCallRecordDestroyPrivateDataSlotEXT(
+    VkDevice                                    device,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    const VkAllocationCallbacks*                pAllocator) {
+    FinishReadObjectParentInstance(device, "vkDestroyPrivateDataSlotEXT");
+    FinishWriteObject(privateDataSlot, "vkDestroyPrivateDataSlotEXT");
+    DestroyObject(privateDataSlot);
+    // Host access to privateDataSlot must be externally synchronized
+}
+
+void ThreadSafety::PreCallRecordSetPrivateDataEXT(
+    VkDevice                                    device,
+    VkObjectType                                objectType,
+    uint64_t                                    objectHandle,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    uint64_t                                    data) {
+    StartReadObjectParentInstance(device, "vkSetPrivateDataEXT");
+    StartReadObject(privateDataSlot, "vkSetPrivateDataEXT");
+}
+
+void ThreadSafety::PostCallRecordSetPrivateDataEXT(
+    VkDevice                                    device,
+    VkObjectType                                objectType,
+    uint64_t                                    objectHandle,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    uint64_t                                    data,
+    VkResult                                    result) {
+    FinishReadObjectParentInstance(device, "vkSetPrivateDataEXT");
+    FinishReadObject(privateDataSlot, "vkSetPrivateDataEXT");
+}
+
+void ThreadSafety::PreCallRecordGetPrivateDataEXT(
+    VkDevice                                    device,
+    VkObjectType                                objectType,
+    uint64_t                                    objectHandle,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    uint64_t*                                   pData) {
+    StartReadObjectParentInstance(device, "vkGetPrivateDataEXT");
+    StartReadObject(privateDataSlot, "vkGetPrivateDataEXT");
+}
+
+void ThreadSafety::PostCallRecordGetPrivateDataEXT(
+    VkDevice                                    device,
+    VkObjectType                                objectType,
+    uint64_t                                    objectHandle,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    uint64_t*                                   pData) {
+    FinishReadObjectParentInstance(device, "vkGetPrivateDataEXT");
+    FinishReadObject(privateDataSlot, "vkGetPrivateDataEXT");
 }
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS

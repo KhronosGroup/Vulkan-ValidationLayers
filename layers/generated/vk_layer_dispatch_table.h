@@ -695,6 +695,12 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCreateIndirectCommandsLayoutNV CreateIndirectCommandsLayoutNV;
     PFN_vkDestroyIndirectCommandsLayoutNV DestroyIndirectCommandsLayoutNV;
 
+    // ---- VK_EXT_private_data extension commands
+    PFN_vkCreatePrivateDataSlotEXT CreatePrivateDataSlotEXT;
+    PFN_vkDestroyPrivateDataSlotEXT DestroyPrivateDataSlotEXT;
+    PFN_vkSetPrivateDataEXT SetPrivateDataEXT;
+    PFN_vkGetPrivateDataEXT GetPrivateDataEXT;
+
     // ---- VK_KHR_ray_tracing extension commands
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;

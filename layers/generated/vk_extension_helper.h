@@ -345,6 +345,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_calibrated_timestamps{kNotEnabled};
     ExtEnabled vk_ext_conditional_rendering{kNotEnabled};
     ExtEnabled vk_ext_conservative_rasterization{kNotEnabled};
+    ExtEnabled vk_ext_custom_border_color{kNotEnabled};
     ExtEnabled vk_ext_debug_marker{kNotEnabled};
     ExtEnabled vk_ext_depth_clip_enable{kNotEnabled};
     ExtEnabled vk_ext_depth_range_unrestricted{kNotEnabled};
@@ -370,7 +371,9 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_pipeline_creation_cache_control{kNotEnabled};
     ExtEnabled vk_ext_pipeline_creation_feedback{kNotEnabled};
     ExtEnabled vk_ext_post_depth_coverage{kNotEnabled};
+    ExtEnabled vk_ext_private_data{kNotEnabled};
     ExtEnabled vk_ext_queue_family_foreign{kNotEnabled};
+    ExtEnabled vk_ext_robustness_2{kNotEnabled};
     ExtEnabled vk_ext_sample_locations{kNotEnabled};
     ExtEnabled vk_ext_sampler_filter_minmax{kNotEnabled};
     ExtEnabled vk_ext_scalar_block_layout{kNotEnabled};
@@ -485,6 +488,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_viewport_array2{kNotEnabled};
     ExtEnabled vk_nv_viewport_swizzle{kNotEnabled};
     ExtEnabled vk_nv_win32_keyed_mutex{kNotEnabled};
+    ExtEnabled vk_qcom_render_pass_shader_resolve{kNotEnabled};
     ExtEnabled vk_qcom_render_pass_store_ops{kNotEnabled};
     ExtEnabled vk_qcom_render_pass_transform{kNotEnabled};
 
@@ -535,7 +539,8 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_android_external_memory_android_hardware_buffer, {{
                            {&DeviceExtensions::vk_khr_sampler_ycbcr_conversion, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME},
                            {&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME},
-                           {&DeviceExtensions::vk_ext_queue_family_foreign, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME}}})),
+                           {&DeviceExtensions::vk_ext_queue_family_foreign, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME},
+                           {&DeviceExtensions::vk_khr_dedicated_allocation, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME}}})),
 #endif
             std::make_pair(VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_astc_decode_mode, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
@@ -546,6 +551,7 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_conditional_rendering, {})),
             std::make_pair(VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_conservative_rasterization, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
+            std::make_pair(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_custom_border_color, {})),
             std::make_pair(VK_EXT_DEBUG_MARKER_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_debug_marker, {{
                            {&DeviceExtensions::vk_ext_debug_report, VK_EXT_DEBUG_REPORT_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_depth_clip_enable, {})),
@@ -600,8 +606,10 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_creation_cache_control, {})),
             std::make_pair(VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_pipeline_creation_feedback, {})),
             std::make_pair(VK_EXT_POST_DEPTH_COVERAGE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_post_depth_coverage, {})),
+            std::make_pair(VK_EXT_PRIVATE_DATA_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_private_data, {})),
             std::make_pair(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_queue_family_foreign, {{
                            {&DeviceExtensions::vk_khr_external_memory, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME}}})),
+            std::make_pair(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_robustness_2, {})),
             std::make_pair(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_sample_locations, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_ext_sampler_filter_minmax, {{
@@ -831,6 +839,7 @@ struct DeviceExtensions : public InstanceExtensions {
             std::make_pair(VK_NV_WIN32_KEYED_MUTEX_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_nv_win32_keyed_mutex, {{
                            {&DeviceExtensions::vk_nv_external_memory_win32, VK_NV_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME}}})),
 #endif
+            std::make_pair(VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_shader_resolve, {})),
             std::make_pair(VK_QCOM_render_pass_store_ops_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_store_ops, {})),
             std::make_pair(VK_QCOM_RENDER_PASS_TRANSFORM_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_qcom_render_pass_transform, {{
                            {&DeviceExtensions::vk_khr_swapchain, VK_KHR_SWAPCHAIN_EXTENSION_NAME},
@@ -965,6 +974,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
     VK_EXT_CONDITIONAL_RENDERING_EXTENSION_NAME,
     VK_EXT_CONSERVATIVE_RASTERIZATION_EXTENSION_NAME,
+    VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME,
     VK_EXT_DEBUG_MARKER_EXTENSION_NAME,
     VK_EXT_DEPTH_CLIP_ENABLE_EXTENSION_NAME,
     VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME,
@@ -992,7 +1002,9 @@ static const std::set<std::string> kDeviceExtensionNames = {
     VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME,
     VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME,
     VK_EXT_POST_DEPTH_COVERAGE_EXTENSION_NAME,
+    VK_EXT_PRIVATE_DATA_EXTENSION_NAME,
     VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME,
+    VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
     VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME,
     VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME,
     VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME,
@@ -1127,6 +1139,7 @@ static const std::set<std::string> kDeviceExtensionNames = {
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     VK_NV_WIN32_KEYED_MUTEX_EXTENSION_NAME,
 #endif
+    VK_QCOM_RENDER_PASS_SHADER_RESOLVE_EXTENSION_NAME,
     VK_QCOM_render_pass_store_ops_EXTENSION_NAME,
     VK_QCOM_RENDER_PASS_TRANSFORM_EXTENSION_NAME,
 };
