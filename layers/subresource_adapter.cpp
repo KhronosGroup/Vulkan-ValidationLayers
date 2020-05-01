@@ -339,14 +339,24 @@ const VkSubresourceLayout& ImageRangeEncoder::SubresourceLayout(const VkImageSub
     return subres_layouts_[subres_layouts_index];
 }
 
+inline VkImageSubresourceRange GetRemaining(const VkImageSubresourceRange& full_range, VkImageSubresourceRange subres_range) {
+    if (subres_range.levelCount == VK_REMAINING_MIP_LEVELS) {
+        subres_range.levelCount = full_range.levelCount - subres_range.baseMipLevel;
+    }
+    if (subres_range.layerCount == VK_REMAINING_ARRAY_LAYERS) {
+        subres_range.layerCount = full_range.layerCount - subres_range.baseArrayLayer;
+    }
+    return subres_range;
+}
+
 ImageRangeGenerator::ImageRangeGenerator(const ImageRangeEncoder& encoder, const VkImageSubresourceRange& subres_range,
                                          const VkOffset3D& offset, const VkExtent3D& extent)
-    : encoder_(&encoder), subres_range_(subres_range), offset_(offset), extent_(extent) {
-    assert(IsValid(*encoder_, subres_range));
+    : encoder_(&encoder), subres_range_(GetRemaining(encoder.FullRange(), subres_range)), offset_(offset), extent_(extent) {
+    assert(IsValid(*encoder_, subres_range_));
     mip_level_index_ = 0;
-    aspect_index_ = encoder_->LowerBoundFromMask(subres_range.aspectMask);
+    aspect_index_ = encoder_->LowerBoundFromMask(subres_range_.aspectMask);
     if ((offset_.z + extent_.depth) == 1) {
-        range_arraylayer_base_ = subres_range.baseArrayLayer;
+        range_arraylayer_base_ = subres_range_.baseArrayLayer;
         range_layer_count_ = subres_range_.layerCount;
     } else {
         range_arraylayer_base_ = offset_.z;
