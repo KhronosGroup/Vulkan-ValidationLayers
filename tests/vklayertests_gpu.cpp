@@ -24,6 +24,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
     TEST_DESCRIPTION(
         "GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors.");
 
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     bool descriptor_indexing = InitGpuAssistedFramework(true);
 
     if (IsPlatform(kGalaxyS10)) {
@@ -505,6 +506,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
 }
 
 TEST_F(VkGpuAssistedLayerTest, GpuBufferDeviceAddressOOB) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     bool supported = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
@@ -1228,6 +1230,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     TEST_DESCRIPTION(
         "GPU validation: Make sure inline uniform blocks don't generate false validation errors, verify reserved descriptor slot "
         "and verify pipeline recovery");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     m_errorMonitor->ExpectSuccess();
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
                                               VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT};
@@ -1469,6 +1472,7 @@ void VkDebugPrintfTest::InitDebugPrintfFramework() {
 
 TEST_F(VkDebugPrintfTest, GpuDebugPrintf) {
     TEST_DESCRIPTION("Verify that calls to debugPrintfEXT are received in debug stream");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
     m_device_extension_names.push_back(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
     InitDebugPrintfFramework();
     if (!DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
