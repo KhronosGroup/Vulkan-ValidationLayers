@@ -2539,24 +2539,6 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK> 
 };
 
 #endif // VK_USE_PLATFORM_MACOS_MVK
-// Map type VkDebugUtilsObjectNameInfoEXT to id VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT
-template <> struct LvlTypeMap<VkDebugUtilsObjectNameInfoEXT> {
-    static const VkStructureType kSType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-};
-
-template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT> {
-    typedef VkDebugUtilsObjectNameInfoEXT Type;
-};
-
-// Map type VkDebugUtilsObjectTagInfoEXT to id VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT
-template <> struct LvlTypeMap<VkDebugUtilsObjectTagInfoEXT> {
-    static const VkStructureType kSType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT;
-};
-
-template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT> {
-    typedef VkDebugUtilsObjectTagInfoEXT Type;
-};
-
 // Map type VkDebugUtilsLabelEXT to id VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT
 template <> struct LvlTypeMap<VkDebugUtilsLabelEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
@@ -2566,6 +2548,15 @@ template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT> {
     typedef VkDebugUtilsLabelEXT Type;
 };
 
+// Map type VkDebugUtilsObjectNameInfoEXT to id VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT
+template <> struct LvlTypeMap<VkDebugUtilsObjectNameInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT> {
+    typedef VkDebugUtilsObjectNameInfoEXT Type;
+};
+
 // Map type VkDebugUtilsMessengerCallbackDataEXT to id VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT
 template <> struct LvlTypeMap<VkDebugUtilsMessengerCallbackDataEXT> {
     static const VkStructureType kSType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT;
@@ -2573,6 +2564,15 @@ template <> struct LvlTypeMap<VkDebugUtilsMessengerCallbackDataEXT> {
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT> {
     typedef VkDebugUtilsMessengerCallbackDataEXT Type;
+};
+
+// Map type VkDebugUtilsObjectTagInfoEXT to id VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT
+template <> struct LvlTypeMap<VkDebugUtilsObjectTagInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT> {
+    typedef VkDebugUtilsObjectTagInfoEXT Type;
 };
 
 // Map type VkDebugUtilsMessengerCreateInfoEXT to id VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT
@@ -3749,6 +3749,78 @@ template <> struct LvlTypeMap<VkCommandBufferInheritanceRenderPassTransformInfoQ
 
 template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_RENDER_PASS_TRANSFORM_INFO_QCOM> {
     typedef VkCommandBufferInheritanceRenderPassTransformInfoQCOM Type;
+};
+
+// Map type VkPhysicalDeviceRobustness2FeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceRobustness2FeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT> {
+    typedef VkPhysicalDeviceRobustness2FeaturesEXT Type;
+};
+
+// Map type VkPhysicalDeviceRobustness2PropertiesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_PROPERTIES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceRobustness2PropertiesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_PROPERTIES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_PROPERTIES_EXT> {
+    typedef VkPhysicalDeviceRobustness2PropertiesEXT Type;
+};
+
+// Map type VkSamplerCustomBorderColorCreateInfoEXT to id VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT
+template <> struct LvlTypeMap<VkSamplerCustomBorderColorCreateInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT> {
+    typedef VkSamplerCustomBorderColorCreateInfoEXT Type;
+};
+
+// Map type VkPhysicalDeviceCustomBorderColorPropertiesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_PROPERTIES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceCustomBorderColorPropertiesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_PROPERTIES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_PROPERTIES_EXT> {
+    typedef VkPhysicalDeviceCustomBorderColorPropertiesEXT Type;
+};
+
+// Map type VkPhysicalDeviceCustomBorderColorFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDeviceCustomBorderColorFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT> {
+    typedef VkPhysicalDeviceCustomBorderColorFeaturesEXT Type;
+};
+
+// Map type VkPhysicalDevicePrivateDataFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES_EXT
+template <> struct LvlTypeMap<VkPhysicalDevicePrivateDataFeaturesEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES_EXT> {
+    typedef VkPhysicalDevicePrivateDataFeaturesEXT Type;
+};
+
+// Map type VkDevicePrivateDataCreateInfoEXT to id VK_STRUCTURE_TYPE_DEVICE_PRIVATE_DATA_CREATE_INFO_EXT
+template <> struct LvlTypeMap<VkDevicePrivateDataCreateInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_DEVICE_PRIVATE_DATA_CREATE_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_DEVICE_PRIVATE_DATA_CREATE_INFO_EXT> {
+    typedef VkDevicePrivateDataCreateInfoEXT Type;
+};
+
+// Map type VkPrivateDataSlotCreateInfoEXT to id VK_STRUCTURE_TYPE_PRIVATE_DATA_SLOT_CREATE_INFO_EXT
+template <> struct LvlTypeMap<VkPrivateDataSlotCreateInfoEXT> {
+    static const VkStructureType kSType = VK_STRUCTURE_TYPE_PRIVATE_DATA_SLOT_CREATE_INFO_EXT;
+};
+
+template <> struct LvlSTypeMap<VK_STRUCTURE_TYPE_PRIVATE_DATA_SLOT_CREATE_INFO_EXT> {
+    typedef VkPrivateDataSlotCreateInfoEXT Type;
 };
 
 // Map type VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT to id VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES_EXT

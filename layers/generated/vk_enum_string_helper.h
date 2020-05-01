@@ -321,6 +321,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_DEVICE_MEMORY_OPAQUE_CAPTURE_ADDRESS_INFO";
         case VK_STRUCTURE_TYPE_DEVICE_MEMORY_OVERALLOCATION_CREATE_INFO_AMD:
             return "VK_STRUCTURE_TYPE_DEVICE_MEMORY_OVERALLOCATION_CREATE_INFO_AMD";
+        case VK_STRUCTURE_TYPE_DEVICE_PRIVATE_DATA_CREATE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_DEVICE_PRIVATE_DATA_CREATE_INFO_EXT";
         case VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO";
         case VK_STRUCTURE_TYPE_DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_EXT:
@@ -573,6 +575,10 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CORNER_SAMPLED_IMAGE_FEATURES_NV";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COVERAGE_REDUCTION_MODE_FEATURES_NV:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COVERAGE_REDUCTION_MODE_FEATURES_NV";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_PROPERTIES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_PROPERTIES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_ENABLE_FEATURES_EXT:
@@ -671,6 +677,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_POINT_CLIPPING_PROPERTIES";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIVATE_DATA_FEATURES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROTECTED_MEMORY_FEATURES:
@@ -687,6 +695,10 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_REPRESENTATIVE_FRAGMENT_TEST_FEATURES_NV:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_REPRESENTATIVE_FRAGMENT_TEST_FEATURES_NV";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT";
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_PROPERTIES_EXT:
+            return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_PROPERTIES_EXT";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLER_YCBCR_CONVERSION_FEATURES:
@@ -859,6 +871,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_PRESENT_REGIONS_KHR";
         case VK_STRUCTURE_TYPE_PRESENT_TIMES_INFO_GOOGLE:
             return "VK_STRUCTURE_TYPE_PRESENT_TIMES_INFO_GOOGLE";
+        case VK_STRUCTURE_TYPE_PRIVATE_DATA_SLOT_CREATE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_PRIVATE_DATA_SLOT_CREATE_INFO_EXT";
         case VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO:
             return "VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO";
         case VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO:
@@ -901,6 +915,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value)
             return "VK_STRUCTURE_TYPE_RENDER_PASS_TRANSFORM_BEGIN_INFO_QCOM";
         case VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO";
+        case VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT:
+            return "VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT";
         case VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO:
             return "VK_STRUCTURE_TYPE_SAMPLER_REDUCTION_MODE_CREATE_INFO";
         case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO:
@@ -3139,12 +3155,16 @@ static inline const char* string_VkBorderColor(VkBorderColor input_value)
 {
     switch ((VkBorderColor)input_value)
     {
+        case VK_BORDER_COLOR_FLOAT_CUSTOM_EXT:
+            return "VK_BORDER_COLOR_FLOAT_CUSTOM_EXT";
         case VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK:
             return "VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK";
         case VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE:
             return "VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE";
         case VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK:
             return "VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK";
+        case VK_BORDER_COLOR_INT_CUSTOM_EXT:
+            return "VK_BORDER_COLOR_INT_CUSTOM_EXT";
         case VK_BORDER_COLOR_INT_OPAQUE_BLACK:
             return "VK_BORDER_COLOR_INT_OPAQUE_BLACK";
         case VK_BORDER_COLOR_INT_OPAQUE_WHITE:
@@ -3364,10 +3384,14 @@ static inline const char* string_VkSubpassDescriptionFlagBits(VkSubpassDescripti
 {
     switch ((VkSubpassDescriptionFlagBits)input_value)
     {
+        case VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM:
+            return "VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM";
         case VK_SUBPASS_DESCRIPTION_PER_VIEW_ATTRIBUTES_BIT_NVX:
             return "VK_SUBPASS_DESCRIPTION_PER_VIEW_ATTRIBUTES_BIT_NVX";
         case VK_SUBPASS_DESCRIPTION_PER_VIEW_POSITION_X_ONLY_BIT_NVX:
             return "VK_SUBPASS_DESCRIPTION_PER_VIEW_POSITION_X_ONLY_BIT_NVX";
+        case VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM:
+            return "VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM";
         default:
             return "Unhandled VkSubpassDescriptionFlagBits";
     }
@@ -3793,6 +3817,8 @@ static inline const char* string_VkObjectType(VkObjectType input_value)
             return "VK_OBJECT_TYPE_PIPELINE_CACHE";
         case VK_OBJECT_TYPE_PIPELINE_LAYOUT:
             return "VK_OBJECT_TYPE_PIPELINE_LAYOUT";
+        case VK_OBJECT_TYPE_PRIVATE_DATA_SLOT_EXT:
+            return "VK_OBJECT_TYPE_PRIVATE_DATA_SLOT_EXT";
         case VK_OBJECT_TYPE_QUERY_POOL:
             return "VK_OBJECT_TYPE_QUERY_POOL";
         case VK_OBJECT_TYPE_QUEUE:
@@ -4500,37 +4526,25 @@ static inline std::string string_VkSurfaceTransformFlagsKHR(VkSurfaceTransformFl
     return ret;
 }
 
-static inline const char* string_VkCompositeAlphaFlagBitsKHR(VkCompositeAlphaFlagBitsKHR input_value)
+static inline const char* string_VkPresentModeKHR(VkPresentModeKHR input_value)
 {
-    switch ((VkCompositeAlphaFlagBitsKHR)input_value)
+    switch ((VkPresentModeKHR)input_value)
     {
-        case VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR:
-            return "VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR";
-        case VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR:
-            return "VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR";
-        case VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR:
-            return "VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR";
-        case VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR:
-            return "VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR";
+        case VK_PRESENT_MODE_FIFO_KHR:
+            return "VK_PRESENT_MODE_FIFO_KHR";
+        case VK_PRESENT_MODE_FIFO_RELAXED_KHR:
+            return "VK_PRESENT_MODE_FIFO_RELAXED_KHR";
+        case VK_PRESENT_MODE_IMMEDIATE_KHR:
+            return "VK_PRESENT_MODE_IMMEDIATE_KHR";
+        case VK_PRESENT_MODE_MAILBOX_KHR:
+            return "VK_PRESENT_MODE_MAILBOX_KHR";
+        case VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR:
+            return "VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR";
+        case VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR:
+            return "VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR";
         default:
-            return "Unhandled VkCompositeAlphaFlagBitsKHR";
+            return "Unhandled VkPresentModeKHR";
     }
-}
-
-static inline std::string string_VkCompositeAlphaFlagsKHR(VkCompositeAlphaFlagsKHR input_value)
-{
-    std::string ret;
-    int index = 0;
-    while(input_value) {
-        if (input_value & 1) {
-            if( !ret.empty()) ret.append("|");
-            ret.append(string_VkCompositeAlphaFlagBitsKHR(static_cast<VkCompositeAlphaFlagBitsKHR>(1 << index)));
-        }
-        ++index;
-        input_value >>= 1;
-    }
-    if( ret.empty()) ret.append(string_VkCompositeAlphaFlagBitsKHR(static_cast<VkCompositeAlphaFlagBitsKHR>(0)));
-    return ret;
 }
 
 static inline const char* string_VkColorSpaceKHR(VkColorSpaceKHR input_value)
@@ -4574,25 +4588,37 @@ static inline const char* string_VkColorSpaceKHR(VkColorSpaceKHR input_value)
     }
 }
 
-static inline const char* string_VkPresentModeKHR(VkPresentModeKHR input_value)
+static inline const char* string_VkCompositeAlphaFlagBitsKHR(VkCompositeAlphaFlagBitsKHR input_value)
 {
-    switch ((VkPresentModeKHR)input_value)
+    switch ((VkCompositeAlphaFlagBitsKHR)input_value)
     {
-        case VK_PRESENT_MODE_FIFO_KHR:
-            return "VK_PRESENT_MODE_FIFO_KHR";
-        case VK_PRESENT_MODE_FIFO_RELAXED_KHR:
-            return "VK_PRESENT_MODE_FIFO_RELAXED_KHR";
-        case VK_PRESENT_MODE_IMMEDIATE_KHR:
-            return "VK_PRESENT_MODE_IMMEDIATE_KHR";
-        case VK_PRESENT_MODE_MAILBOX_KHR:
-            return "VK_PRESENT_MODE_MAILBOX_KHR";
-        case VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR:
-            return "VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR";
-        case VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR:
-            return "VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR";
+        case VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR:
+            return "VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR";
+        case VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR:
+            return "VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR";
+        case VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR:
+            return "VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR";
+        case VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR:
+            return "VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR";
         default:
-            return "Unhandled VkPresentModeKHR";
+            return "Unhandled VkCompositeAlphaFlagBitsKHR";
     }
+}
+
+static inline std::string string_VkCompositeAlphaFlagsKHR(VkCompositeAlphaFlagsKHR input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkCompositeAlphaFlagBitsKHR(static_cast<VkCompositeAlphaFlagBitsKHR>(1 << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkCompositeAlphaFlagBitsKHR(static_cast<VkCompositeAlphaFlagBitsKHR>(0)));
+    return ret;
 }
 
 static inline const char* string_VkSwapchainCreateFlagBitsKHR(VkSwapchainCreateFlagBitsKHR input_value)
@@ -5334,6 +5360,41 @@ static inline const char* string_VkPipelineExecutableStatisticFormatKHR(VkPipeli
     }
 }
 
+static inline const char* string_VkDebugReportFlagBitsEXT(VkDebugReportFlagBitsEXT input_value)
+{
+    switch ((VkDebugReportFlagBitsEXT)input_value)
+    {
+        case VK_DEBUG_REPORT_DEBUG_BIT_EXT:
+            return "VK_DEBUG_REPORT_DEBUG_BIT_EXT";
+        case VK_DEBUG_REPORT_ERROR_BIT_EXT:
+            return "VK_DEBUG_REPORT_ERROR_BIT_EXT";
+        case VK_DEBUG_REPORT_INFORMATION_BIT_EXT:
+            return "VK_DEBUG_REPORT_INFORMATION_BIT_EXT";
+        case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT:
+            return "VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT";
+        case VK_DEBUG_REPORT_WARNING_BIT_EXT:
+            return "VK_DEBUG_REPORT_WARNING_BIT_EXT";
+        default:
+            return "Unhandled VkDebugReportFlagBitsEXT";
+    }
+}
+
+static inline std::string string_VkDebugReportFlagsEXT(VkDebugReportFlagsEXT input_value)
+{
+    std::string ret;
+    int index = 0;
+    while(input_value) {
+        if (input_value & 1) {
+            if( !ret.empty()) ret.append("|");
+            ret.append(string_VkDebugReportFlagBitsEXT(static_cast<VkDebugReportFlagBitsEXT>(1 << index)));
+        }
+        ++index;
+        input_value >>= 1;
+    }
+    if( ret.empty()) ret.append(string_VkDebugReportFlagBitsEXT(static_cast<VkDebugReportFlagBitsEXT>(0)));
+    return ret;
+}
+
 static inline const char* string_VkDebugReportObjectTypeEXT(VkDebugReportObjectTypeEXT input_value)
 {
     switch ((VkDebugReportObjectTypeEXT)input_value)
@@ -5411,41 +5472,6 @@ static inline const char* string_VkDebugReportObjectTypeEXT(VkDebugReportObjectT
         default:
             return "Unhandled VkDebugReportObjectTypeEXT";
     }
-}
-
-static inline const char* string_VkDebugReportFlagBitsEXT(VkDebugReportFlagBitsEXT input_value)
-{
-    switch ((VkDebugReportFlagBitsEXT)input_value)
-    {
-        case VK_DEBUG_REPORT_DEBUG_BIT_EXT:
-            return "VK_DEBUG_REPORT_DEBUG_BIT_EXT";
-        case VK_DEBUG_REPORT_ERROR_BIT_EXT:
-            return "VK_DEBUG_REPORT_ERROR_BIT_EXT";
-        case VK_DEBUG_REPORT_INFORMATION_BIT_EXT:
-            return "VK_DEBUG_REPORT_INFORMATION_BIT_EXT";
-        case VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT:
-            return "VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT";
-        case VK_DEBUG_REPORT_WARNING_BIT_EXT:
-            return "VK_DEBUG_REPORT_WARNING_BIT_EXT";
-        default:
-            return "Unhandled VkDebugReportFlagBitsEXT";
-    }
-}
-
-static inline std::string string_VkDebugReportFlagsEXT(VkDebugReportFlagsEXT input_value)
-{
-    std::string ret;
-    int index = 0;
-    while(input_value) {
-        if (input_value & 1) {
-            if( !ret.empty()) ret.append("|");
-            ret.append(string_VkDebugReportFlagBitsEXT(static_cast<VkDebugReportFlagBitsEXT>(1 << index)));
-        }
-        ++index;
-        input_value >>= 1;
-    }
-    if( ret.empty()) ret.append(string_VkDebugReportFlagBitsEXT(static_cast<VkDebugReportFlagBitsEXT>(0)));
-    return ret;
 }
 
 static inline const char* string_VkRasterizationOrderAMD(VkRasterizationOrderAMD input_value)

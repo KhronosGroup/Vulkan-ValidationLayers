@@ -75,7 +75,8 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeAccelerationStructureKHR = 36,
     kVulkanObjectTypePerformanceConfigurationINTEL = 37,
     kVulkanObjectTypeIndirectCommandsLayoutNV = 38,
-    kVulkanObjectTypeMax = 39,
+    kVulkanObjectTypePrivateDataSlotEXT = 39,
+    kVulkanObjectTypeMax = 40,
     // Aliases for backwards compatibilty of "promoted" types
     kVulkanObjectTypeDescriptorUpdateTemplateKHR = kVulkanObjectTypeDescriptorUpdateTemplate,
     kVulkanObjectTypeSamplerYcbcrConversionKHR = kVulkanObjectTypeSamplerYcbcrConversion,
@@ -123,6 +124,7 @@ static const char * const object_string[kVulkanObjectTypeMax] = {
     "VkAccelerationStructureKHR",
     "VkPerformanceConfigurationINTEL",
     "VkIndirectCommandsLayoutNV",
+    "VkPrivateDataSlotEXT",
 };
 
 // Helper array to get Vulkan VK_EXT_debug_report object type enum from the internal layers version
@@ -170,6 +172,7 @@ const VkDebugReportObjectTypeEXT get_debug_report_enum[] = {
     VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT,   // kVulkanObjectTypeAccelerationStructureKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypePerformanceConfigurationINTEL
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypeIndirectCommandsLayoutNV
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,   // kVulkanObjectTypePrivateDataSlotEXT
 };
 
 // Helper function to get Official Vulkan VkObjectType enum from the internal layers version
@@ -213,6 +216,7 @@ static inline VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType inte
         case kVulkanObjectTypeAccelerationStructureKHR: return VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR;
         case kVulkanObjectTypePerformanceConfigurationINTEL: return VK_OBJECT_TYPE_PERFORMANCE_CONFIGURATION_INTEL;
         case kVulkanObjectTypeIndirectCommandsLayoutNV: return VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NV;
+        case kVulkanObjectTypePrivateDataSlotEXT: return VK_OBJECT_TYPE_PRIVATE_DATA_SLOT_EXT;
         default: return VK_OBJECT_TYPE_UNKNOWN;
     }
 };
@@ -258,6 +262,7 @@ static inline VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType vulk
         case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR: return kVulkanObjectTypeAccelerationStructureKHR;
         case VK_OBJECT_TYPE_PERFORMANCE_CONFIGURATION_INTEL: return kVulkanObjectTypePerformanceConfigurationINTEL;
         case VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_NV: return kVulkanObjectTypeIndirectCommandsLayoutNV;
+        case VK_OBJECT_TYPE_PRIVATE_DATA_SLOT_EXT: return kVulkanObjectTypePrivateDataSlotEXT;
         default: return kVulkanObjectTypeUnknown;
     }
 };
@@ -688,6 +693,17 @@ template <> struct VkHandleInfo<VkPipelineLayout> {
 };
 template <> struct VulkanObjectTypeInfo<kVulkanObjectTypePipelineLayout> {
     typedef VkPipelineLayout Type;
+};
+template <> struct VkHandleInfo<VkPrivateDataSlotEXT> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypePrivateDataSlotEXT;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_PRIVATE_DATA_SLOT_EXT;
+    static const char* Typename() {
+        return "VkPrivateDataSlotEXT";
+    }
+};
+template <> struct VulkanObjectTypeInfo<kVulkanObjectTypePrivateDataSlotEXT> {
+    typedef VkPrivateDataSlotEXT Type;
 };
 template <> struct VkHandleInfo<VkQueryPool> {
     static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeQueryPool;

@@ -37,9 +37,6 @@ void PostCallRecordCreateInstance(
 bool PreCallValidateDestroyInstance(
     VkInstance                                  instance,
     const VkAllocationCallbacks*                pAllocator) const;
-void PreCallRecordDestroyInstance(
-    VkInstance                                  instance,
-    const VkAllocationCallbacks*                pAllocator);
 bool PreCallValidateEnumeratePhysicalDevices(
     VkInstance                                  instance,
     uint32_t*                                   pPhysicalDeviceCount,
@@ -94,9 +91,6 @@ void PostCallRecordCreateDevice(
 bool PreCallValidateDestroyDevice(
     VkDevice                                    device,
     const VkAllocationCallbacks*                pAllocator) const;
-void PreCallRecordDestroyDevice(
-    VkDevice                                    device,
-    const VkAllocationCallbacks*                pAllocator);
 bool PreCallValidateEnumerateDeviceExtensionProperties(
     VkPhysicalDevice                            physicalDevice,
     const char*                                 pLayerName,
@@ -2448,6 +2442,37 @@ void PreCallRecordDestroyIndirectCommandsLayoutNV(
     VkDevice                                    device,
     VkIndirectCommandsLayoutNV                  indirectCommandsLayout,
     const VkAllocationCallbacks*                pAllocator);
+bool PreCallValidateCreatePrivateDataSlotEXT(
+    VkDevice                                    device,
+    const VkPrivateDataSlotCreateInfoEXT*       pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPrivateDataSlotEXT*                       pPrivateDataSlot) const;
+void PostCallRecordCreatePrivateDataSlotEXT(
+    VkDevice                                    device,
+    const VkPrivateDataSlotCreateInfoEXT*       pCreateInfo,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPrivateDataSlotEXT*                       pPrivateDataSlot,
+    VkResult                                    result);
+bool PreCallValidateDestroyPrivateDataSlotEXT(
+    VkDevice                                    device,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    const VkAllocationCallbacks*                pAllocator) const;
+void PreCallRecordDestroyPrivateDataSlotEXT(
+    VkDevice                                    device,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    const VkAllocationCallbacks*                pAllocator);
+bool PreCallValidateSetPrivateDataEXT(
+    VkDevice                                    device,
+    VkObjectType                                objectType,
+    uint64_t                                    objectHandle,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    uint64_t                                    data) const;
+bool PreCallValidateGetPrivateDataEXT(
+    VkDevice                                    device,
+    VkObjectType                                objectType,
+    uint64_t                                    objectHandle,
+    VkPrivateDataSlotEXT                        privateDataSlot,
+    uint64_t*                                   pData) const;
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateCreateAccelerationStructureKHR(
