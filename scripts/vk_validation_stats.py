@@ -565,7 +565,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     @staticmethod
     def make_vuid_spec_version_list(pattern):
         assert pattern
-        max_minor_version = 1 # needs to be bumped with new minor versions :/
+        max_minor_version = 2 # needs to be bumped with new minor versions :/
 
         all_editions_list = []
         for e in reversed(range(max_minor_version+1)):
