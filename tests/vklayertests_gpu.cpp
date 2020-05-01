@@ -31,6 +31,11 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBGraphicsShaders) {
         return;
     }
 
+    if (IsPlatform(kNexusPlayer)) {
+        printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
+        return;
+    }
+
     if (IsPlatform(kMockICD) || DeviceSimulation()) {
         printf("%s GPU-Assisted validation test requires a driver that can draw.\n", kSkipPrefix);
         return;
