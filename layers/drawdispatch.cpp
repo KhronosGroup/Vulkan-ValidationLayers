@@ -322,16 +322,6 @@ bool CoreChecks::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkB
                                               VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                               uint32_t stride, const char *apiName) const {
     bool skip = false;
-    if (offset & 3) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirectCount-offset-02710",
-                         "%s() parameter, VkDeviceSize offset (0x%" PRIxLEAST64 "), is not a multiple of 4.", apiName, offset);
-    }
-
-    if (countBufferOffset & 3) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirectCount-countBufferOffset-02716",
-                         "%s() parameter, VkDeviceSize countBufferOffset (0x%" PRIxLEAST64 "), is not a multiple of 4.", apiName,
-                         countBufferOffset);
-    }
     skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndirectCount-stride-03110", stride, apiName,
                                             sizeof(VkDrawIndirectCommand));
     if (maxDrawCount > 1) {
@@ -358,55 +348,39 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandB
                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                         uint32_t stride) const {
     return ValidateCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                        "VkCmdDrawIndirectCountKHR");
+                                        "vkCmdDrawIndirectCountKHR");
 }
 
 bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                      uint32_t stride) const {
     return ValidateCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
-                                        "VkCmdDrawIndirectCount");
+                                        "vkCmdDrawIndirectCount");
 }
 
 bool CoreChecks::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                     uint32_t stride) const {
+                                                     uint32_t stride, const char *apiName) const {
     bool skip = false;
-    if (offset & 3) {
-        skip |= LogError(
-            commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-offset-02710",
-            "vkCmdDrawIndexedIndirectCount() parameter, VkDeviceSize offset (0x%" PRIxLEAST64 "), is not a multiple of 4.", offset);
-    }
-
-    if (countBufferOffset & 3) {
-        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-countBufferOffset-02716",
-                         "vkCmdDrawIndexedIndirectCount() parameter, VkDeviceSize countBufferOffset (0x%" PRIxLEAST64
-                         "), is not a multiple of 4.",
-                         countBufferOffset);
-    }
-
-    skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-stride-03142", stride,
-                                            "VkDrawIndirectCommand", sizeof(VkDrawIndexedIndirectCommand));
+    skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-stride-03142", stride, apiName,
+                                            sizeof(VkDrawIndexedIndirectCommand));
     if (maxDrawCount > 1) {
         const BUFFER_STATE *buffer_state = GetBufferState(buffer);
         skip |= ValidateCmdDrawStrideWithBuffer(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-maxDrawCount-03143", stride,
-                                                "VkDrawIndirectCommand", sizeof(VkDrawIndexedIndirectCommand), maxDrawCount, offset,
-                                                buffer_state);
+                                                apiName, sizeof(VkDrawIndexedIndirectCommand), maxDrawCount, offset, buffer_state);
     }
 
-    skip |= ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECTCOUNT,
-                                "vkCmdDrawIndexedIndirectCount()", VK_QUEUE_GRAPHICS_BIT);
+    skip |= ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_GRAPHICS, CMD_DRAWINDEXEDINDIRECTCOUNT, apiName,
+                                VK_QUEUE_GRAPHICS_BIT);
     const BUFFER_STATE *buffer_state = GetBufferState(buffer);
     const BUFFER_STATE *count_buffer_state = GetBufferState(countBuffer);
-    skip |= ValidateMemoryIsBoundToBuffer(buffer_state, "vkCmdDrawIndexedIndirectCount()",
-                                          "VUID-vkCmdDrawIndexedIndirectCount-buffer-02708");
-    skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, "vkCmdDrawIndexedIndirectCount()",
-                                          "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02714");
-    skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
-                                     "VUID-vkCmdDrawIndexedIndirectCount-buffer-02709", "vkCmdDrawIndexedIndirectCount()",
-                                     "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+    skip |= ValidateMemoryIsBoundToBuffer(buffer_state, apiName, "VUID-vkCmdDrawIndexedIndirectCount-buffer-02708");
+    skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, apiName, "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02714");
+    skip |=
+        ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+                                 "VUID-vkCmdDrawIndexedIndirectCount-buffer-02709", apiName, "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
     skip |= ValidateBufferUsageFlags(count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
-                                     "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02715", "vkCmdDrawIndexedIndirectCount()",
+                                     "VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02715", apiName,
                                      "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
     return skip;
 }
@@ -414,13 +388,15 @@ bool CoreChecks::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuff
 bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                                VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                                uint32_t maxDrawCount, uint32_t stride) const {
-    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
+                                               "vkCmdDrawIndexedIndirectCountKHR");
 }
 
 bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                             VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                             uint32_t maxDrawCount, uint32_t stride) const {
-    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
+    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
+                                               "vkCmdDrawIndexedIndirectCount");
 }
 
 bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
@@ -529,11 +505,11 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
     skip |= ValidateMemoryIsBoundToBuffer(count_buffer_state, "vkCmdDrawMeshTasksIndirectCountNV()",
                                           "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02714");
     skip |= ValidateBufferUsageFlags(buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
-                                     "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02709", "vkCmdDrawIndexedIndirectCount()",
+                                     "VUID-vkCmdDrawMeshTasksIndirectCountNV-buffer-02709", "vkCmdDrawMeshTasksIndirectCountNV()",
                                      "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
     skip |= ValidateBufferUsageFlags(count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
-                                     "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02715", "vkCmdDrawIndexedIndirectCount()",
-                                     "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
+                                     "VUID-vkCmdDrawMeshTasksIndirectCountNV-countBuffer-02715",
+                                     "vkCmdDrawMeshTasksIndirectCountNV()", "VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT");
     skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawMeshTasksIndirectCountNV-stride-02182", stride,
                                             "VkDrawMeshTasksIndirectCommandNV", sizeof(VkDrawMeshTasksIndirectCommandNV));
     if (maxDrawCount > 1) {

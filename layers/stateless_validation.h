@@ -1217,6 +1217,10 @@ class StatelessValidation : public ValidationObject {
     bool ValidateCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
                                               const VkAllocationCallbacks *pAllocator, VkSamplerYcbcrConversion *pYcbcrConversion,
                                               const char *apiName) const;
+    bool ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkDeviceSize offset, VkDeviceSize countBufferOffset,
+                                      bool khr) const;
+    bool ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkDeviceSize offset, VkDeviceSize countBufferOffset,
+                                             bool khr) const;
 
     bool OutputExtensionError(const std::string &api_name, const std::string &extension_name) const;
 
@@ -1300,6 +1304,22 @@ class StatelessValidation : public ValidationObject {
 
     bool manual_PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                       uint32_t count, uint32_t stride) const;
+
+    bool manual_PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                    VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                    uint32_t stride) const;
+
+    bool manual_PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                       VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                       uint32_t stride) const;
+
+    bool manual_PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                           uint32_t maxDrawCount, uint32_t stride) const;
+
+    bool manual_PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                              uint32_t maxDrawCount, uint32_t stride) const;
 
     bool manual_PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                    const VkClearAttachment *pAttachments, uint32_t rectCount,
@@ -1472,5 +1492,6 @@ class StatelessValidation : public ValidationObject {
                                                                     const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo) const;
     bool manual_PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
         VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo) const;
+
 #include "parameter_validation.h"
 };  // Class StatelessValidation

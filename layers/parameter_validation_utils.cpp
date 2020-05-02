@@ -2933,6 +2933,68 @@ bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirect(VkCommand
     return skip;
 }
 
+bool StatelessValidation::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkDeviceSize offset,
+                                                       VkDeviceSize countBufferOffset, bool khr) const {
+    bool skip = false;
+    const char *apiName = khr ? "vkCmdDrawIndirectCountKHR()" : "vkCmdDrawIndirectCount()";
+    if (offset & 3) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirectCount-offset-02710",
+                         "%s: parameter, VkDeviceSize offset (0x%" PRIxLEAST64 "), is not a multiple of 4.", apiName, offset);
+    }
+
+    if (countBufferOffset & 3) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirectCount-countBufferOffset-02716",
+                         "%s: parameter, VkDeviceSize countBufferOffset (0x%" PRIxLEAST64 "), is not a multiple of 4.", apiName,
+                         countBufferOffset);
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                     VkDeviceSize offset, VkBuffer countBuffer,
+                                                                     VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                                     uint32_t stride) const {
+    return ValidateCmdDrawIndirectCount(commandBuffer, offset, countBufferOffset, false);
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                        VkDeviceSize offset, VkBuffer countBuffer,
+                                                                        VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                                        uint32_t stride) const {
+    return ValidateCmdDrawIndirectCount(commandBuffer, offset, countBufferOffset, true);
+}
+
+bool StatelessValidation::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkDeviceSize offset,
+                                                              VkDeviceSize countBufferOffset, bool khr) const {
+    bool skip = false;
+    const char *apiName = khr ? "vkCmdDrawIndexedIndirectCountKHR()" : "vkCmdDrawIndexedIndirectCount()";
+    if (offset & 3) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-offset-02710",
+                         "%s: parameter, VkDeviceSize offset (0x%" PRIxLEAST64 "), is not a multiple of 4.", apiName, offset);
+    }
+
+    if (countBufferOffset & 3) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-countBufferOffset-02716",
+                         "%s: parameter, VkDeviceSize countBufferOffset (0x%" PRIxLEAST64 "), is not a multiple of 4.", apiName,
+                         countBufferOffset);
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                            VkDeviceSize offset, VkBuffer countBuffer,
+                                                                            VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                                            uint32_t stride) const {
+    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, offset, countBufferOffset, false);
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                                               VkDeviceSize offset, VkBuffer countBuffer,
+                                                                               VkDeviceSize countBufferOffset,
+                                                                               uint32_t maxDrawCount, uint32_t stride) const {
+    return ValidateCmdDrawIndexedIndirectCount(commandBuffer, offset, countBufferOffset, true);
+}
+
 bool StatelessValidation::manual_PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                                     const VkClearAttachment *pAttachments, uint32_t rectCount,
                                                                     const VkClearRect *pRects) const {
