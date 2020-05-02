@@ -464,19 +464,13 @@ class OutputDatabase:
 typedef struct _vuid_spec_text_pair {
     const char * vuid;
     const char * spec_text;
+    const char * url_id;
 } vuid_spec_text_pair;
 
 static const vuid_spec_text_pair vuid_spec_text[] = {
 """
         self.header_postamble = """};
 """
-        # TODO: it might make sense to ask for khr.io short permalink
-        self.spec_url_ext = "https://www.khronos.org/registry/vulkan/specs/1.%s-extensions/html/vkspec.html#%s"
-        self.spec_url_khr = "https://www.khronos.org/registry/vulkan/specs/1.%s-khr-extensions/html/vkspec.html#%s"
-        self.spec_url_core = "https://www.khronos.org/registry/vulkan/specs/1.%s/html/vkspec.html#%s"
-        # For VUIDs that do not exist in any published spec, at least link to spec repo search
-        self.spec_url_default = "https://github.com/KhronosGroup/Vulkan-Docs/search?q=%s"
-
     def dump_txt(self, only_unimplemented = False):
         print("\n Dumping database to text file: %s" % txt_filename)
         with open (txt_filename, 'w') as txt:
@@ -645,14 +639,14 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
 
                 spec_list = self.make_vuid_spec_version_list(db_entry['ext'], minor_version)
 
-                if  not spec_list: spec_url = self.spec_url_default % vuid
-                elif spec_list[0]['ext']: spec_url = self.spec_url_ext % (spec_list[0]['version'], vuid)
-                elif spec_list[0]['khr']: spec_url = self.spec_url_khr % (spec_list[0]['version'], vuid)
-                else: spec_url = self.spec_url_core % (spec_list[0]['version'], vuid)
+                if not spec_list: spec_url_id = 'default'
+                elif spec_list[0]['ext']: spec_url_id = '1.%s-extensions' % spec_list[0]['version']
+                elif spec_list[0]['khr']: spec_url_id = '1.%s-khr-extensions' % spec_list[0]['version']
+                else: spec_url_id = '1.%s' % spec_list[0]['version']
 
                 # Escape quotes when generating C strings for source code
                 db_text = db_entry['text'].replace('"', '\\"')
-                hfile.write('    {"%s", "%s (%s)"},\n' % (vuid, db_text, spec_url))
+                hfile.write('    {"%s", "%s", "%s"},\n' % (vuid, db_text, spec_url_id))
                 # For multiply-defined VUIDs, include versions with extension appended
                 if len(self.vj.vuid_db[vuid]) > 1:
                     print('Error: Found a duplicate VUID: %s' % vuid)
