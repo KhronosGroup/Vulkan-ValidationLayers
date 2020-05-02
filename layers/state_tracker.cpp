@@ -1127,7 +1127,15 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     if (vulkan_12_features) {
         state_tracker->enabled_features.core12 = *vulkan_12_features;
     } else {
-        // These structs are only allowed in pNext chain if there is no kPhysicalDeviceVulkan12Features
+        // Set Extension Feature Aliases to false as there is no struct to check
+        state_tracker->enabled_features.core12.drawIndirectCount = VK_FALSE;
+        state_tracker->enabled_features.core12.samplerMirrorClampToEdge = VK_FALSE;
+        state_tracker->enabled_features.core12.descriptorIndexing = VK_FALSE;
+        state_tracker->enabled_features.core12.samplerFilterMinmax = VK_FALSE;
+        state_tracker->enabled_features.core12.shaderOutputLayer = VK_FALSE;
+        state_tracker->enabled_features.core12.shaderOutputViewportIndex = VK_FALSE;
+
+        // These structs are only allowed in pNext chain if there is no VkPhysicalDeviceVulkan12Features
 
         const auto *eight_bit_storage_features = lvl_find_in_chain<VkPhysicalDevice8BitStorageFeatures>(pCreateInfo->pNext);
         if (eight_bit_storage_features) {

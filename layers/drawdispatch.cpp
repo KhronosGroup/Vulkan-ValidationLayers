@@ -322,6 +322,12 @@ bool CoreChecks::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkB
                                               VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                               uint32_t stride, const char *apiName) const {
     bool skip = false;
+    if ((api_version >= VK_API_VERSION_1_2) && (enabled_features.core12.drawIndirectCount == VK_FALSE)) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndirectCount-None-02836",
+                         "%s(): Starting in Vulkan 1.2 the VkPhysicalDeviceVulkan12Features::drawIndirectCount must be enabled to "
+                         "call this command.",
+                         apiName);
+    }
     skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndirectCount-stride-03110", stride, apiName,
                                             sizeof(VkDrawIndirectCommand));
     if (maxDrawCount > 1) {
@@ -362,6 +368,12 @@ bool CoreChecks::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuff
                                                      VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                      uint32_t stride, const char *apiName) const {
     bool skip = false;
+    if ((api_version >= VK_API_VERSION_1_2) && (enabled_features.core12.drawIndirectCount == VK_FALSE)) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdDrawIndexedIndirect-None-02837",
+                         "%s(): Starting in Vulkan 1.2 the VkPhysicalDeviceVulkan12Features::drawIndirectCount must be enabled to "
+                         "call this command.",
+                         apiName);
+    }
     skip |= ValidateCmdDrawStrideWithStruct(commandBuffer, "VUID-vkCmdDrawIndexedIndirectCount-stride-03142", stride, apiName,
                                             sizeof(VkDrawIndexedIndirectCommand));
     if (maxDrawCount > 1) {
