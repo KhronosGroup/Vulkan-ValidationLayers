@@ -203,6 +203,10 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdCopyAccelerationStructureKHR',
             'vkCopyMemoryToAccelerationStructureKHR',
             'vkCmdCopyMemoryToAccelerationStructureKHR',
+            'vkCmdDrawIndirectCount',
+            'vkCmdDrawIndirectCountKHR',
+            'vkCmdDrawIndexedIndirectCount',
+            'vkCmdDrawIndexedIndirectCountKHR',
             ]
 
         # Commands to ignore

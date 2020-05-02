@@ -5927,6 +5927,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndirectCount(
     bool skip = false;
     skip |= validate_required_handle("vkCmdDrawIndirectCount", "buffer", buffer);
     skip |= validate_required_handle("vkCmdDrawIndirectCount", "countBuffer", countBuffer);
+    if (!skip) skip |= manual_PreCallValidateCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
     return skip;
 }
 
@@ -5941,6 +5942,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexedIndirectCount(
     bool skip = false;
     skip |= validate_required_handle("vkCmdDrawIndexedIndirectCount", "buffer", buffer);
     skip |= validate_required_handle("vkCmdDrawIndexedIndirectCount", "countBuffer", countBuffer);
+    if (!skip) skip |= manual_PreCallValidateCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
     return skip;
 }
 
@@ -8484,6 +8486,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndirectCountKHR(
     if (!device_extensions.vk_khr_draw_indirect_count) skip |= OutputExtensionError("vkCmdDrawIndirectCountKHR", VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     skip |= validate_required_handle("vkCmdDrawIndirectCountKHR", "buffer", buffer);
     skip |= validate_required_handle("vkCmdDrawIndirectCountKHR", "countBuffer", countBuffer);
+    if (!skip) skip |= manual_PreCallValidateCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
     return skip;
 }
 
@@ -8499,6 +8502,7 @@ bool StatelessValidation::PreCallValidateCmdDrawIndexedIndirectCountKHR(
     if (!device_extensions.vk_khr_draw_indirect_count) skip |= OutputExtensionError("vkCmdDrawIndexedIndirectCountKHR", VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
     skip |= validate_required_handle("vkCmdDrawIndexedIndirectCountKHR", "buffer", buffer);
     skip |= validate_required_handle("vkCmdDrawIndexedIndirectCountKHR", "countBuffer", countBuffer);
+    if (!skip) skip |= manual_PreCallValidateCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride);
     return skip;
 }
 
