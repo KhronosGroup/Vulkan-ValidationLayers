@@ -121,13 +121,9 @@ class ErrorMonitor {
     void SetAllowedFailureMsg(const char *const msg);
 
     VkBool32 CheckForDesiredMsg(const char *const msgString);
-    std::vector<std::string> GetOtherFailureMsgs() const;
-    VkDebugReportFlagsEXT GetMessageFlags() const;
-    bool AnyDesiredMsgFound() const;
-    bool AllDesiredMsgsFound() const;
+    VkDebugReportFlagsEXT GetMessageFlags();
     void SetError(const char *const errorString);
     void SetBailout(bool *bailout);
-    void DumpFailureMsgs() const;
 
     // Helpers
 
@@ -141,6 +137,11 @@ class ErrorMonitor {
     // TODO: This is stopgap to block new unexpected errors from being introduced. The long-term goal is to remove the use of this
     // function and its definition.
     bool IgnoreMessage(std::string const &msg) const;
+    std::vector<std::string> GetOtherFailureMsgs() const;
+    bool AnyDesiredMsgFound() const;
+    bool AllDesiredMsgsFound() const;
+    void DumpFailureMsgs() const;
+    void MonitorReset();
 
     VkFlags message_flags_;
     std::unordered_multiset<std::string> desired_message_strings_;
