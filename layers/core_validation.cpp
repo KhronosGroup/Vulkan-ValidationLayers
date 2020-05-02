@@ -8007,6 +8007,14 @@ bool CoreChecks::ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const
                     device, vuid,
                     "Dependency %u specifies a self-dependency from logically-later stage (%s) to a logically-earlier stage (%s).",
                     i, string_VkPipelineStageFlagBits(latest_src_stage), string_VkPipelineStageFlagBits(earliest_dst_stage));
+            } else if ((HasNonFramebufferStagePipelineStageFlags(dependency.srcStageMask) == false) &&
+                       (HasNonFramebufferStagePipelineStageFlags(dependency.dstStageMask) == false) &&
+                       ((dependency.dependencyFlags & VK_DEPENDENCY_BY_REGION_BIT) == 0)) {
+                vuid = use_rp2 ? "VUID-VkSubpassDependency2-srcSubpass-02245" : "VUID-VkSubpassDependency-srcSubpass-02243";
+                skip |= LogError(device, vuid,
+                                 "Dependency %u specifies a self-dependency for subpass %u with both stages including a "
+                                 "framebuffer-space stage, but does not specify VK_DEPENDENCY_BY_REGION_BIT in dependencyFlags.",
+                                 i, dependency.srcSubpass);
             }
         }
     }
