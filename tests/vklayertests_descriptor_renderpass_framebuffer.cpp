@@ -1195,14 +1195,16 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidInputAttachmentReferences) {
     VkRenderPassCreateInfo rpci = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, &rpiaaci, 0, 1, &attach, 1, &subpass, 0, nullptr};
 
     // Invalid meta data aspect
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "VUID-VkRenderPassCreateInfo-pNext-01963");  // Cannot/should not avoid getting this one too
+    // Cannot/should not avoid getting the unxpected ones too
+    m_errorMonitor->SetUnexpectedError("VUID-VkRenderPassCreateInfo-pNext-01963");
+    m_errorMonitor->SetUnexpectedError("VUID-VkRenderPassCreateInfo2-attachment-02525");
     TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkInputAttachmentAspectReference-aspectMask-01964",
                          nullptr);
 
     // Aspect not present
     iaar.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkRenderPassCreateInfo-pNext-01963", nullptr);
+    TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkRenderPassCreateInfo-pNext-01963",
+                         "VUID-VkRenderPassCreateInfo2-attachment-02525");
 
     // Invalid subpass index
     iaar.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1590,7 +1592,8 @@ TEST_F(VkLayerTest, RenderPassCreateInvalidSubpassDependencies) {
         pViewOffsets[0] = 1;
         rpmvci.dependencyCount = 1;
 
-        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkRenderPassCreateInfo-pNext-01930", nullptr);
+        TestRenderPassCreate(m_errorMonitor, m_device->device(), &rpci, false, "VUID-VkRenderPassCreateInfo-pNext-01930",
+                             "VUID-VkSubpassDependency2-viewOffset-02530");
 
         rpmvci.dependencyCount = 0;
 
