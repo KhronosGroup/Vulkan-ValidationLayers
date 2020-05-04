@@ -154,6 +154,12 @@ else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpointer-arith -Wno-unused-function -Wno-sign-compare")
 endif()
 
+
+if(ANNOTATED_SPEC_LINK)
+    message("-- ANNOTATED_SPEC_LINK is ${ANNOTATED_SPEC_LINK}")
+    add_definitions(-DANNOTATED_SPEC_LINK=${ANNOTATED_SPEC_LINK})
+endif()
+
 # Clang warns about unused const variables. Generated files may purposely contain unused consts, so silence this warning in Clang
 if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     set_source_files_properties(parameter_validation.cpp PROPERTIES COMPILE_FLAGS "-Wno-unused-const-variable")
