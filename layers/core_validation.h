@@ -39,6 +39,7 @@ struct DrawDispatchVuid {
     const char* compatible_pipeline;
     const char* render_pass_compatible;
     const char* subpass_index;
+    const char* sample_location;
 };
 
 class CoreChecks : public ValidationStateTracker {
@@ -239,6 +240,7 @@ class CoreChecks : public ValidationStateTracker {
                                 const char* error_code) const;
     bool ValidateCmdQueueFlags(const CMD_BUFFER_STATE* cb_node, const char* caller_name, VkQueueFlags flags,
                                const char* error_code) const;
+    bool ValidateSampleLocationsInfo(const VkSampleLocationsInfoEXT* pSampleLocationsInfo, const char* apiName) const;
     bool InsideRenderPass(const CMD_BUFFER_STATE* pCB, const char* apiName, const char* msgCode) const;
     bool OutsideRenderPass(const CMD_BUFFER_STATE* pCB, const char* apiName, const char* msgCode) const;
     bool ValidateDynamicOffsetAlignment(const VkCommandBuffer command_buffer, const VkDescriptorSetLayoutBinding* binding,

@@ -1490,6 +1490,7 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_texel_buffer_alignment, &phys_dev_props->texel_buffer_alignment_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_fragment_density_map, &phys_dev_props->fragment_density_map_props);
     GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_khr_performance_query, &phys_dev_props->performance_query_props);
+    GetPhysicalDeviceExtProperties(gpu, dev_ext.vk_ext_sample_locations, &phys_dev_props->sample_locations_props);
 
     if (!state_tracker->device_extensions.vk_feature_version_1_2 && dev_ext.vk_khr_timeline_semaphore) {
         VkPhysicalDeviceTimelineSemaphorePropertiesKHR timeline_semaphore_props;
@@ -3097,6 +3098,14 @@ void SetPipelineState(PIPELINE_STATE *pPipe) {
                     pPipe->blendConstantsEnabled = true;
                 }
             }
+        }
+    }
+    // Check if sample location is enabled
+    if (pPipe->graphicsPipelineCI.pMultisampleState) {
+        const VkPipelineSampleLocationsStateCreateInfoEXT *sample_location_state =
+            lvl_find_in_chain<VkPipelineSampleLocationsStateCreateInfoEXT>(pPipe->graphicsPipelineCI.pMultisampleState->pNext);
+        if (sample_location_state != nullptr) {
+            pPipe->sample_location_enabled = sample_location_state->sampleLocationsEnable;
         }
     }
 }

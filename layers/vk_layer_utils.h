@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2017, 2019 The Khronos Group Inc.
- * Copyright (c) 2015-2017, 2019 Valve Corporation
- * Copyright (c) 2015-2017, 2019 LunarG, Inc.
+/* Copyright (c) 2015-2017, 2019-2020 The Khronos Group Inc.
+ * Copyright (c) 2015-2017, 2019-2020 Valve Corporation
+ * Copyright (c) 2015-2017, 2019-2020 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,6 +135,36 @@ VK_LAYER_EXPORT VkLayerInstanceCreateInfo *get_chain_info(const VkInstanceCreate
 VK_LAYER_EXPORT VkLayerDeviceCreateInfo *get_chain_info(const VkDeviceCreateInfo *pCreateInfo, VkLayerFunction func);
 
 static inline bool IsPowerOfTwo(unsigned x) { return x && !(x & (x - 1)); }
+
+static inline uint32_t SampleCountSize(VkSampleCountFlagBits sample_count) {
+    uint32_t size = 0;
+    switch (sample_count) {
+        case VK_SAMPLE_COUNT_1_BIT:
+            size = 1;
+            break;
+        case VK_SAMPLE_COUNT_2_BIT:
+            size = 2;
+            break;
+        case VK_SAMPLE_COUNT_4_BIT:
+            size = 4;
+            break;
+        case VK_SAMPLE_COUNT_8_BIT:
+            size = 8;
+            break;
+        case VK_SAMPLE_COUNT_16_BIT:
+            size = 16;
+            break;
+        case VK_SAMPLE_COUNT_32_BIT:
+            size = 32;
+            break;
+        case VK_SAMPLE_COUNT_64_BIT:
+            size = 64;
+            break;
+        default:
+            size = 0;
+    }
+    return size;
+}
 
 extern "C" {
 #endif

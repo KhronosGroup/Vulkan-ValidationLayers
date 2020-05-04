@@ -670,6 +670,13 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
             }
         }
 
+        if (((pCreateInfo->flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) != 0) &&
+            (FormatHasDepth(pCreateInfo->format) == false)) {
+            skip |= LogError(device, "VUID-VkImageCreateInfo-flags-01533",
+                             "vkCreateImage(): if flags contain VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT the "
+                             "format must be a depth or depth/stencil format.");
+        }
+
         const auto image_stencil_struct = lvl_find_in_chain<VkImageStencilUsageCreateInfoEXT>(pCreateInfo->pNext);
         if (image_stencil_struct != nullptr) {
             if ((image_stencil_struct->stencilUsage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) != 0) {
