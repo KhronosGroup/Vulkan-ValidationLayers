@@ -1185,10 +1185,17 @@ void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const I
         normalized_isr.layerCount = image_create_info.extent.depth;  // Treat each depth slice as a layer subresource
     }
 
+    VkImageLayout initial_layout = mem_barrier.oldLayout;
+
+    // Layout transitions in external instance are not tracked, so don't validate initial layout.
+    if (QueueFamilyIsSpecial(mem_barrier.srcQueueFamilyIndex)) {
+        initial_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    }
+
     if (is_release_op) {
         SetImageInitialLayout(cb_state, *image_state, normalized_isr, mem_barrier.oldLayout);
     } else {
-        SetImageLayout(cb_state, *image_state, normalized_isr, mem_barrier.newLayout, mem_barrier.oldLayout);
+        SetImageLayout(cb_state, *image_state, normalized_isr, mem_barrier.newLayout, initial_layout);
     }
 }
 
