@@ -2206,6 +2206,240 @@ TEST_F(VkLayerTest, RenderPassBeginSampleLocationsInvalidIndicesEXT) {
     vk::DestroyImageView(m_device->device(), dsv, nullptr);
 }
 
+TEST_F(VkLayerTest, InvalidSampleLocations) {
+    TEST_DESCRIPTION("Test invalid cases of VK_EXT_sample_location");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+
+    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    assert(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT vkGetPhysicalDeviceMultisamplePropertiesEXT =
+        (PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT)vk::GetInstanceProcAddr(instance(),
+                                                                                 "vkGetPhysicalDeviceMultisamplePropertiesEXT");
+    assert(vkGetPhysicalDeviceMultisamplePropertiesEXT != nullptr);
+    PFN_vkCmdSetSampleLocationsEXT vkCmdSetSampleLocationsEXT =
+        (PFN_vkCmdSetSampleLocationsEXT)vk::GetInstanceProcAddr(instance(), "vkCmdSetSampleLocationsEXT");
+    assert(vkCmdSetSampleLocationsEXT != nullptr);
+
+    VkPhysicalDeviceSampleLocationsPropertiesEXT sample_locations_props =
+        lvl_init_struct<VkPhysicalDeviceSampleLocationsPropertiesEXT>();
+    VkPhysicalDeviceProperties2KHR prop2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&sample_locations_props);
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &prop2);
+
+    if ((sample_locations_props.sampleLocationSampleCounts & VK_SAMPLE_COUNT_1_BIT) == 0) {
+        printf("%s VK_SAMPLE_COUNT_1_BIT sampleLocationSampleCounts is not supported.\n", kSkipPrefix);
+        return;
+    }
+
+    const bool support_64_sample_count = ((sample_locations_props.sampleLocationSampleCounts & VK_SAMPLE_COUNT_64_BIT) != 0);
+
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = NULL;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.extent.width = 128;
+    image_create_info.extent.height = 128;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+    // If S8_UINT is supported, check not having depth with sample location compatible bit
+    VkFormatProperties format_properties;
+    vk::GetPhysicalDeviceFormatProperties(gpu(), VK_FORMAT_S8_UINT, &format_properties);
+    if ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0) {
+        image_create_info.flags = VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT;
+        image_create_info.format = VK_FORMAT_S8_UINT;
+        VkImage temp_image;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageCreateInfo-flags-01533");
+        vk::CreateImage(m_device->device(), &image_create_info, nullptr, &temp_image);
+        m_errorMonitor->VerifyFound();
+    }
+
+    const VkFormat depth_format = FindSupportedDepthStencilFormat(gpu());
+    if (depth_format == VK_FORMAT_UNDEFINED) {
+        printf("%s No Depth + Stencil format found rest of tests skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    image_create_info.flags = 0;  // image will not have needed flag
+    image_create_info.format = depth_format;
+    VkImageObj depth_image(m_device);
+    depth_image.init(&image_create_info);
+    ASSERT_TRUE(depth_image.initialized());
+    VkImageView depth_image_view = depth_image.targetView(depth_format, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    VkImageObj color_image(m_device);
+    color_image.Init(128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL, 0);
+    ASSERT_TRUE(color_image.initialized());
+    VkImageView color_image_view = color_image.targetView(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+
+    VkAttachmentDescription descriptions[2] = {
+        {0, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
+         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        {0, depth_format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
+         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}};
+    m_renderPass_attachments.push_back(descriptions[0]);
+    m_renderPass_attachments.push_back(descriptions[1]);
+    VkAttachmentReference color_ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkAttachmentReference depth_stencil_ref = {1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
+    VkSubpassDescription subpass = {
+        0, VK_PIPELINE_BIND_POINT_GRAPHICS, 0, nullptr, 1, &color_ref, nullptr, &depth_stencil_ref, 0, nullptr};
+    m_renderPass_subpasses.push_back(subpass);
+    m_renderPass_info = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, nullptr, 0, 2, descriptions, 1, &subpass, 0, nullptr};
+    vk::CreateRenderPass(m_device->device(), &m_renderPass_info, NULL, &m_renderPass);
+
+    // Create a framebuffer
+    m_framebuffer_attachments.push_back(color_image_view);
+    m_framebuffer_attachments.push_back(depth_image_view);
+    m_framebuffer_info = {
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 2, m_framebuffer_attachments.data(), 128, 128, 1};
+    vk::CreateFramebuffer(m_device->handle(), &m_framebuffer_info, nullptr, &m_framebuffer);
+
+    VkMultisamplePropertiesEXT multisample_prop;
+    vkGetPhysicalDeviceMultisamplePropertiesEXT(gpu(), VK_SAMPLE_COUNT_1_BIT, &multisample_prop);
+    // 1 from VK_SAMPLE_COUNT_1_BIT
+    const uint32_t valid_count =
+        multisample_prop.maxSampleLocationGridSize.width * multisample_prop.maxSampleLocationGridSize.height * 1;
+
+    VkSampleLocationEXT sample_location = {0.5, 0.5};
+    VkSampleLocationsInfoEXT sample_locations_info = {};
+    sample_locations_info.sType = VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT;
+    sample_locations_info.pNext = nullptr;
+    sample_locations_info.sampleLocationsPerPixel = VK_SAMPLE_COUNT_1_BIT;
+    sample_locations_info.sampleLocationGridSize = multisample_prop.maxSampleLocationGridSize;
+    sample_locations_info.sampleLocationsCount = valid_count;
+    sample_locations_info.pSampleLocations = &sample_location;
+
+    VkPipelineSampleLocationsStateCreateInfoEXT sample_location_state = {};
+    sample_location_state.sType = VK_STRUCTURE_TYPE_PIPELINE_SAMPLE_LOCATIONS_STATE_CREATE_INFO_EXT;
+    sample_location_state.pNext = nullptr;
+    sample_location_state.sampleLocationsEnable = VK_TRUE;
+    sample_location_state.sampleLocationsInfo = sample_locations_info;
+
+    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = {};
+    pipe_ms_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    pipe_ms_state_ci.pNext = &sample_location_state;
+    pipe_ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    pipe_ms_state_ci.sampleShadingEnable = 0;
+    pipe_ms_state_ci.minSampleShading = 1.0;
+    pipe_ms_state_ci.pSampleMask = NULL;
+
+    VkPipelineDepthStencilStateCreateInfo pipe_ds_state_ci = {};
+    pipe_ds_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    pipe_ds_state_ci.pNext = nullptr;
+    pipe_ds_state_ci.depthTestEnable = VK_TRUE;
+    pipe_ds_state_ci.stencilTestEnable = VK_FALSE;
+
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.InitInfo();
+        pipe.pipe_ms_state_ci_ = pipe_ms_state_ci;
+        pipe.InitState();
+        pipe.gp_ci_.pDepthStencilState = &pipe_ds_state_ci;
+
+        // Set invalid grid size width
+        sample_location_state.sampleLocationsInfo.sampleLocationGridSize.width =
+            multisample_prop.maxSampleLocationGridSize.width + 1;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01521");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSampleLocationsInfoEXT-sampleLocationsCount-01527");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+        sample_location_state.sampleLocationsInfo.sampleLocationGridSize.width = multisample_prop.maxSampleLocationGridSize.width;
+
+        // Set invalid grid size height
+        sample_location_state.sampleLocationsInfo.sampleLocationGridSize.height =
+            multisample_prop.maxSampleLocationGridSize.height + 1;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01522");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSampleLocationsInfoEXT-sampleLocationsCount-01527");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+        sample_location_state.sampleLocationsInfo.sampleLocationGridSize.height = multisample_prop.maxSampleLocationGridSize.height;
+
+        // non-matching rasterizationSamples
+        pipe.pipe_ms_state_ci_.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01523");
+        // if grid size is different
+        m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01521");
+        m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01522");
+        m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-subpass-00757");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+        pipe.pipe_ms_state_ci_.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    }
+
+    // Creates valid pipelines with dynamic state
+    const VkDynamicState dyn_state = VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT;
+    VkPipelineDynamicStateCreateInfo dyn_state_ci = {};
+    dyn_state_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dyn_state_ci.dynamicStateCount = 1;
+    dyn_state_ci.pDynamicStates = &dyn_state;
+
+    CreatePipelineHelper dynamic_pipe(*this);
+    dynamic_pipe.InitInfo();
+    dynamic_pipe.pipe_ms_state_ci_ = pipe_ms_state_ci;
+    dynamic_pipe.dyn_state_ci_ = dyn_state_ci;
+    dynamic_pipe.InitState();
+    dynamic_pipe.gp_ci_.pDepthStencilState = &pipe_ds_state_ci;
+    dynamic_pipe.CreateGraphicsPipeline();
+
+    VkRenderPassBeginInfo rp_begin = {
+        VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, nullptr, m_renderPass, m_framebuffer, {{0, 0}, {128, 128}}, 0, nullptr};
+    const float vbo_data[3] = {1.f, 0.f, 1.f};
+    VkConstantBufferObj vbo(m_device, sizeof(vbo_data), (const void *)&vbo_data, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(rp_begin);
+    m_commandBuffer->BindVertexBuffer(&vbo, 0, 1);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, dynamic_pipe.pipeline_);
+
+    // test trying to use unsupported sample count
+    if (support_64_sample_count == false) {
+        sample_locations_info.sampleLocationsPerPixel = VK_SAMPLE_COUNT_64_BIT;
+        sample_locations_info.sampleLocationsCount = valid_count * 64;
+
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSampleLocationsInfoEXT-sampleLocationsPerPixel-01526");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetSampleLocationsEXT-sampleLocationsPerPixel-01529");
+        vkCmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
+        m_errorMonitor->VerifyFound();
+
+        sample_locations_info.sampleLocationsPerPixel = VK_SAMPLE_COUNT_1_BIT;
+        sample_locations_info.sampleLocationsCount = valid_count;
+    }
+
+    // Test invalid sample location count
+    sample_locations_info.sampleLocationsCount = valid_count + 1;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSampleLocationsInfoEXT-sampleLocationsCount-01527");
+    vkCmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
+    m_errorMonitor->VerifyFound();
+    sample_locations_info.sampleLocationsCount = valid_count;
+
+    // Test image was never created with VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT
+    vkCmdSetSampleLocationsEXT(m_commandBuffer->handle(), &sample_locations_info);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDraw-sampleLocationsEnable-02689");
+    m_commandBuffer->Draw(1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, RenderPassNextSubpassExcessive) {
     TEST_DESCRIPTION("Test that an error is produced when CmdNextSubpass is called too many times in a renderpass instance");
 
