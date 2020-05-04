@@ -321,6 +321,47 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
             }
             current = reinterpret_cast<const VkBaseOutStructure *>(current->pNext);
         }
+        // Check features are enabled if matching extension is passed in as well
+        for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
+            const char *extension = pCreateInfo->ppEnabledExtensionNames[i];
+            if ((0 == strncmp(extension, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) &&
+                (vulkan_12_features->drawIndirectCount == VK_FALSE)) {
+                skip |= LogError(
+                    instance, "VUID-VkDeviceCreateInfo-ppEnabledExtensions-02831",
+                    "vkCreateDevice(): %s is enabled but VkPhysicalDeviceVulkan12Features::drawIndirectCount is not VK_TRUE.",
+                    VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
+            }
+            if ((0 == strncmp(extension, VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) &&
+                (vulkan_12_features->samplerMirrorClampToEdge == VK_FALSE)) {
+                skip |= LogError(instance, "VUID-VkDeviceCreateInfo-ppEnabledExtensions-02832",
+                                 "vkCreateDevice(): %s is enabled but VkPhysicalDeviceVulkan12Features::samplerMirrorClampToEdge "
+                                 "is not VK_TRUE.",
+                                 VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME);
+            }
+            if ((0 == strncmp(extension, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) &&
+                (vulkan_12_features->descriptorIndexing == VK_FALSE)) {
+                skip |= LogError(
+                    instance, "VUID-VkDeviceCreateInfo-ppEnabledExtensions-02833",
+                    "vkCreateDevice(): %s is enabled but VkPhysicalDeviceVulkan12Features::descriptorIndexing is not VK_TRUE.",
+                    VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+            }
+            if ((0 == strncmp(extension, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) &&
+                (vulkan_12_features->samplerFilterMinmax == VK_FALSE)) {
+                skip |= LogError(
+                    instance, "VUID-VkDeviceCreateInfo-ppEnabledExtensions-02834",
+                    "vkCreateDevice(): %s is enabled but VkPhysicalDeviceVulkan12Features::samplerFilterMinmax is not VK_TRUE.",
+                    VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
+            }
+            if ((0 == strncmp(extension, VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE)) &&
+                ((vulkan_12_features->shaderOutputViewportIndex == VK_FALSE) ||
+                 (vulkan_12_features->shaderOutputLayer == VK_FALSE))) {
+                skip |=
+                    LogError(instance, "VUID-VkDeviceCreateInfo-ppEnabledExtensions-02835",
+                             "vkCreateDevice(): %s is enabled but both VkPhysicalDeviceVulkan12Features::shaderOutputViewportIndex "
+                             "and VkPhysicalDeviceVulkan12Features::shaderOutputLayer are not VK_TRUE.",
+                             VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
+            }
+        }
     }
 
     // Validate pCreateInfo->pQueueCreateInfos
