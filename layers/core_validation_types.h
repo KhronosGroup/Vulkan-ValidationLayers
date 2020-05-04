@@ -806,6 +806,7 @@ class PIPELINE_STATE : public BASE_NODE {
     bool blendConstantsEnabled;  // Blend constants enabled for any attachments
     std::shared_ptr<const PIPELINE_LAYOUT_STATE> pipeline_layout;
     VkPrimitiveTopology topology_at_rasterizer;
+    VkBool32 sample_location_enabled;
 
     // Default constructor
     PIPELINE_STATE()
@@ -824,7 +825,8 @@ class PIPELINE_STATE : public BASE_NODE {
           attachments(),
           blendConstantsEnabled(false),
           pipeline_layout(),
-          topology_at_rasterizer{} {}
+          topology_at_rasterizer{},
+          sample_location_enabled(VK_FALSE) {}
 
     void reset() {
         VkGraphicsPipelineCreateInfo emptyGraphicsCI = {};

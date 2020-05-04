@@ -743,6 +743,30 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             skip |= LogError(pPipeline->pipeline, vuid.subpass_index, "Pipeline was built for subpass %u but used in subpass %u.",
                              pPipeline->graphicsPipelineCI.subpass, pCB->activeSubpass);
         }
+        // Check if depth stencil attachment was created with sample location compatible bit
+        if (pPipeline->sample_location_enabled == VK_TRUE) {
+            const safe_VkAttachmentReference2 *ds_attachment =
+                pCB->activeRenderPass->createInfo.pSubpasses[pCB->activeSubpass].pDepthStencilAttachment;
+            const FRAMEBUFFER_STATE *fb_state = GetFramebufferState(pCB->activeFramebuffer);
+            if ((ds_attachment != nullptr) && (fb_state != nullptr)) {
+                const uint32_t attachment = ds_attachment->attachment;
+                if (attachment != VK_ATTACHMENT_UNUSED) {
+                    const IMAGE_VIEW_STATE *imageview_state = GetAttachmentImageViewState(pCB, fb_state, attachment);
+                    if (imageview_state != nullptr) {
+                        const IMAGE_STATE *image_state = GetImageState(imageview_state->create_info.image);
+                        if (image_state != nullptr) {
+                            if ((image_state->createInfo.flags & VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT) == 0) {
+                                skip |= LogError(pPipeline->pipeline, vuid.sample_location,
+                                                 "%s: sampleLocationsEnable is true for the pipeline, but the subpass (%u) depth "
+                                                 "stencil attachment's VkImage was not created with "
+                                                 "VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT.",
+                                                 caller, pCB->activeSubpass);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     return skip;
@@ -1232,6 +1256,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
     }
 
     if (subpass_desc && pPipeline->graphicsPipelineCI.pMultisampleState) {
+        const safe_VkPipelineMultisampleStateCreateInfo *multisample_state = pPipeline->graphicsPipelineCI.pMultisampleState;
         auto accumColorSamples = [subpass_desc, pPipeline](uint32_t &samples) {
             for (uint32_t i = 0; i < subpass_desc->colorAttachmentCount; i++) {
                 const auto attachment = subpass_desc->pColorAttachments[i].attachment;
@@ -1279,14 +1304,12 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                     pPipeline->rp_state->createInfo.pAttachments[subpass_desc->pDepthStencilAttachment->attachment].samples);
             }
             if ((pPipeline->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable == VK_FALSE) &&
-                (pPipeline->graphicsPipelineCI.pMultisampleState->rasterizationSamples != max_sample_count)) {
-                skip |=
-                    LogError(device, "VUID-VkGraphicsPipelineCreateInfo-subpass-01505",
-                             "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->rasterizationSamples (%s) != max "
-                             "attachment samples (%s) used in subpass %u.",
-                             pipelineIndex,
-                             string_VkSampleCountFlagBits(pPipeline->graphicsPipelineCI.pMultisampleState->rasterizationSamples),
-                             string_VkSampleCountFlagBits(max_sample_count), pPipeline->graphicsPipelineCI.subpass);
+                (multisample_state->rasterizationSamples != max_sample_count)) {
+                skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-subpass-01505",
+                                 "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->rasterizationSamples (%s) != max "
+                                 "attachment samples (%s) used in subpass %u.",
+                                 pipelineIndex, string_VkSampleCountFlagBits(multisample_state->rasterizationSamples),
+                                 string_VkSampleCountFlagBits(max_sample_count), pPipeline->graphicsPipelineCI.subpass);
             }
         }
 
@@ -1325,9 +1348,8 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                                      pipelineIndex, raster_samples, subpass_color_samples);
                 }
 
-                if (pPipeline->graphicsPipelineCI.pMultisampleState) {
-                    if ((raster_samples > subpass_color_samples) &&
-                        (pPipeline->graphicsPipelineCI.pMultisampleState->sampleShadingEnable == VK_TRUE)) {
+                if (multisample_state) {
+                    if ((raster_samples > subpass_color_samples) && (multisample_state->sampleShadingEnable == VK_TRUE)) {
                         skip |=
                             LogError(device, "VUID-VkPipelineMultisampleStateCreateInfo-rasterizationSamples-01415",
                                      "vkCreateGraphicsPipelines: pCreateInfo[%d].pMultisampleState->sampleShadingEnable must be "
@@ -1338,8 +1360,8 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                                      pipelineIndex, pipelineIndex, raster_samples, subpass_color_samples);
                     }
 
-                    const auto *coverage_modulation_state = lvl_find_in_chain<VkPipelineCoverageModulationStateCreateInfoNV>(
-                        pPipeline->graphicsPipelineCI.pMultisampleState->pNext);
+                    const auto *coverage_modulation_state =
+                        lvl_find_in_chain<VkPipelineCoverageModulationStateCreateInfoNV>(multisample_state->pNext);
 
                     if (coverage_modulation_state && (coverage_modulation_state->coverageModulationTableEnable == VK_TRUE)) {
                         if (coverage_modulation_state->coverageModulationTableCount != (raster_samples / subpass_color_samples)) {
@@ -1355,8 +1377,7 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         }
 
         if (device_extensions.vk_nv_fragment_coverage_to_color) {
-            const auto coverage_to_color_state =
-                lvl_find_in_chain<VkPipelineCoverageToColorStateCreateInfoNV>(pPipeline->graphicsPipelineCI.pMultisampleState);
+            const auto coverage_to_color_state = lvl_find_in_chain<VkPipelineCoverageToColorStateCreateInfoNV>(multisample_state);
 
             if (coverage_to_color_state && coverage_to_color_state->coverageToColorEnable == VK_TRUE) {
                 bool attachment_is_valid = false;
@@ -1404,6 +1425,54 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                                      "].pMultisampleState VkPipelineCoverageToColorStateCreateInfoNV "
                                      "coverageToColorLocation = %" PRIu32 " %s",
                                      pipelineIndex, coverage_to_color_state->coverageToColorLocation, error_detail.c_str());
+                }
+            }
+        }
+
+        if (device_extensions.vk_ext_sample_locations) {
+            const VkPipelineSampleLocationsStateCreateInfoEXT *sample_location_state =
+                lvl_find_in_chain<VkPipelineSampleLocationsStateCreateInfoEXT>(multisample_state->pNext);
+
+            if (sample_location_state != nullptr) {
+                if ((sample_location_state->sampleLocationsEnable == VK_TRUE) &&
+                    (IsDynamic(pPipeline, VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) == false)) {
+                    const VkSampleLocationsInfoEXT sample_location_info = sample_location_state->sampleLocationsInfo;
+                    skip |= ValidateSampleLocationsInfo(&sample_location_info, "vkCreateGraphicsPipelines");
+                    const VkExtent2D grid_size = sample_location_info.sampleLocationGridSize;
+
+                    VkMultisamplePropertiesEXT multisample_prop;
+                    DispatchGetPhysicalDeviceMultisamplePropertiesEXT(physical_device, multisample_state->rasterizationSamples,
+                                                                      &multisample_prop);
+                    const VkExtent2D max_grid_size = multisample_prop.maxSampleLocationGridSize;
+
+                    if ((grid_size.width % max_grid_size.width) != 0) {
+                        skip |= LogError(
+                            device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01521",
+                            "vkCreateGraphicsPipelines(): Because there is no dynamic state for Sample Location and "
+                            "sampleLocationEnable is true, the "
+                            "VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsInfo::sampleLocationGridSize.width (%u) "
+                            "must be be a multiple of VkMultisamplePropertiesEXT::sampleLocationGridSize.width (%u).",
+                            grid_size.width, max_grid_size.width);
+                    }
+                    if ((grid_size.height % max_grid_size.height) != 0) {
+                        skip |= LogError(
+                            device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01522",
+                            "vkCreateGraphicsPipelines(): Because there is no dynamic state for Sample Location and "
+                            "sampleLocationEnable is true, the "
+                            "VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsInfo::sampleLocationGridSize.height (%u) "
+                            "must be be a multiple of VkMultisamplePropertiesEXT::sampleLocationGridSize.height (%u).",
+                            grid_size.height, max_grid_size.height);
+                    }
+                    if (sample_location_info.sampleLocationsPerPixel != multisample_state->rasterizationSamples) {
+                        skip |= LogError(
+                            device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01523",
+                            "vkCreateGraphicsPipelines(): Because there is no dynamic state for Sample Location and "
+                            "sampleLocationEnable is true, the "
+                            "VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsInfo::sampleLocationsPerPixel (%s) must "
+                            "be the same as the VkPipelineMultisampleStateCreateInfo::rasterizationSamples (%s).",
+                            string_VkSampleCountFlagBits(sample_location_info.sampleLocationsPerPixel),
+                            string_VkSampleCountFlagBits(multisample_state->rasterizationSamples));
+                    }
                 }
             }
         }
@@ -1473,6 +1542,28 @@ bool CoreChecks::ValidateCmdQueueFlags(const CMD_BUFFER_STATE *cb_node, const ch
         }
     }
     return false;
+}
+
+bool CoreChecks::ValidateSampleLocationsInfo(const VkSampleLocationsInfoEXT *pSampleLocationsInfo, const char *apiName) const {
+    bool skip = false;
+    const VkSampleCountFlagBits sample_count = pSampleLocationsInfo->sampleLocationsPerPixel;
+    const uint32_t sample_total_size = pSampleLocationsInfo->sampleLocationGridSize.width *
+                                       pSampleLocationsInfo->sampleLocationGridSize.height * SampleCountSize(sample_count);
+    if (pSampleLocationsInfo->sampleLocationsCount != sample_total_size) {
+        skip |= LogError(device, "VUID-VkSampleLocationsInfoEXT-sampleLocationsCount-01527",
+                         "%s: VkSampleLocationsInfoEXT::sampleLocationsCount (%u) must equal grid width * grid height * pixel "
+                         "sample rate which currently is (%u * %u * %u).",
+                         apiName, pSampleLocationsInfo->sampleLocationsCount, pSampleLocationsInfo->sampleLocationGridSize.width,
+                         pSampleLocationsInfo->sampleLocationGridSize.height, SampleCountSize(sample_count));
+    }
+    if ((phys_dev_ext_props.sample_locations_props.sampleLocationSampleCounts & sample_count) == 0) {
+        skip |= LogError(device, "VUID-VkSampleLocationsInfoEXT-sampleLocationsPerPixel-01526",
+                         "%s: VkSampleLocationsInfoEXT::sampleLocationsPerPixel of %s is not supported by the device, please check "
+                         "VkPhysicalDeviceSampleLocationsPropertiesEXT::sampleLocationSampleCounts for valid sample counts.",
+                         apiName, string_VkSampleCountFlagBits(sample_count));
+    }
+
+    return skip;
 }
 
 static char const *GetCauseStr(VulkanTypedHandle obj) {
@@ -8791,24 +8882,25 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
             lvl_find_in_chain<VkRenderPassSampleLocationsBeginInfoEXT>(pRenderPassBegin->pNext);
         if (pSampleLocationsBeginInfo) {
             for (uint32_t i = 0; i < pSampleLocationsBeginInfo->attachmentInitialSampleLocationsCount; ++i) {
-                if (pSampleLocationsBeginInfo->pAttachmentInitialSampleLocations[i].attachmentIndex >=
-                    render_pass_state->createInfo.attachmentCount) {
+                const VkAttachmentSampleLocationsEXT &sample_location =
+                    pSampleLocationsBeginInfo->pAttachmentInitialSampleLocations[i];
+                skip |= ValidateSampleLocationsInfo(&sample_location.sampleLocationsInfo, function_name);
+                if (sample_location.attachmentIndex >= render_pass_state->createInfo.attachmentCount) {
                     skip |= LogError(device, "VUID-VkAttachmentSampleLocationsEXT-attachmentIndex-01531",
                                      "Attachment index %u specified by attachment sample locations %u is greater than the "
                                      "attachment count of %u for the render pass being begun.",
-                                     pSampleLocationsBeginInfo->pAttachmentInitialSampleLocations[i].attachmentIndex, i,
-                                     render_pass_state->createInfo.attachmentCount);
+                                     sample_location.attachmentIndex, i, render_pass_state->createInfo.attachmentCount);
                 }
             }
 
             for (uint32_t i = 0; i < pSampleLocationsBeginInfo->postSubpassSampleLocationsCount; ++i) {
-                if (pSampleLocationsBeginInfo->pPostSubpassSampleLocations[i].subpassIndex >=
-                    render_pass_state->createInfo.subpassCount) {
+                const VkSubpassSampleLocationsEXT &sample_location = pSampleLocationsBeginInfo->pPostSubpassSampleLocations[i];
+                skip |= ValidateSampleLocationsInfo(&sample_location.sampleLocationsInfo, function_name);
+                if (sample_location.subpassIndex >= render_pass_state->createInfo.subpassCount) {
                     skip |= LogError(device, "VUID-VkSubpassSampleLocationsEXT-subpassIndex-01532",
                                      "Subpass index %u specified by subpass sample locations %u is greater than the subpass count "
                                      "of %u for the render pass being begun.",
-                                     pSampleLocationsBeginInfo->pPostSubpassSampleLocations[i].subpassIndex, i,
-                                     render_pass_state->createInfo.subpassCount);
+                                     sample_location.subpassIndex, i, render_pass_state->createInfo.subpassCount);
                 }
             }
         }
@@ -11020,9 +11112,32 @@ bool CoreChecks::PreCallValidateCmdSetDiscardRectangleEXT(VkCommandBuffer comman
 
 bool CoreChecks::PreCallValidateCmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer,
                                                          const VkSampleLocationsInfoEXT *pSampleLocationsInfo) const {
+    bool skip = false;
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     // Minimal validation for command buffer state
-    return ValidateCmd(cb_state, CMD_SETSAMPLELOCATIONSEXT, "vkCmdSetSampleLocationsEXT()");
+    skip |= ValidateCmd(cb_state, CMD_SETSAMPLELOCATIONSEXT, "vkCmdSetSampleLocationsEXT()");
+    skip |= ValidateSampleLocationsInfo(pSampleLocationsInfo, "vkCmdSetSampleLocationsEXT");
+    const auto last_bound_it = cb_state->lastBound.find(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    if (last_bound_it != cb_state->lastBound.cend()) {
+        const PIPELINE_STATE *pPipe = last_bound_it->second.pipeline_state;
+        if (pPipe != nullptr) {
+            // Check same error with different log messages
+            const safe_VkPipelineMultisampleStateCreateInfo *multisample_state = pPipe->graphicsPipelineCI.pMultisampleState;
+            if (multisample_state == nullptr) {
+                skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdSetSampleLocationsEXT-sampleLocationsPerPixel-01529",
+                                 "vkCmdSetSampleLocationsEXT(): pSampleLocationsInfo->sampleLocationsPerPixel must be equal to "
+                                 "rasterizationSamples, but the bound graphics pipeline was created without a multisample state");
+            } else if (multisample_state->rasterizationSamples != pSampleLocationsInfo->sampleLocationsPerPixel) {
+                skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdSetSampleLocationsEXT-sampleLocationsPerPixel-01529",
+                                 "vkCmdSetSampleLocationsEXT(): pSampleLocationsInfo->sampleLocationsPerPixel (%s) is not equal to "
+                                 "the last bound pipeline's rasterizationSamples (%s)",
+                                 string_VkSampleCountFlagBits(pSampleLocationsInfo->sampleLocationsPerPixel),
+                                 string_VkSampleCountFlagBits(multisample_state->rasterizationSamples));
+            }
+        }
+    }
+
+    return skip;
 }
 
 bool CoreChecks::ValidateCreateSamplerYcbcrConversion(const char *func_name,
