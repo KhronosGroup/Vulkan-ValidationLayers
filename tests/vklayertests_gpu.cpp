@@ -1448,6 +1448,27 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationInlineUniformBlockAndMiscGpu) {
     delete[] layouts;
 }
 
+TEST_F(VkGpuAssistedLayerTest, GpuValidationAbort) {
+    TEST_DESCRIPTION("GPU validation: Verify that aborting GPU-AV is safe.");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    InitGpuAssistedFramework(false);
+    if (IsPlatform(kNexusPlayer)) {
+        printf("%s This test should not run on Nexus Player\n", kSkipPrefix);
+        return;
+    }
+    VkPhysicalDeviceFeatures2KHR features2 = {};
+    features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+
+    vk::GetPhysicalDeviceFeatures2(gpu(), &features2);
+    // Disable features necessary for GPU-AV so initialization aborts
+    features2.features.vertexPipelineStoresAndAtomics = false;
+    features2.features.fragmentStoresAndAtomics = false;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "GPU-Assisted Validation disabled");
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    m_errorMonitor->VerifyFound();
+}
+
 void VkDebugPrintfTest::InitDebugPrintfFramework() {
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
     VkValidationFeatureDisableEXT disables[] = {VK_VALIDATION_FEATURE_DISABLE_ALL_EXT};
