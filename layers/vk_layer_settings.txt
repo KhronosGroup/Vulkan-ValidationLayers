@@ -85,6 +85,8 @@
 #      shader validation in khronos validation layers
 #      VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT - enables best practices warning
 #      validation
+#      VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT - enables processing of 
+#      debug printf instructions in shaders and sending debug strings to the debug callback
 #
 
 # VK_LAYER_KHRONOS_validation Settings
@@ -101,5 +103,8 @@ khronos_validation.log_filename = stdout
 
 # Example entry showing how to Enable Best Practices Validation
 #khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT
+
+# Example entry showing how to enable Debug Printf messages
+#khronos_validation.enables = VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT
 
 ################################################################################
