@@ -5161,6 +5161,58 @@ TEST_F(VkLayerTest, DrawIndexedIndirectCountKHR) {
     vk::DestroyBuffer(m_device->device(), count_buffer_unbound, 0);
 }
 
+TEST_F(VkLayerTest, DrawIndirectCountFeature) {
+    TEST_DESCRIPTION("Test covered valid usage for the 1.2 drawIndirectCount feature");
+
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+    if (DeviceValidationVersion() < VK_API_VERSION_1_2) {
+        printf("%s Tests requires Vulkan 1.2+, skipping test\n", kSkipPrefix);
+        return;
+    }
+
+    VkBufferObj indirect_buffer;
+    indirect_buffer.init(*m_device, sizeof(VkDrawIndirectCommand), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                         VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+
+    VkBufferObj indexed_indirect_buffer;
+    indexed_indirect_buffer.init(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                 VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+
+    VkBufferObj count_buffer;
+    count_buffer.init(*m_device, sizeof(uint32_t), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+
+    VkBufferObj index_buffer;
+    index_buffer.init(*m_device, sizeof(uint32_t), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    // Make calls to valid commands but without the drawIndirectCount feature set
+    m_commandBuffer->begin();
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndirectCount-None-02836");
+    vk::CmdDrawIndirectCount(m_commandBuffer->handle(), indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+                             sizeof(VkDrawIndirectCommand));
+    m_errorMonitor->VerifyFound();
+
+    vk::CmdBindIndexBuffer(m_commandBuffer->handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdDrawIndexedIndirect-None-02837");
+    vk::CmdDrawIndexedIndirectCount(m_commandBuffer->handle(), indexed_indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+                                    sizeof(VkDrawIndexedIndirectCommand));
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->EndRenderPass();
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, ExclusiveScissorNV) {
     TEST_DESCRIPTION("Test VK_NV_scissor_exclusive with multiViewport disabled.");
 
