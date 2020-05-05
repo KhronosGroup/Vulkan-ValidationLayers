@@ -563,9 +563,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
 
     # make list of spec versions containing given VUID
     @staticmethod
-    def make_vuid_spec_version_list(pattern):
+    def make_vuid_spec_version_list(pattern, max_minor_version):
         assert pattern
-        max_minor_version = 2 # needs to be bumped with new minor versions :/
 
         all_editions_list = []
         for e in reversed(range(max_minor_version+1)):
@@ -639,10 +638,12 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
             vuid_list = list(self.vj.all_vuids)
             vuid_list.sort()
             cmd_dict = {}
+            minor_version = int(self.vj.apiversion.split('.')[1])
+
             for vuid in vuid_list:
                 db_entry = self.vj.vuid_db[vuid][0]
 
-                spec_list = self.make_vuid_spec_version_list(db_entry['ext'])
+                spec_list = self.make_vuid_spec_version_list(db_entry['ext'], minor_version)
 
                 if  not spec_list: spec_url = self.spec_url_default % vuid
                 elif spec_list[0]['ext']: spec_url = self.spec_url_ext % (spec_list[0]['version'], vuid)
