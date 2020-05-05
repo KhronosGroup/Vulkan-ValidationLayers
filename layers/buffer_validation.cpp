@@ -113,7 +113,8 @@ bool IMAGE_STATE::IsCreateInfoEqual(const VkImageCreateInfo &other_createInfo) c
     is_equal = is_equal && IsUsageEqual(other_createInfo) && IsInitialLayoutEqual(other_createInfo);
     is_equal = is_equal && IsExtentEqual(other_createInfo) && IsTilingEqual(other_createInfo);
     is_equal = is_equal && IsSamplesEqual(other_createInfo) && IsSharingModeEqual(other_createInfo);
-    return is_equal && IsQueueFamilyIndicesEqual(other_createInfo);
+    return is_equal &&
+           ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) ? IsQueueFamilyIndicesEqual(other_createInfo) : true);
 }
 
 // Check image compatibility rules for VK_NV_dedicated_allocation_image_aliasing
@@ -123,7 +124,9 @@ bool IMAGE_STATE::IsCreateInfoDedicatedAllocationImageAliasingCompatible(const V
     is_compatible = is_compatible && IsMipLevelsEqual(other_createInfo);
     is_compatible = is_compatible && IsUsageEqual(other_createInfo) && IsInitialLayoutEqual(other_createInfo);
     is_compatible = is_compatible && IsSamplesEqual(other_createInfo) && IsSharingModeEqual(other_createInfo);
-    is_compatible = is_compatible && IsQueueFamilyIndicesEqual(other_createInfo) && IsTilingEqual(other_createInfo);
+    is_compatible = is_compatible &&
+                    ((createInfo.sharingMode == VK_SHARING_MODE_CONCURRENT) ? IsQueueFamilyIndicesEqual(other_createInfo) : true);
+    is_compatible = is_compatible && IsTilingEqual(other_createInfo);
 
     is_compatible = is_compatible && createInfo.extent.width <= other_createInfo.extent.width &&
                     createInfo.extent.height <= other_createInfo.extent.height &&
