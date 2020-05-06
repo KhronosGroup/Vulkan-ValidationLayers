@@ -258,7 +258,7 @@ TEST_F(VkLayerTest, BlendingOnFormatWithoutBlendingSupport) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-blendEnable-02023");
 
     VkFormat non_blending_format = VK_FORMAT_UNDEFINED;
-    for (uint32_t i = 1; i <= VK_FORMAT_END_RANGE; i++) {
+    for (uint32_t i = 1; i <= VK_FORMAT_ASTC_12x12_SRGB_BLOCK; i++) {
         VkFormatProperties format_props = m_device->format_properties(static_cast<VkFormat>(i));
         if ((format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) &&
             !(format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT)) {
