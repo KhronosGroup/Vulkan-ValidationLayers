@@ -633,7 +633,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     def export_header(self):
         if verbose_mode:
             print("\n Exporting header file to: %s" % header_filename)
-        with open (header_filename, 'w') as hfile:
+        with open (header_filename, 'w', newline='\n') as hfile:
             hfile.write(self.header_version)
             hfile.write(self.header_preamble)
             vuid_list = list(self.vj.all_vuids)
@@ -657,10 +657,10 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
                     print('Error: Found a duplicate VUID: %s' % vuid)
                     sys.exit(-1)
                 if 'commandBuffer must be in the recording state' in db_text:
-                    cmd_dict[vuid] = db_text 
+                    cmd_dict[vuid] = db_text
             hfile.write(self.header_postamble)
 
-            # Generate the information for validating recording state VUID's 
+            # Generate the information for validating recording state VUID's
             cmd_prefix = 'prefix##'
             cmd_regex = re.compile(r'VUID-vk(Cmd|End)(\w+)')
             cmd_vuid_vector = ['    "VUID_Undefined"']
@@ -897,4 +897,3 @@ def main(argv):
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
-
