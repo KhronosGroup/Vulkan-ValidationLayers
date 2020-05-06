@@ -535,10 +535,12 @@ struct CreateNVRayTracingPipelineHelper {
     VkPipelineLayoutCreateInfo pipeline_layout_ci_ = {};
     VkPipelineLayoutObj pipeline_layout_;
     VkRayTracingPipelineCreateInfoNV rp_ci_ = {};
+    VkRayTracingPipelineCreateInfoKHR rp_ci_KHR_ = {};
     VkPipelineCacheCreateInfo pc_ci_ = {};
     VkPipeline pipeline_ = VK_NULL_HANDLE;
     VkPipelineCache pipeline_cache_ = VK_NULL_HANDLE;
     std::vector<VkRayTracingShaderGroupCreateInfoNV> groups_;
+    std::vector<VkRayTracingShaderGroupCreateInfoKHR> groups_KHR_;
     std::unique_ptr<VkShaderObj> rgs_;
     std::unique_ptr<VkShaderObj> chs_;
     std::unique_ptr<VkShaderObj> mis_;
@@ -549,16 +551,18 @@ struct CreateNVRayTracingPipelineHelper {
     static bool InitInstanceExtensions(VkLayerTest &test, std::vector<const char *> &instance_extension_names);
     static bool InitDeviceExtensions(VkLayerTest &test, std::vector<const char *> &device_extension_names);
     void InitShaderGroups();
+    void InitShaderGroupsKHR();
     void InitDescriptorSetInfo();
     void InitPipelineLayoutInfo();
     void InitShaderInfo();
     void InitNVRayTracingPipelineInfo();
+    void InitKHRRayTracingPipelineInfo();
     void InitPipelineCacheInfo();
-    void InitInfo();
+    void InitInfo(bool isKHR = false);
     void InitState();
-    void LateBindPipelineInfo();
+    void LateBindPipelineInfo(bool isKHR = false);
     VkResult CreateNVRayTracingPipeline(bool implicit_destroy = true, bool do_late_bind = true);
-
+    VkResult CreateKHRRayTracingPipeline(bool implicit_destroy = true, bool do_late_bind = true);
     // Helper function to create a simple test case (positive or negative)
     //
     // info_override can be any callable that takes a CreateNVRayTracingPipelineHelper &
@@ -758,7 +762,8 @@ void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *pCreate
 bool InitFrameworkForRayTracingTest(VkRenderFramework *renderFramework, bool isKHR,
                                     std::vector<const char *> &instance_extension_names,
                                     std::vector<const char *> &device_extension_names, void *user_data,
-                                    bool need_gpu_validation = false, bool need_push_descriptors = false);
+                                    bool need_gpu_validation = false, bool need_push_descriptors = false,
+                                    bool deferred_state_init = false);
 
 void GetSimpleGeometryForAccelerationStructureTests(const VkDeviceObj &device, VkBufferObj *vbo, VkBufferObj *ibo,
                                                     VkGeometryNV *geometry);
