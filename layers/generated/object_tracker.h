@@ -37,6 +37,9 @@ void PostCallRecordCreateInstance(
 bool PreCallValidateDestroyInstance(
     VkInstance                                  instance,
     const VkAllocationCallbacks*                pAllocator) const;
+void PreCallRecordDestroyInstance(
+    VkInstance                                  instance,
+    const VkAllocationCallbacks*                pAllocator);
 bool PreCallValidateEnumeratePhysicalDevices(
     VkInstance                                  instance,
     uint32_t*                                   pPhysicalDeviceCount,
@@ -91,6 +94,9 @@ void PostCallRecordCreateDevice(
 bool PreCallValidateDestroyDevice(
     VkDevice                                    device,
     const VkAllocationCallbacks*                pAllocator) const;
+void PreCallRecordDestroyDevice(
+    VkDevice                                    device,
+    const VkAllocationCallbacks*                pAllocator);
 bool PreCallValidateEnumerateDeviceExtensionProperties(
     VkPhysicalDevice                            physicalDevice,
     const char*                                 pLayerName,

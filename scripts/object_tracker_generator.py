@@ -902,11 +902,15 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         # Generate member info
         membersInfo = []
         allocator = 'nullptr'
+
         for member in members:
             # Get type and name of member
             info = self.getTypeNameTuple(member)
             type = info[0]
             name = info[1]
+            # Skip fake parameters
+            if type == '' or name == '':
+                continue
             cdecl = self.makeCParamDecl(member, 0)
             # Check for parameter name in lens set
             iscount = True if name in lens else False
@@ -948,7 +952,6 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
             manual = False
             if cmdname in self.no_autogen_list:
                 manual = True
-
             # Generate object handling code
             (pre_call_validate, pre_call_record, post_call_record) = self.generate_wrapping_code(cmdinfo.elem)
 
