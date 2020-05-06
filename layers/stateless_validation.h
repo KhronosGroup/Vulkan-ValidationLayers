@@ -1492,12 +1492,58 @@ class StatelessValidation : public ValidationObject {
                                                                const VkCopyAccelerationStructureInfoKHR *pInfo) const;
     bool ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR *pInfo, const char *api_name) const;
     bool ValidateCopyMemoryToAccelerationStructureInfoKHR(const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo,
-                                                          const char *api_name) const;
+                                                          const char *api_name, bool isCmd = false) const;
 
     bool manual_PreCallValidateCopyMemoryToAccelerationStructureKHR(VkDevice device,
                                                                     const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo) const;
     bool manual_PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
         VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo) const;
+
+    bool manual_PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
+        VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount,
+        const VkAccelerationStructureKHR *pAccelerationStructures, VkQueryType queryType, VkQueryPool queryPool,
+        uint32_t firstQuery) const;
+    bool manual_PreCallValidateWriteAccelerationStructuresPropertiesKHR(VkDevice device, uint32_t accelerationStructureCount,
+                                                                        const VkAccelerationStructureKHR *pAccelerationStructures,
+                                                                        VkQueryType queryType, size_t dataSize, void *pData,
+                                                                        size_t stride) const;
+    bool manual_PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline,
+                                                                               uint32_t firstGroup, uint32_t groupCount,
+                                                                               size_t dataSize, void *pData) const;
+
+    bool manual_PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
+                                               const VkStridedBufferRegionKHR *pRaygenShaderBindingTable,
+                                               const VkStridedBufferRegionKHR *pMissShaderBindingTable,
+                                               const VkStridedBufferRegionKHR *pHitShaderBindingTable,
+                                               const VkStridedBufferRegionKHR *pCallableShaderBindingTable, uint32_t width,
+                                               uint32_t height, uint32_t depth) const;
+
+    bool manual_PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
+                                                       const VkStridedBufferRegionKHR *pRaygenShaderBindingTable,
+                                                       const VkStridedBufferRegionKHR *pMissShaderBindingTable,
+                                                       const VkStridedBufferRegionKHR *pHitShaderBindingTable,
+                                                       const VkStridedBufferRegionKHR *pCallableShaderBindingTable, VkBuffer buffer,
+                                                       VkDeviceSize offset) const;
+
+    bool manual_PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer,
+                                              VkDeviceSize raygenShaderBindingOffset, VkBuffer missShaderBindingTableBuffer,
+                                              VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
+                                              VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset,
+                                              VkDeviceSize hitShaderBindingStride, VkBuffer callableShaderBindingTableBuffer,
+                                              VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
+                                              uint32_t width, uint32_t height, uint32_t depth) const;
+
+    bool manual_PreCallValidateCmdBuildAccelerationStructureIndirectKHR(VkCommandBuffer commandBuffer,
+                                                                        const VkAccelerationStructureBuildGeometryInfoKHR *pInfo,
+                                                                        VkBuffer indirectBuffer, VkDeviceSize indirectOffset,
+                                                                        uint32_t indirectStride) const;
+
+    bool manual_PreCallValidateGetDeviceAccelerationStructureCompatibilityKHR(
+        VkDevice device, const VkAccelerationStructureVersionKHR *version) const;
+
+    bool manual_PreCallValidateBuildAccelerationStructureKHR(
+        VkDevice device, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
+        const VkAccelerationStructureBuildOffsetInfoKHR *const *ppOffsetInfos) const;
 
 #include "parameter_validation.h"
 };  // Class StatelessValidation

@@ -1146,6 +1146,34 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateReleaseProfilingLockKHR(VkDevice device) const;
     bool PreCallValidateCmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void* pCheckpointMarker) const;
 
+    bool PreCallValidateWriteAccelerationStructuresPropertiesKHR(VkDevice device, uint32_t accelerationStructureCount,
+                                                                 const VkAccelerationStructureKHR* pAccelerationStructures,
+                                                                 VkQueryType queryType, size_t dataSize, void* pData,
+                                                                 size_t stride) const;
+
+    bool PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer,
+                                                                    uint32_t accelerationStructureCount,
+                                                                    const VkAccelerationStructureKHR* pAccelerationStructures,
+                                                                    VkQueryType queryType, VkQueryPool queryPool,
+                                                                    uint32_t firstQuery) const;
+
+    bool PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
+                                                           uint32_t groupCount, size_t dataSize, void* pData) const;
+
+    bool PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
+                                                                        uint32_t groupCount, size_t dataSize, void* pData) const;
+
+    bool PreCallValidateCmdBuildAccelerationStructureIndirectKHR(VkCommandBuffer commandBuffer,
+                                                                 const VkAccelerationStructureBuildGeometryInfoKHR* pInfo,
+                                                                 VkBuffer indirectBuffer, VkDeviceSize indirectOffset,
+                                                                 uint32_t indirectStride) const;
+
+    bool PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
+                                                        const VkCopyAccelerationStructureInfoKHR* pInfo) const;
+    bool PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuffer,
+                                                                const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) const;
+    bool PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuffer,
+                                                                const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) const;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
     bool PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(VkDevice device, const struct AHardwareBuffer* buffer,
                                                                   VkAndroidHardwareBufferPropertiesANDROID* pProperties) const;

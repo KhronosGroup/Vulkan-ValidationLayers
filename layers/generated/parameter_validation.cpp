@@ -10593,6 +10593,7 @@ bool StatelessValidation::PreCallValidateCmdTraceRaysNV(
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdTraceRaysNV", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_nv_ray_tracing) skip |= OutputExtensionError("vkCmdTraceRaysNV", VK_NV_RAY_TRACING_EXTENSION_NAME);
     skip |= validate_required_handle("vkCmdTraceRaysNV", "raygenShaderBindingTableBuffer", raygenShaderBindingTableBuffer);
+    if (!skip) skip |= manual_PreCallValidateCmdTraceRaysNV(commandBuffer, raygenShaderBindingTableBuffer, raygenShaderBindingOffset, missShaderBindingTableBuffer, missShaderBindingOffset, missShaderBindingStride, hitShaderBindingTableBuffer, hitShaderBindingOffset, hitShaderBindingStride, callableShaderBindingTableBuffer, callableShaderBindingOffset, callableShaderBindingStride, width, height, depth);
     return skip;
 }
 
@@ -10748,6 +10749,7 @@ bool StatelessValidation::PreCallValidateCmdWriteAccelerationStructuresPropertie
     skip |= validate_handle_array("vkCmdWriteAccelerationStructuresPropertiesKHR", "accelerationStructureCount", "pAccelerationStructures", accelerationStructureCount, pAccelerationStructures, true, true);
     skip |= validate_ranged_enum("vkCmdWriteAccelerationStructuresPropertiesKHR", "queryType", "VkQueryType", AllVkQueryTypeEnums, queryType, "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-queryType-parameter");
     skip |= validate_required_handle("vkCmdWriteAccelerationStructuresPropertiesKHR", "queryPool", queryPool);
+    if (!skip) skip |= manual_PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(commandBuffer, accelerationStructureCount, pAccelerationStructures, queryType, queryPool, firstQuery);
     return skip;
 }
 
@@ -11868,6 +11870,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructureKHR(
             // No xml-driven validation
         }
     }
+    if (!skip) skip |= manual_PreCallValidateBuildAccelerationStructureKHR(device, infoCount, pInfos, ppOffsetInfos);
     return skip;
 }
 
@@ -11905,6 +11908,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructureIndirectKH
         // No xml-driven validation
     }
     skip |= validate_required_handle("vkCmdBuildAccelerationStructureIndirectKHR", "indirectBuffer", indirectBuffer);
+    if (!skip) skip |= manual_PreCallValidateCmdBuildAccelerationStructureIndirectKHR(commandBuffer, pInfo, indirectBuffer, indirectOffset, indirectStride);
     return skip;
 }
 
@@ -12057,6 +12061,7 @@ bool StatelessValidation::PreCallValidateWriteAccelerationStructuresPropertiesKH
     skip |= validate_handle_array("vkWriteAccelerationStructuresPropertiesKHR", "accelerationStructureCount", "pAccelerationStructures", accelerationStructureCount, pAccelerationStructures, true, true);
     skip |= validate_ranged_enum("vkWriteAccelerationStructuresPropertiesKHR", "queryType", "VkQueryType", AllVkQueryTypeEnums, queryType, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-parameter");
     skip |= validate_array("vkWriteAccelerationStructuresPropertiesKHR", "dataSize", "pData", dataSize, &pData, true, true, "VUID-vkWriteAccelerationStructuresPropertiesKHR-dataSize-arraylength", "VUID-vkWriteAccelerationStructuresPropertiesKHR-pData-parameter");
+    if (!skip) skip |= manual_PreCallValidateWriteAccelerationStructuresPropertiesKHR(device, accelerationStructureCount, pAccelerationStructures, queryType, dataSize, pData, stride);
     return skip;
 }
 
@@ -12181,6 +12186,7 @@ bool StatelessValidation::PreCallValidateCmdTraceRaysKHR(
     {
         // No xml-driven validation
     }
+    if (!skip) skip |= manual_PreCallValidateCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
     return skip;
 }
 
@@ -12336,6 +12342,7 @@ bool StatelessValidation::PreCallValidateGetRayTracingCaptureReplayShaderGroupHa
     if (!device_extensions.vk_khr_ray_tracing) skip |= OutputExtensionError("vkGetRayTracingCaptureReplayShaderGroupHandlesKHR", VK_KHR_RAY_TRACING_EXTENSION_NAME);
     skip |= validate_required_handle("vkGetRayTracingCaptureReplayShaderGroupHandlesKHR", "pipeline", pipeline);
     skip |= validate_array("vkGetRayTracingCaptureReplayShaderGroupHandlesKHR", "dataSize", "pData", dataSize, &pData, true, true, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-dataSize-arraylength", "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pData-parameter");
+    if (!skip) skip |= manual_PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData);
     return skip;
 }
 
@@ -12376,6 +12383,7 @@ bool StatelessValidation::PreCallValidateCmdTraceRaysIndirectKHR(
         // No xml-driven validation
     }
     skip |= validate_required_handle("vkCmdTraceRaysIndirectKHR", "buffer", buffer);
+    if (!skip) skip |= manual_PreCallValidateCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, buffer, offset);
     return skip;
 }
 
@@ -12397,6 +12405,7 @@ bool StatelessValidation::PreCallValidateGetDeviceAccelerationStructureCompatibi
 
         skip |= validate_required_pointer("vkGetDeviceAccelerationStructureCompatibilityKHR", "version->versionData", version->versionData, "VUID-VkAccelerationStructureVersionKHR-versionData-parameter");
     }
+    if (!skip) skip |= manual_PreCallValidateGetDeviceAccelerationStructureCompatibilityKHR(device, version);
     return skip;
 }
 
