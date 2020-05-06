@@ -4102,6 +4102,10 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
                          "VkPhysicalDeviceRayTracingFeaturesKHR::rayTracingAccelerationStructureCaptureReplay must be VK_TRUE.");
         }
     }
+    if (!raytracing_features || !(raytracing_features->rayQuery == VK_TRUE || raytracing_features->rayTracing == VK_TRUE)) {
+        skip |= LogError(device, "VUID-vkCreateAccelerationStructureKHR-rayTracing-03487",
+                         "vkCreateAccelerationStructureKHR: The rayTracing or rayQuery feature must be enabled.");
+    }
     return skip;
 }
 
@@ -4126,7 +4130,7 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesNV(VkDe
     for (uint32_t i = 0; i < createInfoCount; i++) {
         auto feedback_struct = lvl_find_in_chain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
         if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != pCreateInfos[i].stageCount)) {
-            skip |= LogError(device, "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02670",
+            skip |= LogError(device, "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02969",
                              "vkCreateRayTracingPipelinesNV(): in pCreateInfo[%" PRIu32
                              "], VkPipelineCreationFeedbackEXT::pipelineStageCreationFeedbackCount"
                              "(=%" PRIu32 ") must equal VkRayTracingPipelineCreateInfoNV::stageCount(=%" PRIu32 ").",
@@ -4227,7 +4231,11 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(VkD
                                                                              const VkAllocationCallbacks *pAllocator,
                                                                              VkPipeline *pPipelines) const {
     bool skip = false;
-
+    const auto *raytracing_features = lvl_find_in_chain<VkPhysicalDeviceRayTracingFeaturesKHR>(device_createinfo_pnext);
+    if (!raytracing_features || raytracing_features->rayTracing == VK_FALSE) {
+        skip |= LogError(device, "VUID-vkCreateRayTracingPipelinesKHR-rayTracing-03455",
+                         "vkCreateRayTracingPipelinesKHR(): The rayTracing feature must be enabled.");
+    }
     for (uint32_t i = 0; i < createInfoCount; i++) {
         auto feedback_struct = lvl_find_in_chain<VkPipelineCreationFeedbackCreateInfoEXT>(pCreateInfos[i].pNext);
         if ((feedback_struct != nullptr) && (feedback_struct->pipelineStageCreationFeedbackCount != pCreateInfos[i].stageCount)) {
@@ -4248,7 +4256,6 @@ bool StatelessValidation::manual_PreCallValidateCreateRayTracingPipelinesKHR(VkD
                                  "VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT.");
             }
         }
-        const auto *raytracing_features = lvl_find_in_chain<VkPhysicalDeviceRayTracingFeaturesKHR>(device_createinfo_pnext);
         if (!raytracing_features || raytracing_features->rayTracingPrimitiveCulling == VK_FALSE) {
             if (pCreateInfos[i].flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR) {
                 skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-rayTracingPrimitiveCulling-03472",
@@ -4549,6 +4556,13 @@ bool StatelessValidation::manual_PreCallValidateImportSemaphoreFdKHR(
 bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureToMemoryKHR(
     VkDevice device, const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo) const {
     bool skip = false;
+    const auto *raytracing_features = lvl_find_in_chain<VkPhysicalDeviceRayTracingFeaturesKHR>(device_createinfo_pnext);
+    if (!raytracing_features || raytracing_features->rayTracingHostAccelerationStructureCommands == VK_FALSE) {
+        skip |=
+            LogError(device, "", "VUID-vkCopyAccelerationStructureToMemoryKHR-rayTracingHostAccelerationStructureCommands-03447",
+                     "vkCopyAccelerationStructureToMemoryKHR: the "
+                     "VkPhysicalDeviceRayTracingFeaturesKHR::rayTracingHostAccelerationStructureCommands feature must be enabled.");
+    }
     if (pInfo->mode != VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR) {
         skip |= LogError(device, "VUID-VkCopyAccelerationStructureToMemoryInfoKHR-mode-03412",
                          "vkCopyAccelerationStructureToMemoryKHR: mode must be VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR.");
@@ -4563,6 +4577,13 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureToMe
         skip |=  // to update VUID to VkCmdCopyAccelerationStructureToMemoryInfoKHR after spec update
             LogError(commandBuffer, "VUID-VkCopyAccelerationStructureToMemoryInfoKHR-mode-03412",
                      "vkCmdCopyAccelerationStructureToMemoryKHR: mode must be VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR.");
+    }
+    const auto *pNext_struct = lvl_find_in_chain<VkDeferredOperationInfoKHR>(pInfo->pNext);
+    if (pNext_struct) {
+        skip |= LogError(
+            commandBuffer, "VUID-vkCmdCopyAccelerationStructureToMemoryKHR-pNext-03560",
+            "vkCmdCopyAccelerationStructureToMemoryKHR: The VkDeferredOperationInfoKHR structure must not be included in the"
+            "pNext chain of the VkCopyAccelerationStructureToMemoryInfoKHR structure.");
     }
     return skip;
 }
@@ -4584,21 +4605,36 @@ bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureKHR(
     VkDevice device, const VkCopyAccelerationStructureInfoKHR *pInfo) const {
     bool skip = false;
     skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, "vkCopyAccelerationStructureKHR()");
+    const auto *raytracing_features = lvl_find_in_chain<VkPhysicalDeviceRayTracingFeaturesKHR>(device_createinfo_pnext);
+    if (!raytracing_features || raytracing_features->rayTracingHostAccelerationStructureCommands == VK_FALSE) {
+        skip |= LogError(
+            device, "VUID-vkCopyAccelerationStructureKHR-rayTracingHostAccelerationStructureCommands-03441",
+            "vkCopyAccelerationStructureKHR(): the "
+            "VkPhysicalDeviceRayTracingFeaturesKHR::rayTracingHostAccelerationStructureCommands feature must be enabled .");
+    }
     return skip;
 }
 
 bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureKHR(
     VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureInfoKHR *pInfo) const {
     bool skip = false;
+    const auto *pNext_struct = lvl_find_in_chain<VkDeferredOperationInfoKHR>(pInfo->pNext);
+    if (pNext_struct) {
+        skip |= LogError(device, "VUID-vkCmdCopyAccelerationStructureKHR-pNext-03557",
+                         "vkCmdCopyAccelerationStructureKHR(): The VkDeferredOperationInfoKHR structure must not be included in "
+                         "the pNext chain of the VkCopyAccelerationStructureInfoKHR structure.");
+    }
     skip |= ValidateCopyAccelerationStructureInfoKHR(pInfo, "vkCmdCopyAccelerationStructureKHR()");
     return skip;
 }
 
 bool StatelessValidation::ValidateCopyMemoryToAccelerationStructureInfoKHR(const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo,
-                                                                           const char *api_name) const {
+                                                                           const char *api_name, bool isCmd) const {
     bool skip = false;
     if (pInfo->mode != VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR) {
-        skip |= LogError(device, "VUID-VkCopyMemoryToAccelerationStructureInfoKHR-mode-03413",
+        skip |= LogError(device,
+                         isCmd ? "VUID-vkCmdCopyMemoryToAccelerationStructureKHR-mode-03413"
+                               : "VUID-vkCopyMemoryToAccelerationStructureInfoKHR-mode-03413",
                          "(%s): mode must be VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR.", api_name);
     }
     return skip;
@@ -4607,12 +4643,337 @@ bool StatelessValidation::ValidateCopyMemoryToAccelerationStructureInfoKHR(const
 bool StatelessValidation::manual_PreCallValidateCopyMemoryToAccelerationStructureKHR(
     VkDevice device, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo) const {
     bool skip = false;
-    skip |= ValidateCopyMemoryToAccelerationStructureInfoKHR(pInfo, "vkCopyMemoryToAccelerationStructureKHR()");
+    skip |= ValidateCopyMemoryToAccelerationStructureInfoKHR(pInfo, "vkCopyMemoryToAccelerationStructureKHR()", true);
+    const auto *raytracing_features = lvl_find_in_chain<VkPhysicalDeviceRayTracingFeaturesKHR>(device_createinfo_pnext);
+    if (!raytracing_features || raytracing_features->rayTracingHostAccelerationStructureCommands == VK_FALSE) {
+        skip |=
+            LogError(device, "VUID-vkCopyMemoryToAccelerationStructureKHR-rayTracingHostAccelerationStructureCommands-03444",
+                     "vkCopyMemoryToAccelerationStructureKHR() :the "
+                     "VkPhysicalDeviceRayTracingFeaturesKHR::rayTracingHostAccelerationStructureCommands feature must be enabled.");
+    }
     return skip;
 }
 bool StatelessValidation::manual_PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
     VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo) const {
     bool skip = false;
-    skip |= ValidateCopyMemoryToAccelerationStructureInfoKHR(pInfo, "vkCmdCopyMemoryToAccelerationStructureKHR()");
+    skip |= ValidateCopyMemoryToAccelerationStructureInfoKHR(pInfo, "vkCmdCopyMemoryToAccelerationStructureKHR()", false);
+    return skip;
+}
+bool StatelessValidation::manual_PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
+    VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR *pAccelerationStructures,
+    VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery) const {
+    bool skip = false;
+    if (!(queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR ||
+          queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR)) {
+        skip |= LogError(device, "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-queryType-03432",
+                         "vkCmdWriteAccelerationStructuresPropertiesKHR: queryType must be "
+                         "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR or "
+                         "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR.");
+    }
+    return skip;
+}
+bool StatelessValidation::manual_PreCallValidateWriteAccelerationStructuresPropertiesKHR(
+    VkDevice device, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR *pAccelerationStructures,
+    VkQueryType queryType, size_t dataSize, void *pData, size_t stride) const {
+    bool skip = false;
+    if (dataSize < accelerationStructureCount * stride) {
+        skip |= LogError(device, "VUID-vkWriteAccelerationStructuresPropertiesKHR-dataSize-03452",
+                         "vkWriteAccelerationStructuresPropertiesKHR: dataSize (%zu) must be greater than or equal to "
+                         "accelerationStructureCount (%d) *stride(%zu).",
+                         dataSize, accelerationStructureCount, stride);
+    }
+    if (!(queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR ||
+          queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR)) {
+        skip |= LogError(device, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-03432",
+                         "vkWriteAccelerationStructuresPropertiesKHR: queryType must be "
+                         "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR or "
+                         "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR.");
+    }
+    if (queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR) {
+        if (SafeModulo(stride, sizeof(VkDeviceSize)) != 0) {
+            skip |= LogError(device, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-03448",
+                             "vkWriteAccelerationStructuresPropertiesKHR: If queryType is "
+                             "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR,"
+                             "then stride (%zu) must be a multiple of the size of VkDeviceSize",
+                             stride);
+        }
+    }
+    if (queryType == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR) {
+        if (SafeModulo(stride, sizeof(VkDeviceSize)) != 0) {
+            skip |= LogError(device, "VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-03450",
+                             "vkWriteAccelerationStructuresPropertiesKHR: If queryType is "
+                             "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR,"
+                             "then stride (%zu) must be a multiple of the size of VkDeviceSize",
+                             stride);
+        }
+    }
+    const auto *raytracing_features = lvl_find_in_chain<VkPhysicalDeviceRayTracingFeaturesKHR>(device_createinfo_pnext);
+    if (!raytracing_features || raytracing_features->rayTracingHostAccelerationStructureCommands == VK_FALSE) {
+        skip |=
+            LogError(device, "VUID-vkWriteAccelerationStructuresPropertiesKHR-rayTracingHostAccelerationStructureCommands-03454",
+                     "vkWriteAccelerationStructuresPropertiesKHR: the "
+                     "vkPhysicalDeviceRayTracingFeaturesKHR::rayTracingHostAccelerationStructureCommands"
+                     "feature must be enabled ");
+    }
+    return skip;
+}
+bool StatelessValidation::manual_PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
+    VkDevice device, VkPipeline pipeline, uint32_t firstGroup, uint32_t groupCount, size_t dataSize, void *pData) const {
+    bool skip = false;
+    const auto *raytracing_features = lvl_find_in_chain<VkPhysicalDeviceRayTracingFeaturesKHR>(device_createinfo_pnext);
+    if (!raytracing_features || raytracing_features->rayTracingShaderGroupHandleCaptureReplay == VK_FALSE) {
+        skip |= LogError(device,
+                         "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-rayTracingShaderGroupHandleCaptureReplay-03485",
+                         "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR: "
+                         "VkPhysicalDeviceRayTracingFeaturesKHR::rayTracingShaderGroupHandleCaptureReplay"
+                         "must be enabled to call this function.");
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
+                                                                const VkStridedBufferRegionKHR *pRaygenShaderBindingTable,
+                                                                const VkStridedBufferRegionKHR *pMissShaderBindingTable,
+                                                                const VkStridedBufferRegionKHR *pHitShaderBindingTable,
+                                                                const VkStridedBufferRegionKHR *pCallableShaderBindingTable,
+                                                                uint32_t width, uint32_t height, uint32_t depth) const {
+    bool skip = false;
+    if (SafeModulo(pCallableShaderBindingTable->offset, phys_dev_ext_props.ray_tracing_propsKHR.shaderGroupBaseAlignment) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-offset-04038",
+                         "vkCmdTraceRaysKHR: The offset member of pCallableShaderBindingTable"
+                         "must be a multiple of VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupBaseAlignment.");
+    }
+    if (SafeModulo(pCallableShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_propsKHR.shaderGroupHandleSize) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-stride-04040",
+                         "vkCmdTraceRaysKHR: The stride member of pCallableShaderBindingTable must be a multiple"
+                         "of VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupHandleSize.");
+    }
+    if (pCallableShaderBindingTable->stride > phys_dev_ext_props.ray_tracing_propsKHR.maxShaderGroupStride) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-stride-04041",
+                         "vkCmdTraceRaysKHR: The stride member of pCallableShaderBindingTable must be"
+                         "less than or equal to VkPhysicalDeviceRayTracingPropertiesKHR::maxShaderGroupStride.");
+    }
+    // hitShader
+    if (SafeModulo(pHitShaderBindingTable->offset, phys_dev_ext_props.ray_tracing_propsKHR.shaderGroupBaseAlignment) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-offset-04032",
+                         "vkCmdTraceRaysKHR: The offset member of pHitShaderBindingTable must be a multiple"
+                         "of VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupBaseAlignment.");
+    }
+    if (SafeModulo(pHitShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_propsKHR.shaderGroupHandleSize) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-stride-04034",
+                         "vkCmdTraceRaysKHR: The stride member of pHitShaderBindingTable must be a multiple"
+                         "of VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupHandleSize.");
+    }
+    if (pHitShaderBindingTable->stride > phys_dev_ext_props.ray_tracing_propsKHR.maxShaderGroupStride) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-stride-04035",
+                         "vkCmdTraceRaysKHR: The stride member of pHitShaderBindingTable must be"
+                         "less than or equal to VkPhysicalDeviceRayTracingPropertiesKHR::maxShaderGroupStride.");
+    }
+
+    // missShader
+    if (SafeModulo(pMissShaderBindingTable->offset, phys_dev_ext_props.ray_tracing_propsKHR.shaderGroupBaseAlignment) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-offset-04026",
+                         "vkCmdTraceRaysKHR: The offset member of pMissShaderBindingTable must be a multiple"
+                         "of VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupBaseAlignment.");
+    }
+    if (SafeModulo(pMissShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_propsKHR.shaderGroupHandleSize) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-stride-04028",
+                         "vkCmdTraceRaysKHR: The stride member of pMissShaderBindingTable must be a multiple"
+                         "of VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupHandleSize.");
+    }
+    if (pMissShaderBindingTable->stride > phys_dev_ext_props.ray_tracing_propsKHR.maxShaderGroupStride) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-stride-04029",
+                         "vkCmdTraceRaysKHR: The stride member of pMissShaderBindingTable must be"
+                         "less than or equal to VkPhysicalDeviceRayTracingPropertiesKHR::maxShaderGroupStride.");
+    }
+
+    // raygenShader
+    if (SafeModulo(pRaygenShaderBindingTable->offset, phys_dev_ext_props.ray_tracing_propsKHR.shaderGroupBaseAlignment) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysKHR-pRayGenShaderBindingTable-04021",
+                         "vkCmdTraceRaysKHR: pRayGenShaderBindingTable->offset must be a multiple"
+                         "of VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupBaseAlignment.");
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
+                                                                        const VkStridedBufferRegionKHR *pRaygenShaderBindingTable,
+                                                                        const VkStridedBufferRegionKHR *pMissShaderBindingTable,
+                                                                        const VkStridedBufferRegionKHR *pHitShaderBindingTable,
+                                                                        const VkStridedBufferRegionKHR *pCallableShaderBindingTable,
+                                                                        VkBuffer buffer, VkDeviceSize offset) const {
+    bool skip = false;
+    const auto *raytracing_features = lvl_find_in_chain<VkPhysicalDeviceRayTracingFeaturesKHR>(device_createinfo_pnext);
+    if (!raytracing_features || raytracing_features->rayTracingIndirectTraceRays == VK_FALSE) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-rayTracingIndirectTraceRays-03518",
+                         "vkCmdTraceRaysIndirectKHR: the VkPhysicalDeviceRayTracingFeaturesKHR::rayTracingIndirectTraceRays "
+                         "feature must be enabled.");
+    }
+    if (SafeModulo(pCallableShaderBindingTable->offset, phys_dev_ext_props.ray_tracing_propsKHR.shaderGroupBaseAlignment) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-offset-04038",
+                         "vkCmdTraceRaysIndirectKHR: The offset member of pCallableShaderBindingTable"
+                         "must be a multiple of VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupBaseAlignment.");
+    }
+    if (SafeModulo(pCallableShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_propsKHR.shaderGroupHandleSize) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-stride-04040",
+                         "vkCmdTraceRaysIndirectKHR: The stride member of pCallableShaderBindingTable must be a multiple"
+                         "of VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupHandleSize.");
+    }
+    if (pCallableShaderBindingTable->stride > phys_dev_ext_props.ray_tracing_propsKHR.maxShaderGroupStride) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-stride-04041",
+                         "vkCmdTraceRaysIndirectKHR: The stride member of pCallableShaderBindingTable must be"
+                         "less than or equal to VkPhysicalDeviceRayTracingPropertiesKHR::maxShaderGroupStride.");
+    }
+    // hitShader
+    if (SafeModulo(pHitShaderBindingTable->offset, phys_dev_ext_props.ray_tracing_propsKHR.shaderGroupBaseAlignment) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-offset-04032",
+                         "vkCmdTraceRaysIndirectKHR: The offset member of pHitShaderBindingTable must be a multiple"
+                         "of VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupBaseAlignment.");
+    }
+    if (SafeModulo(pHitShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_propsKHR.shaderGroupHandleSize) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-stride-04034",
+                         "vkCmdTraceRaysIndirectKHR: The stride member of pHitShaderBindingTable must be a multiple"
+                         "of VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupHandleSize.");
+    }
+    if (pHitShaderBindingTable->stride > phys_dev_ext_props.ray_tracing_propsKHR.maxShaderGroupStride) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-stride-04035",
+                         "vkCmdTraceRaysIndirectKHR: The stride member of pHitShaderBindingTable must be"
+                         "less than or equal to VkPhysicalDeviceRayTracingPropertiesKHR::maxShaderGroupStride.");
+    }
+
+    // missShader
+    if (SafeModulo(pMissShaderBindingTable->offset, phys_dev_ext_props.ray_tracing_propsKHR.shaderGroupBaseAlignment) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-offset-04026",
+                         "vkCmdTraceRaysIndirectKHR: The offset member of pMissShaderBindingTable must be a multiple"
+                         "of VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupBaseAlignment.");
+    }
+    if (SafeModulo(pMissShaderBindingTable->stride, phys_dev_ext_props.ray_tracing_propsKHR.shaderGroupHandleSize) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-stride-04028",
+                         "vkCmdTraceRaysIndirectKHR: The stride member of pMissShaderBindingTable must be a multiple"
+                         "of VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupHandleSize.");
+    }
+    if (pMissShaderBindingTable->stride > phys_dev_ext_props.ray_tracing_propsKHR.maxShaderGroupStride) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-stride-04029",
+                         "vkCmdTraceRaysIndirectKHR: The stride member of pMissShaderBindingTable must be"
+                         "less than or equal to VkPhysicalDeviceRayTracingPropertiesKHR::maxShaderGroupStride.");
+    }
+
+    // raygenShader
+    if (SafeModulo(pRaygenShaderBindingTable->offset, phys_dev_ext_props.ray_tracing_propsKHR.shaderGroupBaseAlignment) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysIndirectKHR-pRayGenShaderBindingTable-04021",
+                         "vkCmdTraceRaysIndirectKHR: pRayGenShaderBindingTable->offset must be a multiple"
+                         "of VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupBaseAlignment.");
+    }
+    return skip;
+}
+bool StatelessValidation::manual_PreCallValidateCmdTraceRaysNV(
+    VkCommandBuffer commandBuffer, VkBuffer raygenShaderBindingTableBuffer, VkDeviceSize raygenShaderBindingOffset,
+    VkBuffer missShaderBindingTableBuffer, VkDeviceSize missShaderBindingOffset, VkDeviceSize missShaderBindingStride,
+    VkBuffer hitShaderBindingTableBuffer, VkDeviceSize hitShaderBindingOffset, VkDeviceSize hitShaderBindingStride,
+    VkBuffer callableShaderBindingTableBuffer, VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
+    uint32_t width, uint32_t height, uint32_t depth) const {
+    bool skip = false;
+    if (SafeModulo(callableShaderBindingOffset, phys_dev_ext_props.ray_tracing_propsNV.shaderGroupBaseAlignment) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-callableShaderBindingOffset-02462",
+                         "vkCmdTraceRaysNV: callableShaderBindingOffset must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment.");
+    }
+    if (SafeModulo(callableShaderBindingStride, phys_dev_ext_props.ray_tracing_propsNV.shaderGroupHandleSize) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-callableShaderBindingStride-02465",
+                         "vkCmdTraceRaysNV: callableShaderBindingStride must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupHandleSize.");
+    }
+    if (callableShaderBindingStride > phys_dev_ext_props.ray_tracing_propsNV.maxShaderGroupStride) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-callableShaderBindingStride-02468",
+                         "vkCmdTraceRaysNV: callableShaderBindingStride must be less than or equal to "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::maxShaderGroupStride. ");
+    }
+
+    // hitShader
+    if (SafeModulo(hitShaderBindingOffset, phys_dev_ext_props.ray_tracing_propsNV.shaderGroupBaseAlignment) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-hitShaderBindingOffset-02460",
+                         "vkCmdTraceRaysNV: hitShaderBindingOffset must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment.");
+    }
+    if (SafeModulo(hitShaderBindingStride, phys_dev_ext_props.ray_tracing_propsNV.shaderGroupHandleSize) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-hitShaderBindingStride-02464",
+                         "vkCmdTraceRaysNV: hitShaderBindingStride must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupHandleSize.");
+    }
+    if (hitShaderBindingStride > phys_dev_ext_props.ray_tracing_propsNV.maxShaderGroupStride) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-hitShaderBindingStride-02467",
+                         "vkCmdTraceRaysNV: hitShaderBindingStride must be less than or equal to "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::maxShaderGroupStride.");
+    }
+
+    // missShader
+    if (SafeModulo(missShaderBindingOffset, phys_dev_ext_props.ray_tracing_propsNV.shaderGroupBaseAlignment) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-missShaderBindingOffset-02458",
+                         "vkCmdTraceRaysNV: missShaderBindingOffset must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment.");
+    }
+    if (SafeModulo(missShaderBindingStride, phys_dev_ext_props.ray_tracing_propsNV.shaderGroupHandleSize) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-missShaderBindingStride-02463",
+                         "vkCmdTraceRaysNV: missShaderBindingStride must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupHandleSize.");
+    }
+    if (missShaderBindingStride > phys_dev_ext_props.ray_tracing_propsNV.maxShaderGroupStride) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-missShaderBindingStride-02466",
+                         "vkCmdTraceRaysNV: missShaderBindingStride must be less than or equal to "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::maxShaderGroupStride.");
+    }
+
+    // raygenShader
+    if (SafeModulo(raygenShaderBindingOffset, phys_dev_ext_props.ray_tracing_propsNV.shaderGroupBaseAlignment) != 0) {
+        skip |= LogError(device, "VUID-vkCmdTraceRaysNV-raygenShaderBindingOffset-02456",
+                         "vkCmdTraceRaysNV: raygenShaderBindingOffset must be a multiple of "
+                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment .");
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructureIndirectKHR(
+    VkCommandBuffer commandBuffer, const VkAccelerationStructureBuildGeometryInfoKHR *pInfo, VkBuffer indirectBuffer,
+    VkDeviceSize indirectOffset, uint32_t indirectStride) const {
+    bool skip = false;
+    const auto *raytracing_features = lvl_find_in_chain<VkPhysicalDeviceRayTracingFeaturesKHR>(device_createinfo_pnext);
+    if (!raytracing_features || raytracing_features->rayTracingIndirectAccelerationStructureBuild == VK_FALSE) {
+        skip |= LogError(
+            device, "VUID-vkCmdBuildAccelerationStructureIndirectKHR-rayTracingIndirectAccelerationStructureBuild-03535",
+            "vkCmdBuildAccelerationStructureIndirectKHR: The "
+            "VkPhysicalDeviceRayTracingFeaturesKHR::rayTracingIndirectAccelerationStructureBuild feature must be enabled.");
+    }
+    const auto *pNext_struct = lvl_find_in_chain<VkDeferredOperationInfoKHR>(pInfo->pNext);
+    if (pNext_struct) {
+        skip |=
+            LogError(device, "VUID-vkCmdBuildAccelerationStructureIndirectKHR-pNext-03536",
+                     "vkCmdBuildAccelerationStructureIndirectKHR: The VkDeferredOperationInfoKHR structure must not be included in "
+                     "the pNext chain of any of the provided VkAccelerationStructureBuildGeometryInfoKHR structures.");
+    }
+    return false;
+}
+
+bool StatelessValidation::manual_PreCallValidateGetDeviceAccelerationStructureCompatibilityKHR(
+    VkDevice device, const VkAccelerationStructureVersionKHR *version) const {
+    bool skip = false;
+    const auto *raytracing_features = lvl_find_in_chain<VkPhysicalDeviceRayTracingFeaturesKHR>(device_createinfo_pnext);
+    if (!raytracing_features || !(raytracing_features->rayQuery || raytracing_features->rayTracing)) {
+        skip |= LogError(device, "VUID-vkGetDeviceAccelerationStructureCompatibilityKHR-rayTracing-03565",
+                         "vkGetDeviceAccelerationStructureCompatibilityKHR: The rayTracing or rayQuery feature must be enabled.");
+    }
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateBuildAccelerationStructureKHR(
+    VkDevice device, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
+    const VkAccelerationStructureBuildOffsetInfoKHR *const *ppOffsetInfos) const {
+    bool skip = false;
+    const auto *raytracing_features = lvl_find_in_chain<VkPhysicalDeviceRayTracingFeaturesKHR>(device_createinfo_pnext);
+    if (!raytracing_features || raytracing_features->rayTracingHostAccelerationStructureCommands == VK_FALSE) {
+        skip |= LogError(
+            device, "VUID-vkBuildAccelerationStructureKHR-rayTracingHostAccelerationStructureCommands-03439",
+            "vkBuildAccelerationStructureKHR: The "
+            "VkPhysicalDeviceRayTracingFeaturesKHR::rayTracingHostAccelerationStructureCommands feature must be enabled .");
+    }
     return skip;
 }

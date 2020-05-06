@@ -3239,6 +3239,30 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, bool isKHR
                              pipeline->raytracingPipelineCI.maxRecursionDepth,
                              phys_dev_ext_props.ray_tracing_propsKHR.maxRecursionDepth);
         }
+        for (uint32_t i = 0; i < pipeline->raytracingPipelineCI.libraries.libraryCount; ++i) {
+            const PIPELINE_STATE *pLibrary_pipelinestate = GetPipelineState(pipeline->raytracingPipelineCI.libraries.pLibraries[i]);
+            if (pLibrary_pipelinestate->raytracingPipelineCI.maxRecursionDepth !=
+                pipeline->raytracingPipelineCI.maxRecursionDepth) {
+                skip |= LogError(
+                    device, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraries-03467",
+                    "vkCreateRayTracingPipelinesKHR: Each element  (%d) of the pLibraries member of libraries must have been"
+                    "created with the value of maxRecursionDepth (%d) equal to that in this pipeline (%d) .",
+                    i, pLibrary_pipelinestate->raytracingPipelineCI.maxRecursionDepth,
+                    pipeline->raytracingPipelineCI.maxRecursionDepth);
+            }
+            if (pLibrary_pipelinestate->raytracingPipelineCI.pLibraryInterface->maxAttributeSize !=
+                    pipeline->raytracingPipelineCI.pLibraryInterface->maxAttributeSize ||
+                pLibrary_pipelinestate->raytracingPipelineCI.pLibraryInterface->maxPayloadSize !=
+                    pipeline->raytracingPipelineCI.pLibraryInterface->maxPayloadSize ||
+                pLibrary_pipelinestate->raytracingPipelineCI.pLibraryInterface->maxCallableSize !=
+                    pipeline->raytracingPipelineCI.pLibraryInterface->maxCallableSize) {
+                skip |=
+                    LogError(device, "VUID-VkRayTracingPipelineCreateInfoKHR-pLibraries-03469",
+                             "vkCreateRayTracingPipelinesKHR: Each element of the pLibraries member of libraries must have been "
+                             "created with values of the maxPayloadSize,"
+                             "maxAttributeSize, and maxCallableSize members of pLibraryInterface equal to those in this pipeline.");
+            }
+        }
     } else {
         if (pipeline->raytracingPipelineCI.maxRecursionDepth > phys_dev_ext_props.ray_tracing_propsNV.maxRecursionDepth) {
             skip |= LogError(device, "VUID-VkRayTracingPipelineCreateInfoNV-maxRecursionDepth-03457", ": %d > %d",
@@ -3246,7 +3270,6 @@ bool CoreChecks::ValidateRayTracingPipeline(PIPELINE_STATE *pipeline, bool isKHR
                              phys_dev_ext_props.ray_tracing_propsNV.maxRecursionDepth);
         }
     }
-
     const auto *stages = pipeline->raytracingPipelineCI.ptr()->pStages;
     const auto *groups = pipeline->raytracingPipelineCI.ptr()->pGroups;
 

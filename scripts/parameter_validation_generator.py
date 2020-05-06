@@ -207,6 +207,15 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdDrawIndirectCountKHR',
             'vkCmdDrawIndexedIndirectCount',
             'vkCmdDrawIndexedIndirectCountKHR',
+            'vkCmdWriteAccelerationStructuresPropertiesKHR',
+            'vkWriteAccelerationStructuresPropertiesKHR',
+            'vkGetRayTracingCaptureReplayShaderGroupHandlesKHR',
+            'vkCmdTraceRaysKHR',
+            'vkCmdTraceRaysNV',
+            'vkCmdTraceRaysIndirectKHR',
+            'vkCmdBuildAccelerationStructureIndirectKHR',
+            'vkGetDeviceAccelerationStructureCompatibilityKHR',
+            'vkBuildAccelerationStructureKHR'
             ]
 
         # Commands to ignore
