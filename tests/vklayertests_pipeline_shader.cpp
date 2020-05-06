@@ -6110,7 +6110,7 @@ TEST_F(VkLayerTest, NVRayTracingPipelineStageCreationFeedbackCount) {
 
     feedback_info.pipelineStageCreationFeedbackCount = 2;
     CreateNVRayTracingPipelineHelper::OneshotTest(
-        *this, set_feedback, "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02670");
+        *this, set_feedback, "VUID-VkPipelineCreationFeedbackCreateInfoEXT-pipelineStageCreationFeedbackCount-02969");
 }
 
 TEST_F(VkLayerTest, CreatePipelineCheckShaderImageFootprintEnabled) {
@@ -7161,8 +7161,8 @@ TEST_F(VkLayerTest, RayTracingPipelineShaderGroupsNV) {
     }
 }
 
-TEST_F(VkLayerTest, RayTracingPipelineCreateInfoNV) {
-    TEST_DESCRIPTION("Validate CreateInfo parameters during ray-tracing pipeline creation");
+TEST_F(VkLayerTest, ValidateRayTracingPipelineNV) {
+    TEST_DESCRIPTION("Validate vkCreateRayTracingPipelinesNV and CreateInfo parameters during ray-tracing pipeline creation");
     if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
         m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     } else {
@@ -7293,6 +7293,23 @@ TEST_F(VkLayerTest, RayTracingPipelineCreateInfoNV) {
         pipeline_ci.flags = VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR;
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkRayTracingPipelineCreateInfoNV-flags-03463");
         vkCreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+        m_errorMonitor->VerifyFound();
+    }
+    // test for vkCreateRayTracingPipelinesNV
+    {
+        VkRayTracingPipelineCreateInfoNV pipeline_ci = {};
+        pipeline_ci.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
+        pipeline_ci.stageCount = 1;
+        pipeline_ci.pStages = &stage_create_info;
+        pipeline_ci.groupCount = 1;
+        pipeline_ci.pGroups = &group_create_info;
+        pipeline_ci.layout = empty_pipeline_layout.handle();
+        // appending twice as it is generated twice in auto-validation code
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-vkCreateRayTracingPipelinesNV-createInfoCount-arraylength");
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-vkCreateRayTracingPipelinesNV-createInfoCount-arraylength");
+        vkCreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 0, &pipeline_ci, nullptr, &pipeline);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -8317,5 +8334,70 @@ TEST_F(VkLayerTest, PipelineMaxPerStageResources) {
     graphics_pipe.pipeline_layout_ = VkPipelineLayoutObj(m_device, {&ds_layout_combined0, &ds_layout_combined1});
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-layout-01688");
     graphics_pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, ValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR) {
+    TEST_DESCRIPTION("Validate vkGetRayTracingCaptureReplayShaderGroupHandlesKHR.");
+    if (!InitFrameworkForRayTracingTest(this, true, m_instance_extension_names, m_device_extension_names, m_errorMonitor, false,
+                                        false)) {
+        return;
+    }
+    auto ray_tracing_features = lvl_init_struct<VkPhysicalDeviceRayTracingFeaturesKHR>();
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&ray_tracing_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+    if (ray_tracing_features.rayTracingShaderGroupHandleCaptureReplay == VK_FALSE) {
+        printf("%s rayTracingShaderGroupHandleCaptureReplay not enabled.\n", kSkipPrefix);
+        return;
+    }
+    CreateNVRayTracingPipelineHelper rt_pipe(*this);
+    rt_pipe.InitInfo(true /*isKHR*/);
+    rt_pipe.InitState();
+    rt_pipe.CreateKHRRayTracingPipeline();
+    VkBuffer buffer;
+    VkBufferCreateInfo buf_info = {};
+    buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buf_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buf_info.size = 4096;
+    buf_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    VkResult err = vk::CreateBuffer(device(), &buf_info, NULL, &buffer);
+    ASSERT_VK_SUCCESS(err);
+
+    VkMemoryRequirements mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
+
+    VkMemoryAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.allocationSize = 4096;
+    VkDeviceMemory mem;
+    err = vk::AllocateMemory(device(), &alloc_info, NULL, &mem);
+    ASSERT_VK_SUCCESS(err);
+    vk::BindBufferMemory(device(), buffer, mem, 0);
+    PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR vkGetRayTracingCaptureReplayShaderGroupHandlesKHR =
+        (PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR)vk::GetInstanceProcAddr(
+            instance(), "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-dataSize-arraylength");
+    vkGetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(), rt_pipe.pipeline_, 1, 1, 0, &buffer);
+    m_errorMonitor->VerifyFound();
+
+    // dataSize must be at least VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupHandleCaptureReplaySize
+    PFN_vkGetPhysicalDeviceProperties2KHR vkGetPhysicalDeviceProperties2KHR =
+        (PFN_vkGetPhysicalDeviceProperties2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceProperties2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceProperties2KHR != nullptr);
+    auto ray_tracing_properties = lvl_init_struct<VkPhysicalDeviceRayTracingPropertiesKHR>();
+    auto properties2 = lvl_init_struct<VkPhysicalDeviceProperties2KHR>(&ray_tracing_properties);
+    vkGetPhysicalDeviceProperties2KHR(gpu(), &properties2);
+    // Check only when the reported size is
+    if (ray_tracing_properties.shaderGroupHandleCaptureReplaySize > 0) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-dataSize-03484");
+        vkGetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(), rt_pipe.pipeline_, 1, 1,
+                                                          (ray_tracing_properties.shaderGroupHandleCaptureReplaySize - 1), &buffer);
+        m_errorMonitor->VerifyFound();
+    }
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-03483");
+    vkGetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(), rt_pipe.pipeline_, 2, rt_pipe.groups_KHR_.size(),
+                                                      (ray_tracing_properties.shaderGroupHandleCaptureReplaySize - 1), &buffer);
     m_errorMonitor->VerifyFound();
 }
