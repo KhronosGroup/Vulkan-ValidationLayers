@@ -321,11 +321,11 @@ class CoreChecks : public ValidationStateTracker {
                                                 void* pData);
     // For given bindings validate state at time of draw is correct, returning false on error and writing error details into string*
     bool ValidateDrawState(const cvdescriptorset::DescriptorSet* descriptor_set, const std::map<uint32_t, descriptor_req>& bindings,
-                           const std::vector<uint32_t>& dynamic_offsets, const CMD_BUFFER_STATE* cb_node, const char* caller,
-                           std::string* error) const;
+                           const std::vector<uint32_t>& dynamic_offsets, const CMD_BUFFER_STATE* cb_node, uint32_t setIndex,
+                           const char* caller) const;
     bool ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE* cb_node, const cvdescriptorset::DescriptorSet* descriptor_set,
                                           const std::vector<uint32_t>& dynamic_offsets, uint32_t binding, descriptor_req reqs,
-                                          const char* caller, std::string* error) const;
+                                          const char* caller) const;
 
     // Validate contents of a CopyUpdate
     using DescriptorSet = cvdescriptorset::DescriptorSet;

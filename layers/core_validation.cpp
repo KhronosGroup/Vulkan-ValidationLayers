@@ -860,7 +860,6 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                                                     binding_req_map.begin(), binding_req_map.end());
 
                 if (need_validate) {
-                    bool success;
                     if (!descriptor_set_changed && reduced_map.IsManyDescriptors()) {
                         // Only validate the bindings that haven't already been validated
                         BindingReqMap delta_reqs;
@@ -868,17 +867,11 @@ bool CoreChecks::ValidateCmdBufDrawState(const CMD_BUFFER_STATE *cb_node, CMD_TY
                                             state.per_set[setIndex].validated_set_binding_req_map.begin(),
                                             state.per_set[setIndex].validated_set_binding_req_map.end(),
                                             std::inserter(delta_reqs, delta_reqs.begin()));
-                        success = ValidateDrawState(descriptor_set, delta_reqs, state.per_set[setIndex].dynamicOffsets, cb_node,
-                                                    function, &err_str);
+                        result |= ValidateDrawState(descriptor_set, delta_reqs, state.per_set[setIndex].dynamicOffsets, cb_node,
+                                                    setIndex, function);
                     } else {
-                        success = ValidateDrawState(descriptor_set, binding_req_map, state.per_set[setIndex].dynamicOffsets,
-                                                    cb_node, function, &err_str);
-                    }
-                    if (!success) {
-                        auto set = descriptor_set->GetSet();
-                        result |= LogError(set, kVUID_Core_DrawState_DescriptorSetNotUpdated,
-                                           "%s bound as set #%u encountered the following validation error at %s time: %s",
-                                           report_data->FormatHandle(set).c_str(), setIndex, function, err_str.c_str());
+                        result |= ValidateDrawState(descriptor_set, binding_req_map, state.per_set[setIndex].dynamicOffsets,
+                                                    cb_node, setIndex, function);
                     }
                 }
             }
@@ -2268,13 +2261,8 @@ bool CoreChecks::ValidateCommandBuffersForSubmit(VkQueue queue, const VkSubmitIn
                             std::string error;
                             std::vector<uint32_t> dynamicOffsets;
                             // dynamic data isn't allowed in UPDATE_AFTER_BIND, so dynamicOffsets is always empty.
-                            if (!ValidateDescriptorSetBindingData(cb_node, set_node, dynamicOffsets, binding.first, binding.second,
-                                                                  "vkQueueSubmit()", &error)) {
-                                skip |= LogError(descriptorSet.first, kVUID_Core_DrawState_DescriptorSetNotUpdated,
-                                                 "%s bound the following validation error at %s time: %s",
-                                                 report_data->FormatHandle(descriptorSet.first).c_str(), "vkQueueSubmit()",
-                                                 error.c_str());
-                            }
+                            skip |= ValidateDescriptorSetBindingData(cb_node, set_node, dynamicOffsets, binding.first,
+                                                                     binding.second, "vkQueueSubmit()");
                         }
                     }
                 }
