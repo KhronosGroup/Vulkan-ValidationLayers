@@ -136,25 +136,6 @@ script:
     fi
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
-      # Build DevSim in VulkanTools to run Vulkan-ValidationLayer tests
-      cd ${TRAVIS_BUILD_DIR}/external
-      git clone https://github.com/LunarG/VulkanTools.git
-      cd VulkanTools
-      ./update_external_sources.sh
-      mkdir build
-      cd build
-      cmake -DCMAKE_BUILD_TYPE=Debug \
-            -DBUILD_VIA=NO -DBUILD_VKTRACE=NO -DBUILD_VLF=NO -DBUILD_TESTS=NO -DBUILD_LAYERMGR=NO \
-            -DBUILD_MONITOR=NO -DBUILD_SCREENSHOT=NO -DBUILD_APIDUMP=NO \
-            -DBUILD_VKTRACEVIEWER=NO -DBUILD_VKTRACE_LAYER=NO -DBUILD_VKTRACE_REPLAY=NO \
-            -DVULKAN_HEADERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/external/Vulkan-Headers/build/install \
-            -DVULKAN_LOADER_INSTALL_DIR=${TRAVIS_BUILD_DIR}/external/Vulkan-Loader/build/install \
-            -DVULKAN_VALIDATIONLAYERS_INSTALL_DIR=${TRAVIS_BUILD_DIR}/build/install \
-            ..
-      cmake --build . --target VkLayer_device_simulation -- -j $core_count
-    fi
-  - |
-    if [[ "$VULKAN_BUILD_TARGET" == "LINUX" ]]; then
       # Build MockICD in Vulkan-Tools to run Vulkan-ValidationLayer tests
       cd ${TRAVIS_BUILD_DIR}/external
       git clone https://github.com/KhronosGroup/Vulkan-Tools.git
@@ -183,11 +164,6 @@ script:
       export VK_LAYER_PATH=${TRAVIS_BUILD_DIR}/external/VulkanTools/build/layersvt:${TRAVIS_BUILD_DIR}/build/layers
       export VK_ICD_FILENAMES=${TRAVIS_BUILD_DIR}/external/Vulkan-Tools/build/icd/VkICD_mock_icd.json
       build/tests/vk_layer_validation_tests
-      for profile in tests/device_profiles/*.json
-      do
-        echo Testing with profile $profile
-        VK_DEVSIM_FILENAME=$profile build/tests/vk_layer_validation_tests --devsim
-      done
     fi
   - |
     if [[ "$VULKAN_BUILD_TARGET" == "ANDROID" ]]; then
