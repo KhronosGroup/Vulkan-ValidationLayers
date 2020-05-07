@@ -1717,6 +1717,7 @@ static void SubmitFence(QUEUE_STATE *pQueue, FENCE_STATE *pFence, uint64_t submi
 
 void ValidationStateTracker::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits,
                                                        VkFence fence, VkResult result) {
+    if (result != VK_SUCCESS) return;
     uint64_t early_retire_seq = 0;
     auto pQueue = GetQueueState(queue);
     auto pFence = GetFenceState(fence);

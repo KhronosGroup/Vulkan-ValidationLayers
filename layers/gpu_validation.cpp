@@ -1311,7 +1311,7 @@ void GpuAssisted::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount,
                                             VkResult result) {
     ValidationStateTracker::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, result);
 
-    if (aborted) return;
+    if (aborted || (result != VK_SUCCESS)) return;
     bool buffers_present = false;
     // Don't QueueWaitIdle if there's nothing to process
     for (uint32_t submit_idx = 0; submit_idx < submitCount; submit_idx++) {
