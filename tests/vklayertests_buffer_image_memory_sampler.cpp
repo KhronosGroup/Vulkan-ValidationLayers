@@ -6159,6 +6159,11 @@ TEST_F(VkLayerTest, BadIndexBufferOffset) {
     m_commandBuffer->BindIndexBuffer(&ibo, 1, VK_INDEX_TYPE_UINT32);
     m_errorMonitor->VerifyFound();
 
+    // Test for missing pNext struct for index buffer UINT8 type
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBindIndexBuffer-indexType-02765");
+    m_commandBuffer->BindIndexBuffer(&ibo, 1, VK_INDEX_TYPE_UINT8_EXT);
+    m_errorMonitor->VerifyFound();
+
     m_commandBuffer->EndRenderPass();
     m_commandBuffer->end();
 }
