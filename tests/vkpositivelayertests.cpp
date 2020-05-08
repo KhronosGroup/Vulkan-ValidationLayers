@@ -4067,6 +4067,14 @@ TEST_F(VkPositiveLayerTest, QueryAndCopySecondaryCommandBuffers) {
         printf("%s Queue family needs to have multiple queues to run this test.\n", kSkipPrefix);
         return;
     }
+    uint32_t queue_count;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
+    VkQueueFamilyProperties *queue_props = new VkQueueFamilyProperties[queue_count];
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props);
+    if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
+        printf("%s Device graphic queue has timestampValidBits of 0, skipping.\n", kSkipPrefix);
+        return;
+    }
 
     m_errorMonitor->ExpectSuccess();
 
@@ -4137,6 +4145,14 @@ TEST_F(VkPositiveLayerTest, QueryAndCopyMultipleCommandBuffers) {
     }
     if ((m_device->queue_props.empty()) || (m_device->queue_props[0].queueCount < 2)) {
         printf("%s Queue family needs to have multiple queues to run this test.\n", kSkipPrefix);
+        return;
+    }
+    uint32_t queue_count;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
+    VkQueueFamilyProperties *queue_props = new VkQueueFamilyProperties[queue_count];
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, queue_props);
+    if (queue_props[m_device->graphics_queue_node_index_].timestampValidBits == 0) {
+        printf("%s Device graphic queue has timestampValidBits of 0, skipping.\n", kSkipPrefix);
         return;
     }
 
