@@ -1914,6 +1914,17 @@ bool CoreChecks::ValidateStageMaskGsTsEnables(VkPipelineStageFlags stageMask, co
     return skip;
 }
 
+bool CoreChecks::ValidateStageMaskHost(VkPipelineStageFlags stageMask, const char *caller, const char *vuid) const {
+    bool skip = false;
+    if ((stageMask & VK_PIPELINE_STAGE_HOST_BIT) != 0) {
+        skip |= LogError(
+            device, vuid,
+            "%s: stage mask must not include VK_PIPELINE_STAGE_HOST_BIT as the stage can't be invoked inside a command buffer.",
+            caller);
+    }
+    return skip;
+}
+
 // Note: This function assumes that the global lock is held by the calling thread.
 // For the given queue, verify the queue state up to the given seq number.
 // Currently the only check is to make sure that if there are events to be waited on prior to
@@ -2201,6 +2212,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *
             ValidateStageMaskGsTsEnables(submit->pWaitDstStageMask[i], "vkQueueSubmit()",
                                          "VUID-VkSubmitInfo-pWaitDstStageMask-00076", "VUID-VkSubmitInfo-pWaitDstStageMask-00077",
                                          "VUID-VkSubmitInfo-pWaitDstStageMask-02089", "VUID-VkSubmitInfo-pWaitDstStageMask-02090");
+        skip |= ValidateStageMaskHost(submit->pWaitDstStageMask[i], "vkQueueSubmit()", "VUID-VkSubmitInfo-pWaitDstStageMask-00078");
         VkSemaphore semaphore = submit->pWaitSemaphores[i];
         const auto *pSemaphore = GetSemaphoreState(semaphore);
         if (pSemaphore && pSemaphore->type == VK_SEMAPHORE_TYPE_TIMELINE_KHR && !timeline_semaphore_submit_info) {
@@ -5766,6 +5778,7 @@ bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEve
     skip |= ValidateStageMaskGsTsEnables(stageMask, "vkCmdSetEvent()", "VUID-vkCmdSetEvent-stageMask-01150",
                                          "VUID-vkCmdSetEvent-stageMask-01151", "VUID-vkCmdSetEvent-stageMask-02107",
                                          "VUID-vkCmdSetEvent-stageMask-02108");
+    skip |= ValidateStageMaskHost(stageMask, "vkCmdSetEvent()", "VUID-vkCmdSetEvent-stageMask-01149");
     return skip;
 }
 
@@ -5780,6 +5793,7 @@ bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkE
     skip |= ValidateStageMaskGsTsEnables(stageMask, "vkCmdResetEvent()", "VUID-vkCmdResetEvent-stageMask-01154",
                                          "VUID-vkCmdResetEvent-stageMask-01155", "VUID-vkCmdResetEvent-stageMask-02109",
                                          "VUID-vkCmdResetEvent-stageMask-02110");
+    skip |= ValidateStageMaskHost(stageMask, "vkCmdResetEvent()", "VUID-vkCmdResetEvent-stageMask-01153");
     return skip;
 }
 
