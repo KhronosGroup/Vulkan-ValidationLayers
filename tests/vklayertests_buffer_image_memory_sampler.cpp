@@ -1853,7 +1853,7 @@ TEST_F(VkLayerTest, BindInvalidMemory2Disjoint) {
             if ((image_offset > 0) && (image_mem_reqs.size < (image_alloc_info.allocationSize - image_mem_reqs.alignment))) {
                 bind_image_info.memoryOffset = image_offset;
                 const char *vuid =
-                    (mp_extensions) ? "VUID-VkBindImageMemoryInfo-pNext-01617" : "VUID-VkBindImageMemoryInfo-memoryOffset-01614";
+                    (mp_extensions) ? "VUID-VkBindImageMemoryInfo-pNext-01617" : "VUID-VkBindImageMemoryInfo-memory-01614";
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
                 vkBindImageMemory2Function(device(), 1, &bind_image_info);
                 m_errorMonitor->VerifyFound();
@@ -1933,7 +1933,7 @@ TEST_F(VkLayerTest, BindInvalidMemory2Disjoint) {
                 ASSERT_VK_SUCCESS(vk::AllocateMemory(device(), &image_alloc_info, NULL, &image_mem));
                 bind_image_info.memory = image_mem;
                 const char *vuid =
-                    (mp_extensions) ? "VUID-VkBindImageMemoryInfo-pNext-01615" : "VUID-VkBindImageMemoryInfo-memoryOffset-01612";
+                    (mp_extensions) ? "VUID-VkBindImageMemoryInfo-pNext-01615" : "VUID-VkBindImageMemoryInfo-memory-01612";
                 m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
                 vkBindImageMemory2Function(device(), 1, &bind_image_info);
                 m_errorMonitor->VerifyFound();

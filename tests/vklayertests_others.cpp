@@ -5478,7 +5478,6 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHR) {
         bad_top_level_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
         bad_top_level_create_info.maxGeometryCount = 0;
         bad_top_level_create_info.compactedSize = 0;
-        m_errorMonitor->SetUnexpectedError("VUID-VkAccelerationStructureCreateInfoKHR-maxGeometryCount-arraylength");
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAccelerationStructureCreateInfoKHR-type-03495");
         vkCreateAccelerationStructureKHR(m_device->handle(), &bad_top_level_create_info, nullptr, &as);
         m_errorMonitor->VerifyFound();
