@@ -4412,7 +4412,7 @@ bool StatelessValidation::manual_PreCallValidateCmdBindIndexBuffer(VkCommandBuff
     }
 
     const auto *index_type_uint8_features = lvl_find_in_chain<VkPhysicalDeviceIndexTypeUint8FeaturesEXT>(device_createinfo_pnext);
-    if (indexType == VK_INDEX_TYPE_UINT8_EXT && !index_type_uint8_features->indexTypeUint8) {
+    if (indexType == VK_INDEX_TYPE_UINT8_EXT && (!index_type_uint8_features || !index_type_uint8_features->indexTypeUint8)) {
         skip |= LogError(commandBuffer, "VUID-vkCmdBindIndexBuffer-indexType-02765",
                          "vkCmdBindIndexBuffer() indexType is VK_INDEX_TYPE_UINT8_EXT but indexTypeUint8 feature is not enabled.");
     }
