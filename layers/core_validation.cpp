@@ -7301,6 +7301,14 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer,
                          report_data->FormatHandle(queryPool).c_str());
     }
 
+    const uint32_t timestampValidBits =
+        GetPhysicalDeviceState()->queue_family_properties[cb_state->command_pool->queueFamilyIndex].timestampValidBits;
+    if (timestampValidBits == 0) {
+        skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdWriteTimestamp-timestampValidBits-00829",
+                         "vkCmdWriteTimestamp(): Query Pool %s has a timestampValidBits value of zero.",
+                         report_data->FormatHandle(queryPool).c_str());
+    }
+
     return skip;
 }
 
