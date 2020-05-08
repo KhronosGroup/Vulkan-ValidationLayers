@@ -90,6 +90,7 @@ class CoreChecks : public ValidationStateTracker {
                                      const char* msg, const char* caller, const char* error_code) const;
     bool ValidateStageMaskGsTsEnables(VkPipelineStageFlags stageMask, const char* caller, const char* geo_error_id,
                                       const char* tess_error_id, const char* mesh_error_id, const char* task_error_id) const;
+    bool ValidateStageMaskHost(VkPipelineStageFlags stageMask, const char* caller, const char* vuid) const;
     bool ValidateMapMemRange(const DEVICE_MEMORY_STATE* mem_info, VkDeviceSize offset, VkDeviceSize size) const;
     bool ValidatePushConstantRange(const uint32_t offset, const uint32_t size, const char* caller_name, uint32_t index) const;
     bool ValidateRenderPassDAG(RenderPassCreateVersion rp_version, const VkRenderPassCreateInfo2KHR* pCreateInfo) const;
