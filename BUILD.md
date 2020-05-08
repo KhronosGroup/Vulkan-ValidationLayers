@@ -65,6 +65,10 @@ resolved with the "install directory" override and are listed below. The
 "install directory" override can also be used to force the use of a specific
 version of that dependency.
 
+Alternatively, an automated method for obtaining and installing repo dependencies
+is provided, and described below, in
+[Building Dependent Repositories...](#building-dependent-repositories-with-known-good-revisions)
+
 #### Vulkan-Headers
 
 This repository has a required dependency on the
@@ -88,6 +92,19 @@ file. Ensure that the `update_glslang_sources.py` script has been run as part
 of building glslang. You must also take note of the glslang install directory
 and pass it on the CMake command line for building this repository, as
 described below.
+
+#### SPIRV-Headers
+
+This repository has a required dependency on the
+[SPIRV-headers repository](https://github.com/KhronosGroup/SPIRV-Headers).
+The SPIRV-headers repository is required because it supports components that are
+required to build the validation layers. You must clone the SPIRV-headers repository
+and build its `install` target. Follow the build instructions in the SPIRV-headers
+[README.md](https://github.com/KhronosGroup/SPIRV-Headers/blob/master/README.md)
+file. You must also take note of the SPIRV-headers install directory
+and pass it on the CMake command line for building this repository, as
+described below.
+
 
 #### Google Test
 
@@ -277,7 +294,8 @@ work with the solution interactively.
     mkdir build
     cd build
     cmake -A x64 -DVULKAN_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
-                 -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir ..
+                 -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
+                 -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir ..
     cmake --build .
 
 The above commands instruct CMake to find and use the default Visual Studio
@@ -296,7 +314,8 @@ create a build directory and generate the Visual Studio project files:
     mkdir build
     cd build
     cmake -A x64 -DVULKAN_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
-                 -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir ..
+                 -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
+                 -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir ..
 
 > Note: The `..` parameter tells `cmake` the location of the top of the
 > repository. If you place your build directory someplace else, you'll need to
@@ -451,7 +470,8 @@ CMake with the `--build` option or `make` to build from the command line.
     mkdir build
     cd build
     cmake -DVULKAN_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
-          -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir ..
+          -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
+          -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir ..
     make
 
 See below for the details.
@@ -467,6 +487,7 @@ create a build directory and generate the make files.
     cmake -DCMAKE_BUILD_TYPE=Debug \
           -DVULKAN_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
           -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
+          -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
           -DCMAKE_INSTALL_PREFIX=install ..
 
 > Note: The `..` parameter tells `cmake` the location of the top of the
@@ -789,6 +810,7 @@ build is:
     cd build
     cmake -DVULKAN_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
           -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
+          -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
           -DCMAKE_BUILD_TYPE=Debug ..
     make
 
@@ -805,6 +827,7 @@ To create and open an Xcode project:
     cd build-xcode
     cmake -DVULKAN_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
           -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
+          -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
           -GXcode ..
     open VULKAN.xcodeproj
 
