@@ -1249,6 +1249,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceCoherentMemoryFeaturesAMD device_coherent_memory_features;
     VkPhysicalDeviceYcbcrImageArraysFeaturesEXT ycbcr_image_array_features;
     VkPhysicalDeviceRayTracingFeaturesKHR ray_tracing_features;
+    VkPhysicalDeviceRobustness2FeaturesEXT robustness2_features;
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };

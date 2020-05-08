@@ -188,28 +188,6 @@ bool ObjectLifetimes::PreCallValidateGetDeviceProcAddr(
     return skip;
 }
 
-bool ObjectLifetimes::PreCallValidateCreateDevice(
-    VkPhysicalDevice                            physicalDevice,
-    const VkDeviceCreateInfo*                   pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkDevice*                                   pDevice) const {
-    bool skip = false;
-    skip |= ValidateObject(physicalDevice, kVulkanObjectTypePhysicalDevice, false, "VUID-vkCreateDevice-physicalDevice-parameter", kVUIDUndefined);
-
-    return skip;
-}
-
-void ObjectLifetimes::PostCallRecordCreateDevice(
-    VkPhysicalDevice                            physicalDevice,
-    const VkDeviceCreateInfo*                   pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkDevice*                                   pDevice,
-    VkResult                                    result) {
-    if (result != VK_SUCCESS) return;
-    CreateObject(*pDevice, kVulkanObjectTypeDevice, pAllocator);
-
-}
-
 bool ObjectLifetimes::PreCallValidateEnumerateDeviceExtensionProperties(
     VkPhysicalDevice                            physicalDevice,
     const char*                                 pLayerName,
