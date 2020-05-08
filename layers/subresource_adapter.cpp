@@ -174,20 +174,15 @@ RangeEncoder::RangeEncoder(const VkImageSubresourceRange& full_range, const Aspe
     PopulateFunctionPointers();
 }
 
-static bool IsValid(const RangeEncoder& encoder, const VkImageSubresourceRange& bounds) {
-    const auto& limits = encoder.Limits();
-    return (((bounds.aspectMask & limits.aspectMask) == bounds.aspectMask) &&
-            (bounds.baseMipLevel + bounds.levelCount <= limits.mipLevel) &&
-            (bounds.baseArrayLayer + bounds.layerCount <= limits.arrayLayer));
-}
-
 // Create an iterator like "generator" that for each increment produces the next index range matching the
 // next contiguous (in index space) section of the VkImageSubresourceRange
 // Ranges will always span the layerCount layers, and if the layerCount is the full range of the image (as known by
 // the encoder) will span the levelCount mip levels as weill.
 RangeGenerator::RangeGenerator(const RangeEncoder& encoder, const VkImageSubresourceRange& subres_range)
     : encoder_(&encoder), isr_pos_(encoder, subres_range), pos_(), aspect_base_() {
-    assert(IsValid(encoder, isr_pos_.Limits()));
+    assert((((isr_pos_.Limits()).aspectMask & (encoder.Limits()).aspectMask) == (isr_pos_.Limits()).aspectMask) &&
+           ((isr_pos_.Limits()).baseMipLevel + (isr_pos_.Limits()).levelCount <= (encoder.Limits()).mipLevel) &&
+           ((isr_pos_.Limits()).baseArrayLayer + (isr_pos_.Limits()).layerCount <= (encoder.Limits()).arrayLayer));
 
     // To see if we have a full range special case, need to compare the subres_range against the *encoders* limits
     const auto& limits = encoder.Limits();
