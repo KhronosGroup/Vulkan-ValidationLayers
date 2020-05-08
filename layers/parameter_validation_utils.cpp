@@ -250,6 +250,13 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         }
     }
 
+    const VkPhysicalDeviceFeatures *features = features2 ? &features2->features : pCreateInfo->pEnabledFeatures;
+    const auto *robustness2_features = lvl_find_in_chain<VkPhysicalDeviceRobustness2FeaturesEXT>(pCreateInfo->pNext);
+    if (features && robustness2_features && robustness2_features->robustBufferAccess2 && !features->robustBufferAccess) {
+        skip |= LogError(device, "VUID-VkPhysicalDeviceRobustness2FeaturesEXT-robustBufferAccess2-04000",
+                         "If robustBufferAccess2 is enabled then robustBufferAccess must be enabled.");
+    }
+
     auto vertex_attribute_divisor_features =
         lvl_find_in_chain<VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT>(pCreateInfo->pNext);
     if (vertex_attribute_divisor_features) {
@@ -2591,7 +2598,8 @@ bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunct
                 (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
                 // If descriptorType is VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                 // VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE or VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
-                // pImageInfo must be a pointer to an array of descriptorCount valid VkDescriptorImageInfo structures
+                // pImageInfo must be a pointer to an array of descriptorCount valid VkDescriptorImageInfo structures.
+                // Valid imageView handles are checked in ObjectLifetimes::ValidateDescriptorWrite.
                 if (pDescriptorWrites[i].pImageInfo == nullptr) {
                     skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-00322",
                                      "%s(): if pDescriptorWrites[%d].descriptorType is "
@@ -2601,14 +2609,10 @@ bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunct
                                      vkCallingFunction, i, i);
                 } else if (pDescriptorWrites[i].descriptorType != VK_DESCRIPTOR_TYPE_SAMPLER) {
                     // If descriptorType is VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                    // VK_DESCRIPTOR_TYPE_STORAGE_IMAGE or VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, the imageView and imageLayout
-                    // members of any given element of pImageInfo must be a valid VkImageView and VkImageLayout, respectively
+                    // VK_DESCRIPTOR_TYPE_STORAGE_IMAGE or VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, the imageLayout
+                    // member of any given element of pImageInfo must be a valid VkImageLayout
                     for (uint32_t descriptor_index = 0; descriptor_index < pDescriptorWrites[i].descriptorCount;
                          ++descriptor_index) {
-                        skip |= validate_required_handle(vkCallingFunction,
-                                                         ParameterName("pDescriptorWrites[%i].pImageInfo[%i].imageView",
-                                                                       ParameterName::IndexVector{i, descriptor_index}),
-                                                         pDescriptorWrites[i].pImageInfo[descriptor_index].imageView);
                         skip |= validate_ranged_enum(vkCallingFunction,
                                                      ParameterName("pDescriptorWrites[%i].pImageInfo[%i].imageLayout",
                                                                    ParameterName::IndexVector{i, descriptor_index}),
@@ -2623,6 +2627,7 @@ bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunct
                 // If descriptorType is VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
                 // VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC or VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, pBufferInfo must be a
                 // pointer to an array of descriptorCount valid VkDescriptorBufferInfo structures
+                // Valid buffer handles are checked in ObjectLifetimes::ValidateDescriptorWrite.
                 if (pDescriptorWrites[i].pBufferInfo == nullptr) {
                     skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-00324",
                                      "%s(): if pDescriptorWrites[%d].descriptorType is "
@@ -2631,32 +2636,26 @@ bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunct
                                      "pDescriptorWrites[%d].pBufferInfo must not be NULL.",
                                      vkCallingFunction, i, i);
                 } else {
-                    for (uint32_t descriptorIndex = 0; descriptorIndex < pDescriptorWrites[i].descriptorCount; ++descriptorIndex) {
-                        skip |= validate_required_handle(vkCallingFunction,
-                                                         ParameterName("pDescriptorWrites[%i].pBufferInfo[%i].buffer",
-                                                                       ParameterName::IndexVector{i, descriptorIndex}),
-                                                         pDescriptorWrites[i].pBufferInfo[descriptorIndex].buffer);
+                    const auto *robustness2_features =
+                        lvl_find_in_chain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
+                    if (robustness2_features && robustness2_features->nullDescriptor) {
+                        for (uint32_t descriptorIndex = 0; descriptorIndex < pDescriptorWrites[i].descriptorCount;
+                             ++descriptorIndex) {
+                            if (pDescriptorWrites[i].pBufferInfo[descriptorIndex].buffer == VK_NULL_HANDLE &&
+                                (pDescriptorWrites[i].pBufferInfo[descriptorIndex].offset != 0 ||
+                                 pDescriptorWrites[i].pBufferInfo[descriptorIndex].range != VK_WHOLE_SIZE)) {
+                                skip |= LogError(device, "VUID-VkDescriptorBufferInfo-buffer-02999",
+                                                 "%s(): if pDescriptorWrites[%d].buffer is VK_NULL_HANDLE, "
+                                                 "offset (" PRIu64 ") must be zero and range (" PRIu64 ") must be VK_WHOLE_SIZE.",
+                                                 vkCallingFunction, i, pDescriptorWrites[i].pBufferInfo[descriptorIndex].offset,
+                                                 pDescriptorWrites[i].pBufferInfo[descriptorIndex].range);
+                            }
+                        }
                     }
                 }
             } else if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) ||
                        (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)) {
-                // If descriptorType is VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER or VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
-                // pTexelBufferView must be a pointer to an array of descriptorCount valid VkBufferView handles
-                if (pDescriptorWrites[i].pTexelBufferView == nullptr) {
-                    skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-00323",
-                                     "%s(): if pDescriptorWrites[%d].descriptorType is "
-                                     "VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER or VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, "
-                                     "pDescriptorWrites[%d].pTexelBufferView must not be NULL.",
-                                     vkCallingFunction, i, i);
-                } else {
-                    for (uint32_t descriptor_index = 0; descriptor_index < pDescriptorWrites[i].descriptorCount;
-                         ++descriptor_index) {
-                        skip |= validate_required_handle(vkCallingFunction,
-                                                         ParameterName("pDescriptorWrites[%i].pTexelBufferView[%i]",
-                                                                       ParameterName::IndexVector{i, descriptor_index}),
-                                                         pDescriptorWrites[i].pTexelBufferView[descriptor_index]);
-                    }
-                }
+                // Valid bufferView handles are checked in ObjectLifetimes::ValidateDescriptorWrite.
             }
 
             if ((pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) ||
@@ -4433,6 +4432,21 @@ bool StatelessValidation::manual_PreCallValidateCmdBindVertexBuffers(VkCommandBu
                          "vkCmdBindVertexBuffers() sum of firstBinding (%u) and bindingCount (%u) must be less than "
                          "maxVertexInputBindings (%u)",
                          firstBinding, bindingCount, device_limits.maxVertexInputBindings);
+    }
+
+    for (uint32_t i = 0; i < bindingCount; ++i) {
+        if (pBuffers[i] == VK_NULL_HANDLE) {
+            const auto *robustness2_features = lvl_find_in_chain<VkPhysicalDeviceRobustness2FeaturesEXT>(device_createinfo_pnext);
+            if (!(robustness2_features && robustness2_features->nullDescriptor)) {
+                skip |= LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers-pBuffers-04001",
+                                 "vkCmdBindVertexBuffers() required parameter pBuffers[%d] specified as VK_NULL_HANDLE", i);
+            } else {
+                if (pOffsets[i] != 0) {
+                    skip |= LogError(commandBuffer, "VUID-vkCmdBindVertexBuffers-pBuffers-04002",
+                                     "vkCmdBindVertexBuffers() pBuffers[%d] is VK_NULL_HANDLE, but pOffsets[%d] is not 0", i, i);
+                }
+            }
+        }
     }
 
     return skip;

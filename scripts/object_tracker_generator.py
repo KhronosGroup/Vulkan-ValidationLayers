@@ -135,6 +135,7 @@ class ObjectTrackerOutputGenerator(OutputGenerator):
         self.no_autogen_list = [
             'vkDestroyInstance',
             'vkCreateInstance',
+            'vkCreateDevice',
             'vkEnumeratePhysicalDevices',
             'vkGetPhysicalDeviceQueueFamilyProperties',
             'vkGetPhysicalDeviceQueueFamilyProperties2',

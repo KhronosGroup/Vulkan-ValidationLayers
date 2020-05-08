@@ -1409,6 +1409,11 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.ray_tracing_features = *ray_tracing_features;
     }
 
+    const auto *robustness2_features = lvl_find_in_chain<VkPhysicalDeviceRobustness2FeaturesEXT>(pCreateInfo->pNext);
+    if (robustness2_features) {
+        state_tracker->enabled_features.robustness2_features = *robustness2_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);
@@ -3603,7 +3608,9 @@ void ValidationStateTracker::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer c
         vertex_buffer_binding.buffer = pBuffers[i];
         vertex_buffer_binding.offset = pOffsets[i];
         // Add binding for this vertex buffer to this commandbuffer
-        AddCommandBufferBindingBuffer(cb_state, GetBufferState(pBuffers[i]));
+        if (pBuffers[i]) {
+            AddCommandBufferBindingBuffer(cb_state, GetBufferState(pBuffers[i]));
+        }
     }
 }
 

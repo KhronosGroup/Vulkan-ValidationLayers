@@ -115,7 +115,13 @@ class StatelessValidation : public ValidationObject {
     std::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
 
     // Constructor for stateles validation tracking
-    StatelessValidation() { container_type = LayerObjectTypeParameterValidation; }
+    StatelessValidation() : device_createinfo_pnext(nullptr) { container_type = LayerObjectTypeParameterValidation; }
+    ~StatelessValidation() {
+        if (device_createinfo_pnext) {
+            FreePnextChain(device_createinfo_pnext);
+        }
+    }
+
     /**
      * Validate a minimum value.
      *
