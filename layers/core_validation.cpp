@@ -11333,6 +11333,15 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
                         string_VkFilter(pCreateInfo->minFilter), string_VkFilter(chroma_filter));
                 }
             }
+            // At this point there is a known sampler YCbCr conversion enabled
+            const auto *sampler_reduction = lvl_find_in_chain<VkSamplerReductionModeCreateInfo>(pCreateInfo->pNext);
+            if (sampler_reduction != nullptr) {
+                if (sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
+                    skip |= LogError(device, "VUID-VkSamplerCreateInfo-None-01647",
+                                     "A sampler YCbCr Conversion is being used creating this sampler so the sampler reduction mode "
+                                     "must be VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE.");
+                }
+            }
         }
     }
     return skip;
