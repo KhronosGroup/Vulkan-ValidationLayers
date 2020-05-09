@@ -2441,6 +2441,14 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
         if (pCreateInfo->compareEnable == VK_TRUE) {
             skip |= validate_ranged_enum("vkCreateSampler", "pCreateInfo->compareOp", "VkCompareOp", AllVkCompareOpEnums,
                                          pCreateInfo->compareOp, "VUID-VkSamplerCreateInfo-compareEnable-01080");
+            const auto *sampler_reduction = lvl_find_in_chain<VkSamplerReductionModeCreateInfo>(pCreateInfo->pNext);
+            if (sampler_reduction != nullptr) {
+                if (sampler_reduction->reductionMode != VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE) {
+                    skip |= LogError(
+                        device, "VUID-VkSamplerCreateInfo-compareEnable-01423",
+                        "copmareEnable is true so the sampler reduction mode must be VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE.");
+                }
+            }
         }
 
         // If any of addressModeU, addressModeV or addressModeW are VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, borderColor must be a
