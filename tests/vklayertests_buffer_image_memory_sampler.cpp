@@ -2340,13 +2340,13 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
         bind_image_info[1].memoryOffset = 0;
         bind_image_info[2] = bind_image_info[0];  // duplicate bind
 
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkBindImageMemory2-duplicate");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory2-pBindInfos-04006");
         vkBindImageMemory2Function(device(), 3, bind_image_info);
         m_errorMonitor->VerifyFound();
 
         // Bind same image to 2 different memory in same array
         bind_image_info[1].image = image_a;
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkBindImageMemory2-duplicate");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory2-pBindInfos-04006");
         vkBindImageMemory2Function(device(), 2, bind_image_info);
         m_errorMonitor->VerifyFound();
 
@@ -2454,7 +2454,7 @@ TEST_F(VkLayerTest, BindInvalidMemory2BindInfos) {
         bind_image_info[5].pNext = (void *)&plane_memory_info[1];
         bind_image_info[5].image = mp_image_b;
         bind_image_info[5].memory = mp_image_b_mem[1];
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkBindImageMemory2-duplicate");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBindImageMemory2-pBindInfos-04006");
         vkBindImageMemory2Function(device(), 6, bind_image_info);
         m_errorMonitor->VerifyFound();
 

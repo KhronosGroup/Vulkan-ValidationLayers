@@ -9749,7 +9749,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                         resources_bound.emplace(image_state->image, bound_index);
                     } else {
                         skip |= LogError(
-                            bindInfo.image, "UNASSIGNED-vkBindImageMemory2-duplicate",
+                            bindInfo.image, "VUID-vkBindImageMemory2-pBindInfos-04006",
                             "%s: The same non-disjoint image resource is being bound twice at pBindInfos[%d] and pBindInfos[%d]",
                             error_prefix, it->second[0], i);
                     }
@@ -9817,7 +9817,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     if (it->second[plane] == UINT32_MAX) {
                         it->second[plane] = i;
                     } else {
-                        skip |= LogError(bindInfo.image, "UNASSIGNED-vkBindImageMemory2-duplicate",
+                        skip |= LogError(bindInfo.image, "VUID-vkBindImageMemory2-pBindInfos-04006",
                                          "%s: The same disjoint image sub-resource for plane %d is being bound twice at "
                                          "pBindInfos[%d] and pBindInfos[%d]",
                                          error_prefix, plane, it->second[plane], i);
