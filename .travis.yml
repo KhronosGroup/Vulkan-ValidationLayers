@@ -13,11 +13,9 @@ matrix:
   include:
     # Android build.
     - os: linux
-      compiler: gcc
       env: VULKAN_BUILD_TARGET=ANDROID ANDROID_TARGET=android-26 ANDROID_ABI=armeabi-v7a
     # Android 64-bit build.
     - os: linux
-      compiler: gcc
       env: VULKAN_BUILD_TARGET=ANDROID ANDROID_TARGET=android-26 ANDROID_ABI=arm64-v8a
     # Linux GCC debug build.
     - os: linux
@@ -82,7 +80,10 @@ before_install:
     fi
   # Misc setup
   - export core_count=$(nproc || echo 4) && echo core_count = $core_count
+  - ccache --version
   - ccache --zero-stats
+  - export CCACHE_COMPRESS=true
+  - export CCACHE_COMPRESSLEVEL=9
   - set +e
 
 script:
@@ -195,7 +196,7 @@ script:
       git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git depot_tools
       export PATH=$PATH:$PWD/depot_tools
       ./build-gn/update_deps.sh
-      gn gen out/Debug
+      gn gen out/Debug --args="cc_wrapper=\"ccache\""
       ninja -C out/Debug
     fi
   - ccache --show-stats
