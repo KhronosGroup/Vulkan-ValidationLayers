@@ -524,8 +524,8 @@ void BestPractices::ValidateReturnCodes(const char* api_name, VkResult result, c
     }
     auto success = std::find(success_codes.begin(), success_codes.end(), result);
     if (success != success_codes.end()) {
-        LogWarning(instance, kVUID_BestPractices_NonSuccess_Result, "%s(): Returned non-success return code %s.", api_name,
-                   string_VkResult(result));
+        LogInfo(instance, kVUID_BestPractices_NonSuccess_Result, "%s(): Returned non-success return code %s.", api_name,
+                string_VkResult(result));
     }
 }
 

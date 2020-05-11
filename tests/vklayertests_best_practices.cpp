@@ -87,7 +87,7 @@ TEST_F(VkBestPracticesLayerTest, ValidateReturnCodes) {
     format_count -= 1;
     formats.resize(format_count);
 
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-NonSuccess-Result");
+    m_errorMonitor->SetDesiredFailureMsg(kInformationBit, "UNASSIGNED-BestPractices-NonSuccess-Result");
     result = vk::GetPhysicalDeviceSurfaceFormatsKHR(gpu(), m_surface, &format_count, formats.data());
     m_errorMonitor->VerifyFound();
 }
