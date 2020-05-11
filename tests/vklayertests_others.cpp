@@ -2240,6 +2240,58 @@ TEST_F(VkLayerTest, StageMaskGsTsEnabled) {
     vk::DestroyCommandPool(test_device.handle(), command_pool, NULL);
 }
 
+TEST_F(VkLayerTest, StageMaskHost) {
+    TEST_DESCRIPTION("Test invalid usage of VK_PIPELINE_STAGE_HOST_BIT.");
+    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkEvent event;
+    VkEventCreateInfo event_create_info{};
+    event_create_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
+
+    m_commandBuffer->begin();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdSetEvent-stageMask-01149");
+    vk::CmdSetEvent(m_commandBuffer->handle(), event, VK_PIPELINE_STAGE_HOST_BIT);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResetEvent-stageMask-01153");
+    vk::CmdResetEvent(m_commandBuffer->handle(), event, VK_PIPELINE_STAGE_HOST_BIT);
+    m_errorMonitor->VerifyFound();
+
+    m_commandBuffer->end();
+
+    VkSemaphoreCreateInfo semaphore_create_info = {};
+    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    VkSemaphore semaphore;
+    ASSERT_VK_SUCCESS(vk::CreateSemaphore(m_device->device(), &semaphore_create_info, nullptr, &semaphore));
+
+    VkPipelineStageFlags stage_flags = VK_PIPELINE_STAGE_HOST_BIT;
+    VkSubmitInfo submit_info = {};
+
+    // Signal the semaphore so the next test can wait on it.
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = &semaphore;
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyNotFound();
+
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.signalSemaphoreCount = 0;
+    submit_info.pSignalSemaphores = nullptr;
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = &semaphore;
+    submit_info.pWaitDstStageMask = &stage_flags;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSubmitInfo-pWaitDstStageMask-00078");
+    vk::QueueSubmit(m_device->m_queue, 1, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyEvent(m_device->device(), event, nullptr);
+    vk::DestroySemaphore(m_device->device(), semaphore, nullptr);
+}
+
 TEST_F(VkLayerTest, DescriptorPoolInUseDestroyedSignaled) {
     TEST_DESCRIPTION("Delete a DescriptorPool with a DescriptorSet that is in use.");
     ASSERT_NO_FATAL_FAILURE(Init());
