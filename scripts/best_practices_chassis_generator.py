@@ -27,7 +27,7 @@ from common_codegen import *
 # This is a workaround to use a Python 2.7 and 3.x compatible syntax
 from io import open
 
-class BestPracticesOutputGeneratorOptions(GeneratorOptions):
+class BestPracticesChassisOutputGeneratorOptions(GeneratorOptions):
     def __init__(self,
                  conventions = None,
                  filename = None,
@@ -67,8 +67,8 @@ class BestPracticesOutputGeneratorOptions(GeneratorOptions):
         self.alignFuncParam  = alignFuncParam
         self.expandEnumerants = expandEnumerants
 #
-# BestPracticesOutputGenerator(errFile, warnFile, diagFile)
-class BestPracticesOutputGenerator(OutputGenerator):
+# BestPracticesChassisOutputGenerator(errFile, warnFile, diagFile)
+class BestPracticesChassisOutputGenerator(OutputGenerator):
     def __init__(self,
                  errFile = sys.stderr,
                  warnFile = sys.stderr,
@@ -103,17 +103,17 @@ class BestPracticesOutputGenerator(OutputGenerator):
     #
     # Separate content for validation source and header files
     def otwrite(self, dest, formatstring):
-        if 'best_practices.h' in self.genOpts.filename and (dest == 'hdr' or dest == 'both'):
+        if 'best_practices_chassis.h' in self.genOpts.filename and (dest == 'hdr' or dest == 'both'):
             write(formatstring, file=self.outFile)
-        elif 'best_practices.cpp' in self.genOpts.filename and (dest == 'cpp' or dest == 'both'):
+        elif 'best_practices_chassis.cpp' in self.genOpts.filename and (dest == 'cpp' or dest == 'both'):
             write(formatstring, file=self.outFile)
     #
     # Called at beginning of processing as file is opened
     def beginFile(self, genOpts):
         OutputGenerator.beginFile(self, genOpts)
 
-        header_file = (genOpts.filename == 'best_practices.h')
-        source_file = (genOpts.filename == 'best_practices.cpp')
+        header_file = (genOpts.filename == 'best_practices_chassis.h')
+        source_file = (genOpts.filename == 'best_practices_chassis.cpp')
 
         if not header_file and not source_file:
             print("Error: Output Filenames have changed, update generator source.\n")
@@ -121,7 +121,7 @@ class BestPracticesOutputGenerator(OutputGenerator):
 
         # File Comment
         file_comment = '// *** THIS FILE IS GENERATED - DO NOT EDIT ***\n'
-        file_comment += '// See best_practices_generator.py for modifications\n'
+        file_comment += '// See best_practices_chassis_generator.py for modifications\n'
         self.otwrite('both', file_comment)
         # Copyright Statement
         copyright = ''
@@ -148,15 +148,24 @@ class BestPracticesOutputGenerator(OutputGenerator):
         copyright += ' *\n'
         copyright += ' ****************************************************************************/\n'
         self.otwrite('both', copyright)
+        self.otwrite('hdr', '#pragma once')
         self.newline()
         self.otwrite('hdr', '#include "chassis.h"')
-        self.otwrite('hdr', '#include "best_practices_chassis.h"')
-        self.otwrite('hdr', '#include "best_practices_validation.h"')
         self.otwrite('hdr', '\n')
-        interface_definition = 'class BestPractices : public BestPracticesAPICallHookInterface, public BestPracticesTracker {\n'
+        deprecation_data = 'typedef enum {\n'
+        deprecation_data += '    kExtPromoted,\n'
+        deprecation_data += '    kExtObsoleted,\n'
+        deprecation_data += '    kExtDeprecated,\n'
+        deprecation_data += '}ExtDeprecationReason;\n\n'
+        deprecation_data += 'typedef struct {\n'
+        deprecation_data += '    ExtDeprecationReason reason;\n'
+        deprecation_data += '   std::string target;\n'
+        deprecation_data += '} DeprecationData;\n\n'
+        self.otwrite('hdr', deprecation_data)
+        interface_definition = 'class BestPracticesAPICallHookInterface {\n'
         interface_definition += 'public:\n'
         self.otwrite('hdr', interface_definition)
-        self.otwrite('cpp', '#include "best_practices.h"\n')
+        self.otwrite('cpp', '#include "best_practices_chassis.h"\n')
 
     #
     # Now that the data is all collected and complete, generate and output the object validation routines
@@ -229,10 +238,10 @@ class BestPracticesOutputGenerator(OutputGenerator):
         output = ''
         if isValidation:
             output = '    std::function<bool(BestPracticeBase&)> f = [=](BestPracticeBase& practice) { return practice.' + prefix + cmdname[2:] + '(' + params_text + '); };\n'
-            output += '    skip |= foreachPractice(f);'
+            output += '    skip |= tracker.foreachPractice(f);'
             return output
         else:
-            return '    foreachPractice([=](BestPracticeBase& practice) { practice.' + prefix + cmdname[2:] + '(' + params_text + '); });'
+            return '    tracker.foreachPractice([=](BestPracticeBase& practice) { practice.' + prefix + cmdname[2:] + '(' + params_text + '); });'
 
     def genPreCallValidateCmd(self, cmdinfo, cmdname, alias):
         intercept = ''
@@ -245,25 +254,10 @@ class BestPracticesOutputGenerator(OutputGenerator):
         if cmdname in self.extra_parameter_list:
             pre_decl = pre_decl.replace(')', ',\n    void*                                       state_data)')
         pre_decl = pre_decl.replace(')', ') const {\n')
-        pre_decl = 'virtual bool BestPractices::PreCallValidate' + pre_decl[2:]
+        pre_decl = 'virtual bool BestPracticesAPICallHookInterface::PreCallValidate' + pre_decl[2:]
         func_decl = pre_decl.replace(' {',';\n');
-        func_decl = func_decl.replace('BestPractices::', '')
+        func_decl = func_decl.replace('BestPracticesAPICallHookInterface::', '')
         self.otwrite('hdr', func_decl)
-        pre_decl = pre_decl.replace('virtual ', '')
-        intercept += pre_decl
-        params_text = ''
-        params = cmdinfo.elem.findall('param')
-        for param in params:
-            paramtype,paramname = self.getTypeNameTuple(param)
-            params_text += '%s, ' % paramname
-        if cmdname in self.extra_parameter_list:
-            params_text += 'state_data, '
-        params_text = params_text[:-2] + ');\n'
-        intercept += '    bool skip = ValidationStateTracker::PreCallValidate'+cmdname[2:] + '(' + params_text
-        intercept += self.genBestPracticeHarnessCode(True, False, 'PreCallValidate', cmdinfo, cmdname, alias) + '\n'
-        intercept += '    return skip;\n'
-        intercept += '}\n'
-        self.otwrite('cpp', intercept)
 
     def genPreCallRecordCmd(self, cmdinfo, cmdname, alias):
         intercept = ''
@@ -276,24 +270,10 @@ class BestPracticesOutputGenerator(OutputGenerator):
         if cmdname in self.extra_parameter_list:
             pre_decl = pre_decl.replace(')', ',\n    void*                                       state_data)')
         pre_decl = pre_decl.replace(')', ') {\n')
-        pre_decl = 'virtual void BestPractices::PreCallRecord' + pre_decl[2:]
+        pre_decl = 'virtual void BestPracticesAPICallHookInterface::PreCallRecord' + pre_decl[2:]
         func_decl = pre_decl.replace(' {',';\n');
-        func_decl = func_decl.replace('BestPractices::', '')
+        func_decl = func_decl.replace('BestPracticesAPICallHookInterface::', '')
         self.otwrite('hdr', func_decl)
-        pre_decl = pre_decl.replace('virtual ', '')
-        intercept += pre_decl
-        params_text = ''
-        params = cmdinfo.elem.findall('param')
-        for param in params:
-            paramtype,paramname = self.getTypeNameTuple(param)
-            params_text += '%s, ' % paramname
-        if cmdname in self.extra_parameter_list:
-            params_text += 'state_data, '
-        params_text = params_text[:-2] + ');\n'
-        intercept += '    ValidationStateTracker::PreCallRecord'+cmdname[2:] + '(' + params_text
-        intercept += self.genBestPracticeHarnessCode(False, False, 'PreCallRecord', cmdinfo, cmdname, alias) + '\n'
-        intercept += '}\n'
-        self.otwrite('cpp', intercept)
 
     def genPostCallRecordCmd(self, cmdinfo, cmdname, alias):
         intercept = ''
@@ -313,45 +293,10 @@ class BestPracticesOutputGenerator(OutputGenerator):
         if cmdname in self.extra_parameter_list:
             pre_decl = pre_decl.replace(')', ',\n    void*                                       state_data)')
         pre_decl = pre_decl.replace(')', ') {\n')
-        pre_decl = 'virtual void BestPractices::PostCallRecord' + pre_decl[2:]
+        pre_decl = 'virtual void BestPracticesAPICallHookInterface::PostCallRecord' + pre_decl[2:]
         func_decl = pre_decl.replace(' {',';\n');
-        func_decl = func_decl.replace('BestPractices::', '')
+        func_decl = func_decl.replace('BestPracticesAPICallHookInterface::', '')
         self.otwrite('hdr', func_decl)
-        pre_decl = pre_decl.replace('virtual ', '')
-        intercept += pre_decl
-        params_text = ''
-        params = cmdinfo.elem.findall('param')
-        for param in params:
-            paramtype,paramname = self.getTypeNameTuple(param)
-            params_text += '%s, ' % paramname
-        if resulttype.text == 'VkResult' or resulttype.text == 'VkDeviceAddress':
-            params_text = params_text + 'result, '
-        if cmdname in self.extra_parameter_list:
-            params_text += 'state_data, '
-        params_text = params_text[:-2] + ');\n'
-        intercept += '    ValidationStateTracker::PostCallRecord'+cmdname[2:] + '(' + params_text
-        # if cmdname in self.manual_postcallrecord_list:
-        #     intercept += '    ManualPostCallRecord'+cmdname[2:] + '(' + params_text
-        intercept += self.genBestPracticeHarnessCode(False, True, 'PostCallRecord', cmdinfo, cmdname, alias) + '\n'
-        if resulttype == 'VkResult':
-            error_codes = cmdinfo.elem.attrib.get('errorcodes')
-            success_codes = cmdinfo.elem.attrib.get('successcodes')
-            success_codes = success_codes.replace('VK_SUCCESS,','')
-            success_codes = success_codes.replace('VK_SUCCESS','')
-            if error_codes is not None or success_codes != '':
-                intercept += '    if (result != VK_SUCCESS) {\n'
-                if error_codes is not None:
-                    intercept += '        static const std::vector<VkResult> error_codes = {%s};\n' % error_codes
-                else:
-                    intercept += '        static const std::vector<VkResult> error_codes = {};\n'
-                if success_codes is not None:
-                    intercept += '        static const std::vector<VkResult> success_codes = {%s};\n' % success_codes
-                else:
-                    intercept += '        static const std::vector<VkResult> success_codes = {};\n'
-                intercept += '        ValidateReturnCodes("%s", result, error_codes, success_codes);\n' % cmdname
-                intercept += '    }\n'
-        intercept += '}\n'
-        self.otwrite('cpp', intercept)
 
     #
     # Capture command parameter info needed to create, destroy, and validate objects

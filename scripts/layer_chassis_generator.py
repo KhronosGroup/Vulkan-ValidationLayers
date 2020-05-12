@@ -293,6 +293,8 @@ typedef enum ValidationCheckDisables {
 
 typedef enum ValidationCheckEnables {
     VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM,
+    VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_TEST,
+    VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_TEST2,
     VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL,
 } ValidationCheckEnables;
 
@@ -324,7 +326,10 @@ typedef enum EnableFlags {
     gpu_validation,
     gpu_validation_reserve_binding_slot,
     best_practices,
+    vendor_specific_khronos,
     vendor_specific_arm,
+    vendor_specific_test1,
+    vendor_specific_test2,
     debug_printf,
     // Insert new enables above this line
     kMaxEnableFlags,
@@ -670,7 +675,7 @@ bool wrap_handles = true;
 #define OBJECT_LAYER_DESCRIPTION "khronos_validation"
 
 // Include layer validation object definitions
-#include "best_practices_validation.h"
+#include "best_practices.h"
 #include "core_validation.h"
 #include "gpu_validation.h"
 #include "object_lifetime_validation.h"
@@ -1838,6 +1843,9 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(
         // Allow AllocateDescriptorSets to use some local stack storage for performance purposes
         virtual bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, void* ads_state) const {
             return PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets);
+        };
+        virtual void PreCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, void* ads_state) {
+            return PreCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets);
         };
         virtual void PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, VkResult result, void* ads_state)  {
             PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, result);

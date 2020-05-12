@@ -19,229 +19,154 @@
 
 #pragma once
 
+// Include code-generated functions
 #include "chassis.h"
+#include "best_practices_chassis.h"
 #include "state_tracker.h"
+#include "best_practices_error_enums.h"
+#include <stdarg.h>
+#include <limits.h>
 #include <string>
-
-static const uint32_t kMemoryObjectWarningLimit = 250;
-
-// Maximum number of instanced vertex buffers which should be used
-static const uint32_t kMaxInstancedVertexBuffers = 1;
-
-// Recommended allocation size for vkAllocateMemory
-static const VkDeviceSize kMinDeviceAllocationSize = 256 * 1024;
-
-// If a buffer or image is allocated and it consumes an entire VkDeviceMemory, it should at least be this large.
-// This is slightly different from minDeviceAllocationSize since the 256K buffer can still be sensibly
-// suballocated from. If we consume an entire allocation with one image or buffer, it should at least be for a
-// very large allocation.
-static const VkDeviceSize kMinDedicatedAllocationSize = 1024 * 1024;
+#include <bitset>
 
 typedef enum {
-    kExtPromoted,
-    kExtObsoleted,
-    kExtDeprecated,
-} ExtDeprecationReason;
-
-typedef struct {
-    ExtDeprecationReason reason;
-    std::string target;
-} DeprecationData;
-
-typedef enum {
-    kBPVendorArm = 0x00000001,
+    // TODO what should the default vendor be called?
+    kBPVendorKhronos = 0x00000001,
+    kBPVendorArm = 0x00000002,
+    kBPVendorExample1 = 0x00000004,
+    kBPVendorExample2 = 0x00000008,
 } BPVendorFlagBits;
 typedef VkFlags BPVendorFlags;
 
-// How many small indexed drawcalls in a command buffer before a warning is thrown
-static const uint32_t kMaxSmallIndexedDrawcalls = 10;
+struct VendorSpecificInfo {
+    bool CHECK_ENABLED::*check;
+    std::string name;
+};
 
-// How many indices make a small indexed drawcall
-static const int kSmallIndexedDrawcallIndices = 10;
-
-// Maximum sample count for full throughput on Mali GPUs
-static const VkSampleCountFlagBits kMaxEfficientSamplesArm = VK_SAMPLE_COUNT_4_BIT;
-
-class BestPractices : public ValidationStateTracker {
+class ManualFnAPICallHookInterface {
   public:
-    using StateTracker = ValidationStateTracker;
+    virtual void ManualPostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                                            VkDescriptorSet* pDescriptorSets, VkResult result,
+                                                            void* ads_state) const {}
+    virtual void ManualPostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
+                                                    const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
+                                                    VkResult result) const {}
+    virtual void ManualPostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
+                                                     VkFence fence, VkResult result) const {}
+    virtual void ManualPostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkResult result) const {}
+};
 
-    BestPractices() { container_type = LayerObjectTypeBestPractices; }
+// forward declaration of BestPractices for BestPracticeBase
+class BestPracticesTracker;
 
-    std::string GetAPIVersionName(uint32_t version) const;
+class BestPracticeBase : public virtual BestPracticesAPICallHookInterface, public virtual ManualFnAPICallHookInterface {
+  public:
+    BestPracticeBase(BestPracticesTracker& tracker) : tracker(tracker) {}
 
-    bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const char* caller) const;
+    virtual const std::string id() const = 0;
 
-    bool ValidateDeprecatedExtensions(const char* api_name, const char* extension_name, uint32_t version, const char* vuid) const;
+    void agree(BPVendorFlagBits vendors) { _agreeing_vendors |= vendors; }
 
-    bool PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                       VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
-                                                       uint32_t stride) const;
+    void disagree(BPVendorFlagBits vendors) { _agreeing_vendors &= ~vendors; }
 
-    bool PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                       VkInstance* pInstance) const;
-    void PreCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                     VkInstance* pInstance);
-    bool PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo* pCreateInfo,
-                                     const VkAllocationCallbacks* pAllocator, VkDevice* pDevice) const;
-    bool PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
-                                     const VkAllocationCallbacks* pAllocator, VkBuffer* pBuffer) const;
-    bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                    VkImage* pImage) const;
-    bool PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
-                                           const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain) const;
-    bool PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
-                                                  const VkSwapchainCreateInfoKHR* pCreateInfos,
-                                                  const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains) const;
-    bool PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo* pCreateInfo,
-                                         const VkAllocationCallbacks* pAllocator, VkRenderPass* pRenderPass) const;
-    bool ValidateAttachments(const VkRenderPassCreateInfo2* rpci, uint32_t attachmentCount, const VkImageView* image_views) const;
-    bool PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebufferCreateInfo* pCreateInfo,
-                                          const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer) const;
-    bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                               VkDescriptorSet* pDescriptorSets, void* ads_state_data) const;
-    void ManualPostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                                    VkDescriptorSet* pDescriptorSets, VkResult result, void* ads_state);
-    void PostCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
-                                          const VkDescriptorSet* pDescriptorSets, VkResult result);
-    bool PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
-                                       const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory) const;
-    void ManualPostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
-                                            const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory, VkResult result);
-    void PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator);
-    bool ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, const char* api_name) const;
-    bool PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset) const;
-    bool PreCallValidateBindBufferMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindBufferMemoryInfo* pBindInfos) const;
-    bool PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t bindInfoCount,
-                                             const VkBindBufferMemoryInfo* pBindInfos) const;
-    bool ValidateBindImageMemory(VkImage image, VkDeviceMemory memory, const char* api_name) const;
-    bool PreCallValidateBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset) const;
-    bool PreCallValidateBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos) const;
-    bool PreCallValidateBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos) const;
-    bool PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
-                                          const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool) const;
-    bool PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) const;
-    bool ValidateMultisampledBlendingArm(uint32_t createInfoCount, const VkGraphicsPipelineCreateInfo* pCreateInfos) const;
-    bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                                const VkGraphicsPipelineCreateInfo* pCreateInfos,
-                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                void* cgpl_state) const;
-    bool PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
-                                               const VkComputePipelineCreateInfo* pCreateInfos,
-                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                               void* pipe_state) const;
+    BPVendorFlags agreeing_vendors() const { return _agreeing_vendors; }
 
-    bool CheckPipelineStageFlags(std::string api_name, const VkPipelineStageFlags flags) const;
-    bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence) const;
-    bool PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo) const;
-    bool PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) const;
-    bool PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask) const;
-    bool PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                      VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                                      uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                      uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                                      uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) const;
-    bool PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
-                                           VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
-                                           uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                           uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                                           uint32_t imageMemoryBarrierCount,
-                                           const VkImageMemoryBarrier* pImageMemoryBarriers) const;
-    bool PreCallValidateCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
-                                          VkQueryPool queryPool, uint32_t query) const;
-    bool ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, RenderPassCreateVersion rp_version,
-                                    const VkRenderPassBeginInfo* pRenderPassBegin) const;
-    bool PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                           VkSubpassContents contents) const;
-    bool PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                               const VkSubpassBeginInfoKHR* pSubpassBeginInfo) const;
-    bool PreCallValidateCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                            const VkSubpassBeginInfoKHR* pSubpassBeginInfo) const;
-    bool PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
-                                uint32_t firstInstance) const;
-    bool PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
-                                       uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) const;
-    bool ValidateIndexBufferArm(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
-                                int32_t vertexOffset, uint32_t firstInstance) const;
-    void PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
-                                     uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance);
-    bool PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount,
-                                        uint32_t stride) const;
-    bool PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                               uint32_t drawCount, uint32_t stride) const;
-    bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY,
-                                    uint32_t groupCountZ) const;
-    bool ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice, const char* api_name) const;
-    bool PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
-                                                            uint32_t* pDisplayCount, VkDisplayKHR* pDisplays) const;
-    bool PreCallValidateGetDisplayPlaneCapabilitiesKHR(VkPhysicalDevice physicalDevice, VkDisplayModeKHR mode, uint32_t planeIndex,
-                                                       VkDisplayPlaneCapabilitiesKHR* pCapabilities) const;
-    bool PreCallValidateGetDisplayPlaneCapabilities2KHR(VkPhysicalDevice physicalDevice,
-                                                        const VkDisplayPlaneInfo2KHR* pDisplayPlaneInfo,
-                                                        VkDisplayPlaneCapabilities2KHR* pCapabilities) const;
-    bool PreCallValidateGetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain, uint32_t* pSwapchainImageCount,
-                                              VkImage* pSwapchainImages) const;
-    bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties(VkPhysicalDevice physicalDevice, uint32_t* pQueueFamilyPropertyCount,
-                                                               VkQueueFamilyProperties* pQueueFamilyProperties) const;
-    bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice,
-                                                                uint32_t* pQueueFamilyPropertyCount,
-                                                                VkQueueFamilyProperties2* pQueueFamilyProperties) const;
-    bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(VkPhysicalDevice physicalDevice,
-                                                                   uint32_t* pQueueFamilyPropertyCount,
-                                                                   VkQueueFamilyProperties2* pQueueFamilyProperties) const;
-    bool PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface,
-                                                           uint32_t* pSurfaceFormatCount,
-                                                           VkSurfaceFormatKHR* pSurfaceFormats) const;
-    bool ValidateCommonGetPhysicalDeviceQueueFamilyProperties(const PHYSICAL_DEVICE_STATE* pd_state,
-                                                              uint32_t requested_queue_family_property_count, bool qfp_null,
-                                                              const char* caller_name) const;
-    bool PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
-                                                          const VkBindAccelerationStructureMemoryInfoNV* pBindInfos) const;
-    bool PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
-                                        VkFence fence) const;
-    void ManualPostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
-                                             VkFence fence, VkResult result);
-    bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
-                                            const VkClearAttachment* pAttachments, uint32_t rectCount,
-                                            const VkClearRect* pRects) const;
-    void ValidateReturnCodes(const char* api_name, VkResult result, const std::vector<VkResult>& error_codes,
-                             const std::vector<VkResult>& success_codes) const;
-    bool PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                        VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                        const VkImageResolve* pRegions) const;
-    bool PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
-                                      const VkAllocationCallbacks* pAllocator, VkSampler* pSampler) const;
-    void ManualPostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkResult result);
-
-// Include code-generated functions
-#include "best_practices.h"
+  protected:
+    BestPracticesTracker& tracker;
 
   private:
-    uint32_t instance_api_version = 0;
-    uint32_t num_mem_objects = 0;
+    BPVendorFlags _agreeing_vendors = 0;
+};
 
-    // Check that vendor-specific checks are enabled for at least one of the vendors
-    bool VendorCheckEnabled(BPVendorFlags vendors) const;
+class BestPracticesTracker : public ValidationStateTracker {
+  public:
+    BestPracticesTracker();
 
-    // State for use in best practices:
-    std::unordered_map<VkDescriptorPool, uint32_t> descriptor_pool_freed_count = {};
+    // extra helper functions
 
-    struct CacheEntry {
-        uint32_t value;
-        uint32_t age;
-    };
+    void ValidateReturnCodes(const char* api_name, VkResult result, const std::vector<VkResult>& success_codes,
+                             const std::vector<VkResult>& error_codes) const;
 
-    class PostTransformLRUCacheModel {
-      public:
-        typedef std::vector<CacheEntry>::iterator cache_iterator;
+    const std::map<BPVendorFlagBits, VendorSpecificInfo> vendor_info = initVendorInfo();
+    const std::map<BPVendorFlagBits, std::set<std::string>> vendor_practices = initVendorPractices();
 
-        void resize(size_t size);
+    const std::map<BPVendorFlagBits, VendorSpecificInfo> initVendorInfo();
+    const std::map<BPVendorFlagBits, std::set<std::string>> initVendorPractices();
 
-        // Returns true if there was a cache hit - also models LRU behavior which will effect subsequent calls.
-        bool query_cache(uint32_t value);
+    bool VendorCheckEnabled(BPVendorFlags vendors) const {
+        for (const auto& vendor : vendor_info) {
+            if (vendors & vendor.first && enabled.*(vendor.second.check)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-      private:
-        std::vector<CacheEntry> _entries = {};
-        uint32_t iteration = 0;
-    };
+    const char* VendorSpecificTag(BPVendorFlags vendors) {
+        // Cache built vendor tags in a map
+        static std::unordered_map<BPVendorFlags, std::string> tag_map;
+
+        auto res = tag_map.find(vendors);
+        if (res == tag_map.end()) {
+            // Build the vendor tag string
+            std::stringstream vendor_tag;
+
+            vendor_tag << "[";
+            bool first_vendor = true;
+            for (const auto& vendor : vendor_info) {
+                if (vendors & vendor.first) {
+                    if (!first_vendor) {
+                        vendor_tag << ", ";
+                    }
+                    vendor_tag << vendor.second.name;
+                    first_vendor = false;
+                }
+            }
+            vendor_tag << "]";
+
+            tag_map[vendors] = vendor_tag.str();
+            res = tag_map.find(vendors);
+        }
+
+        return res->second.c_str();
+    }
+
+    bool shouldCheckPractice(BPVendorFlags agreement) const {
+        for (const auto& vendor : vendor_info) {
+            // for each enabled vendor
+            // (khronos is always enabled)
+            const bool vendor_enabled = enabled.*(vendor.second.check);
+            const bool vendor_agrees = vendor.first & agreement;
+            if (vendor_enabled && vendor_agrees) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    template <typename T>
+    T foreachPractice(std::function<T(T, T)> accumulator, std::function<T(BestPracticeBase&)> f) const {
+        T acc;
+        for (size_t i = 0; i < practices.size(); i++) {
+            if (!shouldCheckPractice(practices[i]->agreeing_vendors())) continue;
+            if (i <= 0)
+                acc = f(*practices[i]);
+            else
+                acc = accumulator(acc, f(*practices[i]));
+        }
+        return acc;
+    }
+
+    bool foreachPractice(std::function<bool(BestPracticeBase&)> f) const {
+        return foreachPractice<bool>([](bool a, bool b) { return a | b; }, f);
+    }
+
+    void foreachPractice(std::function<void(BestPracticeBase&)> f) const {
+        for (auto& practice : practices) {
+            if (shouldCheckPractice(practice->agreeing_vendors())) f(*practice);
+        }
+    }
+
+  private:
+    std::vector<std::unique_ptr<BestPracticeBase>> practices = {};
 };

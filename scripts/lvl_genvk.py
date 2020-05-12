@@ -693,6 +693,55 @@ def makeGenOpts(args):
             expandEnumerants  = False)
         ]
 
+    # Options for best practices code-generated source
+    genOpts['best_practices_chassis.cpp'] = [
+          BestPracticesChassisOutputGenerator,
+          BestPracticesChassisOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'best_practices_chassis.cpp',
+            directory         = directory,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            protectFeature    = False,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants  = False)
+        ]
+
+    # Options for best_practices code-generated header
+    genOpts['best_practices_chassis.h'] = [
+          BestPracticesChassisOutputGenerator,
+          BestPracticesChassisOutputGeneratorOptions(
+            conventions       = conventions,
+            filename          = 'best_practices_chassis.h',
+            directory         = directory,
+            apiname           = 'vulkan',
+            profile           = None,
+            versions          = featuresPat,
+            emitversions      = featuresPat,
+            defaultExtensions = 'vulkan',
+            addExtensions     = addExtensionsPat,
+            removeExtensions  = removeExtensionsPat,
+            emitExtensions    = emitExtensionsPat,
+            prefixText        = prefixStrings + vkPrefixStrings,
+            protectFeature    = False,
+            apicall           = 'VKAPI_ATTR ',
+            apientry          = 'VKAPI_CALL ',
+            apientryp         = 'VKAPI_PTR *',
+            alignFuncParam    = 48,
+            expandEnumerants  = False)
+        ]
+
+
 # Create an API generator and corresponding generator options based on
 # the requested target and command line options.
 # This is encapsulated in a function so it can be profiled and/or timed.
@@ -816,6 +865,7 @@ if __name__ == '__main__':
     from lvt_file_generator import LvtFileOutputGenerator, LvtFileOutputGeneratorOptions
     from command_counter_generator import CommandCounterOutputGenerator, CommandCounterOutputGeneratorOptions
     from best_practices_generator import BestPracticesOutputGenerator, BestPracticesOutputGeneratorOptions
+    from best_practices_chassis_generator import BestPracticesChassisOutputGenerator, BestPracticesChassisOutputGeneratorOptions
 
     # Temporary workaround for vkconventions python2 compatibility
     import abc; abc.ABC = abc.ABCMeta('ABC', (object,), {})

@@ -216,7 +216,9 @@ set(BEST_PRACTICES_LIBRARY_FILES
     generated/best_practices.cpp
     generated/best_practices.h
     best_practices_validation.h
-    best_practices_error_enums.h)
+    best_practices_error_enums.h
+    best_practices/my_example_practice.cpp
+    best_practices/my_example_practice.h)
 
 set(GPU_ASSISTED_LIBRARY_FILES
     gpu_validation.cpp

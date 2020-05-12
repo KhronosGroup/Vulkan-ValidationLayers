@@ -65,6 +65,8 @@ def main(argv):
                                               "vk_typemap_helper.h",
                                               "best_practices.h",
                                               "best_practices.cpp",
+                                              "best_practices_chassis.h",
+                                              "best_practices_chassis.cpp",
                                               "command_counter_helper.cpp",
                                               "command_counter_helper.h"]],
                 [common_codegen.repo_relative('scripts/vk_validation_stats.py'),

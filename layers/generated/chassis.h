@@ -2758,7 +2758,10 @@ typedef enum EnableFlags {
     gpu_validation,
     gpu_validation_reserve_binding_slot,
     best_practices,
+    vendor_specific_khronos,
     vendor_specific_arm,
+    vendor_specific_test1,
+    vendor_specific_test2,
     debug_printf,
     // Insert new enables above this line
     kMaxEnableFlags,
@@ -4191,6 +4194,9 @@ public:
         // Allow AllocateDescriptorSets to use some local stack storage for performance purposes
         virtual bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, void* ads_state) const {
             return PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets);
+        };
+        virtual void PreCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, void* ads_state) {
+            return PreCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets);
         };
         virtual void PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo, VkDescriptorSet* pDescriptorSets, VkResult result, void* ads_state)  {
             PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, result);

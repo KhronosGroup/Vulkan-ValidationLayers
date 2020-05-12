@@ -1,5 +1,5 @@
 // *** THIS FILE IS GENERATED - DO NOT EDIT ***
-// See best_practices_generator.py for modifications
+// See best_practices_chassis_generator.py for modifications
 
 
 /***************************************************************************
@@ -24,13 +24,24 @@
  *
  ****************************************************************************/
 
+#pragma once
 
 #include "chassis.h"
-#include "best_practices_chassis.h"
-#include "best_practices_validation.h"
 
 
-class BestPractices : public BestPracticesAPICallHookInterface, public BestPracticesTracker {
+typedef enum {
+    kExtPromoted,
+    kExtObsoleted,
+    kExtDeprecated,
+}ExtDeprecationReason;
+
+typedef struct {
+    ExtDeprecationReason reason;
+   std::string target;
+} DeprecationData;
+
+
+class BestPracticesAPICallHookInterface {
 public:
 
 virtual bool PreCallValidateCreateInstance(

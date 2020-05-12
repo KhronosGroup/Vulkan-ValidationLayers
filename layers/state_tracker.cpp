@@ -2938,6 +2938,13 @@ bool ValidationStateTracker::PreCallValidateAllocateDescriptorSets(VkDevice devi
     return false;
 }
 
+void ValidationStateTracker::PreCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo, VkDescriptorSet *pDescriptorSets, void *ads_state_data) {
+    // Always update common data
+    cvdescriptorset::AllocateDescriptorSetsData *ads_state =
+        reinterpret_cast<cvdescriptorset::AllocateDescriptorSetsData *>(ads_state_data);
+    UpdateAllocateDescriptorSetsData(pAllocateInfo, ads_state);
+}
+
 // Allocation state was good and call down chain was made so update state based on allocating descriptor sets
 void ValidationStateTracker::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
                                                                   VkDescriptorSet *pDescriptorSets, VkResult result,
