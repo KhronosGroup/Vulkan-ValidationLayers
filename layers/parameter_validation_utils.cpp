@@ -830,6 +830,46 @@ bool StatelessValidation::manual_PreCallValidateCreateImage(VkDevice device, con
                                  "in the pNext chain");
             }
         }
+
+        if (pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) {
+            if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-flags-02557",
+                                 "vkCreateImage: if usage includes VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT, "
+                                 "imageType must be VK_IMAGE_TYPE_2D.");
+            }
+            if (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-samples-02558",
+                                 "vkCreateImage: if usage includes VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT, "
+                                 "samples must be VK_SAMPLE_COUNT_1_BIT.");
+            }
+            if (pCreateInfo->tiling != VK_IMAGE_TILING_OPTIMAL) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-tiling-02084",
+                                 "vkCreateImage: if usage includes VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT, "
+                                 "tiling must be VK_IMAGE_TILING_OPTIMAL.");
+            }
+        }
+        if (pCreateInfo->flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
+            if (pCreateInfo->tiling != VK_IMAGE_TILING_OPTIMAL) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-flags-02565",
+                                 "vkCreateImage: if usage includes VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT, "
+                                 "tiling must be VK_IMAGE_TILING_OPTIMAL.");
+            }
+            if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-flags-02566",
+                                 "vkCreateImage: if flags includes VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT, "
+                                 "imageType must be VK_IMAGE_TYPE_2D.");
+            }
+            if (pCreateInfo->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-flags-02567",
+                                 "vkCreateImage: if flags includes VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT, "
+                                 "flags must not include VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT.");
+            }
+            if (pCreateInfo->mipLevels != 1) {
+                skip |= LogError(device, "VUID-VkImageCreateInfo-flags-02568",
+                                 "vkCreateImage: if flags includes VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT, mipLevels (%d) must be 1.",
+                                 pCreateInfo->mipLevels);
+            }
+        }
     }
 
     return skip;
@@ -2510,6 +2550,53 @@ bool StatelessValidation::manual_PreCallValidateCreateSampler(VkDevice device, c
                     string_VkSamplerAddressMode(pCreateInfo->addressModeU), string_VkSamplerAddressMode(pCreateInfo->addressModeV),
                     string_VkSamplerAddressMode(pCreateInfo->addressModeW), pCreateInfo->anisotropyEnable ? "VK_TRUE" : "VK_FALSE",
                     pCreateInfo->unnormalizedCoordinates ? "VK_TRUE" : "VK_FALSE");
+            }
+        }
+
+        if (pCreateInfo->flags & VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT) {
+            if (pCreateInfo->minFilter != pCreateInfo->magFilter) {
+                skip |= LogError(device, "VUID-VkSamplerCreateInfo-flags-02574",
+                                 "vkCreateSampler(): when flags includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, "
+                                 "pCreateInfo->minFilter (%s) and pCreateInfo->magFilter (%s) must be equal.",
+                                 string_VkFilter(pCreateInfo->minFilter), string_VkFilter(pCreateInfo->magFilter));
+            }
+            if (pCreateInfo->mipmapMode != VK_SAMPLER_MIPMAP_MODE_NEAREST) {
+                skip |= LogError(device, "VUID-VkSamplerCreateInfo-flags-02575",
+                                 "vkCreateSampler(): when flags includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, "
+                                 "pCreateInfo->mipmapMode (%s) must be VK_SAMPLER_MIPMAP_MODE_NEAREST.",
+                                 string_VkSamplerMipmapMode(pCreateInfo->mipmapMode));
+            }
+            if (pCreateInfo->minLod != 0.0 || pCreateInfo->maxLod != 0.0) {
+                skip |= LogError(device, "VUID-VkSamplerCreateInfo-flags-02576",
+                                 "vkCreateSampler(): when flags includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, "
+                                 "pCreateInfo->minLod (%f) and pCreateInfo->maxLod (%f) must be zero.",
+                                 pCreateInfo->minLod, pCreateInfo->maxLod);
+            }
+            if (((pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) &&
+                 (pCreateInfo->addressModeU != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER)) ||
+                ((pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE) &&
+                 (pCreateInfo->addressModeV != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER))) {
+                skip |= LogError(device, "VUID-VkSamplerCreateInfo-flags-02577",
+                                 "vkCreateSampler(): when flags includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, "
+                                 "pCreateInfo->addressModeU (%s) and pCreateInfo->addressModeV (%s) must be "
+                                 "VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE or VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER",
+                                 string_VkSamplerAddressMode(pCreateInfo->addressModeU),
+                                 string_VkSamplerAddressMode(pCreateInfo->addressModeV));
+            }
+            if (pCreateInfo->anisotropyEnable) {
+                skip |= LogError(device, "VUID-VkSamplerCreateInfo-flags-02578",
+                                 "vkCreateSampler(): when flags includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, "
+                                 "pCreateInfo->anisotropyEnable must be VK_FALSE");
+            }
+            if (pCreateInfo->compareEnable) {
+                skip |= LogError(device, "VUID-VkSamplerCreateInfo-flags-02579",
+                                 "vkCreateSampler(): when flags includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, "
+                                 "pCreateInfo->compareEnable must be VK_FALSE");
+            }
+            if (pCreateInfo->unnormalizedCoordinates) {
+                skip |= LogError(device, "VUID-VkSamplerCreateInfo-flags-02580",
+                                 "vkCreateSampler(): when flags includes VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT, "
+                                 "pCreateInfo->unnormalizedCoordinates must be VK_FALSE");
             }
         }
     }

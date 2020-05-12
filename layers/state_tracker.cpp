@@ -1414,6 +1414,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.robustness2_features = *robustness2_features;
     }
 
+    const auto *fragment_density_map_features =
+        lvl_find_in_chain<VkPhysicalDeviceFragmentDensityMapFeaturesEXT>(pCreateInfo->pNext);
+    if (fragment_density_map_features) {
+        state_tracker->enabled_features.fragment_density_map_features = *fragment_density_map_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);
