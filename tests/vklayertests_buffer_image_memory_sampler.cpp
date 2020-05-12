@@ -10320,3 +10320,205 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
         }
     }
 }
+
+TEST_F(VkLayerTest, FragmentDensityMapEnabled) {
+    TEST_DESCRIPTION("Validation must check several conditions that apply only when Fragment Density Maps are used.");
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    bool fdmSupported = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+
+    // Check extension support
+    if (!fdmSupported) {
+        printf("%s test requires %s extension. Skipping.\n", kSkipPrefix, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+        return;
+    }
+
+    if (fdmSupported) {
+        m_device_extension_names.push_back(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // Test sampler parameters
+
+    VkSamplerCreateInfo sampler_info_ref = SafeSaneSamplerCreateInfo();
+    sampler_info_ref.maxLod = 0.0;
+    sampler_info_ref.flags |= VK_SAMPLER_CREATE_SUBSAMPLED_BIT_EXT;
+    VkSamplerCreateInfo sampler_info = sampler_info_ref;
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    // min max filters must match
+    sampler_info.minFilter = VK_FILTER_LINEAR;
+    sampler_info.magFilter = VK_FILTER_NEAREST;
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-flags-02574");
+    sampler_info.minFilter = sampler_info_ref.minFilter;
+    sampler_info.magFilter = sampler_info_ref.magFilter;
+
+    // mipmapMode must be SAMPLER_MIPMAP_MODE_NEAREST
+    sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-flags-02575");
+    sampler_info.mipmapMode = sampler_info_ref.mipmapMode;
+
+    // minLod and maxLod must be 0.0
+    sampler_info.minLod = 1.0;
+    sampler_info.maxLod = 1.0;
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-flags-02576");
+    sampler_info.minLod = sampler_info_ref.minLod;
+    sampler_info.maxLod = sampler_info_ref.maxLod;
+
+    // addressMode must be CLAMP_TO_EDGE or CLAMP_TO_BORDER
+    sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-flags-02577");
+    sampler_info.addressModeU = sampler_info_ref.addressModeU;
+
+    sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-flags-02577");
+    sampler_info.addressModeV = sampler_info_ref.addressModeV;
+
+    // some features cannot be enabled for subsampled samplers
+    sampler_info.anisotropyEnable = VK_TRUE;
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-flags-02578");
+    sampler_info.anisotropyEnable = sampler_info_ref.anisotropyEnable;
+
+    sampler_info.compareEnable = VK_TRUE;
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-flags-02579");
+    sampler_info.compareEnable = sampler_info_ref.compareEnable;
+
+    sampler_info.unnormalizedCoordinates = VK_TRUE;
+    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-flags-02580");
+    sampler_info.unnormalizedCoordinates = sampler_info_ref.unnormalizedCoordinates;
+
+    // Test image parameters
+
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = NULL;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8_UNORM;
+    image_create_info.extent.width = 64;
+    image_create_info.extent.height = 64;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
+    image_create_info.flags = 0;
+
+    // only VK_IMAGE_TYPE_2D is supported
+    image_create_info.imageType = VK_IMAGE_TYPE_1D;
+    image_create_info.extent.height = 1;
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-02557");
+
+    // only VK_SAMPLE_COUNT_1_BIT is supported
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-samples-02558");
+
+    // tiling must be VK_IMAGE_TILING_OPTIMAL
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.flags = VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
+    image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-02565");
+
+    // only 2D
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.imageType = VK_IMAGE_TYPE_1D;
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-02566");
+
+    // no cube maps
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.extent.height = 64;
+    image_create_info.arrayLayers = 6;
+    image_create_info.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-02567");
+
+    // mipLevels must be 1
+    image_create_info.flags = VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
+    image_create_info.arrayLayers = 1;
+    image_create_info.mipLevels = 2;
+    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-02568");
+
+    // Test image view parameters
+
+    // create a valid density map image
+    image_create_info.flags = 0;
+    image_create_info.mipLevels = 1;
+    image_create_info.usage = VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
+    VkImageObj densityImage(m_device);
+    densityImage.init(&image_create_info);
+    ASSERT_TRUE(densityImage.initialized());
+
+    VkImageViewCreateInfo ivci = {};
+    ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    ivci.image = densityImage.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = VK_FORMAT_R8G8_UNORM;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.baseArrayLayer = 0;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    // density maps can't be sparse (or protected)
+    if (m_device->phy().features().sparseResidencyImage2D) {
+        image_create_info.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
+        image_create_info.usage = VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
+        VkImageObj image(m_device);
+        image.init(&image_create_info);
+        ASSERT_TRUE(image.initialized());
+
+        ivci.image = image.handle();
+        CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-02573");
+    }
+}
+
+TEST_F(VkLayerTest, FragmentDensityMapDisabled) {
+    TEST_DESCRIPTION("Checks for when the fragment density map features are not enabled.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    bool fdmSupported = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+
+    // Check extension support
+    if (!fdmSupported) {
+        printf("%s test requires %s extension. Skipping.\n", kSkipPrefix, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = NULL;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8_UNORM;
+    image_create_info.extent.width = 64;
+    image_create_info.extent.height = 64;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_create_info.flags = 0;
+
+    VkImageObj image2D(m_device);
+    image2D.init(&image_create_info);
+    ASSERT_TRUE(image2D.initialized());
+
+    VkImageViewCreateInfo ivci = {};
+    ivci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    ivci.image = image2D.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    ivci.format = VK_FORMAT_R8G8_UNORM;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.levelCount = 1;
+    ivci.subresourceRange.baseArrayLayer = 0;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    // Flags must not be set if the feature is not enabled
+    ivci.flags = VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DYNAMIC_BIT_EXT;
+    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-flags-02572");
+}
