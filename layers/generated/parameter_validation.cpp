@@ -11870,7 +11870,6 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructureKHR(
             // No xml-driven validation
         }
     }
-    if (!skip) skip |= manual_PreCallValidateBuildAccelerationStructureKHR(device, infoCount, pInfos, ppOffsetInfos);
     return skip;
 }
 
@@ -11955,6 +11954,7 @@ bool StatelessValidation::PreCallValidateBuildAccelerationStructureKHR(
             // No xml-driven validation
         }
     }
+    if (!skip) skip |= manual_PreCallValidateBuildAccelerationStructureKHR(device, infoCount, pInfos, ppOffsetInfos);
     return skip;
 }
 
