@@ -1194,7 +1194,7 @@ void BestPractices::RecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rend
     prepass_state->second = {};
 
     const auto* cb_state = GetCBState(commandBuffer);
-    const auto* rp_state = cb_state->activeRenderPass;
+    const auto* rp_state = cb_state->activeRenderPass.get();
 
     // track depth / color attachment usage within the renderpass
     for (size_t i = 0; i < rp_state->createInfo.subpassCount; i++) {
@@ -1857,7 +1857,7 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
 
     // Check for uses of ClearAttachments along with LOAD_OP_LOAD,
     // as it can be more efficient to just use LOAD_OP_CLEAR
-    const RENDER_PASS_STATE* rp = cb_node->activeRenderPass;
+    const RENDER_PASS_STATE* rp = cb_node->activeRenderPass.get();
     if (rp) {
         const auto& subpass = rp->createInfo.pSubpasses[cb_node->activeSubpass];
 
