@@ -250,7 +250,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetPhysicalDeviceProcAddr(
     const char*                                 funcName);
 """
 
-    inline_custom_header_class_definition = """
+    inline_custom_header_interface_definition = """
 
 // Layer object type identifiers
 enum LayerObjectTypeId {
@@ -333,8 +333,15 @@ typedef enum EnableFlags {
 typedef std::array<bool, kMaxDisableFlags> CHECK_DISABLED;
 typedef std::array<bool, kMaxEnableFlags> CHECK_ENABLED;
 
+
+class APICallHookInterface {
+public:
+    // Pre/post hook point declarations
+"""
+
+    inline_custom_header_class_definition = """
 // Layer chassis validation object base class definition
-class ValidationObject {
+class ValidationObject : public APICallHookInterface {
     public:
         uint32_t api_version;
         debug_report_data* report_data = nullptr;
@@ -611,9 +618,9 @@ class ValidationObject {
             // Unknown, so wrap
             return WrapDisplay(handle, map_data);
         }
+};
 
-        // Pre/post hook point declarations
-"""
+    """
 
     inline_copyright_message = """
 // This file is ***GENERATED***.  Do Not Edit.
@@ -1762,7 +1769,7 @@ VKAPI_ATTR VkResult VKAPI_CALL GetValidationCacheDataEXT(
 
 }"""
 
-    inline_custom_validation_class_definitions = """
+    inline_custom_validation_interface_definitions = """
         virtual VkResult CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkValidationCacheEXT* pValidationCache) { return VK_SUCCESS; };
         virtual void CoreLayerDestroyValidationCacheEXT(VkDevice device, VkValidationCacheEXT validationCache, const VkAllocationCallbacks* pAllocator) {};
         virtual VkResult CoreLayerMergeValidationCachesEXT(VkDevice device, VkValidationCacheEXT dstCache, uint32_t srcCacheCount, const VkValidationCacheEXT* pSrcCaches)  { return VK_SUCCESS; };
@@ -1941,7 +1948,7 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
             write(self.inline_custom_header_preamble, file=self.outFile)
         else:
             write(self.inline_custom_source_preamble, file=self.outFile)
-        self.layer_factory += self.inline_custom_header_class_definition
+        self.layer_factory += self.inline_custom_header_interface_definition
     #
     #
     def endFile(self):
@@ -1961,8 +1968,9 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkNegotiateLoaderLayerInterfaceVe
         if self.header:
             self.newline()
             # Output Layer Factory Class Definitions
-            self.layer_factory += self.inline_custom_validation_class_definitions
+            self.layer_factory += self.inline_custom_validation_interface_definitions
             self.layer_factory += '};\n\n'
+            self.layer_factory += self.inline_custom_header_class_definition
             self.layer_factory += 'extern small_unordered_map<void*, ValidationObject*, 2> layer_data_map;'
             write(self.layer_factory, file=self.outFile)
         else:

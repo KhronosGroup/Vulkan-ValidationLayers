@@ -2767,286 +2767,10 @@ typedef enum EnableFlags {
 typedef std::array<bool, kMaxDisableFlags> CHECK_DISABLED;
 typedef std::array<bool, kMaxEnableFlags> CHECK_ENABLED;
 
-// Layer chassis validation object base class definition
-class ValidationObject {
-    public:
-        uint32_t api_version;
-        debug_report_data* report_data = nullptr;
 
-        VkLayerInstanceDispatchTable instance_dispatch_table;
-        VkLayerDispatchTable device_dispatch_table;
-
-        InstanceExtensions instance_extensions;
-        DeviceExtensions device_extensions = {};
-        CHECK_DISABLED disabled = {};
-        CHECK_ENABLED enabled = {};
-
-        VkInstance instance = VK_NULL_HANDLE;
-        VkPhysicalDevice physical_device = VK_NULL_HANDLE;
-        VkDevice device = VK_NULL_HANDLE;
-        LAYER_PHYS_DEV_PROPERTIES phys_dev_properties = {};
-
-        std::vector<ValidationObject*> object_dispatch;
-        LayerObjectTypeId container_type;
-
-        std::string layer_name = "CHASSIS";
-
-        // Constructor
-        ValidationObject(){};
-        // Destructor
-        virtual ~ValidationObject() {};
-
-        ReadWriteLock validation_object_mutex;
-        virtual read_lock_guard_t read_lock() {
-            return read_lock_guard_t(validation_object_mutex);
-        }
-        virtual write_lock_guard_t write_lock() {
-            return write_lock_guard_t(validation_object_mutex);
-        }
-
-        void RegisterValidationObject(bool vo_enabled, uint32_t instance_api_version,
-            debug_report_data* instance_report_data, std::vector<ValidationObject*> &dispatch_list) {
-            if (vo_enabled) {
-                api_version = instance_api_version;
-                report_data = instance_report_data;
-                dispatch_list.emplace_back(this);
-            }
-        }
-
-        void FinalizeInstanceValidationObject(ValidationObject *framework) {
-            instance_dispatch_table = framework->instance_dispatch_table;
-            enabled = framework->enabled;
-            disabled = framework->disabled;
-        }
-
-        virtual void InitDeviceValidationObject(bool add_obj, ValidationObject *inst_obj, ValidationObject *dev_obj) {
-            if (add_obj) {
-                dev_obj->object_dispatch.emplace_back(this);
-                device = dev_obj->device;
-                physical_device = dev_obj->physical_device;
-                instance = inst_obj->instance;
-                report_data = inst_obj->report_data;
-                device_dispatch_table = dev_obj->device_dispatch_table;
-                api_version = dev_obj->api_version;
-                disabled = inst_obj->disabled;
-                enabled = inst_obj->enabled;
-                instance_dispatch_table = inst_obj->instance_dispatch_table;
-                instance_extensions = inst_obj->instance_extensions;
-                device_extensions = dev_obj->device_extensions;
-            }
-        }
-
-        ValidationObject* GetValidationObject(std::vector<ValidationObject*>& object_dispatch, LayerObjectTypeId object_type) {
-            for (auto validation_object : object_dispatch) {
-                if (validation_object->container_type == object_type) {
-                    return validation_object;
-                }
-            }
-            return nullptr;
-        };
-
-        // Debug Logging Helpers
-        bool LogError(const LogObjectList &objects, const std::string &vuid_text, const char *format, ...) const {
-            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
-            // Avoid logging cost if msg is to be ignored
-            if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) ||
-                !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
-                return false;
-            }
-            va_list argptr;
-            va_start(argptr, format);
-            char *str;
-            if (-1 == vasprintf(&str, format, argptr)) {
-                str = nullptr;
-            }
-            va_end(argptr);
-            return LogMsgLocked(report_data, kErrorBit, objects, vuid_text, str);
-        };
-
-        template <typename HANDLE_T>
-        bool LogError(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
-            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
-            // Avoid logging cost if msg is to be ignored
-            if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) ||
-                !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
-                return false;
-            }
-            va_list argptr;
-            va_start(argptr, format);
-            char *str;
-            if (-1 == vasprintf(&str, format, argptr)) {
-                str = nullptr;
-            }
-            va_end(argptr);
-            LogObjectList single_object(src_object);
-            return LogMsgLocked(report_data, kErrorBit, single_object, vuid_text, str);
-
-        };
-
-        bool LogWarning(const LogObjectList &objects, const std::string &vuid_text, const char *format, ...) const {
-            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
-            // Avoid logging cost if msg is to be ignored
-            if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) ||
-                !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
-                return false;
-            }
-            va_list argptr;
-            va_start(argptr, format);
-            char *str;
-            if (-1 == vasprintf(&str, format, argptr)) {
-                str = nullptr;
-            }
-            va_end(argptr);
-            return LogMsgLocked(report_data, kWarningBit, objects, vuid_text, str);
-        };
-
-        template <typename HANDLE_T>
-        bool LogWarning(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
-            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
-            // Avoid logging cost if msg is to be ignored
-            if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) ||
-                !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
-                return false;
-            }
-            va_list argptr;
-            va_start(argptr, format);
-            char *str;
-            if (-1 == vasprintf(&str, format, argptr)) {
-                str = nullptr;
-            }
-            va_end(argptr);
-            LogObjectList single_object(src_object);
-            return LogMsgLocked(report_data, kWarningBit, single_object, vuid_text, str);
-        };
-
-        bool LogPerformanceWarning(const LogObjectList &objects, const std::string &vuid_text, const char *format, ...) const {
-            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
-            // Avoid logging cost if msg is to be ignored
-            if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) ||
-                !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)) {
-                return false;
-            }
-            va_list argptr;
-            va_start(argptr, format);
-            char *str;
-            if (-1 == vasprintf(&str, format, argptr)) {
-                str = nullptr;
-            }
-            va_end(argptr);
-            return LogMsgLocked(report_data, kPerformanceWarningBit, objects, vuid_text, str);
-        };
-
-        template <typename HANDLE_T>
-        bool LogPerformanceWarning(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
-            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
-            // Avoid logging cost if msg is to be ignored
-            if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) ||
-                !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)) {
-                return false;
-            }
-            va_list argptr;
-            va_start(argptr, format);
-            char *str;
-            if (-1 == vasprintf(&str, format, argptr)) {
-                str = nullptr;
-            }
-            va_end(argptr);
-            LogObjectList single_object(src_object);
-            return LogMsgLocked(report_data, kPerformanceWarningBit, single_object, vuid_text, str);
-        };
-
-        bool LogInfo(const LogObjectList &objects, const std::string &vuid_text, const char *format, ...) const {
-            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
-            // Avoid logging cost if msg is to be ignored
-            if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) ||
-                !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
-                return false;
-            }
-            va_list argptr;
-            va_start(argptr, format);
-            char *str;
-            if (-1 == vasprintf(&str, format, argptr)) {
-                str = nullptr;
-            }
-            va_end(argptr);
-            return LogMsgLocked(report_data, kInformationBit, objects, vuid_text, str);
-        };
-
-        template <typename HANDLE_T>
-        bool LogInfo(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
-            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
-            // Avoid logging cost if msg is to be ignored
-            if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) ||
-                !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
-                return false;
-            }
-            va_list argptr;
-            va_start(argptr, format);
-            char *str;
-            if (-1 == vasprintf(&str, format, argptr)) {
-                str = nullptr;
-            }
-            va_end(argptr);
-            LogObjectList single_object(src_object);
-            return LogMsgLocked(report_data, kInformationBit, single_object, vuid_text, str);
-        };
-
-        // Handle Wrapping Data
-        // Reverse map display handles
-        vl_concurrent_unordered_map<VkDisplayKHR, uint64_t, 0> display_id_reverse_mapping;
-        // Wrapping Descriptor Template Update structures requires access to the template createinfo structs
-        std::unordered_map<uint64_t, std::unique_ptr<TEMPLATE_STATE>> desc_template_createinfo_map;
-        struct SubpassesUsageStates {
-            std::unordered_set<uint32_t> subpasses_using_color_attachment;
-            std::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
-        };
-        // Uses unwrapped handles
-        std::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
-        // Map of wrapped swapchain handles to arrays of wrapped swapchain image IDs
-        // Each swapchain has an immutable list of wrapped swapchain image IDs -- always return these IDs if they exist
-        std::unordered_map<VkSwapchainKHR, std::vector<VkImage>> swapchain_wrapped_image_handle_map;
-        // Map of wrapped descriptor pools to set of wrapped descriptor sets allocated from each pool
-        std::unordered_map<VkDescriptorPool, std::unordered_set<VkDescriptorSet>> pool_descriptor_sets_map;
-
-
-        // Unwrap a handle.
-        template <typename HandleType>
-        HandleType Unwrap(HandleType wrappedHandle) {
-            auto iter = unique_id_mapping.find(reinterpret_cast<uint64_t const &>(wrappedHandle));
-            if (iter == unique_id_mapping.end())
-                return (HandleType)0;
-            return (HandleType)iter->second;
-        }
-
-        // Wrap a newly created handle with a new unique ID, and return the new ID.
-        template <typename HandleType>
-        HandleType WrapNew(HandleType newlyCreatedHandle) {
-            auto unique_id = global_unique_id++;
-            unique_id = HashedUint64::hash(unique_id);
-            unique_id_mapping.insert_or_assign(unique_id, reinterpret_cast<uint64_t const &>(newlyCreatedHandle));
-            return (HandleType)unique_id;
-        }
-
-        // Specialized handling for VkDisplayKHR. Adds an entry to enable reverse-lookup.
-        VkDisplayKHR WrapDisplay(VkDisplayKHR newlyCreatedHandle, ValidationObject *map_data) {
-            auto unique_id = global_unique_id++;
-            unique_id = HashedUint64::hash(unique_id);
-            unique_id_mapping.insert_or_assign(unique_id, reinterpret_cast<uint64_t const &>(newlyCreatedHandle));
-            map_data->display_id_reverse_mapping.insert_or_assign(newlyCreatedHandle, unique_id);
-            return (VkDisplayKHR)unique_id;
-        }
-
-        // VkDisplayKHR objects don't have a single point of creation, so we need to see if one already exists in the map before
-        // creating another.
-        VkDisplayKHR MaybeWrapDisplay(VkDisplayKHR handle, ValidationObject *map_data) {
-            // See if this display is already known
-            auto it = map_data->display_id_reverse_mapping.find(handle);
-            if (it != map_data->display_id_reverse_mapping.end()) return (VkDisplayKHR)it->second;
-            // Unknown, so wrap
-            return WrapDisplay(handle, map_data);
-        }
-
-        // Pre/post hook point declarations
+class APICallHookInterface {
+public:
+    // Pre/post hook point declarations
         virtual bool PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance) const { return false; };
         virtual void PreCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance) {};
         virtual void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkInstance* pInstance, VkResult result) {};
@@ -4483,4 +4207,285 @@ class ValidationObject {
         };
 };
 
-extern small_unordered_map<void*, ValidationObject*, 2> layer_data_map;
+
+// Layer chassis validation object base class definition
+class ValidationObject : public APICallHookInterface {
+    public:
+        uint32_t api_version;
+        debug_report_data* report_data = nullptr;
+
+        VkLayerInstanceDispatchTable instance_dispatch_table;
+        VkLayerDispatchTable device_dispatch_table;
+
+        InstanceExtensions instance_extensions;
+        DeviceExtensions device_extensions = {};
+        CHECK_DISABLED disabled = {};
+        CHECK_ENABLED enabled = {};
+
+        VkInstance instance = VK_NULL_HANDLE;
+        VkPhysicalDevice physical_device = VK_NULL_HANDLE;
+        VkDevice device = VK_NULL_HANDLE;
+        LAYER_PHYS_DEV_PROPERTIES phys_dev_properties = {};
+
+        std::vector<ValidationObject*> object_dispatch;
+        LayerObjectTypeId container_type;
+
+        std::string layer_name = "CHASSIS";
+
+        // Constructor
+        ValidationObject(){};
+        // Destructor
+        virtual ~ValidationObject() {};
+
+        ReadWriteLock validation_object_mutex;
+        virtual read_lock_guard_t read_lock() {
+            return read_lock_guard_t(validation_object_mutex);
+        }
+        virtual write_lock_guard_t write_lock() {
+            return write_lock_guard_t(validation_object_mutex);
+        }
+
+        void RegisterValidationObject(bool vo_enabled, uint32_t instance_api_version,
+            debug_report_data* instance_report_data, std::vector<ValidationObject*> &dispatch_list) {
+            if (vo_enabled) {
+                api_version = instance_api_version;
+                report_data = instance_report_data;
+                dispatch_list.emplace_back(this);
+            }
+        }
+
+        void FinalizeInstanceValidationObject(ValidationObject *framework) {
+            instance_dispatch_table = framework->instance_dispatch_table;
+            enabled = framework->enabled;
+            disabled = framework->disabled;
+        }
+
+        virtual void InitDeviceValidationObject(bool add_obj, ValidationObject *inst_obj, ValidationObject *dev_obj) {
+            if (add_obj) {
+                dev_obj->object_dispatch.emplace_back(this);
+                device = dev_obj->device;
+                physical_device = dev_obj->physical_device;
+                instance = inst_obj->instance;
+                report_data = inst_obj->report_data;
+                device_dispatch_table = dev_obj->device_dispatch_table;
+                api_version = dev_obj->api_version;
+                disabled = inst_obj->disabled;
+                enabled = inst_obj->enabled;
+                instance_dispatch_table = inst_obj->instance_dispatch_table;
+                instance_extensions = inst_obj->instance_extensions;
+                device_extensions = dev_obj->device_extensions;
+            }
+        }
+
+        ValidationObject* GetValidationObject(std::vector<ValidationObject*>& object_dispatch, LayerObjectTypeId object_type) {
+            for (auto validation_object : object_dispatch) {
+                if (validation_object->container_type == object_type) {
+                    return validation_object;
+                }
+            }
+            return nullptr;
+        };
+
+        // Debug Logging Helpers
+        bool LogError(const LogObjectList &objects, const std::string &vuid_text, const char *format, ...) const {
+            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
+            // Avoid logging cost if msg is to be ignored
+            if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) ||
+                !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
+                return false;
+            }
+            va_list argptr;
+            va_start(argptr, format);
+            char *str;
+            if (-1 == vasprintf(&str, format, argptr)) {
+                str = nullptr;
+            }
+            va_end(argptr);
+            return LogMsgLocked(report_data, kErrorBit, objects, vuid_text, str);
+        };
+
+        template <typename HANDLE_T>
+        bool LogError(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
+            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
+            // Avoid logging cost if msg is to be ignored
+            if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) ||
+                !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
+                return false;
+            }
+            va_list argptr;
+            va_start(argptr, format);
+            char *str;
+            if (-1 == vasprintf(&str, format, argptr)) {
+                str = nullptr;
+            }
+            va_end(argptr);
+            LogObjectList single_object(src_object);
+            return LogMsgLocked(report_data, kErrorBit, single_object, vuid_text, str);
+
+        };
+
+        bool LogWarning(const LogObjectList &objects, const std::string &vuid_text, const char *format, ...) const {
+            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
+            // Avoid logging cost if msg is to be ignored
+            if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) ||
+                !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
+                return false;
+            }
+            va_list argptr;
+            va_start(argptr, format);
+            char *str;
+            if (-1 == vasprintf(&str, format, argptr)) {
+                str = nullptr;
+            }
+            va_end(argptr);
+            return LogMsgLocked(report_data, kWarningBit, objects, vuid_text, str);
+        };
+
+        template <typename HANDLE_T>
+        bool LogWarning(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
+            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
+            // Avoid logging cost if msg is to be ignored
+            if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) ||
+                !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
+                return false;
+            }
+            va_list argptr;
+            va_start(argptr, format);
+            char *str;
+            if (-1 == vasprintf(&str, format, argptr)) {
+                str = nullptr;
+            }
+            va_end(argptr);
+            LogObjectList single_object(src_object);
+            return LogMsgLocked(report_data, kWarningBit, single_object, vuid_text, str);
+        };
+
+        bool LogPerformanceWarning(const LogObjectList &objects, const std::string &vuid_text, const char *format, ...) const {
+            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
+            // Avoid logging cost if msg is to be ignored
+            if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) ||
+                !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)) {
+                return false;
+            }
+            va_list argptr;
+            va_start(argptr, format);
+            char *str;
+            if (-1 == vasprintf(&str, format, argptr)) {
+                str = nullptr;
+            }
+            va_end(argptr);
+            return LogMsgLocked(report_data, kPerformanceWarningBit, objects, vuid_text, str);
+        };
+
+        template <typename HANDLE_T>
+        bool LogPerformanceWarning(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
+            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
+            // Avoid logging cost if msg is to be ignored
+            if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) ||
+                !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT)) {
+                return false;
+            }
+            va_list argptr;
+            va_start(argptr, format);
+            char *str;
+            if (-1 == vasprintf(&str, format, argptr)) {
+                str = nullptr;
+            }
+            va_end(argptr);
+            LogObjectList single_object(src_object);
+            return LogMsgLocked(report_data, kPerformanceWarningBit, single_object, vuid_text, str);
+        };
+
+        bool LogInfo(const LogObjectList &objects, const std::string &vuid_text, const char *format, ...) const {
+            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
+            // Avoid logging cost if msg is to be ignored
+            if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) ||
+                !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
+                return false;
+            }
+            va_list argptr;
+            va_start(argptr, format);
+            char *str;
+            if (-1 == vasprintf(&str, format, argptr)) {
+                str = nullptr;
+            }
+            va_end(argptr);
+            return LogMsgLocked(report_data, kInformationBit, objects, vuid_text, str);
+        };
+
+        template <typename HANDLE_T>
+        bool LogInfo(HANDLE_T src_object, const std::string &vuid_text, const char *format, ...) const {
+            std::unique_lock<std::mutex> lock(report_data->debug_output_mutex);
+            // Avoid logging cost if msg is to be ignored
+            if (!(report_data->active_severities & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) ||
+                !(report_data->active_types & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)) {
+                return false;
+            }
+            va_list argptr;
+            va_start(argptr, format);
+            char *str;
+            if (-1 == vasprintf(&str, format, argptr)) {
+                str = nullptr;
+            }
+            va_end(argptr);
+            LogObjectList single_object(src_object);
+            return LogMsgLocked(report_data, kInformationBit, single_object, vuid_text, str);
+        };
+
+        // Handle Wrapping Data
+        // Reverse map display handles
+        vl_concurrent_unordered_map<VkDisplayKHR, uint64_t, 0> display_id_reverse_mapping;
+        // Wrapping Descriptor Template Update structures requires access to the template createinfo structs
+        std::unordered_map<uint64_t, std::unique_ptr<TEMPLATE_STATE>> desc_template_createinfo_map;
+        struct SubpassesUsageStates {
+            std::unordered_set<uint32_t> subpasses_using_color_attachment;
+            std::unordered_set<uint32_t> subpasses_using_depthstencil_attachment;
+        };
+        // Uses unwrapped handles
+        std::unordered_map<VkRenderPass, SubpassesUsageStates> renderpasses_states;
+        // Map of wrapped swapchain handles to arrays of wrapped swapchain image IDs
+        // Each swapchain has an immutable list of wrapped swapchain image IDs -- always return these IDs if they exist
+        std::unordered_map<VkSwapchainKHR, std::vector<VkImage>> swapchain_wrapped_image_handle_map;
+        // Map of wrapped descriptor pools to set of wrapped descriptor sets allocated from each pool
+        std::unordered_map<VkDescriptorPool, std::unordered_set<VkDescriptorSet>> pool_descriptor_sets_map;
+
+
+        // Unwrap a handle.
+        template <typename HandleType>
+        HandleType Unwrap(HandleType wrappedHandle) {
+            auto iter = unique_id_mapping.find(reinterpret_cast<uint64_t const &>(wrappedHandle));
+            if (iter == unique_id_mapping.end())
+                return (HandleType)0;
+            return (HandleType)iter->second;
+        }
+
+        // Wrap a newly created handle with a new unique ID, and return the new ID.
+        template <typename HandleType>
+        HandleType WrapNew(HandleType newlyCreatedHandle) {
+            auto unique_id = global_unique_id++;
+            unique_id = HashedUint64::hash(unique_id);
+            unique_id_mapping.insert_or_assign(unique_id, reinterpret_cast<uint64_t const &>(newlyCreatedHandle));
+            return (HandleType)unique_id;
+        }
+
+        // Specialized handling for VkDisplayKHR. Adds an entry to enable reverse-lookup.
+        VkDisplayKHR WrapDisplay(VkDisplayKHR newlyCreatedHandle, ValidationObject *map_data) {
+            auto unique_id = global_unique_id++;
+            unique_id = HashedUint64::hash(unique_id);
+            unique_id_mapping.insert_or_assign(unique_id, reinterpret_cast<uint64_t const &>(newlyCreatedHandle));
+            map_data->display_id_reverse_mapping.insert_or_assign(newlyCreatedHandle, unique_id);
+            return (VkDisplayKHR)unique_id;
+        }
+
+        // VkDisplayKHR objects don't have a single point of creation, so we need to see if one already exists in the map before
+        // creating another.
+        VkDisplayKHR MaybeWrapDisplay(VkDisplayKHR handle, ValidationObject *map_data) {
+            // See if this display is already known
+            auto it = map_data->display_id_reverse_mapping.find(handle);
+            if (it != map_data->display_id_reverse_mapping.end()) return (VkDisplayKHR)it->second;
+            // Unknown, so wrap
+            return WrapDisplay(handle, map_data);
+        }
+};
+
+    extern small_unordered_map<void*, ValidationObject*, 2> layer_data_map;
