@@ -116,7 +116,7 @@ class CoreChecks : public ValidationStateTracker {
     void EnqueueSubmitTimeValidateImageBarrierAttachment(const char* func_name, CMD_BUFFER_STATE* cb_state,
                                                          uint32_t imageMemBarrierCount,
                                                          const VkImageMemoryBarrier* pImageMemBarriers);
-    bool ValidateImageBarrierAttachment(const char* funcName, CMD_BUFFER_STATE const* cb_state, VkFramebuffer framebuffer,
+    bool ValidateImageBarrierAttachment(const char* funcName, CMD_BUFFER_STATE const* cb_state, const FRAMEBUFFER_STATE* framebuffer,
                                         uint32_t active_subpass, const safe_VkSubpassDescription2& sub_desc,
                                         const VkRenderPass rp_handle, uint32_t img_index,
                                         const VkImageMemoryBarrier& img_barrier) const;

@@ -137,7 +137,7 @@ std::vector<const IMAGE_VIEW_STATE *> ValidationStateTracker::GetCurrentAttachme
     // Only valid *after* RecordBeginRenderPass and *before* RecordEndRenderpass as it relies on cb_state for the renderpass info.
     std::vector<const IMAGE_VIEW_STATE *> views;
 
-    const auto *rp_state = cb_state.activeRenderPass;
+    const auto *rp_state = cb_state.activeRenderPass.get();
     if (!rp_state) return views;
     const auto &rp_begin = *cb_state.activeRenderPassBeginInfo.ptr();
     const auto *fb_state = Get<FRAMEBUFFER_STATE>(rp_begin.framebuffer);
@@ -1177,8 +1177,7 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
         pCB->object_bindings.clear();
         // Remove this cmdBuffer's reference from each FrameBuffer's CB ref list
         for (auto framebuffer : pCB->framebuffers) {
-            auto fb_state = GetFramebufferState(framebuffer);
-            if (fb_state) fb_state->cb_bindings.erase(pCB);
+            framebuffer->cb_bindings.erase(pCB);
         }
         pCB->framebuffers.clear();
         pCB->activeFramebuffer = VK_NULL_HANDLE;
@@ -3144,10 +3143,12 @@ void ValidationStateTracker::PreCallRecordBeginCommandBuffer(VkCommandBuffer com
         // If we are a secondary command-buffer and inheriting.  Update the items we should inherit.
         if ((cb_state->createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) &&
             (cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT)) {
-            cb_state->activeRenderPass = GetRenderPassState(cb_state->beginInfo.pInheritanceInfo->renderPass);
+            cb_state->activeRenderPass = GetShared<RENDER_PASS_STATE>(cb_state->beginInfo.pInheritanceInfo->renderPass);
             cb_state->activeSubpass = cb_state->beginInfo.pInheritanceInfo->subpass;
-            cb_state->activeFramebuffer = cb_state->beginInfo.pInheritanceInfo->framebuffer;
-            cb_state->framebuffers.insert(cb_state->beginInfo.pInheritanceInfo->framebuffer);
+            if (cb_state->beginInfo.pInheritanceInfo->framebuffer) {
+                cb_state->activeFramebuffer = GetShared<FRAMEBUFFER_STATE>(cb_state->beginInfo.pInheritanceInfo->framebuffer);
+                if (cb_state->activeFramebuffer) cb_state->framebuffers.insert(cb_state->activeFramebuffer);
+            }
         }
     }
 
@@ -4026,7 +4027,6 @@ void ValidationStateTracker::RecordRenderPassDAG(RenderPassCreateVersion rp_vers
     }
 }
 
-
 static VkSubpassDependency2 ImplicitDependencyFromExternal(uint32_t subpass) {
     VkSubpassDependency2 from_external = {VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
                                           nullptr,
@@ -4218,22 +4218,22 @@ void ValidationStateTracker::RecordCmdBeginRenderPassState(VkCommandBuffer comma
                                                            const VkRenderPassBeginInfo *pRenderPassBegin,
                                                            const VkSubpassContents contents) {
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
-    auto render_pass_state = pRenderPassBegin ? GetRenderPassState(pRenderPassBegin->renderPass) : nullptr;
-    auto framebuffer = pRenderPassBegin ? GetFramebufferState(pRenderPassBegin->framebuffer) : nullptr;
+    auto render_pass_state = pRenderPassBegin ? GetShared<RENDER_PASS_STATE>(pRenderPassBegin->renderPass) : nullptr;
+    auto framebuffer = pRenderPassBegin ? GetShared<FRAMEBUFFER_STATE>(pRenderPassBegin->framebuffer) : nullptr;
 
     if (render_pass_state) {
-        cb_state->activeFramebuffer = pRenderPassBegin->framebuffer;
+        cb_state->activeFramebuffer = framebuffer;
         cb_state->activeRenderPass = render_pass_state;
         cb_state->activeRenderPassBeginInfo = safe_VkRenderPassBeginInfo(pRenderPassBegin);
         cb_state->activeSubpass = 0;
         cb_state->activeSubpassContents = contents;
-        cb_state->framebuffers.insert(pRenderPassBegin->framebuffer);
+        if (framebuffer) cb_state->framebuffers.insert(framebuffer);
         // Connect this framebuffer and its children to this cmdBuffer
-        AddFramebufferBinding(cb_state, framebuffer);
+        AddFramebufferBinding(cb_state, framebuffer.get());
         // Connect this RP to cmdBuffer
-        AddCommandBufferBinding(render_pass_state->cb_bindings,
-                                VulkanTypedHandle(render_pass_state->renderPass, kVulkanObjectTypeRenderPass, render_pass_state),
-                                cb_state);
+        AddCommandBufferBinding(
+            render_pass_state->cb_bindings,
+            VulkanTypedHandle(render_pass_state->renderPass, kVulkanObjectTypeRenderPass, render_pass_state.get()), cb_state);
 
         auto chained_device_group_struct = lvl_find_in_chain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
         if (chained_device_group_struct) {

@@ -1623,7 +1623,7 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
 
     // Check for uses of ClearAttachments along with LOAD_OP_LOAD,
     // as it can be more efficient to just use LOAD_OP_CLEAR
-    const RENDER_PASS_STATE* rp = cb_node->activeRenderPass;
+    const RENDER_PASS_STATE* rp = cb_node->activeRenderPass.get();
     if (rp) {
         const auto& subpass = rp->createInfo.pSubpasses[cb_node->activeSubpass];
 

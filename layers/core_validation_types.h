@@ -214,11 +214,11 @@ struct DEVICE_MEMORY_STATE : public BASE_NODE {
     std::unordered_set<VkAccelerationStructureNV> bound_acceleration_structures;
 
     MemRange mapped_range;
-    void *shadow_copy_base;    // Base of layer's allocation for guard band, data, and alignment space
-    void *shadow_copy;         // Pointer to start of guard-band data before mapped region
-    uint64_t shadow_pad_size;  // Size of the guard-band data before and after actual data. It MUST be a
-                               // multiple of limits.minMemoryMapAlignment
-    void *p_driver_data;       // Pointer to application's actual memory
+    void *shadow_copy_base;     // Base of layer's allocation for guard band, data, and alignment space
+    void *shadow_copy;          // Pointer to start of guard-band data before mapped region
+    uint64_t shadow_pad_size;   // Size of the guard-band data before and after actual data. It MUST be a
+                                // multiple of limits.minMemoryMapAlignment
+    void *p_driver_data;        // Pointer to application's actual memory
     VkDeviceSize fake_base_address;  // To allow a unified view of allocations, useful to Synchronization Validation
 
     DEVICE_MEMORY_STATE(void *disp_object, const VkDeviceMemory in_mem, const VkMemoryAllocateInfo *p_alloc_info,
@@ -407,9 +407,9 @@ class IMAGE_STATE : public BINDABLE {
     VkMemoryRequirements plane2_requirements;
     bool plane2_memory_requirements_checked;
 
-    const image_layout_map::Encoder subresource_encoder;            // Subresource resolution encoder
+    const image_layout_map::Encoder subresource_encoder;           // Subresource resolution encoder
     std::unique_ptr<const subresource_adapter::ImageRangeEncoder> fragment_encoder;  // Fragment resolution encoder
-    const VkDevice store_device_as_workaround;                      // TODO REMOVE WHEN encoder can be const
+    const VkDevice store_device_as_workaround;                     // TODO REMOVE WHEN encoder can be const
 
     std::vector<VkSparseImageMemoryRequirements> sparse_requirements;
     IMAGE_STATE(VkDevice dev, VkImage img, const VkImageCreateInfo *pCreateInfo);
@@ -1112,6 +1112,7 @@ typedef ImageSubresourceLayoutMap::LayoutMap GlobalImageLayoutRangeMap;
 typedef std::unordered_map<VkImage, std::unique_ptr<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
 typedef std::unordered_map<VkImage, std::unique_ptr<ImageSubresourceLayoutMap>> CommandBufferImageLayoutMap;
 
+class FRAMEBUFFER_STATE;
 // Cmd Buffer Wrapper Struct - TODO : This desperately needs its own class
 struct CMD_BUFFER_STATE : public BASE_NODE {
     VkCommandBuffer commandBuffer;
@@ -1147,12 +1148,12 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     uint32_t initial_device_mask;
 
     safe_VkRenderPassBeginInfo activeRenderPassBeginInfo;
-    RENDER_PASS_STATE *activeRenderPass;
+    std::shared_ptr<RENDER_PASS_STATE> activeRenderPass;
     VkSubpassContents activeSubpassContents;
     uint32_t active_render_pass_device_mask;
     uint32_t activeSubpass;
-    VkFramebuffer activeFramebuffer;
-    std::unordered_set<VkFramebuffer> framebuffers;
+    std::shared_ptr<FRAMEBUFFER_STATE> activeFramebuffer;
+    std::unordered_set<std::shared_ptr<FRAMEBUFFER_STATE>> framebuffers;
     // Unified data structs to track objects bound to this command buffer as well as object
     //  dependencies that have been broken : either destroyed objects, or updated descriptor sets
     std::vector<VulkanTypedHandle> object_bindings;
@@ -1178,7 +1179,7 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     std::vector<std::function<bool(const ValidationStateTracker *device_data, const class QUEUE_STATE *queue_state)>>
         queue_submit_functions;
     // Validation functions run when secondary CB is executed in primary
-    std::vector<std::function<bool(const CMD_BUFFER_STATE *, VkFramebuffer)>> cmd_execute_commands_functions;
+    std::vector<std::function<bool(const CMD_BUFFER_STATE *, const FRAMEBUFFER_STATE *)>> cmd_execute_commands_functions;
     std::vector<
         std::function<bool(const ValidationStateTracker *device_data, bool do_validate, EventToStageMap *localEventToStageMap)>>
         eventUpdates;
