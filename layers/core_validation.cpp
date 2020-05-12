@@ -926,7 +926,7 @@ bool CoreChecks::ValidatePipelineLocked(std::vector<std::shared_ptr<PIPELINE_STA
     // pipeline correctly, and that the base pipeline was created to allow
     // derivatives.
     if (pPipeline->graphicsPipelineCI.flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
-        const PIPELINE_STATE *pBasePipeline = nullptr;
+        const PIPELINE_STATE *base_pipeline = nullptr;
         if (!((pPipeline->graphicsPipelineCI.basePipelineHandle != VK_NULL_HANDLE) ^
               (pPipeline->graphicsPipelineCI.basePipelineIndex != -1))) {
             // TODO: This check is a superset of VUID-VkGraphicsPipelineCreateInfo-flags-00724 and
@@ -939,13 +939,13 @@ bool CoreChecks::ValidatePipelineLocked(std::vector<std::shared_ptr<PIPELINE_STA
                     LogError(device, "VUID-vkCreateGraphicsPipelines-flags-00720",
                              "Invalid Pipeline CreateInfo: base pipeline must occur earlier in array than derivative pipeline.");
             } else {
-                pBasePipeline = pPipelines[pPipeline->graphicsPipelineCI.basePipelineIndex].get();
+                base_pipeline = pPipelines[pPipeline->graphicsPipelineCI.basePipelineIndex].get();
             }
         } else if (pPipeline->graphicsPipelineCI.basePipelineHandle != VK_NULL_HANDLE) {
-            pBasePipeline = GetPipelineState(pPipeline->graphicsPipelineCI.basePipelineHandle);
+            base_pipeline = GetPipelineState(pPipeline->graphicsPipelineCI.basePipelineHandle);
         }
 
-        if (pBasePipeline && !(pBasePipeline->graphicsPipelineCI.flags & VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) {
+        if (base_pipeline && !(base_pipeline->graphicsPipelineCI.flags & VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) {
             skip |= LogError(device, kVUID_Core_DrawState_InvalidPipelineCreateState,
                              "Invalid Pipeline CreateInfo: base pipeline does not allow derivatives.");
         }
@@ -3921,13 +3921,13 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
     for (uint32_t i = 0; i < count; i++) {
         PIPELINE_STATE *pipeline = crtpl_state->pipe_state[i].get();
         if (pipeline->raytracingPipelineCI.flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
-            const PIPELINE_STATE *pBasePipeline = nullptr;
+            const PIPELINE_STATE *base_pipeline = nullptr;
             if (pipeline->raytracingPipelineCI.basePipelineIndex != -1) {
-                pBasePipeline = crtpl_state->pipe_state[pipeline->raytracingPipelineCI.basePipelineIndex].get();
+                base_pipeline = crtpl_state->pipe_state[pipeline->raytracingPipelineCI.basePipelineIndex].get();
             } else if (pipeline->raytracingPipelineCI.basePipelineHandle != VK_NULL_HANDLE) {
-                pBasePipeline = GetPipelineState(pipeline->raytracingPipelineCI.basePipelineHandle);
+                base_pipeline = GetPipelineState(pipeline->raytracingPipelineCI.basePipelineHandle);
             }
-            if (!pBasePipeline || !(pBasePipeline->getPipelineCreateFlags() & VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) {
+            if (!base_pipeline || !(base_pipeline->getPipelineCreateFlags() & VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) {
                 skip |= LogError(
                     device, "VUID-vkCreateRayTracingPipelinesNV-flags-03416",
                     "vkCreateRayTracingPipelinesNV: If the flags member of any element of pCreateInfos contains the "
@@ -3951,13 +3951,13 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
     for (uint32_t i = 0; i < count; i++) {
         PIPELINE_STATE *pipeline = crtpl_state->pipe_state[i].get();
         if (pipeline->raytracingPipelineCI.flags & VK_PIPELINE_CREATE_DERIVATIVE_BIT) {
-            const PIPELINE_STATE *pBasePipeline = nullptr;
+            const PIPELINE_STATE *base_pipeline = nullptr;
             if (pipeline->raytracingPipelineCI.basePipelineIndex != -1) {
-                pBasePipeline = crtpl_state->pipe_state[pipeline->raytracingPipelineCI.basePipelineIndex].get();
+                base_pipeline = crtpl_state->pipe_state[pipeline->raytracingPipelineCI.basePipelineIndex].get();
             } else if (pipeline->raytracingPipelineCI.basePipelineHandle != VK_NULL_HANDLE) {
-                pBasePipeline = GetPipelineState(pipeline->raytracingPipelineCI.basePipelineHandle);
+                base_pipeline = GetPipelineState(pipeline->raytracingPipelineCI.basePipelineHandle);
             }
-            if (!pBasePipeline || !(pBasePipeline->getPipelineCreateFlags() & VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) {
+            if (!base_pipeline || !(base_pipeline->getPipelineCreateFlags() & VK_PIPELINE_CREATE_ALLOW_DERIVATIVES_BIT)) {
                 skip |= LogError(
                     device, "VUID-vkCreateRayTracingPipelinesKHR-flags-03416",
                     "vkCreateRayTracingPipelinesKHR: If the flags member of any element of pCreateInfos contains the "

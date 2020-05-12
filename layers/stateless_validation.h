@@ -1492,7 +1492,7 @@ class StatelessValidation : public ValidationObject {
                                                                const VkCopyAccelerationStructureInfoKHR *pInfo) const;
     bool ValidateCopyAccelerationStructureInfoKHR(const VkCopyAccelerationStructureInfoKHR *pInfo, const char *api_name) const;
     bool ValidateCopyMemoryToAccelerationStructureInfoKHR(const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo,
-                                                          const char *api_name, bool isCmd = false) const;
+                                                          const char *api_name, bool is_cmd = false) const;
 
     bool manual_PreCallValidateCopyMemoryToAccelerationStructureKHR(VkDevice device,
                                                                     const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo) const;

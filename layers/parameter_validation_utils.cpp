@@ -4651,12 +4651,12 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureKHR(
 }
 
 bool StatelessValidation::ValidateCopyMemoryToAccelerationStructureInfoKHR(const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo,
-                                                                           const char *api_name, bool isCmd) const {
+                                                                           const char *api_name, bool is_cmd) const {
     bool skip = false;
     if (pInfo->mode != VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR) {
         skip |= LogError(device,
-                         isCmd ? "VUID-vkCmdCopyMemoryToAccelerationStructureKHR-mode-03413"
-                               : "VUID-vkCopyMemoryToAccelerationStructureInfoKHR-mode-03413",
+                         is_cmd ? "VUID-vkCmdCopyMemoryToAccelerationStructureKHR-mode-03413"
+                                : "VUID-vkCopyMemoryToAccelerationStructureInfoKHR-mode-03413",
                          "(%s): mode must be VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR.", api_name);
     }
     return skip;
