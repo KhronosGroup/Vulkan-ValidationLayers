@@ -2879,6 +2879,19 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
                                     "vkCmdCopyImage()", "VK_IMAGE_USAGE_TRANSFER_SRC_BIT");
     skip |= ValidateImageUsageFlags(dst_image_state, VK_IMAGE_USAGE_TRANSFER_DST_BIT, true, "VUID-vkCmdCopyImage-dstImage-00131",
                                     "vkCmdCopyImage()", "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
+
+    /* Validation for VK_EXT_fragment_density_map */
+    if (src_image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
+        skip |= LogError(
+            command_buffer, "VUID-vkCmdCopyImage-dstImage-02542",
+            "vkCmdCopyImage(): srcImage must not have been created with flags containing VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT");
+    }
+    if (dst_image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
+        skip |= LogError(
+            command_buffer, "VUID-vkCmdCopyImage-dstImage-02542",
+            "vkCmdCopyImage(): dstImage must not have been created with flags containing VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT");
+    }
+
     if (device_extensions.vk_khr_maintenance1) {
         skip |= ValidateImageFormatFeatureFlags(src_image_state, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT, "vkCmdCopyImage()",
                                                 "VUID-vkCmdCopyImage-srcImage-01995");
@@ -3111,6 +3124,18 @@ bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, V
         skip |= ValidateImageFormatFeatureFlags(dst_image_state, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT, "vkCmdResolveImage()",
                                                 "VUID-vkCmdResolveImage-dstImage-02003");
 
+        /* Validation for VK_EXT_fragment_density_map */
+        if (src_image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
+            skip |= LogError(cb_node->commandBuffer, "vkCmdResolveImage-dstImage-02546",
+                             "vkCmdResolveImage(): srcImage must not have been created with flags containing "
+                             "VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT");
+        }
+        if (dst_image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
+            skip |= LogError(cb_node->commandBuffer, "vkCmdResolveImage-dstImage-02546",
+                             "vkCmdResolveImage(): dstImage must not have been created with flags containing "
+                             "VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT");
+        }
+
         bool hit_error = false;
         const char *invalid_src_layout_vuid =
             (src_image_state->shared_presentable && device_extensions.vk_khr_shared_presentable_image)
@@ -3213,6 +3238,18 @@ bool CoreChecks::PreCallValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkIm
                                                 "VUID-vkCmdBlitImage-srcImage-01999");
         skip |= ValidateImageFormatFeatureFlags(dst_image_state, VK_FORMAT_FEATURE_BLIT_DST_BIT, "vkCmdBlitImage()",
                                                 "VUID-vkCmdBlitImage-dstImage-02000");
+
+        /* Validation for VK_EXT_fragment_density_map */
+        if (src_image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
+            skip |= LogError(
+                cb_node->commandBuffer, "VUID-vkCmdBlitImage-dstImage-02545",
+                "vkCmdBlitImage(): srcImage must not have been created with flags containing VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT");
+        }
+        if (dst_image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
+            skip |= LogError(
+                cb_node->commandBuffer, "VUID-vkCmdBlitImage-dstImage-02545",
+                "vkCmdBlitImage(): dstImage must not have been created with flags containing VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT");
+        }
 
         // TODO: Need to validate image layouts, which will include layout validation for shared presentable images
 
@@ -4918,6 +4955,33 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                     image_state->createInfo.arrayLayers - pCreateInfo->subresourceRange.baseArrayLayer);
             }
         }
+
+        if (image_usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) {
+            if (pCreateInfo->subresourceRange.levelCount != 1) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-02571]]",
+                                 "vkCreateImageView(): If image was created with usage containing "
+                                 "VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT, subresourceRange.levelCount (%d) must: be 1",
+                                 pCreateInfo->subresourceRange.levelCount);
+            }
+        }
+        if (pCreateInfo->flags & VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DYNAMIC_BIT_EXT) {
+            if (!enabled_features.fragment_density_map_features.fragmentDensityMapDynamic) {
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-flags-02572]]",
+                                 "vkCreateImageView(): If the fragmentDensityMapDynamic feature is not enabled, "
+                                 "flags must not contain VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DYNAMIC_BIT_EXT");
+            }
+        } else {
+            if (image_usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) {
+                if (image_flags & (VK_IMAGE_CREATE_PROTECTED_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT |
+                                   VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_ALIASED_BIT)) {
+                    skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-02573",
+                                     "vkCreateImageView(): If image was created with usage containing "
+                                     "VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT flags must not contain any of "
+                                     "VK_IMAGE_CREATE_PROTECTED_BIT, VK_IMAGE_CREATE_SPARSE_BINDING_BIT, "
+                                     "VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT, or VK_IMAGE_CREATE_SPARSE_ALIASED_BIT");
+                }
+            }
+        }
     }
     return skip;
 }
@@ -5434,6 +5498,14 @@ bool CoreChecks::PreCallValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuff
     skip |= ValidateBufferUsageFlags(dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
                                      "VUID-vkCmdCopyImageToBuffer-dstBuffer-00191", "vkCmdCopyImageToBuffer()",
                                      "VK_BUFFER_USAGE_TRANSFER_DST_BIT");
+
+    /* Validation for VK_EXT_fragment_density_map */
+    if (src_image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
+        skip |= LogError(cb_node->commandBuffer, "vkCmdCopyImageToBuffer-srcImage-02544",
+                         "vkCmdCopyBufferToImage(): srcImage must not have been created with flags containing "
+                         "VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT");
+    }
+
     if (device_extensions.vk_khr_maintenance1) {
         skip |= ValidateImageFormatFeatureFlags(src_image_state, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT, "vkCmdCopyImageToBuffer()",
                                                 "VUID-vkCmdCopyImageToBuffer-srcImage-01998");
@@ -5509,6 +5581,14 @@ bool CoreChecks::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandBuff
     skip |= ValidateImageUsageFlags(dst_image_state, VK_IMAGE_USAGE_TRANSFER_DST_BIT, true,
                                     "VUID-vkCmdCopyBufferToImage-dstImage-00177", "vkCmdCopyBufferToImage()",
                                     "VK_IMAGE_USAGE_TRANSFER_DST_BIT");
+
+    /* Validation for VK_EXT_fragment_density_map */
+    if (dst_image_state->createInfo.flags & VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT) {
+        skip |= LogError(cb_node->commandBuffer, "vkCmdCopyBufferToImage-dstImage-02543",
+                         "vkCmdCopyBufferToImage(): dstImage must not have been created with flags containing "
+                         "VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT");
+    }
+
     if (device_extensions.vk_khr_maintenance1) {
         skip |= ValidateImageFormatFeatureFlags(dst_image_state, VK_FORMAT_FEATURE_TRANSFER_DST_BIT, "vkCmdCopyBufferToImage()",
                                                 "VUID-vkCmdCopyBufferToImage-dstImage-01997");
