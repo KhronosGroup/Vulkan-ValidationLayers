@@ -722,8 +722,9 @@ void AccessContext::ApplyImageBarrier(const IMAGE_STATE &image, VkPipelineStageF
                           tag);
         ApplyImageBarrier(image, src_exec_scope, SYNC_IMAGE_LAYOUT_TRANSITION_BIT, dst_exec_scope, dst_access_scope,
                           subresource_range);
+    } else {
+        ApplyImageBarrier(image, src_exec_scope, src_access_scope, dst_exec_scope, dst_access_scope, subresource_range);
     }
-    ApplyImageBarrier(image, src_exec_scope, src_access_scope, dst_exec_scope, dst_access_scope, subresource_range);
 }
 
 void AccessContext::ApplyImageBarrier(const IMAGE_STATE &image, const SyncBarrier &barrier,
@@ -877,6 +878,7 @@ void RenderPassAccessContext::RecordLayoutTransitions(const ResourceUsageTag &ta
     // Add layout transitions...
     const auto &transitions = rp_state_->subpass_transitions[current_subpass_];
     auto &subpass_context = subpass_contexts_[current_subpass_];
+    std::set<const IMAGE_VIEW_STATE *> view_seen;
     for (const auto &transition : transitions) {
         const auto attachment_view = attachment_views_[transition.attachment];
         if (!attachment_view) continue;
@@ -884,7 +886,18 @@ void RenderPassAccessContext::RecordLayoutTransitions(const ResourceUsageTag &ta
         if (!image) continue;
 
         const auto *barrier = subpass_context.GetTrackBackFromSubpass(transition.prev_pass);
-        subpass_context.ApplyImageBarrier(*image, barrier->barrier, attachment_view->normalized_subresource_range, true, tag);
+        auto insert_pair = view_seen.insert(attachment_view);
+        if (insert_pair.second) {
+            // We haven't recorded the transistion yet, so treat this as a normal barrier with transistion.
+            subpass_context.ApplyImageBarrier(*image, barrier->barrier, attachment_view->normalized_subresource_range, true, tag);
+
+        } else {
+            // We've recorded the transition, but we need to added on the additional dest barriers, and rerecording the transition
+            // would clear out the prior barrier flags, so apply this as a *non* transition barrier
+            auto barrier_to_transition = barrier->barrier;
+            barrier_to_transition.src_access_scope |= SYNC_IMAGE_LAYOUT_TRANSITION_BIT;
+            subpass_context.ApplyImageBarrier(*image, barrier->barrier, attachment_view->normalized_subresource_range, false, tag);
+        }
     }
 }
 
@@ -941,7 +954,7 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index)
     HazardResult hazard;
     auto usage = FlagBit(usage_index);
     if (IsRead(usage)) {
-        if (IsWriteHazard(usage)) {
+        if (last_write && IsWriteHazard(usage)) {
             hazard.Set(READ_AFTER_WRITE, write_tag);
         }
     } else {
