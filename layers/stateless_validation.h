@@ -1199,6 +1199,9 @@ class StatelessValidation : public ValidationObject {
 
     bool validate_instance_extensions(const VkInstanceCreateInfo *pCreateInfo) const;
 
+    bool validate_validation_features(const VkInstanceCreateInfo *pCreateInfo,
+                                      const VkValidationFeaturesEXT *validation_features) const;
+
     bool validate_api_version(uint32_t api_version, uint32_t effective_api_version) const;
 
     bool validate_string(const char *apiName, const ParameterName &stringName, const std::string &vuid,

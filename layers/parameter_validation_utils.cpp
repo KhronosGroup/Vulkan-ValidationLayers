@@ -85,6 +85,44 @@ bool StatelessValidation::validate_instance_extensions(const VkInstanceCreateInf
     return skip;
 }
 
+bool StatelessValidation::validate_validation_features(const VkInstanceCreateInfo *pCreateInfo,
+                                                       const VkValidationFeaturesEXT *validation_features) const {
+    bool skip = false;
+    bool debug_printf = false;
+    bool gpu_assisted = false;
+    bool reserve_slot = false;
+    for (uint32_t i = 0; i < validation_features->enabledValidationFeatureCount; i++) {
+        switch (validation_features->pEnabledValidationFeatures[i]) {
+            case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT:
+                gpu_assisted = true;
+                break;
+
+            case VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT:
+                debug_printf = true;
+                break;
+
+            case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT:
+                reserve_slot = true;
+                break;
+
+            default:
+                break;
+        }
+    }
+    if (reserve_slot && !gpu_assisted) {
+        skip |= LogError(instance, "VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-02967",
+                         "If VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT is in pEnabledValidationFeatures, "
+                         "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT must also be in pEnabledValidationFeatures.");
+    }
+    if (gpu_assisted && debug_printf) {
+        skip |= LogError(instance, "VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-02968",
+                         "If VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT is in pEnabledValidationFeatures, "
+                         "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT must not also be in pEnabledValidationFeatures.");
+    }
+
+    return skip;
+}
+
 template <typename ExtensionState>
 ExtEnabled extension_state_by_name(const ExtensionState &extensions, const char *extension_name) {
     if (!extension_name) return kNotEnabled;  // null strings specify nothing
@@ -106,6 +144,9 @@ bool StatelessValidation::manual_PreCallValidateCreateInstance(const VkInstanceC
                                      : VK_API_VERSION_1_0;
     skip |= validate_api_version(local_api_version, api_version);
     skip |= validate_instance_extensions(pCreateInfo);
+    const auto *validation_features = lvl_find_in_chain<VkValidationFeaturesEXT>(pCreateInfo->pNext);
+    if (validation_features) skip |= validate_validation_features(pCreateInfo, validation_features);
+
     return skip;
 }
 
