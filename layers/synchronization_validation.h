@@ -113,8 +113,8 @@ class ResourceAccessState : public SyncStageAccess {
   public:
     HazardResult DetectHazard(SyncStageAccessIndex usage_index) const;
 
-    HazardResult DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags src_stage_mask,
-                                     SyncStageAccessFlags source_scope) const;
+    HazardResult DetectBarrierHazard(SyncStageAccessIndex usage_index, VkPipelineStageFlags source_exec_scope,
+                                     SyncStageAccessFlags source_access_scope) const;
     HazardResult DetectAsyncHazard(SyncStageAccessIndex usage_index) const;
 
     void Update(SyncStageAccessIndex usage_index, const ResourceUsageTag &tag);
