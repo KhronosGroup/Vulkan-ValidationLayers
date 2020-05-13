@@ -1009,9 +1009,9 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                     }
                     // TODO: Validate 04015 for DescriptorClass::PlainSampler
                     if (descriptor_class == DescriptorClass::ImageSampler) {
-                        auto custom_color_info =
-                            lvl_find_in_chain<VkSamplerCustomBorderColorCreateInfoEXT>(sampler_state->createInfo.pNext);
-                        if (custom_color_info && custom_color_info->format == VK_FORMAT_UNDEFINED) {
+                        if ((sampler_state->createInfo.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
+                             sampler_state->createInfo.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) &&
+                            (sampler_state->customCreateInfo.format == VK_FORMAT_UNDEFINED)) {
                             const IMAGE_VIEW_STATE *image_view_state;
                             image_view_state = static_cast<const ImageSamplerDescriptor *>(descriptor)->GetImageViewState();
                             if (image_view_state->create_info.format == VK_FORMAT_B4G4R4A4_UNORM_PACK16) {
