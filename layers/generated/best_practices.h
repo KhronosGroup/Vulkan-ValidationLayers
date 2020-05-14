@@ -1585,7 +1585,7 @@ const std::unordered_map<std::string, DeprecationData>  deprecated_extensions = 
     {"VK_AMD_negative_viewport_height", {kExtObsoleted, "VK_KHR_maintenance1"}},
     {"VK_EXT_buffer_device_address", {kExtDeprecated, "VK_KHR_buffer_device_address"}},
     {"VK_EXT_debug_marker", {kExtPromoted, "VK_EXT_debug_utils"}},
-// ADD BACK AFTER LAYER TESTS SWITCH TO DEBUG_UTILS!       {"VK_EXT_debug_report", {kExtDeprecated, "VK_EXT_debug_utils"}},
+    {"VK_EXT_debug_report", {kExtDeprecated, "VK_EXT_debug_utils"}},
     {"VK_EXT_descriptor_indexing", {kExtPromoted, "VK_VERSION_1_2"}},
     {"VK_EXT_host_query_reset", {kExtPromoted, "VK_VERSION_1_2"}},
     {"VK_EXT_sampler_filter_minmax", {kExtPromoted, "VK_VERSION_1_2"}},

@@ -168,8 +168,6 @@ class BestPracticesOutputGenerator(OutputGenerator):
                 self.otwrite('both', '\n')
             ext_deprecation_data = 'const std::unordered_map<std::string, DeprecationData>  deprecated_extensions = {\n'
             for ext in sorted(self.extension_info):
-                if "VK_EXT_debug_report" in ext:
-                    ext_deprecation_data += '// ADD BACK AFTER LAYER TESTS SWITCH TO DEBUG_UTILS!   '
                 ext_data = self.extension_info[ext]
                 ext_deprecation_data += '    {"%s", {kExt%s, "%s"}},\n' % (ext, ext_data[0], ext_data[1])
             ext_deprecation_data += '};\n'
