@@ -295,7 +295,9 @@ work with the solution interactively.
     cd build
     cmake -A x64 -DVULKAN_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
                  -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
-                 -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir ..
+                 -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
+                 -DSPIRV_TOOLS_INSTALL_DIR=absolute_path_to_install_dir \
+                 ..
     cmake --build .
 
 The above commands instruct CMake to find and use the default Visual Studio
@@ -315,7 +317,9 @@ create a build directory and generate the Visual Studio project files:
     cd build
     cmake -A x64 -DVULKAN_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
                  -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
-                 -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir ..
+                 -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
+                 -DSPIRV_TOOLS_INSTALL_DIR=absolute_path_to_install_dir
+                 ..
 
 > Note: The `..` parameter tells `cmake` the location of the top of the
 > repository. If you place your build directory someplace else, you'll need to
@@ -396,7 +400,9 @@ location of the loader's install directory:
 
     cmake -A x64 -DVULKAN_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
                  -DVULKAN_LOADER_INSTALL_DIR=absolute_path_to_install_dir \
-                 -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir ..
+                 -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
+                 -DSPIRV_TOOLS_INSTALL_DIR=absolute_path_to_install_dir \
+                 ..
 
 ### Windows Tests and Demos
 
@@ -471,7 +477,9 @@ CMake with the `--build` option or `make` to build from the command line.
     cd build
     cmake -DVULKAN_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
           -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
-          -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir ..
+          -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
+          -DSPIRV_TOOLS_INSTALL_DIR=absolute_path_to_install_dir \
+          ..
     make
 
 See below for the details.
@@ -488,6 +496,7 @@ create a build directory and generate the make files.
           -DVULKAN_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
           -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
           -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
+          -DSPIRV_TOOLS_INSTALL_DIR=absolute_path_to_install_dir \
           -DCMAKE_INSTALL_PREFIX=install ..
 
 > Note: The `..` parameter tells `cmake` the location of the top of the
@@ -811,6 +820,7 @@ build is:
     cmake -DVULKAN_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
           -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
           -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
+          -DSPIRV_TOOLS_INSTALL_DIR=absolute_path_to_install_dir \
           -DCMAKE_BUILD_TYPE=Debug ..
     make
 
@@ -828,6 +838,7 @@ To create and open an Xcode project:
     cmake -DVULKAN_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
           -DGLSLANG_INSTALL_DIR=absolute_path_to_install_dir \
           -DSPIRV_HEADERS_INSTALL_DIR=absolute_path_to_install_dir \
+          -DSPIRV_TOOLS_INSTALL_DIR=absolute_path_to_install_dir \
           -GXcode ..
     open VULKAN.xcodeproj
 

@@ -167,7 +167,6 @@ if(BUILD_TESTS OR BUILD_LAYERS)
         message(FATAL_ERROR "Must define location of glslang binaries -- see BUILD.md")
     endif()
 
-    # GLSLANG_INSTALL_DIR is used as the path to all dependent projects' install dirs
     # CMake command line option overrides environment variable
     if(NOT GLSLANG_INSTALL_DIR)
         set(GLSLANG_INSTALL_DIR $ENV{GLSLANG_INSTALL_DIR})
@@ -176,6 +175,10 @@ if(BUILD_TESTS OR BUILD_LAYERS)
     # CMake command line option overrides environment variable
     if(NOT SPIRV_HEADERS_INSTALL_DIR)
         set(SPIRV_HEADERS_INSTALL_DIR $ENV{SPIRV_HEADERS_INSTALL_DIR})
+    endif()
+
+    if(NOT SPIRV_TOOLS_INSTALL_DIR)
+        set(SPIRV_TOOLS_INSTALL_DIR $ENV{SPIRV_TOOLS_INSTALL_DIR})
     endif()
 
     if (NOT TARGET glslang)
@@ -256,15 +259,19 @@ if(BUILD_TESTS OR BUILD_LAYERS)
 
     # spirv-tools
     if (NOT TARGET SPIRV-Tools)
-        set(SPIRV_TOOLS_BINARY_ROOT "${GLSLANG_INSTALL_DIR}/lib"
+        if(NOT SPIRV_TOOLS_INSTALL_DIR)
+            set(SPIRV_TOOLS_INSTALL_DIR "${GLSLANG_INSTALL_DIR}")
+        endif()
+
+        set(SPIRV_TOOLS_BINARY_ROOT "${SPIRV_TOOLS_INSTALL_DIR}/lib"
             CACHE PATH "User defined path to the SPIRV-Tools binaries for this project")
-        set(SPIRV_TOOLS_OPT_BINARY_ROOT "${GLSLANG_INSTALL_DIR}/lib"
+        set(SPIRV_TOOLS_OPT_BINARY_ROOT "${SPIRV_TOOLS_INSTALL_DIR}/lib"
             CACHE PATH "User defined path to the SPIRV-Tools-opt binaries for this project")
-        set(SPIRV_TOOLS_INCLUDE_DIR "${GLSLANG_INSTALL_DIR}/include" CACHE PATH "Path to spirv tools headers")
-        set(SPIRV_TOOLS_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
-        set(SPIRV_TOOLS_DEBUG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
-        set(SPIRV_TOOLS_OPT_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
-        set(SPIRV_TOOLS_OPT_DEBUG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
+        set(SPIRV_TOOLS_INCLUDE_DIR "${SPIRV_TOOLS_INSTALL_DIR}/include" CACHE PATH "Path to spirv tools headers")
+        set(SPIRV_TOOLS_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
+        set(SPIRV_TOOLS_DEBUG_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
+        set(SPIRV_TOOLS_OPT_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
+        set(SPIRV_TOOLS_OPT_DEBUG_SEARCH_PATH "${SPIRV_TOOLS_INSTALL_DIR}/lib")
 
         find_library(SPIRV_TOOLS_LIB NAMES SPIRV-Tools HINTS ${SPIRV_TOOLS_SEARCH_PATH})
         find_library(SPIRV_TOOLS_OPT_LIB NAMES SPIRV-Tools-opt HINTS ${SPIRV_TOOLS_OPT_SEARCH_PATH})
