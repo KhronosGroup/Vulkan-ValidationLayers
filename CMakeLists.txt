@@ -182,6 +182,10 @@ if(BUILD_TESTS OR BUILD_LAYERS)
     endif()
 
     if (NOT TARGET glslang)
+        if(NOT SPIRV_HEADERS_INSTALL_DIR)
+            message(FATAL_ERROR "Must define location of SPIRV-Headers -- see BUILD.md")
+        endif()
+
         message(STATUS "Using glslang install located at ${GLSLANG_INSTALL_DIR}")
         set(GLSLANG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
         set(GLSLANG_DEBUG_SEARCH_PATH "${GLSLANG_INSTALL_DIR}/lib")
