@@ -1477,6 +1477,32 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationAbort) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkGpuAssistedLayerTest, ValidationFeatures) {
+    TEST_DESCRIPTION("Validate Validation Features");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT};
+    VkValidationFeaturesEXT features = {};
+    features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+    features.enabledValidationFeatureCount = 1;
+    features.pEnabledValidationFeatures = enables;
+
+    auto ici = GetInstanceCreateInfo();
+    features.pNext = ici.pNext;
+    ici.pNext = &features;
+    VkInstance instance;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-02967");
+    vk::CreateInstance(&ici, nullptr, &instance);
+    m_errorMonitor->VerifyFound();
+
+    VkValidationFeatureEnableEXT printf_enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
+                                                     VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
+    features.pEnabledValidationFeatures = printf_enables;
+    features.enabledValidationFeatureCount = 2;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkValidationFeaturesEXT-pEnabledValidationFeatures-02968");
+    vk::CreateInstance(&ici, nullptr, &instance);
+    m_errorMonitor->VerifyFound();
+}
+
 void VkDebugPrintfTest::InitDebugPrintfFramework() {
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
     VkValidationFeatureDisableEXT disables[] = {VK_VALIDATION_FEATURE_DISABLE_ALL_EXT};
