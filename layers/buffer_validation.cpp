@@ -5280,16 +5280,22 @@ bool CoreChecks::ValidateBufferImageCopyData(uint32_t regionCount, const VkBuffe
 
             //  BufferRowLength must be a multiple of block width
             if (SafeModulo(pRegions[i].bufferRowLength, block_size.width) != 0) {
+                const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion)
+                                       ? "VUID-VkBufferImageCopy-None-01735"
+                                       : "VUID-VkBufferImageCopy-bufferRowLength-00203";
                 skip |= LogError(
-                    image_state->image, "VUID-VkBufferImageCopy-bufferRowLength-00203",
+                    image_state->image, vuid,
                     "%s(): pRegion[%d] bufferRowLength (%d) must be a multiple of the compressed image's texel width (%d)..",
                     function, i, pRegions[i].bufferRowLength, block_size.width);
             }
 
             //  BufferRowHeight must be a multiple of block height
             if (SafeModulo(pRegions[i].bufferImageHeight, block_size.height) != 0) {
+                const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion)
+                                       ? "VUID-VkBufferImageCopy-None-01736"
+                                       : "VUID-VkBufferImageCopy-bufferImageHeight-00204";
                 skip |= LogError(
-                    image_state->image, "VUID-VkBufferImageCopy-bufferImageHeight-00204",
+                    image_state->image, vuid,
                     "%s(): pRegion[%d] bufferImageHeight (%d) must be a multiple of the compressed image's texel height (%d)..",
                     function, i, pRegions[i].bufferImageHeight, block_size.height);
             }
@@ -5298,7 +5304,9 @@ bool CoreChecks::ValidateBufferImageCopyData(uint32_t regionCount, const VkBuffe
             if ((SafeModulo(pRegions[i].imageOffset.x, block_size.width) != 0) ||
                 (SafeModulo(pRegions[i].imageOffset.y, block_size.height) != 0) ||
                 (SafeModulo(pRegions[i].imageOffset.z, block_size.depth) != 0)) {
-                skip |= LogError(image_state->image, "VUID-VkBufferImageCopy-imageOffset-00205",
+                const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion) ? "VUID-VkBufferImageCopy-None-01737"
+                                                                                       : "VUID-VkBufferImageCopy-imageOffset-00205";
+                skip |= LogError(image_state->image, vuid,
                                  "%s(): pRegion[%d] imageOffset(x,y) (%d, %d) must be multiples of the compressed image's texel "
                                  "width & height (%d, %d)..",
                                  function, i, pRegions[i].imageOffset.x, pRegions[i].imageOffset.y, block_size.width,
@@ -5308,7 +5316,10 @@ bool CoreChecks::ValidateBufferImageCopyData(uint32_t regionCount, const VkBuffe
             // bufferOffset must be a multiple of block size (linear bytes)
             uint32_t block_size_in_bytes = FormatElementSize(image_state->createInfo.format);
             if (SafeModulo(pRegions[i].bufferOffset, block_size_in_bytes) != 0) {
-                skip |= LogError(image_state->image, "VUID-VkBufferImageCopy-bufferOffset-00206",
+                const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion)
+                                       ? "VUID-VkBufferImageCopy-None-01738"
+                                       : "VUID-VkBufferImageCopy-bufferOffset-00206";
+                skip |= LogError(image_state->image, vuid,
                                  "%s(): pRegion[%d] bufferOffset (0x%" PRIxLEAST64
                                  ") must be a multiple of the compressed image's texel block size (%" PRIu32 ")..",
                                  function, i, pRegions[i].bufferOffset, block_size_in_bytes);
@@ -5318,7 +5329,9 @@ bool CoreChecks::ValidateBufferImageCopyData(uint32_t regionCount, const VkBuffe
             VkExtent3D mip_extent = GetImageSubresourceExtent(image_state, &(pRegions[i].imageSubresource));
             if ((SafeModulo(pRegions[i].imageExtent.width, block_size.width) != 0) &&
                 (pRegions[i].imageExtent.width + pRegions[i].imageOffset.x != mip_extent.width)) {
-                skip |= LogError(image_state->image, "VUID-VkBufferImageCopy-imageExtent-00207",
+                const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion) ? "VUID-VkBufferImageCopy-None-01739"
+                                                                                       : "VUID-VkBufferImageCopy-imageExtent-00207";
+                skip |= LogError(image_state->image, vuid,
                                  "%s(): pRegion[%d] extent width (%d) must be a multiple of the compressed texture block width "
                                  "(%d), or when added to offset.x (%d) must equal the image subresource width (%d)..",
                                  function, i, pRegions[i].imageExtent.width, block_size.width, pRegions[i].imageOffset.x,
@@ -5328,7 +5341,9 @@ bool CoreChecks::ValidateBufferImageCopyData(uint32_t regionCount, const VkBuffe
             // imageExtent height must be a multiple of block height, or extent+offset height must equal subresource height
             if ((SafeModulo(pRegions[i].imageExtent.height, block_size.height) != 0) &&
                 (pRegions[i].imageExtent.height + pRegions[i].imageOffset.y != mip_extent.height)) {
-                skip |= LogError(image_state->image, "VUID-VkBufferImageCopy-imageExtent-00208",
+                const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion) ? "VUID-VkBufferImageCopy-None-01740"
+                                                                                       : "VUID-VkBufferImageCopy-imageExtent-00208";
+                skip |= LogError(image_state->image, vuid,
                                  "%s(): pRegion[%d] extent height (%d) must be a multiple of the compressed texture block height "
                                  "(%d), or when added to offset.y (%d) must equal the image subresource height (%d)..",
                                  function, i, pRegions[i].imageExtent.height, block_size.height, pRegions[i].imageOffset.y,
@@ -5338,7 +5353,9 @@ bool CoreChecks::ValidateBufferImageCopyData(uint32_t regionCount, const VkBuffe
             // imageExtent depth must be a multiple of block depth, or extent+offset depth must equal subresource depth
             if ((SafeModulo(pRegions[i].imageExtent.depth, block_size.depth) != 0) &&
                 (pRegions[i].imageExtent.depth + pRegions[i].imageOffset.z != mip_extent.depth)) {
-                skip |= LogError(image_state->image, "VUID-VkBufferImageCopy-imageExtent-00209",
+                const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion) ? "VUID-VkBufferImageCopy-None-01741"
+                                                                                       : "VUID-VkBufferImageCopy-imageExtent-00209";
+                skip |= LogError(image_state->image, vuid,
                                  "%s(): pRegion[%d] extent width (%d) must be a multiple of the compressed texture block depth "
                                  "(%d), or when added to offset.z (%d) must equal the image subresource depth (%d)..",
                                  function, i, pRegions[i].imageExtent.depth, block_size.depth, pRegions[i].imageOffset.z,
