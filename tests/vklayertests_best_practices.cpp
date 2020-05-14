@@ -107,7 +107,9 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
         printf("%s Did not find %s extension, skipped.\n", kSkipPrefix, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
         return;
     }
+    ASSERT_NO_FATAL_FAILURE(InitBestPracticesFramework());
 
+    // Create a 1.1 vulkan instance and request an extension promoted to core in 1.1
     m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-BestPractices-vkCreateInstance-deprecated-extension");
     VkInstance dummy;
     auto features = features_;
@@ -116,6 +118,19 @@ TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
     ici.pNext = &features;
     vk::CreateInstance(&ici, nullptr, &dummy);
     m_errorMonitor->VerifyFound();
+
+    // Create a 1.0 vulkan instance and request an extension promoted to core in 1.1
+    m_errorMonitor->ExpectSuccess(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT);
+    VkApplicationInfo* new_info = new VkApplicationInfo;
+    new_info->apiVersion = VK_API_VERSION_1_0;
+    new_info->pApplicationName = ici.pApplicationInfo->pApplicationName;
+    new_info->applicationVersion = ici.pApplicationInfo->applicationVersion;
+    new_info->pEngineName = ici.pApplicationInfo->pEngineName;
+    new_info->engineVersion = ici.pApplicationInfo->engineVersion;
+    ici.pApplicationInfo = new_info;
+    vk::CreateInstance(&ici, nullptr, &dummy);
+    vk::DestroyInstance(dummy, nullptr);
+    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(VkBestPracticesLayerTest, UseDeprecatedDeviceExtensions) {
