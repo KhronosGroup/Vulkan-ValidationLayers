@@ -1083,6 +1083,7 @@ class ValidationStateTracker : public ValidationObject {
                                          uint32_t set, uint32_t descriptorWriteCount,
                                          const VkWriteDescriptorSet* pDescriptorWrites);
     void RecordCreateImageANDROID(const VkImageCreateInfo* create_info, IMAGE_STATE* is_node);
+    void RecordCreateBufferANDROID(const VkBufferCreateInfo* create_info, BUFFER_STATE* bs_node);
     void RecordCreateRenderPassState(RenderPassCreateVersion rp_version, std::shared_ptr<RENDER_PASS_STATE>& render_pass,
                                      VkRenderPass* pRenderPass);
     void RecordCreateSamplerYcbcrConversionState(const VkSamplerYcbcrConversionCreateInfo* create_info,

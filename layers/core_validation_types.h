@@ -283,6 +283,8 @@ class BINDABLE : public BASE_NODE {
     //  There's more data for sparse bindings so need better long-term solution
     // TODO : Need to update solution to track all sparse binding data
     std::unordered_set<MEM_BINDING> sparse_bindings;
+    // True if memory will be imported/exported from/to an Android Hardware Buffer
+    bool external_ahb;
 
     small_unordered_set<DEVICE_MEMORY_STATE *, 1> bound_memory_set_;
 
@@ -293,6 +295,7 @@ class BINDABLE : public BASE_NODE {
           memory_requirements_checked(false),
           external_memory_handle(0),
           sparse_bindings{},
+          external_ahb(false),
           bound_memory_set_{} {};
 
     // Update the cached set of memory bindings.
@@ -383,7 +386,6 @@ class IMAGE_STATE : public BINDABLE {
     bool get_sparse_reqs_called;         // Track if GetImageSparseMemoryRequirements() has been called for this image
     bool sparse_metadata_required;       // Track if sparse metadata aspect is required for this image
     bool sparse_metadata_bound;          // Track if sparse metadata aspect is bound to this image
-    bool external_ahb;                   // True if image will be imported/exported from/to an Android Hardware Buffer
     bool has_ahb_format;                 // True if image was created with an external Android format
     bool is_swapchain_image;             // True if image is a swapchain image
     uint64_t ahb_format;                 // External Android format, if provided

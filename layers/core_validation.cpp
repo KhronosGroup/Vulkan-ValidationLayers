@@ -2842,16 +2842,38 @@ bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, 
     bool skip = false;
 
     const IMAGE_STATE *image_state = GetImageState(image);
-    if (image_state->external_ahb && (0 == image_state->GetBoundMemory().size())) {
-        // TODO update when new VUID comes out
-        const char *vuid = strcmp(func_name, "vkGetImageMemoryRequirements()") == 0
-                               ? "UNASSIGNED-vkGetImageMemoryRequirements-image"
-                               : "VUID-VkImageMemoryRequirementsInfo2-image-01897";
-        skip |= LogError(image, vuid,
+    if (image_state != nullptr) {
+        if (image_state->external_ahb && (0 == image_state->GetBoundMemory().size())) {
+            const char *vuid = strcmp(func_name, "vkGetImageMemoryRequirements()") == 0
+                                   ? "VUID-vkGetImageMemoryRequirements-image-04004"
+                                   : "VUID-VkImageMemoryRequirementsInfo2-image-01897";
+            skip |=
+                LogError(image, vuid,
                          "%s: Attempt get image memory requirements for an image created with a "
                          "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID handleType, which has not yet been "
                          "bound to memory.",
                          func_name);
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateGetBufferMemoryRequirementsANDROID(const VkBuffer buffer, const char *func_name) const {
+    bool skip = false;
+
+    const BUFFER_STATE *buffer_state = GetBufferState(buffer);
+    if (buffer_state != nullptr) {
+        if (buffer_state->external_ahb && (0 == buffer_state->GetBoundMemory().size())) {
+            const char *vuid = strcmp(func_name, "vkGetBufferMemoryRequirements()") == 0
+                                   ? "VUID-vkGetBufferMemoryRequirements-buffer-04003"
+                                   : "VUID-VkBufferMemoryRequirementsInfo2-buffer-04005";
+            skip |=
+                LogError(buffer, vuid,
+                         "%s: Attempt get buffer memory requirements for a buffer created with a "
+                         "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID handleType, which has not yet been "
+                         "bound to memory.",
+                         func_name);
+        }
     }
     return skip;
 }
@@ -2909,6 +2931,8 @@ bool CoreChecks::ValidateCreateSamplerYcbcrConversionANDROID(const char *func_na
 }
 
 bool CoreChecks::ValidateGetImageMemoryRequirementsANDROID(const VkImage image, const char *func_name) const { return false; }
+
+bool CoreChecks::ValidateGetBufferMemoryRequirementsANDROID(const VkBuffer buffer, const char *func_name) const { return false; }
 
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
 
@@ -3527,6 +3551,10 @@ bool CoreChecks::PreCallValidateBindBufferMemory2KHR(VkDevice device, uint32_t b
 bool CoreChecks::PreCallValidateGetImageMemoryRequirements(VkDevice device, VkImage image,
                                                            VkMemoryRequirements *pMemoryRequirements) const {
     bool skip = false;
+    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
+        skip |= ValidateGetImageMemoryRequirementsANDROID(image, "vkGetImageMemoryRequirements()");
+    }
+
     const IMAGE_STATE *image_state = GetImageState(image);
     if (image_state) {
         // Checks for no disjoint bit
@@ -3535,10 +3563,6 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements(VkDevice device, VkIm
                 image, "VUID-vkGetImageMemoryRequirements-image-01588",
                 "%s must not have been created with the VK_IMAGE_CREATE_DISJOINT_BIT (need to use vkGetImageMemoryRequirements2).",
                 report_data->FormatHandle(image).c_str());
-        }
-
-        if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
-            skip |= ValidateGetImageMemoryRequirementsANDROID(image, "vkGetImageMemoryRequirements()");
         }
     }
     return skip;
@@ -3613,6 +3637,33 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements2(VkDevice device, con
 bool CoreChecks::PreCallValidateGetImageMemoryRequirements2KHR(VkDevice device, const VkImageMemoryRequirementsInfo2 *pInfo,
                                                                VkMemoryRequirements2 *pMemoryRequirements) const {
     return ValidateGetImageMemoryRequirements2(pInfo, "vkGetImageMemoryRequirements2KHR()");
+}
+
+bool CoreChecks::PreCallValidateGetBufferMemoryRequirements(VkDevice device, VkBuffer buffer,
+                                                            VkMemoryRequirements *pMemoryRequirements) const {
+    bool skip = false;
+    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
+        skip |= ValidateGetBufferMemoryRequirementsANDROID(buffer, "vkGetBufferMemoryRequirements()");
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateGetBufferMemoryRequirements2(const VkBufferMemoryRequirementsInfo2 *pInfo, const char *func_name) const {
+    bool skip = false;
+    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
+        skip |= ValidateGetBufferMemoryRequirementsANDROID(pInfo->buffer, func_name);
+    }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateGetBufferMemoryRequirements2(VkDevice device, const VkBufferMemoryRequirementsInfo2 *pInfo,
+                                                             VkMemoryRequirements2 *pMemoryRequirements) const {
+    return ValidateGetBufferMemoryRequirements2(pInfo, "vkGetBufferMemoryRequirements2()");
+}
+
+bool CoreChecks::PreCallValidateGetBufferMemoryRequirements2KHR(VkDevice device, const VkBufferMemoryRequirementsInfo2 *pInfo,
+                                                                VkMemoryRequirements2 *pMemoryRequirements) const {
+    return ValidateGetBufferMemoryRequirements2(pInfo, "vkGetBufferMemoryRequirements2KHR()");
 }
 
 bool CoreChecks::PreCallValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
