@@ -960,25 +960,64 @@ void SetLocalDisableSetting(std::string list_of_disables, std::string delimiter,
     }
 }
 
+void CreateFilterMessageIdList(std::string raw_id_list, std::string delimiter, std::vector<uint32_t> &filter_list) {
+    size_t pos = 0;
+    std::string token;
+    while (raw_id_list.length() != 0) {
+        pos = raw_id_list.find(delimiter);
+        if (pos != std::string::npos) {
+            token = raw_id_list.substr(0, pos);
+        } else {
+            pos = raw_id_list.length() - delimiter.length();
+            token = raw_id_list;
+        }
+        uint32_t int_id = 0;
+        if (token.find("0x") == 0) {                                             // Handle hex number
+            int_id = std::strtoul(token.c_str(), nullptr, 16);
+        } else {
+            int_id = std::strtoul(token.c_str(), nullptr, 10);                   // Decimal number
+            if (int_id == 0) {
+                size_t id_hash = XXH32(token.c_str(), strlen(token.c_str()), 8); // String
+                if (id_hash != 0) {
+                    int_id = static_cast<uint32_t>(id_hash);
+                }
+            }
+        }
+        if ((int_id != 0) && (std::find(filter_list.begin(), filter_list.end(), int_id)) == filter_list.end()) {
+            filter_list.push_back(int_id);
+        }
+        raw_id_list.erase(0, pos + delimiter.length());
+   }
+}
+
 // Process enables and disables set though the vk_layer_settings.txt config file or through an environment variable
-void ProcessConfigAndEnvSettings(const char* layer_description, CHECK_ENABLED &enables, CHECK_DISABLED &disables) {
+void ProcessConfigAndEnvSettings(const char* layer_description, CHECK_ENABLED &enables, CHECK_DISABLED &disables,
+    std::vector<uint32_t> &message_filter_list) {
     std::string enable_key = layer_description;
     std::string disable_key = layer_description;
+    std::string filter_msg_key = layer_description;
     enable_key.append(".enables");
     disable_key.append(".disables");
+    filter_msg_key.append(".message_id_filter");
     std::string list_of_config_enables = getLayerOption(enable_key.c_str());
     std::string list_of_env_enables = GetLayerEnvVar("VK_LAYER_ENABLES");
     std::string list_of_config_disables = getLayerOption(disable_key.c_str());
     std::string list_of_env_disables = GetLayerEnvVar("VK_LAYER_DISABLES");
+    std::string list_of_config_filter_ids = getLayerOption(filter_msg_key.c_str());
+    std::string list_of_env_filter_ids = GetLayerEnvVar("VK_LAYER_MESSAGE_ID_FILTER");
 #if defined(_WIN32)
     std::string env_delimiter = ";";
 #else
     std::string env_delimiter = ":";
 #endif
+    // Process layer enables and disable settings
     SetLocalEnableSetting(list_of_config_enables, ",", enables);
     SetLocalEnableSetting(list_of_env_enables, env_delimiter, enables);
     SetLocalDisableSetting(list_of_config_disables, ",", disables);
     SetLocalDisableSetting(list_of_env_disables, env_delimiter, disables);
+    // Process message filter ID list
+    CreateFilterMessageIdList(list_of_config_filter_ids, ",", message_filter_list);
+    CreateFilterMessageIdList(list_of_env_filter_ids, env_delimiter, message_filter_list);
 }
 
 void OutputLayerStatusInfo(ValidationObject *context) {
@@ -1117,7 +1156,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     if (validation_flags_ext) {
         SetValidationFlags(local_disables, validation_flags_ext);
     }
-    ProcessConfigAndEnvSettings(OBJECT_LAYER_DESCRIPTION, local_enables, local_disables);
+    ProcessConfigAndEnvSettings(OBJECT_LAYER_DESCRIPTION, local_enables, local_disables, report_data->filter_message_ids);
 
     // Create temporary dispatch vector for pre-calls until instance is created
     std::vector<ValidationObject*> local_object_dispatch;

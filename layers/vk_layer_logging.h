@@ -197,6 +197,7 @@ typedef struct _debug_report_data {
     std::unordered_map<uint64_t, std::string> debugUtilsObjectNameMap;
     std::unordered_map<VkQueue, std::unique_ptr<LoggingLabelState>> debugUtilsQueueLabels;
     std::unordered_map<VkCommandBuffer, std::unique_ptr<LoggingLabelState>> debugUtilsCmdBufLabels;
+    std::vector<uint32_t> filter_message_ids{};
     // This mutex is defined as mutable since the normal usage for a debug report object is as 'const'. The mutable keyword allows
     // the layers to continue this pattern, but also allows them to use/change this specific member for synchronization purposes.
     mutable std::mutex debug_output_mutex;
