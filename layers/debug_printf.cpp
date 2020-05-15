@@ -77,7 +77,7 @@ void DebugPrintf::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
         return;
     }
 
-    if (enabled.gpu_validation) {
+    if (enabled[gpu_validation]) {
         ReportSetupProblem(device,
                            "Debug Printf cannot be enabled when gpu assisted validation is enabled.  "
                            "Debug Printf disabled.");

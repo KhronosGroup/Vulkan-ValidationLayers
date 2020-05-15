@@ -615,7 +615,7 @@ void ValidationStateTracker::AddMemObjInfo(void *object, const VkDeviceMemory me
 
 // Create binding link between given sampler and command buffer node
 void ValidationStateTracker::AddCommandBufferBindingSampler(CMD_BUFFER_STATE *cb_node, SAMPLER_STATE *sampler_state) {
-    if (disabled.command_buffer_state) {
+    if (disabled[command_buffer_state]) {
         return;
     }
     AddCommandBufferBinding(sampler_state->cb_bindings,
@@ -624,7 +624,7 @@ void ValidationStateTracker::AddCommandBufferBindingSampler(CMD_BUFFER_STATE *cb
 
 // Create binding link between given image node and command buffer node
 void ValidationStateTracker::AddCommandBufferBindingImage(CMD_BUFFER_STATE *cb_node, IMAGE_STATE *image_state) {
-    if (disabled.command_buffer_state) {
+    if (disabled[command_buffer_state]) {
         return;
     }
     // Skip validation if this image was created through WSI
@@ -644,7 +644,7 @@ void ValidationStateTracker::AddCommandBufferBindingImage(CMD_BUFFER_STATE *cb_n
 
 // Create binding link between given image view node and its image with command buffer node
 void ValidationStateTracker::AddCommandBufferBindingImageView(CMD_BUFFER_STATE *cb_node, IMAGE_VIEW_STATE *view_state) {
-    if (disabled.command_buffer_state) {
+    if (disabled[command_buffer_state]) {
         return;
     }
     // First add bindings for imageView
@@ -661,7 +661,7 @@ void ValidationStateTracker::AddCommandBufferBindingImageView(CMD_BUFFER_STATE *
 
 // Create binding link between given buffer node and command buffer node
 void ValidationStateTracker::AddCommandBufferBindingBuffer(CMD_BUFFER_STATE *cb_node, BUFFER_STATE *buffer_state) {
-    if (disabled.command_buffer_state) {
+    if (disabled[command_buffer_state]) {
         return;
     }
     // First update cb binding for buffer
@@ -678,7 +678,7 @@ void ValidationStateTracker::AddCommandBufferBindingBuffer(CMD_BUFFER_STATE *cb_
 
 // Create binding link between given buffer view node and its buffer with command buffer node
 void ValidationStateTracker::AddCommandBufferBindingBufferView(CMD_BUFFER_STATE *cb_node, BUFFER_VIEW_STATE *view_state) {
-    if (disabled.command_buffer_state) {
+    if (disabled[command_buffer_state]) {
         return;
     }
     // First add bindings for bufferView
@@ -695,7 +695,7 @@ void ValidationStateTracker::AddCommandBufferBindingBufferView(CMD_BUFFER_STATE 
 // Create binding link between given acceleration structure and command buffer node
 void ValidationStateTracker::AddCommandBufferBindingAccelerationStructure(CMD_BUFFER_STATE *cb_node,
                                                                           ACCELERATION_STRUCTURE_STATE *as_state) {
-    if (disabled.command_buffer_state) {
+    if (disabled[command_buffer_state]) {
         return;
     }
     if (AddCommandBufferBinding(
@@ -819,7 +819,7 @@ void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, const V
                     // Update if descriptor set (or contents) has changed
                     state.per_set[setIndex].validated_set != descriptor_set ||
                     state.per_set[setIndex].validated_set_change_count != descriptor_set->GetChangeCount() ||
-                    (!disabled.image_layout_validation &&
+                    (!disabled[image_layout_validation] &&
                      state.per_set[setIndex].validated_set_image_layout_change_count != cb_state->image_layout_change_count);
                 bool need_update = descriptor_set_changed ||
                                    // Update if previous bindingReqMap doesn't include new bindingReqMap
@@ -999,7 +999,7 @@ VkFormatFeatureFlags ValidationStateTracker::GetPotentialFormatFeatures(VkFormat
 //  Add cb_binding to object
 bool ValidationStateTracker::AddCommandBufferBinding(small_unordered_map<CMD_BUFFER_STATE *, int, 8> &cb_bindings,
                                                      const VulkanTypedHandle &obj, CMD_BUFFER_STATE *cb_node) {
-    if (disabled.command_buffer_state) {
+    if (disabled[command_buffer_state]) {
         return false;
     }
     // Insert the cb_binding with a default 'index' of -1. Then push the obj into the object_bindings
@@ -3321,7 +3321,7 @@ void ValidationStateTracker::PostCallRecordBindAccelerationStructureMemoryCommon
 
             // GPU validation of top level acceleration structure building needs acceleration structure handles.
             // XXX TODO: Query device address for KHR extension
-            if (enabled.gpu_validation && isNV) {
+            if (enabled[gpu_validation] && isNV) {
                 DispatchGetAccelerationStructureHandleNV(device, info.accelerationStructure, 8, &as_state->opaque_handle);
             }
         }
@@ -3750,7 +3750,7 @@ QueryState ValidationStateTracker::GetQueryState(const QueryMap *localQueryToSta
 }
 
 void ValidationStateTracker::RecordCmdBeginQuery(CMD_BUFFER_STATE *cb_state, const QueryObject &query_obj) {
-    if (disabled.query_validation) return;
+    if (disabled[query_validation]) return;
     cb_state->activeQueries.insert(query_obj);
     cb_state->startedQueries.insert(query_obj);
     cb_state->queryUpdates.emplace_back([query_obj](const ValidationStateTracker *device_data, bool do_validate,
@@ -3766,14 +3766,14 @@ void ValidationStateTracker::RecordCmdBeginQuery(CMD_BUFFER_STATE *cb_state, con
 
 void ValidationStateTracker::PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                                          VkFlags flags) {
-    if (disabled.query_validation) return;
+    if (disabled[query_validation]) return;
     QueryObject query = {queryPool, slot};
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     RecordCmdBeginQuery(cb_state, query);
 }
 
 void ValidationStateTracker::RecordCmdEndQuery(CMD_BUFFER_STATE *cb_state, const QueryObject &query_obj) {
-    if (disabled.query_validation) return;
+    if (disabled[query_validation]) return;
     cb_state->activeQueries.erase(query_obj);
     cb_state->queryUpdates.emplace_back([query_obj](const ValidationStateTracker *device_data, bool do_validate,
                                                     VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
@@ -3786,7 +3786,7 @@ void ValidationStateTracker::RecordCmdEndQuery(CMD_BUFFER_STATE *cb_state, const
 }
 
 void ValidationStateTracker::PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot) {
-    if (disabled.query_validation) return;
+    if (disabled[query_validation]) return;
     QueryObject query_obj = {queryPool, slot};
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     RecordCmdEndQuery(cb_state, query_obj);
@@ -3794,7 +3794,7 @@ void ValidationStateTracker::PostCallRecordCmdEndQuery(VkCommandBuffer commandBu
 
 void ValidationStateTracker::PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
                                                              uint32_t firstQuery, uint32_t queryCount) {
-    if (disabled.query_validation) return;
+    if (disabled[query_validation]) return;
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
 
     for (uint32_t slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
@@ -3817,7 +3817,7 @@ void ValidationStateTracker::PostCallRecordCmdCopyQueryPoolResults(VkCommandBuff
                                                                    uint32_t firstQuery, uint32_t queryCount, VkBuffer dstBuffer,
                                                                    VkDeviceSize dstOffset, VkDeviceSize stride,
                                                                    VkQueryResultFlags flags) {
-    if (disabled.query_validation) return;
+    if (disabled[query_validation]) return;
     auto cb_state = GetCBState(commandBuffer);
     auto dst_buff_state = GetBufferState(dstBuffer);
     AddCommandBufferBindingBuffer(cb_state, dst_buff_state);
@@ -3828,7 +3828,7 @@ void ValidationStateTracker::PostCallRecordCmdCopyQueryPoolResults(VkCommandBuff
 
 void ValidationStateTracker::PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                              VkQueryPool queryPool, uint32_t slot) {
-    if (disabled.query_validation) return;
+    if (disabled[query_validation]) return;
     CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     auto pool_state = GetQueryPoolState(queryPool);
     AddCommandBufferBinding(pool_state->cb_bindings, VulkanTypedHandle(queryPool, kVulkanObjectTypeQueryPool, pool_state),

@@ -145,25 +145,25 @@ static const std::unordered_map<std::string, ValidationCheckEnables> ValidationE
 };
 
 // Set the local disable flag for the appropriate VALIDATION_CHECK_DISABLE enum
-void SetValidationDisable(CHECK_DISABLED* disable_data, const ValidationCheckDisables disable_id) {
+void SetValidationDisable(CHECK_DISABLED &disable_data, const ValidationCheckDisables disable_id) {
     switch (disable_id) {
         case VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE:
-            disable_data->command_buffer_state = true;
+            disable_data[command_buffer_state] = true;
             break;
         case VALIDATION_CHECK_DISABLE_OBJECT_IN_USE:
-            disable_data->object_in_use = true;
+            disable_data[object_in_use] = true;
             break;
         case VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET:
-            disable_data->idle_descriptor_set = true;
+            disable_data[idle_descriptor_set] = true;
             break;
         case VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE:
-            disable_data->push_constant_range = true;
+            disable_data[push_constant_range] = true;
             break;
         case VALIDATION_CHECK_DISABLE_QUERY_VALIDATION:
-            disable_data->query_validation = true;
+            disable_data[query_validation] = true;
             break;
         case VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION:
-            disable_data->image_layout_validation = true;
+            disable_data[image_layout_validation] = true;
             break;
         default:
             assert(true);
@@ -171,29 +171,29 @@ void SetValidationDisable(CHECK_DISABLED* disable_data, const ValidationCheckDis
 }
 
 // Set the local disable flag for a single VK_VALIDATION_FEATURE_DISABLE_* flag
-void SetValidationFeatureDisable(CHECK_DISABLED* disable_data, const VkValidationFeatureDisableEXT feature_disable) {
+void SetValidationFeatureDisable(CHECK_DISABLED &disable_data, const VkValidationFeatureDisableEXT feature_disable) {
     switch (feature_disable) {
         case VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT:
-            disable_data->shader_validation = true;
+            disable_data[shader_validation] = true;
             break;
         case VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT:
-            disable_data->thread_safety = true;
+            disable_data[thread_safety] = true;
             break;
         case VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT:
-            disable_data->stateless_checks = true;
+            disable_data[stateless_checks] = true;
             break;
         case VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT:
-            disable_data->object_tracking = true;
+            disable_data[object_tracking] = true;
             break;
         case VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT:
-            disable_data->core_checks = true;
+            disable_data[core_checks] = true;
             break;
         case VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT:
-            disable_data->handle_wrapping = true;
+            disable_data[handle_wrapping] = true;
             break;
         case VK_VALIDATION_FEATURE_DISABLE_ALL_EXT:
             // Set all disabled flags to true
-            disable_data->SetAll(true);
+            std::fill(disable_data.begin(), disable_data.end(), true);
             break;
         default:
             break;
@@ -201,47 +201,48 @@ void SetValidationFeatureDisable(CHECK_DISABLED* disable_data, const VkValidatio
 }
 
 // Set the local enable flag for the appropriate VALIDATION_CHECK_ENABLE enum
-void SetValidationEnable(CHECK_ENABLED* enable_data, const ValidationCheckEnables enable_id) {
+void SetValidationEnable(CHECK_ENABLED &enable_data, const ValidationCheckEnables enable_id) {
     switch (enable_id) {
         case VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM:
-            enable_data->vendor_specific_arm = true;
+            enable_data[vendor_specific_arm] = true;
             break;
         case VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL:
-            enable_data->SetAllVendorSpecific(true);
+            enable_data[vendor_specific_arm] = true;
             break;
         default:
             assert(true);
     }
 }
+
 // Set the local enable flag for a single VK_VALIDATION_FEATURE_ENABLE_* flag
-void SetValidationFeatureEnable(CHECK_ENABLED *enable_data, const VkValidationFeatureEnableEXT feature_enable) {
+void SetValidationFeatureEnable(CHECK_ENABLED &enable_data, const VkValidationFeatureEnableEXT feature_enable) {
     switch (feature_enable) {
         case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT:
-            enable_data->gpu_validation = true;
+            enable_data[gpu_validation] = true;
             break;
         case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT:
-            enable_data->gpu_validation_reserve_binding_slot = true;
+            enable_data[gpu_validation_reserve_binding_slot] = true;
             break;
         case VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT:
-            enable_data->best_practices = true;
+            enable_data[best_practices] = true;
             break;
         case VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT:
-            enable_data->debug_printf = true;
+            enable_data[debug_printf] = true;
         default:
             break;
     }
 }
 
 // Set the local disable flag for settings specified through the VK_EXT_validation_flags extension
-void SetValidationFlags(CHECK_DISABLED* disables, const VkValidationFlagsEXT* val_flags_struct) {
+void SetValidationFlags(CHECK_DISABLED &disables, const VkValidationFlagsEXT* val_flags_struct) {
     for (uint32_t i = 0; i < val_flags_struct->disabledValidationCheckCount; ++i) {
         switch (val_flags_struct->pDisabledValidationChecks[i]) {
             case VK_VALIDATION_CHECK_SHADERS_EXT:
-                disables->shader_validation = true;
+                disables[shader_validation] = true;
                 break;
             case VK_VALIDATION_CHECK_ALL_EXT:
                 // Set all disabled flags to true
-                disables->SetAll(true);
+                disables[shader_validation] = true;
                 break;
             default:
                 break;
@@ -250,7 +251,7 @@ void SetValidationFlags(CHECK_DISABLED* disables, const VkValidationFlagsEXT* va
 }
 
 // Process Validation Features flags specified through the ValidationFeature extension
-void SetValidationFeatures(CHECK_DISABLED *disable_data, CHECK_ENABLED *enable_data,
+void SetValidationFeatures(CHECK_DISABLED &disable_data, CHECK_ENABLED &enable_data,
                            const VkValidationFeaturesEXT *val_features_struct) {
     for (uint32_t i = 0; i < val_features_struct->disabledValidationFeatureCount; ++i) {
         SetValidationFeatureDisable(disable_data, val_features_struct->pDisabledValidationFeatures[i]);
@@ -261,7 +262,7 @@ void SetValidationFeatures(CHECK_DISABLED *disable_data, CHECK_ENABLED *enable_d
 }
 
 // Given a string representation of a list of enable enum values, call the appropriate setter function
-void SetLocalEnableSetting(std::string list_of_enables, std::string delimiter, CHECK_ENABLED* enables) {
+void SetLocalEnableSetting(std::string list_of_enables, std::string delimiter, CHECK_ENABLED &enables) {
     size_t pos = 0;
     std::string token;
     while (list_of_enables.length() != 0) {
@@ -289,7 +290,7 @@ void SetLocalEnableSetting(std::string list_of_enables, std::string delimiter, C
 }
 
 // Given a string representation of a list of disable enum values, call the appropriate setter function
-void SetLocalDisableSetting(std::string list_of_disables, std::string delimiter, CHECK_DISABLED* disables) {
+void SetLocalDisableSetting(std::string list_of_disables, std::string delimiter, CHECK_DISABLED &disables) {
     size_t pos = 0;
     std::string token;
     while (list_of_disables.length() != 0) {
@@ -317,7 +318,7 @@ void SetLocalDisableSetting(std::string list_of_disables, std::string delimiter,
 }
 
 // Process enables and disables set though the vk_layer_settings.txt config file or through an environment variable
-void ProcessConfigAndEnvSettings(const char* layer_description, CHECK_ENABLED* enables, CHECK_DISABLED* disables) {
+void ProcessConfigAndEnvSettings(const char* layer_description, CHECK_ENABLED &enables, CHECK_DISABLED &disables) {
     std::string enable_key = layer_description;
     std::string disable_key = layer_description;
     enable_key.append(".enables");
@@ -430,45 +431,47 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     report_data->instance_pnext_chain = SafePnextCopy(pCreateInfo->pNext);
     ActivateInstanceDebugCallbacks(report_data);
 
+    // Set up enable and disable features flags
     CHECK_ENABLED local_enables {};
     CHECK_DISABLED local_disables {};
+
     const auto *validation_features_ext = lvl_find_in_chain<VkValidationFeaturesEXT>(pCreateInfo->pNext);
     if (validation_features_ext) {
-        SetValidationFeatures(&local_disables, &local_enables, validation_features_ext);
+        SetValidationFeatures(local_disables, local_enables, validation_features_ext);
     }
     const auto *validation_flags_ext = lvl_find_in_chain<VkValidationFlagsEXT>(pCreateInfo->pNext);
     if (validation_flags_ext) {
-        SetValidationFlags(&local_disables, validation_flags_ext);
+        SetValidationFlags(local_disables, validation_flags_ext);
     }
-    ProcessConfigAndEnvSettings(OBJECT_LAYER_DESCRIPTION, &local_enables, &local_disables);
+    ProcessConfigAndEnvSettings(OBJECT_LAYER_DESCRIPTION, local_enables, local_disables);
 
     // Create temporary dispatch vector for pre-calls until instance is created
     std::vector<ValidationObject*> local_object_dispatch;
 
     // Add VOs to dispatch vector. Order here will be the validation dispatch order!
-    auto thread_checker = new ThreadSafety(nullptr);
-    thread_checker->RegisterValidationObject(!local_disables.thread_safety, api_version, report_data, local_object_dispatch);
+    auto thread_checker_obj = new ThreadSafety(nullptr);
+    thread_checker_obj->RegisterValidationObject(!local_disables[thread_safety], api_version, report_data, local_object_dispatch);
 
-    auto parameter_validation = new StatelessValidation;
-    parameter_validation->RegisterValidationObject(!local_disables.stateless_checks, api_version, report_data, local_object_dispatch);
+    auto parameter_validation_obj = new StatelessValidation;
+    parameter_validation_obj->RegisterValidationObject(!local_disables[stateless_checks], api_version, report_data, local_object_dispatch);
 
-    auto object_tracker = new ObjectLifetimes;
-    object_tracker->RegisterValidationObject(!local_disables.object_tracking, api_version, report_data, local_object_dispatch);
+    auto object_tracker_obj = new ObjectLifetimes;
+    object_tracker_obj->RegisterValidationObject(!local_disables[object_tracking], api_version, report_data, local_object_dispatch);
 
-    auto core_checks = new CoreChecks;
-    core_checks->RegisterValidationObject(!local_disables.core_checks, api_version, report_data, local_object_dispatch);
+    auto core_checks_obj = new CoreChecks;
+    core_checks_obj->RegisterValidationObject(!local_disables[core_checks], api_version, report_data, local_object_dispatch);
 
-    auto best_practices = new BestPractices;
-    best_practices->RegisterValidationObject(local_enables.best_practices, api_version, report_data, local_object_dispatch);
+    auto best_practices_obj = new BestPractices;
+    best_practices_obj->RegisterValidationObject(local_enables[best_practices], api_version, report_data, local_object_dispatch);
 
-    auto gpu_assisted = new GpuAssisted;
-    gpu_assisted->RegisterValidationObject(local_enables.gpu_validation, api_version, report_data, local_object_dispatch);
+    auto gpu_assisted_obj = new GpuAssisted;
+    gpu_assisted_obj->RegisterValidationObject(local_enables[gpu_validation], api_version, report_data, local_object_dispatch);
 
-    auto debug_printf = new DebugPrintf;
-    debug_printf->RegisterValidationObject(local_enables.debug_printf, api_version, report_data, local_object_dispatch);
+    auto debug_printf_obj = new DebugPrintf;
+    debug_printf_obj->RegisterValidationObject(local_enables[debug_printf], api_version, report_data, local_object_dispatch);
 
     // If handle wrapping is disabled via the ValidationFeatures extension, override build flag
-    if (local_disables.handle_wrapping) {
+    if (local_disables[handle_wrapping]) {
         wrap_handles = false;
     }
 
@@ -502,15 +505,15 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
 
     layer_debug_messenger_actions(framework->report_data, pAllocator, OBJECT_LAYER_DESCRIPTION);
 
-    thread_checker->FinalizeInstanceValidationObject(framework);
-    object_tracker->FinalizeInstanceValidationObject(framework);
-    parameter_validation->FinalizeInstanceValidationObject(framework);
-    core_checks->FinalizeInstanceValidationObject(framework);
-    core_checks->instance = *pInstance;
-    core_checks->instance_state = core_checks;
-    best_practices->FinalizeInstanceValidationObject(framework);
-    gpu_assisted->FinalizeInstanceValidationObject(framework);
-    debug_printf->FinalizeInstanceValidationObject(framework);
+    thread_checker_obj->FinalizeInstanceValidationObject(framework);
+    object_tracker_obj->FinalizeInstanceValidationObject(framework);
+    parameter_validation_obj->FinalizeInstanceValidationObject(framework);
+    core_checks_obj->FinalizeInstanceValidationObject(framework);
+    core_checks_obj->instance = *pInstance;
+    core_checks_obj->instance_state = core_checks_obj;
+    best_practices_obj->FinalizeInstanceValidationObject(framework);
+    gpu_assisted_obj->FinalizeInstanceValidationObject(framework);
+    debug_printf_obj->FinalizeInstanceValidationObject(framework);
 
     for (auto intercept : framework->object_dispatch) {
         auto lock = intercept->write_lock();
@@ -621,26 +624,26 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     auto disables = instance_interceptor->disabled;
     auto enables = instance_interceptor->enabled;
 
-    auto thread_safety = new ThreadSafety(reinterpret_cast<ThreadSafety *>(instance_interceptor->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeThreading)));
-    thread_safety->InitDeviceValidationObject(!disables.thread_safety, instance_interceptor, device_interceptor);
+    auto thread_safety_obj = new ThreadSafety(reinterpret_cast<ThreadSafety *>(instance_interceptor->GetValidationObject(instance_interceptor->object_dispatch, LayerObjectTypeThreading)));
+    thread_safety_obj->InitDeviceValidationObject(!disables[thread_safety], instance_interceptor, device_interceptor);
 
-    auto stateless_validation = new StatelessValidation;
-    stateless_validation->InitDeviceValidationObject(!disables.stateless_checks, instance_interceptor, device_interceptor);
+    auto stateless_validation_obj = new StatelessValidation;
+    stateless_validation_obj->InitDeviceValidationObject(!disables[stateless_checks], instance_interceptor, device_interceptor);
 
-    auto object_tracker = new ObjectLifetimes;
-    object_tracker->InitDeviceValidationObject(!disables.object_tracking, instance_interceptor, device_interceptor);
+    auto object_tracker_obj = new ObjectLifetimes;
+    object_tracker_obj->InitDeviceValidationObject(!disables[object_tracking], instance_interceptor, device_interceptor);
 
-    auto core_checks = new CoreChecks;
-    core_checks->InitDeviceValidationObject(!disables.core_checks, instance_interceptor, device_interceptor);
+    auto core_checks_obj = new CoreChecks;
+    core_checks_obj->InitDeviceValidationObject(!disables[core_checks], instance_interceptor, device_interceptor);
 
-    auto best_practices = new BestPractices;
-    best_practices->InitDeviceValidationObject(enables.best_practices, instance_interceptor, device_interceptor);
+    auto best_practices_obj = new BestPractices;
+    best_practices_obj->InitDeviceValidationObject(enables[best_practices], instance_interceptor, device_interceptor);
 
-    auto gpu_assisted = new GpuAssisted;
-    gpu_assisted->InitDeviceValidationObject(enables.gpu_validation, instance_interceptor, device_interceptor);
+    auto gpu_assisted_obj = new GpuAssisted;
+    gpu_assisted_obj->InitDeviceValidationObject(enables[gpu_validation], instance_interceptor, device_interceptor);
 
-    auto debug_printf = new DebugPrintf;
-    debug_printf->InitDeviceValidationObject(enables.debug_printf, instance_interceptor, device_interceptor);
+    auto debug_printf_obj = new DebugPrintf;
+    debug_printf_obj->InitDeviceValidationObject(enables[debug_printf], instance_interceptor, device_interceptor);
 
     for (auto intercept : instance_interceptor->object_dispatch) {
         auto lock = intercept->write_lock();
