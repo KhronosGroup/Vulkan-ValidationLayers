@@ -869,7 +869,7 @@ bool CoreChecks::ValidateDescriptorSetBindingData(const CMD_BUFFER_STATE *cb_nod
                             }
                         }
 
-                        if (!disabled.image_layout_validation) {
+                        if (!disabled[image_layout_validation]) {
                             auto image_node = image_view_state->image_state.get();
                             assert(image_node);
                             // Verify Image Layout
@@ -1341,7 +1341,7 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(ValidationStateTracker *d
 void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *device_data, CMD_BUFFER_STATE *cb_node,
                                                      const PIPELINE_STATE *pipe,
                                                      const std::map<uint32_t, descriptor_req> &binding_req_map) {
-    if (!device_data->disabled.command_buffer_state) {
+    if (!device_data->disabled[command_buffer_state]) {
         // bind cb to this descriptor set
         // Add bindings for descriptor set, the set's pool, and individual objects in the set
         if (device_data->AddCommandBufferBinding(cb_bindings, VulkanTypedHandle(set_, kVulkanObjectTypeDescriptorSet, this),
@@ -1354,7 +1354,7 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
 
     // Descriptor UpdateDrawState functions do two things - associate resources to the command buffer,
     // and call image layout validation callbacks. If both are disabled, skip the entire loop.
-    if (device_data->disabled.command_buffer_state && device_data->disabled.image_layout_validation) {
+    if (device_data->disabled[command_buffer_state] && device_data->disabled[image_layout_validation]) {
         return;
     }
 

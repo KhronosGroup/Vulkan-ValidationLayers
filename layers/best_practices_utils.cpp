@@ -39,17 +39,17 @@ std::string BestPractices::GetAPIVersionName(uint32_t version) const {
 }
 
 struct VendorSpecificInfo {
-    bool CHECK_ENABLED::*check;
+    EnableFlags vendor_id;
     std::string name;
 };
 
 const std::map<BPVendorFlagBits, VendorSpecificInfo> vendor_info = {
-    {kBPVendorArm, {&CHECK_ENABLED::vendor_specific_arm, "Arm"}},
+    {kBPVendorArm, {vendor_specific_arm, "Arm"}},
 };
 
 bool BestPractices::VendorCheckEnabled(BPVendorFlags vendors) const {
     for (const auto& vendor : vendor_info) {
-        if (vendors & vendor.first && enabled.*(vendor.second.check)) {
+        if (vendors & vendor.first && enabled[vendor.second.vendor_id]) {
             return true;
         }
     }

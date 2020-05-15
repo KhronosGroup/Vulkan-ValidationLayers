@@ -2734,36 +2734,38 @@ typedef enum VkValidationFeatureEnable {
     VK_VALIDATION_FEATURE_ENABLE_SHADER_DEBUG_PRINTF,
 } VkValidationFeatureEnable;
 
-// CHECK_DISABLED struct is a container for bools that can block validation checks from being performed.
-// These bools are all "false" by default meaning that all checks are enabled. Enum values can be specified
-// via the vk_layer_setting.txt config file or at CreateInstance time via the VK_EXT_validation_features extension
-// that can selectively disable checks.
-struct CHECK_DISABLED {
-    bool command_buffer_state;                      // Skip command buffer state validation
-    bool object_in_use;                             // Skip all object in_use checking
-    bool idle_descriptor_set;                       // Skip check to verify that descriptor set is not in-use
-    bool push_constant_range;                       // Skip push constant range checks
-    bool query_validation;                          // Disable all core validation query-related checks
-    bool image_layout_validation;                   // Disable image layout validation
-    bool object_tracking;                           // Disable object lifetime validation
-    bool core_checks;                               // Disable core validation checks
-    bool thread_safety;                             // Disable thread safety validation
-    bool stateless_checks;                          // Disable stateless validation checks
-    bool handle_wrapping;                           // Disable unique handles/handle wrapping
-    bool shader_validation;                         // Skip validation for shaders
+// CHECK_DISABLED and CHECK_ENABLED vectors are containers for bools that can opt in or out of specific classes of validation
+// checks. Enum values can be specified via the vk_layer_settings.txt config file or at CreateInstance time via the
+// VK_EXT_validation_features extension that can selectively disable or enable checks.
+typedef enum DisableFlags {
+    command_buffer_state,
+    object_in_use,
+    idle_descriptor_set,
+    push_constant_range,
+    query_validation,
+    image_layout_validation,
+    object_tracking,
+    core_checks,
+    thread_safety,
+    stateless_checks,
+    handle_wrapping,
+    shader_validation,
+    // Insert new disables above this line
+    kMaxDisableFlags,
+} DisableFlags;
 
-    void SetAll(bool value) { std::fill(&command_buffer_state, &shader_validation + 1, value); }
-};
+typedef enum EnableFlags {
+    gpu_validation,
+    gpu_validation_reserve_binding_slot,
+    best_practices,
+    vendor_specific_arm,
+    debug_printf,
+    // Insert new enables above this line
+    kMaxEnableFlags,
+} EnableFlags;
 
-struct CHECK_ENABLED {
-    bool gpu_validation;
-    bool gpu_validation_reserve_binding_slot;
-    bool best_practices;
-    bool vendor_specific_arm;                       // Vendor-specific validation for Arm platforms
-    bool debug_printf;
-
-    void SetAllVendorSpecific(bool value) { std::fill(&vendor_specific_arm, &vendor_specific_arm + 1, value); }
-};
+typedef std::array<bool, kMaxDisableFlags> CHECK_DISABLED;
+typedef std::array<bool, kMaxEnableFlags> CHECK_ENABLED;
 
 // Layer chassis validation object base class definition
 class ValidationObject {

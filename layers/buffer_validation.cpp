@@ -253,7 +253,7 @@ void CoreChecks::SetImageLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_STATE &im
 
 // Set the initial image layout for all slices of an image view
 void CoreChecks::SetImageViewInitialLayout(CMD_BUFFER_STATE *cb_node, const IMAGE_VIEW_STATE &view_state, VkImageLayout layout) {
-    if (disabled.image_layout_validation) {
+    if (disabled[image_layout_validation]) {
         return;
     }
     IMAGE_STATE *image_state = view_state.image_state.get();
@@ -1208,7 +1208,7 @@ bool CoreChecks::VerifyImageLayout(const CMD_BUFFER_STATE *cb_node, const IMAGE_
                                    const VkImageSubresourceRange &range, VkImageAspectFlags aspect_mask,
                                    VkImageLayout explicit_layout, VkImageLayout optimal_layout, const char *caller,
                                    const char *layout_invalid_msg_code, const char *layout_mismatch_msg_code, bool *error) const {
-    if (disabled.image_layout_validation) return false;
+    if (disabled[image_layout_validation]) return false;
     assert(cb_node);
     assert(image_state);
     const auto image = image_state->image;
@@ -3560,7 +3560,7 @@ const GlobalImageLayoutRangeMap *GetLayoutRangeMap(const GlobalImageLayoutMap &m
 // This validates that the initial layout specified in the command buffer for the IMAGE is the same as the global IMAGE layout
 bool CoreChecks::ValidateCmdBufImageLayouts(const CMD_BUFFER_STATE *pCB, const GlobalImageLayoutMap &globalImageLayoutMap,
                                             GlobalImageLayoutMap *overlayLayoutMap_arg) const {
-    if (disabled.image_layout_validation) return false;
+    if (disabled[image_layout_validation]) return false;
     bool skip = false;
     GlobalImageLayoutMap &overlayLayoutMap = *overlayLayoutMap_arg;
     // Iterate over the layout maps for each referenced image
