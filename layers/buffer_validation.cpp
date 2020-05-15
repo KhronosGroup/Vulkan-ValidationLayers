@@ -74,7 +74,6 @@ IMAGE_STATE::IMAGE_STATE(VkImage img, const VkImageCreateInfo *pCreateInfo)
       get_sparse_reqs_called(false),
       sparse_metadata_required(false),
       sparse_metadata_bound(false),
-      external_ahb(false),
       has_ahb_format(false),
       is_swapchain_image(false),
       ahb_format(0),
@@ -1429,11 +1428,13 @@ bool CoreChecks::ValidateGetImageSubresourceLayoutANDROID(const VkImage image) c
     bool skip = false;
 
     const IMAGE_STATE *image_state = GetImageState(image);
-    if (image_state->external_ahb && (0 == image_state->GetBoundMemory().size())) {
-        skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-image-01895",
-                         "vkGetImageSubresourceLayout(): Attempt to query layout from an image created with "
-                         "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID handleType which has not yet been "
-                         "bound to memory.");
+    if (image_state != nullptr) {
+        if (image_state->external_ahb && (0 == image_state->GetBoundMemory().size())) {
+            skip |= LogError(image, "VUID-vkGetImageSubresourceLayout-image-01895",
+                             "vkGetImageSubresourceLayout(): Attempt to query layout from an image created with "
+                             "VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID handleType which has not yet been "
+                             "bound to memory.");
+        }
     }
     return skip;
 }

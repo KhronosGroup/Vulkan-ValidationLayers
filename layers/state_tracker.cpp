@@ -73,6 +73,13 @@ void ValidationStateTracker::RecordCreateImageANDROID(const VkImageCreateInfo *c
     }
 }
 
+void ValidationStateTracker::RecordCreateBufferANDROID(const VkBufferCreateInfo *create_info, BUFFER_STATE *bs_node) {
+    const VkExternalMemoryBufferCreateInfo *embci = lvl_find_in_chain<VkExternalMemoryBufferCreateInfo>(create_info->pNext);
+    if (embci && (embci->handleTypes & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)) {
+        bs_node->external_ahb = true;
+    }
+}
+
 void ValidationStateTracker::RecordCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo *create_info,
                                                                        VkSamplerYcbcrConversion ycbcr_conversion,
                                                                        SAMPLER_YCBCR_CONVERSION_STATE *ycbcr_state) {
@@ -103,6 +110,8 @@ void ValidationStateTracker::PostCallRecordGetAndroidHardwareBufferPropertiesAND
 #else
 
 void ValidationStateTracker::RecordCreateImageANDROID(const VkImageCreateInfo *create_info, IMAGE_STATE *is_node) {}
+
+void ValidationStateTracker::RecordCreateBufferANDROID(const VkBufferCreateInfo *create_info, BUFFER_STATE *bs_node) {}
 
 void ValidationStateTracker::RecordCreateSamplerYcbcrConversionANDROID(const VkSamplerYcbcrConversionCreateInfo *create_info,
                                                                        VkSamplerYcbcrConversion ycbcr_conversion,
@@ -168,7 +177,7 @@ void ValidationStateTracker::PostCallRecordCreateImage(VkDevice device, const Vk
     }
 
     // Record the memory requirements in case they won't be queried
-    // External AHB memory can't be quired until after memory is bound
+    // External AHB memory can't be queried until after memory is bound
     if (is_node->external_ahb == false) {
         if (is_node->disjoint == false) {
             DispatchGetImageMemoryRequirements(device, *pImage, &is_node->requirements);
@@ -290,8 +299,14 @@ void ValidationStateTracker::PostCallRecordCreateBuffer(VkDevice device, const V
     // TODO : This doesn't create deep copy of pQueueFamilyIndices so need to fix that if/when we want that data to be valid
     auto buffer_state = std::make_shared<BUFFER_STATE>(*pBuffer, pCreateInfo);
 
+    if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
+        RecordCreateBufferANDROID(pCreateInfo, buffer_state.get());
+    }
     // Get a set of requirements in the case the app does not
-    DispatchGetBufferMemoryRequirements(device, *pBuffer, &buffer_state->requirements);
+    // External AHB memory can't be queried until after memory is bound
+    if (buffer_state->external_ahb == false) {
+        DispatchGetBufferMemoryRequirements(device, *pBuffer, &buffer_state->requirements);
+    }
 
     bufferMap.insert(std::make_pair(*pBuffer, std::move(buffer_state)));
 }

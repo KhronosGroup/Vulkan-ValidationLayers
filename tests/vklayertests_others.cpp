@@ -4704,7 +4704,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferCreateImageView) {
     vk::AllocateMemory(dev, &mai, NULL, &img_mem);
 
     // It shouldn't use vk::GetImageMemoryRequirements for imported AndroidHardwareBuffer when memory isn't bound yet
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "UNASSIGNED-vkGetImageMemoryRequirements-image");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetImageMemoryRequirements-image-04004");
     VkMemoryRequirements img_mem_reqs = {};
     vk::GetImageMemoryRequirements(m_device->device(), img, &img_mem_reqs);
     m_errorMonitor->VerifyFound();
