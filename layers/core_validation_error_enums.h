@@ -251,6 +251,9 @@ static const char DECORATE_UNUSED *kVUID_Core_BindAccelNV_NoMemReqQuery = "UNASS
 static const char DECORATE_UNUSED *kVUID_Core_CmdBuildAccelNV_NoScratchMemReqQuery = "UNASSIGNED-CoreValidation-vkCmdBuildAccelerationStructureNV-scratch-requirements";
 static const char DECORATE_UNUSED *kVUID_Core_CmdBuildAccelNV_NoUpdateMemReqQuery = "UNASSIGNED-CoreValidation-vkCmdBuildAccelerationStructureNV-update-requirements";
 
+static const char DECORATE_UNUSED *kVUID_Core_CreatInstance_Status = "UNASSIGNED-khronos-validation-createinstance-status-message";
+static const char DECORATE_UNUSED *kVUID_Core_CreateInstance_Debug_Warning = "UNASSIGNED-khronos-Validation-debug-build-warning-message";
+
 // clang-format on
 
 #undef DECORATE_UNUSED

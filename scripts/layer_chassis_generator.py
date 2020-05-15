@@ -762,6 +762,31 @@ static const std::unordered_map<std::string, ValidationCheckEnables> ValidationE
     {"VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL", VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL},
 };
 
+// This should mirror the 'DisableFlags' enumerated type
+static const std::vector<std::string> DisableFlagNameHelper = {
+    "VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE",        // command_buffer_state,
+    "VALIDATION_CHECK_DISABLE_OBJECT_IN_USE",               // object_in_use,
+    "VALIDATION_CHECK_DISABLE_IDLE_DESCRIPTOR_SET",         // idle_descriptor_set,
+    "VALIDATION_CHECK_DISABLE_PUSH_CONSTANT_RANGE",         // push_constant_range,
+    "VALIDATION_CHECK_DISABLE_QUERY_VALIDATION",            // query_validation,
+    "VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION",     // image_layout_validation,
+    "VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT",   // object_tracking,
+    "VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT",        // core_checks,
+    "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT",      // thread_safety,
+    "VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT",     // stateless_checks,
+    "VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT",     // handle_wrapping,
+    "VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT"             // shader_validation,
+};
+
+// This should mirror the 'EnableFlags' enumerated type
+static const std::vector<std::string> EnableFlagNameHelper = {
+    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT",        // gpu_validation,
+    "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT", // gpu_validation_reserve_binding_slot,
+    "VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT",      // best_practices,
+    "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM",          // vendor_specific_arm,
+    "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT"         // debug_printf,
+};
+
 // Set the local disable flag for the appropriate VALIDATION_CHECK_DISABLE enum
 void SetValidationDisable(CHECK_DISABLED &disable_data, const ValidationCheckDisables disable_id) {
     switch (disable_id) {
@@ -956,6 +981,37 @@ void ProcessConfigAndEnvSettings(const char* layer_description, CHECK_ENABLED &e
     SetLocalDisableSetting(list_of_env_disables, env_delimiter, disables);
 }
 
+void OutputLayerStatusInfo(ValidationObject *context) {
+    std::string list_of_enables;
+    std::string list_of_disables;
+    for (uint32_t i = 0; i < kMaxEnableFlags; i++) {
+        if (context->enabled[i]) {
+            list_of_enables.append(", ");
+            list_of_enables.append(EnableFlagNameHelper[i]);
+        }
+    }
+    if (list_of_enables.size() == 0) {
+        list_of_enables.append("None");
+    }
+    for (uint32_t i = 0; i < kMaxDisableFlags; i++) {
+        if (context->disabled[i]) {
+            list_of_disables.append(", ");
+            list_of_disables.append(DisableFlagNameHelper[i]);
+        }
+    }
+    if (list_of_disables.size() == 0) {
+        list_of_disables.append("None");
+    }
+    context->LogInfo(context->instance, kVUID_Core_CreatInstance_Status,
+        "Khronos Validation Layer Active: Current Enables: %s; Current Disables: %s;",
+        list_of_enables.c_str(), list_of_disables.c_str());
+
+    // Create warning message if user is running debug layers.
+#ifndef NDEBUG
+    context->LogPerformanceWarning(context->instance, kVUID_Core_CreateInstance_Debug_Warning,
+        "VALIDATION LAYERS WARNING: Using debug builds of the validation layers *will* adversely affect performance.");
+#endif
+}
 
 // Non-code-generated chassis API functions
 
@@ -1122,6 +1178,8 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     framework->instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
 
     layer_debug_messenger_actions(framework->report_data, pAllocator, OBJECT_LAYER_DESCRIPTION);
+
+    OutputLayerStatusInfo(framework);
 
     thread_checker_obj->FinalizeInstanceValidationObject(framework);
     object_tracker_obj->FinalizeInstanceValidationObject(framework);
