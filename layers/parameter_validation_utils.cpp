@@ -464,6 +464,22 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
         }
     }
 
+    // feature dependencies for VK_KHR_variable_pointers
+    const auto *variable_pointers_features = lvl_find_in_chain<VkPhysicalDeviceVariablePointersFeatures>(pCreateInfo->pNext);
+    VkBool32 variablePointers = VK_FALSE;
+    VkBool32 variablePointersStorageBuffer = VK_FALSE;
+    if (vulkan_11_features) {
+        variablePointers = vulkan_11_features->variablePointers;
+        variablePointersStorageBuffer = vulkan_11_features->variablePointersStorageBuffer;
+    } else if (variable_pointers_features) {
+        variablePointers = variable_pointers_features->variablePointers;
+        variablePointersStorageBuffer = variable_pointers_features->variablePointersStorageBuffer;
+    }
+    if ((variablePointers == VK_TRUE) && (variablePointersStorageBuffer == VK_FALSE)) {
+        skip |= LogError(instance, "VUID-VkPhysicalDeviceVariablePointersFeatures-variablePointers-01431",
+                         "If variablePointers is VK_TRUE then variablePointersStorageBuffer also needs to be VK_TRUE");
+    }
+
     return skip;
 }
 
