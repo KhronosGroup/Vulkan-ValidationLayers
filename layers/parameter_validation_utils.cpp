@@ -2339,6 +2339,13 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                 }
             }
 
+            if ((pCreateInfos[i].flags & VK_PIPELINE_CREATE_DISPATCH_BASE) != 0) {
+                skip |= LogError(
+                    device, "VUID-VkGraphicsPipelineCreateInfo-flags-00764",
+                    "vkCreateGraphicsPipelines parameter pCreateInfos[%u]->flags must not contain VK_PIPELINE_CREATE_DISPATCH_BASE",
+                    i);
+            }
+
             if (pCreateInfos[i].pRasterizationState) {
                 if (!device_extensions.vk_nv_fill_rectangle) {
                     if (pCreateInfos[i].pRasterizationState->polygonMode == VK_POLYGON_MODE_FILL_RECTANGLE_NV) {
