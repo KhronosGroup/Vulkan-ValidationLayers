@@ -110,6 +110,8 @@ class CoreChecks : public ValidationStateTracker {
 
     bool ValidatePipelineVertexDivisors(std::vector<std::shared_ptr<PIPELINE_STATE>> const& pipe_state_vec, const uint32_t count,
                                         const VkGraphicsPipelineCreateInfo* pipe_cis) const;
+    bool ValidatePipelineCacheControlFlags(VkPipelineCreateFlags flags, uint32_t index, const char* caller_name,
+                                           const char* vuid) const;
     void EnqueueSubmitTimeValidateImageBarrierAttachment(const char* func_name, CMD_BUFFER_STATE* cb_state,
                                                          uint32_t imageMemBarrierCount,
                                                          const VkImageMemoryBarrier* pImageMemBarriers);
@@ -682,6 +684,8 @@ class CoreChecks : public ValidationStateTracker {
                                                      const VkSamplerYcbcrConversionCreateInfo* create_info) const;
     bool ValidateGetPhysicalDeviceImageFormatProperties2ANDROID(const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
                                                                 const VkImageFormatProperties2* pImageFormatProperties) const;
+    bool PreCallValidateCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo* pCreateInfo,
+                                            const VkAllocationCallbacks* pAllocator, VkPipelineCache* pPipelineCache) const;
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,

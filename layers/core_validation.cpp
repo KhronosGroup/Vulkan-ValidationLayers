@@ -1479,6 +1479,8 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
         }
     }
 
+    skip |= ValidatePipelineCacheControlFlags(pPipeline->graphicsPipelineCI.flags, pipelineIndex, "vkCreateGraphicsPipelines",
+                                              "VUID-VkGraphicsPipelineCreateInfo-pipelineCreationCacheControl-02878");
     return skip;
 }
 
@@ -3872,6 +3874,37 @@ bool CoreChecks::ValidatePipelineVertexDivisors(std::vector<std::shared_ptr<PIPE
     return skip;
 }
 
+bool CoreChecks::ValidatePipelineCacheControlFlags(VkPipelineCreateFlags flags, uint32_t index, const char *caller_name,
+                                                   const char *vuid) const {
+    bool skip = false;
+    if (enabled_features.pipeline_creation_cache_control_features.pipelineCreationCacheControl == VK_FALSE) {
+        const VkPipelineCreateFlags invalid_flags =
+            VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT | VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT;
+        if ((flags & invalid_flags) != 0) {
+            skip |= LogError(device, vuid,
+                             "%s(): pipelineCreationCacheControl is turned off but pipeline[%u] has VkPipelineCreateFlags "
+                             "containing VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT or "
+                             "VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT",
+                             caller_name, index);
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCreatePipelineCache(VkDevice device, const VkPipelineCacheCreateInfo *pCreateInfo,
+                                                    const VkAllocationCallbacks *pAllocator,
+                                                    VkPipelineCache *pPipelineCache) const {
+    bool skip = false;
+    if (enabled_features.pipeline_creation_cache_control_features.pipelineCreationCacheControl == VK_FALSE) {
+        if ((pCreateInfo->flags & VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT_EXT) != 0) {
+            skip |= LogError(device, "VUID-VkPipelineCacheCreateInfo-pipelineCreationCacheControl-02892",
+                             "vkCreatePipelineCache(): pipelineCreationCacheControl is turned off but pCreateInfo::flags contains "
+                             "VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT_EXT");
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                         const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                         const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -3906,6 +3939,8 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
     for (uint32_t i = 0; i < count; i++) {
         // TODO: Add Compute Pipeline Verification
         skip |= ValidateComputePipelineShaderState(ccpl_state->pipe_state.back().get());
+        skip |= ValidatePipelineCacheControlFlags(pCreateInfos->flags, i, "vkCreateComputePipelines",
+                                                  "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875");
     }
     return skip;
 }
@@ -3936,6 +3971,8 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
             }
         }
         skip |= ValidateRayTracingPipeline(pipeline, /*isKHR*/ false);
+        skip |= ValidatePipelineCacheControlFlags(pCreateInfos->flags, i, "vkCreateRayTracingPipelinesNV",
+                                                  "VUID-VkRayTracingPipelineCreateInfoNV-pipelineCreationCacheControl-02905");
     }
     return skip;
 }
@@ -3966,6 +4003,8 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
             }
         }
         skip |= ValidateRayTracingPipeline(pipeline, /*isKHR*/ true);
+        skip |= ValidatePipelineCacheControlFlags(pCreateInfos->flags, i, "vkCreateRayTracingPipelinesKHR",
+                                                  "VUID-VkRayTracingPipelineCreateInfoKHR-pipelineCreationCacheControl-02905");
     }
     return skip;
 }
