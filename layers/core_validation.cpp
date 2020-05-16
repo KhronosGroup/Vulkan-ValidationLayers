@@ -4016,7 +4016,7 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
     auto *ccpl_state = reinterpret_cast<create_compute_pipeline_api_state *>(ccpl_state_data);
     for (uint32_t i = 0; i < count; i++) {
         // TODO: Add Compute Pipeline Verification
-        skip |= ValidateComputePipelineShaderState(ccpl_state->pipe_state.back().get());
+        skip |= ValidateComputePipelineShaderState(ccpl_state->pipe_state[i].get());
         skip |= ValidatePipelineCacheControlFlags(pCreateInfos->flags, i, "vkCreateComputePipelines",
                                                   "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875");
     }
