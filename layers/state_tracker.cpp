@@ -2700,6 +2700,7 @@ bool ValidationStateTracker::PreCallValidateCreateGraphicsPipelines(VkDevice dev
         cgpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>());
         (cgpl_state->pipe_state)[i]->initGraphicsPipeline(this, &pCreateInfos[i], GetRenderPassShared(pCreateInfos[i].renderPass));
         (cgpl_state->pipe_state)[i]->pipeline_layout = GetPipelineLayoutShared(pCreateInfos[i].layout);
+        (cgpl_state->pipe_state)[i]->device = device;
     }
     return false;
 }
@@ -2731,6 +2732,7 @@ bool ValidationStateTracker::PreCallValidateCreateComputePipelines(VkDevice devi
         ccpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>());
         ccpl_state->pipe_state.back()->initComputePipeline(this, &pCreateInfos[i]);
         ccpl_state->pipe_state.back()->pipeline_layout = GetPipelineLayoutShared(pCreateInfos[i].layout);
+        ccpl_state->pipe_state.back()->device = device;
     }
     return false;
 }
@@ -2763,6 +2765,7 @@ bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesNV(VkDevice
         crtpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>());
         crtpl_state->pipe_state.back()->initRayTracingPipeline(this, &pCreateInfos[i]);
         crtpl_state->pipe_state.back()->pipeline_layout = GetPipelineLayoutShared(pCreateInfos[i].layout);
+        crtpl_state->pipe_state.back()->device = device;
     }
     return false;
 }
@@ -2793,6 +2796,7 @@ bool ValidationStateTracker::PreCallValidateCreateRayTracingPipelinesKHR(VkDevic
         crtpl_state->pipe_state.push_back(std::make_shared<PIPELINE_STATE>());
         crtpl_state->pipe_state.back()->initRayTracingPipeline(this, &pCreateInfos[i]);
         crtpl_state->pipe_state.back()->pipeline_layout = GetPipelineLayoutShared(pCreateInfos[i].layout);
+        crtpl_state->pipe_state.back()->device = device;
     }
     return false;
 }

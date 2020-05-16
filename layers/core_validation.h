@@ -700,7 +700,10 @@ class CoreChecks : public ValidationStateTracker {
     bool PreCallValidateGetPipelineExecutablePropertiesKHR(VkDevice device, const VkPipelineInfoKHR* pPipelineInfo,
                                                            uint32_t* pExecutableCount,
                                                            VkPipelineExecutablePropertiesKHR* pProperties) const;
-    bool ValidatePipelineExecutableInfo(VkDevice device, const VkPipelineExecutableInfoKHR* pExecutableInfo) const;
+    bool ValidatePipelineExecutableInfo(VkDevice device, const VkPipelineExecutableInfoKHR* pExecutableInfo,
+                                        const char* caller_name) const;
+    bool ValidatePipelineExecutableInfoDevice(VkDevice device, const PIPELINE_STATE* pPipeline, const char* caller_name,
+                                              const char* feature_vuid, const char* device_vuid) const;
     bool PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice device, const VkPipelineExecutableInfoKHR* pExecutableInfo,
                                                            uint32_t* pStatisticCount,
                                                            VkPipelineExecutableStatisticKHR* pStatistics) const;

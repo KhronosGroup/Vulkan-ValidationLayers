@@ -4090,23 +4090,15 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
 bool CoreChecks::PreCallValidateGetPipelineExecutablePropertiesKHR(VkDevice device, const VkPipelineInfoKHR *pPipelineInfo,
                                                                    uint32_t *pExecutableCount,
                                                                    VkPipelineExecutablePropertiesKHR *pProperties) const {
-    bool skip = false;
-
-    if (!enabled_features.pipeline_exe_props_features.pipelineExecutableInfo) {
-        skip |= LogError(device, "VUID-vkGetPipelineExecutablePropertiesKHR-pipelineExecutableInfo-03270",
-                         "vkGetPipelineExecutablePropertiesKHR called when pipelineExecutableInfo feature is not enabled.");
-    }
-
-    return skip;
+    const PIPELINE_STATE *pipeline_state = GetPipelineState(pPipelineInfo->pipeline);
+    return ValidatePipelineExecutableInfoDevice(device, pipeline_state, "vkGetPipelineExecutablePropertiesKHR",
+                                                "VUID-vkGetPipelineExecutablePropertiesKHR-pipelineExecutableInfo-03270",
+                                                "VUID-vkGetPipelineExecutablePropertiesKHR-pipeline-03271");
 }
 
-bool CoreChecks::ValidatePipelineExecutableInfo(VkDevice device, const VkPipelineExecutableInfoKHR *pExecutableInfo) const {
+bool CoreChecks::ValidatePipelineExecutableInfo(VkDevice device, const VkPipelineExecutableInfoKHR *pExecutableInfo,
+                                                const char *caller_name) const {
     bool skip = false;
-
-    if (!enabled_features.pipeline_exe_props_features.pipelineExecutableInfo) {
-        skip |= LogError(device, "VUID-vkGetPipelineExecutableStatisticsKHR-pipelineExecutableInfo-03272",
-                         "vkGetPipelineExecutableStatisticsKHR called when pipelineExecutableInfo feature is not enabled.");
-    }
 
     VkPipelineInfoKHR pi = {};
     pi.sType = VK_STRUCTURE_TYPE_PIPELINE_INFO_KHR;
@@ -4117,13 +4109,33 @@ bool CoreChecks::ValidatePipelineExecutableInfo(VkDevice device, const VkPipelin
     DispatchGetPipelineExecutablePropertiesKHR(device, &pi, &executableCount, NULL);
 
     if (pExecutableInfo->executableIndex >= executableCount) {
-        skip |=
-            LogError(pExecutableInfo->pipeline, "VUID-VkPipelineExecutableInfoKHR-executableIndex-03275",
-                     "VkPipelineExecutableInfo::executableIndex (%1u) must be less than the number of executables associated with "
-                     "the pipeline (%1u) as returned by vkGetPipelineExecutablePropertiessKHR",
-                     pExecutableInfo->executableIndex, executableCount);
+        skip |= LogError(
+            pExecutableInfo->pipeline, "VUID-VkPipelineExecutableInfoKHR-executableIndex-03275",
+            "%s(): VkPipelineExecutableInfo::executableIndex (%1u) must be less than the number of executables associated with "
+            "the pipeline (%1u) as returned by vkGetPipelineExecutablePropertiessKHR",
+            caller_name, pExecutableInfo->executableIndex, executableCount);
     }
 
+    return skip;
+}
+
+bool CoreChecks::ValidatePipelineExecutableInfoDevice(VkDevice device, const PIPELINE_STATE *pPipeline, const char *caller_name,
+                                                      const char *feature_vuid, const char *device_vuid) const {
+    bool skip = false;
+
+    if (!enabled_features.pipeline_exe_props_features.pipelineExecutableInfo) {
+        skip |= LogError(device, feature_vuid, "%s(): called when pipelineExecutableInfo feature is not enabled.", caller_name);
+    }
+
+    if (pPipeline != nullptr) {
+        if (pPipeline->device != device) {
+            skip |= LogError(
+                pPipeline->pipeline, device_vuid,
+                "%s(): pipeline (%s) in pExecutableInfo was created on VkDevice (%s) but VkDevice (%s) was used for the call.",
+                caller_name, report_data->FormatHandle(pPipeline->pipeline).c_str(),
+                report_data->FormatHandle(pPipeline->device).c_str(), report_data->FormatHandle(device).c_str());
+        }
+    }
     return skip;
 }
 
@@ -4131,9 +4143,12 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice devi
                                                                    const VkPipelineExecutableInfoKHR *pExecutableInfo,
                                                                    uint32_t *pStatisticCount,
                                                                    VkPipelineExecutableStatisticKHR *pStatistics) const {
-    bool skip = ValidatePipelineExecutableInfo(device, pExecutableInfo);
+    bool skip = ValidatePipelineExecutableInfo(device, pExecutableInfo, "vkGetPipelineExecutableStatisticsKHR");
 
     const PIPELINE_STATE *pipeline_state = GetPipelineState(pExecutableInfo->pipeline);
+    skip |= ValidatePipelineExecutableInfoDevice(device, pipeline_state, "vkGetPipelineExecutableStatisticsKHR",
+                                                 "VUID-vkGetPipelineExecutableStatisticsKHR-pipelineExecutableInfo-03272",
+                                                 "VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03273");
     if (!(pipeline_state->getPipelineCreateFlags() & VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR)) {
         skip |= LogError(pExecutableInfo->pipeline, "VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03274",
                          "vkGetPipelineExecutableStatisticsKHR called on a pipeline created without the "
@@ -4146,9 +4161,13 @@ bool CoreChecks::PreCallValidateGetPipelineExecutableStatisticsKHR(VkDevice devi
 bool CoreChecks::PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
     VkDevice device, const VkPipelineExecutableInfoKHR *pExecutableInfo, uint32_t *pInternalRepresentationCount,
     VkPipelineExecutableInternalRepresentationKHR *pStatistics) const {
-    bool skip = ValidatePipelineExecutableInfo(device, pExecutableInfo);
+    bool skip = ValidatePipelineExecutableInfo(device, pExecutableInfo, "vkGetPipelineExecutableInternalRepresentationsKHR");
 
     const PIPELINE_STATE *pipeline_state = GetPipelineState(pExecutableInfo->pipeline);
+    skip |=
+        ValidatePipelineExecutableInfoDevice(device, pipeline_state, "vkGetPipelineExecutableInternalRepresentationsKHR",
+                                             "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipelineExecutableInfo-03276",
+                                             "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03277");
     if (!(pipeline_state->getPipelineCreateFlags() & VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR)) {
         skip |= LogError(pExecutableInfo->pipeline, "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03278",
                          "vkGetPipelineExecutableInternalRepresentationsKHR called on a pipeline created without the "

@@ -792,6 +792,8 @@ class PIPELINE_STATE : public BASE_NODE {
     safe_VkGraphicsPipelineCreateInfo graphicsPipelineCI;
     safe_VkComputePipelineCreateInfo computePipelineCI;
     safe_VkRayTracingPipelineCreateInfoCommon raytracingPipelineCI;
+    // device this pipeline belongs to
+    VkDevice device;
     // Hold shared ptr to RP in case RP itself is destroyed
     std::shared_ptr<const RENDER_PASS_STATE> rp_state;
     // Flag of which shader stages are active for this pipeline
