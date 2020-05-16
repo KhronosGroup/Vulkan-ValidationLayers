@@ -4381,7 +4381,18 @@ TEST_F(VkLayerTest, CreateBufferViewNoMemoryBoundToBuffer) {
 TEST_F(VkLayerTest, InvalidBufferViewCreateInfoEntries) {
     TEST_DESCRIPTION("Attempt to create a buffer view with invalid create info.");
 
-    ASSERT_NO_FATAL_FAILURE(Init());
+    // Attempt to enable texel buffer alignmnet extension
+    bool texel_buffer_alignment = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (texel_buffer_alignment) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    texel_buffer_alignment =
+        texel_buffer_alignment && DeviceExtensionSupported(gpu(), nullptr, VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME);
+    if (texel_buffer_alignment) {
+        m_device_extension_names.push_back(VK_EXT_TEXEL_BUFFER_ALIGNMENT_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
 
     const VkPhysicalDeviceLimits &dev_limits = m_device->props.limits;
     const VkDeviceSize minTexelBufferOffsetAlignment = dev_limits.minTexelBufferOffsetAlignment;
@@ -4438,7 +4449,9 @@ TEST_F(VkLayerTest, InvalidBufferViewCreateInfoEntries) {
 
     // Offset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment so add 1 to ensure it is not
     buff_view_ci.offset = minTexelBufferOffsetAlignment + 1;
-    CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-offset-02749"});
+    const char *offset_vuid =
+        (texel_buffer_alignment == true) ? "VUID-VkBufferViewCreateInfo-offset-02749" : "VUID-VkBufferViewCreateInfo-offset-00926";
+    CreateBufferViewTest(*this, &buff_view_ci, {offset_vuid});
 
     // Set offset to acceptable value for range tests
     buff_view_ci.offset = minTexelBufferOffsetAlignment;
