@@ -195,9 +195,7 @@ TEST_F(VkLayerTest, DisabledIndependentBlend) {
     features.independentBlend = VK_FALSE;
     ASSERT_NO_FATAL_FAILURE(Init(&features));
 
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit,
-        "Invalid Pipeline CreateInfo: If independent blend feature not enabled, all elements of pAttachments must be identical");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineColorBlendStateCreateInfo-pAttachments-00605");
 
     VkDescriptorSetObj descriptorSet(m_device);
     descriptorSet.AppendDummy();
@@ -1676,7 +1674,7 @@ TEST_F(VkLayerTest, InvalidPipelineCreateState) {
     VkPipelineShaderStageCreateInfo shaderStage = fs.GetStageCreateInfo();  // should be: vs.GetStageCreateInfo();
 
     auto set_info = [&](CreatePipelineHelper &helper) { helper.shader_stages_ = {shaderStage}; };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "Invalid Pipeline CreateInfo State: Vertex Shader required");
+    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkGraphicsPipelineCreateInfo-stage-00727");
 
     // Finally, check the string validation for the shader stage pName variable.  Correct the shader stage data, and bork the
     // string before calling again
