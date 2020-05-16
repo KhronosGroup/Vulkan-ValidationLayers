@@ -2316,25 +2316,28 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                     if (pCreateInfos[i].basePipelineHandle != VK_NULL_HANDLE) {
                         skip |=
                             LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-00724",
-                                     "vkCreateGraphicsPipelines parameter, pCreateInfos->basePipelineHandle, must be "
+                                     "vkCreateGraphicsPipelines parameter, pCreateInfos[%u]->basePipelineHandle, must be "
                                      "VK_NULL_HANDLE if pCreateInfos->flags contains the VK_PIPELINE_CREATE_DERIVATIVE_BIT flag "
-                                     "and pCreateInfos->basePipelineIndex is not -1.");
+                                     "and pCreateInfos->basePipelineIndex is not -1.",
+                                     i);
                     }
                 }
 
                 if (pCreateInfos[i].basePipelineHandle != VK_NULL_HANDLE) {
                     if (pCreateInfos[i].basePipelineIndex != -1) {
                         skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-00725",
-                                         "vkCreateGraphicsPipelines parameter, pCreateInfos->basePipelineIndex, must be -1 if "
+                                         "vkCreateGraphicsPipelines parameter, pCreateInfos[%u]->basePipelineIndex, must be -1 if "
                                          "pCreateInfos->flags contains the VK_PIPELINE_CREATE_DERIVATIVE_BIT flag and "
-                                         "pCreateInfos->basePipelineHandle is not VK_NULL_HANDLE.");
+                                         "pCreateInfos->basePipelineHandle is not VK_NULL_HANDLE.",
+                                         i);
                     }
                 } else {
                     if (static_cast<uint32_t>(pCreateInfos[i].basePipelineIndex) >= createInfoCount) {
-                        skip |= LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-00723",
-                                         "vkCreateGraphicsPipelines parameter pCreateInfos->basePipelineIndex (%d) must be a valid"
-                                         "index into the pCreateInfos array, of size %d.",
-                                         pCreateInfos[i].basePipelineIndex, createInfoCount);
+                        skip |=
+                            LogError(device, "VUID-VkGraphicsPipelineCreateInfo-flags-00723",
+                                     "vkCreateGraphicsPipelines parameter pCreateInfos[%u]->basePipelineIndex (%d) must be a valid"
+                                     "index into the pCreateInfos array, of size %d.",
+                                     i, pCreateInfos[i].basePipelineIndex, createInfoCount);
                     }
                 }
             }
@@ -2351,8 +2354,9 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                                (physical_device_features.fillModeNonSolid == false)) {
                         skip |= LogError(device, kVUID_PVError_DeviceFeature,
                                          "vkCreateGraphicsPipelines parameter, VkPolygonMode "
-                                         "pCreateInfos->pRasterizationState->polygonMode cannot be VK_POLYGON_MODE_POINT or "
-                                         "VK_POLYGON_MODE_LINE if VkPhysicalDeviceFeatures->fillModeNonSolid is false.");
+                                         "pCreateInfos[%u]->pRasterizationState->polygonMode cannot be VK_POLYGON_MODE_POINT or "
+                                         "VK_POLYGON_MODE_LINE if VkPhysicalDeviceFeatures->fillModeNonSolid is false.",
+                                         i);
                     }
                 } else {
                     if ((pCreateInfos[i].pRasterizationState->polygonMode != VK_POLYGON_MODE_FILL) &&
@@ -2361,8 +2365,9 @@ bool StatelessValidation::manual_PreCallValidateCreateGraphicsPipelines(VkDevice
                         skip |=
                             LogError(device, "VUID-VkPipelineRasterizationStateCreateInfo-polygonMode-01507",
                                      "vkCreateGraphicsPipelines parameter, VkPolygonMode "
-                                     "pCreateInfos->pRasterizationState->polygonMode must be VK_POLYGON_MODE_FILL or "
-                                     "VK_POLYGON_MODE_FILL_RECTANGLE_NV if VkPhysicalDeviceFeatures->fillModeNonSolid is false.");
+                                     "pCreateInfos[%u]->pRasterizationState->polygonMode must be VK_POLYGON_MODE_FILL or "
+                                     "VK_POLYGON_MODE_FILL_RECTANGLE_NV if VkPhysicalDeviceFeatures->fillModeNonSolid is false.",
+                                     i);
                     }
                 }
 
