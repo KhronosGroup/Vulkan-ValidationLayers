@@ -5118,8 +5118,10 @@ TEST_F(VkLayerTest, InvalidBarriers) {
         m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
         m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     }
+    bool separate_ds_layouts = false;
     if (rp2Supported && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME)) {
         m_device_extension_names.push_back(VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME);
+        separate_ds_layouts = true;
     }
     bool maintaince2 = DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE2_EXTENSION_NAME);
     if (maintaince2) {
@@ -5257,11 +5259,13 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     if (separate_depth_stencil_layouts_features.separateDepthStencilLayouts) {
         conc_test("VUID-VkImageMemoryBarrier-image-03319");
     } else {
-        conc_test("VUID-VkImageMemoryBarrier-image-03320");
+        const char *vuid =
+            (separate_ds_layouts == true) ? "VUID-VkImageMemoryBarrier-image-03320" : "VUID-VkImageMemoryBarrier-image-01207";
+        conc_test(vuid);
 
         // Having only one of depth or stencil set for DS image is an error
         conc_test.image_barrier_.subresourceRange.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-        conc_test("VUID-VkImageMemoryBarrier-image-03320");
+        conc_test(vuid);
     }
 
     // Having anything other than DEPTH and STENCIL is an error

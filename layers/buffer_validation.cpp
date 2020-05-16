@@ -847,7 +847,10 @@ bool CoreChecks::ValidateBarriersToImages(const CMD_BUFFER_STATE *cb_state, uint
                 } else {
                     auto const ds_mask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
                     if ((aspect_mask & ds_mask) != (ds_mask)) {
-                        skip |= LogError(img_barrier.image, "VUID-VkImageMemoryBarrier-image-03320",
+                        const char *vuid = device_extensions.vk_khr_separate_depth_stencil_layouts
+                                               ? "VUID-VkImageMemoryBarrier-image-03320"
+                                               : "VUID-VkImageMemoryBarrier-image-01207";
+                        skip |= LogError(img_barrier.image, vuid,
                                          "%s: Image barrier %s references %s of format %s that must have the depth and stencil "
                                          "aspects set, but its aspectMask is 0x%" PRIx32 ".",
                                          func_name, barrier_pname.c_str(), report_data->FormatHandle(img_barrier.image).c_str(),
