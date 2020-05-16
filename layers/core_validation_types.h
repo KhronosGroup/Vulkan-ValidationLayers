@@ -1257,6 +1257,7 @@ struct DeviceFeatures {
     VkPhysicalDeviceRobustness2FeaturesEXT robustness2_features;
     VkPhysicalDeviceFragmentDensityMapFeaturesEXT fragment_density_map_features;
     VkPhysicalDeviceCustomBorderColorFeaturesEXT custom_border_color_features;
+    VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT pipeline_creation_cache_control_features;
 };
 
 enum RenderPassCreateVersion { RENDER_PASS_VERSION_1 = 0, RENDER_PASS_VERSION_2 = 1 };

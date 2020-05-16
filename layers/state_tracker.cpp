@@ -1440,6 +1440,12 @@ void ValidationStateTracker::PostCallRecordCreateDevice(VkPhysicalDevice gpu, co
         state_tracker->enabled_features.custom_border_color_features = *custom_border_color_features;
     }
 
+    const auto *pipeline_creation_cache_control_features =
+        lvl_find_in_chain<VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT>(pCreateInfo->pNext);
+    if (pipeline_creation_cache_control_features) {
+        state_tracker->enabled_features.pipeline_creation_cache_control_features = *pipeline_creation_cache_control_features;
+    }
+
     // Store physical device properties and physical device mem limits into CoreChecks structs
     DispatchGetPhysicalDeviceMemoryProperties(gpu, &state_tracker->phys_dev_mem_props);
     DispatchGetPhysicalDeviceProperties(gpu, &state_tracker->phys_dev_props);
