@@ -42,6 +42,16 @@
 #define STRINGIFY_HELPER(s) #s
 
 #ifdef __cplusplus
+static inline VkExtent3D CastTo3D(const VkExtent2D &d2) {
+    VkExtent3D d3 = {d2.width, d2.height, 1};
+    return d3;
+}
+
+static inline VkOffset3D CastTo3D(const VkOffset2D &d2) {
+    VkOffset3D d3 = {d2.x, d2.y, 0};
+    return d3;
+}
+
 // Traits objects to allow string_join to operate on collections of const char *
 template <typename String>
 struct StringJoinSizeTrait {
