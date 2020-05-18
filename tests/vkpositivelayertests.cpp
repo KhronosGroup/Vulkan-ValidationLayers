@@ -888,7 +888,9 @@ TEST_F(VkPositiveLayerTest, ResetQueryPoolFromDifferentCB) {
 TEST_F(VkPositiveLayerTest, BasicQuery) {
     TEST_DESCRIPTION("Use a couple occlusion queries");
     m_errorMonitor->ExpectSuccess();
-    ASSERT_NO_FATAL_FAILURE(Init());
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, pool_flags));
     ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
 
     uint32_t qfi = 0;
@@ -944,7 +946,22 @@ TEST_F(VkPositiveLayerTest, BasicQuery) {
     res = vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, 2, sizeof(samples_passed), samples_passed, sizeof(uint64_t),
                                   VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
     ASSERT_VK_SUCCESS(res);
+
+    // Now reset query pool in a different command buffer than the BeginQuery
+    vk::ResetCommandBuffer(m_commandBuffer->handle(), 0);
+    m_commandBuffer->begin();
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
+    m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer();
+    vk::QueueWaitIdle(m_device->m_queue);
+    vk::ResetCommandBuffer(m_commandBuffer->handle(), 0);
+    m_commandBuffer->begin();
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 0);
+    m_commandBuffer->end();
+    m_commandBuffer->QueueCommandBuffer();
     m_errorMonitor->VerifyNotFound();
+    vk::QueueWaitIdle(m_device->m_queue);
     vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
 }
 
