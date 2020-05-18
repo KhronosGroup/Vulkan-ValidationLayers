@@ -7116,16 +7116,16 @@ bool CoreChecks::VerifyQueryIsReset(const ValidationStateTracker *state_data, Vk
     const auto &query_pool_ci = query_pool_state->createInfo;
 
     QueryState state = state_data->GetQueryState(localQueryToStateMap, query_obj.pool, query_obj.query, perfPass);
+    // If reset was in another command buffer, check the global map
+    if (state == QUERYSTATE_UNKNOWN)
+        state = state_data->GetQueryState(&state_data->queryToStateMap, query_obj.pool, query_obj.query, perfPass);
     // Performance queries have limitation upon when they can be
-    // reset. If there is unknown state in the local state, check the
-    // global state.
-    if (query_pool_ci.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR && state == QUERYSTATE_UNKNOWN) {
+    // reset.
+    if (query_pool_ci.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR && state == QUERYSTATE_UNKNOWN &&
+        perfPass >= query_pool_state->n_performance_passes) {
         // If the pass is invalid, assume RESET state, another error
         // will be raised in ValidatePerformanceQuery().
-        if (perfPass < query_pool_state->n_performance_passes)
-            state = state_data->GetQueryState(&state_data->queryToStateMap, query_obj.pool, query_obj.query, perfPass);
-        else
-            state = QUERYSTATE_RESET;
+        state = QUERYSTATE_RESET;
     }
 
     if (state != QUERYSTATE_RESET) {
