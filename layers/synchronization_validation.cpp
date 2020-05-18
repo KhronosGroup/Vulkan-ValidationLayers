@@ -361,6 +361,17 @@ VkDeviceSize AccessContext::ResourceBaseAddress(const BINDABLE &bindable) {
 
 static bool SimpleBinding(const BINDABLE &bindable) { return !bindable.sparse && bindable.binding.mem_state; }
 
+static SyncStageAccessIndex ColorLoadUsage(VkAttachmentLoadOp load_op) {
+    const auto stage_access = (load_op == VK_ATTACHMENT_LOAD_OP_LOAD) ? SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ
+                                                                      : SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE;
+    return stage_access;
+}
+static SyncStageAccessIndex DepthStencilLoadUsage(VkAttachmentLoadOp load_op) {
+    const auto stage_access = (load_op == VK_ATTACHMENT_LOAD_OP_LOAD) ? SYNC_EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_READ
+                                                                      : SYNC_EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE;
+    return stage_access;
+}
+
 void AccessContext::ResolvePreviousAccess(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range_arg,
                                           AddressType address_type, ResourceAccessRangeMap *descent_map,
                                           const ResourceAccessState *infill_state) const {
@@ -375,17 +386,114 @@ void AccessContext::ResolvePreviousAccess(const IMAGE_STATE &image_state, const 
     }
 }
 
-static bool ValidateLayoutTransitions(const SyncValidator &sync_state, const RENDER_PASS_STATE &rp_state,
-                                      const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name,
-                                      uint32_t subpass, const AccessContext &context) {
+bool AccessContext::ValidateLayoutTransitions(const SyncValidator &sync_state, const RENDER_PASS_STATE &rp_state,
+                                              const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name,
+                                              uint32_t subpass) const {
     bool skip = false;
     const auto &transitions = rp_state.subpass_transitions[subpass];
     for (const auto &transition : transitions) {
-        auto hazard = context.DetectSubpassTransitionHazard(transition, attachment_views);
+        auto hazard = DetectSubpassTransitionHazard(transition, attachment_views);
         if (hazard.hazard) {
             skip |= sync_state.LogError(rp_state.renderPass, string_SyncHazardVUID(hazard.hazard),
                                         "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32 " image layout transition.",
                                         func_name, string_SyncHazard(hazard.hazard), subpass, transition.attachment);
+        }
+    }
+    return skip;
+}
+
+bool AccessContext::ValidateLoadOperation(const SyncValidator &sync_state, const RENDER_PASS_STATE &rp_state,
+                                          const VkRect2D &render_area,
+                                          const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name,
+                                          uint32_t subpass) const {
+    bool skip = false;
+    const auto *attachment_ci = rp_state.createInfo.pAttachments;
+    VkExtent3D extent = CastTo3D(render_area.extent);
+    VkOffset3D offset = CastTo3D(render_area.offset);
+    const auto external_access_scope = src_external_.barrier.dst_access_scope;
+    HazardResult hazard;
+
+    for (uint32_t i = 0; i < rp_state.createInfo.attachmentCount; i++) {
+        if (subpass == rp_state.attachment_first_subpass[i]) {
+            if (attachment_views[i] == nullptr) continue;
+            const IMAGE_VIEW_STATE &view = *attachment_views[i];
+            const IMAGE_STATE *image = view.image_state.get();
+            if (image == nullptr) continue;
+            const auto &ci = attachment_ci[i];
+            const bool is_transition = rp_state.attachment_first_is_transition[i];
+
+            // Need check in the following way
+            // 1) if the usage bit isn't in the dest_access_scope, and there is layout traniition for initial use, report hazard
+            //    vs. transition
+            // 2) if there isn't a layout transition, we need to look at the  external context with a "detect hazard" operation
+            //    for each aspect loaded.
+
+            const bool has_depth = FormatHasDepth(ci.format);
+            const bool has_stencil = FormatHasDepth(ci.format);
+            const bool is_color = !(has_depth || has_stencil);
+
+            const SyncStageAccessIndex load_index = has_depth ? DepthStencilLoadUsage(ci.loadOp) : ColorLoadUsage(ci.loadOp);
+            const SyncStageAccessFlags load_mask = (has_depth || is_color) ? SyncStageAccess::Flags(load_index) : 0U;
+            const SyncStageAccessIndex stencil_load_index = has_stencil ? DepthStencilLoadUsage(ci.stencilLoadOp) : load_index;
+            const SyncStageAccessFlags stencil_mask = has_stencil ? SyncStageAccess::Flags(stencil_load_index) : 0U;
+
+            const char *aspect = nullptr;
+            if (is_transition) {
+                // For transition w
+                SyncHazard transition_hazard = SyncHazard::NONE;
+                bool checked_stencil = false;
+                if (load_mask) {
+                    if ((load_mask & external_access_scope) != load_mask) {
+                        transition_hazard =
+                            SyncStageAccess::HasWrite(load_mask) ? SyncHazard::WRITE_AFTER_WRITE : SyncHazard::READ_AFTER_WRITE;
+                        aspect = is_color ? "color" : "depth";
+                    }
+                    if (!transition_hazard && stencil_mask) {
+                        if ((stencil_mask & external_access_scope) != stencil_mask) {
+                            transition_hazard = SyncStageAccess::HasWrite(stencil_mask) ? SyncHazard::WRITE_AFTER_WRITE
+                                                                                        : SyncHazard::READ_AFTER_WRITE;
+                            aspect = "stencil";
+                            checked_stencil = true;
+                        }
+                    }
+                }
+                if (transition_hazard) {
+                    // Hazard vs. ILT
+                    auto load_op_string = string_VkAttachmentLoadOp(checked_stencil ? ci.stencilLoadOp : ci.loadOp);
+                    skip |=
+                        sync_state.LogError(rp_state.renderPass, string_SyncHazardVUID(hazard.hazard),
+                                            "%s: Hazard %s vs. layout transition in subpass %" PRIu32 " for attachment %" PRIu32
+                                            " aspect %s during load with loadOp %s.",
+                                            func_name, string_SyncHazard(transition_hazard), subpass, i, aspect, load_op_string);
+                }
+            } else {
+                auto hazard_range = view.normalized_subresource_range;
+                bool checked_stencil = false;
+                if (is_color) {
+                    hazard = DetectHazard(*image, load_index, view.normalized_subresource_range, offset, extent);
+                    aspect = "color";
+                } else {
+                    if (has_depth) {
+                        hazard_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                        hazard = DetectHazard(*image, load_index, hazard_range, offset, extent);
+                        aspect = "depth";
+                    }
+                    if (!hazard.hazard && has_stencil) {
+                        hazard_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+                        hazard = DetectHazard(*image, stencil_load_index, hazard_range, offset, extent);
+                        aspect = "stencil";
+                        checked_stencil = true;
+                    }
+                }
+
+                if (hazard.hazard) {
+                    auto load_op_string = string_VkAttachmentLoadOp(checked_stencil ? ci.stencilLoadOp : ci.loadOp);
+                    skip |= sync_state.LogError(rp_state.renderPass, string_SyncHazardVUID(hazard.hazard),
+                                                "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
+                                                " aspect %s during load with loadOp %s.",
+                                                func_name, string_SyncHazard(hazard.hazard), subpass, i, aspect, load_op_string);
+                }
+            }
         }
     }
     return skip;
@@ -417,10 +525,15 @@ HazardResult AccessContext::DetectHazard(const BUFFER_STATE &buffer, SyncStageAc
 HazardResult AccessContext::DetectHazard(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
                                          const VkImageSubresourceLayers &subresource, const VkOffset3D &offset,
                                          const VkExtent3D &extent) const {
-    if (!SimpleBinding(image)) return HazardResult();
-    // TODO: replace the encoder/generator with offset3D/extent3D aware versions
     VkImageSubresourceRange subresource_range = {subresource.aspectMask, subresource.mipLevel, 1, subresource.baseArrayLayer,
                                                  subresource.layerCount};
+    return DetectHazard(image, current_usage, subresource_range, offset, extent);
+}
+
+HazardResult AccessContext::DetectHazard(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
+                                         const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
+                                         const VkExtent3D &extent) const {
+    if (!SimpleBinding(image)) return HazardResult();
     subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, offset, extent);
     const auto address_type = ImageAddressType(image);
     const auto base_address = ResourceBaseAddress(image);
@@ -793,7 +906,8 @@ bool CommandBufferAccessContext::ValidateBeginRenderPass(const RENDER_PASS_STATE
             views[transition.attachment] = sync_state_->Get<IMAGE_VIEW_STATE>(attachments[transition.attachment]);
         }
 
-        skip |= ValidateLayoutTransitions(*sync_state_, rp_state, views, func_name, 0, temp_context);
+        skip |= temp_context.ValidateLayoutTransitions(*sync_state_, rp_state, views, func_name, 0);
+        skip |= temp_context.ValidateLoadOperation(*sync_state_, rp_state, pRenderPassBegin->renderArea, views, func_name, 0);
     }
     return skip;
 }
@@ -802,7 +916,8 @@ bool CommandBufferAccessContext::ValidateNextSubpass(const char *func_name) cons
     // TODO: Things to add here.
     // Validate Preserve/Resolve attachments
     bool skip = false;
-    skip |= current_renderpass_context_->ValidateNextSubpassLayoutTransitions(*sync_state_, func_name);
+    skip |=
+        current_renderpass_context_->ValidateNextSubpass(*sync_state_, cb_state_->activeRenderPassBeginInfo.renderArea, func_name);
 
     return skip;
 }
@@ -829,7 +944,7 @@ void CommandBufferAccessContext::RecordBeginRenderPass(const ResourceUsageTag &t
 
 void CommandBufferAccessContext::RecordNextSubpass(const RENDER_PASS_STATE &rp_state, const ResourceUsageTag &tag) {
     assert(current_renderpass_context_);
-    current_renderpass_context_->RecordNextSubpass(tag);
+    current_renderpass_context_->RecordNextSubpass(cb_state_->activeRenderPassBeginInfo.renderArea, tag);
     current_context_ = &current_renderpass_context_->CurrentContext();
 }
 
@@ -843,11 +958,13 @@ void CommandBufferAccessContext::RecordEndRenderPass(const RENDER_PASS_STATE &re
     current_renderpass_context_ = nullptr;
 }
 
-bool RenderPassAccessContext::ValidateNextSubpassLayoutTransitions(const SyncValidator &sync_state, const char *func_name) const {
+bool RenderPassAccessContext::ValidateNextSubpass(const SyncValidator &sync_state, const VkRect2D &render_area,
+                                                  const char *func_name) const {
     bool skip = false;
     const auto next_subpass = current_subpass_ + 1;
-    skip |= ValidateLayoutTransitions(sync_state, *rp_state_, attachment_views_, func_name, next_subpass,
-                                      subpass_contexts_[next_subpass]);
+    const auto &next_context = subpass_contexts_[next_subpass];
+    skip |= next_context.ValidateLayoutTransitions(sync_state, *rp_state_, attachment_views_, func_name, next_subpass);
+    skip |= next_context.ValidateLoadOperation(sync_state, *rp_state_, render_area, attachment_views_, func_name, next_subpass);
     return skip;
 }
 
@@ -901,6 +1018,43 @@ void RenderPassAccessContext::RecordLayoutTransitions(const ResourceUsageTag &ta
     }
 }
 
+void RenderPassAccessContext::RecordLoadOperations(const VkRect2D &render_area, const ResourceUsageTag &tag) {
+    const auto *attachment_ci = rp_state_->createInfo.pAttachments;
+    auto &subpass_context = subpass_contexts_[current_subpass_];
+    VkExtent3D extent = CastTo3D(render_area.extent);
+    VkOffset3D offset = CastTo3D(render_area.offset);
+
+    for (uint32_t i = 0; i < rp_state_->createInfo.attachmentCount; i++) {
+        if (rp_state_->attachment_first_subpass[i] == current_subpass_) {
+            if (attachment_views_[i] == nullptr) continue;  // UNUSED
+            const auto &view = *attachment_views_[i];
+            const IMAGE_STATE *image = view.image_state.get();
+            if (image == nullptr) continue;
+
+            const auto &ci = attachment_ci[i];
+            const bool has_depth = FormatHasDepth(ci.format);
+            const bool has_stencil = FormatHasDepth(ci.format);
+            const bool is_color = !(has_depth || has_stencil);
+
+            if (is_color) {
+                subpass_context.UpdateAccessState(*image, ColorLoadUsage(ci.loadOp), view.normalized_subresource_range, offset,
+                                                  extent, tag);
+            } else {
+                auto update_range = view.normalized_subresource_range;
+                if (has_depth) {
+                    update_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                    subpass_context.UpdateAccessState(*image, DepthStencilLoadUsage(ci.loadOp), update_range, offset, extent, tag);
+                }
+                if (has_stencil) {
+                    update_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+                    subpass_context.UpdateAccessState(*image, DepthStencilLoadUsage(ci.stencilLoadOp), update_range, offset, extent,
+                                                      tag);
+                }
+            }
+        }
+    }
+}
+
 void RenderPassAccessContext::RecordBeginRenderPass(const SyncValidator &state, const CMD_BUFFER_STATE &cb_state,
                                                     VkQueueFlags queue_flags, const ResourceUsageTag &tag) {
     current_subpass_ = 0;
@@ -913,11 +1067,14 @@ void RenderPassAccessContext::RecordBeginRenderPass(const SyncValidator &state, 
     attachment_views_ = state.GetCurrentAttachmentViews(cb_state);
 
     RecordLayoutTransitions(tag);
+    RecordLoadOperations(cb_state.activeRenderPassBeginInfo.renderArea, tag);
 }
-void RenderPassAccessContext::RecordNextSubpass(const ResourceUsageTag &tag) {
+
+void RenderPassAccessContext::RecordNextSubpass(const VkRect2D &render_area, const ResourceUsageTag &tag) {
     current_subpass_++;
     assert(current_subpass_ < subpass_contexts_.size());
     RecordLayoutTransitions(tag);
+    RecordLoadOperations(render_area, tag);
 }
 
 void RenderPassAccessContext::RecordEndRenderPass(const ResourceUsageTag &tag) {
