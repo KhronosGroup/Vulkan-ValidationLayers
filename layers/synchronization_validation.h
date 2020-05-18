@@ -41,14 +41,18 @@ enum SyncHazard {
 
 // Useful Utilites for manipulating StageAccess parameters, suitable as base class to save typing
 struct SyncStageAccess {
-    static SyncStageAccessFlagBits FlagBit(SyncStageAccessIndex stage_access) {
+    static inline SyncStageAccessFlagBits FlagBit(SyncStageAccessIndex stage_access) {
         return syncStageAccessInfoByStageAccessIndex[stage_access].stage_access_bit;
+    }
+    static inline SyncStageAccessFlags Flags(SyncStageAccessIndex stage_access) {
+        return static_cast<SyncStageAccessFlags>(FlagBit(stage_access));
     }
 
     static bool IsRead(SyncStageAccessFlagBits stage_access_bit) { return 0 != (stage_access_bit & syncStageAccessReadMask); }
     static bool IsRead(SyncStageAccessIndex stage_access_index) { return IsRead(FlagBit(stage_access_index)); }
 
     static bool IsWrite(SyncStageAccessFlagBits stage_access_bit) { return 0 != (stage_access_bit & syncStageAccessWriteMask); }
+    static bool HasWrite(SyncStageAccessFlags stage_access_mask) { return 0 != (stage_access_mask & syncStageAccessWriteMask); }
     static bool IsWrite(SyncStageAccessIndex stage_access_index) { return IsWrite(FlagBit(stage_access_index)); }
     static VkPipelineStageFlagBits PipelineStageBit(SyncStageAccessIndex stage_access_index) {
         return syncStageAccessInfoByStageAccessIndex[stage_access_index].stage_mask;
@@ -193,6 +197,9 @@ class AccessContext {
     HazardResult DetectHazard(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
                               const VkImageSubresourceLayers &subresource, const VkOffset3D &offset,
                               const VkExtent3D &extent) const;
+    HazardResult DetectHazard(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
+                              const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
+                              const VkExtent3D &extent) const;
     HazardResult DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags src_exec_scope,
                                           SyncStageAccessFlags src_access_scope, const VkImageSubresourceRange &subresource_range,
                                           DetectOptions options) const;
@@ -273,6 +280,13 @@ class AccessContext {
         }
     }
 
+    bool ValidateLayoutTransitions(const SyncValidator &sync_state, const RENDER_PASS_STATE &rp_state,
+                                   const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name,
+                                   uint32_t subpass) const;
+    bool ValidateLoadOperation(const SyncValidator &sync_state, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
+                               const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name,
+                               uint32_t subpass) const;
+
   private:
     HazardResult DetectHazard(AddressType type, SyncStageAccessIndex usage_index, const ResourceAccessRange &range) const;
     HazardResult DetectBarrierHazard(AddressType type, SyncStageAccessIndex current_usage, VkPipelineStageFlags src_exec_scope,
@@ -303,13 +317,14 @@ class RenderPassAccessContext {
     RenderPassAccessContext(AccessContext *external_context)
         : external_context_(external_context), rp_state_(nullptr), current_subpass_(0) {}
 
-    bool ValidateNextSubpassLayoutTransitions(const SyncValidator &sync_state, const char *command_name) const;
+    bool ValidateNextSubpass(const SyncValidator &sync_state, const VkRect2D &render_area, const char *command_name) const;
     bool ValidateFinalSubpassLayoutTransitions(const SyncValidator &sync_state, const char *func_name) const;
 
     void RecordLayoutTransitions(const ResourceUsageTag &tag);
+    void RecordLoadOperations(const VkRect2D &render_area, const ResourceUsageTag &tag);
     void RecordBeginRenderPass(const SyncValidator &state, const CMD_BUFFER_STATE &cb_state, VkQueueFlags queue_flags,
                                const ResourceUsageTag &tag);
-    void RecordNextSubpass(const ResourceUsageTag &tag);
+    void RecordNextSubpass(const VkRect2D &render_area, const ResourceUsageTag &tag);
     void RecordEndRenderPass(const ResourceUsageTag &tag);
 
     AccessContext &CurrentContext() { return subpass_contexts_[current_subpass_]; }

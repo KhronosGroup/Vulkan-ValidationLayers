@@ -4112,6 +4112,7 @@ void ValidationStateTracker::RecordCreateRenderPassState(RenderPassCreateVersion
     struct AttachmentTracker {  // This is really only of local interest, but a bit big for a lambda
         RENDER_PASS_STATE *const rp;
         std::vector<uint32_t> &first;
+        std::vector<bool> &first_is_transition;
         std::vector<uint32_t> &last;
         std::vector<std::vector<RENDER_PASS_STATE::AttachmentTransition>> &subpass_transitions;
         std::unordered_map<uint32_t, bool> &first_read;
@@ -4121,6 +4122,7 @@ void ValidationStateTracker::RecordCreateRenderPassState(RenderPassCreateVersion
         AttachmentTracker(std::shared_ptr<RENDER_PASS_STATE> &render_pass)
             : rp(render_pass.get()),
               first(rp->attachment_first_subpass),
+              first_is_transition(rp->attachment_first_is_transition),
               last(rp->attachment_last_subpass),
               subpass_transitions(rp->subpass_transitions),
               first_read(rp->attachment_first_read),
@@ -4128,6 +4130,7 @@ void ValidationStateTracker::RecordCreateRenderPassState(RenderPassCreateVersion
               attachment_layout(),
               subpass_attachment_layout() {
             first.resize(attachment_count, VK_SUBPASS_EXTERNAL);
+            first_is_transition.resize(attachment_count, false);
             last.resize(attachment_count, VK_SUBPASS_EXTERNAL);
             subpass_transitions.resize(rp->createInfo.subpassCount + 1);  // Add an extra for EndRenderPass
             attachment_layout.reserve(attachment_count);
@@ -4152,7 +4155,10 @@ void ValidationStateTracker::RecordCreateRenderPassState(RenderPassCreateVersion
                     if (first[attachment] == VK_SUBPASS_EXTERNAL) {
                         first[attachment] = subpass;
                         const auto initial_layout = rp->createInfo.pAttachments[attachment].initialLayout;
-                        subpass_transitions[subpass].emplace_back(VK_SUBPASS_EXTERNAL, attachment, initial_layout, layout);
+                        if (initial_layout != layout) {
+                            subpass_transitions[subpass].emplace_back(VK_SUBPASS_EXTERNAL, attachment, initial_layout, layout);
+                            first_is_transition[attachment] = true;
+                        }
                     }
                     last[attachment] = subpass;
 

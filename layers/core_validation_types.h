@@ -585,6 +585,7 @@ struct RENDER_PASS_STATE : public BASE_NODE {
     std::unordered_map<uint32_t, bool> attachment_first_read;
     std::vector<uint32_t> attachment_first_subpass;
     std::vector<uint32_t> attachment_last_subpass;
+    std::vector<bool> attachment_first_is_transition;
     std::vector<SubpassDependencyGraphNode> subpass_dependencies;
     std::vector<std::vector<AttachmentTransition>> subpass_transitions;
 
