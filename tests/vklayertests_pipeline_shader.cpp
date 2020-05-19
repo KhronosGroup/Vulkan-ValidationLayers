@@ -2715,6 +2715,47 @@ TEST_F(VkLayerTest, PSOLineWidthInvalid) {
     }
 }
 
+TEST_F(VkLayerTest, PipelineCreationCacheControl) {
+    TEST_DESCRIPTION("Test VK_EXT_pipeline_creation_cache_control");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_EXT_PIPELINE_CREATION_CACHE_CONTROL_EXTENSION_NAME);
+    } else {
+        printf("%s VK_EXT_pipeline_creation_cache_control not supported, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    VkPhysicalDevicePipelineCreationCacheControlFeaturesEXT cache_control_features = {};
+    cache_control_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_CREATION_CACHE_CONTROL_FEATURES_EXT;
+    cache_control_features.pNext = nullptr;
+    cache_control_features.pipelineCreationCacheControl = VK_FALSE;  // Tests all assume feature is off
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &cache_control_features));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    const auto set_graphics_flags = [&](CreatePipelineHelper &helper) {
+        helper.gp_ci_.flags = VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT_EXT;
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_graphics_flags, kErrorBit,
+                                      "VUID-VkGraphicsPipelineCreateInfo-pipelineCreationCacheControl-02878");
+
+    const auto set_compute_flags = [&](CreateComputePipelineHelper &helper) {
+        helper.cp_ci_.flags = VK_PIPELINE_CREATE_EARLY_RETURN_ON_FAILURE_BIT_EXT;
+    };
+    CreateComputePipelineHelper::OneshotTest(*this, set_compute_flags, kErrorBit,
+                                             "VUID-VkComputePipelineCreateInfo-pipelineCreationCacheControl-02875");
+
+    VkPipelineCache pipeline_cache;
+    VkPipelineCacheCreateInfo cache_create_info = {};
+    cache_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+    cache_create_info.pNext = nullptr;
+    cache_create_info.initialDataSize = 0;
+    cache_create_info.flags = VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT_EXT;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPipelineCacheCreateInfo-pipelineCreationCacheControl-02892");
+    vk::CreatePipelineCache(m_device->device(), &cache_create_info, nullptr, &pipeline_cache);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, VUID_VkVertexInputBindingDescription_binding_00618) {
     TEST_DESCRIPTION(
         "Test VUID-VkVertexInputBindingDescription-binding-00618: binding must be less than "
