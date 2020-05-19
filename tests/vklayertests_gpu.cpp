@@ -691,7 +691,7 @@ TEST_F(VkGpuAssistedLayerTest, GpuValidationArrayOOBRayTracingShaders) {
     TEST_DESCRIPTION(
         "GPU validation: Verify detection of out-of-bounds descriptor array indexing and use of uninitialized descriptors for "
         "ray tracing shaders using gpu assited validation.");
-    OOBRayTracingShadersTestBody(false);
+    OOBRayTracingShadersTestBody(true);
 }
 
 TEST_F(VkGpuAssistedLayerTest, GpuBuildAccelerationStructureValidationInvalidHandle) {
