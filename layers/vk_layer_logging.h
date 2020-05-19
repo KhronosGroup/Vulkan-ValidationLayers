@@ -629,6 +629,12 @@ static inline bool LogMsgLocked(const debug_report_data *debug_data, VkFlags msg
                                 const std::string &vuid_text, char *err_msg) {
     std::string str_plus_spec_text(err_msg ? err_msg : "Allocation failure");
 
+    // If message is in filter list, bail out very early
+    size_t message_id = XXH32(vuid_text.c_str(), strlen(vuid_text.c_str()), 8);
+    if (std::find(debug_data->filter_message_ids.begin(), debug_data->filter_message_ids.end(),
+                  static_cast<uint32_t>(message_id)) != debug_data->filter_message_ids.end())
+        return false;
+
     // Append the spec error text to the error message, unless it's an UNASSIGNED or UNDEFINED vuid
     if ((vuid_text.find("UNASSIGNED-") == std::string::npos) && (vuid_text.find(kVUIDUndefined) == std::string::npos)) {
         // Linear search makes no assumptions about the layout of the string table. This is not fast, but it does not need to be at
