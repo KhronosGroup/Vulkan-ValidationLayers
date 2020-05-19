@@ -45,6 +45,16 @@
 #    debug - For layer development. Report messages for debugging layer
 #            behavior.
 #
+#   MESSAGE_ID_FILTER:
+#   =============
+#   <LayerIdentifier>.messag_id_filter: This is a comma-delineated list of VUIDs
+#    or VUID identifers which are to be IGNORED by the layers. These can be in
+#    any combination of the normal VUID string form,
+#        "VUID-vkCmdPipelineBarrier-image-02635",
+#    or the hexadecimal or decimal representation of the VUID id returned from
+#    a validation message, for example:
+#        0xdf3391a2 or 3744698786.
+#
 #   LOG_FILENAME:
 #   =============
 #   <LayerIdentifier>.log_filename : output filename. Can be relative to
@@ -94,6 +104,9 @@
 khronos_validation.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG
 khronos_validation.report_flags = error,warn,perf
 khronos_validation.log_filename = stdout
+
+# Example entry showing how to filter specific VUIDs from layer output
+#khronos_validation.message_id_filter = 3744698786,0xdf3391a2,"VUID-vkCmdPipelineBarrier-image-02635"
 
 # Example entry showing how to disable threading checks and validation at DestroyPipeline time
 #khronos_validation.disables = VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT,VALIDATION_CHECK_DISABLE_DESTROY_PIPELINE
