@@ -18,11 +18,7 @@
 
 void VkBestPracticesLayerTest::InitBestPracticesFramework() {
     // Enable all vendor-specific checks
-#if defined(_WIN32)
-    SetEnvironmentVariable("VK_LAYER_ENABLES", "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL;");
-#else
-    setenv("VK_LAYER_ENABLES", "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL:", true);
-#endif
+    SetEnvVar("VK_LAYER_ENABLES", "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL");
 
     InitFramework(m_errorMonitor, &features_);
 }

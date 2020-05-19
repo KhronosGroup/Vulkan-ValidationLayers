@@ -163,6 +163,8 @@ static const char bindStateFragUniformShaderText[] =
     "   x = vec4(bar.y);\n"
     "}\n";
 
+void SetEnvVar(const char *env_var, const char *value);
+
 // Static arrays helper
 template <class ElementT, size_t array_size>
 size_t size(ElementT (&)[array_size]) {
