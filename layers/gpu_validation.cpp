@@ -465,37 +465,19 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
     }
 
     VkBuffer scratch = VK_NULL_HANDLE;
+    VmaAllocation scratch_allocation = {};
     if (result == VK_SUCCESS) {
         VkBufferCreateInfo scratch_ci = {};
         scratch_ci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         scratch_ci.size = scratch_mem_requirements.memoryRequirements.size;
         scratch_ci.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
-
-        result = DispatchCreateBuffer(device_gpuav->device, &scratch_ci, nullptr, &scratch);
-        if (result != VK_SUCCESS) {
-            ReportSetupProblem(device_gpuav->device,
-                               "Failed to create scratch buffer for acceleration structure build validation.");
-        }
-    }
-
-    VmaAllocation scratch_allocation = VK_NULL_HANDLE;
-    VmaAllocationInfo scratch_allocation_info = {};
-    if (result == VK_SUCCESS) {
         VmaAllocationCreateInfo scratch_aci = {};
         scratch_aci.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
-        result = vmaAllocateMemory(device_gpuav->vmaAllocator, &scratch_mem_requirements.memoryRequirements, &scratch_aci,
-                                   &scratch_allocation, &scratch_allocation_info);
+        result = vmaCreateBuffer(device_gpuav->vmaAllocator, &scratch_ci, &scratch_aci, &scratch, &scratch_allocation, nullptr);
         if (result != VK_SUCCESS) {
-            ReportSetupProblem(device_gpuav->device, "Failed to alloc scratch memory for acceleration structure build validation.");
-        }
-    }
-
-    if (result == VK_SUCCESS) {
-        result = DispatchBindBufferMemory(device_gpuav->device, scratch, scratch_allocation_info.deviceMemory,
-                                          scratch_allocation_info.offset);
-        if (result != VK_SUCCESS) {
-            ReportSetupProblem(device_gpuav->device, "Failed to bind scratch memory for acceleration structure build validation.");
+            ReportSetupProblem(device_gpuav->device,
+                               "Failed to create scratch buffer for acceleration structure build validation.");
         }
     }
 
@@ -578,8 +560,7 @@ void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *d
         vmaDestroyBuffer(device_gpuav->vmaAllocator, ibo, ibo_allocation);
     }
     if (scratch != VK_NULL_HANDLE) {
-        DispatchDestroyBuffer(device_gpuav->device, scratch, nullptr);
-        vmaFreeMemory(device_gpuav->vmaAllocator, scratch_allocation);
+        vmaDestroyBuffer(device_gpuav->vmaAllocator, scratch, scratch_allocation);
     }
     if (command_pool != VK_NULL_HANDLE) {
         DispatchDestroyCommandPool(device_gpuav->device, command_pool, nullptr);
