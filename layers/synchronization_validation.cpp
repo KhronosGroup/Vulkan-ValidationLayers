@@ -176,8 +176,7 @@ template <typename Detector>
 HazardResult AccessContext::DetectPreviousHazard(AddressType type, const Detector &detector,
                                                  const ResourceAccessRange &range) const {
     ResourceAccessRangeMap descent_map;
-    ResourceAccessState default_state;  // When present, PreviousAccess will "infill"
-    ResolvePreviousAccess(type, range, &descent_map, &default_state);
+    ResolvePreviousAccess(type, range, &descent_map, nullptr);
 
     HazardResult hazard;
     for (auto prev = descent_map.begin(); prev != descent_map.end() && !hazard.hazard; ++prev) {
@@ -202,35 +201,37 @@ HazardResult AccessContext::DetectHazard(AddressType type, const Detector &detec
         }
     }
 
-    if (static_cast<uint32_t>(options) | DetectOptions::kDetectAsync) {
-        const auto &accesses = GetAccessStateMap(type);
-        const auto from = accesses.lower_bound(range);
-        if (from != accesses.end() && from->first.intersects(range)) {
-            const auto to = accesses.upper_bound(range);
-            ResourceAccessRange gap = {range.begin, range.begin};
-            for (auto pos = from; pos != to; ++pos) {
-                hazard = detector.Detect(pos);
-                if (hazard.hazard) return hazard;
+    const bool detect_prev = (static_cast<uint32_t>(options) | DetectOptions::kDetectPrevious) != 0;
 
-                // make sure we don't go past range
-                auto upper_bound = std::min(range.end, pos->first.end);
-                gap.end = upper_bound;
+    const auto &accesses = GetAccessStateMap(type);
+    const auto from = accesses.lower_bound(range);
+    const auto to = accesses.upper_bound(range);
+    ResourceAccessRange gap = {range.begin, range.begin};
 
-                // TODO: After profiling we may want to change the descent logic such that we don't recur per gap...
-                if (!gap.empty()) {
-                    // Must recur on all gaps
-                    hazard = DetectPreviousHazard(type, detector, gap);
-                    if (hazard.hazard) return hazard;
-                }
-                gap.begin = upper_bound;
-            }
-            gap.end = range.end;
+    for (auto pos = from; pos != to; ++pos) {
+        // Cover any leading gap, or gap between entries
+        if (detect_prev) {
+            // TODO: After profiling we may want to change the descent logic such that we don't recur per gap...
+            // Cover any leading gap, or gap between entries
+            gap.end = pos->first.begin;  // We know this begin is < range.end
             if (gap.non_empty()) {
+                // Recur on all gaps
                 hazard = DetectPreviousHazard(type, detector, gap);
                 if (hazard.hazard) return hazard;
             }
-        } else {
-            hazard = DetectPreviousHazard(type, detector, range);
+            // Set up for the next gap.  If pos..end is >= range.end, loop will exit, and trailing gap will be empty
+            gap.begin = pos->first.end;
+        }
+
+        hazard = detector.Detect(pos);
+        if (hazard.hazard) return hazard;
+    }
+
+    if (detect_prev) {
+        // Detect in the trailing empty as needed
+        gap.end = range.end;
+        if (gap.non_empty()) {
+            hazard = DetectPreviousHazard(type, detector, gap);
         }
     }
 
@@ -504,6 +505,21 @@ class HazardDetector {
     HazardDetector(SyncStageAccessIndex usage) : usage_index_(usage) {}
 };
 
+class HazardDetectorWithOrdering {
+    const SyncStageAccessIndex usage_index_;
+    const SyncOrderingBarrier &ordering_;
+
+  public:
+    HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
+        return pos->second.DetectHazard(usage_index_, ordering_);
+    }
+    HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos) const {
+        return pos->second.DetectAsyncHazard(usage_index_);
+    }
+    HazardDetectorWithOrdering(SyncStageAccessIndex usage, const SyncOrderingBarrier &ordering)
+        : usage_index_(usage), ordering_(ordering) {}
+};
+
 HazardResult AccessContext::DetectHazard(AddressType type, SyncStageAccessIndex usage_index,
                                          const ResourceAccessRange &range) const {
     HazardDetector detector(usage_index);
@@ -514,6 +530,21 @@ HazardResult AccessContext::DetectHazard(const BUFFER_STATE &buffer, SyncStageAc
                                          const ResourceAccessRange &range) const {
     if (!SimpleBinding(buffer)) return HazardResult();
     return DetectHazard(AddressType::kLinearAddress, usage_index, range + ResourceBaseAddress(buffer));
+}
+
+template <typename Detector>
+HazardResult AccessContext::DetectHazard(Detector &detector, const IMAGE_STATE &image,
+                                         const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
+                                         const VkExtent3D &extent, DetectOptions options) const {
+    if (!SimpleBinding(image)) return HazardResult();
+    subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, offset, extent);
+    const auto address_type = ImageAddressType(image);
+    const auto base_address = ResourceBaseAddress(image);
+    for (; range_gen->non_empty(); ++range_gen) {
+        HazardResult hazard = DetectHazard(address_type, detector, (*range_gen + base_address), options);
+        if (hazard.hazard) return hazard;
+    }
+    return HazardResult();
 }
 
 HazardResult AccessContext::DetectHazard(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
@@ -527,15 +558,15 @@ HazardResult AccessContext::DetectHazard(const IMAGE_STATE &image, SyncStageAcce
 HazardResult AccessContext::DetectHazard(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
                                          const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
                                          const VkExtent3D &extent) const {
-    if (!SimpleBinding(image)) return HazardResult();
-    subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, offset, extent);
-    const auto address_type = ImageAddressType(image);
-    const auto base_address = ResourceBaseAddress(image);
-    for (; range_gen->non_empty(); ++range_gen) {
-        HazardResult hazard = DetectHazard(address_type, current_usage, (*range_gen + base_address));
-        if (hazard.hazard) return hazard;
-    }
-    return HazardResult();
+    HazardDetector detector(current_usage);
+    return DetectHazard(detector, image, subresource_range, offset, extent, DetectOptions::kDetectAll);
+}
+
+HazardResult AccessContext::DetectHazard(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
+                                         const VkImageSubresourceRange &subresource_range, const SyncOrderingBarrier &ordering,
+                                         const VkOffset3D &offset, const VkExtent3D &extent) const {
+    HazardDetectorWithOrdering detector(current_usage, ordering);
+    return DetectHazard(detector, image, subresource_range, offset, extent, DetectOptions::kDetectAll);
 }
 
 class BarrierHazardDetector {
@@ -562,24 +593,16 @@ HazardResult AccessContext::DetectBarrierHazard(AddressType type, SyncStageAcces
                                                 VkPipelineStageFlags src_exec_scope, SyncStageAccessFlags src_access_scope,
                                                 const ResourceAccessRange &range, DetectOptions options) const {
     BarrierHazardDetector detector(current_usage, src_exec_scope, src_access_scope);
-    return DetectHazard(type, detector, range, DetectOptions::kDetectAll);
+    return DetectHazard(type, detector, range, options);
 }
 
 HazardResult AccessContext::DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags src_exec_scope,
                                                      SyncStageAccessFlags src_access_scope,
                                                      const VkImageSubresourceRange &subresource_range,
                                                      DetectOptions options) const {
-    if (!SimpleBinding(image)) return HazardResult();
-    subresource_adapter::ImageRangeGenerator range_gen(*image.fragment_encoder.get(), subresource_range, {0, 0, 0},
-                                                       image.createInfo.extent);
-    const auto address_type = ImageAddressType(image);
-    const auto base_address = ResourceBaseAddress(image);
-    for (; range_gen->non_empty(); ++range_gen) {
-        HazardResult hazard = DetectBarrierHazard(address_type, SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION, src_exec_scope,
-                                                  src_access_scope, (*range_gen + base_address), options);
-        if (hazard.hazard) return hazard;
-    }
-    return HazardResult();
+    BarrierHazardDetector detector(SyncStageAccessIndex::SYNC_IMAGE_LAYOUT_TRANSITION, src_exec_scope, src_access_scope);
+    VkOffset3D zero_offset = {0, 0, 0};
+    return DetectHazard(detector, image, subresource_range, zero_offset, image.createInfo.extent, options);
 }
 
 HazardResult AccessContext::DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags src_exec_scope,
@@ -1115,12 +1138,43 @@ HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index)
         if (last_write && IsWriteHazard(usage)) {
             hazard.Set(WRITE_AFTER_WRITE, write_tag);
         } else {
-            // Only look for casus belli for WAR
+            // Look for casus belli for WAR
             const auto usage_stage = PipelineStageBit(usage_index);
             for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
                 if (IsReadHazard(usage_stage, last_reads[read_index])) {
                     hazard.Set(WRITE_AFTER_READ, last_reads[read_index].tag);
                     break;
+                }
+            }
+        }
+    }
+    return hazard;
+}
+
+HazardResult ResourceAccessState::DetectHazard(SyncStageAccessIndex usage_index, const SyncOrderingBarrier &ordering) const {
+    // The ordering guarantees act as barriers to the last accesses, independent of synchronization operations
+    HazardResult hazard;
+    const auto usage = FlagBit(usage_index);
+    const bool write_is_ordered = (last_write & ordering.access_scope) == last_write;  // Is true if no write, and that's good.
+    if (IsRead(usage)) {
+        if (!write_is_ordered && IsWriteHazard(usage)) {
+            hazard.Set(READ_AFTER_WRITE, write_tag);
+        }
+    } else {
+        if (!write_is_ordered && IsWriteHazard(usage)) {
+            hazard.Set(WRITE_AFTER_WRITE, write_tag);
+        } else {
+            const auto usage_stage = PipelineStageBit(usage_index);
+            const auto unordered_reads = last_read_stages & ~ordering.exec_scope;
+            if (unordered_reads) {
+                // Look for any WAR hazards outside the ordered set of stages
+                for (uint32_t read_index = 0; read_index < last_read_count; read_index++) {
+                    if (last_reads[read_index].stage & unordered_reads) {
+                        if (IsReadHazard(usage_stage, last_reads[read_index])) {
+                            hazard.Set(WRITE_AFTER_READ, last_reads[read_index].tag);
+                            break;
+                        }
+                    }
                 }
             }
         }
