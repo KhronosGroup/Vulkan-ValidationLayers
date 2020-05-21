@@ -214,6 +214,8 @@ class AccessContext {
     HazardResult DetectHazard(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
                               const VkImageSubresourceRange &subresource_range, const SyncOrderingBarrier &ordering,
                               const VkOffset3D &offset, const VkExtent3D &extent) const;
+    HazardResult DetectHazard(const IMAGE_VIEW_STATE *view, SyncStageAccessIndex current_usage, const SyncOrderingBarrier &ordering,
+                              const VkOffset3D &offset, const VkExtent3D &extent, VkImageAspectFlags aspect_mask = 0U) const;
     HazardResult DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags src_exec_scope,
                                           SyncStageAccessFlags src_access_scope, const VkImageSubresourceRange &subresource_range,
                                           DetectOptions options) const;
@@ -300,6 +302,9 @@ class AccessContext {
     bool ValidateLoadOperation(const SyncValidator &sync_state, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
                                const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name,
                                uint32_t subpass) const;
+    bool ValidateResolveOperations(const SyncValidator &sync_state, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
+                                   const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name,
+                                   uint32_t subpass) const;
 
   private:
     HazardResult DetectHazard(AddressType type, SyncStageAccessIndex usage_index, const ResourceAccessRange &range) const;
