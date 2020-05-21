@@ -1099,6 +1099,8 @@ void ValidationStateTracker::ResetCommandBufferState(const VkCommandBuffer cb) {
 
         // Best practices info
         pCB->small_indexed_draw_call_count = 0;
+
+        pCB->transform_feedback_active = false;
     }
     if (command_buffer_reset_callback) {
         (*command_buffer_reset_callback)(cb);
@@ -3999,6 +4001,23 @@ void ValidationStateTracker::PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer
                                                                  const VkRenderPassBeginInfo *pRenderPassBegin,
                                                                  const VkSubpassBeginInfoKHR *pSubpassBeginInfo) {
     RecordCmdBeginRenderPassState(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents);
+}
+
+void ValidationStateTracker::PostCallRecordCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
+                                                                        uint32_t counterBufferCount,
+                                                                        const VkBuffer *pCounterBuffers,
+                                                                        const VkDeviceSize *pCounterBufferOffsets) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+
+    cb_state->transform_feedback_active = true;
+}
+
+void ValidationStateTracker::PostCallRecordCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
+                                                                      uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
+                                                                      const VkDeviceSize *pCounterBufferOffsets) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+
+    cb_state->transform_feedback_active = false;
 }
 
 void ValidationStateTracker::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer,

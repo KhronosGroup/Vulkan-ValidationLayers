@@ -1161,6 +1161,8 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     uint32_t small_indexed_draw_call_count;
 
     std::vector<IMAGE_VIEW_STATE *> imagelessFramebufferAttachments;
+
+    bool transform_feedback_active{false};
 };
 
 static inline const QFOTransferBarrierSets<VkImageMemoryBarrier> &GetQFOBarrierSets(

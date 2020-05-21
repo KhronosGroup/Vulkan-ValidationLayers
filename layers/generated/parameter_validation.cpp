@@ -9033,6 +9033,7 @@ bool StatelessValidation::PreCallValidateCmdBindTransformFeedbackBuffersEXT(
     if (!device_extensions.vk_ext_transform_feedback) skip |= OutputExtensionError("vkCmdBindTransformFeedbackBuffersEXT", VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     skip |= validate_handle_array("vkCmdBindTransformFeedbackBuffersEXT", "bindingCount", "pBuffers", bindingCount, pBuffers, true, true);
     skip |= validate_array("vkCmdBindTransformFeedbackBuffersEXT", "bindingCount", "pOffsets", bindingCount, &pOffsets, true, true, "VUID-vkCmdBindTransformFeedbackBuffersEXT-bindingCount-arraylength", "VUID-vkCmdBindTransformFeedbackBuffersEXT-pOffsets-parameter");
+    if (!skip) skip |= manual_PreCallValidateCmdBindTransformFeedbackBuffersEXT(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets, pSizes);
     return skip;
 }
 
@@ -9046,6 +9047,7 @@ bool StatelessValidation::PreCallValidateCmdBeginTransformFeedbackEXT(
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdBeginTransformFeedbackEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_ext_transform_feedback) skip |= OutputExtensionError("vkCmdBeginTransformFeedbackEXT", VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     // No xml-driven validation
+    if (!skip) skip |= manual_PreCallValidateCmdBeginTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount, pCounterBuffers, pCounterBufferOffsets);
     return skip;
 }
 
@@ -9059,6 +9061,7 @@ bool StatelessValidation::PreCallValidateCmdEndTransformFeedbackEXT(
     if (!device_extensions.vk_khr_get_physical_device_properties_2) skip |= OutputExtensionError("vkCmdEndTransformFeedbackEXT", VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     if (!device_extensions.vk_ext_transform_feedback) skip |= OutputExtensionError("vkCmdEndTransformFeedbackEXT", VK_EXT_TRANSFORM_FEEDBACK_EXTENSION_NAME);
     // No xml-driven validation
+    if (!skip) skip |= manual_PreCallValidateCmdEndTransformFeedbackEXT(commandBuffer, firstCounterBuffer, counterBufferCount, pCounterBuffers, pCounterBufferOffsets);
     return skip;
 }
 

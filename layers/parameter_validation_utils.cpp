@@ -4696,6 +4696,109 @@ bool StatelessValidation::manual_PreCallValidateAcquireNextImage2KHR(VkDevice de
     return skip;
 }
 
+bool StatelessValidation::manual_PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer,
+                                                                                   uint32_t firstBinding, uint32_t bindingCount,
+                                                                                   const VkBuffer *pBuffers,
+                                                                                   const VkDeviceSize *pOffsets,
+                                                                                   const VkDeviceSize *pSizes) const {
+    bool skip = false;
+
+    char const *const cmd_name = "CmdBindTransformFeedbackBuffersEXT";
+    for (uint32_t i = 0; i < bindingCount; ++i) {
+        if (pOffsets[i] & 3) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdBindTransformFeedbackBuffersEXT-pOffsets-02359",
+                             "%s: pOffsets[%" PRIu32 "](0x%" PRIxLEAST64 ") is not a multiple of 4.", cmd_name, i, pOffsets[i]);
+        }
+    }
+
+    if (firstBinding >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBindTransformFeedbackBuffersEXT-firstBinding-02356",
+                         "%s: The firstBinding(%" PRIu32
+                         ") index is greater than or equal to "
+                         "VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackBuffers(%" PRIu32 ").",
+                         cmd_name, firstBinding, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
+    }
+
+    if (firstBinding + bindingCount > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
+        skip |=
+            LogError(commandBuffer, "VUID-vkCmdBindTransformFeedbackBuffersEXT-firstBinding-02357",
+                     "%s: The sum of firstBinding(%" PRIu32 ") and bindCount(%" PRIu32
+                     ") is greater than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackBuffers(%" PRIu32 ").",
+                     cmd_name, firstBinding, bindingCount, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
+    }
+
+    for (uint32_t i = 0; i < bindingCount; ++i) {
+        // pSizes is optional and may be nullptr.
+        if (pSizes != nullptr) {
+            if (pSizes[i] != VK_WHOLE_SIZE &&
+                pSizes[i] > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBufferSize) {
+                skip |= LogError(commandBuffer, "VUID-vkCmdBindTransformFeedbackBuffersEXT-pSize-02361",
+                                 "%s: pSizes[%" PRIu32 "] (0x%" PRIxLEAST64
+                                 ") is not VK_WHOLE_SIZE and is greater than "
+                                 "VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackBufferSize.",
+                                 cmd_name, i, pSizes[i]);
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer,
+                                                                             uint32_t firstCounterBuffer,
+                                                                             uint32_t counterBufferCount,
+                                                                             const VkBuffer *pCounterBuffers,
+                                                                             const VkDeviceSize *pCounterBufferOffsets) const {
+    bool skip = false;
+
+    char const *const cmd_name = "CmdBeginTransformFeedbackEXT";
+    if (firstCounterBuffer >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-02368",
+                         "%s: The firstCounterBuffer(%" PRIu32
+                         ") index is greater than or equal to "
+                         "VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackBuffers(%" PRIu32 ").",
+                         cmd_name, firstCounterBuffer, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
+    }
+
+    if (firstCounterBuffer + counterBufferCount > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
+        skip |=
+            LogError(commandBuffer, "VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-02369",
+                     "%s: The sum of firstCounterBuffer(%" PRIu32 ") and counterBufferCount(%" PRIu32
+                     ") is greater than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackBuffers(%" PRIu32 ").",
+                     cmd_name, firstCounterBuffer, counterBufferCount,
+                     phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
+    }
+
+    return skip;
+}
+
+bool StatelessValidation::manual_PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer,
+                                                                           uint32_t firstCounterBuffer, uint32_t counterBufferCount,
+                                                                           const VkBuffer *pCounterBuffers,
+                                                                           const VkDeviceSize *pCounterBufferOffsets) const {
+    bool skip = false;
+
+    char const *const cmd_name = "CmdEndTransformFeedbackEXT";
+    if (firstCounterBuffer >= phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdEndTransformFeedbackEXT-firstCounterBuffer-02376",
+                         "%s: The firstCounterBuffer(%" PRIu32
+                         ") index is greater than or equal to "
+                         "VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackBuffers(%" PRIu32 ").",
+                         cmd_name, firstCounterBuffer, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
+    }
+
+    if (firstCounterBuffer + counterBufferCount > phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers) {
+        skip |=
+            LogError(commandBuffer, "VUID-vkCmdEndTransformFeedbackEXT-firstCounterBuffer-02377",
+                     "%s: The sum of firstCounterBuffer(%" PRIu32 ") and counterBufferCount(%" PRIu32
+                     ") is greater than VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackBuffers(%" PRIu32 ").",
+                     cmd_name, firstCounterBuffer, counterBufferCount,
+                     phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackBuffers);
+    }
+
+    return skip;
+}
+
 bool StatelessValidation::manual_PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
                                                                             uint32_t firstInstance, VkBuffer counterBuffer,
                                                                             VkDeviceSize counterBufferOffset,
@@ -4859,6 +4962,7 @@ bool StatelessValidation::manual_PreCallValidateCopyMemoryToAccelerationStructur
     }
     return skip;
 }
+
 bool StatelessValidation::manual_PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
     VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo) const {
     bool skip = false;
