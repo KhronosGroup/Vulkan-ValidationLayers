@@ -3488,6 +3488,11 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
         const VulkanTypedHandle obj_struct(buffer, kVulkanObjectTypeBuffer);
         skip = ValidateSetMemBinding(mem, obj_struct, api_name);
 
+        if (buffer_state->external_ahb) {
+            // TODO check what is valid to cover with external AHB below
+            return skip;
+        }
+
         // Validate bound memory range information
         const auto mem_info = GetDevMemState(mem);
         if (mem_info) {
