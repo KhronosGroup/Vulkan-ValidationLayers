@@ -8176,6 +8176,9 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     }
     SetTargetApiVersion(VK_API_VERSION_1_1);
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    VkPhysicalDeviceFeatures device_features = {};
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
+
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
@@ -8286,11 +8289,13 @@ TEST_F(VkLayerTest, MultiplaneImageSamplerConversionMismatch) {
     err = vk::CreateSampler(m_device->device(), &sci, NULL, &BadSampler);
     m_errorMonitor->VerifyFound();
 
-    sci.unnormalizedCoordinates = VK_FALSE;
-    sci.anisotropyEnable = VK_TRUE;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-addressModeU-01646");
-    err = vk::CreateSampler(m_device->device(), &sci, NULL, &BadSampler);
-    m_errorMonitor->VerifyFound();
+    if (device_features.samplerAnisotropy == VK_TRUE) {
+        sci.unnormalizedCoordinates = VK_FALSE;
+        sci.anisotropyEnable = VK_TRUE;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkSamplerCreateInfo-addressModeU-01646");
+        err = vk::CreateSampler(m_device->device(), &sci, NULL, &BadSampler);
+        m_errorMonitor->VerifyFound();
+    }
 
     // Create an image without a Ycbcr conversion
     VkImageObj mpimage(m_device);
@@ -10341,6 +10346,8 @@ TEST_F(VkLayerTest, InvalidMemoryRequirements) {
 TEST_F(VkLayerTest, FragmentDensityMapEnabled) {
     TEST_DESCRIPTION("Validation must check several conditions that apply only when Fragment Density Maps are used.");
     ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    VkPhysicalDeviceFeatures device_features = {};
+    ASSERT_NO_FATAL_FAILURE(GetPhysicalDeviceFeatures(&device_features));
 
     bool fdmSupported = DeviceExtensionSupported(gpu(), nullptr, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
 
@@ -10393,9 +10400,12 @@ TEST_F(VkLayerTest, FragmentDensityMapEnabled) {
     sampler_info.addressModeV = sampler_info_ref.addressModeV;
 
     // some features cannot be enabled for subsampled samplers
-    sampler_info.anisotropyEnable = VK_TRUE;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-flags-02578");
-    sampler_info.anisotropyEnable = sampler_info_ref.anisotropyEnable;
+    if (device_features.samplerAnisotropy == VK_TRUE) {
+        sampler_info.anisotropyEnable = VK_TRUE;
+        CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-flags-02578");
+        sampler_info.anisotropyEnable = sampler_info_ref.anisotropyEnable;
+        sampler_info.anisotropyEnable = VK_FALSE;
+    }
 
     sampler_info.compareEnable = VK_TRUE;
     CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-flags-02579");
