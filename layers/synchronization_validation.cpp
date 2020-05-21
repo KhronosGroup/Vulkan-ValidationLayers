@@ -81,6 +81,25 @@ static const char *string_SyncHazard(SyncHazard hazard) {
     return "INVALID HAZARD";
 }
 
+static constexpr VkPipelineStageFlags kColorAttachmentExecScope = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+static constexpr SyncStageAccessFlags kColorAttachmentAccessScope =
+    SyncStageAccessFlagBits::SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ_BIT |
+    SyncStageAccessFlagBits::SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT |
+    SyncStageAccessFlagBits::SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE_BIT;
+static constexpr VkPipelineStageFlags kDepthStencilAttachmentExecScope =
+    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+static constexpr SyncStageAccessFlags kDepthStencilAttachmentAccessScope =
+    SyncStageAccessFlagBits::SYNC_EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+    SyncStageAccessFlagBits::SYNC_EARLY_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+    SyncStageAccessFlagBits::SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+    SyncStageAccessFlagBits::SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+static constexpr SyncOrderingBarrier kColorAttachmentRasterOrder = {kColorAttachmentExecScope, kColorAttachmentAccessScope};
+static constexpr SyncOrderingBarrier kDepthStencilAttachmentRasterOrder = {kDepthStencilAttachmentExecScope,
+                                                                           kDepthStencilAttachmentAccessScope};
+static constexpr SyncOrderingBarrier kAttachmentRasterOrder = {kDepthStencilAttachmentExecScope | kColorAttachmentExecScope,
+                                                               kDepthStencilAttachmentAccessScope | kColorAttachmentAccessScope};
+
 inline VkDeviceSize GetRealWholeSize(VkDeviceSize offset, VkDeviceSize size, VkDeviceSize whole_size) {
     if (size == VK_WHOLE_SIZE) {
         return (whole_size - offset);
@@ -424,7 +443,7 @@ bool AccessContext::ValidateLoadOperation(const SyncValidator &sync_state, const
             //    for each aspect loaded.
 
             const bool has_depth = FormatHasDepth(ci.format);
-            const bool has_stencil = FormatHasDepth(ci.format);
+            const bool has_stencil = FormatHasStencil(ci.format);
             const bool is_color = !(has_depth || has_stencil);
 
             const SyncStageAccessIndex load_index = has_depth ? DepthStencilLoadUsage(ci.loadOp) : ColorLoadUsage(ci.loadOp);
@@ -488,6 +507,93 @@ bool AccessContext::ValidateLoadOperation(const SyncValidator &sync_state, const
                                                 " aspect %s during load with loadOp %s.",
                                                 func_name, string_SyncHazard(hazard.hazard), subpass, i, aspect, load_op_string);
                 }
+            }
+        }
+    }
+    return skip;
+}
+
+bool AccessContext::ValidateResolveOperations(const SyncValidator &sync_state, const RENDER_PASS_STATE &rp_state,
+                                              const VkRect2D &render_area,
+                                              const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name,
+                                              uint32_t subpass) const {
+    bool skip = false;
+    VkExtent3D extent = CastTo3D(render_area.extent);
+    VkOffset3D offset = CastTo3D(render_area.offset);
+    const auto &rp_ci = rp_state.createInfo;
+    const auto *attachment_ci = rp_ci.pAttachments;
+    const auto &subpass_ci = rp_ci.pSubpasses[subpass];
+
+    // Color resolves
+    const auto *color_attachments = subpass_ci.pColorAttachments;
+    const auto *color_resolve = subpass_ci.pResolveAttachments;
+    if (color_resolve && color_attachments) {
+        for (uint32_t i = 0; i < subpass_ci.colorAttachmentCount; i++) {
+            const auto &color_attach = color_attachments[i].attachment;
+            const auto &resolve_attach = subpass_ci.pResolveAttachments[i].attachment;
+            if ((color_attach != VK_ATTACHMENT_UNUSED) && (resolve_attach != VK_ATTACHMENT_UNUSED)) {
+                const char *resolve_op = "color attachment read";
+                auto hazard = DetectHazard(attachment_views[color_attach], SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ,
+                                           kColorAttachmentRasterOrder, offset, extent);
+
+                if (!hazard.hazard) {
+                    resolve_op = "resolve attachment write";
+                    hazard = DetectHazard(attachment_views[resolve_attach], SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
+                                          kColorAttachmentRasterOrder, offset, extent);
+                }
+                if (hazard.hazard) {
+                    skip |= sync_state.LogError(rp_state.renderPass, string_SyncHazardVUID(hazard.hazard),
+                                                "%s: Hazard %s in subpass %" PRIu32 "during %s, from color attachment %" PRIu32
+                                                " to resolve attachment %" PRIu32 " during %.",
+                                                func_name, string_SyncHazard(hazard.hazard), subpass, resolve_op, color_attach,
+                                                resolve_attach);
+                }
+            }
+        }
+    }
+    const auto ds_resolve = lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolve>(subpass_ci.pNext);
+    if (ds_resolve && ds_resolve->pDepthStencilResolveAttachment &&
+        (ds_resolve->pDepthStencilResolveAttachment->attachment != VK_ATTACHMENT_UNUSED) && subpass_ci.pDepthStencilAttachment &&
+        (subpass_ci.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED)) {
+        const auto src_at = subpass_ci.pDepthStencilAttachment->attachment;
+        const auto src_ci = attachment_ci[src_at];
+        // The formats are required to match so we can pick either
+        const bool resolve_depth = (ds_resolve->depthResolveMode != VK_RESOLVE_MODE_NONE) && FormatHasDepth(src_ci.format);
+        const bool resolve_stencil = (ds_resolve->stencilResolveMode != VK_RESOLVE_MODE_NONE) && FormatHasStencil(src_ci.format);
+        const auto dst_at = ds_resolve->pDepthStencilResolveAttachment->attachment;
+        VkImageAspectFlags aspect_mask = 0u;
+
+        const char *aspect_string = nullptr;
+        if (resolve_depth && resolve_stencil) {
+            // Validate all aspects together
+            aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+            aspect_string = "depth/stencil";
+        } else if (resolve_depth) {
+            // Validate depth only
+            aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT;
+            aspect_string = "depth";
+        } else if (resolve_stencil) {
+            // Validate all stencil only
+            aspect_mask = VK_IMAGE_ASPECT_STENCIL_BIT;
+            aspect_string = "stencil";
+        }
+
+        if (aspect_mask) {
+            const char *resolve_op = "attachment read";
+            auto hazard = DetectHazard(attachment_views[src_at], SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ,
+                                       kDepthStencilAttachmentRasterOrder, offset, extent);
+            if (!hazard.hazard) {
+                // Use the broader ordering guarantee as d/s resolve uses the color stage, to process depth/stencil information
+                resolve_op = "resolve attachment write";
+                hazard = DetectHazard(attachment_views[dst_at], SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
+                                      kAttachmentRasterOrder, offset, extent);
+            }
+            if (hazard.hazard) {
+                skip |= sync_state.LogError(
+                    rp_state.renderPass, string_SyncHazardVUID(hazard.hazard),
+                    "%s: Hazard %s in subpass %" PRIu32 "during %s %s, from depth/stencil attachment %" PRIu32
+                    " to resolve attachment %" PRIu32 " during %.",
+                    func_name, string_SyncHazard(hazard.hazard), subpass, aspect_string, resolve_op, src_at, dst_at);
             }
         }
     }
@@ -569,6 +675,30 @@ HazardResult AccessContext::DetectHazard(const IMAGE_STATE &image, SyncStageAcce
     return DetectHazard(detector, image, subresource_range, offset, extent, DetectOptions::kDetectAll);
 }
 
+// Some common code for looking at attachments, if there's anything wrong, we return no hazard, core validation
+// should have reported the issue regarding an invalid attachment entry
+HazardResult AccessContext::DetectHazard(const IMAGE_VIEW_STATE *view, SyncStageAccessIndex current_usage,
+                                         const SyncOrderingBarrier &ordering, const VkOffset3D &offset, const VkExtent3D &extent,
+                                         VkImageAspectFlags aspect_mask) const {
+    if (view != nullptr) {
+        const IMAGE_STATE *image = view->image_state.get();
+        if (image != nullptr) {
+            auto *detect_range = &view->normalized_subresource_range;
+            VkImageSubresourceRange masked_range;
+            if (aspect_mask) {  // If present and non-zero, restrict the normalized range to aspects present in aspect_mask
+                masked_range = view->normalized_subresource_range;
+                masked_range.aspectMask = aspect_mask & masked_range.aspectMask;
+                detect_range = &masked_range;
+            }
+
+            // NOTE: The range encoding code is not robust to invalid ranges, so we protect it from our change
+            if (detect_range->aspectMask) {
+                return DetectHazard(*image, current_usage, *detect_range, ordering, offset, extent);
+            }
+        }
+    }
+    return HazardResult();
+}
 class BarrierHazardDetector {
   public:
     BarrierHazardDetector(SyncStageAccessIndex usage_index, VkPipelineStageFlags src_exec_scope,
@@ -978,6 +1108,8 @@ void CommandBufferAccessContext::RecordEndRenderPass(const RENDER_PASS_STATE &re
 bool RenderPassAccessContext::ValidateNextSubpass(const SyncValidator &sync_state, const VkRect2D &render_area,
                                                   const char *func_name) const {
     bool skip = false;
+    skip |= CurrentContext().ValidateResolveOperations(sync_state, *rp_state_, render_area, attachment_views_, func_name,
+                                                       current_subpass_);
     const auto next_subpass = current_subpass_ + 1;
     const auto &next_context = subpass_contexts_[next_subpass];
     skip |= next_context.ValidateLayoutTransitions(sync_state, *rp_state_, attachment_views_, func_name, next_subpass);
@@ -1050,7 +1182,7 @@ void RenderPassAccessContext::RecordLoadOperations(const VkRect2D &render_area, 
 
             const auto &ci = attachment_ci[i];
             const bool has_depth = FormatHasDepth(ci.format);
-            const bool has_stencil = FormatHasDepth(ci.format);
+            const bool has_stencil = FormatHasStencil(ci.format);
             const bool is_color = !(has_depth || has_stencil);
 
             if (is_color) {
