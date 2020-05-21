@@ -133,6 +133,55 @@ TEST_F(VkLayerTest, MessageIdFilterInt) {
     SetEnvVar("VK_LAYER_MESSAGE_ID_FILTER", "");
 }
 
+struct LayerStatusCheckData {
+    std::function<void(const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, LayerStatusCheckData *)> callback;
+    ErrorMonitor *error_monitor;
+};
+
+TEST_F(VkLayerTest, LayerInfoMessages) {
+    TEST_DESCRIPTION("Ensure layer prints startup status messages.");
+
+    auto ici = GetInstanceCreateInfo();
+    LayerStatusCheckData callback_data;
+    auto local_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, LayerStatusCheckData *data) {
+        std::string message(pCallbackData->pMessage);
+        if ((data->error_monitor->GetMessageFlags() & kInformationBit) &&
+            (message.find("UNASSIGNED-khronos-validation-createinstance-status-message") == std::string::npos)) {
+            data->error_monitor->SetError("UNASSIGNED-Khronos-validation-createinstance-status-message-not-found");
+        } else if ((data->error_monitor->GetMessageFlags() & kPerformanceWarningBit) &&
+                   (message.find("UNASSIGNED-khronos-Validation-debug-build-warning-message") == std::string::npos)) {
+            data->error_monitor->SetError("UNASSIGNED-khronos-validation-createinstance-debug-warning-message-not-found");
+        }
+    };
+    callback_data.error_monitor = m_errorMonitor;
+    callback_data.callback = local_callback;
+
+    VkInstance local_instance;
+
+    auto callback_create_info = lvl_init_struct<VkDebugUtilsMessengerCreateInfoEXT>();
+    callback_create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+    callback_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+    callback_create_info.pfnUserCallback = DebugUtilsCallback;
+    callback_create_info.pUserData = &callback_data;
+    ici.pNext = &callback_create_info;
+
+    // Create an instance, error if layer status INFO message not found
+    m_errorMonitor->ExpectSuccess();
+    ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &local_instance));
+    m_errorMonitor->VerifyNotFound();
+    vk::DestroyInstance(local_instance, nullptr);
+
+#ifndef NDEBUG
+    // Create an instance, error if layer DEBUG_BUILD warning message not found
+    callback_create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+    callback_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    m_errorMonitor->ExpectSuccess();
+    ASSERT_VK_SUCCESS(vk::CreateInstance(&ici, nullptr, &local_instance));
+    m_errorMonitor->VerifyNotFound();
+    vk::DestroyInstance(local_instance, nullptr);
+#endif
+}
+
 TEST_F(VkLayerTest, RequiredParameter) {
     TEST_DESCRIPTION("Specify VK_NULL_HANDLE, NULL, and 0 for required handle, pointer, array, and array count parameters");
 
