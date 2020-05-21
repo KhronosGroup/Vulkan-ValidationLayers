@@ -274,12 +274,14 @@ void GpuAssisted::PostCallRecordGetBufferDeviceAddressKHR(VkDevice device, const
 void GpuAssisted::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator) {
     BUFFER_STATE *buffer_state = GetBufferState(buffer);
     if (buffer_state) buffer_map.erase(buffer_state->deviceAddress);
+    ValidationStateTracker::PreCallRecordDestroyBuffer(device, buffer, pAllocator);
 }
 
 // Clean up device-related resources
 void GpuAssisted::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator) {
     DestroyAccelerationStructureBuildValidationState();
     UtilPreCallRecordDestroyDevice(this);
+    ValidationStateTracker::PreCallRecordDestroyDevice(device, pAllocator);
 }
 
 void GpuAssisted::CreateAccelerationStructureBuildValidationState(GpuAssisted *device_gpuav) {
