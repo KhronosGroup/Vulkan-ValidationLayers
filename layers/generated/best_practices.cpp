@@ -5715,6 +5715,8 @@ void BestPractices::PostCallRecordCreateSharedSwapchainsKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCreateSharedSwapchainsKHR(device, swapchainCount, pCreateInfos, pAllocator, pSwapchains, result); });
 }
 
+#ifdef VK_USE_PLATFORM_XLIB_KHR
+
 bool BestPractices::PreCallValidateCreateXlibSurfaceKHR(
     VkInstance                                  instance,
     const VkXlibSurfaceCreateInfoKHR*           pCreateInfo,
@@ -5745,6 +5747,10 @@ void BestPractices::PostCallRecordCreateXlibSurfaceKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCreateXlibSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, result); });
 }
 
+#endif // VK_USE_PLATFORM_XLIB_KHR
+
+#ifdef VK_USE_PLATFORM_XLIB_KHR
+
 bool BestPractices::PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
@@ -5773,6 +5779,10 @@ void BestPractices::PostCallRecordGetPhysicalDeviceXlibPresentationSupportKHR(
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceXlibPresentationSupportKHR(physicalDevice, queueFamilyIndex, dpy, visualID);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetPhysicalDeviceXlibPresentationSupportKHR(physicalDevice, queueFamilyIndex, dpy, visualID); });
 }
+
+#endif // VK_USE_PLATFORM_XLIB_KHR
+
+#ifdef VK_USE_PLATFORM_XCB_KHR
 
 bool BestPractices::PreCallValidateCreateXcbSurfaceKHR(
     VkInstance                                  instance,
@@ -5804,6 +5814,10 @@ void BestPractices::PostCallRecordCreateXcbSurfaceKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCreateXcbSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, result); });
 }
 
+#endif // VK_USE_PLATFORM_XCB_KHR
+
+#ifdef VK_USE_PLATFORM_XCB_KHR
+
 bool BestPractices::PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
@@ -5832,6 +5846,10 @@ void BestPractices::PostCallRecordGetPhysicalDeviceXcbPresentationSupportKHR(
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceXcbPresentationSupportKHR(physicalDevice, queueFamilyIndex, connection, visual_id);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetPhysicalDeviceXcbPresentationSupportKHR(physicalDevice, queueFamilyIndex, connection, visual_id); });
 }
+
+#endif // VK_USE_PLATFORM_XCB_KHR
+
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
 
 bool BestPractices::PreCallValidateCreateWaylandSurfaceKHR(
     VkInstance                                  instance,
@@ -5863,6 +5881,10 @@ void BestPractices::PostCallRecordCreateWaylandSurfaceKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCreateWaylandSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, result); });
 }
 
+#endif // VK_USE_PLATFORM_WAYLAND_KHR
+
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+
 bool BestPractices::PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
@@ -5888,6 +5910,10 @@ void BestPractices::PostCallRecordGetPhysicalDeviceWaylandPresentationSupportKHR
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceWaylandPresentationSupportKHR(physicalDevice, queueFamilyIndex, display);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetPhysicalDeviceWaylandPresentationSupportKHR(physicalDevice, queueFamilyIndex, display); });
 }
+
+#endif // VK_USE_PLATFORM_WAYLAND_KHR
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
 
 bool BestPractices::PreCallValidateCreateAndroidSurfaceKHR(
     VkInstance                                  instance,
@@ -5919,6 +5945,10 @@ void BestPractices::PostCallRecordCreateAndroidSurfaceKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCreateAndroidSurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, result); });
 }
 
+#endif // VK_USE_PLATFORM_ANDROID_KHR
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+
 bool BestPractices::PreCallValidateCreateWin32SurfaceKHR(
     VkInstance                                  instance,
     const VkWin32SurfaceCreateInfoKHR*          pCreateInfo,
@@ -5949,6 +5979,10 @@ void BestPractices::PostCallRecordCreateWin32SurfaceKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCreateWin32SurfaceKHR(instance, pCreateInfo, pAllocator, pSurface, result); });
 }
 
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+
 bool BestPractices::PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex) const {
@@ -5971,6 +6005,8 @@ void BestPractices::PostCallRecordGetPhysicalDeviceWin32PresentationSupportKHR(
     ValidationStateTracker::PostCallRecordGetPhysicalDeviceWin32PresentationSupportKHR(physicalDevice, queueFamilyIndex);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetPhysicalDeviceWin32PresentationSupportKHR(physicalDevice, queueFamilyIndex); });
 }
+
+#endif // VK_USE_PLATFORM_WIN32_KHR
 
 bool BestPractices::PreCallValidateGetPhysicalDeviceFeatures2KHR(
     VkPhysicalDevice                            physicalDevice,
@@ -6321,6 +6357,8 @@ void BestPractices::PostCallRecordGetPhysicalDeviceExternalBufferPropertiesKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetPhysicalDeviceExternalBufferPropertiesKHR(physicalDevice, pExternalBufferInfo, pExternalBufferProperties); });
 }
 
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+
 bool BestPractices::PreCallValidateGetMemoryWin32HandleKHR(
     VkDevice                                    device,
     const VkMemoryGetWin32HandleInfoKHR*        pGetWin32HandleInfo,
@@ -6347,6 +6385,10 @@ void BestPractices::PostCallRecordGetMemoryWin32HandleKHR(
     ValidationStateTracker::PostCallRecordGetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, result); });
 }
+
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool BestPractices::PreCallValidateGetMemoryWin32HandlePropertiesKHR(
     VkDevice                                    device,
@@ -6377,6 +6419,8 @@ void BestPractices::PostCallRecordGetMemoryWin32HandlePropertiesKHR(
     ValidationStateTracker::PostCallRecordGetMemoryWin32HandlePropertiesKHR(device, handleType, handle, pMemoryWin32HandleProperties, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetMemoryWin32HandlePropertiesKHR(device, handleType, handle, pMemoryWin32HandleProperties, result); });
 }
+
+#endif // VK_USE_PLATFORM_WIN32_KHR
 
 bool BestPractices::PreCallValidateGetMemoryFdKHR(
     VkDevice                                    device,
@@ -6461,6 +6505,8 @@ void BestPractices::PostCallRecordGetPhysicalDeviceExternalSemaphorePropertiesKH
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetPhysicalDeviceExternalSemaphorePropertiesKHR(physicalDevice, pExternalSemaphoreInfo, pExternalSemaphoreProperties); });
 }
 
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+
 bool BestPractices::PreCallValidateImportSemaphoreWin32HandleKHR(
     VkDevice                                    device,
     const VkImportSemaphoreWin32HandleInfoKHR*  pImportSemaphoreWin32HandleInfo) const {
@@ -6484,6 +6530,10 @@ void BestPractices::PostCallRecordImportSemaphoreWin32HandleKHR(
     ValidationStateTracker::PostCallRecordImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordImportSemaphoreWin32HandleKHR(device, pImportSemaphoreWin32HandleInfo, result); });
 }
+
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool BestPractices::PreCallValidateGetSemaphoreWin32HandleKHR(
     VkDevice                                    device,
@@ -6511,6 +6561,8 @@ void BestPractices::PostCallRecordGetSemaphoreWin32HandleKHR(
     ValidationStateTracker::PostCallRecordGetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, result); });
 }
+
+#endif // VK_USE_PLATFORM_WIN32_KHR
 
 bool BestPractices::PreCallValidateImportSemaphoreFdKHR(
     VkDevice                                    device,
@@ -6870,6 +6922,8 @@ void BestPractices::PostCallRecordGetPhysicalDeviceExternalFencePropertiesKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetPhysicalDeviceExternalFencePropertiesKHR(physicalDevice, pExternalFenceInfo, pExternalFenceProperties); });
 }
 
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+
 bool BestPractices::PreCallValidateImportFenceWin32HandleKHR(
     VkDevice                                    device,
     const VkImportFenceWin32HandleInfoKHR*      pImportFenceWin32HandleInfo) const {
@@ -6893,6 +6947,10 @@ void BestPractices::PostCallRecordImportFenceWin32HandleKHR(
     ValidationStateTracker::PostCallRecordImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordImportFenceWin32HandleKHR(device, pImportFenceWin32HandleInfo, result); });
 }
+
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool BestPractices::PreCallValidateGetFenceWin32HandleKHR(
     VkDevice                                    device,
@@ -6920,6 +6978,8 @@ void BestPractices::PostCallRecordGetFenceWin32HandleKHR(
     ValidationStateTracker::PostCallRecordGetFenceWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetFenceWin32HandleKHR(device, pGetWin32HandleInfo, pHandle, result); });
 }
+
+#endif // VK_USE_PLATFORM_WIN32_KHR
 
 bool BestPractices::PreCallValidateImportFenceFdKHR(
     VkDevice                                    device,
@@ -7684,6 +7744,8 @@ void BestPractices::PostCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR(device, pInfo); });
 }
 
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
 bool BestPractices::PreCallValidateCreateDeferredOperationKHR(
     VkDevice                                    device,
     const VkAllocationCallbacks*                pAllocator,
@@ -7711,6 +7773,10 @@ void BestPractices::PostCallRecordCreateDeferredOperationKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCreateDeferredOperationKHR(device, pAllocator, pDeferredOperation, result); });
 }
 
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
 bool BestPractices::PreCallValidateDestroyDeferredOperationKHR(
     VkDevice                                    device,
     VkDeferredOperationKHR                      operation,
@@ -7737,6 +7803,10 @@ void BestPractices::PostCallRecordDestroyDeferredOperationKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordDestroyDeferredOperationKHR(device, operation, pAllocator); });
 }
 
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
 bool BestPractices::PreCallValidateGetDeferredOperationMaxConcurrencyKHR(
     VkDevice                                    device,
     VkDeferredOperationKHR                      operation) const {
@@ -7759,6 +7829,10 @@ void BestPractices::PostCallRecordGetDeferredOperationMaxConcurrencyKHR(
     ValidationStateTracker::PostCallRecordGetDeferredOperationMaxConcurrencyKHR(device, operation);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetDeferredOperationMaxConcurrencyKHR(device, operation); });
 }
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool BestPractices::PreCallValidateGetDeferredOperationResultKHR(
     VkDevice                                    device,
@@ -7784,6 +7858,10 @@ void BestPractices::PostCallRecordGetDeferredOperationResultKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetDeferredOperationResultKHR(device, operation, result); });
 }
 
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
 bool BestPractices::PreCallValidateDeferredOperationJoinKHR(
     VkDevice                                    device,
     VkDeferredOperationKHR                      operation) const {
@@ -7807,6 +7885,8 @@ void BestPractices::PostCallRecordDeferredOperationJoinKHR(
     ValidationStateTracker::PostCallRecordDeferredOperationJoinKHR(device, operation, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordDeferredOperationJoinKHR(device, operation, result); });
 }
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
 
 bool BestPractices::PreCallValidateGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
@@ -8469,6 +8549,8 @@ void BestPractices::PostCallRecordGetShaderInfoAMD(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetShaderInfoAMD(device, pipeline, shaderStage, infoType, pInfoSize, pInfo, result); });
 }
 
+#ifdef VK_USE_PLATFORM_GGP
+
 bool BestPractices::PreCallValidateCreateStreamDescriptorSurfaceGGP(
     VkInstance                                  instance,
     const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
@@ -8498,6 +8580,8 @@ void BestPractices::PostCallRecordCreateStreamDescriptorSurfaceGGP(
     ValidationStateTracker::PostCallRecordCreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCreateStreamDescriptorSurfaceGGP(instance, pCreateInfo, pAllocator, pSurface, result); });
 }
+
+#endif // VK_USE_PLATFORM_GGP
 
 bool BestPractices::PreCallValidateGetPhysicalDeviceExternalImageFormatPropertiesNV(
     VkPhysicalDevice                            physicalDevice,
@@ -8541,6 +8625,8 @@ void BestPractices::PostCallRecordGetPhysicalDeviceExternalImageFormatProperties
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetPhysicalDeviceExternalImageFormatPropertiesNV(physicalDevice, format, type, tiling, usage, flags, externalHandleType, pExternalImageFormatProperties, result); });
 }
 
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+
 bool BestPractices::PreCallValidateGetMemoryWin32HandleNV(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
@@ -8571,6 +8657,10 @@ void BestPractices::PostCallRecordGetMemoryWin32HandleNV(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetMemoryWin32HandleNV(device, memory, handleType, pHandle, result); });
 }
 
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
+#ifdef VK_USE_PLATFORM_VI_NN
+
 bool BestPractices::PreCallValidateCreateViSurfaceNN(
     VkInstance                                  instance,
     const VkViSurfaceCreateInfoNN*              pCreateInfo,
@@ -8600,6 +8690,8 @@ void BestPractices::PostCallRecordCreateViSurfaceNN(
     ValidationStateTracker::PostCallRecordCreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCreateViSurfaceNN(instance, pCreateInfo, pAllocator, pSurface, result); });
 }
+
+#endif // VK_USE_PLATFORM_VI_NN
 
 bool BestPractices::PreCallValidateCmdBeginConditionalRenderingEXT(
     VkCommandBuffer                             commandBuffer,
@@ -8697,6 +8789,8 @@ void BestPractices::PostCallRecordReleaseDisplayEXT(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordReleaseDisplayEXT(physicalDevice, display, result); });
 }
 
+#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
+
 bool BestPractices::PreCallValidateAcquireXlibDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     Display*                                    dpy,
@@ -8723,6 +8817,10 @@ void BestPractices::PostCallRecordAcquireXlibDisplayEXT(
     ValidationStateTracker::PostCallRecordAcquireXlibDisplayEXT(physicalDevice, dpy, display, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordAcquireXlibDisplayEXT(physicalDevice, dpy, display, result); });
 }
+
+#endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
+
+#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
 bool BestPractices::PreCallValidateGetRandROutputDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
@@ -8753,6 +8851,8 @@ void BestPractices::PostCallRecordGetRandROutputDisplayEXT(
     ValidationStateTracker::PostCallRecordGetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetRandROutputDisplayEXT(physicalDevice, dpy, rrOutput, pDisplay, result); });
 }
+
+#endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
 bool BestPractices::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EXT(
     VkPhysicalDevice                            physicalDevice,
@@ -9016,6 +9116,8 @@ void BestPractices::PostCallRecordSetHdrMetadataEXT(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordSetHdrMetadataEXT(device, swapchainCount, pSwapchains, pMetadata); });
 }
 
+#ifdef VK_USE_PLATFORM_IOS_MVK
+
 bool BestPractices::PreCallValidateCreateIOSSurfaceMVK(
     VkInstance                                  instance,
     const VkIOSSurfaceCreateInfoMVK*            pCreateInfo,
@@ -9046,6 +9148,10 @@ void BestPractices::PostCallRecordCreateIOSSurfaceMVK(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCreateIOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, result); });
 }
 
+#endif // VK_USE_PLATFORM_IOS_MVK
+
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+
 bool BestPractices::PreCallValidateCreateMacOSSurfaceMVK(
     VkInstance                                  instance,
     const VkMacOSSurfaceCreateInfoMVK*          pCreateInfo,
@@ -9075,6 +9181,8 @@ void BestPractices::PostCallRecordCreateMacOSSurfaceMVK(
     ValidationStateTracker::PostCallRecordCreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCreateMacOSSurfaceMVK(instance, pCreateInfo, pAllocator, pSurface, result); });
 }
+
+#endif // VK_USE_PLATFORM_MACOS_MVK
 
 bool BestPractices::PreCallValidateSetDebugUtilsObjectNameEXT(
     VkDevice                                    device,
@@ -9341,6 +9449,8 @@ void BestPractices::PostCallRecordSubmitDebugUtilsMessageEXT(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordSubmitDebugUtilsMessageEXT(instance, messageSeverity, messageTypes, pCallbackData); });
 }
 
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+
 bool BestPractices::PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(
     VkDevice                                    device,
     const struct AHardwareBuffer*               buffer,
@@ -9368,6 +9478,10 @@ void BestPractices::PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(device, buffer, pProperties, result); });
 }
 
+#endif // VK_USE_PLATFORM_ANDROID_KHR
+
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+
 bool BestPractices::PreCallValidateGetMemoryAndroidHardwareBufferANDROID(
     VkDevice                                    device,
     const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
@@ -9394,6 +9508,8 @@ void BestPractices::PostCallRecordGetMemoryAndroidHardwareBufferANDROID(
     ValidationStateTracker::PostCallRecordGetMemoryAndroidHardwareBufferANDROID(device, pInfo, pBuffer, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetMemoryAndroidHardwareBufferANDROID(device, pInfo, pBuffer, result); });
 }
+
+#endif // VK_USE_PLATFORM_ANDROID_KHR
 
 bool BestPractices::PreCallValidateCmdSetSampleLocationsEXT(
     VkCommandBuffer                             commandBuffer,
@@ -9470,92 +9586,6 @@ void BestPractices::PostCallRecordGetImageDrmFormatModifierPropertiesEXT(
     ValidationStateTracker::PostCallRecordGetImageDrmFormatModifierPropertiesEXT(device, image, pProperties, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetImageDrmFormatModifierPropertiesEXT(device, image, pProperties, result); });
 }
-
-bool BestPractices::PreCallValidateCreateValidationCacheEXT(
-    VkDevice                                    device,
-    const VkValidationCacheCreateInfoEXT*       pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkValidationCacheEXT*                       pValidationCache) const {
-    bool skip = ValidationStateTracker::PreCallValidateCreateValidationCacheEXT(device, pCreateInfo, pAllocator, pValidationCache);
-    std::function<bool(BestPracticeBase&)> f = [=](BestPracticeBase& practice) { return practice.PreCallValidateCreateValidationCacheEXT(device, pCreateInfo, pAllocator, pValidationCache); };
-    skip |= foreachPractice(f);
-    return skip;
-}
-
-void BestPractices::PreCallRecordCreateValidationCacheEXT(
-    VkDevice                                    device,
-    const VkValidationCacheCreateInfoEXT*       pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkValidationCacheEXT*                       pValidationCache) {
-    ValidationStateTracker::PreCallRecordCreateValidationCacheEXT(device, pCreateInfo, pAllocator, pValidationCache);
-    foreachPractice([=](BestPracticeBase& practice) { practice.PreCallRecordCreateValidationCacheEXT(device, pCreateInfo, pAllocator, pValidationCache); });
-}
-
-// Skipping vkCreateValidationCacheEXT for autogen as it has a manually created custom function or ignored.
-
-bool BestPractices::PreCallValidateDestroyValidationCacheEXT(
-    VkDevice                                    device,
-    VkValidationCacheEXT                        validationCache,
-    const VkAllocationCallbacks*                pAllocator) const {
-    bool skip = ValidationStateTracker::PreCallValidateDestroyValidationCacheEXT(device, validationCache, pAllocator);
-    std::function<bool(BestPracticeBase&)> f = [=](BestPracticeBase& practice) { return practice.PreCallValidateDestroyValidationCacheEXT(device, validationCache, pAllocator); };
-    skip |= foreachPractice(f);
-    return skip;
-}
-
-void BestPractices::PreCallRecordDestroyValidationCacheEXT(
-    VkDevice                                    device,
-    VkValidationCacheEXT                        validationCache,
-    const VkAllocationCallbacks*                pAllocator) {
-    ValidationStateTracker::PreCallRecordDestroyValidationCacheEXT(device, validationCache, pAllocator);
-    foreachPractice([=](BestPracticeBase& practice) { practice.PreCallRecordDestroyValidationCacheEXT(device, validationCache, pAllocator); });
-}
-
-// Skipping vkDestroyValidationCacheEXT for autogen as it has a manually created custom function or ignored.
-
-bool BestPractices::PreCallValidateMergeValidationCachesEXT(
-    VkDevice                                    device,
-    VkValidationCacheEXT                        dstCache,
-    uint32_t                                    srcCacheCount,
-    const VkValidationCacheEXT*                 pSrcCaches) const {
-    bool skip = ValidationStateTracker::PreCallValidateMergeValidationCachesEXT(device, dstCache, srcCacheCount, pSrcCaches);
-    std::function<bool(BestPracticeBase&)> f = [=](BestPracticeBase& practice) { return practice.PreCallValidateMergeValidationCachesEXT(device, dstCache, srcCacheCount, pSrcCaches); };
-    skip |= foreachPractice(f);
-    return skip;
-}
-
-void BestPractices::PreCallRecordMergeValidationCachesEXT(
-    VkDevice                                    device,
-    VkValidationCacheEXT                        dstCache,
-    uint32_t                                    srcCacheCount,
-    const VkValidationCacheEXT*                 pSrcCaches) {
-    ValidationStateTracker::PreCallRecordMergeValidationCachesEXT(device, dstCache, srcCacheCount, pSrcCaches);
-    foreachPractice([=](BestPracticeBase& practice) { practice.PreCallRecordMergeValidationCachesEXT(device, dstCache, srcCacheCount, pSrcCaches); });
-}
-
-// Skipping vkMergeValidationCachesEXT for autogen as it has a manually created custom function or ignored.
-
-bool BestPractices::PreCallValidateGetValidationCacheDataEXT(
-    VkDevice                                    device,
-    VkValidationCacheEXT                        validationCache,
-    size_t*                                     pDataSize,
-    void*                                       pData) const {
-    bool skip = ValidationStateTracker::PreCallValidateGetValidationCacheDataEXT(device, validationCache, pDataSize, pData);
-    std::function<bool(BestPracticeBase&)> f = [=](BestPracticeBase& practice) { return practice.PreCallValidateGetValidationCacheDataEXT(device, validationCache, pDataSize, pData); };
-    skip |= foreachPractice(f);
-    return skip;
-}
-
-void BestPractices::PreCallRecordGetValidationCacheDataEXT(
-    VkDevice                                    device,
-    VkValidationCacheEXT                        validationCache,
-    size_t*                                     pDataSize,
-    void*                                       pData) {
-    ValidationStateTracker::PreCallRecordGetValidationCacheDataEXT(device, validationCache, pDataSize, pData);
-    foreachPractice([=](BestPracticeBase& practice) { practice.PreCallRecordGetValidationCacheDataEXT(device, validationCache, pDataSize, pData); });
-}
-
-// Skipping vkGetValidationCacheDataEXT for autogen as it has a manually created custom function or ignored.
 
 bool BestPractices::PreCallValidateCmdBindShadingRateImageNV(
     VkCommandBuffer                             commandBuffer,
@@ -10716,6 +10746,8 @@ void BestPractices::PostCallRecordSetLocalDimmingAMD(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordSetLocalDimmingAMD(device, swapChain, localDimmingEnable); });
 }
 
+#ifdef VK_USE_PLATFORM_FUCHSIA
+
 bool BestPractices::PreCallValidateCreateImagePipeSurfaceFUCHSIA(
     VkInstance                                  instance,
     const VkImagePipeSurfaceCreateInfoFUCHSIA*  pCreateInfo,
@@ -10746,6 +10778,10 @@ void BestPractices::PostCallRecordCreateImagePipeSurfaceFUCHSIA(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCreateImagePipeSurfaceFUCHSIA(instance, pCreateInfo, pAllocator, pSurface, result); });
 }
 
+#endif // VK_USE_PLATFORM_FUCHSIA
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+
 bool BestPractices::PreCallValidateCreateMetalSurfaceEXT(
     VkInstance                                  instance,
     const VkMetalSurfaceCreateInfoEXT*          pCreateInfo,
@@ -10775,6 +10811,8 @@ void BestPractices::PostCallRecordCreateMetalSurfaceEXT(
     ValidationStateTracker::PostCallRecordCreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCreateMetalSurfaceEXT(instance, pCreateInfo, pAllocator, pSurface, result); });
 }
+
+#endif // VK_USE_PLATFORM_METAL_EXT
 
 bool BestPractices::PreCallValidateGetBufferDeviceAddressEXT(
     VkDevice                                    device,
@@ -10881,6 +10919,8 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSupportedFramebufferMixedSamp
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(physicalDevice, pCombinationCount, pCombinations, result); });
 }
 
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+
 bool BestPractices::PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
@@ -10911,6 +10951,10 @@ void BestPractices::PostCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(physicalDevice, pSurfaceInfo, pPresentModeCount, pPresentModes, result); });
 }
 
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+
 bool BestPractices::PreCallValidateAcquireFullScreenExclusiveModeEXT(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain) const {
@@ -10935,6 +10979,10 @@ void BestPractices::PostCallRecordAcquireFullScreenExclusiveModeEXT(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordAcquireFullScreenExclusiveModeEXT(device, swapchain, result); });
 }
 
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+
 bool BestPractices::PreCallValidateReleaseFullScreenExclusiveModeEXT(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain) const {
@@ -10958,6 +11006,10 @@ void BestPractices::PostCallRecordReleaseFullScreenExclusiveModeEXT(
     ValidationStateTracker::PostCallRecordReleaseFullScreenExclusiveModeEXT(device, swapchain, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordReleaseFullScreenExclusiveModeEXT(device, swapchain, result); });
 }
+
+#endif // VK_USE_PLATFORM_WIN32_KHR
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
 
 bool BestPractices::PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(
     VkDevice                                    device,
@@ -10985,6 +11037,8 @@ void BestPractices::PostCallRecordGetDeviceGroupSurfacePresentModes2EXT(
     ValidationStateTracker::PostCallRecordGetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetDeviceGroupSurfacePresentModes2EXT(device, pSurfaceInfo, pModes, result); });
 }
+
+#endif // VK_USE_PLATFORM_WIN32_KHR
 
 bool BestPractices::PreCallValidateCreateHeadlessSurfaceEXT(
     VkInstance                                  instance,
@@ -11352,6 +11406,8 @@ void BestPractices::PostCallRecordGetPrivateDataEXT(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData); });
 }
 
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
 bool BestPractices::PreCallValidateCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
@@ -11382,6 +11438,10 @@ void BestPractices::PostCallRecordCreateAccelerationStructureKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure, result); });
 }
 
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
 bool BestPractices::PreCallValidateGetAccelerationStructureMemoryRequirementsKHR(
     VkDevice                                    device,
     const VkAccelerationStructureMemoryRequirementsInfoKHR* pInfo,
@@ -11407,6 +11467,10 @@ void BestPractices::PostCallRecordGetAccelerationStructureMemoryRequirementsKHR(
     ValidationStateTracker::PostCallRecordGetAccelerationStructureMemoryRequirementsKHR(device, pInfo, pMemoryRequirements);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetAccelerationStructureMemoryRequirementsKHR(device, pInfo, pMemoryRequirements); });
 }
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool BestPractices::PreCallValidateCmdBuildAccelerationStructureKHR(
     VkCommandBuffer                             commandBuffer,
@@ -11436,6 +11500,10 @@ void BestPractices::PostCallRecordCmdBuildAccelerationStructureKHR(
     ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructureKHR(commandBuffer, infoCount, pInfos, ppOffsetInfos);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCmdBuildAccelerationStructureKHR(commandBuffer, infoCount, pInfos, ppOffsetInfos); });
 }
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool BestPractices::PreCallValidateCmdBuildAccelerationStructureIndirectKHR(
     VkCommandBuffer                             commandBuffer,
@@ -11469,6 +11537,10 @@ void BestPractices::PostCallRecordCmdBuildAccelerationStructureIndirectKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCmdBuildAccelerationStructureIndirectKHR(commandBuffer, pInfo, indirectBuffer, indirectOffset, indirectStride); });
 }
 
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
 bool BestPractices::PreCallValidateBuildAccelerationStructureKHR(
     VkDevice                                    device,
     uint32_t                                    infoCount,
@@ -11499,6 +11571,10 @@ void BestPractices::PostCallRecordBuildAccelerationStructureKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordBuildAccelerationStructureKHR(device, infoCount, pInfos, ppOffsetInfos, result); });
 }
 
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
 bool BestPractices::PreCallValidateCopyAccelerationStructureKHR(
     VkDevice                                    device,
     const VkCopyAccelerationStructureInfoKHR*   pInfo) const {
@@ -11522,6 +11598,10 @@ void BestPractices::PostCallRecordCopyAccelerationStructureKHR(
     ValidationStateTracker::PostCallRecordCopyAccelerationStructureKHR(device, pInfo, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCopyAccelerationStructureKHR(device, pInfo, result); });
 }
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool BestPractices::PreCallValidateCopyAccelerationStructureToMemoryKHR(
     VkDevice                                    device,
@@ -11547,6 +11627,10 @@ void BestPractices::PostCallRecordCopyAccelerationStructureToMemoryKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCopyAccelerationStructureToMemoryKHR(device, pInfo, result); });
 }
 
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
 bool BestPractices::PreCallValidateCopyMemoryToAccelerationStructureKHR(
     VkDevice                                    device,
     const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) const {
@@ -11570,6 +11654,10 @@ void BestPractices::PostCallRecordCopyMemoryToAccelerationStructureKHR(
     ValidationStateTracker::PostCallRecordCopyMemoryToAccelerationStructureKHR(device, pInfo, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCopyMemoryToAccelerationStructureKHR(device, pInfo, result); });
 }
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool BestPractices::PreCallValidateWriteAccelerationStructuresPropertiesKHR(
     VkDevice                                    device,
@@ -11610,6 +11698,10 @@ void BestPractices::PostCallRecordWriteAccelerationStructuresPropertiesKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordWriteAccelerationStructuresPropertiesKHR(device, accelerationStructureCount, pAccelerationStructures, queryType, dataSize, pData, stride, result); });
 }
 
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
 bool BestPractices::PreCallValidateCmdCopyAccelerationStructureKHR(
     VkCommandBuffer                             commandBuffer,
     const VkCopyAccelerationStructureInfoKHR*   pInfo) const {
@@ -11632,6 +11724,10 @@ void BestPractices::PostCallRecordCmdCopyAccelerationStructureKHR(
     ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureKHR(commandBuffer, pInfo);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCmdCopyAccelerationStructureKHR(commandBuffer, pInfo); });
 }
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool BestPractices::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(
     VkCommandBuffer                             commandBuffer,
@@ -11656,6 +11752,10 @@ void BestPractices::PostCallRecordCmdCopyAccelerationStructureToMemoryKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCmdCopyAccelerationStructureToMemoryKHR(commandBuffer, pInfo); });
 }
 
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
 bool BestPractices::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
     VkCommandBuffer                             commandBuffer,
     const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) const {
@@ -11678,6 +11778,10 @@ void BestPractices::PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(
     ValidationStateTracker::PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(commandBuffer, pInfo);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(commandBuffer, pInfo); });
 }
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool BestPractices::PreCallValidateCmdTraceRaysKHR(
     VkCommandBuffer                             commandBuffer,
@@ -11720,6 +11824,10 @@ void BestPractices::PostCallRecordCmdTraceRaysKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth); });
 }
 
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
 bool BestPractices::PreCallValidateCreateRayTracingPipelinesKHR(
     VkDevice                                    device,
     VkPipelineCache                             pipelineCache,
@@ -11759,6 +11867,10 @@ void BestPractices::PostCallRecordCreateRayTracingPipelinesKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCreateRayTracingPipelinesKHR(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines, result, state_data); });
 }
 
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
 bool BestPractices::PreCallValidateGetAccelerationStructureDeviceAddressKHR(
     VkDevice                                    device,
     const VkAccelerationStructureDeviceAddressInfoKHR* pInfo) const {
@@ -11782,6 +11894,10 @@ void BestPractices::PostCallRecordGetAccelerationStructureDeviceAddressKHR(
     ValidationStateTracker::PostCallRecordGetAccelerationStructureDeviceAddressKHR(device, pInfo, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetAccelerationStructureDeviceAddressKHR(device, pInfo, result); });
 }
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool BestPractices::PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
     VkDevice                                    device,
@@ -11818,6 +11934,10 @@ void BestPractices::PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKH
     ValidationStateTracker::PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData, result); });
 }
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 bool BestPractices::PreCallValidateCmdTraceRaysIndirectKHR(
     VkCommandBuffer                             commandBuffer,
@@ -11857,6 +11977,10 @@ void BestPractices::PostCallRecordCmdTraceRaysIndirectKHR(
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordCmdTraceRaysIndirectKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, buffer, offset); });
 }
 
+#endif // VK_ENABLE_BETA_EXTENSIONS
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+
 bool BestPractices::PreCallValidateGetDeviceAccelerationStructureCompatibilityKHR(
     VkDevice                                    device,
     const VkAccelerationStructureVersionKHR*    version) const {
@@ -11880,6 +12004,8 @@ void BestPractices::PostCallRecordGetDeviceAccelerationStructureCompatibilityKHR
     ValidationStateTracker::PostCallRecordGetDeviceAccelerationStructureCompatibilityKHR(device, version, result);
     foreachPractice([=](BestPracticeBase& practice) { practice.PostCallRecordGetDeviceAccelerationStructureCompatibilityKHR(device, version, result); });
 }
+
+#endif // VK_ENABLE_BETA_EXTENSIONS
 
 
 

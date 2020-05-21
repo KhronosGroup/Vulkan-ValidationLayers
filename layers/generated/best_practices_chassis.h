@@ -6924,60 +6924,6 @@ virtual void PostCallRecordGetImageDrmFormatModifierPropertiesEXT(
     VkResult                                    result);
 
 
-virtual bool PreCallValidateCreateValidationCacheEXT(
-    VkDevice                                    device,
-    const VkValidationCacheCreateInfoEXT*       pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkValidationCacheEXT*                       pValidationCache) const;
-
-
-virtual void PreCallRecordCreateValidationCacheEXT(
-    VkDevice                                    device,
-    const VkValidationCacheCreateInfoEXT*       pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkValidationCacheEXT*                       pValidationCache);
-
-
-virtual bool PreCallValidateDestroyValidationCacheEXT(
-    VkDevice                                    device,
-    VkValidationCacheEXT                        validationCache,
-    const VkAllocationCallbacks*                pAllocator) const;
-
-
-virtual void PreCallRecordDestroyValidationCacheEXT(
-    VkDevice                                    device,
-    VkValidationCacheEXT                        validationCache,
-    const VkAllocationCallbacks*                pAllocator);
-
-
-virtual bool PreCallValidateMergeValidationCachesEXT(
-    VkDevice                                    device,
-    VkValidationCacheEXT                        dstCache,
-    uint32_t                                    srcCacheCount,
-    const VkValidationCacheEXT*                 pSrcCaches) const;
-
-
-virtual void PreCallRecordMergeValidationCachesEXT(
-    VkDevice                                    device,
-    VkValidationCacheEXT                        dstCache,
-    uint32_t                                    srcCacheCount,
-    const VkValidationCacheEXT*                 pSrcCaches);
-
-
-virtual bool PreCallValidateGetValidationCacheDataEXT(
-    VkDevice                                    device,
-    VkValidationCacheEXT                        validationCache,
-    size_t*                                     pDataSize,
-    void*                                       pData) const;
-
-
-virtual void PreCallRecordGetValidationCacheDataEXT(
-    VkDevice                                    device,
-    VkValidationCacheEXT                        validationCache,
-    size_t*                                     pDataSize,
-    void*                                       pData);
-
-
 virtual bool PreCallValidateCmdBindShadingRateImageNV(
     VkCommandBuffer                             commandBuffer,
     VkImageView                                 imageView,

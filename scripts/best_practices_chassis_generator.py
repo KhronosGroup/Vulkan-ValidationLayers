@@ -301,9 +301,12 @@ class BestPracticesChassisOutputGenerator(OutputGenerator):
     #
     # Capture command parameter info needed to create, destroy, and validate objects
     def genCmd(self, cmdinfo, cmdname, alias):
-        # these are copied from the chassis generator
         ignored_functions = [
             'vkEnumerateInstanceVersion',
+            'vkCreateValidationCacheEXT',
+            'vkDestroyValidationCacheEXT',
+            'vkMergeValidationCachesEXT',
+            'vkGetValidationCacheDataEXT',
             ]
         if cmdname in ignored_functions:
             return

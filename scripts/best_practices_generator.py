@@ -356,17 +356,20 @@ class BestPracticesOutputGenerator(OutputGenerator):
     #
     # Capture command parameter info needed to create, destroy, and validate objects
     def genCmd(self, cmdinfo, cmdname, alias):
-        # these are copied from the chassis generator
         ignored_functions = [
             'vkEnumerateInstanceVersion',
+            'vkCreateValidationCacheEXT',
+            'vkDestroyValidationCacheEXT',
+            'vkMergeValidationCachesEXT',
+            'vkGetValidationCacheDataEXT',
             ]
         if cmdname in ignored_functions:
             return
         OutputGenerator.genCmd(self, cmdinfo, cmdname, alias)
         if self.featureExtraProtect is not None:
-            self.otwrite('hdr', '#ifdef %s\n' % self.featureExtraProtect)
+            self.otwrite('both', '#ifdef %s\n' % self.featureExtraProtect)
         self.genPreCallValidateCmd(cmdinfo, cmdname, alias)
         self.genPreCallRecordCmd(cmdinfo, cmdname, alias)
         self.genPostCallRecordCmd(cmdinfo, cmdname, alias)
         if self.featureExtraProtect is not None:
-            self.otwrite('hdr', '#endif // %s\n' % self.featureExtraProtect)
+            self.otwrite('both', '#endif // %s\n' % self.featureExtraProtect)

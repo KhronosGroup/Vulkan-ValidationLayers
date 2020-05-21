@@ -27,14 +27,6 @@
 
 #include "best_practices_chassis.h"
 
-// Skipping vkCreateValidationCacheEXT for autogen as it has a manually created custom function or ignored.
-
-// Skipping vkDestroyValidationCacheEXT for autogen as it has a manually created custom function or ignored.
-
-// Skipping vkMergeValidationCachesEXT for autogen as it has a manually created custom function or ignored.
-
-// Skipping vkGetValidationCacheDataEXT for autogen as it has a manually created custom function or ignored.
-
 
 
 
