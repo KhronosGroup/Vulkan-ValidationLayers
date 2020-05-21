@@ -1757,25 +1757,32 @@ void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const
     StateTracker::PreCallRecordDestroyImage(device, image, pAllocator);
 }
 
-bool CoreChecks::ValidateImageAttributes(const IMAGE_STATE *image_state, const VkImageSubresourceRange &range) const {
+bool CoreChecks::ValidateImageAttributes(const IMAGE_STATE *image_state, const VkImageSubresourceRange &range,
+                                         const char *param_name) const {
     bool skip = false;
+    const VkImage image = image_state->image;
+    const VkFormat format = image_state->createInfo.format;
 
     if (range.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT) {
-        char const str[] = "vkCmdClearColorImage aspectMasks for all subresource ranges must be set to VK_IMAGE_ASPECT_COLOR_BIT";
-        skip |= LogError(image_state->image, kVUID_Core_DrawState_InvalidImageAspect, str);
+        skip |= LogError(image, "VUID-vkCmdClearColorImage-aspectMask-02498",
+                         "vkCmdClearColorImage(): %s.aspectMasks must only be set to VK_IMAGE_ASPECT_COLOR_BIT.", param_name);
     }
 
-    if (FormatIsDepthOrStencil(image_state->createInfo.format)) {
-        char const str[] = "vkCmdClearColorImage called with depth/stencil image.";
-        skip |= LogError(image_state->image, "VUID-vkCmdClearColorImage-image-00007", "%s.", str);
-    } else if (FormatIsCompressed(image_state->createInfo.format)) {
-        char const str[] = "vkCmdClearColorImage called with compressed image.";
-        skip |= LogError(image_state->image, "VUID-vkCmdClearColorImage-image-00007", "%s.", str);
+    if (FormatIsDepthOrStencil(format)) {
+        skip |= LogError(image, "VUID-vkCmdClearColorImage-image-00007",
+                         "vkCmdClearColorImage(): %s called with image %s which has a depth/stencil format (%s).", param_name,
+                         report_data->FormatHandle(image).c_str(), string_VkFormat(format));
+    } else if (FormatIsCompressed(format)) {
+        skip |= LogError(image, "VUID-vkCmdClearColorImage-image-00007",
+                         "vkCmdClearColorImage(): %s called with image %s which has a compressed format (%s).", param_name,
+                         report_data->FormatHandle(image).c_str(), string_VkFormat(format));
     }
 
     if (!(image_state->createInfo.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
-        char const str[] = "vkCmdClearColorImage called with image created without VK_IMAGE_USAGE_TRANSFER_DST_BIT.";
-        skip |= LogError(image_state->image, "VUID-vkCmdClearColorImage-image-00002", "%s.", str);
+        skip |=
+            LogError(image, "VUID-vkCmdClearColorImage-image-00002",
+                     "vkCmdClearColorImage() %s called with image %s which was created without VK_IMAGE_USAGE_TRANSFER_DST_BIT.",
+                     param_name, report_data->FormatHandle(image).c_str());
     }
     return skip;
 }
@@ -1874,7 +1881,7 @@ bool CoreChecks::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer
         for (uint32_t i = 0; i < rangeCount; ++i) {
             std::string param_name = "pRanges[" + std::to_string(i) + "]";
             skip |= ValidateCmdClearColorSubresourceRange(image_state, pRanges[i], param_name.c_str());
-            skip |= ValidateImageAttributes(image_state, pRanges[i]);
+            skip |= ValidateImageAttributes(image_state, pRanges[i], param_name.c_str());
             skip |= VerifyClearImageLayout(cb_node, image_state, pRanges[i], imageLayout, "vkCmdClearColorImage()");
         }
         // Tests for "Formats requiring sampler Y’CBCR conversion for VK_IMAGE_ASPECT_COLOR_BIT image views"
@@ -1932,10 +1939,10 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
             // Image aspect must be depth or stencil or both
             VkImageAspectFlags valid_aspects = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
             if (((pRanges[i].aspectMask & valid_aspects) == 0) || ((pRanges[i].aspectMask & ~valid_aspects) != 0)) {
-                char const str[] =
-                    "vkCmdClearDepthStencilImage aspectMasks for all subresource ranges must be set to VK_IMAGE_ASPECT_DEPTH_BIT "
-                    "and/or VK_IMAGE_ASPECT_STENCIL_BIT";
-                skip |= LogError(commandBuffer, kVUID_Core_DrawState_InvalidImageAspect, str);
+                skip |= LogError(commandBuffer, "VUID-vkCmdClearDepthStencilImage-aspectMask-02824",
+                                 "vkCmdClearDepthStencilImage(): pRanges[%u].aspectMask can only be VK_IMAGE_ASPECT_DEPTH_BIT "
+                                 "and/or VK_IMAGE_ASPECT_STENCIL_BIT.",
+                                 i);
             }
             if ((pRanges[i].aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0) {
                 any_include_aspect_depth_bit = true;
@@ -1970,14 +1977,15 @@ bool CoreChecks::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer comman
                              "VK_IMAGE_USAGE_TRANSFER_DST_BIT must be included in VkImageCreateInfo::usage used to create image");
         }
         if (image_state && !FormatIsDepthOrStencil(image_state->createInfo.format)) {
-            char const str[] = "vkCmdClearDepthStencilImage called without a depth/stencil image.";
-            skip |= LogError(image, "VUID-vkCmdClearDepthStencilImage-image-00014", "%s.", str);
+            skip |= LogError(image, "VUID-vkCmdClearDepthStencilImage-image-00014",
+                             "vkCmdClearDepthStencilImage(): called with image %s which doesn't have a depth/stencil format (%s).",
+                             report_data->FormatHandle(image).c_str(), string_VkFormat(image_state->createInfo.format));
         }
         if (VK_IMAGE_USAGE_TRANSFER_DST_BIT != (VK_IMAGE_USAGE_TRANSFER_DST_BIT & image_state->createInfo.usage)) {
-            char const str[] =
-                "vkCmdClearDepthStencilImage() called with an image that was not created with the VK_IMAGE_USAGE_TRANSFER_DST_BIT "
-                "set.";
-            skip |= LogError(image, "VUID-vkCmdClearDepthStencilImage-image-00009", "%s.", str);
+            skip |= LogError(image, "VUID-vkCmdClearDepthStencilImage-image-00009",
+                             "vkCmdClearDepthStencilImage(): called with image %s which was not created with the "
+                             "VK_IMAGE_USAGE_TRANSFER_DST_BIT set.",
+                             report_data->FormatHandle(image).c_str());
         }
     }
     return skip;
