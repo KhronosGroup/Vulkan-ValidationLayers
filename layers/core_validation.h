@@ -1157,6 +1157,15 @@ class CoreChecks : public ValidationStateTracker {
                                          const VkDeviceSize offset, const BUFFER_STATE* buffer_state) const;
     bool PreCallValidateReleaseProfilingLockKHR(VkDevice device) const;
     bool PreCallValidateCmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void* pCheckpointMarker) const;
+    bool PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                           uint32_t bindingCount, const VkBuffer* pBuffers,
+                                                           const VkDeviceSize* pOffsets, const VkDeviceSize* pSizes) const;
+    bool PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
+                                                     uint32_t counterBufferCount, const VkBuffer* pCounterBuffers,
+                                                     const VkDeviceSize* pCounterBufferOffsets) const;
+    bool PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
+                                                   uint32_t counterBufferCount, const VkBuffer* pCounterBuffers,
+                                                   const VkDeviceSize* pCounterBufferOffsets) const;
 
     bool PreCallValidateWriteAccelerationStructuresPropertiesKHR(VkDevice device, uint32_t accelerationStructureCount,
                                                                  const VkAccelerationStructureKHR* pAccelerationStructures,

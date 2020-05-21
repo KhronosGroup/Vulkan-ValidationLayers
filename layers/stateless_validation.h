@@ -1469,10 +1469,23 @@ class StatelessValidation : public ValidationObject {
     bool manual_PreCallValidateAcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *pAcquireInfo,
                                                     uint32_t *pImageIndex) const;
 
+    bool manual_PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                                  uint32_t bindingCount, const VkBuffer *pBuffers,
+                                                                  const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes) const;
+
+    bool manual_PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
+                                                            uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
+                                                            const VkDeviceSize *pCounterBufferOffsets) const;
+
+    bool manual_PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
+                                                          uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
+                                                          const VkDeviceSize *pCounterBufferOffsets) const;
+
     bool manual_PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer, uint32_t instanceCount,
                                                            uint32_t firstInstance, VkBuffer counterBuffer,
                                                            VkDeviceSize counterBufferOffset, uint32_t counterOffset,
                                                            uint32_t vertexStride) const;
+
     bool manual_PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
                                                             const VkAllocationCallbacks *pAllocator,
                                                             VkSamplerYcbcrConversion *pYcbcrConversion) const;

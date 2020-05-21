@@ -11990,6 +11990,170 @@ bool CoreChecks::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
                              "VUID-vkCmdCopyMemoryToAccelerationStructureKHR-renderpass");
     return skip;
 }
+
+bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                                   uint32_t bindingCount, const VkBuffer *pBuffers,
+                                                                   const VkDeviceSize *pOffsets, const VkDeviceSize *pSizes) const {
+    bool skip = false;
+    char const *const cmd_name = "CmdBindTransformFeedbackBuffersEXT";
+    if (!enabled_features.transform_feedback_features.transformFeedback) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBindTransformFeedbackBuffersEXT-transformFeedback-02355",
+                         "%s: transformFeedback feature is not enabled.", cmd_name);
+    }
+
+    {
+        auto const cb_state = GetCBState(commandBuffer);
+        if (cb_state->transform_feedback_active) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdBindTransformFeedbackBuffersEXT-None-02365",
+                             "%s: transform feedback is active.", cmd_name);
+        }
+    }
+
+    for (uint32_t i = 0; i < bindingCount; ++i) {
+        auto const buffer_state = GetBufferState(pBuffers[i]);
+        assert(buffer_state != nullptr);
+
+        if (pOffsets[i] >= buffer_state->createInfo.size) {
+            skip |= LogError(buffer_state->buffer, "VUID-vkCmdBindTransformFeedbackBuffersEXT-pOffsets-02358",
+                             "%s: pOffset[%" PRIu32 "](0x%" PRIxLEAST64
+                             ") is greater than or equal to the size of pBuffers[%" PRIu32 "](0x%" PRIxLEAST64 ").",
+                             cmd_name, i, pOffsets[i], i, buffer_state->createInfo.size);
+        }
+
+        if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT) == 0) {
+            skip |= LogError(buffer_state->buffer, "VUID-vkCmdBindTransformFeedbackBuffersEXT-pBuffers-02360",
+                             "%s: pBuffers[%" PRIu32 "] (0x%" PRIxLEAST64
+                             ") was not created with the VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT flag.",
+                             cmd_name, i, pBuffers[i]);
+        }
+
+        // pSizes is optional and may be nullptr.
+        if (pSizes != nullptr) {
+            if (pSizes[i] > buffer_state->createInfo.size) {
+                skip |= LogError(buffer_state->buffer, "VUID-vkCmdBindTransformFeedbackBuffersEXT-pSizes-02362",
+                                 "%s: pSizes[%" PRIu32 "](0x%" PRIxLEAST64 ") is greater than the size of pBuffers[%" PRIu32
+                                 "](0x%" PRIxLEAST64 ").",
+                                 cmd_name, i, pSizes[i], i, buffer_state->createInfo.size);
+            }
+
+            if (pSizes[i] != VK_WHOLE_SIZE && pOffsets[i] + pSizes[i] > buffer_state->createInfo.size) {
+                skip |= LogError(buffer_state->buffer, "VUID-vkCmdBindTransformFeedbackBuffersEXT-pOffsets-02363",
+                                 "%s: The sum of pOffsets[%" PRIu32 "](Ox%" PRIxLEAST64 ") and pSizes[%" PRIu32 "](0x%" PRIxLEAST64
+                                 ") is greater than the size of pBuffers[%" PRIu32 "](0x%" PRIxLEAST64 ").",
+                                 cmd_name, i, pOffsets[i], i, pSizes[i], i, buffer_state->createInfo.size);
+            }
+        }
+
+        skip |= ValidateMemoryIsBoundToBuffer(buffer_state, cmd_name, "VUID-vkCmdBindTransformFeedbackBuffersEXT-pBuffers-02364");
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
+                                                             uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
+                                                             const VkDeviceSize *pCounterBufferOffsets) const {
+    bool skip = false;
+    char const *const cmd_name = "CmdBeginTransformFeedbackEXT";
+    if (!enabled_features.transform_feedback_features.transformFeedback) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdBeginTransformFeedbackEXT-transformFeedback-02366",
+                         "%s: transformFeedback feature is not enabled.", cmd_name);
+    }
+
+    {
+        auto const cb_state = GetCBState(commandBuffer);
+        if (cb_state->transform_feedback_active) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdBeginTransformFeedbackEXT-None-02367", "%s: transform feedback is active.",
+                             cmd_name);
+        }
+    }
+
+    // pCounterBuffers and pCounterBufferOffsets are optional and may be nullptr. Additionaly, pCounterBufferOffsets must be nullptr
+    // if pCounterBuffers is nullptr.
+    if (pCounterBuffers == nullptr) {
+        if (pCounterBufferOffsets != nullptr) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdBeginTransformFeedbackEXT-pCounterBuffer-02371",
+                             "%s: pCounterBuffers is NULL and pCounterBufferOffsets is not NULL.", cmd_name);
+        }
+    } else {
+        for (uint32_t i = 0; i < counterBufferCount; ++i) {
+            if (pCounterBuffers[i] != VK_NULL_HANDLE) {
+                auto const buffer_state = GetBufferState(pCounterBuffers[i]);
+                assert(buffer_state != nullptr);
+
+                if (pCounterBufferOffsets != nullptr && pCounterBufferOffsets[i] + 4 > buffer_state->createInfo.size) {
+                    skip |=
+                        LogError(buffer_state->buffer, "VUID-vkCmdBeginTransformFeedbackEXT-pCounterBufferOffsets-02370",
+                                 "%s: pCounterBuffers[%" PRIu32 "](0x%" PRIxLEAST64
+                                 ") is not large enough to hold 4 bytes at pCounterBufferOffsets[%" PRIu32 "](0x%" PRIxLEAST64 ").",
+                                 cmd_name, i, pCounterBuffers[i], i, pCounterBufferOffsets[i]);
+                }
+
+                if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT) == 0) {
+                    skip |= LogError(buffer_state->buffer, "VUID-vkCmdBeginTransformFeedbackEXT-pCounterBuffers-02372",
+                                     "%s: pCounterBuffers[%" PRIu32 "] (0x%" PRIxLEAST64
+                                     ") was not created with the VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT flag.",
+                                     cmd_name, i, pCounterBuffers[i]);
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
+                                                           uint32_t counterBufferCount, const VkBuffer *pCounterBuffers,
+                                                           const VkDeviceSize *pCounterBufferOffsets) const {
+    bool skip = false;
+    char const *const cmd_name = "CmdEndTransformFeedbackEXT";
+    if (!enabled_features.transform_feedback_features.transformFeedback) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdEndTransformFeedbackEXT-transformFeedback-02374",
+                         "%s: transformFeedback feature is not enabled.", cmd_name);
+    }
+
+    {
+        auto const cb_state = GetCBState(commandBuffer);
+        if (!cb_state->transform_feedback_active) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdEndTransformFeedbackEXT-None-02375", "%s: transform feedback is not active.",
+                             cmd_name);
+        }
+    }
+
+    // pCounterBuffers and pCounterBufferOffsets are optional and may be nullptr. Additionaly, pCounterBufferOffsets must be nullptr
+    // if pCounterBuffers is nullptr.
+    if (pCounterBuffers == nullptr) {
+        if (pCounterBufferOffsets != nullptr) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdEndTransformFeedbackEXT-pCounterBuffer-02379",
+                             "%s: pCounterBuffers is NULL and pCounterBufferOffsets is not NULL.", cmd_name);
+        }
+    } else {
+        for (uint32_t i = 0; i < counterBufferCount; ++i) {
+            if (pCounterBuffers[i] != VK_NULL_HANDLE) {
+                auto const buffer_state = GetBufferState(pCounterBuffers[i]);
+                assert(buffer_state != nullptr);
+
+                if (pCounterBufferOffsets != nullptr && pCounterBufferOffsets[i] + 4 > buffer_state->createInfo.size) {
+                    skip |=
+                        LogError(buffer_state->buffer, "VUID-vkCmdEndTransformFeedbackEXT-pCounterBufferOffsets-02378",
+                                 "%s: pCounterBuffers[%" PRIu32 "](0x%" PRIxLEAST64
+                                 ") is not large enough to hold 4 bytes at pCounterBufferOffsets[%" PRIu32 "](0x%" PRIxLEAST64 ").",
+                                 cmd_name, i, pCounterBuffers[i], i, pCounterBufferOffsets[i]);
+                }
+
+                if ((buffer_state->createInfo.usage & VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT) == 0) {
+                    skip |= LogError(buffer_state->buffer, "VUID-vkCmdEndTransformFeedbackEXT-pCounterBuffers-02380",
+                                     "%s: pCounterBuffers[%" PRIu32 "] (0x%" PRIxLEAST64
+                                     ") was not created with the VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT flag.",
+                                     cmd_name, i, pCounterBuffers[i]);
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
 void PIPELINE_STATE::initGraphicsPipeline(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
                                           std::shared_ptr<const RENDER_PASS_STATE> &&rpstate) {
     reset();

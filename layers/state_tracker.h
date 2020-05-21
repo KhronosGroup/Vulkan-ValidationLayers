@@ -860,6 +860,12 @@ class ValidationStateTracker : public ValidationObject {
                                           const VkSubpassBeginInfoKHR* pSubpassBeginInfo);
     void PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                              const VkSubpassBeginInfoKHR* pSubpassBeginInfo);
+    void PostCallRecordCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
+                                                    uint32_t counterBufferCount, const VkBuffer* pCounterBuffers,
+                                                    const VkDeviceSize* pCounterBufferOffsets);
+    void PostCallRecordCmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
+                                                  uint32_t counterBufferCount, const VkBuffer* pCounterBuffers,
+                                                  const VkDeviceSize* pCounterBufferOffsets);
     void PreCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                             VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
                                             const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
