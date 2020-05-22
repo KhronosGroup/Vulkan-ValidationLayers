@@ -3890,7 +3890,7 @@ bool CoreChecks::ValidateLayouts(RenderPassCreateVersion rp_version, VkDevice de
                     vuid = use_rp2 ? "VUID-VkSubpassDescription2-loadOp-03064" : "VUID-VkSubpassDescription-loadOp-00846";
                     skip |= LogError(device, vuid,
                                      "%s: attachment %u is first used as an input attachment in subpass %u with loadOp=CLEAR.",
-                                     function_name, attach_index, attach_index);
+                                     function_name, attach_index, i);
                 }
             }
             attach_first_use[attach_index] = false;
