@@ -286,31 +286,36 @@ void SetValidationFeatures(CHECK_DISABLED &disable_data, CHECK_ENABLED &enable_d
     }
 }
 
+std::string GetNextToken(std::string &token_list, std::string &delimiter, size_t &pos) {
+    std::string token;
+    pos = token_list.find(delimiter);
+    if (pos != std::string::npos) {
+        token = token_list.substr(0, pos);
+    } else {
+        pos = token_list.length() - delimiter.length();
+        token = token_list;
+    }
+    token_list.erase(0, pos + delimiter.length());
+    return token;
+}
+
 // Given a string representation of a list of enable enum values, call the appropriate setter function
 void SetLocalEnableSetting(std::string list_of_enables, std::string delimiter, CHECK_ENABLED &enables) {
     size_t pos = 0;
     std::string token;
     while (list_of_enables.length() != 0) {
-        pos = list_of_enables.find(delimiter);
-        if (pos != std::string::npos) {
-            token = list_of_enables.substr(0, pos);
-        } else {
-            pos = list_of_enables.length() - delimiter.length();
-            token = list_of_enables;
-        }
+        token = GetNextToken(list_of_enables, delimiter, pos);
         if (token.find("VK_VALIDATION_FEATURE_ENABLE_") != std::string::npos) {
             auto result = VkValFeatureEnableLookup.find(token);
             if (result != VkValFeatureEnableLookup.end()) {
                 SetValidationFeatureEnable(enables, result->second);
             } 
-        }
-        else if (token.find("VALIDATION_CHECK_ENABLE_") != std::string::npos) {
+        } else if (token.find("VALIDATION_CHECK_ENABLE_") != std::string::npos) {
             auto result = ValidationEnableLookup.find(token);
             if (result != ValidationEnableLookup.end()) {
                 SetValidationEnable(enables, result->second);
             }
         }
-        list_of_enables.erase(0, pos + delimiter.length());
     }
 }
 
@@ -319,26 +324,18 @@ void SetLocalDisableSetting(std::string list_of_disables, std::string delimiter,
     size_t pos = 0;
     std::string token;
     while (list_of_disables.length() != 0) {
-        pos = list_of_disables.find(delimiter);
-        if (pos != std::string::npos) {
-            token = list_of_disables.substr(0, pos);
-        } else {
-            pos = list_of_disables.length() - delimiter.length();
-            token = list_of_disables;
-        }
+        token = GetNextToken(list_of_disables, delimiter, pos);
         if (token.find("VK_VALIDATION_FEATURE_DISABLE_") != std::string::npos) {
             auto result = VkValFeatureDisableLookup.find(token);
             if (result != VkValFeatureDisableLookup.end()) {
                 SetValidationFeatureDisable(disables, result->second);
             }
-        }
-        if (token.find("VALIDATION_CHECK_DISABLE_") != std::string::npos) {
+        } else if (token.find("VALIDATION_CHECK_DISABLE_") != std::string::npos) {
             auto result = ValidationDisableLookup.find(token);
             if (result != ValidationDisableLookup.end()) {
                 SetValidationDisable(disables, result->second);
             }
         }
-        list_of_disables.erase(0, pos + delimiter.length());
     }
 }
 
@@ -346,13 +343,7 @@ void CreateFilterMessageIdList(std::string raw_id_list, std::string delimiter, s
     size_t pos = 0;
     std::string token;
     while (raw_id_list.length() != 0) {
-        pos = raw_id_list.find(delimiter);
-        if (pos != std::string::npos) {
-            token = raw_id_list.substr(0, pos);
-        } else {
-            pos = raw_id_list.length() - delimiter.length();
-            token = raw_id_list;
-        }
+        token = GetNextToken(raw_id_list, delimiter, pos);
         uint32_t int_id = 0;
         if (token.find("0x") == 0) {                                             // Handle hex number
             int_id = std::strtoul(token.c_str(), nullptr, 16);
@@ -368,7 +359,6 @@ void CreateFilterMessageIdList(std::string raw_id_list, std::string delimiter, s
         if ((int_id != 0) && (std::find(filter_list.begin(), filter_list.end(), int_id)) == filter_list.end()) {
             filter_list.push_back(int_id);
         }
-        raw_id_list.erase(0, pos + delimiter.length());
    }
 }
 
