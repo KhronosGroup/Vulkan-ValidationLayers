@@ -4125,6 +4125,7 @@ TEST_F(VkLayerTest, ImageDescriptorLayoutMismatch) {
                                                              image->subresource_range(aspect_mask));
             cmd_buf.PipelineBarrier(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
                                     nullptr, 1, &image_barrier);
+            image->Layout(image_layout);
 
             if (test_type == kExternal) {
                 // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
