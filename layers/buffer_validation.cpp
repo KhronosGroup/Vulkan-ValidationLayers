@@ -4561,7 +4561,8 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
 
     if (subresourceRange.levelCount != VK_REMAINING_MIP_LEVELS) {
         if (subresourceRange.levelCount == 0) {
-            skip |= LogError(image, errorCodes.mip_count_err, "%s: %s.levelCount is 0.", cmd_name, param_name);
+            skip |=
+                LogError(image, "VUID-VkImageSubresourceRange-levelCount-01720", "%s: %s.levelCount is 0.", cmd_name, param_name);
         } else {
             const uint64_t necessary_mip_count = uint64_t{subresourceRange.baseMipLevel} + uint64_t{subresourceRange.levelCount};
 
@@ -4585,7 +4586,8 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
 
     if (subresourceRange.layerCount != VK_REMAINING_ARRAY_LAYERS) {
         if (subresourceRange.layerCount == 0) {
-            skip |= LogError(image, errorCodes.layer_count_err, "%s: %s.layerCount is 0.", cmd_name, param_name);
+            skip |=
+                LogError(image, "VUID-VkImageSubresourceRange-layerCount-01721", "%s: %s.layerCount is 0.", cmd_name, param_name);
         } else {
             const uint64_t necessary_layer_count =
                 uint64_t{subresourceRange.baseArrayLayer} + uint64_t{subresourceRange.layerCount};

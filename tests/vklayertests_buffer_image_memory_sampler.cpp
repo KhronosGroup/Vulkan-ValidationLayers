@@ -4684,7 +4684,7 @@ TEST_F(VkLayerTest, ClearColorImageWithBadRange) {
 
     // Try levelCount = 0
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-pRanges-01692");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageSubresourceRange-levelCount-01720");
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 0, 1};
         vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -4717,7 +4717,7 @@ TEST_F(VkLayerTest, ClearColorImageWithBadRange) {
 
     // Try layerCount = 0
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearColorImage-pRanges-01693");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageSubresourceRange-layerCount-01721");
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 0};
         vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -4927,7 +4927,7 @@ TEST_F(VkLayerTest, ClearDepthStencilWithBadRange) {
 
     // Try levelCount = 0
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-pRanges-01694");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageSubresourceRange-levelCount-01720");
         const VkImageSubresourceRange range = {ds_aspect, 0, 0, 0, 1};
         vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -4960,7 +4960,7 @@ TEST_F(VkLayerTest, ClearDepthStencilWithBadRange) {
 
     // Try layerCount = 0
     {
-        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdClearDepthStencilImage-pRanges-01695");
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageSubresourceRange-layerCount-01721");
         const VkImageSubresourceRange range = {ds_aspect, 0, 1, 0, 0};
         vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
@@ -5848,7 +5848,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
         // Try levelCount = 0
         {
             conc_test.image_barrier_.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 0, 1};
-            conc_test("VUID-VkImageMemoryBarrier-subresourceRange-01724");
+            conc_test("VUID-VkImageSubresourceRange-levelCount-01720");
         }
 
         // Try baseMipLevel + levelCount > image.mipLevels
@@ -5873,7 +5873,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
         // Try layerCount = 0
         {
             conc_test.image_barrier_.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 0};
-            conc_test("VUID-VkImageMemoryBarrier-subresourceRange-01725");
+            conc_test("VUID-VkImageSubresourceRange-layerCount-01721");
         }
 
         // Try baseArrayLayer + layerCount > image.arrayLayers
@@ -5916,7 +5916,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
 
         // Try levelCount = 0
         {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryBarrier-subresourceRange-01724");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageSubresourceRange-levelCount-01720");
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 0, 1};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
@@ -5961,7 +5961,7 @@ TEST_F(VkLayerTest, ImageBarrierWithBadRange) {
 
         // Try layerCount = 0
         {
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageMemoryBarrier-subresourceRange-01725");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageSubresourceRange-layerCount-01721");
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 0};
             VkImageMemoryBarrier img_barrier = img_barrier_template;
             img_barrier.subresourceRange = range;
@@ -7657,7 +7657,7 @@ TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 0, 1};
         VkImageViewCreateInfo img_view_info = img_view_info_template;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-01718");
+        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageSubresourceRange-levelCount-01720");
     }
 
     // Try baseMipLevel + levelCount > image.mipLevels
@@ -7692,7 +7692,7 @@ TEST_F(VkLayerTest, CreateImageViewInvalidSubresourceRange) {
             const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 0};
             VkImageViewCreateInfo img_view_info = img_view_info_template;
             img_view_info.subresourceRange = range;
-            CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-01719");
+            CreateImageViewTest(*this, &img_view_info, "VUID-VkImageSubresourceRange-layerCount-01721");
         }
 
         // Try baseArrayLayer + layerCount > image.arrayLayers
