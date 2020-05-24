@@ -295,14 +295,27 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHand
         const BINDABLE *mem_binding = ValidationStateTracker::GetObjectMemBinding(typed_handle);
         assert(mem_binding);
         if (mem_binding->sparse) {
-            const char *error_code = "VUID-vkBindImageMemory-image-01045";
-            const char *handle_type = "IMAGE";
+            const char *error_code = nullptr;
+            const char *handle_type = nullptr;
             if (typed_handle.type == kVulkanObjectTypeBuffer) {
-                error_code = "VUID-vkBindBufferMemory-buffer-01030";
                 handle_type = "BUFFER";
+                if (strcmp(apiName, "vkBindBufferMemory()") == 0) {
+                    error_code = "VUID-vkBindBufferMemory-buffer-01030";
+                } else {
+                    error_code = "VUID-VkBindBufferMemoryInfo-buffer-01594";
+                }
+            } else if (typed_handle.type == kVulkanObjectTypeImage) {
+                handle_type = "IMAGE";
+                if (strcmp(apiName, "vkBindImageMemory()") == 0) {
+                    error_code = "VUID-vkBindImageMemory-image-01045";
+                } else {
+                    error_code = "VUID-VkBindImageMemoryInfo-image-01610";
+                }
             } else {
-                assert(typed_handle.type == kVulkanObjectTypeImage);
+                // Unsupported object type
+                assert(false);
             }
+
             LogObjectList objlist(mem);
             objlist.add(typed_handle);
             skip |= LogError(objlist, error_code,
@@ -316,12 +329,24 @@ bool CoreChecks::ValidateSetMemBinding(VkDeviceMemory mem, const VulkanTypedHand
             const DEVICE_MEMORY_STATE *prev_binding = mem_binding->binding.mem_state.get();
             if (prev_binding) {
                 if (!prev_binding->destroyed) {
-                    const char *error_code = "VUID-vkBindImageMemory-image-01044";
+                    const char *error_code = nullptr;
                     if (typed_handle.type == kVulkanObjectTypeBuffer) {
-                        error_code = "VUID-vkBindBufferMemory-buffer-01029";
+                        if (strcmp(apiName, "vkBindBufferMemory()") == 0) {
+                            error_code = "VUID-vkBindBufferMemory-buffer-01029";
+                        } else {
+                            error_code = "VUID-VkBindBufferMemoryInfo-buffer-01593";
+                        }
+                    } else if (typed_handle.type == kVulkanObjectTypeImage) {
+                        if (strcmp(apiName, "vkBindImageMemory()") == 0) {
+                            error_code = "VUID-vkBindImageMemory-image-01044";
+                        } else {
+                            error_code = "VUID-VkBindImageMemoryInfo-image-01609";
+                        }
                     } else {
-                        assert(typed_handle.type == kVulkanObjectTypeImage);
+                        // Unsupported object type
+                        assert(false);
                     }
+
                     LogObjectList objlist(mem);
                     objlist.add(typed_handle);
                     objlist.add(prev_binding->mem);
@@ -3427,9 +3452,17 @@ bool CoreChecks::ValidateInsertMemoryRange(const VulkanTypedHandle &typed_handle
     if (memoryOffset >= mem_info->alloc_info.allocationSize) {
         const char *error_code = nullptr;
         if (typed_handle.type == kVulkanObjectTypeBuffer) {
-            error_code = "VUID-vkBindBufferMemory-memoryOffset-01031";
+            if (strcmp(api_name, "vkBindBufferMemory()") == 0) {
+                error_code = "VUID-vkBindBufferMemory-memoryOffset-01031";
+            } else {
+                error_code = "VUID-VkBindBufferMemoryInfo-memoryOffset-01595";
+            }
         } else if (typed_handle.type == kVulkanObjectTypeImage) {
-            error_code = "VUID-vkBindImageMemory-memoryOffset-01046";
+            if (strcmp(api_name, "vkBindImageMemory()") == 0) {
+                error_code = "VUID-vkBindImageMemory-memoryOffset-01046";
+            } else {
+                error_code = "VUID-VkBindImageMemoryInfo-memoryOffset-01611";
+            }
         } else if (typed_handle.type == kVulkanObjectTypeAccelerationStructureNV) {
             error_code = "VUID-VkBindAccelerationStructureMemoryInfoKHR-memoryOffset-02451";
         } else {
