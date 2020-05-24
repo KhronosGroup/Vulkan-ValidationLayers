@@ -988,7 +988,11 @@ TEST_F(VkLayerTest, ImagelessFramebufferDepthStencilResolveAttachmentTests) {
 
     uint32_t attachmentWidth = 512;
     uint32_t attachmentHeight = 512;
-    VkFormat attachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    VkFormat attachmentFormat = FindSupportedDepthStencilFormat(gpu());
+    if (attachmentFormat == VK_FORMAT_UNDEFINED) {
+        printf("%s Did not find a supported depth stencil format; skipped.\n", kSkipPrefix);
+        return;
+    }
 
     VkAttachmentDescription2KHR attachmentDescriptions[2] = {};
     // Depth/stencil attachment
