@@ -3514,6 +3514,7 @@ bool CoreChecks::ValidateMemoryTypes(const DEVICE_MEMORY_STATE *mem_info, const 
 bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, VkDeviceSize memoryOffset,
                                           const char *api_name) const {
     const BUFFER_STATE *buffer_state = GetBufferState(buffer);
+    bool bind_buffer_mem_2 = strcmp(api_name, "vkBindBufferMemory()") != 0;
 
     bool skip = false;
     if (buffer_state) {
@@ -3526,27 +3527,31 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
             return skip;
         }
 
-        // Validate bound memory range information
-        const auto mem_info = GetDevMemState(mem);
-        if (mem_info) {
-            skip |= ValidateInsertBufferMemoryRange(buffer, mem_info, memoryOffset, api_name);
-            skip |= ValidateMemoryTypes(mem_info, buffer_state->requirements.memoryTypeBits, api_name,
-                                        "VUID-vkBindBufferMemory-memory-01035");
-        }
-
         // Validate memory requirements alignment
         if (SafeModulo(memoryOffset, buffer_state->requirements.alignment) != 0) {
-            skip |= LogError(buffer, "VUID-vkBindBufferMemory-memoryOffset-01036",
+            const char *vuid =
+                bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memoryOffset-01600" : "VUID-vkBindBufferMemory-memoryOffset-01036";
+            skip |= LogError(buffer, vuid,
                              "%s: memoryOffset is 0x%" PRIxLEAST64
                              " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
                              ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
                              api_name, memoryOffset, buffer_state->requirements.alignment);
         }
 
+        const auto mem_info = GetDevMemState(mem);
         if (mem_info) {
+            // Validate bound memory range information
+            skip |= ValidateInsertBufferMemoryRange(buffer, mem_info, memoryOffset, api_name);
+
+            const char *mem_type_vuid =
+                bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01599" : "VUID-vkBindBufferMemory-memory-01035";
+            skip |= ValidateMemoryTypes(mem_info, buffer_state->requirements.memoryTypeBits, api_name, mem_type_vuid);
+
             // Validate memory requirements size
             if (buffer_state->requirements.size > (mem_info->alloc_info.allocationSize - memoryOffset)) {
-                skip |= LogError(buffer, "VUID-vkBindBufferMemory-size-01037",
+                const char *vuid =
+                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-size-01601" : "VUID-vkBindBufferMemory-size-01037";
+                skip |= LogError(buffer, vuid,
                                  "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
                                  " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
                                  ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
@@ -3555,15 +3560,12 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
 
             // Validate dedicated allocation
             if (mem_info->is_dedicated && ((mem_info->dedicated_buffer != buffer) || (memoryOffset != 0))) {
-                // TODO: Add vkBindBufferMemory2KHR error message when added to spec.
-                auto validation_error = kVUIDUndefined;
-                if (strcmp(api_name, "vkBindBufferMemory()") == 0) {
-                    validation_error = "VUID-vkBindBufferMemory-memory-01508";
-                }
+                const char *vuid =
+                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01900" : "VUID-vkBindBufferMemory-memory-01508";
                 LogObjectList objlist(buffer);
                 objlist.add(mem);
                 objlist.add(mem_info->dedicated_buffer);
-                skip |= LogError(objlist, validation_error,
+                skip |= LogError(objlist, vuid,
                                  "%s: for dedicated %s, VkMemoryDedicatedAllocateInfoKHR::buffer %s must be equal "
                                  "to %s and memoryOffset 0x%" PRIxLEAST64 " must be zero.",
                                  api_name, report_data->FormatHandle(mem).c_str(),
