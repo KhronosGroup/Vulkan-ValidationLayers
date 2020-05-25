@@ -46,8 +46,8 @@
 #            behavior.
 #
 #   MESSAGE_ID_FILTER:
-#   =============
-#   <LayerIdentifier>.messag_id_filter: This is a comma-delineated list of VUIDs
+#   ==================
+#   <LayerIdentifier>.message_id_filter: This is a comma-delineated list of VUIDs
 #    or VUID identifers which are to be IGNORED by the layers. These can be in
 #    any combination of the normal VUID string form,
 #        "VUID-vkCmdPipelineBarrier-image-02635",
@@ -63,7 +63,7 @@
 #      is used by default.
 #
 #   DISABLES:
-#   =============
+#   =========
 #   <LayerIdentifier>.disables : comma separated list of feature/flag/disable enums
 #      These can include VkValidationFeatureDisableEXT flags defined in the Vulkan
 #      specification, or ValidationCheckDisables enums defined in chassis.h.
@@ -86,7 +86,7 @@
 #          This may not always be necessary late in a development cycle.
 #
 #   ENABLES:
-#   =============
+#   ========
 #   <LayerIdentifier>.enables : comma separated list of feature enable enums
 #      These can include VkValidationFeatureEnableEXT flags defined in the Vulkan
 #      specification, where their effects are described.  The most useful
@@ -98,6 +98,16 @@
 #      VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT - enables processing of 
 #      debug printf instructions in shaders and sending debug strings to the debug callback
 #
+#   CUSTOM_STYPE_LIST:
+#   ==================
+#   <LayerIdentifier>.custom_stype_list: This is a comma-delineated list of uin32_t
+#    value-pairs describing custom structure types. Unrecognized structures encountered
+#    in wrapped pNext chains are typically removed. Specifying the sType value and size
+#    in bytes in this list will allow the layers to properly preserve the containing
+#    pNext chain. Multiple structs can be specified.  For instance, in the following
+#    example, two custom structs are declared, the first in decimal and the second in
+#    hexadecimal:
+#        khronos_validation.custom_stype_list=1100297000,32,0x478b1428,0x20
 
 # VK_LAYER_KHRONOS_validation Settings
 
@@ -107,6 +117,9 @@ khronos_validation.log_filename = stdout
 
 # Example entry showing how to filter specific VUIDs from layer output
 #khronos_validation.message_id_filter = 3744698786,0xdf3391a2,"VUID-vkCmdPipelineBarrier-image-02635"
+
+# Example entry showing how to declare custom non-Vulkan structure types
+khronos_validation.custom_stype_list=1100297000,32,0x478b1428,0x20
 
 # Example entry showing how to disable threading checks and validation at DestroyPipeline time
 #khronos_validation.disables = VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT,VALIDATION_CHECK_DISABLE_DESTROY_PIPELINE
