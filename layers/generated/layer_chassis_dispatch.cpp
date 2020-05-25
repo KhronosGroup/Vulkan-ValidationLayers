@@ -26,9 +26,7 @@
 #include "chassis.h"
 #include "layer_chassis_dispatch.h"
 #include "vk_layer_utils.h"
-
-// This intentionally includes a cpp file
-#include "vk_safe_struct.cpp"
+#include "vk_safe_struct.h"
 
 ReadWriteLock dispatch_lock;
 

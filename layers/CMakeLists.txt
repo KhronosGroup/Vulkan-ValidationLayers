@@ -169,6 +169,8 @@ set(CHASSIS_LIBRARY_FILES
     generated/chassis.cpp
     generated/layer_chassis_dispatch.cpp
     generated/command_counter_helper.cpp
+    generated/vk_safe_struct.cpp
+    generated/vk_safe_struct.h
     state_tracker.cpp
     state_tracker.h
     image_layout_map.cpp
