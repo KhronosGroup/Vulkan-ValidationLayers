@@ -1,5 +1,5 @@
 /* THIS FILE IS GENERATED - DO NOT EDIT (scripts/vk_validation_stats.py) */
-/* Vulkan specification version: 1.2.140 */
+/* Vulkan specification version: 1.2.141 */
 /*
  * Vulkan
  *
@@ -5994,7 +5994,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-dataSize-03484", "dataSize must be at least VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupHandleCaptureReplaySize {times} groupCount", "1.2-extensions"},
     {"VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-dataSize-arraylength", "dataSize must be greater than 0", "1.2-extensions"},
     {"VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-device-parameter", "device must be a valid VkDevice handle", "1.2-extensions"},
-    {"VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-03483", "The sum of firstGroup and groupCount must be less than the number of shader groups in pipeline", "1.2-extensions"},
+    {"VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-03483", "The sum of firstGroup and groupCount must be less than or equal to the number of shader groups in pipeline", "1.2-extensions"},
+    {"VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-04051", "firstGroup must be less than the number of shader groups in pipeline", "1.2-extensions"},
     {"VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pData-parameter", "pData must be a valid pointer to an array of dataSize bytes", "1.2-extensions"},
     {"VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pipeline-parameter", "pipeline must be a valid VkPipeline handle", "1.2-extensions"},
     {"VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pipeline-parent", "pipeline must have been created, allocated, or retrieved from device", "1.2-extensions"},
@@ -6002,7 +6003,8 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
     {"VUID-vkGetRayTracingShaderGroupHandlesKHR-dataSize-02420", "dataSize must be at least VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupHandleSize {times} groupCount", "1.2-extensions"},
     {"VUID-vkGetRayTracingShaderGroupHandlesKHR-dataSize-arraylength", "dataSize must be greater than 0", "1.2-extensions"},
     {"VUID-vkGetRayTracingShaderGroupHandlesKHR-device-parameter", "device must be a valid VkDevice handle", "1.2-extensions"},
-    {"VUID-vkGetRayTracingShaderGroupHandlesKHR-firstGroup-02419", "The sum of firstGroup and groupCount must be less than the number of shader groups in pipeline", "1.2-extensions"},
+    {"VUID-vkGetRayTracingShaderGroupHandlesKHR-firstGroup-02419", "The sum of firstGroup and groupCount must be less than or equal to the number of shader groups in pipeline", "1.2-extensions"},
+    {"VUID-vkGetRayTracingShaderGroupHandlesKHR-firstGroup-04050", "firstGroup must be less than the number of shader groups in pipeline", "1.2-extensions"},
     {"VUID-vkGetRayTracingShaderGroupHandlesKHR-pData-parameter", "pData must be a valid pointer to an array of dataSize bytes", "1.2-extensions"},
     {"VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-03482", "pipeline must have not been created with VK_PIPELINE_CREATE_LIBRARY_BIT_KHR", "1.2-extensions"},
     {"VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-parameter", "pipeline must be a valid VkPipeline handle", "1.2-extensions"},

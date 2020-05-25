@@ -4943,7 +4943,7 @@ bool StatelessValidation::ValidateCopyMemoryToAccelerationStructureInfoKHR(const
     if (pInfo->mode != VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR) {
         skip |= LogError(device,
                          is_cmd ? "VUID-vkCmdCopyMemoryToAccelerationStructureKHR-mode-03413"
-                                : "VUID-vkCopyMemoryToAccelerationStructureInfoKHR-mode-03413",
+                                : "VUID-VkCopyMemoryToAccelerationStructureInfoKHR-mode-03413",
                          "(%s): mode must be VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR.", api_name);
     }
     return skip;

@@ -3854,6 +3854,8 @@ static inline const char* string_VkVendorId(VkVendorId input_value)
             return "VK_VENDOR_ID_CODEPLAY";
         case VK_VENDOR_ID_KAZAN:
             return "VK_VENDOR_ID_KAZAN";
+        case VK_VENDOR_ID_MESA:
+            return "VK_VENDOR_ID_MESA";
         case VK_VENDOR_ID_VIV:
             return "VK_VENDOR_ID_VIV";
         case VK_VENDOR_ID_VSI:
@@ -4334,6 +4336,8 @@ static inline const char* string_VkDriverId(VkDriverId input_value)
             return "VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA";
         case VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS:
             return "VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS";
+        case VK_DRIVER_ID_MESA_LLVMPIPE:
+            return "VK_DRIVER_ID_MESA_LLVMPIPE";
         case VK_DRIVER_ID_MESA_RADV:
             return "VK_DRIVER_ID_MESA_RADV";
         case VK_DRIVER_ID_NVIDIA_PROPRIETARY:
@@ -5242,6 +5246,8 @@ static inline const char* string_VkDriverIdKHR(VkDriverIdKHR input_value)
             return "VK_DRIVER_ID_INTEL_OPEN_SOURCE_MESA";
         case VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS:
             return "VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS";
+        case VK_DRIVER_ID_MESA_LLVMPIPE:
+            return "VK_DRIVER_ID_MESA_LLVMPIPE";
         case VK_DRIVER_ID_MESA_RADV:
             return "VK_DRIVER_ID_MESA_RADV";
         case VK_DRIVER_ID_NVIDIA_PROPRIETARY:

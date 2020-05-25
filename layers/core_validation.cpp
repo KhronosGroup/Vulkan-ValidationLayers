@@ -1745,7 +1745,7 @@ static const std::array<const char *, CMD_RANGE_SIZE> must_be_recording_list = {
 // VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-commandBuffer-recording
 // VUID-vkCmdWriteBufferMarkerAMD-commandBuffer-recording
 // VUID-vkCmdWriteTimestamp-commandBuffer-recording
-// VUID-vkEndCommandBuffer-commandBuffer-00059//
+// VUID-vkEndCommandBuffer-commandBuffer-00059
 
 // Validate the given command being added to the specified cmd buffer, flagging errors if CB is not in the recording state or if
 // there's an issue with the Cmd ordering

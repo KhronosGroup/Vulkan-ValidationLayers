@@ -4975,7 +4975,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
 
         if (image_usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) {
             if (pCreateInfo->subresourceRange.levelCount != 1) {
-                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-02571]]",
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-image-02571",
                                  "vkCreateImageView(): If image was created with usage containing "
                                  "VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT, subresourceRange.levelCount (%d) must: be 1",
                                  pCreateInfo->subresourceRange.levelCount);
@@ -4983,7 +4983,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         }
         if (pCreateInfo->flags & VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DYNAMIC_BIT_EXT) {
             if (!enabled_features.fragment_density_map_features.fragmentDensityMapDynamic) {
-                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-flags-02572]]",
+                skip |= LogError(pCreateInfo->image, "VUID-VkImageViewCreateInfo-flags-02572",
                                  "vkCreateImageView(): If the fragmentDensityMapDynamic feature is not enabled, "
                                  "flags must not contain VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DYNAMIC_BIT_EXT");
             }

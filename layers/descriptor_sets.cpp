@@ -1187,7 +1187,7 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet *update, const Des
         return false;
     }
     // Check that types match
-    // TODO : Base default error case going from here is "VUID-VkAcquireNextImageInfoKHR-semaphore-parameter"2ba which covers all
+    // TODO : Base default error case going from here is "VUID-VkAcquireNextImageInfoKHR-semaphore-parameter" 2ba which covers all
     // consistency issues, need more fine-grained error codes
     *error_code = "VUID-VkCopyDescriptorSet-srcSet-00349";
     auto src_type = src_set->GetTypeFromBinding(update->srcBinding);
