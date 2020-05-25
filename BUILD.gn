@@ -83,8 +83,6 @@ config("vulkan_layer_config") {
 }
 
 core_validation_sources = [
-  # This file is manually included in the layer
-  # "layers/generated/vk_safe_struct.cpp",
   "layers/buffer_validation.cpp",
   "layers/buffer_validation.h",
   "layers/state_tracker.cpp",
@@ -149,6 +147,7 @@ command_counter_sources = [
 ]
 
 chassis_sources = [
+  "layers/generated/vk_safe_struct.cpp",
   "layers/generated/vk_safe_struct.h",
   "layers/generated/thread_safety.h",
   "layers/generated/chassis.cpp",
