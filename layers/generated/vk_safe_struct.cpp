@@ -35,8 +35,11 @@
 #include <string.h>
 #include <cassert>
 #include <cstring>
+#include <vector>
 
 #include <vulkan/vk_layer.h>
+
+extern std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info;
 
 
 safe_VkApplicationInfo::safe_VkApplicationInfo(const VkApplicationInfo* in_struct) :
@@ -33553,7 +33556,7 @@ char *SafeStringCopy(const char *in_string) {
 void *SafePnextCopy(const void *pNext) {
     if (!pNext) return nullptr;
 
-    void *safe_pNext;
+    void *safe_pNext{};
     const VkBaseOutStructure *header = reinterpret_cast<const VkBaseOutStructure *>(pNext);
 
     switch (header->sType) {
@@ -34295,7 +34298,21 @@ void *SafePnextCopy(const void *pNext) {
             break;
 #endif // VK_USE_PLATFORM_WIN32_KHR
         default: // Encountered an unknown sType -- skip (do not copy) this entry in the chain
-            safe_pNext = SafePnextCopy(header->pNext);
+            // If sType is in custom list, construct blind copy
+            for (auto item : custom_stype_info) {
+                if (item.first == header->sType) {
+                    safe_pNext = malloc(item.second);
+                    memcpy(safe_pNext, header, item.second);
+                    // Deep copy the rest of the pNext chain
+                    VkBaseOutStructure *custom_struct = reinterpret_cast<VkBaseOutStructure *>(safe_pNext);
+                    if (custom_struct->pNext) {
+                        custom_struct->pNext = reinterpret_cast<VkBaseOutStructure *>(SafePnextCopy(custom_struct->pNext));
+                    }
+                }
+            }
+            if (!safe_pNext) {
+                safe_pNext = SafePnextCopy(header->pNext);
+            }
             break;
     }
 
@@ -35037,9 +35054,20 @@ void FreePnextChain(const void *pNext) {
             delete reinterpret_cast<const safe_VkSurfaceFullScreenExclusiveWin32InfoEXT *>(header);
             break;
 #endif // VK_USE_PLATFORM_WIN32_KHR
-        default: // Encountered an unknown sType -- panic, there should be none such in safe chain
-            assert(false);
-            FreePnextChain(header->pNext);
+        default: // Encountered an unknown sType
+            // If sType is in custom list, free custom struct memory and clean up
+            for (auto item : custom_stype_info) {
+                if (item.first == header->sType) {
+                    if (header->pNext) {
+                        FreePnextChain(header->pNext);
+                    }
+                    free(const_cast<void *>(pNext));
+                    pNext = nullptr;
+                }
+            }
+            if (pNext) {
+                FreePnextChain(header->pNext);
+            }
             break;
     }
 }

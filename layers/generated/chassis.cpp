@@ -53,6 +53,9 @@ bool wrap_handles = true;
 #include "stateless_validation.h"
 #include "thread_safety.h"
 
+// Global list of sType,size identifiers
+std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
+
 namespace vulkan_layer_chassis {
 
 using std::unordered_map;
@@ -339,44 +342,77 @@ void SetLocalDisableSetting(std::string list_of_disables, std::string delimiter,
     }
 }
 
+uint32_t TokenToUint(std::string &token) {
+    uint32_t int_id = 0;
+    if ((token.find("0x") == 0) || token.find("0X") == 0) {    // Handle hex format
+        int_id = std::strtoul(token.c_str(), nullptr, 16);
+    } else {
+        int_id = std::strtoul(token.c_str(), nullptr, 10);     // Decimal format
+    }
+    return int_id;
+}
+
 void CreateFilterMessageIdList(std::string raw_id_list, std::string delimiter, std::vector<uint32_t> &filter_list) {
     size_t pos = 0;
     std::string token;
     while (raw_id_list.length() != 0) {
         token = GetNextToken(&raw_id_list, delimiter, &pos);
-        uint32_t int_id = 0;
-        if (token.find("0x") == 0) {                                             // Handle hex number
-            int_id = std::strtoul(token.c_str(), nullptr, 16);
-        } else {
-            int_id = std::strtoul(token.c_str(), nullptr, 10);                   // Decimal number
-            if (int_id == 0) {
-                size_t id_hash = XXH32(token.c_str(), strlen(token.c_str()), 8); // String
-                if (id_hash != 0) {
-                    int_id = static_cast<uint32_t>(id_hash);
-                }
+        uint32_t int_id = TokenToUint(token);
+        if (int_id == 0) {
+            size_t id_hash = XXH32(token.c_str(), strlen(token.c_str()), 8); // String
+            if (id_hash != 0) {
+                int_id = static_cast<uint32_t>(id_hash);
             }
         }
         if ((int_id != 0) && (std::find(filter_list.begin(), filter_list.end(), int_id)) == filter_list.end()) {
             filter_list.push_back(int_id);
         }
-   }
+    }
+}
+
+void SetCustomStypeInfo(std::string raw_id_list, std::string delimiter) {
+    size_t pos = 0;
+    std::string token;
+    // List format is a list of integer pairs
+    while (raw_id_list.length() != 0) {
+        token = GetNextToken(&raw_id_list, delimiter, &pos);
+        uint32_t stype_id = TokenToUint(token);
+        token = GetNextToken(&raw_id_list, delimiter, &pos);
+        uint32_t struct_size_in_bytes = TokenToUint(token);
+        if ((stype_id != 0) && (struct_size_in_bytes != 0)) {
+            bool found = false;
+            // Prevent duplicate entries
+            for (auto item : custom_stype_info) {
+                if (item.first == stype_id) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) custom_stype_info.push_back(std::make_pair(stype_id, struct_size_in_bytes));
+        }
+    }
 }
 
 // Process enables and disables set though the vk_layer_settings.txt config file or through an environment variable
 void ProcessConfigAndEnvSettings(const char* layer_description, CHECK_ENABLED &enables, CHECK_DISABLED &disables,
     std::vector<uint32_t> &message_filter_list) {
-    std::string enable_key = layer_description;
-    std::string disable_key = layer_description;
-    std::string filter_msg_key = layer_description;
+
+    std::string enable_key(layer_description);
+    std::string disable_key(layer_description);
+    std::string stypes_key(layer_description);
+    std::string filter_msg_key(layer_description);
     enable_key.append(".enables");
     disable_key.append(".disables");
     filter_msg_key.append(".message_id_filter");
+    stypes_key.append(".custom_stype_list");
     std::string list_of_config_enables = getLayerOption(enable_key.c_str());
     std::string list_of_env_enables = GetLayerEnvVar("VK_LAYER_ENABLES");
     std::string list_of_config_disables = getLayerOption(disable_key.c_str());
     std::string list_of_env_disables = GetLayerEnvVar("VK_LAYER_DISABLES");
     std::string list_of_config_filter_ids = getLayerOption(filter_msg_key.c_str());
     std::string list_of_env_filter_ids = GetLayerEnvVar("VK_LAYER_MESSAGE_ID_FILTER");
+    std::string list_of_config_stypes = getLayerOption(stypes_key.c_str());
+    std::string list_of_env_stypes = GetLayerEnvVar("VK_LAYER_CUSTOM_STYPE_LIST");
 #if defined(_WIN32)
     std::string env_delimiter = ";";
 #else
@@ -390,6 +426,9 @@ void ProcessConfigAndEnvSettings(const char* layer_description, CHECK_ENABLED &e
     // Process message filter ID list
     CreateFilterMessageIdList(list_of_config_filter_ids, ",", message_filter_list);
     CreateFilterMessageIdList(list_of_env_filter_ids, env_delimiter, message_filter_list);
+    // Process custom stype struct list
+    SetCustomStypeInfo(list_of_config_stypes, ",");
+    SetCustomStypeInfo(list_of_env_stypes, env_delimiter);
 }
 
 const VkLayerSettingsEXT *FindSettingsInChain(const void *next) {
@@ -563,16 +602,36 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     const auto layer_settings_ext = FindSettingsInChain(pCreateInfo->pNext);
     if (layer_settings_ext) {
         for (uint32_t i = 0; i < layer_settings_ext->settingCount; i++) {
-            std::string name(layer_settings_ext->pSettings[i].name);
+            auto cur_setting = layer_settings_ext->pSettings[i];
+            std::string name(cur_setting.name);
             if (name == "enables") {
-                std::string data(layer_settings_ext->pSettings[i].data.arrayString.pCharArray);
+                std::string data(cur_setting.data.arrayString.pCharArray);
                 SetLocalEnableSetting(data, ",", local_enables);
             } else if (name == "disables") {
-                std::string data(layer_settings_ext->pSettings[i].data.arrayString.pCharArray);
+                std::string data(cur_setting.data.arrayString.pCharArray);
                 SetLocalDisableSetting(data, ",", local_disables);
             } else if (name == "message_id_filter") {
-                std::string data(layer_settings_ext->pSettings[i].data.arrayString.pCharArray);
+                std::string data(cur_setting.data.arrayString.pCharArray);
                 CreateFilterMessageIdList(data, ",", report_data->filter_message_ids);
+            } else if (name == "custom_stype_list") {
+                if (cur_setting.type == VK_LAYER_SETTING_VALUE_TYPE_STRING_ARRAY_EXT) {
+                    std::string data(cur_setting.data.arrayString.pCharArray);
+                    SetCustomStypeInfo(data, ",");
+                } else if (cur_setting.type == VK_LAYER_SETTING_VALUE_TYPE_UINT32_ARRAY_EXT) {
+                    for (uint32_t j = 0; j < cur_setting.data.arrayInt32.count/2; j++) {
+                        auto stype_id = cur_setting.data.arrayInt32.pInt32Array[j*2];
+                        auto struct_size = cur_setting.data.arrayInt32.pInt32Array[(j*2)+1];
+                        bool found = false;
+                        // Prevent duplicate entries
+                        for (auto item : custom_stype_info) {
+                            if (item.first == stype_id) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) custom_stype_info.push_back(std::make_pair(stype_id, struct_size));
+                    }
+                }
             }
         }
     }

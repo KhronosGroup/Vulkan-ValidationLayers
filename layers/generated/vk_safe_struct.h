@@ -32,6 +32,7 @@
 
 #pragma once
 #include <vulkan/vulkan.h>
+#include <stdlib.h>
 
 void *SafePnextCopy(const void *pNext);
 void FreePnextChain(const void *pNext);

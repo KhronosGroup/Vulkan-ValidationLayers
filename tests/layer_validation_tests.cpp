@@ -26,6 +26,9 @@
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
 
+// Global list of sType,size identifiers
+std::vector<std::pair<uint32_t, uint32_t>> custom_stype_info{};
+
 VkFormat FindSupportedDepthOnlyFormat(VkPhysicalDevice phy) {
     const VkFormat ds_formats[] = {VK_FORMAT_D16_UNORM, VK_FORMAT_X8_D24_UNORM_PACK32, VK_FORMAT_D32_SFLOAT};
     for (uint32_t i = 0; i < size(ds_formats); ++i) {
