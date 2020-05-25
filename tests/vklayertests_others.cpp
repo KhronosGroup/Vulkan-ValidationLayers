@@ -49,6 +49,139 @@ class MessageIdFilter {
     std::string local_string;
 };
 
+class CustomStypeList {
+  public:
+    CustomStypeList(const char *stype_id_string) {
+        local_string = stype_id_string;
+        custom_stype_value.arrayString.pCharArray = local_string.data();
+        custom_stype_value.arrayString.count = local_string.size();
+
+        strncpy(custom_stype_setting_val.name, "custom_stype_list", sizeof(custom_stype_setting_val.name));
+        custom_stype_setting_val.type = VK_LAYER_SETTING_VALUE_TYPE_STRING_ARRAY_EXT;
+        custom_stype_setting_val.data = custom_stype_value;
+        custom_stype_setting = {static_cast<VkStructureType>(VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT), nullptr, 1,
+                                &custom_stype_setting_val};
+    }
+
+    CustomStypeList(const std::vector<uint32_t> &stype_id_array) {
+        local_vector = stype_id_array;
+        custom_stype_value.arrayInt32.pInt32Array = local_vector.data();
+        custom_stype_value.arrayInt32.count = local_vector.size();
+
+        strncpy(custom_stype_setting_val.name, "custom_stype_list", sizeof(custom_stype_setting_val.name));
+        custom_stype_setting_val.type = VK_LAYER_SETTING_VALUE_TYPE_UINT32_ARRAY_EXT;
+        custom_stype_setting_val.data = custom_stype_value;
+        custom_stype_setting = {static_cast<VkStructureType>(VK_STRUCTURE_TYPE_INSTANCE_LAYER_SETTINGS_EXT), nullptr, 1,
+                                &custom_stype_setting_val};
+    }
+    VkLayerSettingsEXT *pnext{&custom_stype_setting};
+
+  private:
+    VkLayerSettingValueDataEXT custom_stype_value{};
+    VkLayerSettingValueEXT custom_stype_setting_val;
+    VkLayerSettingsEXT custom_stype_setting;
+    std::string local_string;
+    std::vector<uint32_t> local_vector;
+};
+
+TEST_F(VkLayerTest, CustomStypeStructString) {
+    TEST_DESCRIPTION("Positive Test for ability to specify custom pNext structs using a list (string)");
+
+    // Create a custom structure
+    typedef struct CustomStruct {
+        VkStructureType sType;
+        const void *pNext;
+        uint32_t custom_data;
+    } CustomStruct;
+
+    uint32_t custom_stype = 3000300000;
+    CustomStruct custom_struct;
+    custom_struct.pNext = nullptr;
+    custom_struct.sType = static_cast<VkStructureType>(custom_stype);
+    custom_struct.custom_data = 44;
+
+    // Communicate list of structinfo pairs to layers
+    auto stype_list = CustomStypeList("3000300000,24");
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, stype_list.pnext));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    uint32_t queue_family_index = 0;
+    VkBufferCreateInfo buffer_create_info = {};
+    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_create_info.size = 1024;
+    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
+    buffer_create_info.queueFamilyIndexCount = 1;
+    buffer_create_info.pQueueFamilyIndices = &queue_family_index;
+    VkBufferObj buffer;
+    buffer.init(*m_device, buffer_create_info);
+    VkBufferView buffer_view;
+    VkBufferViewCreateInfo bvci = {};
+    bvci.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
+    bvci.pNext = &custom_struct;  // Add custom struct through pNext
+    bvci.buffer = buffer.handle();
+    bvci.format = VK_FORMAT_R32_SFLOAT;
+    bvci.range = VK_WHOLE_SIZE;
+
+    m_errorMonitor->ExpectSuccess(kErrorBit);
+    vk::CreateBufferView(m_device->device(), &bvci, NULL, &buffer_view);
+    m_errorMonitor->VerifyNotFound();
+
+    vk::DestroyBufferView(m_device->device(), buffer_view, nullptr);
+}
+
+TEST_F(VkLayerTest, CustomStypeStructArray) {
+    TEST_DESCRIPTION("Positive Test for ability to specify custom pNext structs using a vector of integers");
+
+    // Create a custom structure
+    typedef struct CustomStruct {
+        VkStructureType sType;
+        const void *pNext;
+        uint32_t custom_data;
+    } CustomStruct;
+
+    const uint32_t custom_stype_a = 3000300000;
+    CustomStruct custom_struct_a;
+    custom_struct_a.pNext = nullptr;
+    custom_struct_a.sType = static_cast<VkStructureType>(custom_stype_a);
+    custom_struct_a.custom_data = 44;
+
+    const uint32_t custom_stype_b = 3000300001;
+    CustomStruct custom_struct_b;
+    custom_struct_b.pNext = &custom_struct_a;
+    custom_struct_b.sType = static_cast<VkStructureType>(custom_stype_b);
+    custom_struct_b.custom_data = 88;
+
+    // Communicate list of structinfo pairs to layers, including a duplicate which should get filtered out
+    std::vector<uint32_t> custom_struct_info = {custom_stype_a,       sizeof(CustomStruct), custom_stype_b,
+                                                sizeof(CustomStruct), custom_stype_a,       sizeof(CustomStruct)};
+    auto stype_list = CustomStypeList(custom_struct_info);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor, stype_list.pnext));
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    uint32_t queue_family_index = 0;
+    VkBufferCreateInfo buffer_create_info = {};
+    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_create_info.size = 1024;
+    buffer_create_info.usage = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
+    buffer_create_info.queueFamilyIndexCount = 1;
+    buffer_create_info.pQueueFamilyIndices = &queue_family_index;
+    VkBufferObj buffer;
+    buffer.init(*m_device, buffer_create_info);
+    VkBufferView buffer_view;
+    VkBufferViewCreateInfo bvci = {};
+    bvci.sType = VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO;
+    bvci.pNext = &custom_struct_b;  // Add custom struct through pNext
+    bvci.buffer = buffer.handle();
+    bvci.format = VK_FORMAT_R32_SFLOAT;
+    bvci.range = VK_WHOLE_SIZE;
+
+    m_errorMonitor->ExpectSuccess(kErrorBit);
+    vk::CreateBufferView(m_device->device(), &bvci, NULL, &buffer_view);
+    m_errorMonitor->VerifyNotFound();
+
+    vk::DestroyBufferView(m_device->device(), buffer_view, nullptr);
+}
+
 TEST_F(VkLayerTest, MessageIdFilterString) {
     TEST_DESCRIPTION("Validate that message id string filtering is working");
 
