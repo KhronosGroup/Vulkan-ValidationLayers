@@ -2461,13 +2461,15 @@ void ValidationStateTracker::PreCallRecordDestroySampler(VkDevice device, VkSamp
     // Any bound cmd buffers are now invalid
     if (sampler_state) {
         InvalidateCommandBuffers(sampler_state->cb_bindings, obj_struct);
+
+        if (sampler_state->createInfo.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
+            sampler_state->createInfo.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
+            custom_border_color_sampler_count--;
+        }
+
+        sampler_state->destroyed = true;
     }
-    sampler_state->destroyed = true;
     samplerMap.erase(sampler);
-    if (sampler_state->createInfo.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
-        sampler_state->createInfo.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
-        custom_border_color_sampler_count--;
-    }
 }
 
 void ValidationStateTracker::PreCallRecordDestroyDescriptorSetLayout(VkDevice device, VkDescriptorSetLayout descriptorSetLayout,
