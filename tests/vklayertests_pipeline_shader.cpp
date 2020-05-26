@@ -8440,3 +8440,236 @@ TEST_F(VkLayerTest, ValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR) {
                                                       (ray_tracing_properties.shaderGroupHandleCaptureReplaySize - 1), &buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, ValidatePipelineExecutablePropertiesFeature) {
+    TEST_DESCRIPTION("Trying making calls without pipelineExecutableInfo.");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
+        return;
+    }
+
+    VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR pipeline_exe_features = {};
+    pipeline_exe_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_EXECUTABLE_PROPERTIES_FEATURES_KHR;
+    pipeline_exe_features.pNext = nullptr;
+    pipeline_exe_features.pipelineExecutableInfo = VK_FALSE;  // Starting with it off
+
+    VkPhysicalDeviceFeatures2 features2 = {};
+    features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    features2.pNext = &pipeline_exe_features;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, &features2));
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    PFN_vkGetPipelineExecutableInternalRepresentationsKHR vkGetPipelineExecutableInternalRepresentationsKHR =
+        (PFN_vkGetPipelineExecutableInternalRepresentationsKHR)vk::GetDeviceProcAddr(
+            m_device->device(), "vkGetPipelineExecutableInternalRepresentationsKHR");
+    PFN_vkGetPipelineExecutableStatisticsKHR vkGetPipelineExecutableStatisticsKHR =
+        (PFN_vkGetPipelineExecutableStatisticsKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetPipelineExecutableStatisticsKHR");
+    PFN_vkGetPipelineExecutablePropertiesKHR vkGetPipelineExecutablePropertiesKHR =
+        (PFN_vkGetPipelineExecutablePropertiesKHR)vk::GetDeviceProcAddr(m_device->device(), "vkGetPipelineExecutablePropertiesKHR");
+    ASSERT_TRUE(vkGetPipelineExecutableInternalRepresentationsKHR != nullptr);
+    ASSERT_TRUE(vkGetPipelineExecutableStatisticsKHR != nullptr);
+    ASSERT_TRUE(vkGetPipelineExecutablePropertiesKHR != nullptr);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.InitInfo();
+    pipe.InitState();
+    pipe.CreateGraphicsPipeline();
+
+    uint32_t count;
+    VkPipelineExecutableInfoKHR pipeline_exe_info = {};
+    pipeline_exe_info.sType = VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INFO_KHR;
+    pipeline_exe_info.pNext = nullptr;
+    pipeline_exe_info.pipeline = pipe.pipeline_;
+    pipeline_exe_info.executableIndex = 0;
+
+    VkPipelineInfoKHR pipeline_info = {};
+    pipeline_info.sType = VK_STRUCTURE_TYPE_PIPELINE_INFO_KHR;
+    pipeline_info.pNext = nullptr;
+    pipeline_info.pipeline = pipe.pipeline_;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipelineExecutableInfo-03276");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03278");
+    // MockICD will return 0 for the executable count so need to check for it
+    m_errorMonitor->SetUnexpectedError("VUID-VkPipelineExecutableInfoKHR-executableIndex-03275");
+    vkGetPipelineExecutableInternalRepresentationsKHR(m_device->device(), &pipeline_exe_info, &count, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutableStatisticsKHR-pipelineExecutableInfo-03272");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03274");
+    // MockICD will return 0 for the executable count so need to check for it
+    m_errorMonitor->SetUnexpectedError("VUID-VkPipelineExecutableInfoKHR-executableIndex-03275");
+    vkGetPipelineExecutableStatisticsKHR(m_device->device(), &pipeline_exe_info, &count, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutablePropertiesKHR-pipelineExecutableInfo-03270");
+    vkGetPipelineExecutablePropertiesKHR(m_device->device(), &pipeline_info, &count, nullptr);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, ValidatePipelineExecutablePropertiesMultiDevice) {
+    TEST_DESCRIPTION("Validate VK_KHR_pipeline_executable_properties use with multiple VkDevice.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
+    } else {
+        printf("%s Extension %s is not supported.\n", kSkipPrefix, VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto pipeline_exe_features = lvl_init_struct<VkPhysicalDevicePipelineExecutablePropertiesFeaturesKHR>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&pipeline_exe_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    if (pipeline_exe_features.pipelineExecutableInfo == VK_FALSE) {
+        printf("%s Feature pipelineExecutableInfo is not supported.\n", kSkipPrefix);
+        return;
+    }
+
+    // All pipelines are created on device_a
+    // device_b is used with pipeline executable queries to invoke validation
+    VkDevice device_a;
+    VkDevice device_b;
+
+    // Use the first Physical device and queue family
+    // Makes test more portable as every driver has at least 1 queue with a queueCount of 1
+    uint32_t queue_family_count = 1;
+    uint32_t queue_family_index = 0;
+    VkQueueFamilyProperties queue_properties;
+    vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_family_count, &queue_properties);
+
+    float queue_priority = 1.0;
+    VkDeviceQueueCreateInfo queue_create_info = {};
+    queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queue_create_info.flags = VK_DEVICE_QUEUE_CREATE_PROTECTED_BIT;
+    queue_create_info.pNext = nullptr;
+    queue_create_info.queueFamilyIndex = queue_family_index;
+    queue_create_info.queueCount = 1;
+    queue_create_info.pQueuePriorities = &queue_priority;
+
+    VkDeviceCreateInfo device_create_info = {};
+    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    device_create_info.pNext = &features2;
+    device_create_info.flags = 0;
+    device_create_info.pQueueCreateInfos = &queue_create_info;
+    device_create_info.queueCreateInfoCount = 1;
+    device_create_info.pEnabledFeatures = nullptr;
+    device_create_info.enabledLayerCount = 0;
+    device_create_info.enabledExtensionCount = static_cast<uint32_t>(m_device_extension_names.size());
+    device_create_info.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    vk::CreateDevice(gpu(), &device_create_info, nullptr, &device_a);
+    vk::CreateDevice(gpu(), &device_create_info, nullptr, &device_b);
+
+    // Only need to function pointer with device_b
+    PFN_vkGetPipelineExecutableInternalRepresentationsKHR vkGetPipelineExecutableInternalRepresentationsKHR =
+        (PFN_vkGetPipelineExecutableInternalRepresentationsKHR)vk::GetDeviceProcAddr(
+            device_b, "vkGetPipelineExecutableInternalRepresentationsKHR");
+    PFN_vkGetPipelineExecutableStatisticsKHR vkGetPipelineExecutableStatisticsKHR =
+        (PFN_vkGetPipelineExecutableStatisticsKHR)vk::GetDeviceProcAddr(device_b, "vkGetPipelineExecutableStatisticsKHR");
+    PFN_vkGetPipelineExecutablePropertiesKHR vkGetPipelineExecutablePropertiesKHR =
+        (PFN_vkGetPipelineExecutablePropertiesKHR)vk::GetDeviceProcAddr(device_b, "vkGetPipelineExecutablePropertiesKHR");
+    ASSERT_TRUE(vkGetPipelineExecutableInternalRepresentationsKHR != nullptr);
+    ASSERT_TRUE(vkGetPipelineExecutableStatisticsKHR != nullptr);
+    ASSERT_TRUE(vkGetPipelineExecutablePropertiesKHR != nullptr);
+
+    // Need to create shader with device_a instead of using renderframework
+    VkShaderModule shader_module;
+    VkPipelineLayout pipeline_layout;
+    VkPipeline pipeline;
+
+    VkPhysicalDeviceProperties pd_properties;
+    vk::GetPhysicalDeviceProperties(gpu(), &pd_properties);
+    vector<unsigned int> spv;
+    GLSLtoSPV(&pd_properties.limits, VK_SHADER_STAGE_COMPUTE_BIT, bindStateMinimalShaderText, spv, false, 0);
+
+    VkShaderModuleCreateInfo module_ci = {};
+    module_ci.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    module_ci.codeSize = spv.size() * sizeof(unsigned int);
+    module_ci.pCode = spv.data();
+    vk::CreateShaderModule(device_a, &module_ci, nullptr, &shader_module);
+
+    VkPipelineLayoutCreateInfo pipeline_layer_ci = {};
+    pipeline_layer_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipeline_layer_ci.pNext = nullptr;
+    pipeline_layer_ci.flags = 0;
+    pipeline_layer_ci.setLayoutCount = 0;
+    pipeline_layer_ci.pushConstantRangeCount = 0;
+    vk::CreatePipelineLayout(device_a, &pipeline_layer_ci, nullptr, &pipeline_layout);
+
+    VkPipelineShaderStageCreateInfo stage_ci = {};
+    stage_ci.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    stage_ci.pNext = nullptr;
+    stage_ci.flags = 0;
+    stage_ci.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    stage_ci.module = shader_module;
+    stage_ci.pName = "name";
+    stage_ci.pSpecializationInfo = nullptr;
+
+    VkComputePipelineCreateInfo pipeline_ci = {};
+    pipeline_ci.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pipeline_ci.pNext = nullptr;
+    pipeline_ci.flags =
+        (VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR | VK_PIPELINE_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR);
+    pipeline_ci.layout = pipeline_layout;
+    pipeline_ci.basePipelineHandle = VK_NULL_HANDLE;
+    pipeline_ci.basePipelineIndex = -1;
+    pipeline_ci.stage = stage_ci;
+
+    VkResult result = vk::CreateComputePipelines(device_a, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+    ASSERT_TRUE(result == VK_SUCCESS);
+
+    uint32_t count;
+    VkPipelineExecutableInfoKHR pipeline_exe_info = {};
+    pipeline_exe_info.sType = VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_INFO_KHR;
+    pipeline_exe_info.pNext = nullptr;
+    pipeline_exe_info.pipeline = pipeline;
+    pipeline_exe_info.executableIndex = 0;
+
+    VkPipelineInfoKHR pipeline_info = {};
+    pipeline_info.sType = VK_STRUCTURE_TYPE_PIPELINE_INFO_KHR;
+    pipeline_info.pNext = nullptr;
+    pipeline_info.pipeline = pipeline;
+
+    // Now attempt to make all function calls on device_b using pipeline from device_a
+    // MockICD will return 0 for the executable count so need to check for 03275 for each call
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03277");
+    m_errorMonitor->SetUnexpectedError("VUID-VkPipelineExecutableInfoKHR-executableIndex-03275");
+    vkGetPipelineExecutableInternalRepresentationsKHR(device_b, &pipeline_exe_info, &count, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03273");
+    m_errorMonitor->SetUnexpectedError("VUID-VkPipelineExecutableInfoKHR-executableIndex-03275");
+    vkGetPipelineExecutableStatisticsKHR(device_b, &pipeline_exe_info, &count, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkGetPipelineExecutablePropertiesKHR-pipeline-03271");
+    m_errorMonitor->SetUnexpectedError("VUID-VkPipelineExecutableInfoKHR-executableIndex-03275");
+    vkGetPipelineExecutablePropertiesKHR(device_b, &pipeline_info, &count, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyShaderModule(device_a, shader_module, nullptr);
+    vk::DestroyPipelineLayout(device_a, pipeline_layout, nullptr);
+    vk::DestroyPipeline(device_a, pipeline, nullptr);
+    vk::DestroyDevice(device_a, nullptr);
+    vk::DestroyDevice(device_b, nullptr);
+}
