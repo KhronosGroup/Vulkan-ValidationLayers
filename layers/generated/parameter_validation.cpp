@@ -11873,6 +11873,7 @@ bool StatelessValidation::PreCallValidateCmdBuildAccelerationStructureKHR(
             // No xml-driven validation
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdBuildAccelerationStructureKHR(commandBuffer, infoCount, pInfos, ppOffsetInfos);
     return skip;
 }
 
