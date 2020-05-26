@@ -2990,7 +2990,6 @@ void ValidationStateTracker::PostCallRecordAllocateCommandBuffers(VkDevice devic
             pPool->commandBuffers.insert(pCommandBuffer[i]);
             auto pCB = std::make_shared<CMD_BUFFER_STATE>();
             pCB->createInfo = *pCreateInfo;
-            pCB->device = device;
             pCB->command_pool = pPool;
             // Add command buffer to map
             commandBufferMap[pCommandBuffer[i]] = std::move(pCB);
