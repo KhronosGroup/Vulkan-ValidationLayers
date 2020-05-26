@@ -11542,10 +11542,6 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
 
     if (pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
         pCreateInfo->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
-        if (!enabled_features.custom_border_color_features.customBorderColors) {
-            skip |= LogError(device, "VUID-vkCustomBorderColor",
-                             "A custom border color was specified without enabling the custom border color feature");
-        }
         auto custom_create_info = lvl_find_in_chain<VkSamplerCustomBorderColorCreateInfoEXT>(pCreateInfo->pNext);
         if (custom_create_info) {
             if (custom_create_info->format == VK_FORMAT_UNDEFINED &&
