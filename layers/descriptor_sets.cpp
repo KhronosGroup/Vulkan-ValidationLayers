@@ -1931,6 +1931,23 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t write_count, const VkWrit
                                  report_data->FormatHandle(dest_set).c_str(), error_str.c_str());
             }
         }
+        if (p_wds[i].pNext) {
+            const auto *pNext_struct = lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureKHR>(p_wds[i].pNext);
+            if (pNext_struct) {
+                for (uint32_t j = 0; j < pNext_struct->accelerationStructureCount; ++j) {
+                    const ACCELERATION_STRUCTURE_STATE *as_state =
+                        GetAccelerationStructureState(pNext_struct->pAccelerationStructures[j]);
+                    if (as_state && (as_state->create_infoKHR.sType == VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR &&
+                                     as_state->create_infoKHR.type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR)) {
+                        skip |=
+                            LogError(dest_set, "VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-02764",
+                                     "%s: Each acceleration structure in pAccelerationStructures must have been"
+                                     "created with VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR.",
+                                     func_name);
+                    }
+                }
+            }
+        }
     }
     // Now validate copy updates
     for (uint32_t i = 0; i < copy_count; ++i) {

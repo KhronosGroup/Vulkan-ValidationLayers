@@ -218,7 +218,8 @@ class ParameterValidationOutputGenerator(OutputGenerator):
             'vkCmdTraceRaysIndirectKHR',
             'vkCmdBuildAccelerationStructureIndirectKHR',
             'vkGetDeviceAccelerationStructureCompatibilityKHR',
-            'vkBuildAccelerationStructureKHR'
+            'vkBuildAccelerationStructureKHR',
+            'vkCmdBuildAccelerationStructureKHR'
             ]
 
         # Commands to ignore

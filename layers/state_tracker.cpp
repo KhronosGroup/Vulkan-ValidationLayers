@@ -3245,7 +3245,7 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureNV(VkDevic
     update_memory_req_info.accelerationStructure = as_state->acceleration_structure;
     DispatchGetAccelerationStructureMemoryRequirementsNV(device, &update_memory_req_info,
                                                          &as_state->update_scratch_memory_requirements);
-
+    as_state->pAllocator = pAllocator;
     accelerationStructureMap[*pAccelerationStructure] = std::move(as_state);
 }
 
@@ -3280,7 +3280,7 @@ void ValidationStateTracker::PostCallRecordCreateAccelerationStructureKHR(VkDevi
     update_memory_req_info.accelerationStructure = as_state->acceleration_structure;
     DispatchGetAccelerationStructureMemoryRequirementsKHR(device, &update_memory_req_info,
                                                           &as_state->update_scratch_memory_requirements);
-
+    as_state->pAllocator = pAllocator;
     accelerationStructureMap[*pAccelerationStructure] = std::move(as_state);
 }
 
