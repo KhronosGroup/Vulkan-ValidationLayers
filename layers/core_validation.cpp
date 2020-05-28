@@ -4891,7 +4891,17 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                          "command buffer fence before this call.",
                          report_data->FormatHandle(commandBuffer).c_str());
     }
-    if (cb_state->createInfo.level != VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
+    if (cb_state->createInfo.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
+        // Primary Command Buffer
+        const VkCommandBufferUsageFlags invalid_usage =
+            (VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+        if ((pBeginInfo->flags & invalid_usage) == invalid_usage) {
+            skip |= LogError(commandBuffer, "VUID-vkBeginCommandBuffer-commandBuffer-02840",
+                             "vkBeginCommandBuffer(): Primary %s can't have both VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT and "
+                             "VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
+                             report_data->FormatHandle(commandBuffer).c_str());
+        }
+    } else {
         // Secondary Command Buffer
         const VkCommandBufferInheritanceInfo *pInfo = pBeginInfo->pInheritanceInfo;
         if (!pInfo) {
