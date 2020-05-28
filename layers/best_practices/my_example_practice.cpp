@@ -167,7 +167,7 @@ bool MyExampleBestPractices::PreCallValidateCreateImage(VkDevice device, const V
                        imageHex.str().c_str(), pCreateInfo->queueFamilyIndexCount);
     }
 
-    if (VendorCheckEnabled(kBPVendorArm)) {
+    if (tracker.VendorCheckEnabled(kBPVendorArm)) {
         if (pCreateInfo->samples > kMaxEfficientSamplesArm) {
             skip |= tracker.LogPerformanceWarning(
                 tracker.device, kVUID_BestPractices_CreateImage_TooLargeSampleCount,
@@ -374,7 +374,7 @@ bool MyExampleBestPractices::PreCallValidateAllocateDescriptorSets(VkDevice devi
         auto iter = descriptor_pool_freed_count.find(pool_handle);
         // if the number of freed sets > 0, it implies they could be recycled instead if desirable
         // this warning is specific to Arm
-        if (VendorCheckEnabled(kBPVendorArm) && iter != descriptor_pool_freed_count.end() && iter->second > 0) {
+        if (tracker.VendorCheckEnabled(kBPVendorArm) && iter != descriptor_pool_freed_count.end() && iter->second > 0) {
             skip |= tracker.LogPerformanceWarning(
                 tracker.device, kVUID_BestPractices_AllocateDescriptorSets_SuboptimalReuse,
                 "%s Descriptor set memory was allocated via vkAllocateDescriptorSets() for sets which were previously freed in the "
@@ -741,7 +741,7 @@ bool MyExampleBestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice dev
             }
         }
 
-        skip |= VendorCheckEnabled(kBPVendorArm) && ValidateMultisampledBlendingArm(createInfoCount, pCreateInfos);
+        skip |= tracker.VendorCheckEnabled(kBPVendorArm) && ValidateMultisampledBlendingArm(createInfoCount, pCreateInfos);
     }
 
     return skip;
@@ -830,7 +830,7 @@ bool MyExampleBestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer c
     }
 
     if (!(pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)) {
-        skip |= VendorCheckEnabled(kBPVendorArm) &&
+        skip |= tracker.VendorCheckEnabled(kBPVendorArm) &&
                 tracker.LogPerformanceWarning(tracker.device, kVUID_BestPractices_BeginCommandBuffer_OneTimeSubmit,
                                               "%s vkBeginCommandBuffer(): VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT is not set. "
                                               "For best performance on Mali GPUs, consider setting ONE_TIME_SUBMIT by default.",
@@ -957,7 +957,7 @@ bool MyExampleBestPractices::ValidateCmdBeginRenderPass(VkCommandBuffer commandB
 
             // Using LOAD_OP_LOAD is expensive on tiled GPUs, so flag it as a potential improvement
             if (attachmentNeedsReadback) {
-                skip |= VendorCheckEnabled(kBPVendorArm) &&
+                skip |= tracker.VendorCheckEnabled(kBPVendorArm) &&
                         tracker.LogPerformanceWarning(
                             tracker.device, kVUID_BestPractices_BeginRenderPass_AttachmentNeedsReadback,
                             "%s Attachment #%u in render pass has begun with VK_ATTACHMENT_LOAD_OP_LOAD.\n"
@@ -1045,7 +1045,7 @@ bool MyExampleBestPractices::PreCallValidateCmdDrawIndexed(VkCommandBuffer comma
     const CMD_BUFFER_STATE* cmd_state = tracker.GetCBState(commandBuffer);
     if ((indexCount * instanceCount) <= kSmallIndexedDrawcallIndices &&
         (cmd_state->small_indexed_draw_call_count == kMaxSmallIndexedDrawcalls - 1)) {
-        skip |= VendorCheckEnabled(kBPVendorArm) &&
+        skip |= tracker.VendorCheckEnabled(kBPVendorArm) &&
                 tracker.LogPerformanceWarning(
                     tracker.device, kVUID_BestPractices_CmdDrawIndexed_ManySmallIndexedDrawcalls,
                     "The command buffer contains many small indexed drawcalls "
@@ -1054,7 +1054,7 @@ bool MyExampleBestPractices::PreCallValidateCmdDrawIndexed(VkCommandBuffer comma
                     tracker.VendorSpecificTag(kBPVendorArm), kMaxSmallIndexedDrawcalls, kSmallIndexedDrawcallIndices);
     }
 
-    if (VendorCheckEnabled(kBPVendorArm)) {
+    if (tracker.VendorCheckEnabled(kBPVendorArm)) {
         ValidateIndexBufferArm(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 
@@ -1627,7 +1627,7 @@ bool MyExampleBestPractices::PreCallValidateCmdResolveImage(VkCommandBuffer comm
                                                    const VkImageResolve* pRegions) const {
     bool skip = false;
 
-    skip |= VendorCheckEnabled(kBPVendorArm) &&
+    skip |= tracker.VendorCheckEnabled(kBPVendorArm) &&
             tracker.LogPerformanceWarning(
                 tracker.device, kVUID_BestPractices_CmdResolveImage_ResolvingImage,
                 "%s Attempting to use vkCmdResolveImage to resolve a multisampled image. "
@@ -1642,7 +1642,7 @@ bool MyExampleBestPractices::PreCallValidateCreateSampler(VkDevice device, const
                                                  const VkAllocationCallbacks* pAllocator, VkSampler* pSampler) const {
     bool skip = false;
 
-    if (VendorCheckEnabled(kBPVendorArm)) {
+    if (tracker.VendorCheckEnabled(kBPVendorArm)) {
         if ((pCreateInfo->addressModeU != pCreateInfo->addressModeV) || (pCreateInfo->addressModeV != pCreateInfo->addressModeW)) {
             skip |= tracker.LogPerformanceWarning(
                 tracker.device, kVUID_BestPractices_CreateSampler_DifferentWrappingModes,

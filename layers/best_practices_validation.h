@@ -59,7 +59,7 @@ class ManualFnAPICallHookInterface {
 // forward declaration of BestPractices for BestPracticeBase
 class BestPracticesTracker;
 
-class BestPracticeBase : public virtual BestPracticesAPICallHookInterface, public virtual ManualFnAPICallHookInterface {
+class BestPracticeBase : public BestPracticesAPICallHookInterface {
   public:
     BestPracticeBase(BestPracticesTracker& tracker) : tracker(tracker) {}
 
@@ -146,7 +146,7 @@ class BestPracticesTracker : public ValidationStateTracker {
 
     template <typename T>
     T foreachPractice(std::function<T(T, T)> accumulator, std::function<T(BestPracticeBase&)> f) const {
-        T acc;
+        T acc = T();
         for (size_t i = 0; i < practices.size(); i++) {
             if (!shouldCheckPractice(practices[i]->agreeing_vendors())) continue;
             if (i <= 0)

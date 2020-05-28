@@ -246,7 +246,7 @@ class BestPracticesOutputGenerator(OutputGenerator):
             pre_decl = pre_decl.replace(')', ',\n    void*                                       state_data)')
         pre_decl = pre_decl.replace(')', ') const {\n')
         pre_decl = 'virtual bool BestPractices::PreCallValidate' + pre_decl[2:]
-        func_decl = pre_decl.replace(' {',';\n');
+        func_decl = pre_decl.replace(' {',' override;\n');
         func_decl = func_decl.replace('BestPractices::', '')
         self.otwrite('hdr', func_decl)
         pre_decl = pre_decl.replace('virtual ', '')
@@ -277,7 +277,7 @@ class BestPracticesOutputGenerator(OutputGenerator):
             pre_decl = pre_decl.replace(')', ',\n    void*                                       state_data)')
         pre_decl = pre_decl.replace(')', ') {\n')
         pre_decl = 'virtual void BestPractices::PreCallRecord' + pre_decl[2:]
-        func_decl = pre_decl.replace(' {',';\n');
+        func_decl = pre_decl.replace(' {',' override;\n');
         func_decl = func_decl.replace('BestPractices::', '')
         self.otwrite('hdr', func_decl)
         pre_decl = pre_decl.replace('virtual ', '')
@@ -314,7 +314,7 @@ class BestPracticesOutputGenerator(OutputGenerator):
             pre_decl = pre_decl.replace(')', ',\n    void*                                       state_data)')
         pre_decl = pre_decl.replace(')', ') {\n')
         pre_decl = 'virtual void BestPractices::PostCallRecord' + pre_decl[2:]
-        func_decl = pre_decl.replace(' {',';\n');
+        func_decl = pre_decl.replace(' {',' override;\n');
         func_decl = func_decl.replace('BestPractices::', '')
         self.otwrite('hdr', func_decl)
         pre_decl = pre_decl.replace('virtual ', '')

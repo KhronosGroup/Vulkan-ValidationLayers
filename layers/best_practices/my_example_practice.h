@@ -71,14 +71,14 @@ class MyExampleBestPractices : public BestPracticeBase {
                                           const VkAllocationCallbacks* pAllocator, VkFramebuffer* pFramebuffer) const override;
     bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                                VkDescriptorSet* pDescriptorSets, void* ads_state_data) const override;
-    void ManualPostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                                    VkDescriptorSet* pDescriptorSets, VkResult result, void* ads_state) const override;
+    //void ManualPostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
+    //                                                VkDescriptorSet* pDescriptorSets, VkResult result, void* ads_state) const override;
     void PostCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount,
                                           const VkDescriptorSet* pDescriptorSets, VkResult result) override;
     bool PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory) const override;
-    void ManualPostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
-                                            const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory, VkResult result) const override;
+    //void ManualPostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
+    //                                        const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory, VkResult result) const override;
     void PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) override;
     bool ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory, const char* api_name) const;
     bool PreCallValidateBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset) const override;
@@ -170,8 +170,8 @@ class MyExampleBestPractices : public BestPracticeBase {
                                                           const VkBindAccelerationStructureMemoryInfoNV* pBindInfos) const override;
     bool PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
                                         VkFence fence) const override;
-    void ManualPostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
-                                             VkFence fence, VkResult result) const override;
+    //void ManualPostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
+    //                                         VkFence fence, VkResult result) const override;
     bool PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                             const VkClearAttachment* pAttachments, uint32_t rectCount,
                                             const VkClearRect* pRects) const override;
@@ -182,7 +182,7 @@ class MyExampleBestPractices : public BestPracticeBase {
                                         const VkImageResolve* pRegions) const override;
     bool PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
                                       const VkAllocationCallbacks* pAllocator, VkSampler* pSampler) const override;
-    void ManualPostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkResult result) const override;
+    //void ManualPostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkResult result) const override;
 
 // Include code-generated functions
 //#include "best_practices.h"

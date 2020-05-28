@@ -47,88 +47,73 @@ public:
 virtual bool PreCallValidateCreateInstance(
     const VkInstanceCreateInfo*                 pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkInstance*                                 pInstance) const;
-
+    VkInstance*                                 pInstance) const { return false; }
 
 virtual void PreCallRecordCreateInstance(
     const VkInstanceCreateInfo*                 pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkInstance*                                 pInstance);
-
+    VkInstance*                                 pInstance) {}
 
 virtual void PostCallRecordCreateInstance(
     const VkInstanceCreateInfo*                 pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkInstance*                                 pInstance,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyInstance(
     VkInstance                                  instance,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyInstance(
     VkInstance                                  instance,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyInstance(
     VkInstance                                  instance,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateEnumeratePhysicalDevices(
     VkInstance                                  instance,
     uint32_t*                                   pPhysicalDeviceCount,
-    VkPhysicalDevice*                           pPhysicalDevices) const;
-
+    VkPhysicalDevice*                           pPhysicalDevices) const { return false; }
 
 virtual void PreCallRecordEnumeratePhysicalDevices(
     VkInstance                                  instance,
     uint32_t*                                   pPhysicalDeviceCount,
-    VkPhysicalDevice*                           pPhysicalDevices);
-
+    VkPhysicalDevice*                           pPhysicalDevices) {}
 
 virtual void PostCallRecordEnumeratePhysicalDevices(
     VkInstance                                  instance,
     uint32_t*                                   pPhysicalDeviceCount,
     VkPhysicalDevice*                           pPhysicalDevices,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceFeatures(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceFeatures*                   pFeatures) const;
-
+    VkPhysicalDeviceFeatures*                   pFeatures) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceFeatures(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceFeatures*                   pFeatures);
-
+    VkPhysicalDeviceFeatures*                   pFeatures) {}
 
 virtual void PostCallRecordGetPhysicalDeviceFeatures(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceFeatures*                   pFeatures);
-
+    VkPhysicalDeviceFeatures*                   pFeatures) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceFormatProperties(
     VkPhysicalDevice                            physicalDevice,
     VkFormat                                    format,
-    VkFormatProperties*                         pFormatProperties) const;
-
+    VkFormatProperties*                         pFormatProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceFormatProperties(
     VkPhysicalDevice                            physicalDevice,
     VkFormat                                    format,
-    VkFormatProperties*                         pFormatProperties);
-
+    VkFormatProperties*                         pFormatProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceFormatProperties(
     VkPhysicalDevice                            physicalDevice,
     VkFormat                                    format,
-    VkFormatProperties*                         pFormatProperties);
-
+    VkFormatProperties*                         pFormatProperties) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceImageFormatProperties(
     VkPhysicalDevice                            physicalDevice,
@@ -137,8 +122,7 @@ virtual bool PreCallValidateGetPhysicalDeviceImageFormatProperties(
     VkImageTiling                               tiling,
     VkImageUsageFlags                           usage,
     VkImageCreateFlags                          flags,
-    VkImageFormatProperties*                    pImageFormatProperties) const;
-
+    VkImageFormatProperties*                    pImageFormatProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceImageFormatProperties(
     VkPhysicalDevice                            physicalDevice,
@@ -147,8 +131,7 @@ virtual void PreCallRecordGetPhysicalDeviceImageFormatProperties(
     VkImageTiling                               tiling,
     VkImageUsageFlags                           usage,
     VkImageCreateFlags                          flags,
-    VkImageFormatProperties*                    pImageFormatProperties);
-
+    VkImageFormatProperties*                    pImageFormatProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceImageFormatProperties(
     VkPhysicalDevice                            physicalDevice,
@@ -158,308 +141,256 @@ virtual void PostCallRecordGetPhysicalDeviceImageFormatProperties(
     VkImageUsageFlags                           usage,
     VkImageCreateFlags                          flags,
     VkImageFormatProperties*                    pImageFormatProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceProperties(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceProperties*                 pProperties) const;
-
+    VkPhysicalDeviceProperties*                 pProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceProperties(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceProperties*                 pProperties);
-
+    VkPhysicalDeviceProperties*                 pProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceProperties(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceProperties*                 pProperties);
-
+    VkPhysicalDeviceProperties*                 pProperties) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pQueueFamilyPropertyCount,
-    VkQueueFamilyProperties*                    pQueueFamilyProperties) const;
-
+    VkQueueFamilyProperties*                    pQueueFamilyProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceQueueFamilyProperties(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pQueueFamilyPropertyCount,
-    VkQueueFamilyProperties*                    pQueueFamilyProperties);
-
+    VkQueueFamilyProperties*                    pQueueFamilyProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceQueueFamilyProperties(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pQueueFamilyPropertyCount,
-    VkQueueFamilyProperties*                    pQueueFamilyProperties);
-
+    VkQueueFamilyProperties*                    pQueueFamilyProperties) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceMemoryProperties(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceMemoryProperties*           pMemoryProperties) const;
-
+    VkPhysicalDeviceMemoryProperties*           pMemoryProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceMemoryProperties(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceMemoryProperties*           pMemoryProperties);
-
+    VkPhysicalDeviceMemoryProperties*           pMemoryProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceMemoryProperties(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceMemoryProperties*           pMemoryProperties);
-
+    VkPhysicalDeviceMemoryProperties*           pMemoryProperties) {}
 
 virtual bool PreCallValidateGetInstanceProcAddr(
     VkInstance                                  instance,
-    const char*                                 pName) const;
-
+    const char*                                 pName) const { return false; }
 
 virtual void PreCallRecordGetInstanceProcAddr(
     VkInstance                                  instance,
-    const char*                                 pName);
-
+    const char*                                 pName) {}
 
 virtual void PostCallRecordGetInstanceProcAddr(
     VkInstance                                  instance,
-    const char*                                 pName);
-
+    const char*                                 pName) {}
 
 virtual bool PreCallValidateGetDeviceProcAddr(
     VkDevice                                    device,
-    const char*                                 pName) const;
-
+    const char*                                 pName) const { return false; }
 
 virtual void PreCallRecordGetDeviceProcAddr(
     VkDevice                                    device,
-    const char*                                 pName);
-
+    const char*                                 pName) {}
 
 virtual void PostCallRecordGetDeviceProcAddr(
     VkDevice                                    device,
-    const char*                                 pName);
-
+    const char*                                 pName) {}
 
 virtual bool PreCallValidateCreateDevice(
     VkPhysicalDevice                            physicalDevice,
     const VkDeviceCreateInfo*                   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDevice*                                   pDevice) const;
-
+    VkDevice*                                   pDevice) const { return false; }
 
 virtual void PreCallRecordCreateDevice(
     VkPhysicalDevice                            physicalDevice,
     const VkDeviceCreateInfo*                   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDevice*                                   pDevice);
-
+    VkDevice*                                   pDevice) {}
 
 virtual void PostCallRecordCreateDevice(
     VkPhysicalDevice                            physicalDevice,
     const VkDeviceCreateInfo*                   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkDevice*                                   pDevice,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyDevice(
     VkDevice                                    device,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyDevice(
     VkDevice                                    device,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyDevice(
     VkDevice                                    device,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateEnumerateInstanceExtensionProperties(
     const char*                                 pLayerName,
     uint32_t*                                   pPropertyCount,
-    VkExtensionProperties*                      pProperties) const;
-
+    VkExtensionProperties*                      pProperties) const { return false; }
 
 virtual void PreCallRecordEnumerateInstanceExtensionProperties(
     const char*                                 pLayerName,
     uint32_t*                                   pPropertyCount,
-    VkExtensionProperties*                      pProperties);
-
+    VkExtensionProperties*                      pProperties) {}
 
 virtual void PostCallRecordEnumerateInstanceExtensionProperties(
     const char*                                 pLayerName,
     uint32_t*                                   pPropertyCount,
     VkExtensionProperties*                      pProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateEnumerateDeviceExtensionProperties(
     VkPhysicalDevice                            physicalDevice,
     const char*                                 pLayerName,
     uint32_t*                                   pPropertyCount,
-    VkExtensionProperties*                      pProperties) const;
-
+    VkExtensionProperties*                      pProperties) const { return false; }
 
 virtual void PreCallRecordEnumerateDeviceExtensionProperties(
     VkPhysicalDevice                            physicalDevice,
     const char*                                 pLayerName,
     uint32_t*                                   pPropertyCount,
-    VkExtensionProperties*                      pProperties);
-
+    VkExtensionProperties*                      pProperties) {}
 
 virtual void PostCallRecordEnumerateDeviceExtensionProperties(
     VkPhysicalDevice                            physicalDevice,
     const char*                                 pLayerName,
     uint32_t*                                   pPropertyCount,
     VkExtensionProperties*                      pProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateEnumerateInstanceLayerProperties(
     uint32_t*                                   pPropertyCount,
-    VkLayerProperties*                          pProperties) const;
-
+    VkLayerProperties*                          pProperties) const { return false; }
 
 virtual void PreCallRecordEnumerateInstanceLayerProperties(
     uint32_t*                                   pPropertyCount,
-    VkLayerProperties*                          pProperties);
-
+    VkLayerProperties*                          pProperties) {}
 
 virtual void PostCallRecordEnumerateInstanceLayerProperties(
     uint32_t*                                   pPropertyCount,
     VkLayerProperties*                          pProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateEnumerateDeviceLayerProperties(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
-    VkLayerProperties*                          pProperties) const;
-
+    VkLayerProperties*                          pProperties) const { return false; }
 
 virtual void PreCallRecordEnumerateDeviceLayerProperties(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
-    VkLayerProperties*                          pProperties);
-
+    VkLayerProperties*                          pProperties) {}
 
 virtual void PostCallRecordEnumerateDeviceLayerProperties(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
     VkLayerProperties*                          pProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetDeviceQueue(
     VkDevice                                    device,
     uint32_t                                    queueFamilyIndex,
     uint32_t                                    queueIndex,
-    VkQueue*                                    pQueue) const;
-
+    VkQueue*                                    pQueue) const { return false; }
 
 virtual void PreCallRecordGetDeviceQueue(
     VkDevice                                    device,
     uint32_t                                    queueFamilyIndex,
     uint32_t                                    queueIndex,
-    VkQueue*                                    pQueue);
-
+    VkQueue*                                    pQueue) {}
 
 virtual void PostCallRecordGetDeviceQueue(
     VkDevice                                    device,
     uint32_t                                    queueFamilyIndex,
     uint32_t                                    queueIndex,
-    VkQueue*                                    pQueue);
-
+    VkQueue*                                    pQueue) {}
 
 virtual bool PreCallValidateQueueSubmit(
     VkQueue                                     queue,
     uint32_t                                    submitCount,
     const VkSubmitInfo*                         pSubmits,
-    VkFence                                     fence) const;
-
+    VkFence                                     fence) const { return false; }
 
 virtual void PreCallRecordQueueSubmit(
     VkQueue                                     queue,
     uint32_t                                    submitCount,
     const VkSubmitInfo*                         pSubmits,
-    VkFence                                     fence);
-
+    VkFence                                     fence) {}
 
 virtual void PostCallRecordQueueSubmit(
     VkQueue                                     queue,
     uint32_t                                    submitCount,
     const VkSubmitInfo*                         pSubmits,
     VkFence                                     fence,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateQueueWaitIdle(
-    VkQueue                                     queue) const;
-
+    VkQueue                                     queue) const { return false; }
 
 virtual void PreCallRecordQueueWaitIdle(
-    VkQueue                                     queue);
-
+    VkQueue                                     queue) {}
 
 virtual void PostCallRecordQueueWaitIdle(
     VkQueue                                     queue,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDeviceWaitIdle(
-    VkDevice                                    device) const;
-
+    VkDevice                                    device) const { return false; }
 
 virtual void PreCallRecordDeviceWaitIdle(
-    VkDevice                                    device);
-
+    VkDevice                                    device) {}
 
 virtual void PostCallRecordDeviceWaitIdle(
     VkDevice                                    device,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateAllocateMemory(
     VkDevice                                    device,
     const VkMemoryAllocateInfo*                 pAllocateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDeviceMemory*                             pMemory) const;
-
+    VkDeviceMemory*                             pMemory) const { return false; }
 
 virtual void PreCallRecordAllocateMemory(
     VkDevice                                    device,
     const VkMemoryAllocateInfo*                 pAllocateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDeviceMemory*                             pMemory);
-
+    VkDeviceMemory*                             pMemory) {}
 
 virtual void PostCallRecordAllocateMemory(
     VkDevice                                    device,
     const VkMemoryAllocateInfo*                 pAllocateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkDeviceMemory*                             pMemory,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateFreeMemory(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordFreeMemory(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordFreeMemory(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateMapMemory(
     VkDevice                                    device,
@@ -467,8 +398,7 @@ virtual bool PreCallValidateMapMemory(
     VkDeviceSize                                offset,
     VkDeviceSize                                size,
     VkMemoryMapFlags                            flags,
-    void**                                      ppData) const;
-
+    void**                                      ppData) const { return false; }
 
 virtual void PreCallRecordMapMemory(
     VkDevice                                    device,
@@ -476,8 +406,7 @@ virtual void PreCallRecordMapMemory(
     VkDeviceSize                                offset,
     VkDeviceSize                                size,
     VkMemoryMapFlags                            flags,
-    void**                                      ppData);
-
+    void**                                      ppData) {}
 
 virtual void PostCallRecordMapMemory(
     VkDevice                                    device,
@@ -486,180 +415,152 @@ virtual void PostCallRecordMapMemory(
     VkDeviceSize                                size,
     VkMemoryMapFlags                            flags,
     void**                                      ppData,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateUnmapMemory(
     VkDevice                                    device,
-    VkDeviceMemory                              memory) const;
-
+    VkDeviceMemory                              memory) const { return false; }
 
 virtual void PreCallRecordUnmapMemory(
     VkDevice                                    device,
-    VkDeviceMemory                              memory);
-
+    VkDeviceMemory                              memory) {}
 
 virtual void PostCallRecordUnmapMemory(
     VkDevice                                    device,
-    VkDeviceMemory                              memory);
-
+    VkDeviceMemory                              memory) {}
 
 virtual bool PreCallValidateFlushMappedMemoryRanges(
     VkDevice                                    device,
     uint32_t                                    memoryRangeCount,
-    const VkMappedMemoryRange*                  pMemoryRanges) const;
-
+    const VkMappedMemoryRange*                  pMemoryRanges) const { return false; }
 
 virtual void PreCallRecordFlushMappedMemoryRanges(
     VkDevice                                    device,
     uint32_t                                    memoryRangeCount,
-    const VkMappedMemoryRange*                  pMemoryRanges);
-
+    const VkMappedMemoryRange*                  pMemoryRanges) {}
 
 virtual void PostCallRecordFlushMappedMemoryRanges(
     VkDevice                                    device,
     uint32_t                                    memoryRangeCount,
     const VkMappedMemoryRange*                  pMemoryRanges,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateInvalidateMappedMemoryRanges(
     VkDevice                                    device,
     uint32_t                                    memoryRangeCount,
-    const VkMappedMemoryRange*                  pMemoryRanges) const;
-
+    const VkMappedMemoryRange*                  pMemoryRanges) const { return false; }
 
 virtual void PreCallRecordInvalidateMappedMemoryRanges(
     VkDevice                                    device,
     uint32_t                                    memoryRangeCount,
-    const VkMappedMemoryRange*                  pMemoryRanges);
-
+    const VkMappedMemoryRange*                  pMemoryRanges) {}
 
 virtual void PostCallRecordInvalidateMappedMemoryRanges(
     VkDevice                                    device,
     uint32_t                                    memoryRangeCount,
     const VkMappedMemoryRange*                  pMemoryRanges,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetDeviceMemoryCommitment(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
-    VkDeviceSize*                               pCommittedMemoryInBytes) const;
-
+    VkDeviceSize*                               pCommittedMemoryInBytes) const { return false; }
 
 virtual void PreCallRecordGetDeviceMemoryCommitment(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
-    VkDeviceSize*                               pCommittedMemoryInBytes);
-
+    VkDeviceSize*                               pCommittedMemoryInBytes) {}
 
 virtual void PostCallRecordGetDeviceMemoryCommitment(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
-    VkDeviceSize*                               pCommittedMemoryInBytes);
-
+    VkDeviceSize*                               pCommittedMemoryInBytes) {}
 
 virtual bool PreCallValidateBindBufferMemory(
     VkDevice                                    device,
     VkBuffer                                    buffer,
     VkDeviceMemory                              memory,
-    VkDeviceSize                                memoryOffset) const;
-
+    VkDeviceSize                                memoryOffset) const { return false; }
 
 virtual void PreCallRecordBindBufferMemory(
     VkDevice                                    device,
     VkBuffer                                    buffer,
     VkDeviceMemory                              memory,
-    VkDeviceSize                                memoryOffset);
-
+    VkDeviceSize                                memoryOffset) {}
 
 virtual void PostCallRecordBindBufferMemory(
     VkDevice                                    device,
     VkBuffer                                    buffer,
     VkDeviceMemory                              memory,
     VkDeviceSize                                memoryOffset,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateBindImageMemory(
     VkDevice                                    device,
     VkImage                                     image,
     VkDeviceMemory                              memory,
-    VkDeviceSize                                memoryOffset) const;
-
+    VkDeviceSize                                memoryOffset) const { return false; }
 
 virtual void PreCallRecordBindImageMemory(
     VkDevice                                    device,
     VkImage                                     image,
     VkDeviceMemory                              memory,
-    VkDeviceSize                                memoryOffset);
-
+    VkDeviceSize                                memoryOffset) {}
 
 virtual void PostCallRecordBindImageMemory(
     VkDevice                                    device,
     VkImage                                     image,
     VkDeviceMemory                              memory,
     VkDeviceSize                                memoryOffset,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetBufferMemoryRequirements(
     VkDevice                                    device,
     VkBuffer                                    buffer,
-    VkMemoryRequirements*                       pMemoryRequirements) const;
-
+    VkMemoryRequirements*                       pMemoryRequirements) const { return false; }
 
 virtual void PreCallRecordGetBufferMemoryRequirements(
     VkDevice                                    device,
     VkBuffer                                    buffer,
-    VkMemoryRequirements*                       pMemoryRequirements);
-
+    VkMemoryRequirements*                       pMemoryRequirements) {}
 
 virtual void PostCallRecordGetBufferMemoryRequirements(
     VkDevice                                    device,
     VkBuffer                                    buffer,
-    VkMemoryRequirements*                       pMemoryRequirements);
-
+    VkMemoryRequirements*                       pMemoryRequirements) {}
 
 virtual bool PreCallValidateGetImageMemoryRequirements(
     VkDevice                                    device,
     VkImage                                     image,
-    VkMemoryRequirements*                       pMemoryRequirements) const;
-
+    VkMemoryRequirements*                       pMemoryRequirements) const { return false; }
 
 virtual void PreCallRecordGetImageMemoryRequirements(
     VkDevice                                    device,
     VkImage                                     image,
-    VkMemoryRequirements*                       pMemoryRequirements);
-
+    VkMemoryRequirements*                       pMemoryRequirements) {}
 
 virtual void PostCallRecordGetImageMemoryRequirements(
     VkDevice                                    device,
     VkImage                                     image,
-    VkMemoryRequirements*                       pMemoryRequirements);
-
+    VkMemoryRequirements*                       pMemoryRequirements) {}
 
 virtual bool PreCallValidateGetImageSparseMemoryRequirements(
     VkDevice                                    device,
     VkImage                                     image,
     uint32_t*                                   pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements*            pSparseMemoryRequirements) const;
-
+    VkSparseImageMemoryRequirements*            pSparseMemoryRequirements) const { return false; }
 
 virtual void PreCallRecordGetImageSparseMemoryRequirements(
     VkDevice                                    device,
     VkImage                                     image,
     uint32_t*                                   pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements*            pSparseMemoryRequirements);
-
+    VkSparseImageMemoryRequirements*            pSparseMemoryRequirements) {}
 
 virtual void PostCallRecordGetImageSparseMemoryRequirements(
     VkDevice                                    device,
     VkImage                                     image,
     uint32_t*                                   pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements*            pSparseMemoryRequirements);
-
+    VkSparseImageMemoryRequirements*            pSparseMemoryRequirements) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(
     VkPhysicalDevice                            physicalDevice,
@@ -669,8 +570,7 @@ virtual bool PreCallValidateGetPhysicalDeviceSparseImageFormatProperties(
     VkImageUsageFlags                           usage,
     VkImageTiling                               tiling,
     uint32_t*                                   pPropertyCount,
-    VkSparseImageFormatProperties*              pProperties) const;
-
+    VkSparseImageFormatProperties*              pProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceSparseImageFormatProperties(
     VkPhysicalDevice                            physicalDevice,
@@ -680,8 +580,7 @@ virtual void PreCallRecordGetPhysicalDeviceSparseImageFormatProperties(
     VkImageUsageFlags                           usage,
     VkImageTiling                               tiling,
     uint32_t*                                   pPropertyCount,
-    VkSparseImageFormatProperties*              pProperties);
-
+    VkSparseImageFormatProperties*              pProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceSparseImageFormatProperties(
     VkPhysicalDevice                            physicalDevice,
@@ -691,121 +590,103 @@ virtual void PostCallRecordGetPhysicalDeviceSparseImageFormatProperties(
     VkImageUsageFlags                           usage,
     VkImageTiling                               tiling,
     uint32_t*                                   pPropertyCount,
-    VkSparseImageFormatProperties*              pProperties);
-
+    VkSparseImageFormatProperties*              pProperties) {}
 
 virtual bool PreCallValidateQueueBindSparse(
     VkQueue                                     queue,
     uint32_t                                    bindInfoCount,
     const VkBindSparseInfo*                     pBindInfo,
-    VkFence                                     fence) const;
-
+    VkFence                                     fence) const { return false; }
 
 virtual void PreCallRecordQueueBindSparse(
     VkQueue                                     queue,
     uint32_t                                    bindInfoCount,
     const VkBindSparseInfo*                     pBindInfo,
-    VkFence                                     fence);
-
+    VkFence                                     fence) {}
 
 virtual void PostCallRecordQueueBindSparse(
     VkQueue                                     queue,
     uint32_t                                    bindInfoCount,
     const VkBindSparseInfo*                     pBindInfo,
     VkFence                                     fence,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCreateFence(
     VkDevice                                    device,
     const VkFenceCreateInfo*                    pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkFence*                                    pFence) const;
-
+    VkFence*                                    pFence) const { return false; }
 
 virtual void PreCallRecordCreateFence(
     VkDevice                                    device,
     const VkFenceCreateInfo*                    pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkFence*                                    pFence);
-
+    VkFence*                                    pFence) {}
 
 virtual void PostCallRecordCreateFence(
     VkDevice                                    device,
     const VkFenceCreateInfo*                    pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkFence*                                    pFence,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyFence(
     VkDevice                                    device,
     VkFence                                     fence,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyFence(
     VkDevice                                    device,
     VkFence                                     fence,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyFence(
     VkDevice                                    device,
     VkFence                                     fence,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateResetFences(
     VkDevice                                    device,
     uint32_t                                    fenceCount,
-    const VkFence*                              pFences) const;
-
+    const VkFence*                              pFences) const { return false; }
 
 virtual void PreCallRecordResetFences(
     VkDevice                                    device,
     uint32_t                                    fenceCount,
-    const VkFence*                              pFences);
-
+    const VkFence*                              pFences) {}
 
 virtual void PostCallRecordResetFences(
     VkDevice                                    device,
     uint32_t                                    fenceCount,
     const VkFence*                              pFences,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetFenceStatus(
     VkDevice                                    device,
-    VkFence                                     fence) const;
-
+    VkFence                                     fence) const { return false; }
 
 virtual void PreCallRecordGetFenceStatus(
     VkDevice                                    device,
-    VkFence                                     fence);
-
+    VkFence                                     fence) {}
 
 virtual void PostCallRecordGetFenceStatus(
     VkDevice                                    device,
     VkFence                                     fence,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateWaitForFences(
     VkDevice                                    device,
     uint32_t                                    fenceCount,
     const VkFence*                              pFences,
     VkBool32                                    waitAll,
-    uint64_t                                    timeout) const;
-
+    uint64_t                                    timeout) const { return false; }
 
 virtual void PreCallRecordWaitForFences(
     VkDevice                                    device,
     uint32_t                                    fenceCount,
     const VkFence*                              pFences,
     VkBool32                                    waitAll,
-    uint64_t                                    timeout);
-
+    uint64_t                                    timeout) {}
 
 virtual void PostCallRecordWaitForFences(
     VkDevice                                    device,
@@ -813,176 +694,148 @@ virtual void PostCallRecordWaitForFences(
     const VkFence*                              pFences,
     VkBool32                                    waitAll,
     uint64_t                                    timeout,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCreateSemaphore(
     VkDevice                                    device,
     const VkSemaphoreCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSemaphore*                                pSemaphore) const;
-
+    VkSemaphore*                                pSemaphore) const { return false; }
 
 virtual void PreCallRecordCreateSemaphore(
     VkDevice                                    device,
     const VkSemaphoreCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSemaphore*                                pSemaphore);
-
+    VkSemaphore*                                pSemaphore) {}
 
 virtual void PostCallRecordCreateSemaphore(
     VkDevice                                    device,
     const VkSemaphoreCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSemaphore*                                pSemaphore,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroySemaphore(
     VkDevice                                    device,
     VkSemaphore                                 semaphore,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroySemaphore(
     VkDevice                                    device,
     VkSemaphore                                 semaphore,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroySemaphore(
     VkDevice                                    device,
     VkSemaphore                                 semaphore,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateCreateEvent(
     VkDevice                                    device,
     const VkEventCreateInfo*                    pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkEvent*                                    pEvent) const;
-
+    VkEvent*                                    pEvent) const { return false; }
 
 virtual void PreCallRecordCreateEvent(
     VkDevice                                    device,
     const VkEventCreateInfo*                    pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkEvent*                                    pEvent);
-
+    VkEvent*                                    pEvent) {}
 
 virtual void PostCallRecordCreateEvent(
     VkDevice                                    device,
     const VkEventCreateInfo*                    pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkEvent*                                    pEvent,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyEvent(
     VkDevice                                    device,
     VkEvent                                     event,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyEvent(
     VkDevice                                    device,
     VkEvent                                     event,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyEvent(
     VkDevice                                    device,
     VkEvent                                     event,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateGetEventStatus(
     VkDevice                                    device,
-    VkEvent                                     event) const;
-
+    VkEvent                                     event) const { return false; }
 
 virtual void PreCallRecordGetEventStatus(
     VkDevice                                    device,
-    VkEvent                                     event);
-
+    VkEvent                                     event) {}
 
 virtual void PostCallRecordGetEventStatus(
     VkDevice                                    device,
     VkEvent                                     event,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateSetEvent(
     VkDevice                                    device,
-    VkEvent                                     event) const;
-
+    VkEvent                                     event) const { return false; }
 
 virtual void PreCallRecordSetEvent(
     VkDevice                                    device,
-    VkEvent                                     event);
-
+    VkEvent                                     event) {}
 
 virtual void PostCallRecordSetEvent(
     VkDevice                                    device,
     VkEvent                                     event,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateResetEvent(
     VkDevice                                    device,
-    VkEvent                                     event) const;
-
+    VkEvent                                     event) const { return false; }
 
 virtual void PreCallRecordResetEvent(
     VkDevice                                    device,
-    VkEvent                                     event);
-
+    VkEvent                                     event) {}
 
 virtual void PostCallRecordResetEvent(
     VkDevice                                    device,
     VkEvent                                     event,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCreateQueryPool(
     VkDevice                                    device,
     const VkQueryPoolCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkQueryPool*                                pQueryPool) const;
-
+    VkQueryPool*                                pQueryPool) const { return false; }
 
 virtual void PreCallRecordCreateQueryPool(
     VkDevice                                    device,
     const VkQueryPoolCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkQueryPool*                                pQueryPool);
-
+    VkQueryPool*                                pQueryPool) {}
 
 virtual void PostCallRecordCreateQueryPool(
     VkDevice                                    device,
     const VkQueryPoolCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkQueryPool*                                pQueryPool,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyQueryPool(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyQueryPool(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyQueryPool(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateGetQueryPoolResults(
     VkDevice                                    device,
@@ -992,8 +845,7 @@ virtual bool PreCallValidateGetQueryPoolResults(
     size_t                                      dataSize,
     void*                                       pData,
     VkDeviceSize                                stride,
-    VkQueryResultFlags                          flags) const;
-
+    VkQueryResultFlags                          flags) const { return false; }
 
 virtual void PreCallRecordGetQueryPoolResults(
     VkDevice                                    device,
@@ -1003,8 +855,7 @@ virtual void PreCallRecordGetQueryPoolResults(
     size_t                                      dataSize,
     void*                                       pData,
     VkDeviceSize                                stride,
-    VkQueryResultFlags                          flags);
-
+    VkQueryResultFlags                          flags) {}
 
 virtual void PostCallRecordGetQueryPoolResults(
     VkDevice                                    device,
@@ -1015,205 +866,175 @@ virtual void PostCallRecordGetQueryPoolResults(
     void*                                       pData,
     VkDeviceSize                                stride,
     VkQueryResultFlags                          flags,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCreateBuffer(
     VkDevice                                    device,
     const VkBufferCreateInfo*                   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkBuffer*                                   pBuffer) const;
-
+    VkBuffer*                                   pBuffer) const { return false; }
 
 virtual void PreCallRecordCreateBuffer(
     VkDevice                                    device,
     const VkBufferCreateInfo*                   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkBuffer*                                   pBuffer);
-
+    VkBuffer*                                   pBuffer) {}
 
 virtual void PostCallRecordCreateBuffer(
     VkDevice                                    device,
     const VkBufferCreateInfo*                   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkBuffer*                                   pBuffer,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyBuffer(
     VkDevice                                    device,
     VkBuffer                                    buffer,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyBuffer(
     VkDevice                                    device,
     VkBuffer                                    buffer,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyBuffer(
     VkDevice                                    device,
     VkBuffer                                    buffer,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateCreateBufferView(
     VkDevice                                    device,
     const VkBufferViewCreateInfo*               pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkBufferView*                               pView) const;
-
+    VkBufferView*                               pView) const { return false; }
 
 virtual void PreCallRecordCreateBufferView(
     VkDevice                                    device,
     const VkBufferViewCreateInfo*               pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkBufferView*                               pView);
-
+    VkBufferView*                               pView) {}
 
 virtual void PostCallRecordCreateBufferView(
     VkDevice                                    device,
     const VkBufferViewCreateInfo*               pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkBufferView*                               pView,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyBufferView(
     VkDevice                                    device,
     VkBufferView                                bufferView,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyBufferView(
     VkDevice                                    device,
     VkBufferView                                bufferView,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyBufferView(
     VkDevice                                    device,
     VkBufferView                                bufferView,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateCreateImage(
     VkDevice                                    device,
     const VkImageCreateInfo*                    pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkImage*                                    pImage) const;
-
+    VkImage*                                    pImage) const { return false; }
 
 virtual void PreCallRecordCreateImage(
     VkDevice                                    device,
     const VkImageCreateInfo*                    pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkImage*                                    pImage);
-
+    VkImage*                                    pImage) {}
 
 virtual void PostCallRecordCreateImage(
     VkDevice                                    device,
     const VkImageCreateInfo*                    pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkImage*                                    pImage,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyImage(
     VkDevice                                    device,
     VkImage                                     image,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyImage(
     VkDevice                                    device,
     VkImage                                     image,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyImage(
     VkDevice                                    device,
     VkImage                                     image,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateGetImageSubresourceLayout(
     VkDevice                                    device,
     VkImage                                     image,
     const VkImageSubresource*                   pSubresource,
-    VkSubresourceLayout*                        pLayout) const;
-
+    VkSubresourceLayout*                        pLayout) const { return false; }
 
 virtual void PreCallRecordGetImageSubresourceLayout(
     VkDevice                                    device,
     VkImage                                     image,
     const VkImageSubresource*                   pSubresource,
-    VkSubresourceLayout*                        pLayout);
-
+    VkSubresourceLayout*                        pLayout) {}
 
 virtual void PostCallRecordGetImageSubresourceLayout(
     VkDevice                                    device,
     VkImage                                     image,
     const VkImageSubresource*                   pSubresource,
-    VkSubresourceLayout*                        pLayout);
-
+    VkSubresourceLayout*                        pLayout) {}
 
 virtual bool PreCallValidateCreateImageView(
     VkDevice                                    device,
     const VkImageViewCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkImageView*                                pView) const;
-
+    VkImageView*                                pView) const { return false; }
 
 virtual void PreCallRecordCreateImageView(
     VkDevice                                    device,
     const VkImageViewCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkImageView*                                pView);
-
+    VkImageView*                                pView) {}
 
 virtual void PostCallRecordCreateImageView(
     VkDevice                                    device,
     const VkImageViewCreateInfo*                pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkImageView*                                pView,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyImageView(
     VkDevice                                    device,
     VkImageView                                 imageView,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyImageView(
     VkDevice                                    device,
     VkImageView                                 imageView,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyImageView(
     VkDevice                                    device,
     VkImageView                                 imageView,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateCreateShaderModule(
     VkDevice                                    device,
     const VkShaderModuleCreateInfo*             pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkShaderModule*                             pShaderModule,
-    void*                                       state_data) const;
-
+    void*                                       state_data) const { return false; }
 
 virtual void PreCallRecordCreateShaderModule(
     VkDevice                                    device,
     const VkShaderModuleCreateInfo*             pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkShaderModule*                             pShaderModule,
-    void*                                       state_data);
-
+    void*                                       state_data) {}
 
 virtual void PostCallRecordCreateShaderModule(
     VkDevice                                    device,
@@ -1221,110 +1042,94 @@ virtual void PostCallRecordCreateShaderModule(
     const VkAllocationCallbacks*                pAllocator,
     VkShaderModule*                             pShaderModule,
     VkResult                                    result,
-    void*                                       state_data);
-
+    void*                                       state_data) {}
 
 virtual bool PreCallValidateDestroyShaderModule(
     VkDevice                                    device,
     VkShaderModule                              shaderModule,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyShaderModule(
     VkDevice                                    device,
     VkShaderModule                              shaderModule,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyShaderModule(
     VkDevice                                    device,
     VkShaderModule                              shaderModule,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateCreatePipelineCache(
     VkDevice                                    device,
     const VkPipelineCacheCreateInfo*            pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkPipelineCache*                            pPipelineCache) const;
-
+    VkPipelineCache*                            pPipelineCache) const { return false; }
 
 virtual void PreCallRecordCreatePipelineCache(
     VkDevice                                    device,
     const VkPipelineCacheCreateInfo*            pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkPipelineCache*                            pPipelineCache);
-
+    VkPipelineCache*                            pPipelineCache) {}
 
 virtual void PostCallRecordCreatePipelineCache(
     VkDevice                                    device,
     const VkPipelineCacheCreateInfo*            pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkPipelineCache*                            pPipelineCache,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyPipelineCache(
     VkDevice                                    device,
     VkPipelineCache                             pipelineCache,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyPipelineCache(
     VkDevice                                    device,
     VkPipelineCache                             pipelineCache,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyPipelineCache(
     VkDevice                                    device,
     VkPipelineCache                             pipelineCache,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateGetPipelineCacheData(
     VkDevice                                    device,
     VkPipelineCache                             pipelineCache,
     size_t*                                     pDataSize,
-    void*                                       pData) const;
-
+    void*                                       pData) const { return false; }
 
 virtual void PreCallRecordGetPipelineCacheData(
     VkDevice                                    device,
     VkPipelineCache                             pipelineCache,
     size_t*                                     pDataSize,
-    void*                                       pData);
-
+    void*                                       pData) {}
 
 virtual void PostCallRecordGetPipelineCacheData(
     VkDevice                                    device,
     VkPipelineCache                             pipelineCache,
     size_t*                                     pDataSize,
     void*                                       pData,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateMergePipelineCaches(
     VkDevice                                    device,
     VkPipelineCache                             dstCache,
     uint32_t                                    srcCacheCount,
-    const VkPipelineCache*                      pSrcCaches) const;
-
+    const VkPipelineCache*                      pSrcCaches) const { return false; }
 
 virtual void PreCallRecordMergePipelineCaches(
     VkDevice                                    device,
     VkPipelineCache                             dstCache,
     uint32_t                                    srcCacheCount,
-    const VkPipelineCache*                      pSrcCaches);
-
+    const VkPipelineCache*                      pSrcCaches) {}
 
 virtual void PostCallRecordMergePipelineCaches(
     VkDevice                                    device,
     VkPipelineCache                             dstCache,
     uint32_t                                    srcCacheCount,
     const VkPipelineCache*                      pSrcCaches,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCreateGraphicsPipelines(
     VkDevice                                    device,
@@ -1333,8 +1138,7 @@ virtual bool PreCallValidateCreateGraphicsPipelines(
     const VkGraphicsPipelineCreateInfo*         pCreateInfos,
     const VkAllocationCallbacks*                pAllocator,
     VkPipeline*                                 pPipelines,
-    void*                                       state_data) const;
-
+    void*                                       state_data) const { return false; }
 
 virtual void PreCallRecordCreateGraphicsPipelines(
     VkDevice                                    device,
@@ -1343,8 +1147,7 @@ virtual void PreCallRecordCreateGraphicsPipelines(
     const VkGraphicsPipelineCreateInfo*         pCreateInfos,
     const VkAllocationCallbacks*                pAllocator,
     VkPipeline*                                 pPipelines,
-    void*                                       state_data);
-
+    void*                                       state_data) {}
 
 virtual void PostCallRecordCreateGraphicsPipelines(
     VkDevice                                    device,
@@ -1354,8 +1157,7 @@ virtual void PostCallRecordCreateGraphicsPipelines(
     const VkAllocationCallbacks*                pAllocator,
     VkPipeline*                                 pPipelines,
     VkResult                                    result,
-    void*                                       state_data);
-
+    void*                                       state_data) {}
 
 virtual bool PreCallValidateCreateComputePipelines(
     VkDevice                                    device,
@@ -1364,8 +1166,7 @@ virtual bool PreCallValidateCreateComputePipelines(
     const VkComputePipelineCreateInfo*          pCreateInfos,
     const VkAllocationCallbacks*                pAllocator,
     VkPipeline*                                 pPipelines,
-    void*                                       state_data) const;
-
+    void*                                       state_data) const { return false; }
 
 virtual void PreCallRecordCreateComputePipelines(
     VkDevice                                    device,
@@ -1374,8 +1175,7 @@ virtual void PreCallRecordCreateComputePipelines(
     const VkComputePipelineCreateInfo*          pCreateInfos,
     const VkAllocationCallbacks*                pAllocator,
     VkPipeline*                                 pPipelines,
-    void*                                       state_data);
-
+    void*                                       state_data) {}
 
 virtual void PostCallRecordCreateComputePipelines(
     VkDevice                                    device,
@@ -1385,698 +1185,589 @@ virtual void PostCallRecordCreateComputePipelines(
     const VkAllocationCallbacks*                pAllocator,
     VkPipeline*                                 pPipelines,
     VkResult                                    result,
-    void*                                       state_data);
-
+    void*                                       state_data) {}
 
 virtual bool PreCallValidateDestroyPipeline(
     VkDevice                                    device,
     VkPipeline                                  pipeline,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyPipeline(
     VkDevice                                    device,
     VkPipeline                                  pipeline,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyPipeline(
     VkDevice                                    device,
     VkPipeline                                  pipeline,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateCreatePipelineLayout(
     VkDevice                                    device,
     const VkPipelineLayoutCreateInfo*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkPipelineLayout*                           pPipelineLayout) const;
-
+    VkPipelineLayout*                           pPipelineLayout) const { return false; }
 
 virtual void PreCallRecordCreatePipelineLayout(
     VkDevice                                    device,
     const VkPipelineLayoutCreateInfo*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkPipelineLayout*                           pPipelineLayout);
-
+    VkPipelineLayout*                           pPipelineLayout) {}
 
 virtual void PostCallRecordCreatePipelineLayout(
     VkDevice                                    device,
     const VkPipelineLayoutCreateInfo*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkPipelineLayout*                           pPipelineLayout,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyPipelineLayout(
     VkDevice                                    device,
     VkPipelineLayout                            pipelineLayout,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyPipelineLayout(
     VkDevice                                    device,
     VkPipelineLayout                            pipelineLayout,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyPipelineLayout(
     VkDevice                                    device,
     VkPipelineLayout                            pipelineLayout,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateCreateSampler(
     VkDevice                                    device,
     const VkSamplerCreateInfo*                  pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSampler*                                  pSampler) const;
-
+    VkSampler*                                  pSampler) const { return false; }
 
 virtual void PreCallRecordCreateSampler(
     VkDevice                                    device,
     const VkSamplerCreateInfo*                  pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSampler*                                  pSampler);
-
+    VkSampler*                                  pSampler) {}
 
 virtual void PostCallRecordCreateSampler(
     VkDevice                                    device,
     const VkSamplerCreateInfo*                  pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSampler*                                  pSampler,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroySampler(
     VkDevice                                    device,
     VkSampler                                   sampler,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroySampler(
     VkDevice                                    device,
     VkSampler                                   sampler,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroySampler(
     VkDevice                                    device,
     VkSampler                                   sampler,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateCreateDescriptorSetLayout(
     VkDevice                                    device,
     const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDescriptorSetLayout*                      pSetLayout) const;
-
+    VkDescriptorSetLayout*                      pSetLayout) const { return false; }
 
 virtual void PreCallRecordCreateDescriptorSetLayout(
     VkDevice                                    device,
     const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDescriptorSetLayout*                      pSetLayout);
-
+    VkDescriptorSetLayout*                      pSetLayout) {}
 
 virtual void PostCallRecordCreateDescriptorSetLayout(
     VkDevice                                    device,
     const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkDescriptorSetLayout*                      pSetLayout,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyDescriptorSetLayout(
     VkDevice                                    device,
     VkDescriptorSetLayout                       descriptorSetLayout,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyDescriptorSetLayout(
     VkDevice                                    device,
     VkDescriptorSetLayout                       descriptorSetLayout,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyDescriptorSetLayout(
     VkDevice                                    device,
     VkDescriptorSetLayout                       descriptorSetLayout,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateCreateDescriptorPool(
     VkDevice                                    device,
     const VkDescriptorPoolCreateInfo*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDescriptorPool*                           pDescriptorPool) const;
-
+    VkDescriptorPool*                           pDescriptorPool) const { return false; }
 
 virtual void PreCallRecordCreateDescriptorPool(
     VkDevice                                    device,
     const VkDescriptorPoolCreateInfo*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDescriptorPool*                           pDescriptorPool);
-
+    VkDescriptorPool*                           pDescriptorPool) {}
 
 virtual void PostCallRecordCreateDescriptorPool(
     VkDevice                                    device,
     const VkDescriptorPoolCreateInfo*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkDescriptorPool*                           pDescriptorPool,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyDescriptorPool(
     VkDevice                                    device,
     VkDescriptorPool                            descriptorPool,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyDescriptorPool(
     VkDevice                                    device,
     VkDescriptorPool                            descriptorPool,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyDescriptorPool(
     VkDevice                                    device,
     VkDescriptorPool                            descriptorPool,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateResetDescriptorPool(
     VkDevice                                    device,
     VkDescriptorPool                            descriptorPool,
-    VkDescriptorPoolResetFlags                  flags) const;
-
+    VkDescriptorPoolResetFlags                  flags) const { return false; }
 
 virtual void PreCallRecordResetDescriptorPool(
     VkDevice                                    device,
     VkDescriptorPool                            descriptorPool,
-    VkDescriptorPoolResetFlags                  flags);
-
+    VkDescriptorPoolResetFlags                  flags) {}
 
 virtual void PostCallRecordResetDescriptorPool(
     VkDevice                                    device,
     VkDescriptorPool                            descriptorPool,
     VkDescriptorPoolResetFlags                  flags,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateAllocateDescriptorSets(
     VkDevice                                    device,
     const VkDescriptorSetAllocateInfo*          pAllocateInfo,
     VkDescriptorSet*                            pDescriptorSets,
-    void*                                       state_data) const;
-
+    void*                                       state_data) const { return false; }
 
 virtual void PreCallRecordAllocateDescriptorSets(
     VkDevice                                    device,
     const VkDescriptorSetAllocateInfo*          pAllocateInfo,
     VkDescriptorSet*                            pDescriptorSets,
-    void*                                       state_data);
-
+    void*                                       state_data) {}
 
 virtual void PostCallRecordAllocateDescriptorSets(
     VkDevice                                    device,
     const VkDescriptorSetAllocateInfo*          pAllocateInfo,
     VkDescriptorSet*                            pDescriptorSets,
     VkResult                                    result,
-    void*                                       state_data);
-
+    void*                                       state_data) {}
 
 virtual bool PreCallValidateFreeDescriptorSets(
     VkDevice                                    device,
     VkDescriptorPool                            descriptorPool,
     uint32_t                                    descriptorSetCount,
-    const VkDescriptorSet*                      pDescriptorSets) const;
-
+    const VkDescriptorSet*                      pDescriptorSets) const { return false; }
 
 virtual void PreCallRecordFreeDescriptorSets(
     VkDevice                                    device,
     VkDescriptorPool                            descriptorPool,
     uint32_t                                    descriptorSetCount,
-    const VkDescriptorSet*                      pDescriptorSets);
-
+    const VkDescriptorSet*                      pDescriptorSets) {}
 
 virtual void PostCallRecordFreeDescriptorSets(
     VkDevice                                    device,
     VkDescriptorPool                            descriptorPool,
     uint32_t                                    descriptorSetCount,
     const VkDescriptorSet*                      pDescriptorSets,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateUpdateDescriptorSets(
     VkDevice                                    device,
     uint32_t                                    descriptorWriteCount,
     const VkWriteDescriptorSet*                 pDescriptorWrites,
     uint32_t                                    descriptorCopyCount,
-    const VkCopyDescriptorSet*                  pDescriptorCopies) const;
-
+    const VkCopyDescriptorSet*                  pDescriptorCopies) const { return false; }
 
 virtual void PreCallRecordUpdateDescriptorSets(
     VkDevice                                    device,
     uint32_t                                    descriptorWriteCount,
     const VkWriteDescriptorSet*                 pDescriptorWrites,
     uint32_t                                    descriptorCopyCount,
-    const VkCopyDescriptorSet*                  pDescriptorCopies);
-
+    const VkCopyDescriptorSet*                  pDescriptorCopies) {}
 
 virtual void PostCallRecordUpdateDescriptorSets(
     VkDevice                                    device,
     uint32_t                                    descriptorWriteCount,
     const VkWriteDescriptorSet*                 pDescriptorWrites,
     uint32_t                                    descriptorCopyCount,
-    const VkCopyDescriptorSet*                  pDescriptorCopies);
-
+    const VkCopyDescriptorSet*                  pDescriptorCopies) {}
 
 virtual bool PreCallValidateCreateFramebuffer(
     VkDevice                                    device,
     const VkFramebufferCreateInfo*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkFramebuffer*                              pFramebuffer) const;
-
+    VkFramebuffer*                              pFramebuffer) const { return false; }
 
 virtual void PreCallRecordCreateFramebuffer(
     VkDevice                                    device,
     const VkFramebufferCreateInfo*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkFramebuffer*                              pFramebuffer);
-
+    VkFramebuffer*                              pFramebuffer) {}
 
 virtual void PostCallRecordCreateFramebuffer(
     VkDevice                                    device,
     const VkFramebufferCreateInfo*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkFramebuffer*                              pFramebuffer,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyFramebuffer(
     VkDevice                                    device,
     VkFramebuffer                               framebuffer,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyFramebuffer(
     VkDevice                                    device,
     VkFramebuffer                               framebuffer,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyFramebuffer(
     VkDevice                                    device,
     VkFramebuffer                               framebuffer,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateCreateRenderPass(
     VkDevice                                    device,
     const VkRenderPassCreateInfo*               pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkRenderPass*                               pRenderPass) const;
-
+    VkRenderPass*                               pRenderPass) const { return false; }
 
 virtual void PreCallRecordCreateRenderPass(
     VkDevice                                    device,
     const VkRenderPassCreateInfo*               pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkRenderPass*                               pRenderPass);
-
+    VkRenderPass*                               pRenderPass) {}
 
 virtual void PostCallRecordCreateRenderPass(
     VkDevice                                    device,
     const VkRenderPassCreateInfo*               pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkRenderPass*                               pRenderPass,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyRenderPass(
     VkDevice                                    device,
     VkRenderPass                                renderPass,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyRenderPass(
     VkDevice                                    device,
     VkRenderPass                                renderPass,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyRenderPass(
     VkDevice                                    device,
     VkRenderPass                                renderPass,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateGetRenderAreaGranularity(
     VkDevice                                    device,
     VkRenderPass                                renderPass,
-    VkExtent2D*                                 pGranularity) const;
-
+    VkExtent2D*                                 pGranularity) const { return false; }
 
 virtual void PreCallRecordGetRenderAreaGranularity(
     VkDevice                                    device,
     VkRenderPass                                renderPass,
-    VkExtent2D*                                 pGranularity);
-
+    VkExtent2D*                                 pGranularity) {}
 
 virtual void PostCallRecordGetRenderAreaGranularity(
     VkDevice                                    device,
     VkRenderPass                                renderPass,
-    VkExtent2D*                                 pGranularity);
-
+    VkExtent2D*                                 pGranularity) {}
 
 virtual bool PreCallValidateCreateCommandPool(
     VkDevice                                    device,
     const VkCommandPoolCreateInfo*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkCommandPool*                              pCommandPool) const;
-
+    VkCommandPool*                              pCommandPool) const { return false; }
 
 virtual void PreCallRecordCreateCommandPool(
     VkDevice                                    device,
     const VkCommandPoolCreateInfo*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkCommandPool*                              pCommandPool);
-
+    VkCommandPool*                              pCommandPool) {}
 
 virtual void PostCallRecordCreateCommandPool(
     VkDevice                                    device,
     const VkCommandPoolCreateInfo*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkCommandPool*                              pCommandPool,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyCommandPool(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyCommandPool(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyCommandPool(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateResetCommandPool(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
-    VkCommandPoolResetFlags                     flags) const;
-
+    VkCommandPoolResetFlags                     flags) const { return false; }
 
 virtual void PreCallRecordResetCommandPool(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
-    VkCommandPoolResetFlags                     flags);
-
+    VkCommandPoolResetFlags                     flags) {}
 
 virtual void PostCallRecordResetCommandPool(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
     VkCommandPoolResetFlags                     flags,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateAllocateCommandBuffers(
     VkDevice                                    device,
     const VkCommandBufferAllocateInfo*          pAllocateInfo,
-    VkCommandBuffer*                            pCommandBuffers) const;
-
+    VkCommandBuffer*                            pCommandBuffers) const { return false; }
 
 virtual void PreCallRecordAllocateCommandBuffers(
     VkDevice                                    device,
     const VkCommandBufferAllocateInfo*          pAllocateInfo,
-    VkCommandBuffer*                            pCommandBuffers);
-
+    VkCommandBuffer*                            pCommandBuffers) {}
 
 virtual void PostCallRecordAllocateCommandBuffers(
     VkDevice                                    device,
     const VkCommandBufferAllocateInfo*          pAllocateInfo,
     VkCommandBuffer*                            pCommandBuffers,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateFreeCommandBuffers(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
     uint32_t                                    commandBufferCount,
-    const VkCommandBuffer*                      pCommandBuffers) const;
-
+    const VkCommandBuffer*                      pCommandBuffers) const { return false; }
 
 virtual void PreCallRecordFreeCommandBuffers(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
     uint32_t                                    commandBufferCount,
-    const VkCommandBuffer*                      pCommandBuffers);
-
+    const VkCommandBuffer*                      pCommandBuffers) {}
 
 virtual void PostCallRecordFreeCommandBuffers(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
     uint32_t                                    commandBufferCount,
-    const VkCommandBuffer*                      pCommandBuffers);
-
+    const VkCommandBuffer*                      pCommandBuffers) {}
 
 virtual bool PreCallValidateBeginCommandBuffer(
     VkCommandBuffer                             commandBuffer,
-    const VkCommandBufferBeginInfo*             pBeginInfo) const;
-
+    const VkCommandBufferBeginInfo*             pBeginInfo) const { return false; }
 
 virtual void PreCallRecordBeginCommandBuffer(
     VkCommandBuffer                             commandBuffer,
-    const VkCommandBufferBeginInfo*             pBeginInfo);
-
+    const VkCommandBufferBeginInfo*             pBeginInfo) {}
 
 virtual void PostCallRecordBeginCommandBuffer(
     VkCommandBuffer                             commandBuffer,
     const VkCommandBufferBeginInfo*             pBeginInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateEndCommandBuffer(
-    VkCommandBuffer                             commandBuffer) const;
-
+    VkCommandBuffer                             commandBuffer) const { return false; }
 
 virtual void PreCallRecordEndCommandBuffer(
-    VkCommandBuffer                             commandBuffer);
-
+    VkCommandBuffer                             commandBuffer) {}
 
 virtual void PostCallRecordEndCommandBuffer(
     VkCommandBuffer                             commandBuffer,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateResetCommandBuffer(
     VkCommandBuffer                             commandBuffer,
-    VkCommandBufferResetFlags                   flags) const;
-
+    VkCommandBufferResetFlags                   flags) const { return false; }
 
 virtual void PreCallRecordResetCommandBuffer(
     VkCommandBuffer                             commandBuffer,
-    VkCommandBufferResetFlags                   flags);
-
+    VkCommandBufferResetFlags                   flags) {}
 
 virtual void PostCallRecordResetCommandBuffer(
     VkCommandBuffer                             commandBuffer,
     VkCommandBufferResetFlags                   flags,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCmdBindPipeline(
     VkCommandBuffer                             commandBuffer,
     VkPipelineBindPoint                         pipelineBindPoint,
-    VkPipeline                                  pipeline) const;
-
+    VkPipeline                                  pipeline) const { return false; }
 
 virtual void PreCallRecordCmdBindPipeline(
     VkCommandBuffer                             commandBuffer,
     VkPipelineBindPoint                         pipelineBindPoint,
-    VkPipeline                                  pipeline);
-
+    VkPipeline                                  pipeline) {}
 
 virtual void PostCallRecordCmdBindPipeline(
     VkCommandBuffer                             commandBuffer,
     VkPipelineBindPoint                         pipelineBindPoint,
-    VkPipeline                                  pipeline);
-
+    VkPipeline                                  pipeline) {}
 
 virtual bool PreCallValidateCmdSetViewport(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstViewport,
     uint32_t                                    viewportCount,
-    const VkViewport*                           pViewports) const;
-
+    const VkViewport*                           pViewports) const { return false; }
 
 virtual void PreCallRecordCmdSetViewport(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstViewport,
     uint32_t                                    viewportCount,
-    const VkViewport*                           pViewports);
-
+    const VkViewport*                           pViewports) {}
 
 virtual void PostCallRecordCmdSetViewport(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstViewport,
     uint32_t                                    viewportCount,
-    const VkViewport*                           pViewports);
-
+    const VkViewport*                           pViewports) {}
 
 virtual bool PreCallValidateCmdSetScissor(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstScissor,
     uint32_t                                    scissorCount,
-    const VkRect2D*                             pScissors) const;
-
+    const VkRect2D*                             pScissors) const { return false; }
 
 virtual void PreCallRecordCmdSetScissor(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstScissor,
     uint32_t                                    scissorCount,
-    const VkRect2D*                             pScissors);
-
+    const VkRect2D*                             pScissors) {}
 
 virtual void PostCallRecordCmdSetScissor(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstScissor,
     uint32_t                                    scissorCount,
-    const VkRect2D*                             pScissors);
-
+    const VkRect2D*                             pScissors) {}
 
 virtual bool PreCallValidateCmdSetLineWidth(
     VkCommandBuffer                             commandBuffer,
-    float                                       lineWidth) const;
-
+    float                                       lineWidth) const { return false; }
 
 virtual void PreCallRecordCmdSetLineWidth(
     VkCommandBuffer                             commandBuffer,
-    float                                       lineWidth);
-
+    float                                       lineWidth) {}
 
 virtual void PostCallRecordCmdSetLineWidth(
     VkCommandBuffer                             commandBuffer,
-    float                                       lineWidth);
-
+    float                                       lineWidth) {}
 
 virtual bool PreCallValidateCmdSetDepthBias(
     VkCommandBuffer                             commandBuffer,
     float                                       depthBiasConstantFactor,
     float                                       depthBiasClamp,
-    float                                       depthBiasSlopeFactor) const;
-
+    float                                       depthBiasSlopeFactor) const { return false; }
 
 virtual void PreCallRecordCmdSetDepthBias(
     VkCommandBuffer                             commandBuffer,
     float                                       depthBiasConstantFactor,
     float                                       depthBiasClamp,
-    float                                       depthBiasSlopeFactor);
-
+    float                                       depthBiasSlopeFactor) {}
 
 virtual void PostCallRecordCmdSetDepthBias(
     VkCommandBuffer                             commandBuffer,
     float                                       depthBiasConstantFactor,
     float                                       depthBiasClamp,
-    float                                       depthBiasSlopeFactor);
-
+    float                                       depthBiasSlopeFactor) {}
 
 virtual bool PreCallValidateCmdSetBlendConstants(
     VkCommandBuffer                             commandBuffer,
-    const float                                 blendConstants[4]) const;
-
+    const float                                 blendConstants[4]) const { return false; }
 
 virtual void PreCallRecordCmdSetBlendConstants(
     VkCommandBuffer                             commandBuffer,
-    const float                                 blendConstants[4]);
-
+    const float                                 blendConstants[4]) {}
 
 virtual void PostCallRecordCmdSetBlendConstants(
     VkCommandBuffer                             commandBuffer,
-    const float                                 blendConstants[4]);
-
+    const float                                 blendConstants[4]) {}
 
 virtual bool PreCallValidateCmdSetDepthBounds(
     VkCommandBuffer                             commandBuffer,
     float                                       minDepthBounds,
-    float                                       maxDepthBounds) const;
-
+    float                                       maxDepthBounds) const { return false; }
 
 virtual void PreCallRecordCmdSetDepthBounds(
     VkCommandBuffer                             commandBuffer,
     float                                       minDepthBounds,
-    float                                       maxDepthBounds);
-
+    float                                       maxDepthBounds) {}
 
 virtual void PostCallRecordCmdSetDepthBounds(
     VkCommandBuffer                             commandBuffer,
     float                                       minDepthBounds,
-    float                                       maxDepthBounds);
-
+    float                                       maxDepthBounds) {}
 
 virtual bool PreCallValidateCmdSetStencilCompareMask(
     VkCommandBuffer                             commandBuffer,
     VkStencilFaceFlags                          faceMask,
-    uint32_t                                    compareMask) const;
-
+    uint32_t                                    compareMask) const { return false; }
 
 virtual void PreCallRecordCmdSetStencilCompareMask(
     VkCommandBuffer                             commandBuffer,
     VkStencilFaceFlags                          faceMask,
-    uint32_t                                    compareMask);
-
+    uint32_t                                    compareMask) {}
 
 virtual void PostCallRecordCmdSetStencilCompareMask(
     VkCommandBuffer                             commandBuffer,
     VkStencilFaceFlags                          faceMask,
-    uint32_t                                    compareMask);
-
+    uint32_t                                    compareMask) {}
 
 virtual bool PreCallValidateCmdSetStencilWriteMask(
     VkCommandBuffer                             commandBuffer,
     VkStencilFaceFlags                          faceMask,
-    uint32_t                                    writeMask) const;
-
+    uint32_t                                    writeMask) const { return false; }
 
 virtual void PreCallRecordCmdSetStencilWriteMask(
     VkCommandBuffer                             commandBuffer,
     VkStencilFaceFlags                          faceMask,
-    uint32_t                                    writeMask);
-
+    uint32_t                                    writeMask) {}
 
 virtual void PostCallRecordCmdSetStencilWriteMask(
     VkCommandBuffer                             commandBuffer,
     VkStencilFaceFlags                          faceMask,
-    uint32_t                                    writeMask);
-
+    uint32_t                                    writeMask) {}
 
 virtual bool PreCallValidateCmdSetStencilReference(
     VkCommandBuffer                             commandBuffer,
     VkStencilFaceFlags                          faceMask,
-    uint32_t                                    reference) const;
-
+    uint32_t                                    reference) const { return false; }
 
 virtual void PreCallRecordCmdSetStencilReference(
     VkCommandBuffer                             commandBuffer,
     VkStencilFaceFlags                          faceMask,
-    uint32_t                                    reference);
-
+    uint32_t                                    reference) {}
 
 virtual void PostCallRecordCmdSetStencilReference(
     VkCommandBuffer                             commandBuffer,
     VkStencilFaceFlags                          faceMask,
-    uint32_t                                    reference);
-
+    uint32_t                                    reference) {}
 
 virtual bool PreCallValidateCmdBindDescriptorSets(
     VkCommandBuffer                             commandBuffer,
@@ -2086,8 +1777,7 @@ virtual bool PreCallValidateCmdBindDescriptorSets(
     uint32_t                                    descriptorSetCount,
     const VkDescriptorSet*                      pDescriptorSets,
     uint32_t                                    dynamicOffsetCount,
-    const uint32_t*                             pDynamicOffsets) const;
-
+    const uint32_t*                             pDynamicOffsets) const { return false; }
 
 virtual void PreCallRecordCmdBindDescriptorSets(
     VkCommandBuffer                             commandBuffer,
@@ -2097,8 +1787,7 @@ virtual void PreCallRecordCmdBindDescriptorSets(
     uint32_t                                    descriptorSetCount,
     const VkDescriptorSet*                      pDescriptorSets,
     uint32_t                                    dynamicOffsetCount,
-    const uint32_t*                             pDynamicOffsets);
-
+    const uint32_t*                             pDynamicOffsets) {}
 
 virtual void PostCallRecordCmdBindDescriptorSets(
     VkCommandBuffer                             commandBuffer,
@@ -2108,77 +1797,67 @@ virtual void PostCallRecordCmdBindDescriptorSets(
     uint32_t                                    descriptorSetCount,
     const VkDescriptorSet*                      pDescriptorSets,
     uint32_t                                    dynamicOffsetCount,
-    const uint32_t*                             pDynamicOffsets);
-
+    const uint32_t*                             pDynamicOffsets) {}
 
 virtual bool PreCallValidateCmdBindIndexBuffer(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,
     VkDeviceSize                                offset,
-    VkIndexType                                 indexType) const;
-
+    VkIndexType                                 indexType) const { return false; }
 
 virtual void PreCallRecordCmdBindIndexBuffer(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,
     VkDeviceSize                                offset,
-    VkIndexType                                 indexType);
-
+    VkIndexType                                 indexType) {}
 
 virtual void PostCallRecordCmdBindIndexBuffer(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,
     VkDeviceSize                                offset,
-    VkIndexType                                 indexType);
-
+    VkIndexType                                 indexType) {}
 
 virtual bool PreCallValidateCmdBindVertexBuffers(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstBinding,
     uint32_t                                    bindingCount,
     const VkBuffer*                             pBuffers,
-    const VkDeviceSize*                         pOffsets) const;
-
+    const VkDeviceSize*                         pOffsets) const { return false; }
 
 virtual void PreCallRecordCmdBindVertexBuffers(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstBinding,
     uint32_t                                    bindingCount,
     const VkBuffer*                             pBuffers,
-    const VkDeviceSize*                         pOffsets);
-
+    const VkDeviceSize*                         pOffsets) {}
 
 virtual void PostCallRecordCmdBindVertexBuffers(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstBinding,
     uint32_t                                    bindingCount,
     const VkBuffer*                             pBuffers,
-    const VkDeviceSize*                         pOffsets);
-
+    const VkDeviceSize*                         pOffsets) {}
 
 virtual bool PreCallValidateCmdDraw(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    vertexCount,
     uint32_t                                    instanceCount,
     uint32_t                                    firstVertex,
-    uint32_t                                    firstInstance) const;
-
+    uint32_t                                    firstInstance) const { return false; }
 
 virtual void PreCallRecordCmdDraw(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    vertexCount,
     uint32_t                                    instanceCount,
     uint32_t                                    firstVertex,
-    uint32_t                                    firstInstance);
-
+    uint32_t                                    firstInstance) {}
 
 virtual void PostCallRecordCmdDraw(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    vertexCount,
     uint32_t                                    instanceCount,
     uint32_t                                    firstVertex,
-    uint32_t                                    firstInstance);
-
+    uint32_t                                    firstInstance) {}
 
 virtual bool PreCallValidateCmdDrawIndexed(
     VkCommandBuffer                             commandBuffer,
@@ -2186,8 +1865,7 @@ virtual bool PreCallValidateCmdDrawIndexed(
     uint32_t                                    instanceCount,
     uint32_t                                    firstIndex,
     int32_t                                     vertexOffset,
-    uint32_t                                    firstInstance) const;
-
+    uint32_t                                    firstInstance) const { return false; }
 
 virtual void PreCallRecordCmdDrawIndexed(
     VkCommandBuffer                             commandBuffer,
@@ -2195,8 +1873,7 @@ virtual void PreCallRecordCmdDrawIndexed(
     uint32_t                                    instanceCount,
     uint32_t                                    firstIndex,
     int32_t                                     vertexOffset,
-    uint32_t                                    firstInstance);
-
+    uint32_t                                    firstInstance) {}
 
 virtual void PostCallRecordCmdDrawIndexed(
     VkCommandBuffer                             commandBuffer,
@@ -2204,119 +1881,103 @@ virtual void PostCallRecordCmdDrawIndexed(
     uint32_t                                    instanceCount,
     uint32_t                                    firstIndex,
     int32_t                                     vertexOffset,
-    uint32_t                                    firstInstance);
-
+    uint32_t                                    firstInstance) {}
 
 virtual bool PreCallValidateCmdDrawIndirect(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,
     VkDeviceSize                                offset,
     uint32_t                                    drawCount,
-    uint32_t                                    stride) const;
-
+    uint32_t                                    stride) const { return false; }
 
 virtual void PreCallRecordCmdDrawIndirect(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,
     VkDeviceSize                                offset,
     uint32_t                                    drawCount,
-    uint32_t                                    stride);
-
+    uint32_t                                    stride) {}
 
 virtual void PostCallRecordCmdDrawIndirect(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,
     VkDeviceSize                                offset,
     uint32_t                                    drawCount,
-    uint32_t                                    stride);
-
+    uint32_t                                    stride) {}
 
 virtual bool PreCallValidateCmdDrawIndexedIndirect(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,
     VkDeviceSize                                offset,
     uint32_t                                    drawCount,
-    uint32_t                                    stride) const;
-
+    uint32_t                                    stride) const { return false; }
 
 virtual void PreCallRecordCmdDrawIndexedIndirect(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,
     VkDeviceSize                                offset,
     uint32_t                                    drawCount,
-    uint32_t                                    stride);
-
+    uint32_t                                    stride) {}
 
 virtual void PostCallRecordCmdDrawIndexedIndirect(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,
     VkDeviceSize                                offset,
     uint32_t                                    drawCount,
-    uint32_t                                    stride);
-
+    uint32_t                                    stride) {}
 
 virtual bool PreCallValidateCmdDispatch(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    groupCountX,
     uint32_t                                    groupCountY,
-    uint32_t                                    groupCountZ) const;
-
+    uint32_t                                    groupCountZ) const { return false; }
 
 virtual void PreCallRecordCmdDispatch(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    groupCountX,
     uint32_t                                    groupCountY,
-    uint32_t                                    groupCountZ);
-
+    uint32_t                                    groupCountZ) {}
 
 virtual void PostCallRecordCmdDispatch(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    groupCountX,
     uint32_t                                    groupCountY,
-    uint32_t                                    groupCountZ);
-
+    uint32_t                                    groupCountZ) {}
 
 virtual bool PreCallValidateCmdDispatchIndirect(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,
-    VkDeviceSize                                offset) const;
-
+    VkDeviceSize                                offset) const { return false; }
 
 virtual void PreCallRecordCmdDispatchIndirect(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,
-    VkDeviceSize                                offset);
-
+    VkDeviceSize                                offset) {}
 
 virtual void PostCallRecordCmdDispatchIndirect(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,
-    VkDeviceSize                                offset);
-
+    VkDeviceSize                                offset) {}
 
 virtual bool PreCallValidateCmdCopyBuffer(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    srcBuffer,
     VkBuffer                                    dstBuffer,
     uint32_t                                    regionCount,
-    const VkBufferCopy*                         pRegions) const;
-
+    const VkBufferCopy*                         pRegions) const { return false; }
 
 virtual void PreCallRecordCmdCopyBuffer(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    srcBuffer,
     VkBuffer                                    dstBuffer,
     uint32_t                                    regionCount,
-    const VkBufferCopy*                         pRegions);
-
+    const VkBufferCopy*                         pRegions) {}
 
 virtual void PostCallRecordCmdCopyBuffer(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    srcBuffer,
     VkBuffer                                    dstBuffer,
     uint32_t                                    regionCount,
-    const VkBufferCopy*                         pRegions);
-
+    const VkBufferCopy*                         pRegions) {}
 
 virtual bool PreCallValidateCmdCopyImage(
     VkCommandBuffer                             commandBuffer,
@@ -2325,8 +1986,7 @@ virtual bool PreCallValidateCmdCopyImage(
     VkImage                                     dstImage,
     VkImageLayout                               dstImageLayout,
     uint32_t                                    regionCount,
-    const VkImageCopy*                          pRegions) const;
-
+    const VkImageCopy*                          pRegions) const { return false; }
 
 virtual void PreCallRecordCmdCopyImage(
     VkCommandBuffer                             commandBuffer,
@@ -2335,8 +1995,7 @@ virtual void PreCallRecordCmdCopyImage(
     VkImage                                     dstImage,
     VkImageLayout                               dstImageLayout,
     uint32_t                                    regionCount,
-    const VkImageCopy*                          pRegions);
-
+    const VkImageCopy*                          pRegions) {}
 
 virtual void PostCallRecordCmdCopyImage(
     VkCommandBuffer                             commandBuffer,
@@ -2345,8 +2004,7 @@ virtual void PostCallRecordCmdCopyImage(
     VkImage                                     dstImage,
     VkImageLayout                               dstImageLayout,
     uint32_t                                    regionCount,
-    const VkImageCopy*                          pRegions);
-
+    const VkImageCopy*                          pRegions) {}
 
 virtual bool PreCallValidateCmdBlitImage(
     VkCommandBuffer                             commandBuffer,
@@ -2356,8 +2014,7 @@ virtual bool PreCallValidateCmdBlitImage(
     VkImageLayout                               dstImageLayout,
     uint32_t                                    regionCount,
     const VkImageBlit*                          pRegions,
-    VkFilter                                    filter) const;
-
+    VkFilter                                    filter) const { return false; }
 
 virtual void PreCallRecordCmdBlitImage(
     VkCommandBuffer                             commandBuffer,
@@ -2367,8 +2024,7 @@ virtual void PreCallRecordCmdBlitImage(
     VkImageLayout                               dstImageLayout,
     uint32_t                                    regionCount,
     const VkImageBlit*                          pRegions,
-    VkFilter                                    filter);
-
+    VkFilter                                    filter) {}
 
 virtual void PostCallRecordCmdBlitImage(
     VkCommandBuffer                             commandBuffer,
@@ -2378,8 +2034,7 @@ virtual void PostCallRecordCmdBlitImage(
     VkImageLayout                               dstImageLayout,
     uint32_t                                    regionCount,
     const VkImageBlit*                          pRegions,
-    VkFilter                                    filter);
-
+    VkFilter                                    filter) {}
 
 virtual bool PreCallValidateCmdCopyBufferToImage(
     VkCommandBuffer                             commandBuffer,
@@ -2387,8 +2042,7 @@ virtual bool PreCallValidateCmdCopyBufferToImage(
     VkImage                                     dstImage,
     VkImageLayout                               dstImageLayout,
     uint32_t                                    regionCount,
-    const VkBufferImageCopy*                    pRegions) const;
-
+    const VkBufferImageCopy*                    pRegions) const { return false; }
 
 virtual void PreCallRecordCmdCopyBufferToImage(
     VkCommandBuffer                             commandBuffer,
@@ -2396,8 +2050,7 @@ virtual void PreCallRecordCmdCopyBufferToImage(
     VkImage                                     dstImage,
     VkImageLayout                               dstImageLayout,
     uint32_t                                    regionCount,
-    const VkBufferImageCopy*                    pRegions);
-
+    const VkBufferImageCopy*                    pRegions) {}
 
 virtual void PostCallRecordCmdCopyBufferToImage(
     VkCommandBuffer                             commandBuffer,
@@ -2405,8 +2058,7 @@ virtual void PostCallRecordCmdCopyBufferToImage(
     VkImage                                     dstImage,
     VkImageLayout                               dstImageLayout,
     uint32_t                                    regionCount,
-    const VkBufferImageCopy*                    pRegions);
-
+    const VkBufferImageCopy*                    pRegions) {}
 
 virtual bool PreCallValidateCmdCopyImageToBuffer(
     VkCommandBuffer                             commandBuffer,
@@ -2414,8 +2066,7 @@ virtual bool PreCallValidateCmdCopyImageToBuffer(
     VkImageLayout                               srcImageLayout,
     VkBuffer                                    dstBuffer,
     uint32_t                                    regionCount,
-    const VkBufferImageCopy*                    pRegions) const;
-
+    const VkBufferImageCopy*                    pRegions) const { return false; }
 
 virtual void PreCallRecordCmdCopyImageToBuffer(
     VkCommandBuffer                             commandBuffer,
@@ -2423,8 +2074,7 @@ virtual void PreCallRecordCmdCopyImageToBuffer(
     VkImageLayout                               srcImageLayout,
     VkBuffer                                    dstBuffer,
     uint32_t                                    regionCount,
-    const VkBufferImageCopy*                    pRegions);
-
+    const VkBufferImageCopy*                    pRegions) {}
 
 virtual void PostCallRecordCmdCopyImageToBuffer(
     VkCommandBuffer                             commandBuffer,
@@ -2432,56 +2082,49 @@ virtual void PostCallRecordCmdCopyImageToBuffer(
     VkImageLayout                               srcImageLayout,
     VkBuffer                                    dstBuffer,
     uint32_t                                    regionCount,
-    const VkBufferImageCopy*                    pRegions);
-
+    const VkBufferImageCopy*                    pRegions) {}
 
 virtual bool PreCallValidateCmdUpdateBuffer(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
     VkDeviceSize                                dataSize,
-    const void*                                 pData) const;
-
+    const void*                                 pData) const { return false; }
 
 virtual void PreCallRecordCmdUpdateBuffer(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
     VkDeviceSize                                dataSize,
-    const void*                                 pData);
-
+    const void*                                 pData) {}
 
 virtual void PostCallRecordCmdUpdateBuffer(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
     VkDeviceSize                                dataSize,
-    const void*                                 pData);
-
+    const void*                                 pData) {}
 
 virtual bool PreCallValidateCmdFillBuffer(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
     VkDeviceSize                                size,
-    uint32_t                                    data) const;
-
+    uint32_t                                    data) const { return false; }
 
 virtual void PreCallRecordCmdFillBuffer(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
     VkDeviceSize                                size,
-    uint32_t                                    data);
-
+    uint32_t                                    data) {}
 
 virtual void PostCallRecordCmdFillBuffer(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
     VkDeviceSize                                size,
-    uint32_t                                    data);
-
+    uint32_t                                    data) {}
 
 virtual bool PreCallValidateCmdClearColorImage(
     VkCommandBuffer                             commandBuffer,
@@ -2489,8 +2132,7 @@ virtual bool PreCallValidateCmdClearColorImage(
     VkImageLayout                               imageLayout,
     const VkClearColorValue*                    pColor,
     uint32_t                                    rangeCount,
-    const VkImageSubresourceRange*              pRanges) const;
-
+    const VkImageSubresourceRange*              pRanges) const { return false; }
 
 virtual void PreCallRecordCmdClearColorImage(
     VkCommandBuffer                             commandBuffer,
@@ -2498,8 +2140,7 @@ virtual void PreCallRecordCmdClearColorImage(
     VkImageLayout                               imageLayout,
     const VkClearColorValue*                    pColor,
     uint32_t                                    rangeCount,
-    const VkImageSubresourceRange*              pRanges);
-
+    const VkImageSubresourceRange*              pRanges) {}
 
 virtual void PostCallRecordCmdClearColorImage(
     VkCommandBuffer                             commandBuffer,
@@ -2507,8 +2148,7 @@ virtual void PostCallRecordCmdClearColorImage(
     VkImageLayout                               imageLayout,
     const VkClearColorValue*                    pColor,
     uint32_t                                    rangeCount,
-    const VkImageSubresourceRange*              pRanges);
-
+    const VkImageSubresourceRange*              pRanges) {}
 
 virtual bool PreCallValidateCmdClearDepthStencilImage(
     VkCommandBuffer                             commandBuffer,
@@ -2516,8 +2156,7 @@ virtual bool PreCallValidateCmdClearDepthStencilImage(
     VkImageLayout                               imageLayout,
     const VkClearDepthStencilValue*             pDepthStencil,
     uint32_t                                    rangeCount,
-    const VkImageSubresourceRange*              pRanges) const;
-
+    const VkImageSubresourceRange*              pRanges) const { return false; }
 
 virtual void PreCallRecordCmdClearDepthStencilImage(
     VkCommandBuffer                             commandBuffer,
@@ -2525,8 +2164,7 @@ virtual void PreCallRecordCmdClearDepthStencilImage(
     VkImageLayout                               imageLayout,
     const VkClearDepthStencilValue*             pDepthStencil,
     uint32_t                                    rangeCount,
-    const VkImageSubresourceRange*              pRanges);
-
+    const VkImageSubresourceRange*              pRanges) {}
 
 virtual void PostCallRecordCmdClearDepthStencilImage(
     VkCommandBuffer                             commandBuffer,
@@ -2534,32 +2172,28 @@ virtual void PostCallRecordCmdClearDepthStencilImage(
     VkImageLayout                               imageLayout,
     const VkClearDepthStencilValue*             pDepthStencil,
     uint32_t                                    rangeCount,
-    const VkImageSubresourceRange*              pRanges);
-
+    const VkImageSubresourceRange*              pRanges) {}
 
 virtual bool PreCallValidateCmdClearAttachments(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    attachmentCount,
     const VkClearAttachment*                    pAttachments,
     uint32_t                                    rectCount,
-    const VkClearRect*                          pRects) const;
-
+    const VkClearRect*                          pRects) const { return false; }
 
 virtual void PreCallRecordCmdClearAttachments(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    attachmentCount,
     const VkClearAttachment*                    pAttachments,
     uint32_t                                    rectCount,
-    const VkClearRect*                          pRects);
-
+    const VkClearRect*                          pRects) {}
 
 virtual void PostCallRecordCmdClearAttachments(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    attachmentCount,
     const VkClearAttachment*                    pAttachments,
     uint32_t                                    rectCount,
-    const VkClearRect*                          pRects);
-
+    const VkClearRect*                          pRects) {}
 
 virtual bool PreCallValidateCmdResolveImage(
     VkCommandBuffer                             commandBuffer,
@@ -2568,8 +2202,7 @@ virtual bool PreCallValidateCmdResolveImage(
     VkImage                                     dstImage,
     VkImageLayout                               dstImageLayout,
     uint32_t                                    regionCount,
-    const VkImageResolve*                       pRegions) const;
-
+    const VkImageResolve*                       pRegions) const { return false; }
 
 virtual void PreCallRecordCmdResolveImage(
     VkCommandBuffer                             commandBuffer,
@@ -2578,8 +2211,7 @@ virtual void PreCallRecordCmdResolveImage(
     VkImage                                     dstImage,
     VkImageLayout                               dstImageLayout,
     uint32_t                                    regionCount,
-    const VkImageResolve*                       pRegions);
-
+    const VkImageResolve*                       pRegions) {}
 
 virtual void PostCallRecordCmdResolveImage(
     VkCommandBuffer                             commandBuffer,
@@ -2588,44 +2220,37 @@ virtual void PostCallRecordCmdResolveImage(
     VkImage                                     dstImage,
     VkImageLayout                               dstImageLayout,
     uint32_t                                    regionCount,
-    const VkImageResolve*                       pRegions);
-
+    const VkImageResolve*                       pRegions) {}
 
 virtual bool PreCallValidateCmdSetEvent(
     VkCommandBuffer                             commandBuffer,
     VkEvent                                     event,
-    VkPipelineStageFlags                        stageMask) const;
-
+    VkPipelineStageFlags                        stageMask) const { return false; }
 
 virtual void PreCallRecordCmdSetEvent(
     VkCommandBuffer                             commandBuffer,
     VkEvent                                     event,
-    VkPipelineStageFlags                        stageMask);
-
+    VkPipelineStageFlags                        stageMask) {}
 
 virtual void PostCallRecordCmdSetEvent(
     VkCommandBuffer                             commandBuffer,
     VkEvent                                     event,
-    VkPipelineStageFlags                        stageMask);
-
+    VkPipelineStageFlags                        stageMask) {}
 
 virtual bool PreCallValidateCmdResetEvent(
     VkCommandBuffer                             commandBuffer,
     VkEvent                                     event,
-    VkPipelineStageFlags                        stageMask) const;
-
+    VkPipelineStageFlags                        stageMask) const { return false; }
 
 virtual void PreCallRecordCmdResetEvent(
     VkCommandBuffer                             commandBuffer,
     VkEvent                                     event,
-    VkPipelineStageFlags                        stageMask);
-
+    VkPipelineStageFlags                        stageMask) {}
 
 virtual void PostCallRecordCmdResetEvent(
     VkCommandBuffer                             commandBuffer,
     VkEvent                                     event,
-    VkPipelineStageFlags                        stageMask);
-
+    VkPipelineStageFlags                        stageMask) {}
 
 virtual bool PreCallValidateCmdWaitEvents(
     VkCommandBuffer                             commandBuffer,
@@ -2638,8 +2263,7 @@ virtual bool PreCallValidateCmdWaitEvents(
     uint32_t                                    bufferMemoryBarrierCount,
     const VkBufferMemoryBarrier*                pBufferMemoryBarriers,
     uint32_t                                    imageMemoryBarrierCount,
-    const VkImageMemoryBarrier*                 pImageMemoryBarriers) const;
-
+    const VkImageMemoryBarrier*                 pImageMemoryBarriers) const { return false; }
 
 virtual void PreCallRecordCmdWaitEvents(
     VkCommandBuffer                             commandBuffer,
@@ -2652,8 +2276,7 @@ virtual void PreCallRecordCmdWaitEvents(
     uint32_t                                    bufferMemoryBarrierCount,
     const VkBufferMemoryBarrier*                pBufferMemoryBarriers,
     uint32_t                                    imageMemoryBarrierCount,
-    const VkImageMemoryBarrier*                 pImageMemoryBarriers);
-
+    const VkImageMemoryBarrier*                 pImageMemoryBarriers) {}
 
 virtual void PostCallRecordCmdWaitEvents(
     VkCommandBuffer                             commandBuffer,
@@ -2666,8 +2289,7 @@ virtual void PostCallRecordCmdWaitEvents(
     uint32_t                                    bufferMemoryBarrierCount,
     const VkBufferMemoryBarrier*                pBufferMemoryBarriers,
     uint32_t                                    imageMemoryBarrierCount,
-    const VkImageMemoryBarrier*                 pImageMemoryBarriers);
-
+    const VkImageMemoryBarrier*                 pImageMemoryBarriers) {}
 
 virtual bool PreCallValidateCmdPipelineBarrier(
     VkCommandBuffer                             commandBuffer,
@@ -2679,8 +2301,7 @@ virtual bool PreCallValidateCmdPipelineBarrier(
     uint32_t                                    bufferMemoryBarrierCount,
     const VkBufferMemoryBarrier*                pBufferMemoryBarriers,
     uint32_t                                    imageMemoryBarrierCount,
-    const VkImageMemoryBarrier*                 pImageMemoryBarriers) const;
-
+    const VkImageMemoryBarrier*                 pImageMemoryBarriers) const { return false; }
 
 virtual void PreCallRecordCmdPipelineBarrier(
     VkCommandBuffer                             commandBuffer,
@@ -2692,8 +2313,7 @@ virtual void PreCallRecordCmdPipelineBarrier(
     uint32_t                                    bufferMemoryBarrierCount,
     const VkBufferMemoryBarrier*                pBufferMemoryBarriers,
     uint32_t                                    imageMemoryBarrierCount,
-    const VkImageMemoryBarrier*                 pImageMemoryBarriers);
-
+    const VkImageMemoryBarrier*                 pImageMemoryBarriers) {}
 
 virtual void PostCallRecordCmdPipelineBarrier(
     VkCommandBuffer                             commandBuffer,
@@ -2705,89 +2325,76 @@ virtual void PostCallRecordCmdPipelineBarrier(
     uint32_t                                    bufferMemoryBarrierCount,
     const VkBufferMemoryBarrier*                pBufferMemoryBarriers,
     uint32_t                                    imageMemoryBarrierCount,
-    const VkImageMemoryBarrier*                 pImageMemoryBarriers);
-
+    const VkImageMemoryBarrier*                 pImageMemoryBarriers) {}
 
 virtual bool PreCallValidateCmdBeginQuery(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
-    VkQueryControlFlags                         flags) const;
-
+    VkQueryControlFlags                         flags) const { return false; }
 
 virtual void PreCallRecordCmdBeginQuery(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
-    VkQueryControlFlags                         flags);
-
+    VkQueryControlFlags                         flags) {}
 
 virtual void PostCallRecordCmdBeginQuery(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
-    VkQueryControlFlags                         flags);
-
+    VkQueryControlFlags                         flags) {}
 
 virtual bool PreCallValidateCmdEndQuery(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
-    uint32_t                                    query) const;
-
+    uint32_t                                    query) const { return false; }
 
 virtual void PreCallRecordCmdEndQuery(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
-    uint32_t                                    query);
-
+    uint32_t                                    query) {}
 
 virtual void PostCallRecordCmdEndQuery(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
-    uint32_t                                    query);
-
+    uint32_t                                    query) {}
 
 virtual bool PreCallValidateCmdResetQueryPool(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
-    uint32_t                                    queryCount) const;
-
+    uint32_t                                    queryCount) const { return false; }
 
 virtual void PreCallRecordCmdResetQueryPool(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
-    uint32_t                                    queryCount);
-
+    uint32_t                                    queryCount) {}
 
 virtual void PostCallRecordCmdResetQueryPool(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
-    uint32_t                                    queryCount);
-
+    uint32_t                                    queryCount) {}
 
 virtual bool PreCallValidateCmdWriteTimestamp(
     VkCommandBuffer                             commandBuffer,
     VkPipelineStageFlagBits                     pipelineStage,
     VkQueryPool                                 queryPool,
-    uint32_t                                    query) const;
-
+    uint32_t                                    query) const { return false; }
 
 virtual void PreCallRecordCmdWriteTimestamp(
     VkCommandBuffer                             commandBuffer,
     VkPipelineStageFlagBits                     pipelineStage,
     VkQueryPool                                 queryPool,
-    uint32_t                                    query);
-
+    uint32_t                                    query) {}
 
 virtual void PostCallRecordCmdWriteTimestamp(
     VkCommandBuffer                             commandBuffer,
     VkPipelineStageFlagBits                     pipelineStage,
     VkQueryPool                                 queryPool,
-    uint32_t                                    query);
-
+    uint32_t                                    query) {}
 
 virtual bool PreCallValidateCmdCopyQueryPoolResults(
     VkCommandBuffer                             commandBuffer,
@@ -2797,8 +2404,7 @@ virtual bool PreCallValidateCmdCopyQueryPoolResults(
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
     VkDeviceSize                                stride,
-    VkQueryResultFlags                          flags) const;
-
+    VkQueryResultFlags                          flags) const { return false; }
 
 virtual void PreCallRecordCmdCopyQueryPoolResults(
     VkCommandBuffer                             commandBuffer,
@@ -2808,8 +2414,7 @@ virtual void PreCallRecordCmdCopyQueryPoolResults(
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
     VkDeviceSize                                stride,
-    VkQueryResultFlags                          flags);
-
+    VkQueryResultFlags                          flags) {}
 
 virtual void PostCallRecordCmdCopyQueryPoolResults(
     VkCommandBuffer                             commandBuffer,
@@ -2819,8 +2424,7 @@ virtual void PostCallRecordCmdCopyQueryPoolResults(
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
     VkDeviceSize                                stride,
-    VkQueryResultFlags                          flags);
-
+    VkQueryResultFlags                          flags) {}
 
 virtual bool PreCallValidateCmdPushConstants(
     VkCommandBuffer                             commandBuffer,
@@ -2828,8 +2432,7 @@ virtual bool PreCallValidateCmdPushConstants(
     VkShaderStageFlags                          stageFlags,
     uint32_t                                    offset,
     uint32_t                                    size,
-    const void*                                 pValues) const;
-
+    const void*                                 pValues) const { return false; }
 
 virtual void PreCallRecordCmdPushConstants(
     VkCommandBuffer                             commandBuffer,
@@ -2837,8 +2440,7 @@ virtual void PreCallRecordCmdPushConstants(
     VkShaderStageFlags                          stageFlags,
     uint32_t                                    offset,
     uint32_t                                    size,
-    const void*                                 pValues);
-
+    const void*                                 pValues) {}
 
 virtual void PostCallRecordCmdPushConstants(
     VkCommandBuffer                             commandBuffer,
@@ -2846,148 +2448,123 @@ virtual void PostCallRecordCmdPushConstants(
     VkShaderStageFlags                          stageFlags,
     uint32_t                                    offset,
     uint32_t                                    size,
-    const void*                                 pValues);
-
+    const void*                                 pValues) {}
 
 virtual bool PreCallValidateCmdBeginRenderPass(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    VkSubpassContents                           contents) const;
-
+    VkSubpassContents                           contents) const { return false; }
 
 virtual void PreCallRecordCmdBeginRenderPass(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    VkSubpassContents                           contents);
-
+    VkSubpassContents                           contents) {}
 
 virtual void PostCallRecordCmdBeginRenderPass(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    VkSubpassContents                           contents);
-
+    VkSubpassContents                           contents) {}
 
 virtual bool PreCallValidateCmdNextSubpass(
     VkCommandBuffer                             commandBuffer,
-    VkSubpassContents                           contents) const;
-
+    VkSubpassContents                           contents) const { return false; }
 
 virtual void PreCallRecordCmdNextSubpass(
     VkCommandBuffer                             commandBuffer,
-    VkSubpassContents                           contents);
-
+    VkSubpassContents                           contents) {}
 
 virtual void PostCallRecordCmdNextSubpass(
     VkCommandBuffer                             commandBuffer,
-    VkSubpassContents                           contents);
-
+    VkSubpassContents                           contents) {}
 
 virtual bool PreCallValidateCmdEndRenderPass(
-    VkCommandBuffer                             commandBuffer) const;
-
+    VkCommandBuffer                             commandBuffer) const { return false; }
 
 virtual void PreCallRecordCmdEndRenderPass(
-    VkCommandBuffer                             commandBuffer);
-
+    VkCommandBuffer                             commandBuffer) {}
 
 virtual void PostCallRecordCmdEndRenderPass(
-    VkCommandBuffer                             commandBuffer);
-
+    VkCommandBuffer                             commandBuffer) {}
 
 virtual bool PreCallValidateCmdExecuteCommands(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    commandBufferCount,
-    const VkCommandBuffer*                      pCommandBuffers) const;
-
+    const VkCommandBuffer*                      pCommandBuffers) const { return false; }
 
 virtual void PreCallRecordCmdExecuteCommands(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    commandBufferCount,
-    const VkCommandBuffer*                      pCommandBuffers);
-
+    const VkCommandBuffer*                      pCommandBuffers) {}
 
 virtual void PostCallRecordCmdExecuteCommands(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    commandBufferCount,
-    const VkCommandBuffer*                      pCommandBuffers);
-
+    const VkCommandBuffer*                      pCommandBuffers) {}
 
 virtual bool PreCallValidateBindBufferMemory2(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindBufferMemoryInfo*               pBindInfos) const;
-
+    const VkBindBufferMemoryInfo*               pBindInfos) const { return false; }
 
 virtual void PreCallRecordBindBufferMemory2(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindBufferMemoryInfo*               pBindInfos);
-
+    const VkBindBufferMemoryInfo*               pBindInfos) {}
 
 virtual void PostCallRecordBindBufferMemory2(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
     const VkBindBufferMemoryInfo*               pBindInfos,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateBindImageMemory2(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindImageMemoryInfo*                pBindInfos) const;
-
+    const VkBindImageMemoryInfo*                pBindInfos) const { return false; }
 
 virtual void PreCallRecordBindImageMemory2(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindImageMemoryInfo*                pBindInfos);
-
+    const VkBindImageMemoryInfo*                pBindInfos) {}
 
 virtual void PostCallRecordBindImageMemory2(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
     const VkBindImageMemoryInfo*                pBindInfos,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetDeviceGroupPeerMemoryFeatures(
     VkDevice                                    device,
     uint32_t                                    heapIndex,
     uint32_t                                    localDeviceIndex,
     uint32_t                                    remoteDeviceIndex,
-    VkPeerMemoryFeatureFlags*                   pPeerMemoryFeatures) const;
-
+    VkPeerMemoryFeatureFlags*                   pPeerMemoryFeatures) const { return false; }
 
 virtual void PreCallRecordGetDeviceGroupPeerMemoryFeatures(
     VkDevice                                    device,
     uint32_t                                    heapIndex,
     uint32_t                                    localDeviceIndex,
     uint32_t                                    remoteDeviceIndex,
-    VkPeerMemoryFeatureFlags*                   pPeerMemoryFeatures);
-
+    VkPeerMemoryFeatureFlags*                   pPeerMemoryFeatures) {}
 
 virtual void PostCallRecordGetDeviceGroupPeerMemoryFeatures(
     VkDevice                                    device,
     uint32_t                                    heapIndex,
     uint32_t                                    localDeviceIndex,
     uint32_t                                    remoteDeviceIndex,
-    VkPeerMemoryFeatureFlags*                   pPeerMemoryFeatures);
-
+    VkPeerMemoryFeatureFlags*                   pPeerMemoryFeatures) {}
 
 virtual bool PreCallValidateCmdSetDeviceMask(
     VkCommandBuffer                             commandBuffer,
-    uint32_t                                    deviceMask) const;
-
+    uint32_t                                    deviceMask) const { return false; }
 
 virtual void PreCallRecordCmdSetDeviceMask(
     VkCommandBuffer                             commandBuffer,
-    uint32_t                                    deviceMask);
-
+    uint32_t                                    deviceMask) {}
 
 virtual void PostCallRecordCmdSetDeviceMask(
     VkCommandBuffer                             commandBuffer,
-    uint32_t                                    deviceMask);
-
+    uint32_t                                    deviceMask) {}
 
 virtual bool PreCallValidateCmdDispatchBase(
     VkCommandBuffer                             commandBuffer,
@@ -2996,8 +2573,7 @@ virtual bool PreCallValidateCmdDispatchBase(
     uint32_t                                    baseGroupZ,
     uint32_t                                    groupCountX,
     uint32_t                                    groupCountY,
-    uint32_t                                    groupCountZ) const;
-
+    uint32_t                                    groupCountZ) const { return false; }
 
 virtual void PreCallRecordCmdDispatchBase(
     VkCommandBuffer                             commandBuffer,
@@ -3006,8 +2582,7 @@ virtual void PreCallRecordCmdDispatchBase(
     uint32_t                                    baseGroupZ,
     uint32_t                                    groupCountX,
     uint32_t                                    groupCountY,
-    uint32_t                                    groupCountZ);
-
+    uint32_t                                    groupCountZ) {}
 
 virtual void PostCallRecordCmdDispatchBase(
     VkCommandBuffer                             commandBuffer,
@@ -3016,414 +2591,347 @@ virtual void PostCallRecordCmdDispatchBase(
     uint32_t                                    baseGroupZ,
     uint32_t                                    groupCountX,
     uint32_t                                    groupCountY,
-    uint32_t                                    groupCountZ);
-
+    uint32_t                                    groupCountZ) {}
 
 virtual bool PreCallValidateEnumeratePhysicalDeviceGroups(
     VkInstance                                  instance,
     uint32_t*                                   pPhysicalDeviceGroupCount,
-    VkPhysicalDeviceGroupProperties*            pPhysicalDeviceGroupProperties) const;
-
+    VkPhysicalDeviceGroupProperties*            pPhysicalDeviceGroupProperties) const { return false; }
 
 virtual void PreCallRecordEnumeratePhysicalDeviceGroups(
     VkInstance                                  instance,
     uint32_t*                                   pPhysicalDeviceGroupCount,
-    VkPhysicalDeviceGroupProperties*            pPhysicalDeviceGroupProperties);
-
+    VkPhysicalDeviceGroupProperties*            pPhysicalDeviceGroupProperties) {}
 
 virtual void PostCallRecordEnumeratePhysicalDeviceGroups(
     VkInstance                                  instance,
     uint32_t*                                   pPhysicalDeviceGroupCount,
     VkPhysicalDeviceGroupProperties*            pPhysicalDeviceGroupProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetImageMemoryRequirements2(
     VkDevice                                    device,
     const VkImageMemoryRequirementsInfo2*       pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements) const;
-
+    VkMemoryRequirements2*                      pMemoryRequirements) const { return false; }
 
 virtual void PreCallRecordGetImageMemoryRequirements2(
     VkDevice                                    device,
     const VkImageMemoryRequirementsInfo2*       pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements);
-
+    VkMemoryRequirements2*                      pMemoryRequirements) {}
 
 virtual void PostCallRecordGetImageMemoryRequirements2(
     VkDevice                                    device,
     const VkImageMemoryRequirementsInfo2*       pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements);
-
+    VkMemoryRequirements2*                      pMemoryRequirements) {}
 
 virtual bool PreCallValidateGetBufferMemoryRequirements2(
     VkDevice                                    device,
     const VkBufferMemoryRequirementsInfo2*      pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements) const;
-
+    VkMemoryRequirements2*                      pMemoryRequirements) const { return false; }
 
 virtual void PreCallRecordGetBufferMemoryRequirements2(
     VkDevice                                    device,
     const VkBufferMemoryRequirementsInfo2*      pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements);
-
+    VkMemoryRequirements2*                      pMemoryRequirements) {}
 
 virtual void PostCallRecordGetBufferMemoryRequirements2(
     VkDevice                                    device,
     const VkBufferMemoryRequirementsInfo2*      pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements);
-
+    VkMemoryRequirements2*                      pMemoryRequirements) {}
 
 virtual bool PreCallValidateGetImageSparseMemoryRequirements2(
     VkDevice                                    device,
     const VkImageSparseMemoryRequirementsInfo2* pInfo,
     uint32_t*                                   pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) const;
-
+    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) const { return false; }
 
 virtual void PreCallRecordGetImageSparseMemoryRequirements2(
     VkDevice                                    device,
     const VkImageSparseMemoryRequirementsInfo2* pInfo,
     uint32_t*                                   pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements);
-
+    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) {}
 
 virtual void PostCallRecordGetImageSparseMemoryRequirements2(
     VkDevice                                    device,
     const VkImageSparseMemoryRequirementsInfo2* pInfo,
     uint32_t*                                   pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements);
-
+    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceFeatures2(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceFeatures2*                  pFeatures) const;
-
+    VkPhysicalDeviceFeatures2*                  pFeatures) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceFeatures2(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceFeatures2*                  pFeatures);
-
+    VkPhysicalDeviceFeatures2*                  pFeatures) {}
 
 virtual void PostCallRecordGetPhysicalDeviceFeatures2(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceFeatures2*                  pFeatures);
-
+    VkPhysicalDeviceFeatures2*                  pFeatures) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceProperties2(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceProperties2*                pProperties) const;
-
+    VkPhysicalDeviceProperties2*                pProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceProperties2(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceProperties2*                pProperties);
-
+    VkPhysicalDeviceProperties2*                pProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceProperties2(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceProperties2*                pProperties);
-
+    VkPhysicalDeviceProperties2*                pProperties) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceFormatProperties2(
     VkPhysicalDevice                            physicalDevice,
     VkFormat                                    format,
-    VkFormatProperties2*                        pFormatProperties) const;
-
+    VkFormatProperties2*                        pFormatProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceFormatProperties2(
     VkPhysicalDevice                            physicalDevice,
     VkFormat                                    format,
-    VkFormatProperties2*                        pFormatProperties);
-
+    VkFormatProperties2*                        pFormatProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceFormatProperties2(
     VkPhysicalDevice                            physicalDevice,
     VkFormat                                    format,
-    VkFormatProperties2*                        pFormatProperties);
-
+    VkFormatProperties2*                        pFormatProperties) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceImageFormatProperties2(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceImageFormatInfo2*     pImageFormatInfo,
-    VkImageFormatProperties2*                   pImageFormatProperties) const;
-
+    VkImageFormatProperties2*                   pImageFormatProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceImageFormatProperties2(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceImageFormatInfo2*     pImageFormatInfo,
-    VkImageFormatProperties2*                   pImageFormatProperties);
-
+    VkImageFormatProperties2*                   pImageFormatProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceImageFormatProperties2(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceImageFormatInfo2*     pImageFormatInfo,
     VkImageFormatProperties2*                   pImageFormatProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pQueueFamilyPropertyCount,
-    VkQueueFamilyProperties2*                   pQueueFamilyProperties) const;
-
+    VkQueueFamilyProperties2*                   pQueueFamilyProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceQueueFamilyProperties2(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pQueueFamilyPropertyCount,
-    VkQueueFamilyProperties2*                   pQueueFamilyProperties);
-
+    VkQueueFamilyProperties2*                   pQueueFamilyProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pQueueFamilyPropertyCount,
-    VkQueueFamilyProperties2*                   pQueueFamilyProperties);
-
+    VkQueueFamilyProperties2*                   pQueueFamilyProperties) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceMemoryProperties2(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceMemoryProperties2*          pMemoryProperties) const;
-
+    VkPhysicalDeviceMemoryProperties2*          pMemoryProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceMemoryProperties2(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceMemoryProperties2*          pMemoryProperties);
-
+    VkPhysicalDeviceMemoryProperties2*          pMemoryProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceMemoryProperties2(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceMemoryProperties2*          pMemoryProperties);
-
+    VkPhysicalDeviceMemoryProperties2*          pMemoryProperties) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceSparseImageFormatProperties2(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo,
     uint32_t*                                   pPropertyCount,
-    VkSparseImageFormatProperties2*             pProperties) const;
-
+    VkSparseImageFormatProperties2*             pProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceSparseImageFormatProperties2(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo,
     uint32_t*                                   pPropertyCount,
-    VkSparseImageFormatProperties2*             pProperties);
-
+    VkSparseImageFormatProperties2*             pProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceSparseImageFormatProperties2(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo,
     uint32_t*                                   pPropertyCount,
-    VkSparseImageFormatProperties2*             pProperties);
-
+    VkSparseImageFormatProperties2*             pProperties) {}
 
 virtual bool PreCallValidateTrimCommandPool(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
-    VkCommandPoolTrimFlags                      flags) const;
-
+    VkCommandPoolTrimFlags                      flags) const { return false; }
 
 virtual void PreCallRecordTrimCommandPool(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
-    VkCommandPoolTrimFlags                      flags);
-
+    VkCommandPoolTrimFlags                      flags) {}
 
 virtual void PostCallRecordTrimCommandPool(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
-    VkCommandPoolTrimFlags                      flags);
-
+    VkCommandPoolTrimFlags                      flags) {}
 
 virtual bool PreCallValidateGetDeviceQueue2(
     VkDevice                                    device,
     const VkDeviceQueueInfo2*                   pQueueInfo,
-    VkQueue*                                    pQueue) const;
-
+    VkQueue*                                    pQueue) const { return false; }
 
 virtual void PreCallRecordGetDeviceQueue2(
     VkDevice                                    device,
     const VkDeviceQueueInfo2*                   pQueueInfo,
-    VkQueue*                                    pQueue);
-
+    VkQueue*                                    pQueue) {}
 
 virtual void PostCallRecordGetDeviceQueue2(
     VkDevice                                    device,
     const VkDeviceQueueInfo2*                   pQueueInfo,
-    VkQueue*                                    pQueue);
-
+    VkQueue*                                    pQueue) {}
 
 virtual bool PreCallValidateCreateSamplerYcbcrConversion(
     VkDevice                                    device,
     const VkSamplerYcbcrConversionCreateInfo*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSamplerYcbcrConversion*                   pYcbcrConversion) const;
-
+    VkSamplerYcbcrConversion*                   pYcbcrConversion) const { return false; }
 
 virtual void PreCallRecordCreateSamplerYcbcrConversion(
     VkDevice                                    device,
     const VkSamplerYcbcrConversionCreateInfo*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSamplerYcbcrConversion*                   pYcbcrConversion);
-
+    VkSamplerYcbcrConversion*                   pYcbcrConversion) {}
 
 virtual void PostCallRecordCreateSamplerYcbcrConversion(
     VkDevice                                    device,
     const VkSamplerYcbcrConversionCreateInfo*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSamplerYcbcrConversion*                   pYcbcrConversion,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroySamplerYcbcrConversion(
     VkDevice                                    device,
     VkSamplerYcbcrConversion                    ycbcrConversion,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroySamplerYcbcrConversion(
     VkDevice                                    device,
     VkSamplerYcbcrConversion                    ycbcrConversion,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroySamplerYcbcrConversion(
     VkDevice                                    device,
     VkSamplerYcbcrConversion                    ycbcrConversion,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateCreateDescriptorUpdateTemplate(
     VkDevice                                    device,
     const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate) const;
-
+    VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate) const { return false; }
 
 virtual void PreCallRecordCreateDescriptorUpdateTemplate(
     VkDevice                                    device,
     const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate);
-
+    VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate) {}
 
 virtual void PostCallRecordCreateDescriptorUpdateTemplate(
     VkDevice                                    device,
     const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyDescriptorUpdateTemplate(
     VkDevice                                    device,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyDescriptorUpdateTemplate(
     VkDevice                                    device,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyDescriptorUpdateTemplate(
     VkDevice                                    device,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateUpdateDescriptorSetWithTemplate(
     VkDevice                                    device,
     VkDescriptorSet                             descriptorSet,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
-    const void*                                 pData) const;
-
+    const void*                                 pData) const { return false; }
 
 virtual void PreCallRecordUpdateDescriptorSetWithTemplate(
     VkDevice                                    device,
     VkDescriptorSet                             descriptorSet,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
-    const void*                                 pData);
-
+    const void*                                 pData) {}
 
 virtual void PostCallRecordUpdateDescriptorSetWithTemplate(
     VkDevice                                    device,
     VkDescriptorSet                             descriptorSet,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
-    const void*                                 pData);
-
+    const void*                                 pData) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceExternalBufferProperties(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalBufferInfo*   pExternalBufferInfo,
-    VkExternalBufferProperties*                 pExternalBufferProperties) const;
-
+    VkExternalBufferProperties*                 pExternalBufferProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceExternalBufferProperties(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalBufferInfo*   pExternalBufferInfo,
-    VkExternalBufferProperties*                 pExternalBufferProperties);
-
+    VkExternalBufferProperties*                 pExternalBufferProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceExternalBufferProperties(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalBufferInfo*   pExternalBufferInfo,
-    VkExternalBufferProperties*                 pExternalBufferProperties);
-
+    VkExternalBufferProperties*                 pExternalBufferProperties) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceExternalFenceProperties(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalFenceInfo*    pExternalFenceInfo,
-    VkExternalFenceProperties*                  pExternalFenceProperties) const;
-
+    VkExternalFenceProperties*                  pExternalFenceProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceExternalFenceProperties(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalFenceInfo*    pExternalFenceInfo,
-    VkExternalFenceProperties*                  pExternalFenceProperties);
-
+    VkExternalFenceProperties*                  pExternalFenceProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceExternalFenceProperties(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalFenceInfo*    pExternalFenceInfo,
-    VkExternalFenceProperties*                  pExternalFenceProperties);
-
+    VkExternalFenceProperties*                  pExternalFenceProperties) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceExternalSemaphoreProperties(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
-    VkExternalSemaphoreProperties*              pExternalSemaphoreProperties) const;
-
+    VkExternalSemaphoreProperties*              pExternalSemaphoreProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceExternalSemaphoreProperties(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
-    VkExternalSemaphoreProperties*              pExternalSemaphoreProperties);
-
+    VkExternalSemaphoreProperties*              pExternalSemaphoreProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceExternalSemaphoreProperties(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
-    VkExternalSemaphoreProperties*              pExternalSemaphoreProperties);
-
+    VkExternalSemaphoreProperties*              pExternalSemaphoreProperties) {}
 
 virtual bool PreCallValidateGetDescriptorSetLayoutSupport(
     VkDevice                                    device,
     const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
-    VkDescriptorSetLayoutSupport*               pSupport) const;
-
+    VkDescriptorSetLayoutSupport*               pSupport) const { return false; }
 
 virtual void PreCallRecordGetDescriptorSetLayoutSupport(
     VkDevice                                    device,
     const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
-    VkDescriptorSetLayoutSupport*               pSupport);
-
+    VkDescriptorSetLayoutSupport*               pSupport) {}
 
 virtual void PostCallRecordGetDescriptorSetLayoutSupport(
     VkDevice                                    device,
     const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
-    VkDescriptorSetLayoutSupport*               pSupport);
-
+    VkDescriptorSetLayoutSupport*               pSupport) {}
 
 virtual bool PreCallValidateCmdDrawIndirectCount(
     VkCommandBuffer                             commandBuffer,
@@ -3432,8 +2940,7 @@ virtual bool PreCallValidateCmdDrawIndirectCount(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride) const;
-
+    uint32_t                                    stride) const { return false; }
 
 virtual void PreCallRecordCmdDrawIndirectCount(
     VkCommandBuffer                             commandBuffer,
@@ -3442,8 +2949,7 @@ virtual void PreCallRecordCmdDrawIndirectCount(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride);
-
+    uint32_t                                    stride) {}
 
 virtual void PostCallRecordCmdDrawIndirectCount(
     VkCommandBuffer                             commandBuffer,
@@ -3452,8 +2958,7 @@ virtual void PostCallRecordCmdDrawIndirectCount(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride);
-
+    uint32_t                                    stride) {}
 
 virtual bool PreCallValidateCmdDrawIndexedIndirectCount(
     VkCommandBuffer                             commandBuffer,
@@ -3462,8 +2967,7 @@ virtual bool PreCallValidateCmdDrawIndexedIndirectCount(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride) const;
-
+    uint32_t                                    stride) const { return false; }
 
 virtual void PreCallRecordCmdDrawIndexedIndirectCount(
     VkCommandBuffer                             commandBuffer,
@@ -3472,8 +2976,7 @@ virtual void PreCallRecordCmdDrawIndexedIndirectCount(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride);
-
+    uint32_t                                    stride) {}
 
 virtual void PostCallRecordCmdDrawIndexedIndirectCount(
     VkCommandBuffer                             commandBuffer,
@@ -3482,367 +2985,309 @@ virtual void PostCallRecordCmdDrawIndexedIndirectCount(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride);
-
+    uint32_t                                    stride) {}
 
 virtual bool PreCallValidateCreateRenderPass2(
     VkDevice                                    device,
     const VkRenderPassCreateInfo2*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkRenderPass*                               pRenderPass) const;
-
+    VkRenderPass*                               pRenderPass) const { return false; }
 
 virtual void PreCallRecordCreateRenderPass2(
     VkDevice                                    device,
     const VkRenderPassCreateInfo2*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkRenderPass*                               pRenderPass);
-
+    VkRenderPass*                               pRenderPass) {}
 
 virtual void PostCallRecordCreateRenderPass2(
     VkDevice                                    device,
     const VkRenderPassCreateInfo2*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkRenderPass*                               pRenderPass,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCmdBeginRenderPass2(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    const VkSubpassBeginInfo*                   pSubpassBeginInfo) const;
-
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo) const { return false; }
 
 virtual void PreCallRecordCmdBeginRenderPass2(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    const VkSubpassBeginInfo*                   pSubpassBeginInfo);
-
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo) {}
 
 virtual void PostCallRecordCmdBeginRenderPass2(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    const VkSubpassBeginInfo*                   pSubpassBeginInfo);
-
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo) {}
 
 virtual bool PreCallValidateCmdNextSubpass2(
     VkCommandBuffer                             commandBuffer,
     const VkSubpassBeginInfo*                   pSubpassBeginInfo,
-    const VkSubpassEndInfo*                     pSubpassEndInfo) const;
-
+    const VkSubpassEndInfo*                     pSubpassEndInfo) const { return false; }
 
 virtual void PreCallRecordCmdNextSubpass2(
     VkCommandBuffer                             commandBuffer,
     const VkSubpassBeginInfo*                   pSubpassBeginInfo,
-    const VkSubpassEndInfo*                     pSubpassEndInfo);
-
+    const VkSubpassEndInfo*                     pSubpassEndInfo) {}
 
 virtual void PostCallRecordCmdNextSubpass2(
     VkCommandBuffer                             commandBuffer,
     const VkSubpassBeginInfo*                   pSubpassBeginInfo,
-    const VkSubpassEndInfo*                     pSubpassEndInfo);
-
+    const VkSubpassEndInfo*                     pSubpassEndInfo) {}
 
 virtual bool PreCallValidateCmdEndRenderPass2(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassEndInfo*                     pSubpassEndInfo) const;
-
+    const VkSubpassEndInfo*                     pSubpassEndInfo) const { return false; }
 
 virtual void PreCallRecordCmdEndRenderPass2(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassEndInfo*                     pSubpassEndInfo);
-
+    const VkSubpassEndInfo*                     pSubpassEndInfo) {}
 
 virtual void PostCallRecordCmdEndRenderPass2(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassEndInfo*                     pSubpassEndInfo);
-
+    const VkSubpassEndInfo*                     pSubpassEndInfo) {}
 
 virtual bool PreCallValidateResetQueryPool(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
-    uint32_t                                    queryCount) const;
-
+    uint32_t                                    queryCount) const { return false; }
 
 virtual void PreCallRecordResetQueryPool(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
-    uint32_t                                    queryCount);
-
+    uint32_t                                    queryCount) {}
 
 virtual void PostCallRecordResetQueryPool(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
-    uint32_t                                    queryCount);
-
+    uint32_t                                    queryCount) {}
 
 virtual bool PreCallValidateGetSemaphoreCounterValue(
     VkDevice                                    device,
     VkSemaphore                                 semaphore,
-    uint64_t*                                   pValue) const;
-
+    uint64_t*                                   pValue) const { return false; }
 
 virtual void PreCallRecordGetSemaphoreCounterValue(
     VkDevice                                    device,
     VkSemaphore                                 semaphore,
-    uint64_t*                                   pValue);
-
+    uint64_t*                                   pValue) {}
 
 virtual void PostCallRecordGetSemaphoreCounterValue(
     VkDevice                                    device,
     VkSemaphore                                 semaphore,
     uint64_t*                                   pValue,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateWaitSemaphores(
     VkDevice                                    device,
     const VkSemaphoreWaitInfo*                  pWaitInfo,
-    uint64_t                                    timeout) const;
-
+    uint64_t                                    timeout) const { return false; }
 
 virtual void PreCallRecordWaitSemaphores(
     VkDevice                                    device,
     const VkSemaphoreWaitInfo*                  pWaitInfo,
-    uint64_t                                    timeout);
-
+    uint64_t                                    timeout) {}
 
 virtual void PostCallRecordWaitSemaphores(
     VkDevice                                    device,
     const VkSemaphoreWaitInfo*                  pWaitInfo,
     uint64_t                                    timeout,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateSignalSemaphore(
     VkDevice                                    device,
-    const VkSemaphoreSignalInfo*                pSignalInfo) const;
-
+    const VkSemaphoreSignalInfo*                pSignalInfo) const { return false; }
 
 virtual void PreCallRecordSignalSemaphore(
     VkDevice                                    device,
-    const VkSemaphoreSignalInfo*                pSignalInfo);
-
+    const VkSemaphoreSignalInfo*                pSignalInfo) {}
 
 virtual void PostCallRecordSignalSemaphore(
     VkDevice                                    device,
     const VkSemaphoreSignalInfo*                pSignalInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetBufferDeviceAddress(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfo*            pInfo) const;
-
+    const VkBufferDeviceAddressInfo*            pInfo) const { return false; }
 
 virtual void PreCallRecordGetBufferDeviceAddress(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfo*            pInfo);
-
+    const VkBufferDeviceAddressInfo*            pInfo) {}
 
 virtual void PostCallRecordGetBufferDeviceAddress(
     VkDevice                                    device,
     const VkBufferDeviceAddressInfo*            pInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetBufferOpaqueCaptureAddress(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfo*            pInfo) const;
-
+    const VkBufferDeviceAddressInfo*            pInfo) const { return false; }
 
 virtual void PreCallRecordGetBufferOpaqueCaptureAddress(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfo*            pInfo);
-
+    const VkBufferDeviceAddressInfo*            pInfo) {}
 
 virtual void PostCallRecordGetBufferOpaqueCaptureAddress(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfo*            pInfo);
-
+    const VkBufferDeviceAddressInfo*            pInfo) {}
 
 virtual bool PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(
     VkDevice                                    device,
-    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) const;
-
+    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) const { return false; }
 
 virtual void PreCallRecordGetDeviceMemoryOpaqueCaptureAddress(
     VkDevice                                    device,
-    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo);
-
+    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {}
 
 virtual void PostCallRecordGetDeviceMemoryOpaqueCaptureAddress(
     VkDevice                                    device,
-    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo);
-
+    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {}
 
 virtual bool PreCallValidateDestroySurfaceKHR(
     VkInstance                                  instance,
     VkSurfaceKHR                                surface,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroySurfaceKHR(
     VkInstance                                  instance,
     VkSurfaceKHR                                surface,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroySurfaceKHR(
     VkInstance                                  instance,
     VkSurfaceKHR                                surface,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceSurfaceSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     VkSurfaceKHR                                surface,
-    VkBool32*                                   pSupported) const;
-
+    VkBool32*                                   pSupported) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceSurfaceSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     VkSurfaceKHR                                surface,
-    VkBool32*                                   pSupported);
-
+    VkBool32*                                   pSupported) {}
 
 virtual void PostCallRecordGetPhysicalDeviceSurfaceSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     VkSurfaceKHR                                surface,
     VkBool32*                                   pSupported,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceSurfaceCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
-    VkSurfaceCapabilitiesKHR*                   pSurfaceCapabilities) const;
-
+    VkSurfaceCapabilitiesKHR*                   pSurfaceCapabilities) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
-    VkSurfaceCapabilitiesKHR*                   pSurfaceCapabilities);
-
+    VkSurfaceCapabilitiesKHR*                   pSurfaceCapabilities) {}
 
 virtual void PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     VkSurfaceCapabilitiesKHR*                   pSurfaceCapabilities,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pSurfaceFormatCount,
-    VkSurfaceFormatKHR*                         pSurfaceFormats) const;
-
+    VkSurfaceFormatKHR*                         pSurfaceFormats) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceSurfaceFormatsKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pSurfaceFormatCount,
-    VkSurfaceFormatKHR*                         pSurfaceFormats);
-
+    VkSurfaceFormatKHR*                         pSurfaceFormats) {}
 
 virtual void PostCallRecordGetPhysicalDeviceSurfaceFormatsKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pSurfaceFormatCount,
     VkSurfaceFormatKHR*                         pSurfaceFormats,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceSurfacePresentModesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pPresentModeCount,
-    VkPresentModeKHR*                           pPresentModes) const;
-
+    VkPresentModeKHR*                           pPresentModes) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceSurfacePresentModesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pPresentModeCount,
-    VkPresentModeKHR*                           pPresentModes);
-
+    VkPresentModeKHR*                           pPresentModes) {}
 
 virtual void PostCallRecordGetPhysicalDeviceSurfacePresentModesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pPresentModeCount,
     VkPresentModeKHR*                           pPresentModes,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCreateSwapchainKHR(
     VkDevice                                    device,
     const VkSwapchainCreateInfoKHR*             pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSwapchainKHR*                             pSwapchain) const;
-
+    VkSwapchainKHR*                             pSwapchain) const { return false; }
 
 virtual void PreCallRecordCreateSwapchainKHR(
     VkDevice                                    device,
     const VkSwapchainCreateInfoKHR*             pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSwapchainKHR*                             pSwapchain);
-
+    VkSwapchainKHR*                             pSwapchain) {}
 
 virtual void PostCallRecordCreateSwapchainKHR(
     VkDevice                                    device,
     const VkSwapchainCreateInfoKHR*             pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSwapchainKHR*                             pSwapchain,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroySwapchainKHR(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroySwapchainKHR(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroySwapchainKHR(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateGetSwapchainImagesKHR(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     uint32_t*                                   pSwapchainImageCount,
-    VkImage*                                    pSwapchainImages) const;
-
+    VkImage*                                    pSwapchainImages) const { return false; }
 
 virtual void PreCallRecordGetSwapchainImagesKHR(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     uint32_t*                                   pSwapchainImageCount,
-    VkImage*                                    pSwapchainImages);
-
+    VkImage*                                    pSwapchainImages) {}
 
 virtual void PostCallRecordGetSwapchainImagesKHR(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     uint32_t*                                   pSwapchainImageCount,
     VkImage*                                    pSwapchainImages,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateAcquireNextImageKHR(
     VkDevice                                    device,
@@ -3850,8 +3295,7 @@ virtual bool PreCallValidateAcquireNextImageKHR(
     uint64_t                                    timeout,
     VkSemaphore                                 semaphore,
     VkFence                                     fence,
-    uint32_t*                                   pImageIndex) const;
-
+    uint32_t*                                   pImageIndex) const { return false; }
 
 virtual void PreCallRecordAcquireNextImageKHR(
     VkDevice                                    device,
@@ -3859,8 +3303,7 @@ virtual void PreCallRecordAcquireNextImageKHR(
     uint64_t                                    timeout,
     VkSemaphore                                 semaphore,
     VkFence                                     fence,
-    uint32_t*                                   pImageIndex);
-
+    uint32_t*                                   pImageIndex) {}
 
 virtual void PostCallRecordAcquireNextImageKHR(
     VkDevice                                    device,
@@ -3869,198 +3312,168 @@ virtual void PostCallRecordAcquireNextImageKHR(
     VkSemaphore                                 semaphore,
     VkFence                                     fence,
     uint32_t*                                   pImageIndex,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateQueuePresentKHR(
     VkQueue                                     queue,
-    const VkPresentInfoKHR*                     pPresentInfo) const;
-
+    const VkPresentInfoKHR*                     pPresentInfo) const { return false; }
 
 virtual void PreCallRecordQueuePresentKHR(
     VkQueue                                     queue,
-    const VkPresentInfoKHR*                     pPresentInfo);
-
+    const VkPresentInfoKHR*                     pPresentInfo) {}
 
 virtual void PostCallRecordQueuePresentKHR(
     VkQueue                                     queue,
     const VkPresentInfoKHR*                     pPresentInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetDeviceGroupPresentCapabilitiesKHR(
     VkDevice                                    device,
-    VkDeviceGroupPresentCapabilitiesKHR*        pDeviceGroupPresentCapabilities) const;
-
+    VkDeviceGroupPresentCapabilitiesKHR*        pDeviceGroupPresentCapabilities) const { return false; }
 
 virtual void PreCallRecordGetDeviceGroupPresentCapabilitiesKHR(
     VkDevice                                    device,
-    VkDeviceGroupPresentCapabilitiesKHR*        pDeviceGroupPresentCapabilities);
-
+    VkDeviceGroupPresentCapabilitiesKHR*        pDeviceGroupPresentCapabilities) {}
 
 virtual void PostCallRecordGetDeviceGroupPresentCapabilitiesKHR(
     VkDevice                                    device,
     VkDeviceGroupPresentCapabilitiesKHR*        pDeviceGroupPresentCapabilities,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetDeviceGroupSurfacePresentModesKHR(
     VkDevice                                    device,
     VkSurfaceKHR                                surface,
-    VkDeviceGroupPresentModeFlagsKHR*           pModes) const;
-
+    VkDeviceGroupPresentModeFlagsKHR*           pModes) const { return false; }
 
 virtual void PreCallRecordGetDeviceGroupSurfacePresentModesKHR(
     VkDevice                                    device,
     VkSurfaceKHR                                surface,
-    VkDeviceGroupPresentModeFlagsKHR*           pModes);
-
+    VkDeviceGroupPresentModeFlagsKHR*           pModes) {}
 
 virtual void PostCallRecordGetDeviceGroupSurfacePresentModesKHR(
     VkDevice                                    device,
     VkSurfaceKHR                                surface,
     VkDeviceGroupPresentModeFlagsKHR*           pModes,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPhysicalDevicePresentRectanglesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pRectCount,
-    VkRect2D*                                   pRects) const;
-
+    VkRect2D*                                   pRects) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDevicePresentRectanglesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pRectCount,
-    VkRect2D*                                   pRects);
-
+    VkRect2D*                                   pRects) {}
 
 virtual void PostCallRecordGetPhysicalDevicePresentRectanglesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     uint32_t*                                   pRectCount,
     VkRect2D*                                   pRects,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateAcquireNextImage2KHR(
     VkDevice                                    device,
     const VkAcquireNextImageInfoKHR*            pAcquireInfo,
-    uint32_t*                                   pImageIndex) const;
-
+    uint32_t*                                   pImageIndex) const { return false; }
 
 virtual void PreCallRecordAcquireNextImage2KHR(
     VkDevice                                    device,
     const VkAcquireNextImageInfoKHR*            pAcquireInfo,
-    uint32_t*                                   pImageIndex);
-
+    uint32_t*                                   pImageIndex) {}
 
 virtual void PostCallRecordAcquireNextImage2KHR(
     VkDevice                                    device,
     const VkAcquireNextImageInfoKHR*            pAcquireInfo,
     uint32_t*                                   pImageIndex,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceDisplayPropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
-    VkDisplayPropertiesKHR*                     pProperties) const;
-
+    VkDisplayPropertiesKHR*                     pProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceDisplayPropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
-    VkDisplayPropertiesKHR*                     pProperties);
-
+    VkDisplayPropertiesKHR*                     pProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceDisplayPropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
     VkDisplayPropertiesKHR*                     pProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceDisplayPlanePropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
-    VkDisplayPlanePropertiesKHR*                pProperties) const;
-
+    VkDisplayPlanePropertiesKHR*                pProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
-    VkDisplayPlanePropertiesKHR*                pProperties);
-
+    VkDisplayPlanePropertiesKHR*                pProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceDisplayPlanePropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
     VkDisplayPlanePropertiesKHR*                pProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetDisplayPlaneSupportedDisplaysKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    planeIndex,
     uint32_t*                                   pDisplayCount,
-    VkDisplayKHR*                               pDisplays) const;
-
+    VkDisplayKHR*                               pDisplays) const { return false; }
 
 virtual void PreCallRecordGetDisplayPlaneSupportedDisplaysKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    planeIndex,
     uint32_t*                                   pDisplayCount,
-    VkDisplayKHR*                               pDisplays);
-
+    VkDisplayKHR*                               pDisplays) {}
 
 virtual void PostCallRecordGetDisplayPlaneSupportedDisplaysKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    planeIndex,
     uint32_t*                                   pDisplayCount,
     VkDisplayKHR*                               pDisplays,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetDisplayModePropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,
     uint32_t*                                   pPropertyCount,
-    VkDisplayModePropertiesKHR*                 pProperties) const;
-
+    VkDisplayModePropertiesKHR*                 pProperties) const { return false; }
 
 virtual void PreCallRecordGetDisplayModePropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,
     uint32_t*                                   pPropertyCount,
-    VkDisplayModePropertiesKHR*                 pProperties);
-
+    VkDisplayModePropertiesKHR*                 pProperties) {}
 
 virtual void PostCallRecordGetDisplayModePropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,
     uint32_t*                                   pPropertyCount,
     VkDisplayModePropertiesKHR*                 pProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCreateDisplayModeKHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,
     const VkDisplayModeCreateInfoKHR*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDisplayModeKHR*                           pMode) const;
-
+    VkDisplayModeKHR*                           pMode) const { return false; }
 
 virtual void PreCallRecordCreateDisplayModeKHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,
     const VkDisplayModeCreateInfoKHR*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDisplayModeKHR*                           pMode);
-
+    VkDisplayModeKHR*                           pMode) {}
 
 virtual void PostCallRecordCreateDisplayModeKHR(
     VkPhysicalDevice                            physicalDevice,
@@ -4068,68 +3481,59 @@ virtual void PostCallRecordCreateDisplayModeKHR(
     const VkDisplayModeCreateInfoKHR*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkDisplayModeKHR*                           pMode,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetDisplayPlaneCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayModeKHR                            mode,
     uint32_t                                    planeIndex,
-    VkDisplayPlaneCapabilitiesKHR*              pCapabilities) const;
-
+    VkDisplayPlaneCapabilitiesKHR*              pCapabilities) const { return false; }
 
 virtual void PreCallRecordGetDisplayPlaneCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayModeKHR                            mode,
     uint32_t                                    planeIndex,
-    VkDisplayPlaneCapabilitiesKHR*              pCapabilities);
-
+    VkDisplayPlaneCapabilitiesKHR*              pCapabilities) {}
 
 virtual void PostCallRecordGetDisplayPlaneCapabilitiesKHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayModeKHR                            mode,
     uint32_t                                    planeIndex,
     VkDisplayPlaneCapabilitiesKHR*              pCapabilities,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCreateDisplayPlaneSurfaceKHR(
     VkInstance                                  instance,
     const VkDisplaySurfaceCreateInfoKHR*        pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const;
-
+    VkSurfaceKHR*                               pSurface) const { return false; }
 
 virtual void PreCallRecordCreateDisplayPlaneSurfaceKHR(
     VkInstance                                  instance,
     const VkDisplaySurfaceCreateInfoKHR*        pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface);
-
+    VkSurfaceKHR*                               pSurface) {}
 
 virtual void PostCallRecordCreateDisplayPlaneSurfaceKHR(
     VkInstance                                  instance,
     const VkDisplaySurfaceCreateInfoKHR*        pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSurfaceKHR*                               pSurface,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCreateSharedSwapchainsKHR(
     VkDevice                                    device,
     uint32_t                                    swapchainCount,
     const VkSwapchainCreateInfoKHR*             pCreateInfos,
     const VkAllocationCallbacks*                pAllocator,
-    VkSwapchainKHR*                             pSwapchains) const;
-
+    VkSwapchainKHR*                             pSwapchains) const { return false; }
 
 virtual void PreCallRecordCreateSharedSwapchainsKHR(
     VkDevice                                    device,
     uint32_t                                    swapchainCount,
     const VkSwapchainCreateInfoKHR*             pCreateInfos,
     const VkAllocationCallbacks*                pAllocator,
-    VkSwapchainKHR*                             pSwapchains);
-
+    VkSwapchainKHR*                             pSwapchains) {}
 
 virtual void PostCallRecordCreateSharedSwapchainsKHR(
     VkDevice                                    device,
@@ -4137,8 +3541,7 @@ virtual void PostCallRecordCreateSharedSwapchainsKHR(
     const VkSwapchainCreateInfoKHR*             pCreateInfos,
     const VkAllocationCallbacks*                pAllocator,
     VkSwapchainKHR*                             pSwapchains,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
 
@@ -4146,23 +3549,20 @@ virtual bool PreCallValidateCreateXlibSurfaceKHR(
     VkInstance                                  instance,
     const VkXlibSurfaceCreateInfoKHR*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const;
-
+    VkSurfaceKHR*                               pSurface) const { return false; }
 
 virtual void PreCallRecordCreateXlibSurfaceKHR(
     VkInstance                                  instance,
     const VkXlibSurfaceCreateInfoKHR*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface);
-
+    VkSurfaceKHR*                               pSurface) {}
 
 virtual void PostCallRecordCreateXlibSurfaceKHR(
     VkInstance                                  instance,
     const VkXlibSurfaceCreateInfoKHR*           pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSurfaceKHR*                               pSurface,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_XLIB_KHR
 
@@ -4172,22 +3572,19 @@ virtual bool PreCallValidateGetPhysicalDeviceXlibPresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     Display*                                    dpy,
-    VisualID                                    visualID) const;
-
+    VisualID                                    visualID) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceXlibPresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     Display*                                    dpy,
-    VisualID                                    visualID);
-
+    VisualID                                    visualID) {}
 
 virtual void PostCallRecordGetPhysicalDeviceXlibPresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     Display*                                    dpy,
-    VisualID                                    visualID);
-
+    VisualID                                    visualID) {}
 
 #endif // VK_USE_PLATFORM_XLIB_KHR
 
@@ -4197,23 +3594,20 @@ virtual bool PreCallValidateCreateXcbSurfaceKHR(
     VkInstance                                  instance,
     const VkXcbSurfaceCreateInfoKHR*            pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const;
-
+    VkSurfaceKHR*                               pSurface) const { return false; }
 
 virtual void PreCallRecordCreateXcbSurfaceKHR(
     VkInstance                                  instance,
     const VkXcbSurfaceCreateInfoKHR*            pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface);
-
+    VkSurfaceKHR*                               pSurface) {}
 
 virtual void PostCallRecordCreateXcbSurfaceKHR(
     VkInstance                                  instance,
     const VkXcbSurfaceCreateInfoKHR*            pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSurfaceKHR*                               pSurface,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_XCB_KHR
 
@@ -4223,22 +3617,19 @@ virtual bool PreCallValidateGetPhysicalDeviceXcbPresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     xcb_connection_t*                           connection,
-    xcb_visualid_t                              visual_id) const;
-
+    xcb_visualid_t                              visual_id) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceXcbPresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     xcb_connection_t*                           connection,
-    xcb_visualid_t                              visual_id);
-
+    xcb_visualid_t                              visual_id) {}
 
 virtual void PostCallRecordGetPhysicalDeviceXcbPresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     xcb_connection_t*                           connection,
-    xcb_visualid_t                              visual_id);
-
+    xcb_visualid_t                              visual_id) {}
 
 #endif // VK_USE_PLATFORM_XCB_KHR
 
@@ -4248,23 +3639,20 @@ virtual bool PreCallValidateCreateWaylandSurfaceKHR(
     VkInstance                                  instance,
     const VkWaylandSurfaceCreateInfoKHR*        pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const;
-
+    VkSurfaceKHR*                               pSurface) const { return false; }
 
 virtual void PreCallRecordCreateWaylandSurfaceKHR(
     VkInstance                                  instance,
     const VkWaylandSurfaceCreateInfoKHR*        pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface);
-
+    VkSurfaceKHR*                               pSurface) {}
 
 virtual void PostCallRecordCreateWaylandSurfaceKHR(
     VkInstance                                  instance,
     const VkWaylandSurfaceCreateInfoKHR*        pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSurfaceKHR*                               pSurface,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_WAYLAND_KHR
 
@@ -4273,20 +3661,17 @@ virtual void PostCallRecordCreateWaylandSurfaceKHR(
 virtual bool PreCallValidateGetPhysicalDeviceWaylandPresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
-    struct wl_display*                          display) const;
-
+    struct wl_display*                          display) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceWaylandPresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
-    struct wl_display*                          display);
-
+    struct wl_display*                          display) {}
 
 virtual void PostCallRecordGetPhysicalDeviceWaylandPresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
-    struct wl_display*                          display);
-
+    struct wl_display*                          display) {}
 
 #endif // VK_USE_PLATFORM_WAYLAND_KHR
 
@@ -4296,23 +3681,20 @@ virtual bool PreCallValidateCreateAndroidSurfaceKHR(
     VkInstance                                  instance,
     const VkAndroidSurfaceCreateInfoKHR*        pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const;
-
+    VkSurfaceKHR*                               pSurface) const { return false; }
 
 virtual void PreCallRecordCreateAndroidSurfaceKHR(
     VkInstance                                  instance,
     const VkAndroidSurfaceCreateInfoKHR*        pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface);
-
+    VkSurfaceKHR*                               pSurface) {}
 
 virtual void PostCallRecordCreateAndroidSurfaceKHR(
     VkInstance                                  instance,
     const VkAndroidSurfaceCreateInfoKHR*        pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSurfaceKHR*                               pSurface,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 
@@ -4322,23 +3704,20 @@ virtual bool PreCallValidateCreateWin32SurfaceKHR(
     VkInstance                                  instance,
     const VkWin32SurfaceCreateInfoKHR*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const;
-
+    VkSurfaceKHR*                               pSurface) const { return false; }
 
 virtual void PreCallRecordCreateWin32SurfaceKHR(
     VkInstance                                  instance,
     const VkWin32SurfaceCreateInfoKHR*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface);
-
+    VkSurfaceKHR*                               pSurface) {}
 
 virtual void PostCallRecordCreateWin32SurfaceKHR(
     VkInstance                                  instance,
     const VkWin32SurfaceCreateInfoKHR*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSurfaceKHR*                               pSurface,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -4346,180 +3725,150 @@ virtual void PostCallRecordCreateWin32SurfaceKHR(
 
 virtual bool PreCallValidateGetPhysicalDeviceWin32PresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
-    uint32_t                                    queueFamilyIndex) const;
-
+    uint32_t                                    queueFamilyIndex) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceWin32PresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
-    uint32_t                                    queueFamilyIndex);
-
+    uint32_t                                    queueFamilyIndex) {}
 
 virtual void PostCallRecordGetPhysicalDeviceWin32PresentationSupportKHR(
     VkPhysicalDevice                            physicalDevice,
-    uint32_t                                    queueFamilyIndex);
-
+    uint32_t                                    queueFamilyIndex) {}
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
 virtual bool PreCallValidateGetPhysicalDeviceFeatures2KHR(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceFeatures2*                  pFeatures) const;
-
+    VkPhysicalDeviceFeatures2*                  pFeatures) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceFeatures2KHR(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceFeatures2*                  pFeatures);
-
+    VkPhysicalDeviceFeatures2*                  pFeatures) {}
 
 virtual void PostCallRecordGetPhysicalDeviceFeatures2KHR(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceFeatures2*                  pFeatures);
-
+    VkPhysicalDeviceFeatures2*                  pFeatures) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceProperties2*                pProperties) const;
-
+    VkPhysicalDeviceProperties2*                pProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceProperties2*                pProperties);
-
+    VkPhysicalDeviceProperties2*                pProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceProperties2*                pProperties);
-
+    VkPhysicalDeviceProperties2*                pProperties) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceFormatProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     VkFormat                                    format,
-    VkFormatProperties2*                        pFormatProperties) const;
-
+    VkFormatProperties2*                        pFormatProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceFormatProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     VkFormat                                    format,
-    VkFormatProperties2*                        pFormatProperties);
-
+    VkFormatProperties2*                        pFormatProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceFormatProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     VkFormat                                    format,
-    VkFormatProperties2*                        pFormatProperties);
-
+    VkFormatProperties2*                        pFormatProperties) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceImageFormatProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceImageFormatInfo2*     pImageFormatInfo,
-    VkImageFormatProperties2*                   pImageFormatProperties) const;
-
+    VkImageFormatProperties2*                   pImageFormatProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceImageFormatProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceImageFormatInfo2*     pImageFormatInfo,
-    VkImageFormatProperties2*                   pImageFormatProperties);
-
+    VkImageFormatProperties2*                   pImageFormatProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceImageFormatProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceImageFormatInfo2*     pImageFormatInfo,
     VkImageFormatProperties2*                   pImageFormatProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceQueueFamilyProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pQueueFamilyPropertyCount,
-    VkQueueFamilyProperties2*                   pQueueFamilyProperties) const;
-
+    VkQueueFamilyProperties2*                   pQueueFamilyProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pQueueFamilyPropertyCount,
-    VkQueueFamilyProperties2*                   pQueueFamilyProperties);
-
+    VkQueueFamilyProperties2*                   pQueueFamilyProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceQueueFamilyProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pQueueFamilyPropertyCount,
-    VkQueueFamilyProperties2*                   pQueueFamilyProperties);
-
+    VkQueueFamilyProperties2*                   pQueueFamilyProperties) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceMemoryProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceMemoryProperties2*          pMemoryProperties) const;
-
+    VkPhysicalDeviceMemoryProperties2*          pMemoryProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceMemoryProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceMemoryProperties2*          pMemoryProperties);
-
+    VkPhysicalDeviceMemoryProperties2*          pMemoryProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceMemoryProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceMemoryProperties2*          pMemoryProperties);
-
+    VkPhysicalDeviceMemoryProperties2*          pMemoryProperties) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceSparseImageFormatProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo,
     uint32_t*                                   pPropertyCount,
-    VkSparseImageFormatProperties2*             pProperties) const;
-
+    VkSparseImageFormatProperties2*             pProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceSparseImageFormatProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo,
     uint32_t*                                   pPropertyCount,
-    VkSparseImageFormatProperties2*             pProperties);
-
+    VkSparseImageFormatProperties2*             pProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceSparseImageFormatProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSparseImageFormatInfo2* pFormatInfo,
     uint32_t*                                   pPropertyCount,
-    VkSparseImageFormatProperties2*             pProperties);
-
+    VkSparseImageFormatProperties2*             pProperties) {}
 
 virtual bool PreCallValidateGetDeviceGroupPeerMemoryFeaturesKHR(
     VkDevice                                    device,
     uint32_t                                    heapIndex,
     uint32_t                                    localDeviceIndex,
     uint32_t                                    remoteDeviceIndex,
-    VkPeerMemoryFeatureFlags*                   pPeerMemoryFeatures) const;
-
+    VkPeerMemoryFeatureFlags*                   pPeerMemoryFeatures) const { return false; }
 
 virtual void PreCallRecordGetDeviceGroupPeerMemoryFeaturesKHR(
     VkDevice                                    device,
     uint32_t                                    heapIndex,
     uint32_t                                    localDeviceIndex,
     uint32_t                                    remoteDeviceIndex,
-    VkPeerMemoryFeatureFlags*                   pPeerMemoryFeatures);
-
+    VkPeerMemoryFeatureFlags*                   pPeerMemoryFeatures) {}
 
 virtual void PostCallRecordGetDeviceGroupPeerMemoryFeaturesKHR(
     VkDevice                                    device,
     uint32_t                                    heapIndex,
     uint32_t                                    localDeviceIndex,
     uint32_t                                    remoteDeviceIndex,
-    VkPeerMemoryFeatureFlags*                   pPeerMemoryFeatures);
-
+    VkPeerMemoryFeatureFlags*                   pPeerMemoryFeatures) {}
 
 virtual bool PreCallValidateCmdSetDeviceMaskKHR(
     VkCommandBuffer                             commandBuffer,
-    uint32_t                                    deviceMask) const;
-
+    uint32_t                                    deviceMask) const { return false; }
 
 virtual void PreCallRecordCmdSetDeviceMaskKHR(
     VkCommandBuffer                             commandBuffer,
-    uint32_t                                    deviceMask);
-
+    uint32_t                                    deviceMask) {}
 
 virtual void PostCallRecordCmdSetDeviceMaskKHR(
     VkCommandBuffer                             commandBuffer,
-    uint32_t                                    deviceMask);
-
+    uint32_t                                    deviceMask) {}
 
 virtual bool PreCallValidateCmdDispatchBaseKHR(
     VkCommandBuffer                             commandBuffer,
@@ -4528,8 +3877,7 @@ virtual bool PreCallValidateCmdDispatchBaseKHR(
     uint32_t                                    baseGroupZ,
     uint32_t                                    groupCountX,
     uint32_t                                    groupCountY,
-    uint32_t                                    groupCountZ) const;
-
+    uint32_t                                    groupCountZ) const { return false; }
 
 virtual void PreCallRecordCmdDispatchBaseKHR(
     VkCommandBuffer                             commandBuffer,
@@ -4538,8 +3886,7 @@ virtual void PreCallRecordCmdDispatchBaseKHR(
     uint32_t                                    baseGroupZ,
     uint32_t                                    groupCountX,
     uint32_t                                    groupCountY,
-    uint32_t                                    groupCountZ);
-
+    uint32_t                                    groupCountZ) {}
 
 virtual void PostCallRecordCmdDispatchBaseKHR(
     VkCommandBuffer                             commandBuffer,
@@ -4548,84 +3895,71 @@ virtual void PostCallRecordCmdDispatchBaseKHR(
     uint32_t                                    baseGroupZ,
     uint32_t                                    groupCountX,
     uint32_t                                    groupCountY,
-    uint32_t                                    groupCountZ);
-
+    uint32_t                                    groupCountZ) {}
 
 virtual bool PreCallValidateTrimCommandPoolKHR(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
-    VkCommandPoolTrimFlags                      flags) const;
-
+    VkCommandPoolTrimFlags                      flags) const { return false; }
 
 virtual void PreCallRecordTrimCommandPoolKHR(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
-    VkCommandPoolTrimFlags                      flags);
-
+    VkCommandPoolTrimFlags                      flags) {}
 
 virtual void PostCallRecordTrimCommandPoolKHR(
     VkDevice                                    device,
     VkCommandPool                               commandPool,
-    VkCommandPoolTrimFlags                      flags);
-
+    VkCommandPoolTrimFlags                      flags) {}
 
 virtual bool PreCallValidateEnumeratePhysicalDeviceGroupsKHR(
     VkInstance                                  instance,
     uint32_t*                                   pPhysicalDeviceGroupCount,
-    VkPhysicalDeviceGroupProperties*            pPhysicalDeviceGroupProperties) const;
-
+    VkPhysicalDeviceGroupProperties*            pPhysicalDeviceGroupProperties) const { return false; }
 
 virtual void PreCallRecordEnumeratePhysicalDeviceGroupsKHR(
     VkInstance                                  instance,
     uint32_t*                                   pPhysicalDeviceGroupCount,
-    VkPhysicalDeviceGroupProperties*            pPhysicalDeviceGroupProperties);
-
+    VkPhysicalDeviceGroupProperties*            pPhysicalDeviceGroupProperties) {}
 
 virtual void PostCallRecordEnumeratePhysicalDeviceGroupsKHR(
     VkInstance                                  instance,
     uint32_t*                                   pPhysicalDeviceGroupCount,
     VkPhysicalDeviceGroupProperties*            pPhysicalDeviceGroupProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceExternalBufferPropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalBufferInfo*   pExternalBufferInfo,
-    VkExternalBufferProperties*                 pExternalBufferProperties) const;
-
+    VkExternalBufferProperties*                 pExternalBufferProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceExternalBufferPropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalBufferInfo*   pExternalBufferInfo,
-    VkExternalBufferProperties*                 pExternalBufferProperties);
-
+    VkExternalBufferProperties*                 pExternalBufferProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceExternalBufferPropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalBufferInfo*   pExternalBufferInfo,
-    VkExternalBufferProperties*                 pExternalBufferProperties);
-
+    VkExternalBufferProperties*                 pExternalBufferProperties) {}
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 virtual bool PreCallValidateGetMemoryWin32HandleKHR(
     VkDevice                                    device,
     const VkMemoryGetWin32HandleInfoKHR*        pGetWin32HandleInfo,
-    HANDLE*                                     pHandle) const;
-
+    HANDLE*                                     pHandle) const { return false; }
 
 virtual void PreCallRecordGetMemoryWin32HandleKHR(
     VkDevice                                    device,
     const VkMemoryGetWin32HandleInfoKHR*        pGetWin32HandleInfo,
-    HANDLE*                                     pHandle);
-
+    HANDLE*                                     pHandle) {}
 
 virtual void PostCallRecordGetMemoryWin32HandleKHR(
     VkDevice                                    device,
     const VkMemoryGetWin32HandleInfoKHR*        pGetWin32HandleInfo,
     HANDLE*                                     pHandle,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -4635,102 +3969,87 @@ virtual bool PreCallValidateGetMemoryWin32HandlePropertiesKHR(
     VkDevice                                    device,
     VkExternalMemoryHandleTypeFlagBits          handleType,
     HANDLE                                      handle,
-    VkMemoryWin32HandlePropertiesKHR*           pMemoryWin32HandleProperties) const;
-
+    VkMemoryWin32HandlePropertiesKHR*           pMemoryWin32HandleProperties) const { return false; }
 
 virtual void PreCallRecordGetMemoryWin32HandlePropertiesKHR(
     VkDevice                                    device,
     VkExternalMemoryHandleTypeFlagBits          handleType,
     HANDLE                                      handle,
-    VkMemoryWin32HandlePropertiesKHR*           pMemoryWin32HandleProperties);
-
+    VkMemoryWin32HandlePropertiesKHR*           pMemoryWin32HandleProperties) {}
 
 virtual void PostCallRecordGetMemoryWin32HandlePropertiesKHR(
     VkDevice                                    device,
     VkExternalMemoryHandleTypeFlagBits          handleType,
     HANDLE                                      handle,
     VkMemoryWin32HandlePropertiesKHR*           pMemoryWin32HandleProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
 virtual bool PreCallValidateGetMemoryFdKHR(
     VkDevice                                    device,
     const VkMemoryGetFdInfoKHR*                 pGetFdInfo,
-    int*                                        pFd) const;
-
+    int*                                        pFd) const { return false; }
 
 virtual void PreCallRecordGetMemoryFdKHR(
     VkDevice                                    device,
     const VkMemoryGetFdInfoKHR*                 pGetFdInfo,
-    int*                                        pFd);
-
+    int*                                        pFd) {}
 
 virtual void PostCallRecordGetMemoryFdKHR(
     VkDevice                                    device,
     const VkMemoryGetFdInfoKHR*                 pGetFdInfo,
     int*                                        pFd,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetMemoryFdPropertiesKHR(
     VkDevice                                    device,
     VkExternalMemoryHandleTypeFlagBits          handleType,
     int                                         fd,
-    VkMemoryFdPropertiesKHR*                    pMemoryFdProperties) const;
-
+    VkMemoryFdPropertiesKHR*                    pMemoryFdProperties) const { return false; }
 
 virtual void PreCallRecordGetMemoryFdPropertiesKHR(
     VkDevice                                    device,
     VkExternalMemoryHandleTypeFlagBits          handleType,
     int                                         fd,
-    VkMemoryFdPropertiesKHR*                    pMemoryFdProperties);
-
+    VkMemoryFdPropertiesKHR*                    pMemoryFdProperties) {}
 
 virtual void PostCallRecordGetMemoryFdPropertiesKHR(
     VkDevice                                    device,
     VkExternalMemoryHandleTypeFlagBits          handleType,
     int                                         fd,
     VkMemoryFdPropertiesKHR*                    pMemoryFdProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceExternalSemaphorePropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
-    VkExternalSemaphoreProperties*              pExternalSemaphoreProperties) const;
-
+    VkExternalSemaphoreProperties*              pExternalSemaphoreProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceExternalSemaphorePropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
-    VkExternalSemaphoreProperties*              pExternalSemaphoreProperties);
-
+    VkExternalSemaphoreProperties*              pExternalSemaphoreProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceExternalSemaphorePropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
-    VkExternalSemaphoreProperties*              pExternalSemaphoreProperties);
-
+    VkExternalSemaphoreProperties*              pExternalSemaphoreProperties) {}
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 virtual bool PreCallValidateImportSemaphoreWin32HandleKHR(
     VkDevice                                    device,
-    const VkImportSemaphoreWin32HandleInfoKHR*  pImportSemaphoreWin32HandleInfo) const;
-
+    const VkImportSemaphoreWin32HandleInfoKHR*  pImportSemaphoreWin32HandleInfo) const { return false; }
 
 virtual void PreCallRecordImportSemaphoreWin32HandleKHR(
     VkDevice                                    device,
-    const VkImportSemaphoreWin32HandleInfoKHR*  pImportSemaphoreWin32HandleInfo);
-
+    const VkImportSemaphoreWin32HandleInfoKHR*  pImportSemaphoreWin32HandleInfo) {}
 
 virtual void PostCallRecordImportSemaphoreWin32HandleKHR(
     VkDevice                                    device,
     const VkImportSemaphoreWin32HandleInfoKHR*  pImportSemaphoreWin32HandleInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -4739,58 +4058,49 @@ virtual void PostCallRecordImportSemaphoreWin32HandleKHR(
 virtual bool PreCallValidateGetSemaphoreWin32HandleKHR(
     VkDevice                                    device,
     const VkSemaphoreGetWin32HandleInfoKHR*     pGetWin32HandleInfo,
-    HANDLE*                                     pHandle) const;
-
+    HANDLE*                                     pHandle) const { return false; }
 
 virtual void PreCallRecordGetSemaphoreWin32HandleKHR(
     VkDevice                                    device,
     const VkSemaphoreGetWin32HandleInfoKHR*     pGetWin32HandleInfo,
-    HANDLE*                                     pHandle);
-
+    HANDLE*                                     pHandle) {}
 
 virtual void PostCallRecordGetSemaphoreWin32HandleKHR(
     VkDevice                                    device,
     const VkSemaphoreGetWin32HandleInfoKHR*     pGetWin32HandleInfo,
     HANDLE*                                     pHandle,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
 virtual bool PreCallValidateImportSemaphoreFdKHR(
     VkDevice                                    device,
-    const VkImportSemaphoreFdInfoKHR*           pImportSemaphoreFdInfo) const;
-
+    const VkImportSemaphoreFdInfoKHR*           pImportSemaphoreFdInfo) const { return false; }
 
 virtual void PreCallRecordImportSemaphoreFdKHR(
     VkDevice                                    device,
-    const VkImportSemaphoreFdInfoKHR*           pImportSemaphoreFdInfo);
-
+    const VkImportSemaphoreFdInfoKHR*           pImportSemaphoreFdInfo) {}
 
 virtual void PostCallRecordImportSemaphoreFdKHR(
     VkDevice                                    device,
     const VkImportSemaphoreFdInfoKHR*           pImportSemaphoreFdInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetSemaphoreFdKHR(
     VkDevice                                    device,
     const VkSemaphoreGetFdInfoKHR*              pGetFdInfo,
-    int*                                        pFd) const;
-
+    int*                                        pFd) const { return false; }
 
 virtual void PreCallRecordGetSemaphoreFdKHR(
     VkDevice                                    device,
     const VkSemaphoreGetFdInfoKHR*              pGetFdInfo,
-    int*                                        pFd);
-
+    int*                                        pFd) {}
 
 virtual void PostCallRecordGetSemaphoreFdKHR(
     VkDevice                                    device,
     const VkSemaphoreGetFdInfoKHR*              pGetFdInfo,
     int*                                        pFd,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCmdPushDescriptorSetKHR(
     VkCommandBuffer                             commandBuffer,
@@ -4798,8 +4108,7 @@ virtual bool PreCallValidateCmdPushDescriptorSetKHR(
     VkPipelineLayout                            layout,
     uint32_t                                    set,
     uint32_t                                    descriptorWriteCount,
-    const VkWriteDescriptorSet*                 pDescriptorWrites) const;
-
+    const VkWriteDescriptorSet*                 pDescriptorWrites) const { return false; }
 
 virtual void PreCallRecordCmdPushDescriptorSetKHR(
     VkCommandBuffer                             commandBuffer,
@@ -4807,8 +4116,7 @@ virtual void PreCallRecordCmdPushDescriptorSetKHR(
     VkPipelineLayout                            layout,
     uint32_t                                    set,
     uint32_t                                    descriptorWriteCount,
-    const VkWriteDescriptorSet*                 pDescriptorWrites);
-
+    const VkWriteDescriptorSet*                 pDescriptorWrites) {}
 
 virtual void PostCallRecordCmdPushDescriptorSetKHR(
     VkCommandBuffer                             commandBuffer,
@@ -4816,218 +4124,184 @@ virtual void PostCallRecordCmdPushDescriptorSetKHR(
     VkPipelineLayout                            layout,
     uint32_t                                    set,
     uint32_t                                    descriptorWriteCount,
-    const VkWriteDescriptorSet*                 pDescriptorWrites);
-
+    const VkWriteDescriptorSet*                 pDescriptorWrites) {}
 
 virtual bool PreCallValidateCmdPushDescriptorSetWithTemplateKHR(
     VkCommandBuffer                             commandBuffer,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
     VkPipelineLayout                            layout,
     uint32_t                                    set,
-    const void*                                 pData) const;
-
+    const void*                                 pData) const { return false; }
 
 virtual void PreCallRecordCmdPushDescriptorSetWithTemplateKHR(
     VkCommandBuffer                             commandBuffer,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
     VkPipelineLayout                            layout,
     uint32_t                                    set,
-    const void*                                 pData);
-
+    const void*                                 pData) {}
 
 virtual void PostCallRecordCmdPushDescriptorSetWithTemplateKHR(
     VkCommandBuffer                             commandBuffer,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
     VkPipelineLayout                            layout,
     uint32_t                                    set,
-    const void*                                 pData);
-
+    const void*                                 pData) {}
 
 virtual bool PreCallValidateCreateDescriptorUpdateTemplateKHR(
     VkDevice                                    device,
     const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate) const;
-
+    VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate) const { return false; }
 
 virtual void PreCallRecordCreateDescriptorUpdateTemplateKHR(
     VkDevice                                    device,
     const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate);
-
+    VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate) {}
 
 virtual void PostCallRecordCreateDescriptorUpdateTemplateKHR(
     VkDevice                                    device,
     const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkDescriptorUpdateTemplate*                 pDescriptorUpdateTemplate,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyDescriptorUpdateTemplateKHR(
     VkDevice                                    device,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyDescriptorUpdateTemplateKHR(
     VkDevice                                    device,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyDescriptorUpdateTemplateKHR(
     VkDevice                                    device,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateUpdateDescriptorSetWithTemplateKHR(
     VkDevice                                    device,
     VkDescriptorSet                             descriptorSet,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
-    const void*                                 pData) const;
-
+    const void*                                 pData) const { return false; }
 
 virtual void PreCallRecordUpdateDescriptorSetWithTemplateKHR(
     VkDevice                                    device,
     VkDescriptorSet                             descriptorSet,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
-    const void*                                 pData);
-
+    const void*                                 pData) {}
 
 virtual void PostCallRecordUpdateDescriptorSetWithTemplateKHR(
     VkDevice                                    device,
     VkDescriptorSet                             descriptorSet,
     VkDescriptorUpdateTemplate                  descriptorUpdateTemplate,
-    const void*                                 pData);
-
+    const void*                                 pData) {}
 
 virtual bool PreCallValidateCreateRenderPass2KHR(
     VkDevice                                    device,
     const VkRenderPassCreateInfo2*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkRenderPass*                               pRenderPass) const;
-
+    VkRenderPass*                               pRenderPass) const { return false; }
 
 virtual void PreCallRecordCreateRenderPass2KHR(
     VkDevice                                    device,
     const VkRenderPassCreateInfo2*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkRenderPass*                               pRenderPass);
-
+    VkRenderPass*                               pRenderPass) {}
 
 virtual void PostCallRecordCreateRenderPass2KHR(
     VkDevice                                    device,
     const VkRenderPassCreateInfo2*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkRenderPass*                               pRenderPass,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCmdBeginRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    const VkSubpassBeginInfo*                   pSubpassBeginInfo) const;
-
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo) const { return false; }
 
 virtual void PreCallRecordCmdBeginRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    const VkSubpassBeginInfo*                   pSubpassBeginInfo);
-
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo) {}
 
 virtual void PostCallRecordCmdBeginRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkRenderPassBeginInfo*                pRenderPassBegin,
-    const VkSubpassBeginInfo*                   pSubpassBeginInfo);
-
+    const VkSubpassBeginInfo*                   pSubpassBeginInfo) {}
 
 virtual bool PreCallValidateCmdNextSubpass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkSubpassBeginInfo*                   pSubpassBeginInfo,
-    const VkSubpassEndInfo*                     pSubpassEndInfo) const;
-
+    const VkSubpassEndInfo*                     pSubpassEndInfo) const { return false; }
 
 virtual void PreCallRecordCmdNextSubpass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkSubpassBeginInfo*                   pSubpassBeginInfo,
-    const VkSubpassEndInfo*                     pSubpassEndInfo);
-
+    const VkSubpassEndInfo*                     pSubpassEndInfo) {}
 
 virtual void PostCallRecordCmdNextSubpass2KHR(
     VkCommandBuffer                             commandBuffer,
     const VkSubpassBeginInfo*                   pSubpassBeginInfo,
-    const VkSubpassEndInfo*                     pSubpassEndInfo);
-
+    const VkSubpassEndInfo*                     pSubpassEndInfo) {}
 
 virtual bool PreCallValidateCmdEndRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassEndInfo*                     pSubpassEndInfo) const;
-
+    const VkSubpassEndInfo*                     pSubpassEndInfo) const { return false; }
 
 virtual void PreCallRecordCmdEndRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassEndInfo*                     pSubpassEndInfo);
-
+    const VkSubpassEndInfo*                     pSubpassEndInfo) {}
 
 virtual void PostCallRecordCmdEndRenderPass2KHR(
     VkCommandBuffer                             commandBuffer,
-    const VkSubpassEndInfo*                     pSubpassEndInfo);
-
+    const VkSubpassEndInfo*                     pSubpassEndInfo) {}
 
 virtual bool PreCallValidateGetSwapchainStatusKHR(
     VkDevice                                    device,
-    VkSwapchainKHR                              swapchain) const;
-
+    VkSwapchainKHR                              swapchain) const { return false; }
 
 virtual void PreCallRecordGetSwapchainStatusKHR(
     VkDevice                                    device,
-    VkSwapchainKHR                              swapchain);
-
+    VkSwapchainKHR                              swapchain) {}
 
 virtual void PostCallRecordGetSwapchainStatusKHR(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceExternalFencePropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalFenceInfo*    pExternalFenceInfo,
-    VkExternalFenceProperties*                  pExternalFenceProperties) const;
-
+    VkExternalFenceProperties*                  pExternalFenceProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceExternalFencePropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalFenceInfo*    pExternalFenceInfo,
-    VkExternalFenceProperties*                  pExternalFenceProperties);
-
+    VkExternalFenceProperties*                  pExternalFenceProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceExternalFencePropertiesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceExternalFenceInfo*    pExternalFenceInfo,
-    VkExternalFenceProperties*                  pExternalFenceProperties);
-
+    VkExternalFenceProperties*                  pExternalFenceProperties) {}
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
 virtual bool PreCallValidateImportFenceWin32HandleKHR(
     VkDevice                                    device,
-    const VkImportFenceWin32HandleInfoKHR*      pImportFenceWin32HandleInfo) const;
-
+    const VkImportFenceWin32HandleInfoKHR*      pImportFenceWin32HandleInfo) const { return false; }
 
 virtual void PreCallRecordImportFenceWin32HandleKHR(
     VkDevice                                    device,
-    const VkImportFenceWin32HandleInfoKHR*      pImportFenceWin32HandleInfo);
-
+    const VkImportFenceWin32HandleInfoKHR*      pImportFenceWin32HandleInfo) {}
 
 virtual void PostCallRecordImportFenceWin32HandleKHR(
     VkDevice                                    device,
     const VkImportFenceWin32HandleInfoKHR*      pImportFenceWin32HandleInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -5036,74 +4310,63 @@ virtual void PostCallRecordImportFenceWin32HandleKHR(
 virtual bool PreCallValidateGetFenceWin32HandleKHR(
     VkDevice                                    device,
     const VkFenceGetWin32HandleInfoKHR*         pGetWin32HandleInfo,
-    HANDLE*                                     pHandle) const;
-
+    HANDLE*                                     pHandle) const { return false; }
 
 virtual void PreCallRecordGetFenceWin32HandleKHR(
     VkDevice                                    device,
     const VkFenceGetWin32HandleInfoKHR*         pGetWin32HandleInfo,
-    HANDLE*                                     pHandle);
-
+    HANDLE*                                     pHandle) {}
 
 virtual void PostCallRecordGetFenceWin32HandleKHR(
     VkDevice                                    device,
     const VkFenceGetWin32HandleInfoKHR*         pGetWin32HandleInfo,
     HANDLE*                                     pHandle,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
 virtual bool PreCallValidateImportFenceFdKHR(
     VkDevice                                    device,
-    const VkImportFenceFdInfoKHR*               pImportFenceFdInfo) const;
-
+    const VkImportFenceFdInfoKHR*               pImportFenceFdInfo) const { return false; }
 
 virtual void PreCallRecordImportFenceFdKHR(
     VkDevice                                    device,
-    const VkImportFenceFdInfoKHR*               pImportFenceFdInfo);
-
+    const VkImportFenceFdInfoKHR*               pImportFenceFdInfo) {}
 
 virtual void PostCallRecordImportFenceFdKHR(
     VkDevice                                    device,
     const VkImportFenceFdInfoKHR*               pImportFenceFdInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetFenceFdKHR(
     VkDevice                                    device,
     const VkFenceGetFdInfoKHR*                  pGetFdInfo,
-    int*                                        pFd) const;
-
+    int*                                        pFd) const { return false; }
 
 virtual void PreCallRecordGetFenceFdKHR(
     VkDevice                                    device,
     const VkFenceGetFdInfoKHR*                  pGetFdInfo,
-    int*                                        pFd);
-
+    int*                                        pFd) {}
 
 virtual void PostCallRecordGetFenceFdKHR(
     VkDevice                                    device,
     const VkFenceGetFdInfoKHR*                  pGetFdInfo,
     int*                                        pFd,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     uint32_t*                                   pCounterCount,
     VkPerformanceCounterKHR*                    pCounters,
-    VkPerformanceCounterDescriptionKHR*         pCounterDescriptions) const;
-
+    VkPerformanceCounterDescriptionKHR*         pCounterDescriptions) const { return false; }
 
 virtual void PreCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t                                    queueFamilyIndex,
     uint32_t*                                   pCounterCount,
     VkPerformanceCounterKHR*                    pCounters,
-    VkPerformanceCounterDescriptionKHR*         pCounterDescriptions);
-
+    VkPerformanceCounterDescriptionKHR*         pCounterDescriptions) {}
 
 virtual void PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR(
     VkPhysicalDevice                            physicalDevice,
@@ -5111,327 +4374,275 @@ virtual void PostCallRecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCou
     uint32_t*                                   pCounterCount,
     VkPerformanceCounterKHR*                    pCounters,
     VkPerformanceCounterDescriptionKHR*         pCounterDescriptions,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkQueryPoolPerformanceCreateInfoKHR*  pPerformanceQueryCreateInfo,
-    uint32_t*                                   pNumPasses) const;
-
+    uint32_t*                                   pNumPasses) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkQueryPoolPerformanceCreateInfoKHR*  pPerformanceQueryCreateInfo,
-    uint32_t*                                   pNumPasses);
-
+    uint32_t*                                   pNumPasses) {}
 
 virtual void PostCallRecordGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR(
     VkPhysicalDevice                            physicalDevice,
     const VkQueryPoolPerformanceCreateInfoKHR*  pPerformanceQueryCreateInfo,
-    uint32_t*                                   pNumPasses);
-
+    uint32_t*                                   pNumPasses) {}
 
 virtual bool PreCallValidateAcquireProfilingLockKHR(
     VkDevice                                    device,
-    const VkAcquireProfilingLockInfoKHR*        pInfo) const;
-
+    const VkAcquireProfilingLockInfoKHR*        pInfo) const { return false; }
 
 virtual void PreCallRecordAcquireProfilingLockKHR(
     VkDevice                                    device,
-    const VkAcquireProfilingLockInfoKHR*        pInfo);
-
+    const VkAcquireProfilingLockInfoKHR*        pInfo) {}
 
 virtual void PostCallRecordAcquireProfilingLockKHR(
     VkDevice                                    device,
     const VkAcquireProfilingLockInfoKHR*        pInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateReleaseProfilingLockKHR(
-    VkDevice                                    device) const;
-
+    VkDevice                                    device) const { return false; }
 
 virtual void PreCallRecordReleaseProfilingLockKHR(
-    VkDevice                                    device);
-
+    VkDevice                                    device) {}
 
 virtual void PostCallRecordReleaseProfilingLockKHR(
-    VkDevice                                    device);
-
+    VkDevice                                    device) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
-    VkSurfaceCapabilities2KHR*                  pSurfaceCapabilities) const;
-
+    VkSurfaceCapabilities2KHR*                  pSurfaceCapabilities) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
-    VkSurfaceCapabilities2KHR*                  pSurfaceCapabilities);
-
+    VkSurfaceCapabilities2KHR*                  pSurfaceCapabilities) {}
 
 virtual void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
     VkSurfaceCapabilities2KHR*                  pSurfaceCapabilities,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceSurfaceFormats2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
     uint32_t*                                   pSurfaceFormatCount,
-    VkSurfaceFormat2KHR*                        pSurfaceFormats) const;
-
+    VkSurfaceFormat2KHR*                        pSurfaceFormats) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceSurfaceFormats2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
     uint32_t*                                   pSurfaceFormatCount,
-    VkSurfaceFormat2KHR*                        pSurfaceFormats);
-
+    VkSurfaceFormat2KHR*                        pSurfaceFormats) {}
 
 virtual void PostCallRecordGetPhysicalDeviceSurfaceFormats2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
     uint32_t*                                   pSurfaceFormatCount,
     VkSurfaceFormat2KHR*                        pSurfaceFormats,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceDisplayProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
-    VkDisplayProperties2KHR*                    pProperties) const;
-
+    VkDisplayProperties2KHR*                    pProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceDisplayProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
-    VkDisplayProperties2KHR*                    pProperties);
-
+    VkDisplayProperties2KHR*                    pProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceDisplayProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
     VkDisplayProperties2KHR*                    pProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceDisplayPlaneProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
-    VkDisplayPlaneProperties2KHR*               pProperties) const;
-
+    VkDisplayPlaneProperties2KHR*               pProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
-    VkDisplayPlaneProperties2KHR*               pProperties);
-
+    VkDisplayPlaneProperties2KHR*               pProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
     VkDisplayPlaneProperties2KHR*               pProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetDisplayModeProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,
     uint32_t*                                   pPropertyCount,
-    VkDisplayModeProperties2KHR*                pProperties) const;
-
+    VkDisplayModeProperties2KHR*                pProperties) const { return false; }
 
 virtual void PreCallRecordGetDisplayModeProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,
     uint32_t*                                   pPropertyCount,
-    VkDisplayModeProperties2KHR*                pProperties);
-
+    VkDisplayModeProperties2KHR*                pProperties) {}
 
 virtual void PostCallRecordGetDisplayModeProperties2KHR(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,
     uint32_t*                                   pPropertyCount,
     VkDisplayModeProperties2KHR*                pProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetDisplayPlaneCapabilities2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkDisplayPlaneInfo2KHR*               pDisplayPlaneInfo,
-    VkDisplayPlaneCapabilities2KHR*             pCapabilities) const;
-
+    VkDisplayPlaneCapabilities2KHR*             pCapabilities) const { return false; }
 
 virtual void PreCallRecordGetDisplayPlaneCapabilities2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkDisplayPlaneInfo2KHR*               pDisplayPlaneInfo,
-    VkDisplayPlaneCapabilities2KHR*             pCapabilities);
-
+    VkDisplayPlaneCapabilities2KHR*             pCapabilities) {}
 
 virtual void PostCallRecordGetDisplayPlaneCapabilities2KHR(
     VkPhysicalDevice                            physicalDevice,
     const VkDisplayPlaneInfo2KHR*               pDisplayPlaneInfo,
     VkDisplayPlaneCapabilities2KHR*             pCapabilities,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetImageMemoryRequirements2KHR(
     VkDevice                                    device,
     const VkImageMemoryRequirementsInfo2*       pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements) const;
-
+    VkMemoryRequirements2*                      pMemoryRequirements) const { return false; }
 
 virtual void PreCallRecordGetImageMemoryRequirements2KHR(
     VkDevice                                    device,
     const VkImageMemoryRequirementsInfo2*       pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements);
-
+    VkMemoryRequirements2*                      pMemoryRequirements) {}
 
 virtual void PostCallRecordGetImageMemoryRequirements2KHR(
     VkDevice                                    device,
     const VkImageMemoryRequirementsInfo2*       pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements);
-
+    VkMemoryRequirements2*                      pMemoryRequirements) {}
 
 virtual bool PreCallValidateGetBufferMemoryRequirements2KHR(
     VkDevice                                    device,
     const VkBufferMemoryRequirementsInfo2*      pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements) const;
-
+    VkMemoryRequirements2*                      pMemoryRequirements) const { return false; }
 
 virtual void PreCallRecordGetBufferMemoryRequirements2KHR(
     VkDevice                                    device,
     const VkBufferMemoryRequirementsInfo2*      pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements);
-
+    VkMemoryRequirements2*                      pMemoryRequirements) {}
 
 virtual void PostCallRecordGetBufferMemoryRequirements2KHR(
     VkDevice                                    device,
     const VkBufferMemoryRequirementsInfo2*      pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements);
-
+    VkMemoryRequirements2*                      pMemoryRequirements) {}
 
 virtual bool PreCallValidateGetImageSparseMemoryRequirements2KHR(
     VkDevice                                    device,
     const VkImageSparseMemoryRequirementsInfo2* pInfo,
     uint32_t*                                   pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) const;
-
+    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) const { return false; }
 
 virtual void PreCallRecordGetImageSparseMemoryRequirements2KHR(
     VkDevice                                    device,
     const VkImageSparseMemoryRequirementsInfo2* pInfo,
     uint32_t*                                   pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements);
-
+    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) {}
 
 virtual void PostCallRecordGetImageSparseMemoryRequirements2KHR(
     VkDevice                                    device,
     const VkImageSparseMemoryRequirementsInfo2* pInfo,
     uint32_t*                                   pSparseMemoryRequirementCount,
-    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements);
-
+    VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements) {}
 
 virtual bool PreCallValidateCreateSamplerYcbcrConversionKHR(
     VkDevice                                    device,
     const VkSamplerYcbcrConversionCreateInfo*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSamplerYcbcrConversion*                   pYcbcrConversion) const;
-
+    VkSamplerYcbcrConversion*                   pYcbcrConversion) const { return false; }
 
 virtual void PreCallRecordCreateSamplerYcbcrConversionKHR(
     VkDevice                                    device,
     const VkSamplerYcbcrConversionCreateInfo*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSamplerYcbcrConversion*                   pYcbcrConversion);
-
+    VkSamplerYcbcrConversion*                   pYcbcrConversion) {}
 
 virtual void PostCallRecordCreateSamplerYcbcrConversionKHR(
     VkDevice                                    device,
     const VkSamplerYcbcrConversionCreateInfo*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSamplerYcbcrConversion*                   pYcbcrConversion,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroySamplerYcbcrConversionKHR(
     VkDevice                                    device,
     VkSamplerYcbcrConversion                    ycbcrConversion,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroySamplerYcbcrConversionKHR(
     VkDevice                                    device,
     VkSamplerYcbcrConversion                    ycbcrConversion,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroySamplerYcbcrConversionKHR(
     VkDevice                                    device,
     VkSamplerYcbcrConversion                    ycbcrConversion,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateBindBufferMemory2KHR(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindBufferMemoryInfo*               pBindInfos) const;
-
+    const VkBindBufferMemoryInfo*               pBindInfos) const { return false; }
 
 virtual void PreCallRecordBindBufferMemory2KHR(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindBufferMemoryInfo*               pBindInfos);
-
+    const VkBindBufferMemoryInfo*               pBindInfos) {}
 
 virtual void PostCallRecordBindBufferMemory2KHR(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
     const VkBindBufferMemoryInfo*               pBindInfos,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateBindImageMemory2KHR(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindImageMemoryInfo*                pBindInfos) const;
-
+    const VkBindImageMemoryInfo*                pBindInfos) const { return false; }
 
 virtual void PreCallRecordBindImageMemory2KHR(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindImageMemoryInfo*                pBindInfos);
-
+    const VkBindImageMemoryInfo*                pBindInfos) {}
 
 virtual void PostCallRecordBindImageMemory2KHR(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
     const VkBindImageMemoryInfo*                pBindInfos,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetDescriptorSetLayoutSupportKHR(
     VkDevice                                    device,
     const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
-    VkDescriptorSetLayoutSupport*               pSupport) const;
-
+    VkDescriptorSetLayoutSupport*               pSupport) const { return false; }
 
 virtual void PreCallRecordGetDescriptorSetLayoutSupportKHR(
     VkDevice                                    device,
     const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
-    VkDescriptorSetLayoutSupport*               pSupport);
-
+    VkDescriptorSetLayoutSupport*               pSupport) {}
 
 virtual void PostCallRecordGetDescriptorSetLayoutSupportKHR(
     VkDevice                                    device,
     const VkDescriptorSetLayoutCreateInfo*      pCreateInfo,
-    VkDescriptorSetLayoutSupport*               pSupport);
-
+    VkDescriptorSetLayoutSupport*               pSupport) {}
 
 virtual bool PreCallValidateCmdDrawIndirectCountKHR(
     VkCommandBuffer                             commandBuffer,
@@ -5440,8 +4651,7 @@ virtual bool PreCallValidateCmdDrawIndirectCountKHR(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride) const;
-
+    uint32_t                                    stride) const { return false; }
 
 virtual void PreCallRecordCmdDrawIndirectCountKHR(
     VkCommandBuffer                             commandBuffer,
@@ -5450,8 +4660,7 @@ virtual void PreCallRecordCmdDrawIndirectCountKHR(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride);
-
+    uint32_t                                    stride) {}
 
 virtual void PostCallRecordCmdDrawIndirectCountKHR(
     VkCommandBuffer                             commandBuffer,
@@ -5460,8 +4669,7 @@ virtual void PostCallRecordCmdDrawIndirectCountKHR(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride);
-
+    uint32_t                                    stride) {}
 
 virtual bool PreCallValidateCmdDrawIndexedIndirectCountKHR(
     VkCommandBuffer                             commandBuffer,
@@ -5470,8 +4678,7 @@ virtual bool PreCallValidateCmdDrawIndexedIndirectCountKHR(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride) const;
-
+    uint32_t                                    stride) const { return false; }
 
 virtual void PreCallRecordCmdDrawIndexedIndirectCountKHR(
     VkCommandBuffer                             commandBuffer,
@@ -5480,8 +4687,7 @@ virtual void PreCallRecordCmdDrawIndexedIndirectCountKHR(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride);
-
+    uint32_t                                    stride) {}
 
 virtual void PostCallRecordCmdDrawIndexedIndirectCountKHR(
     VkCommandBuffer                             commandBuffer,
@@ -5490,129 +4696,107 @@ virtual void PostCallRecordCmdDrawIndexedIndirectCountKHR(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride);
-
+    uint32_t                                    stride) {}
 
 virtual bool PreCallValidateGetSemaphoreCounterValueKHR(
     VkDevice                                    device,
     VkSemaphore                                 semaphore,
-    uint64_t*                                   pValue) const;
-
+    uint64_t*                                   pValue) const { return false; }
 
 virtual void PreCallRecordGetSemaphoreCounterValueKHR(
     VkDevice                                    device,
     VkSemaphore                                 semaphore,
-    uint64_t*                                   pValue);
-
+    uint64_t*                                   pValue) {}
 
 virtual void PostCallRecordGetSemaphoreCounterValueKHR(
     VkDevice                                    device,
     VkSemaphore                                 semaphore,
     uint64_t*                                   pValue,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateWaitSemaphoresKHR(
     VkDevice                                    device,
     const VkSemaphoreWaitInfo*                  pWaitInfo,
-    uint64_t                                    timeout) const;
-
+    uint64_t                                    timeout) const { return false; }
 
 virtual void PreCallRecordWaitSemaphoresKHR(
     VkDevice                                    device,
     const VkSemaphoreWaitInfo*                  pWaitInfo,
-    uint64_t                                    timeout);
-
+    uint64_t                                    timeout) {}
 
 virtual void PostCallRecordWaitSemaphoresKHR(
     VkDevice                                    device,
     const VkSemaphoreWaitInfo*                  pWaitInfo,
     uint64_t                                    timeout,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateSignalSemaphoreKHR(
     VkDevice                                    device,
-    const VkSemaphoreSignalInfo*                pSignalInfo) const;
-
+    const VkSemaphoreSignalInfo*                pSignalInfo) const { return false; }
 
 virtual void PreCallRecordSignalSemaphoreKHR(
     VkDevice                                    device,
-    const VkSemaphoreSignalInfo*                pSignalInfo);
-
+    const VkSemaphoreSignalInfo*                pSignalInfo) {}
 
 virtual void PostCallRecordSignalSemaphoreKHR(
     VkDevice                                    device,
     const VkSemaphoreSignalInfo*                pSignalInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetBufferDeviceAddressKHR(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfo*            pInfo) const;
-
+    const VkBufferDeviceAddressInfo*            pInfo) const { return false; }
 
 virtual void PreCallRecordGetBufferDeviceAddressKHR(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfo*            pInfo);
-
+    const VkBufferDeviceAddressInfo*            pInfo) {}
 
 virtual void PostCallRecordGetBufferDeviceAddressKHR(
     VkDevice                                    device,
     const VkBufferDeviceAddressInfo*            pInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetBufferOpaqueCaptureAddressKHR(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfo*            pInfo) const;
-
+    const VkBufferDeviceAddressInfo*            pInfo) const { return false; }
 
 virtual void PreCallRecordGetBufferOpaqueCaptureAddressKHR(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfo*            pInfo);
-
+    const VkBufferDeviceAddressInfo*            pInfo) {}
 
 virtual void PostCallRecordGetBufferOpaqueCaptureAddressKHR(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfo*            pInfo);
-
+    const VkBufferDeviceAddressInfo*            pInfo) {}
 
 virtual bool PreCallValidateGetDeviceMemoryOpaqueCaptureAddressKHR(
     VkDevice                                    device,
-    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) const;
-
+    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) const { return false; }
 
 virtual void PreCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR(
     VkDevice                                    device,
-    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo);
-
+    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {}
 
 virtual void PostCallRecordGetDeviceMemoryOpaqueCaptureAddressKHR(
     VkDevice                                    device,
-    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo);
-
+    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo) {}
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
 virtual bool PreCallValidateCreateDeferredOperationKHR(
     VkDevice                                    device,
     const VkAllocationCallbacks*                pAllocator,
-    VkDeferredOperationKHR*                     pDeferredOperation) const;
-
+    VkDeferredOperationKHR*                     pDeferredOperation) const { return false; }
 
 virtual void PreCallRecordCreateDeferredOperationKHR(
     VkDevice                                    device,
     const VkAllocationCallbacks*                pAllocator,
-    VkDeferredOperationKHR*                     pDeferredOperation);
-
+    VkDeferredOperationKHR*                     pDeferredOperation) {}
 
 virtual void PostCallRecordCreateDeferredOperationKHR(
     VkDevice                                    device,
     const VkAllocationCallbacks*                pAllocator,
     VkDeferredOperationKHR*                     pDeferredOperation,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -5621,20 +4805,17 @@ virtual void PostCallRecordCreateDeferredOperationKHR(
 virtual bool PreCallValidateDestroyDeferredOperationKHR(
     VkDevice                                    device,
     VkDeferredOperationKHR                      operation,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyDeferredOperationKHR(
     VkDevice                                    device,
     VkDeferredOperationKHR                      operation,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyDeferredOperationKHR(
     VkDevice                                    device,
     VkDeferredOperationKHR                      operation,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -5642,18 +4823,15 @@ virtual void PostCallRecordDestroyDeferredOperationKHR(
 
 virtual bool PreCallValidateGetDeferredOperationMaxConcurrencyKHR(
     VkDevice                                    device,
-    VkDeferredOperationKHR                      operation) const;
-
+    VkDeferredOperationKHR                      operation) const { return false; }
 
 virtual void PreCallRecordGetDeferredOperationMaxConcurrencyKHR(
     VkDevice                                    device,
-    VkDeferredOperationKHR                      operation);
-
+    VkDeferredOperationKHR                      operation) {}
 
 virtual void PostCallRecordGetDeferredOperationMaxConcurrencyKHR(
     VkDevice                                    device,
-    VkDeferredOperationKHR                      operation);
-
+    VkDeferredOperationKHR                      operation) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -5661,19 +4839,16 @@ virtual void PostCallRecordGetDeferredOperationMaxConcurrencyKHR(
 
 virtual bool PreCallValidateGetDeferredOperationResultKHR(
     VkDevice                                    device,
-    VkDeferredOperationKHR                      operation) const;
-
+    VkDeferredOperationKHR                      operation) const { return false; }
 
 virtual void PreCallRecordGetDeferredOperationResultKHR(
     VkDevice                                    device,
-    VkDeferredOperationKHR                      operation);
-
+    VkDeferredOperationKHR                      operation) {}
 
 virtual void PostCallRecordGetDeferredOperationResultKHR(
     VkDevice                                    device,
     VkDeferredOperationKHR                      operation,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -5681,19 +4856,16 @@ virtual void PostCallRecordGetDeferredOperationResultKHR(
 
 virtual bool PreCallValidateDeferredOperationJoinKHR(
     VkDevice                                    device,
-    VkDeferredOperationKHR                      operation) const;
-
+    VkDeferredOperationKHR                      operation) const { return false; }
 
 virtual void PreCallRecordDeferredOperationJoinKHR(
     VkDevice                                    device,
-    VkDeferredOperationKHR                      operation);
-
+    VkDeferredOperationKHR                      operation) {}
 
 virtual void PostCallRecordDeferredOperationJoinKHR(
     VkDevice                                    device,
     VkDeferredOperationKHR                      operation,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -5701,107 +4873,92 @@ virtual bool PreCallValidateGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
     const VkPipelineInfoKHR*                    pPipelineInfo,
     uint32_t*                                   pExecutableCount,
-    VkPipelineExecutablePropertiesKHR*          pProperties) const;
-
+    VkPipelineExecutablePropertiesKHR*          pProperties) const { return false; }
 
 virtual void PreCallRecordGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
     const VkPipelineInfoKHR*                    pPipelineInfo,
     uint32_t*                                   pExecutableCount,
-    VkPipelineExecutablePropertiesKHR*          pProperties);
-
+    VkPipelineExecutablePropertiesKHR*          pProperties) {}
 
 virtual void PostCallRecordGetPipelineExecutablePropertiesKHR(
     VkDevice                                    device,
     const VkPipelineInfoKHR*                    pPipelineInfo,
     uint32_t*                                   pExecutableCount,
     VkPipelineExecutablePropertiesKHR*          pProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPipelineExecutableStatisticsKHR(
     VkDevice                                    device,
     const VkPipelineExecutableInfoKHR*          pExecutableInfo,
     uint32_t*                                   pStatisticCount,
-    VkPipelineExecutableStatisticKHR*           pStatistics) const;
-
+    VkPipelineExecutableStatisticKHR*           pStatistics) const { return false; }
 
 virtual void PreCallRecordGetPipelineExecutableStatisticsKHR(
     VkDevice                                    device,
     const VkPipelineExecutableInfoKHR*          pExecutableInfo,
     uint32_t*                                   pStatisticCount,
-    VkPipelineExecutableStatisticKHR*           pStatistics);
-
+    VkPipelineExecutableStatisticKHR*           pStatistics) {}
 
 virtual void PostCallRecordGetPipelineExecutableStatisticsKHR(
     VkDevice                                    device,
     const VkPipelineExecutableInfoKHR*          pExecutableInfo,
     uint32_t*                                   pStatisticCount,
     VkPipelineExecutableStatisticKHR*           pStatistics,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPipelineExecutableInternalRepresentationsKHR(
     VkDevice                                    device,
     const VkPipelineExecutableInfoKHR*          pExecutableInfo,
     uint32_t*                                   pInternalRepresentationCount,
-    VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations) const;
-
+    VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations) const { return false; }
 
 virtual void PreCallRecordGetPipelineExecutableInternalRepresentationsKHR(
     VkDevice                                    device,
     const VkPipelineExecutableInfoKHR*          pExecutableInfo,
     uint32_t*                                   pInternalRepresentationCount,
-    VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations);
-
+    VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations) {}
 
 virtual void PostCallRecordGetPipelineExecutableInternalRepresentationsKHR(
     VkDevice                                    device,
     const VkPipelineExecutableInfoKHR*          pExecutableInfo,
     uint32_t*                                   pInternalRepresentationCount,
     VkPipelineExecutableInternalRepresentationKHR* pInternalRepresentations,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDebugReportCallbackEXT*                   pCallback) const;
-
+    VkDebugReportCallbackEXT*                   pCallback) const { return false; }
 
 virtual void PreCallRecordCreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDebugReportCallbackEXT*                   pCallback);
-
+    VkDebugReportCallbackEXT*                   pCallback) {}
 
 virtual void PostCallRecordCreateDebugReportCallbackEXT(
     VkInstance                                  instance,
     const VkDebugReportCallbackCreateInfoEXT*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkDebugReportCallbackEXT*                   pCallback,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyDebugReportCallbackEXT(
     VkInstance                                  instance,
     VkDebugReportCallbackEXT                    callback,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyDebugReportCallbackEXT(
     VkInstance                                  instance,
     VkDebugReportCallbackEXT                    callback,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyDebugReportCallbackEXT(
     VkInstance                                  instance,
     VkDebugReportCallbackEXT                    callback,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateDebugReportMessageEXT(
     VkInstance                                  instance,
@@ -5811,8 +4968,7 @@ virtual bool PreCallValidateDebugReportMessageEXT(
     size_t                                      location,
     int32_t                                     messageCode,
     const char*                                 pLayerPrefix,
-    const char*                                 pMessage) const;
-
+    const char*                                 pMessage) const { return false; }
 
 virtual void PreCallRecordDebugReportMessageEXT(
     VkInstance                                  instance,
@@ -5822,8 +4978,7 @@ virtual void PreCallRecordDebugReportMessageEXT(
     size_t                                      location,
     int32_t                                     messageCode,
     const char*                                 pLayerPrefix,
-    const char*                                 pMessage);
-
+    const char*                                 pMessage) {}
 
 virtual void PostCallRecordDebugReportMessageEXT(
     VkInstance                                  instance,
@@ -5833,82 +4988,66 @@ virtual void PostCallRecordDebugReportMessageEXT(
     size_t                                      location,
     int32_t                                     messageCode,
     const char*                                 pLayerPrefix,
-    const char*                                 pMessage);
-
+    const char*                                 pMessage) {}
 
 virtual bool PreCallValidateDebugMarkerSetObjectTagEXT(
     VkDevice                                    device,
-    const VkDebugMarkerObjectTagInfoEXT*        pTagInfo) const;
-
+    const VkDebugMarkerObjectTagInfoEXT*        pTagInfo) const { return false; }
 
 virtual void PreCallRecordDebugMarkerSetObjectTagEXT(
     VkDevice                                    device,
-    const VkDebugMarkerObjectTagInfoEXT*        pTagInfo);
-
+    const VkDebugMarkerObjectTagInfoEXT*        pTagInfo) {}
 
 virtual void PostCallRecordDebugMarkerSetObjectTagEXT(
     VkDevice                                    device,
     const VkDebugMarkerObjectTagInfoEXT*        pTagInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDebugMarkerSetObjectNameEXT(
     VkDevice                                    device,
-    const VkDebugMarkerObjectNameInfoEXT*       pNameInfo) const;
-
+    const VkDebugMarkerObjectNameInfoEXT*       pNameInfo) const { return false; }
 
 virtual void PreCallRecordDebugMarkerSetObjectNameEXT(
     VkDevice                                    device,
-    const VkDebugMarkerObjectNameInfoEXT*       pNameInfo);
-
+    const VkDebugMarkerObjectNameInfoEXT*       pNameInfo) {}
 
 virtual void PostCallRecordDebugMarkerSetObjectNameEXT(
     VkDevice                                    device,
     const VkDebugMarkerObjectNameInfoEXT*       pNameInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCmdDebugMarkerBeginEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkDebugMarkerMarkerInfoEXT*           pMarkerInfo) const;
-
+    const VkDebugMarkerMarkerInfoEXT*           pMarkerInfo) const { return false; }
 
 virtual void PreCallRecordCmdDebugMarkerBeginEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkDebugMarkerMarkerInfoEXT*           pMarkerInfo);
-
+    const VkDebugMarkerMarkerInfoEXT*           pMarkerInfo) {}
 
 virtual void PostCallRecordCmdDebugMarkerBeginEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkDebugMarkerMarkerInfoEXT*           pMarkerInfo);
-
+    const VkDebugMarkerMarkerInfoEXT*           pMarkerInfo) {}
 
 virtual bool PreCallValidateCmdDebugMarkerEndEXT(
-    VkCommandBuffer                             commandBuffer) const;
-
+    VkCommandBuffer                             commandBuffer) const { return false; }
 
 virtual void PreCallRecordCmdDebugMarkerEndEXT(
-    VkCommandBuffer                             commandBuffer);
-
+    VkCommandBuffer                             commandBuffer) {}
 
 virtual void PostCallRecordCmdDebugMarkerEndEXT(
-    VkCommandBuffer                             commandBuffer);
-
+    VkCommandBuffer                             commandBuffer) {}
 
 virtual bool PreCallValidateCmdDebugMarkerInsertEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkDebugMarkerMarkerInfoEXT*           pMarkerInfo) const;
-
+    const VkDebugMarkerMarkerInfoEXT*           pMarkerInfo) const { return false; }
 
 virtual void PreCallRecordCmdDebugMarkerInsertEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkDebugMarkerMarkerInfoEXT*           pMarkerInfo);
-
+    const VkDebugMarkerMarkerInfoEXT*           pMarkerInfo) {}
 
 virtual void PostCallRecordCmdDebugMarkerInsertEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkDebugMarkerMarkerInfoEXT*           pMarkerInfo);
-
+    const VkDebugMarkerMarkerInfoEXT*           pMarkerInfo) {}
 
 virtual bool PreCallValidateCmdBindTransformFeedbackBuffersEXT(
     VkCommandBuffer                             commandBuffer,
@@ -5916,8 +5055,7 @@ virtual bool PreCallValidateCmdBindTransformFeedbackBuffersEXT(
     uint32_t                                    bindingCount,
     const VkBuffer*                             pBuffers,
     const VkDeviceSize*                         pOffsets,
-    const VkDeviceSize*                         pSizes) const;
-
+    const VkDeviceSize*                         pSizes) const { return false; }
 
 virtual void PreCallRecordCmdBindTransformFeedbackBuffersEXT(
     VkCommandBuffer                             commandBuffer,
@@ -5925,8 +5063,7 @@ virtual void PreCallRecordCmdBindTransformFeedbackBuffersEXT(
     uint32_t                                    bindingCount,
     const VkBuffer*                             pBuffers,
     const VkDeviceSize*                         pOffsets,
-    const VkDeviceSize*                         pSizes);
-
+    const VkDeviceSize*                         pSizes) {}
 
 virtual void PostCallRecordCmdBindTransformFeedbackBuffersEXT(
     VkCommandBuffer                             commandBuffer,
@@ -5934,101 +5071,88 @@ virtual void PostCallRecordCmdBindTransformFeedbackBuffersEXT(
     uint32_t                                    bindingCount,
     const VkBuffer*                             pBuffers,
     const VkDeviceSize*                         pOffsets,
-    const VkDeviceSize*                         pSizes);
-
+    const VkDeviceSize*                         pSizes) {}
 
 virtual bool PreCallValidateCmdBeginTransformFeedbackEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstCounterBuffer,
     uint32_t                                    counterBufferCount,
     const VkBuffer*                             pCounterBuffers,
-    const VkDeviceSize*                         pCounterBufferOffsets) const;
-
+    const VkDeviceSize*                         pCounterBufferOffsets) const { return false; }
 
 virtual void PreCallRecordCmdBeginTransformFeedbackEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstCounterBuffer,
     uint32_t                                    counterBufferCount,
     const VkBuffer*                             pCounterBuffers,
-    const VkDeviceSize*                         pCounterBufferOffsets);
-
+    const VkDeviceSize*                         pCounterBufferOffsets) {}
 
 virtual void PostCallRecordCmdBeginTransformFeedbackEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstCounterBuffer,
     uint32_t                                    counterBufferCount,
     const VkBuffer*                             pCounterBuffers,
-    const VkDeviceSize*                         pCounterBufferOffsets);
-
+    const VkDeviceSize*                         pCounterBufferOffsets) {}
 
 virtual bool PreCallValidateCmdEndTransformFeedbackEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstCounterBuffer,
     uint32_t                                    counterBufferCount,
     const VkBuffer*                             pCounterBuffers,
-    const VkDeviceSize*                         pCounterBufferOffsets) const;
-
+    const VkDeviceSize*                         pCounterBufferOffsets) const { return false; }
 
 virtual void PreCallRecordCmdEndTransformFeedbackEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstCounterBuffer,
     uint32_t                                    counterBufferCount,
     const VkBuffer*                             pCounterBuffers,
-    const VkDeviceSize*                         pCounterBufferOffsets);
-
+    const VkDeviceSize*                         pCounterBufferOffsets) {}
 
 virtual void PostCallRecordCmdEndTransformFeedbackEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstCounterBuffer,
     uint32_t                                    counterBufferCount,
     const VkBuffer*                             pCounterBuffers,
-    const VkDeviceSize*                         pCounterBufferOffsets);
-
+    const VkDeviceSize*                         pCounterBufferOffsets) {}
 
 virtual bool PreCallValidateCmdBeginQueryIndexedEXT(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
     VkQueryControlFlags                         flags,
-    uint32_t                                    index) const;
-
+    uint32_t                                    index) const { return false; }
 
 virtual void PreCallRecordCmdBeginQueryIndexedEXT(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
     VkQueryControlFlags                         flags,
-    uint32_t                                    index);
-
+    uint32_t                                    index) {}
 
 virtual void PostCallRecordCmdBeginQueryIndexedEXT(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
     VkQueryControlFlags                         flags,
-    uint32_t                                    index);
-
+    uint32_t                                    index) {}
 
 virtual bool PreCallValidateCmdEndQueryIndexedEXT(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
-    uint32_t                                    index) const;
-
+    uint32_t                                    index) const { return false; }
 
 virtual void PreCallRecordCmdEndQueryIndexedEXT(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
-    uint32_t                                    index);
-
+    uint32_t                                    index) {}
 
 virtual void PostCallRecordCmdEndQueryIndexedEXT(
     VkCommandBuffer                             commandBuffer,
     VkQueryPool                                 queryPool,
     uint32_t                                    query,
-    uint32_t                                    index);
-
+    uint32_t                                    index) {}
 
 virtual bool PreCallValidateCmdDrawIndirectByteCountEXT(
     VkCommandBuffer                             commandBuffer,
@@ -6037,8 +5161,7 @@ virtual bool PreCallValidateCmdDrawIndirectByteCountEXT(
     VkBuffer                                    counterBuffer,
     VkDeviceSize                                counterBufferOffset,
     uint32_t                                    counterOffset,
-    uint32_t                                    vertexStride) const;
-
+    uint32_t                                    vertexStride) const { return false; }
 
 virtual void PreCallRecordCmdDrawIndirectByteCountEXT(
     VkCommandBuffer                             commandBuffer,
@@ -6047,8 +5170,7 @@ virtual void PreCallRecordCmdDrawIndirectByteCountEXT(
     VkBuffer                                    counterBuffer,
     VkDeviceSize                                counterBufferOffset,
     uint32_t                                    counterOffset,
-    uint32_t                                    vertexStride);
-
+    uint32_t                                    vertexStride) {}
 
 virtual void PostCallRecordCmdDrawIndirectByteCountEXT(
     VkCommandBuffer                             commandBuffer,
@@ -6057,42 +5179,35 @@ virtual void PostCallRecordCmdDrawIndirectByteCountEXT(
     VkBuffer                                    counterBuffer,
     VkDeviceSize                                counterBufferOffset,
     uint32_t                                    counterOffset,
-    uint32_t                                    vertexStride);
-
+    uint32_t                                    vertexStride) {}
 
 virtual bool PreCallValidateGetImageViewHandleNVX(
     VkDevice                                    device,
-    const VkImageViewHandleInfoNVX*             pInfo) const;
-
+    const VkImageViewHandleInfoNVX*             pInfo) const { return false; }
 
 virtual void PreCallRecordGetImageViewHandleNVX(
     VkDevice                                    device,
-    const VkImageViewHandleInfoNVX*             pInfo);
-
+    const VkImageViewHandleInfoNVX*             pInfo) {}
 
 virtual void PostCallRecordGetImageViewHandleNVX(
     VkDevice                                    device,
-    const VkImageViewHandleInfoNVX*             pInfo);
-
+    const VkImageViewHandleInfoNVX*             pInfo) {}
 
 virtual bool PreCallValidateGetImageViewAddressNVX(
     VkDevice                                    device,
     VkImageView                                 imageView,
-    VkImageViewAddressPropertiesNVX*            pProperties) const;
-
+    VkImageViewAddressPropertiesNVX*            pProperties) const { return false; }
 
 virtual void PreCallRecordGetImageViewAddressNVX(
     VkDevice                                    device,
     VkImageView                                 imageView,
-    VkImageViewAddressPropertiesNVX*            pProperties);
-
+    VkImageViewAddressPropertiesNVX*            pProperties) {}
 
 virtual void PostCallRecordGetImageViewAddressNVX(
     VkDevice                                    device,
     VkImageView                                 imageView,
     VkImageViewAddressPropertiesNVX*            pProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCmdDrawIndirectCountAMD(
     VkCommandBuffer                             commandBuffer,
@@ -6101,8 +5216,7 @@ virtual bool PreCallValidateCmdDrawIndirectCountAMD(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride) const;
-
+    uint32_t                                    stride) const { return false; }
 
 virtual void PreCallRecordCmdDrawIndirectCountAMD(
     VkCommandBuffer                             commandBuffer,
@@ -6111,8 +5225,7 @@ virtual void PreCallRecordCmdDrawIndirectCountAMD(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride);
-
+    uint32_t                                    stride) {}
 
 virtual void PostCallRecordCmdDrawIndirectCountAMD(
     VkCommandBuffer                             commandBuffer,
@@ -6121,8 +5234,7 @@ virtual void PostCallRecordCmdDrawIndirectCountAMD(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride);
-
+    uint32_t                                    stride) {}
 
 virtual bool PreCallValidateCmdDrawIndexedIndirectCountAMD(
     VkCommandBuffer                             commandBuffer,
@@ -6131,8 +5243,7 @@ virtual bool PreCallValidateCmdDrawIndexedIndirectCountAMD(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride) const;
-
+    uint32_t                                    stride) const { return false; }
 
 virtual void PreCallRecordCmdDrawIndexedIndirectCountAMD(
     VkCommandBuffer                             commandBuffer,
@@ -6141,8 +5252,7 @@ virtual void PreCallRecordCmdDrawIndexedIndirectCountAMD(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride);
-
+    uint32_t                                    stride) {}
 
 virtual void PostCallRecordCmdDrawIndexedIndirectCountAMD(
     VkCommandBuffer                             commandBuffer,
@@ -6151,8 +5261,7 @@ virtual void PostCallRecordCmdDrawIndexedIndirectCountAMD(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride);
-
+    uint32_t                                    stride) {}
 
 virtual bool PreCallValidateGetShaderInfoAMD(
     VkDevice                                    device,
@@ -6160,8 +5269,7 @@ virtual bool PreCallValidateGetShaderInfoAMD(
     VkShaderStageFlagBits                       shaderStage,
     VkShaderInfoTypeAMD                         infoType,
     size_t*                                     pInfoSize,
-    void*                                       pInfo) const;
-
+    void*                                       pInfo) const { return false; }
 
 virtual void PreCallRecordGetShaderInfoAMD(
     VkDevice                                    device,
@@ -6169,8 +5277,7 @@ virtual void PreCallRecordGetShaderInfoAMD(
     VkShaderStageFlagBits                       shaderStage,
     VkShaderInfoTypeAMD                         infoType,
     size_t*                                     pInfoSize,
-    void*                                       pInfo);
-
+    void*                                       pInfo) {}
 
 virtual void PostCallRecordGetShaderInfoAMD(
     VkDevice                                    device,
@@ -6179,8 +5286,7 @@ virtual void PostCallRecordGetShaderInfoAMD(
     VkShaderInfoTypeAMD                         infoType,
     size_t*                                     pInfoSize,
     void*                                       pInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #ifdef VK_USE_PLATFORM_GGP
 
@@ -6188,23 +5294,20 @@ virtual bool PreCallValidateCreateStreamDescriptorSurfaceGGP(
     VkInstance                                  instance,
     const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const;
-
+    VkSurfaceKHR*                               pSurface) const { return false; }
 
 virtual void PreCallRecordCreateStreamDescriptorSurfaceGGP(
     VkInstance                                  instance,
     const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface);
-
+    VkSurfaceKHR*                               pSurface) {}
 
 virtual void PostCallRecordCreateStreamDescriptorSurfaceGGP(
     VkInstance                                  instance,
     const VkStreamDescriptorSurfaceCreateInfoGGP* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSurfaceKHR*                               pSurface,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_GGP
 
@@ -6216,8 +5319,7 @@ virtual bool PreCallValidateGetPhysicalDeviceExternalImageFormatPropertiesNV(
     VkImageUsageFlags                           usage,
     VkImageCreateFlags                          flags,
     VkExternalMemoryHandleTypeFlagsNV           externalHandleType,
-    VkExternalImageFormatPropertiesNV*          pExternalImageFormatProperties) const;
-
+    VkExternalImageFormatPropertiesNV*          pExternalImageFormatProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceExternalImageFormatPropertiesNV(
     VkPhysicalDevice                            physicalDevice,
@@ -6227,8 +5329,7 @@ virtual void PreCallRecordGetPhysicalDeviceExternalImageFormatPropertiesNV(
     VkImageUsageFlags                           usage,
     VkImageCreateFlags                          flags,
     VkExternalMemoryHandleTypeFlagsNV           externalHandleType,
-    VkExternalImageFormatPropertiesNV*          pExternalImageFormatProperties);
-
+    VkExternalImageFormatPropertiesNV*          pExternalImageFormatProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceExternalImageFormatPropertiesNV(
     VkPhysicalDevice                            physicalDevice,
@@ -6239,8 +5340,7 @@ virtual void PostCallRecordGetPhysicalDeviceExternalImageFormatPropertiesNV(
     VkImageCreateFlags                          flags,
     VkExternalMemoryHandleTypeFlagsNV           externalHandleType,
     VkExternalImageFormatPropertiesNV*          pExternalImageFormatProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
@@ -6248,23 +5348,20 @@ virtual bool PreCallValidateGetMemoryWin32HandleNV(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
     VkExternalMemoryHandleTypeFlagsNV           handleType,
-    HANDLE*                                     pHandle) const;
-
+    HANDLE*                                     pHandle) const { return false; }
 
 virtual void PreCallRecordGetMemoryWin32HandleNV(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
     VkExternalMemoryHandleTypeFlagsNV           handleType,
-    HANDLE*                                     pHandle);
-
+    HANDLE*                                     pHandle) {}
 
 virtual void PostCallRecordGetMemoryWin32HandleNV(
     VkDevice                                    device,
     VkDeviceMemory                              memory,
     VkExternalMemoryHandleTypeFlagsNV           handleType,
     HANDLE*                                     pHandle,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -6274,110 +5371,92 @@ virtual bool PreCallValidateCreateViSurfaceNN(
     VkInstance                                  instance,
     const VkViSurfaceCreateInfoNN*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const;
-
+    VkSurfaceKHR*                               pSurface) const { return false; }
 
 virtual void PreCallRecordCreateViSurfaceNN(
     VkInstance                                  instance,
     const VkViSurfaceCreateInfoNN*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface);
-
+    VkSurfaceKHR*                               pSurface) {}
 
 virtual void PostCallRecordCreateViSurfaceNN(
     VkInstance                                  instance,
     const VkViSurfaceCreateInfoNN*              pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSurfaceKHR*                               pSurface,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_VI_NN
 
 virtual bool PreCallValidateCmdBeginConditionalRenderingEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkConditionalRenderingBeginInfoEXT*   pConditionalRenderingBegin) const;
-
+    const VkConditionalRenderingBeginInfoEXT*   pConditionalRenderingBegin) const { return false; }
 
 virtual void PreCallRecordCmdBeginConditionalRenderingEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkConditionalRenderingBeginInfoEXT*   pConditionalRenderingBegin);
-
+    const VkConditionalRenderingBeginInfoEXT*   pConditionalRenderingBegin) {}
 
 virtual void PostCallRecordCmdBeginConditionalRenderingEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkConditionalRenderingBeginInfoEXT*   pConditionalRenderingBegin);
-
+    const VkConditionalRenderingBeginInfoEXT*   pConditionalRenderingBegin) {}
 
 virtual bool PreCallValidateCmdEndConditionalRenderingEXT(
-    VkCommandBuffer                             commandBuffer) const;
-
+    VkCommandBuffer                             commandBuffer) const { return false; }
 
 virtual void PreCallRecordCmdEndConditionalRenderingEXT(
-    VkCommandBuffer                             commandBuffer);
-
+    VkCommandBuffer                             commandBuffer) {}
 
 virtual void PostCallRecordCmdEndConditionalRenderingEXT(
-    VkCommandBuffer                             commandBuffer);
-
+    VkCommandBuffer                             commandBuffer) {}
 
 virtual bool PreCallValidateCmdSetViewportWScalingNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstViewport,
     uint32_t                                    viewportCount,
-    const VkViewportWScalingNV*                 pViewportWScalings) const;
-
+    const VkViewportWScalingNV*                 pViewportWScalings) const { return false; }
 
 virtual void PreCallRecordCmdSetViewportWScalingNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstViewport,
     uint32_t                                    viewportCount,
-    const VkViewportWScalingNV*                 pViewportWScalings);
-
+    const VkViewportWScalingNV*                 pViewportWScalings) {}
 
 virtual void PostCallRecordCmdSetViewportWScalingNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstViewport,
     uint32_t                                    viewportCount,
-    const VkViewportWScalingNV*                 pViewportWScalings);
-
+    const VkViewportWScalingNV*                 pViewportWScalings) {}
 
 virtual bool PreCallValidateReleaseDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
-    VkDisplayKHR                                display) const;
-
+    VkDisplayKHR                                display) const { return false; }
 
 virtual void PreCallRecordReleaseDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
-    VkDisplayKHR                                display);
-
+    VkDisplayKHR                                display) {}
 
 virtual void PostCallRecordReleaseDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     VkDisplayKHR                                display,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
 virtual bool PreCallValidateAcquireXlibDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     Display*                                    dpy,
-    VkDisplayKHR                                display) const;
-
+    VkDisplayKHR                                display) const { return false; }
 
 virtual void PreCallRecordAcquireXlibDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     Display*                                    dpy,
-    VkDisplayKHR                                display);
-
+    VkDisplayKHR                                display) {}
 
 virtual void PostCallRecordAcquireXlibDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     Display*                                    dpy,
     VkDisplayKHR                                display,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
@@ -6387,101 +5466,87 @@ virtual bool PreCallValidateGetRandROutputDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     Display*                                    dpy,
     RROutput                                    rrOutput,
-    VkDisplayKHR*                               pDisplay) const;
-
+    VkDisplayKHR*                               pDisplay) const { return false; }
 
 virtual void PreCallRecordGetRandROutputDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     Display*                                    dpy,
     RROutput                                    rrOutput,
-    VkDisplayKHR*                               pDisplay);
-
+    VkDisplayKHR*                               pDisplay) {}
 
 virtual void PostCallRecordGetRandROutputDisplayEXT(
     VkPhysicalDevice                            physicalDevice,
     Display*                                    dpy,
     RROutput                                    rrOutput,
     VkDisplayKHR*                               pDisplay,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_XLIB_XRANDR_EXT
 
 virtual bool PreCallValidateGetPhysicalDeviceSurfaceCapabilities2EXT(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
-    VkSurfaceCapabilities2EXT*                  pSurfaceCapabilities) const;
-
+    VkSurfaceCapabilities2EXT*                  pSurfaceCapabilities) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
-    VkSurfaceCapabilities2EXT*                  pSurfaceCapabilities);
-
+    VkSurfaceCapabilities2EXT*                  pSurfaceCapabilities) {}
 
 virtual void PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(
     VkPhysicalDevice                            physicalDevice,
     VkSurfaceKHR                                surface,
     VkSurfaceCapabilities2EXT*                  pSurfaceCapabilities,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDisplayPowerControlEXT(
     VkDevice                                    device,
     VkDisplayKHR                                display,
-    const VkDisplayPowerInfoEXT*                pDisplayPowerInfo) const;
-
+    const VkDisplayPowerInfoEXT*                pDisplayPowerInfo) const { return false; }
 
 virtual void PreCallRecordDisplayPowerControlEXT(
     VkDevice                                    device,
     VkDisplayKHR                                display,
-    const VkDisplayPowerInfoEXT*                pDisplayPowerInfo);
-
+    const VkDisplayPowerInfoEXT*                pDisplayPowerInfo) {}
 
 virtual void PostCallRecordDisplayPowerControlEXT(
     VkDevice                                    device,
     VkDisplayKHR                                display,
     const VkDisplayPowerInfoEXT*                pDisplayPowerInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateRegisterDeviceEventEXT(
     VkDevice                                    device,
     const VkDeviceEventInfoEXT*                 pDeviceEventInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkFence*                                    pFence) const;
-
+    VkFence*                                    pFence) const { return false; }
 
 virtual void PreCallRecordRegisterDeviceEventEXT(
     VkDevice                                    device,
     const VkDeviceEventInfoEXT*                 pDeviceEventInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkFence*                                    pFence);
-
+    VkFence*                                    pFence) {}
 
 virtual void PostCallRecordRegisterDeviceEventEXT(
     VkDevice                                    device,
     const VkDeviceEventInfoEXT*                 pDeviceEventInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkFence*                                    pFence,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateRegisterDisplayEventEXT(
     VkDevice                                    device,
     VkDisplayKHR                                display,
     const VkDisplayEventInfoEXT*                pDisplayEventInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkFence*                                    pFence) const;
-
+    VkFence*                                    pFence) const { return false; }
 
 virtual void PreCallRecordRegisterDisplayEventEXT(
     VkDevice                                    device,
     VkDisplayKHR                                display,
     const VkDisplayEventInfoEXT*                pDisplayEventInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkFence*                                    pFence);
-
+    VkFence*                                    pFence) {}
 
 virtual void PostCallRecordRegisterDisplayEventEXT(
     VkDevice                                    device,
@@ -6489,113 +5554,97 @@ virtual void PostCallRecordRegisterDisplayEventEXT(
     const VkDisplayEventInfoEXT*                pDisplayEventInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkFence*                                    pFence,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetSwapchainCounterEXT(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     VkSurfaceCounterFlagBitsEXT                 counter,
-    uint64_t*                                   pCounterValue) const;
-
+    uint64_t*                                   pCounterValue) const { return false; }
 
 virtual void PreCallRecordGetSwapchainCounterEXT(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     VkSurfaceCounterFlagBitsEXT                 counter,
-    uint64_t*                                   pCounterValue);
-
+    uint64_t*                                   pCounterValue) {}
 
 virtual void PostCallRecordGetSwapchainCounterEXT(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     VkSurfaceCounterFlagBitsEXT                 counter,
     uint64_t*                                   pCounterValue,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetRefreshCycleDurationGOOGLE(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
-    VkRefreshCycleDurationGOOGLE*               pDisplayTimingProperties) const;
-
+    VkRefreshCycleDurationGOOGLE*               pDisplayTimingProperties) const { return false; }
 
 virtual void PreCallRecordGetRefreshCycleDurationGOOGLE(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
-    VkRefreshCycleDurationGOOGLE*               pDisplayTimingProperties);
-
+    VkRefreshCycleDurationGOOGLE*               pDisplayTimingProperties) {}
 
 virtual void PostCallRecordGetRefreshCycleDurationGOOGLE(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     VkRefreshCycleDurationGOOGLE*               pDisplayTimingProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPastPresentationTimingGOOGLE(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     uint32_t*                                   pPresentationTimingCount,
-    VkPastPresentationTimingGOOGLE*             pPresentationTimings) const;
-
+    VkPastPresentationTimingGOOGLE*             pPresentationTimings) const { return false; }
 
 virtual void PreCallRecordGetPastPresentationTimingGOOGLE(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     uint32_t*                                   pPresentationTimingCount,
-    VkPastPresentationTimingGOOGLE*             pPresentationTimings);
-
+    VkPastPresentationTimingGOOGLE*             pPresentationTimings) {}
 
 virtual void PostCallRecordGetPastPresentationTimingGOOGLE(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
     uint32_t*                                   pPresentationTimingCount,
     VkPastPresentationTimingGOOGLE*             pPresentationTimings,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCmdSetDiscardRectangleEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstDiscardRectangle,
     uint32_t                                    discardRectangleCount,
-    const VkRect2D*                             pDiscardRectangles) const;
-
+    const VkRect2D*                             pDiscardRectangles) const { return false; }
 
 virtual void PreCallRecordCmdSetDiscardRectangleEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstDiscardRectangle,
     uint32_t                                    discardRectangleCount,
-    const VkRect2D*                             pDiscardRectangles);
-
+    const VkRect2D*                             pDiscardRectangles) {}
 
 virtual void PostCallRecordCmdSetDiscardRectangleEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstDiscardRectangle,
     uint32_t                                    discardRectangleCount,
-    const VkRect2D*                             pDiscardRectangles);
-
+    const VkRect2D*                             pDiscardRectangles) {}
 
 virtual bool PreCallValidateSetHdrMetadataEXT(
     VkDevice                                    device,
     uint32_t                                    swapchainCount,
     const VkSwapchainKHR*                       pSwapchains,
-    const VkHdrMetadataEXT*                     pMetadata) const;
-
+    const VkHdrMetadataEXT*                     pMetadata) const { return false; }
 
 virtual void PreCallRecordSetHdrMetadataEXT(
     VkDevice                                    device,
     uint32_t                                    swapchainCount,
     const VkSwapchainKHR*                       pSwapchains,
-    const VkHdrMetadataEXT*                     pMetadata);
-
+    const VkHdrMetadataEXT*                     pMetadata) {}
 
 virtual void PostCallRecordSetHdrMetadataEXT(
     VkDevice                                    device,
     uint32_t                                    swapchainCount,
     const VkSwapchainKHR*                       pSwapchains,
-    const VkHdrMetadataEXT*                     pMetadata);
-
+    const VkHdrMetadataEXT*                     pMetadata) {}
 
 #ifdef VK_USE_PLATFORM_IOS_MVK
 
@@ -6603,23 +5652,20 @@ virtual bool PreCallValidateCreateIOSSurfaceMVK(
     VkInstance                                  instance,
     const VkIOSSurfaceCreateInfoMVK*            pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const;
-
+    VkSurfaceKHR*                               pSurface) const { return false; }
 
 virtual void PreCallRecordCreateIOSSurfaceMVK(
     VkInstance                                  instance,
     const VkIOSSurfaceCreateInfoMVK*            pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface);
-
+    VkSurfaceKHR*                               pSurface) {}
 
 virtual void PostCallRecordCreateIOSSurfaceMVK(
     VkInstance                                  instance,
     const VkIOSSurfaceCreateInfoMVK*            pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSurfaceKHR*                               pSurface,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_IOS_MVK
 
@@ -6629,223 +5675,184 @@ virtual bool PreCallValidateCreateMacOSSurfaceMVK(
     VkInstance                                  instance,
     const VkMacOSSurfaceCreateInfoMVK*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const;
-
+    VkSurfaceKHR*                               pSurface) const { return false; }
 
 virtual void PreCallRecordCreateMacOSSurfaceMVK(
     VkInstance                                  instance,
     const VkMacOSSurfaceCreateInfoMVK*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface);
-
+    VkSurfaceKHR*                               pSurface) {}
 
 virtual void PostCallRecordCreateMacOSSurfaceMVK(
     VkInstance                                  instance,
     const VkMacOSSurfaceCreateInfoMVK*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSurfaceKHR*                               pSurface,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_MACOS_MVK
 
 virtual bool PreCallValidateSetDebugUtilsObjectNameEXT(
     VkDevice                                    device,
-    const VkDebugUtilsObjectNameInfoEXT*        pNameInfo) const;
-
+    const VkDebugUtilsObjectNameInfoEXT*        pNameInfo) const { return false; }
 
 virtual void PreCallRecordSetDebugUtilsObjectNameEXT(
     VkDevice                                    device,
-    const VkDebugUtilsObjectNameInfoEXT*        pNameInfo);
-
+    const VkDebugUtilsObjectNameInfoEXT*        pNameInfo) {}
 
 virtual void PostCallRecordSetDebugUtilsObjectNameEXT(
     VkDevice                                    device,
     const VkDebugUtilsObjectNameInfoEXT*        pNameInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateSetDebugUtilsObjectTagEXT(
     VkDevice                                    device,
-    const VkDebugUtilsObjectTagInfoEXT*         pTagInfo) const;
-
+    const VkDebugUtilsObjectTagInfoEXT*         pTagInfo) const { return false; }
 
 virtual void PreCallRecordSetDebugUtilsObjectTagEXT(
     VkDevice                                    device,
-    const VkDebugUtilsObjectTagInfoEXT*         pTagInfo);
-
+    const VkDebugUtilsObjectTagInfoEXT*         pTagInfo) {}
 
 virtual void PostCallRecordSetDebugUtilsObjectTagEXT(
     VkDevice                                    device,
     const VkDebugUtilsObjectTagInfoEXT*         pTagInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateQueueBeginDebugUtilsLabelEXT(
     VkQueue                                     queue,
-    const VkDebugUtilsLabelEXT*                 pLabelInfo) const;
-
+    const VkDebugUtilsLabelEXT*                 pLabelInfo) const { return false; }
 
 virtual void PreCallRecordQueueBeginDebugUtilsLabelEXT(
     VkQueue                                     queue,
-    const VkDebugUtilsLabelEXT*                 pLabelInfo);
-
+    const VkDebugUtilsLabelEXT*                 pLabelInfo) {}
 
 virtual void PostCallRecordQueueBeginDebugUtilsLabelEXT(
     VkQueue                                     queue,
-    const VkDebugUtilsLabelEXT*                 pLabelInfo);
-
+    const VkDebugUtilsLabelEXT*                 pLabelInfo) {}
 
 virtual bool PreCallValidateQueueEndDebugUtilsLabelEXT(
-    VkQueue                                     queue) const;
-
+    VkQueue                                     queue) const { return false; }
 
 virtual void PreCallRecordQueueEndDebugUtilsLabelEXT(
-    VkQueue                                     queue);
-
+    VkQueue                                     queue) {}
 
 virtual void PostCallRecordQueueEndDebugUtilsLabelEXT(
-    VkQueue                                     queue);
-
+    VkQueue                                     queue) {}
 
 virtual bool PreCallValidateQueueInsertDebugUtilsLabelEXT(
     VkQueue                                     queue,
-    const VkDebugUtilsLabelEXT*                 pLabelInfo) const;
-
+    const VkDebugUtilsLabelEXT*                 pLabelInfo) const { return false; }
 
 virtual void PreCallRecordQueueInsertDebugUtilsLabelEXT(
     VkQueue                                     queue,
-    const VkDebugUtilsLabelEXT*                 pLabelInfo);
-
+    const VkDebugUtilsLabelEXT*                 pLabelInfo) {}
 
 virtual void PostCallRecordQueueInsertDebugUtilsLabelEXT(
     VkQueue                                     queue,
-    const VkDebugUtilsLabelEXT*                 pLabelInfo);
-
+    const VkDebugUtilsLabelEXT*                 pLabelInfo) {}
 
 virtual bool PreCallValidateCmdBeginDebugUtilsLabelEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkDebugUtilsLabelEXT*                 pLabelInfo) const;
-
+    const VkDebugUtilsLabelEXT*                 pLabelInfo) const { return false; }
 
 virtual void PreCallRecordCmdBeginDebugUtilsLabelEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkDebugUtilsLabelEXT*                 pLabelInfo);
-
+    const VkDebugUtilsLabelEXT*                 pLabelInfo) {}
 
 virtual void PostCallRecordCmdBeginDebugUtilsLabelEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkDebugUtilsLabelEXT*                 pLabelInfo);
-
+    const VkDebugUtilsLabelEXT*                 pLabelInfo) {}
 
 virtual bool PreCallValidateCmdEndDebugUtilsLabelEXT(
-    VkCommandBuffer                             commandBuffer) const;
-
+    VkCommandBuffer                             commandBuffer) const { return false; }
 
 virtual void PreCallRecordCmdEndDebugUtilsLabelEXT(
-    VkCommandBuffer                             commandBuffer);
-
+    VkCommandBuffer                             commandBuffer) {}
 
 virtual void PostCallRecordCmdEndDebugUtilsLabelEXT(
-    VkCommandBuffer                             commandBuffer);
-
+    VkCommandBuffer                             commandBuffer) {}
 
 virtual bool PreCallValidateCmdInsertDebugUtilsLabelEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkDebugUtilsLabelEXT*                 pLabelInfo) const;
-
+    const VkDebugUtilsLabelEXT*                 pLabelInfo) const { return false; }
 
 virtual void PreCallRecordCmdInsertDebugUtilsLabelEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkDebugUtilsLabelEXT*                 pLabelInfo);
-
+    const VkDebugUtilsLabelEXT*                 pLabelInfo) {}
 
 virtual void PostCallRecordCmdInsertDebugUtilsLabelEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkDebugUtilsLabelEXT*                 pLabelInfo);
-
+    const VkDebugUtilsLabelEXT*                 pLabelInfo) {}
 
 virtual bool PreCallValidateCreateDebugUtilsMessengerEXT(
     VkInstance                                  instance,
     const VkDebugUtilsMessengerCreateInfoEXT*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDebugUtilsMessengerEXT*                   pMessenger) const;
-
+    VkDebugUtilsMessengerEXT*                   pMessenger) const { return false; }
 
 virtual void PreCallRecordCreateDebugUtilsMessengerEXT(
     VkInstance                                  instance,
     const VkDebugUtilsMessengerCreateInfoEXT*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkDebugUtilsMessengerEXT*                   pMessenger);
-
+    VkDebugUtilsMessengerEXT*                   pMessenger) {}
 
 virtual void PostCallRecordCreateDebugUtilsMessengerEXT(
     VkInstance                                  instance,
     const VkDebugUtilsMessengerCreateInfoEXT*   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkDebugUtilsMessengerEXT*                   pMessenger,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyDebugUtilsMessengerEXT(
     VkInstance                                  instance,
     VkDebugUtilsMessengerEXT                    messenger,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyDebugUtilsMessengerEXT(
     VkInstance                                  instance,
     VkDebugUtilsMessengerEXT                    messenger,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyDebugUtilsMessengerEXT(
     VkInstance                                  instance,
     VkDebugUtilsMessengerEXT                    messenger,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateSubmitDebugUtilsMessageEXT(
     VkInstance                                  instance,
     VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT             messageTypes,
-    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData) const;
-
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData) const { return false; }
 
 virtual void PreCallRecordSubmitDebugUtilsMessageEXT(
     VkInstance                                  instance,
     VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT             messageTypes,
-    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData);
-
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData) {}
 
 virtual void PostCallRecordSubmitDebugUtilsMessageEXT(
     VkInstance                                  instance,
     VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT             messageTypes,
-    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData);
-
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData) {}
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 
 virtual bool PreCallValidateGetAndroidHardwareBufferPropertiesANDROID(
     VkDevice                                    device,
     const struct AHardwareBuffer*               buffer,
-    VkAndroidHardwareBufferPropertiesANDROID*   pProperties) const;
-
+    VkAndroidHardwareBufferPropertiesANDROID*   pProperties) const { return false; }
 
 virtual void PreCallRecordGetAndroidHardwareBufferPropertiesANDROID(
     VkDevice                                    device,
     const struct AHardwareBuffer*               buffer,
-    VkAndroidHardwareBufferPropertiesANDROID*   pProperties);
-
+    VkAndroidHardwareBufferPropertiesANDROID*   pProperties) {}
 
 virtual void PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(
     VkDevice                                    device,
     const struct AHardwareBuffer*               buffer,
     VkAndroidHardwareBufferPropertiesANDROID*   pProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 
@@ -6854,249 +5861,210 @@ virtual void PostCallRecordGetAndroidHardwareBufferPropertiesANDROID(
 virtual bool PreCallValidateGetMemoryAndroidHardwareBufferANDROID(
     VkDevice                                    device,
     const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
-    struct AHardwareBuffer**                    pBuffer) const;
-
+    struct AHardwareBuffer**                    pBuffer) const { return false; }
 
 virtual void PreCallRecordGetMemoryAndroidHardwareBufferANDROID(
     VkDevice                                    device,
     const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
-    struct AHardwareBuffer**                    pBuffer);
-
+    struct AHardwareBuffer**                    pBuffer) {}
 
 virtual void PostCallRecordGetMemoryAndroidHardwareBufferANDROID(
     VkDevice                                    device,
     const VkMemoryGetAndroidHardwareBufferInfoANDROID* pInfo,
     struct AHardwareBuffer**                    pBuffer,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_ANDROID_KHR
 
 virtual bool PreCallValidateCmdSetSampleLocationsEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkSampleLocationsInfoEXT*             pSampleLocationsInfo) const;
-
+    const VkSampleLocationsInfoEXT*             pSampleLocationsInfo) const { return false; }
 
 virtual void PreCallRecordCmdSetSampleLocationsEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkSampleLocationsInfoEXT*             pSampleLocationsInfo);
-
+    const VkSampleLocationsInfoEXT*             pSampleLocationsInfo) {}
 
 virtual void PostCallRecordCmdSetSampleLocationsEXT(
     VkCommandBuffer                             commandBuffer,
-    const VkSampleLocationsInfoEXT*             pSampleLocationsInfo);
-
+    const VkSampleLocationsInfoEXT*             pSampleLocationsInfo) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceMultisamplePropertiesEXT(
     VkPhysicalDevice                            physicalDevice,
     VkSampleCountFlagBits                       samples,
-    VkMultisamplePropertiesEXT*                 pMultisampleProperties) const;
-
+    VkMultisamplePropertiesEXT*                 pMultisampleProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceMultisamplePropertiesEXT(
     VkPhysicalDevice                            physicalDevice,
     VkSampleCountFlagBits                       samples,
-    VkMultisamplePropertiesEXT*                 pMultisampleProperties);
-
+    VkMultisamplePropertiesEXT*                 pMultisampleProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceMultisamplePropertiesEXT(
     VkPhysicalDevice                            physicalDevice,
     VkSampleCountFlagBits                       samples,
-    VkMultisamplePropertiesEXT*                 pMultisampleProperties);
-
+    VkMultisamplePropertiesEXT*                 pMultisampleProperties) {}
 
 virtual bool PreCallValidateGetImageDrmFormatModifierPropertiesEXT(
     VkDevice                                    device,
     VkImage                                     image,
-    VkImageDrmFormatModifierPropertiesEXT*      pProperties) const;
-
+    VkImageDrmFormatModifierPropertiesEXT*      pProperties) const { return false; }
 
 virtual void PreCallRecordGetImageDrmFormatModifierPropertiesEXT(
     VkDevice                                    device,
     VkImage                                     image,
-    VkImageDrmFormatModifierPropertiesEXT*      pProperties);
-
+    VkImageDrmFormatModifierPropertiesEXT*      pProperties) {}
 
 virtual void PostCallRecordGetImageDrmFormatModifierPropertiesEXT(
     VkDevice                                    device,
     VkImage                                     image,
     VkImageDrmFormatModifierPropertiesEXT*      pProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCmdBindShadingRateImageNV(
     VkCommandBuffer                             commandBuffer,
     VkImageView                                 imageView,
-    VkImageLayout                               imageLayout) const;
-
+    VkImageLayout                               imageLayout) const { return false; }
 
 virtual void PreCallRecordCmdBindShadingRateImageNV(
     VkCommandBuffer                             commandBuffer,
     VkImageView                                 imageView,
-    VkImageLayout                               imageLayout);
-
+    VkImageLayout                               imageLayout) {}
 
 virtual void PostCallRecordCmdBindShadingRateImageNV(
     VkCommandBuffer                             commandBuffer,
     VkImageView                                 imageView,
-    VkImageLayout                               imageLayout);
-
+    VkImageLayout                               imageLayout) {}
 
 virtual bool PreCallValidateCmdSetViewportShadingRatePaletteNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstViewport,
     uint32_t                                    viewportCount,
-    const VkShadingRatePaletteNV*               pShadingRatePalettes) const;
-
+    const VkShadingRatePaletteNV*               pShadingRatePalettes) const { return false; }
 
 virtual void PreCallRecordCmdSetViewportShadingRatePaletteNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstViewport,
     uint32_t                                    viewportCount,
-    const VkShadingRatePaletteNV*               pShadingRatePalettes);
-
+    const VkShadingRatePaletteNV*               pShadingRatePalettes) {}
 
 virtual void PostCallRecordCmdSetViewportShadingRatePaletteNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstViewport,
     uint32_t                                    viewportCount,
-    const VkShadingRatePaletteNV*               pShadingRatePalettes);
-
+    const VkShadingRatePaletteNV*               pShadingRatePalettes) {}
 
 virtual bool PreCallValidateCmdSetCoarseSampleOrderNV(
     VkCommandBuffer                             commandBuffer,
     VkCoarseSampleOrderTypeNV                   sampleOrderType,
     uint32_t                                    customSampleOrderCount,
-    const VkCoarseSampleOrderCustomNV*          pCustomSampleOrders) const;
-
+    const VkCoarseSampleOrderCustomNV*          pCustomSampleOrders) const { return false; }
 
 virtual void PreCallRecordCmdSetCoarseSampleOrderNV(
     VkCommandBuffer                             commandBuffer,
     VkCoarseSampleOrderTypeNV                   sampleOrderType,
     uint32_t                                    customSampleOrderCount,
-    const VkCoarseSampleOrderCustomNV*          pCustomSampleOrders);
-
+    const VkCoarseSampleOrderCustomNV*          pCustomSampleOrders) {}
 
 virtual void PostCallRecordCmdSetCoarseSampleOrderNV(
     VkCommandBuffer                             commandBuffer,
     VkCoarseSampleOrderTypeNV                   sampleOrderType,
     uint32_t                                    customSampleOrderCount,
-    const VkCoarseSampleOrderCustomNV*          pCustomSampleOrders);
-
+    const VkCoarseSampleOrderCustomNV*          pCustomSampleOrders) {}
 
 virtual bool PreCallValidateCreateAccelerationStructureNV(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoNV*  pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkAccelerationStructureNV*                  pAccelerationStructure) const;
-
+    VkAccelerationStructureNV*                  pAccelerationStructure) const { return false; }
 
 virtual void PreCallRecordCreateAccelerationStructureNV(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoNV*  pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkAccelerationStructureNV*                  pAccelerationStructure);
-
+    VkAccelerationStructureNV*                  pAccelerationStructure) {}
 
 virtual void PostCallRecordCreateAccelerationStructureNV(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoNV*  pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkAccelerationStructureNV*                  pAccelerationStructure,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyAccelerationStructureKHR(
     VkDevice                                    device,
     VkAccelerationStructureKHR                  accelerationStructure,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyAccelerationStructureKHR(
     VkDevice                                    device,
     VkAccelerationStructureKHR                  accelerationStructure,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyAccelerationStructureKHR(
     VkDevice                                    device,
     VkAccelerationStructureKHR                  accelerationStructure,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateDestroyAccelerationStructureNV(
     VkDevice                                    device,
     VkAccelerationStructureKHR                  accelerationStructure,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyAccelerationStructureNV(
     VkDevice                                    device,
     VkAccelerationStructureKHR                  accelerationStructure,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyAccelerationStructureNV(
     VkDevice                                    device,
     VkAccelerationStructureKHR                  accelerationStructure,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateGetAccelerationStructureMemoryRequirementsNV(
     VkDevice                                    device,
     const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
-    VkMemoryRequirements2KHR*                   pMemoryRequirements) const;
-
+    VkMemoryRequirements2KHR*                   pMemoryRequirements) const { return false; }
 
 virtual void PreCallRecordGetAccelerationStructureMemoryRequirementsNV(
     VkDevice                                    device,
     const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
-    VkMemoryRequirements2KHR*                   pMemoryRequirements);
-
+    VkMemoryRequirements2KHR*                   pMemoryRequirements) {}
 
 virtual void PostCallRecordGetAccelerationStructureMemoryRequirementsNV(
     VkDevice                                    device,
     const VkAccelerationStructureMemoryRequirementsInfoNV* pInfo,
-    VkMemoryRequirements2KHR*                   pMemoryRequirements);
-
+    VkMemoryRequirements2KHR*                   pMemoryRequirements) {}
 
 virtual bool PreCallValidateBindAccelerationStructureMemoryKHR(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos) const;
-
+    const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos) const { return false; }
 
 virtual void PreCallRecordBindAccelerationStructureMemoryKHR(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos);
-
+    const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos) {}
 
 virtual void PostCallRecordBindAccelerationStructureMemoryKHR(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
     const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateBindAccelerationStructureMemoryNV(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos) const;
-
+    const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos) const { return false; }
 
 virtual void PreCallRecordBindAccelerationStructureMemoryNV(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
-    const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos);
-
+    const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos) {}
 
 virtual void PostCallRecordBindAccelerationStructureMemoryNV(
     VkDevice                                    device,
     uint32_t                                    bindInfoCount,
     const VkBindAccelerationStructureMemoryInfoKHR* pBindInfos,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCmdBuildAccelerationStructureNV(
     VkCommandBuffer                             commandBuffer,
@@ -7107,8 +6075,7 @@ virtual bool PreCallValidateCmdBuildAccelerationStructureNV(
     VkAccelerationStructureKHR                  dst,
     VkAccelerationStructureKHR                  src,
     VkBuffer                                    scratch,
-    VkDeviceSize                                scratchOffset) const;
-
+    VkDeviceSize                                scratchOffset) const { return false; }
 
 virtual void PreCallRecordCmdBuildAccelerationStructureNV(
     VkCommandBuffer                             commandBuffer,
@@ -7119,8 +6086,7 @@ virtual void PreCallRecordCmdBuildAccelerationStructureNV(
     VkAccelerationStructureKHR                  dst,
     VkAccelerationStructureKHR                  src,
     VkBuffer                                    scratch,
-    VkDeviceSize                                scratchOffset);
-
+    VkDeviceSize                                scratchOffset) {}
 
 virtual void PostCallRecordCmdBuildAccelerationStructureNV(
     VkCommandBuffer                             commandBuffer,
@@ -7131,29 +6097,25 @@ virtual void PostCallRecordCmdBuildAccelerationStructureNV(
     VkAccelerationStructureKHR                  dst,
     VkAccelerationStructureKHR                  src,
     VkBuffer                                    scratch,
-    VkDeviceSize                                scratchOffset);
-
+    VkDeviceSize                                scratchOffset) {}
 
 virtual bool PreCallValidateCmdCopyAccelerationStructureNV(
     VkCommandBuffer                             commandBuffer,
     VkAccelerationStructureKHR                  dst,
     VkAccelerationStructureKHR                  src,
-    VkCopyAccelerationStructureModeKHR          mode) const;
-
+    VkCopyAccelerationStructureModeKHR          mode) const { return false; }
 
 virtual void PreCallRecordCmdCopyAccelerationStructureNV(
     VkCommandBuffer                             commandBuffer,
     VkAccelerationStructureKHR                  dst,
     VkAccelerationStructureKHR                  src,
-    VkCopyAccelerationStructureModeKHR          mode);
-
+    VkCopyAccelerationStructureModeKHR          mode) {}
 
 virtual void PostCallRecordCmdCopyAccelerationStructureNV(
     VkCommandBuffer                             commandBuffer,
     VkAccelerationStructureKHR                  dst,
     VkAccelerationStructureKHR                  src,
-    VkCopyAccelerationStructureModeKHR          mode);
-
+    VkCopyAccelerationStructureModeKHR          mode) {}
 
 virtual bool PreCallValidateCmdTraceRaysNV(
     VkCommandBuffer                             commandBuffer,
@@ -7170,8 +6132,7 @@ virtual bool PreCallValidateCmdTraceRaysNV(
     VkDeviceSize                                callableShaderBindingStride,
     uint32_t                                    width,
     uint32_t                                    height,
-    uint32_t                                    depth) const;
-
+    uint32_t                                    depth) const { return false; }
 
 virtual void PreCallRecordCmdTraceRaysNV(
     VkCommandBuffer                             commandBuffer,
@@ -7188,8 +6149,7 @@ virtual void PreCallRecordCmdTraceRaysNV(
     VkDeviceSize                                callableShaderBindingStride,
     uint32_t                                    width,
     uint32_t                                    height,
-    uint32_t                                    depth);
-
+    uint32_t                                    depth) {}
 
 virtual void PostCallRecordCmdTraceRaysNV(
     VkCommandBuffer                             commandBuffer,
@@ -7206,8 +6166,7 @@ virtual void PostCallRecordCmdTraceRaysNV(
     VkDeviceSize                                callableShaderBindingStride,
     uint32_t                                    width,
     uint32_t                                    height,
-    uint32_t                                    depth);
-
+    uint32_t                                    depth) {}
 
 virtual bool PreCallValidateCreateRayTracingPipelinesNV(
     VkDevice                                    device,
@@ -7216,8 +6175,7 @@ virtual bool PreCallValidateCreateRayTracingPipelinesNV(
     const VkRayTracingPipelineCreateInfoNV*     pCreateInfos,
     const VkAllocationCallbacks*                pAllocator,
     VkPipeline*                                 pPipelines,
-    void*                                       state_data) const;
-
+    void*                                       state_data) const { return false; }
 
 virtual void PreCallRecordCreateRayTracingPipelinesNV(
     VkDevice                                    device,
@@ -7226,8 +6184,7 @@ virtual void PreCallRecordCreateRayTracingPipelinesNV(
     const VkRayTracingPipelineCreateInfoNV*     pCreateInfos,
     const VkAllocationCallbacks*                pAllocator,
     VkPipeline*                                 pPipelines,
-    void*                                       state_data);
-
+    void*                                       state_data) {}
 
 virtual void PostCallRecordCreateRayTracingPipelinesNV(
     VkDevice                                    device,
@@ -7237,8 +6194,7 @@ virtual void PostCallRecordCreateRayTracingPipelinesNV(
     const VkAllocationCallbacks*                pAllocator,
     VkPipeline*                                 pPipelines,
     VkResult                                    result,
-    void*                                       state_data);
-
+    void*                                       state_data) {}
 
 virtual bool PreCallValidateGetRayTracingShaderGroupHandlesKHR(
     VkDevice                                    device,
@@ -7246,8 +6202,7 @@ virtual bool PreCallValidateGetRayTracingShaderGroupHandlesKHR(
     uint32_t                                    firstGroup,
     uint32_t                                    groupCount,
     size_t                                      dataSize,
-    void*                                       pData) const;
-
+    void*                                       pData) const { return false; }
 
 virtual void PreCallRecordGetRayTracingShaderGroupHandlesKHR(
     VkDevice                                    device,
@@ -7255,8 +6210,7 @@ virtual void PreCallRecordGetRayTracingShaderGroupHandlesKHR(
     uint32_t                                    firstGroup,
     uint32_t                                    groupCount,
     size_t                                      dataSize,
-    void*                                       pData);
-
+    void*                                       pData) {}
 
 virtual void PostCallRecordGetRayTracingShaderGroupHandlesKHR(
     VkDevice                                    device,
@@ -7265,8 +6219,7 @@ virtual void PostCallRecordGetRayTracingShaderGroupHandlesKHR(
     uint32_t                                    groupCount,
     size_t                                      dataSize,
     void*                                       pData,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetRayTracingShaderGroupHandlesNV(
     VkDevice                                    device,
@@ -7274,8 +6227,7 @@ virtual bool PreCallValidateGetRayTracingShaderGroupHandlesNV(
     uint32_t                                    firstGroup,
     uint32_t                                    groupCount,
     size_t                                      dataSize,
-    void*                                       pData) const;
-
+    void*                                       pData) const { return false; }
 
 virtual void PreCallRecordGetRayTracingShaderGroupHandlesNV(
     VkDevice                                    device,
@@ -7283,8 +6235,7 @@ virtual void PreCallRecordGetRayTracingShaderGroupHandlesNV(
     uint32_t                                    firstGroup,
     uint32_t                                    groupCount,
     size_t                                      dataSize,
-    void*                                       pData);
-
+    void*                                       pData) {}
 
 virtual void PostCallRecordGetRayTracingShaderGroupHandlesNV(
     VkDevice                                    device,
@@ -7293,30 +6244,26 @@ virtual void PostCallRecordGetRayTracingShaderGroupHandlesNV(
     uint32_t                                    groupCount,
     size_t                                      dataSize,
     void*                                       pData,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetAccelerationStructureHandleNV(
     VkDevice                                    device,
     VkAccelerationStructureKHR                  accelerationStructure,
     size_t                                      dataSize,
-    void*                                       pData) const;
-
+    void*                                       pData) const { return false; }
 
 virtual void PreCallRecordGetAccelerationStructureHandleNV(
     VkDevice                                    device,
     VkAccelerationStructureKHR                  accelerationStructure,
     size_t                                      dataSize,
-    void*                                       pData);
-
+    void*                                       pData) {}
 
 virtual void PostCallRecordGetAccelerationStructureHandleNV(
     VkDevice                                    device,
     VkAccelerationStructureKHR                  accelerationStructure,
     size_t                                      dataSize,
     void*                                       pData,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
     VkCommandBuffer                             commandBuffer,
@@ -7324,8 +6271,7 @@ virtual bool PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
     const VkAccelerationStructureKHR*           pAccelerationStructures,
     VkQueryType                                 queryType,
     VkQueryPool                                 queryPool,
-    uint32_t                                    firstQuery) const;
-
+    uint32_t                                    firstQuery) const { return false; }
 
 virtual void PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
     VkCommandBuffer                             commandBuffer,
@@ -7333,8 +6279,7 @@ virtual void PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
     const VkAccelerationStructureKHR*           pAccelerationStructures,
     VkQueryType                                 queryType,
     VkQueryPool                                 queryPool,
-    uint32_t                                    firstQuery);
-
+    uint32_t                                    firstQuery) {}
 
 virtual void PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
     VkCommandBuffer                             commandBuffer,
@@ -7342,8 +6287,7 @@ virtual void PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
     const VkAccelerationStructureKHR*           pAccelerationStructures,
     VkQueryType                                 queryType,
     VkQueryPool                                 queryPool,
-    uint32_t                                    firstQuery);
-
+    uint32_t                                    firstQuery) {}
 
 virtual bool PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(
     VkCommandBuffer                             commandBuffer,
@@ -7351,8 +6295,7 @@ virtual bool PreCallValidateCmdWriteAccelerationStructuresPropertiesNV(
     const VkAccelerationStructureKHR*           pAccelerationStructures,
     VkQueryType                                 queryType,
     VkQueryPool                                 queryPool,
-    uint32_t                                    firstQuery) const;
-
+    uint32_t                                    firstQuery) const { return false; }
 
 virtual void PreCallRecordCmdWriteAccelerationStructuresPropertiesNV(
     VkCommandBuffer                             commandBuffer,
@@ -7360,8 +6303,7 @@ virtual void PreCallRecordCmdWriteAccelerationStructuresPropertiesNV(
     const VkAccelerationStructureKHR*           pAccelerationStructures,
     VkQueryType                                 queryType,
     VkQueryPool                                 queryPool,
-    uint32_t                                    firstQuery);
-
+    uint32_t                                    firstQuery) {}
 
 virtual void PostCallRecordCmdWriteAccelerationStructuresPropertiesNV(
     VkCommandBuffer                             commandBuffer,
@@ -7369,108 +6311,93 @@ virtual void PostCallRecordCmdWriteAccelerationStructuresPropertiesNV(
     const VkAccelerationStructureKHR*           pAccelerationStructures,
     VkQueryType                                 queryType,
     VkQueryPool                                 queryPool,
-    uint32_t                                    firstQuery);
-
+    uint32_t                                    firstQuery) {}
 
 virtual bool PreCallValidateCompileDeferredNV(
     VkDevice                                    device,
     VkPipeline                                  pipeline,
-    uint32_t                                    shader) const;
-
+    uint32_t                                    shader) const { return false; }
 
 virtual void PreCallRecordCompileDeferredNV(
     VkDevice                                    device,
     VkPipeline                                  pipeline,
-    uint32_t                                    shader);
-
+    uint32_t                                    shader) {}
 
 virtual void PostCallRecordCompileDeferredNV(
     VkDevice                                    device,
     VkPipeline                                  pipeline,
     uint32_t                                    shader,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetMemoryHostPointerPropertiesEXT(
     VkDevice                                    device,
     VkExternalMemoryHandleTypeFlagBits          handleType,
     const void*                                 pHostPointer,
-    VkMemoryHostPointerPropertiesEXT*           pMemoryHostPointerProperties) const;
-
+    VkMemoryHostPointerPropertiesEXT*           pMemoryHostPointerProperties) const { return false; }
 
 virtual void PreCallRecordGetMemoryHostPointerPropertiesEXT(
     VkDevice                                    device,
     VkExternalMemoryHandleTypeFlagBits          handleType,
     const void*                                 pHostPointer,
-    VkMemoryHostPointerPropertiesEXT*           pMemoryHostPointerProperties);
-
+    VkMemoryHostPointerPropertiesEXT*           pMemoryHostPointerProperties) {}
 
 virtual void PostCallRecordGetMemoryHostPointerPropertiesEXT(
     VkDevice                                    device,
     VkExternalMemoryHandleTypeFlagBits          handleType,
     const void*                                 pHostPointer,
     VkMemoryHostPointerPropertiesEXT*           pMemoryHostPointerProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCmdWriteBufferMarkerAMD(
     VkCommandBuffer                             commandBuffer,
     VkPipelineStageFlagBits                     pipelineStage,
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
-    uint32_t                                    marker) const;
-
+    uint32_t                                    marker) const { return false; }
 
 virtual void PreCallRecordCmdWriteBufferMarkerAMD(
     VkCommandBuffer                             commandBuffer,
     VkPipelineStageFlagBits                     pipelineStage,
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
-    uint32_t                                    marker);
-
+    uint32_t                                    marker) {}
 
 virtual void PostCallRecordCmdWriteBufferMarkerAMD(
     VkCommandBuffer                             commandBuffer,
     VkPipelineStageFlagBits                     pipelineStage,
     VkBuffer                                    dstBuffer,
     VkDeviceSize                                dstOffset,
-    uint32_t                                    marker);
-
+    uint32_t                                    marker) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceCalibrateableTimeDomainsEXT(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pTimeDomainCount,
-    VkTimeDomainEXT*                            pTimeDomains) const;
-
+    VkTimeDomainEXT*                            pTimeDomains) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceCalibrateableTimeDomainsEXT(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pTimeDomainCount,
-    VkTimeDomainEXT*                            pTimeDomains);
-
+    VkTimeDomainEXT*                            pTimeDomains) {}
 
 virtual void PostCallRecordGetPhysicalDeviceCalibrateableTimeDomainsEXT(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pTimeDomainCount,
     VkTimeDomainEXT*                            pTimeDomains,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetCalibratedTimestampsEXT(
     VkDevice                                    device,
     uint32_t                                    timestampCount,
     const VkCalibratedTimestampInfoEXT*         pTimestampInfos,
     uint64_t*                                   pTimestamps,
-    uint64_t*                                   pMaxDeviation) const;
-
+    uint64_t*                                   pMaxDeviation) const { return false; }
 
 virtual void PreCallRecordGetCalibratedTimestampsEXT(
     VkDevice                                    device,
     uint32_t                                    timestampCount,
     const VkCalibratedTimestampInfoEXT*         pTimestampInfos,
     uint64_t*                                   pTimestamps,
-    uint64_t*                                   pMaxDeviation);
-
+    uint64_t*                                   pMaxDeviation) {}
 
 virtual void PostCallRecordGetCalibratedTimestampsEXT(
     VkDevice                                    device,
@@ -7478,50 +6405,43 @@ virtual void PostCallRecordGetCalibratedTimestampsEXT(
     const VkCalibratedTimestampInfoEXT*         pTimestampInfos,
     uint64_t*                                   pTimestamps,
     uint64_t*                                   pMaxDeviation,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCmdDrawMeshTasksNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    taskCount,
-    uint32_t                                    firstTask) const;
-
+    uint32_t                                    firstTask) const { return false; }
 
 virtual void PreCallRecordCmdDrawMeshTasksNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    taskCount,
-    uint32_t                                    firstTask);
-
+    uint32_t                                    firstTask) {}
 
 virtual void PostCallRecordCmdDrawMeshTasksNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    taskCount,
-    uint32_t                                    firstTask);
-
+    uint32_t                                    firstTask) {}
 
 virtual bool PreCallValidateCmdDrawMeshTasksIndirectNV(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,
     VkDeviceSize                                offset,
     uint32_t                                    drawCount,
-    uint32_t                                    stride) const;
-
+    uint32_t                                    stride) const { return false; }
 
 virtual void PreCallRecordCmdDrawMeshTasksIndirectNV(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,
     VkDeviceSize                                offset,
     uint32_t                                    drawCount,
-    uint32_t                                    stride);
-
+    uint32_t                                    stride) {}
 
 virtual void PostCallRecordCmdDrawMeshTasksIndirectNV(
     VkCommandBuffer                             commandBuffer,
     VkBuffer                                    buffer,
     VkDeviceSize                                offset,
     uint32_t                                    drawCount,
-    uint32_t                                    stride);
-
+    uint32_t                                    stride) {}
 
 virtual bool PreCallValidateCmdDrawMeshTasksIndirectCountNV(
     VkCommandBuffer                             commandBuffer,
@@ -7530,8 +6450,7 @@ virtual bool PreCallValidateCmdDrawMeshTasksIndirectCountNV(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride) const;
-
+    uint32_t                                    stride) const { return false; }
 
 virtual void PreCallRecordCmdDrawMeshTasksIndirectCountNV(
     VkCommandBuffer                             commandBuffer,
@@ -7540,8 +6459,7 @@ virtual void PreCallRecordCmdDrawMeshTasksIndirectCountNV(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride);
-
+    uint32_t                                    stride) {}
 
 virtual void PostCallRecordCmdDrawMeshTasksIndirectCountNV(
     VkCommandBuffer                             commandBuffer,
@@ -7550,226 +6468,186 @@ virtual void PostCallRecordCmdDrawMeshTasksIndirectCountNV(
     VkBuffer                                    countBuffer,
     VkDeviceSize                                countBufferOffset,
     uint32_t                                    maxDrawCount,
-    uint32_t                                    stride);
-
+    uint32_t                                    stride) {}
 
 virtual bool PreCallValidateCmdSetExclusiveScissorNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstExclusiveScissor,
     uint32_t                                    exclusiveScissorCount,
-    const VkRect2D*                             pExclusiveScissors) const;
-
+    const VkRect2D*                             pExclusiveScissors) const { return false; }
 
 virtual void PreCallRecordCmdSetExclusiveScissorNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstExclusiveScissor,
     uint32_t                                    exclusiveScissorCount,
-    const VkRect2D*                             pExclusiveScissors);
-
+    const VkRect2D*                             pExclusiveScissors) {}
 
 virtual void PostCallRecordCmdSetExclusiveScissorNV(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    firstExclusiveScissor,
     uint32_t                                    exclusiveScissorCount,
-    const VkRect2D*                             pExclusiveScissors);
-
+    const VkRect2D*                             pExclusiveScissors) {}
 
 virtual bool PreCallValidateCmdSetCheckpointNV(
     VkCommandBuffer                             commandBuffer,
-    const void*                                 pCheckpointMarker) const;
-
+    const void*                                 pCheckpointMarker) const { return false; }
 
 virtual void PreCallRecordCmdSetCheckpointNV(
     VkCommandBuffer                             commandBuffer,
-    const void*                                 pCheckpointMarker);
-
+    const void*                                 pCheckpointMarker) {}
 
 virtual void PostCallRecordCmdSetCheckpointNV(
     VkCommandBuffer                             commandBuffer,
-    const void*                                 pCheckpointMarker);
-
+    const void*                                 pCheckpointMarker) {}
 
 virtual bool PreCallValidateGetQueueCheckpointDataNV(
     VkQueue                                     queue,
     uint32_t*                                   pCheckpointDataCount,
-    VkCheckpointDataNV*                         pCheckpointData) const;
-
+    VkCheckpointDataNV*                         pCheckpointData) const { return false; }
 
 virtual void PreCallRecordGetQueueCheckpointDataNV(
     VkQueue                                     queue,
     uint32_t*                                   pCheckpointDataCount,
-    VkCheckpointDataNV*                         pCheckpointData);
-
+    VkCheckpointDataNV*                         pCheckpointData) {}
 
 virtual void PostCallRecordGetQueueCheckpointDataNV(
     VkQueue                                     queue,
     uint32_t*                                   pCheckpointDataCount,
-    VkCheckpointDataNV*                         pCheckpointData);
-
+    VkCheckpointDataNV*                         pCheckpointData) {}
 
 virtual bool PreCallValidateInitializePerformanceApiINTEL(
     VkDevice                                    device,
-    const VkInitializePerformanceApiInfoINTEL*  pInitializeInfo) const;
-
+    const VkInitializePerformanceApiInfoINTEL*  pInitializeInfo) const { return false; }
 
 virtual void PreCallRecordInitializePerformanceApiINTEL(
     VkDevice                                    device,
-    const VkInitializePerformanceApiInfoINTEL*  pInitializeInfo);
-
+    const VkInitializePerformanceApiInfoINTEL*  pInitializeInfo) {}
 
 virtual void PostCallRecordInitializePerformanceApiINTEL(
     VkDevice                                    device,
     const VkInitializePerformanceApiInfoINTEL*  pInitializeInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateUninitializePerformanceApiINTEL(
-    VkDevice                                    device) const;
-
+    VkDevice                                    device) const { return false; }
 
 virtual void PreCallRecordUninitializePerformanceApiINTEL(
-    VkDevice                                    device);
-
+    VkDevice                                    device) {}
 
 virtual void PostCallRecordUninitializePerformanceApiINTEL(
-    VkDevice                                    device);
-
+    VkDevice                                    device) {}
 
 virtual bool PreCallValidateCmdSetPerformanceMarkerINTEL(
     VkCommandBuffer                             commandBuffer,
-    const VkPerformanceMarkerInfoINTEL*         pMarkerInfo) const;
-
+    const VkPerformanceMarkerInfoINTEL*         pMarkerInfo) const { return false; }
 
 virtual void PreCallRecordCmdSetPerformanceMarkerINTEL(
     VkCommandBuffer                             commandBuffer,
-    const VkPerformanceMarkerInfoINTEL*         pMarkerInfo);
-
+    const VkPerformanceMarkerInfoINTEL*         pMarkerInfo) {}
 
 virtual void PostCallRecordCmdSetPerformanceMarkerINTEL(
     VkCommandBuffer                             commandBuffer,
     const VkPerformanceMarkerInfoINTEL*         pMarkerInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCmdSetPerformanceStreamMarkerINTEL(
     VkCommandBuffer                             commandBuffer,
-    const VkPerformanceStreamMarkerInfoINTEL*   pMarkerInfo) const;
-
+    const VkPerformanceStreamMarkerInfoINTEL*   pMarkerInfo) const { return false; }
 
 virtual void PreCallRecordCmdSetPerformanceStreamMarkerINTEL(
     VkCommandBuffer                             commandBuffer,
-    const VkPerformanceStreamMarkerInfoINTEL*   pMarkerInfo);
-
+    const VkPerformanceStreamMarkerInfoINTEL*   pMarkerInfo) {}
 
 virtual void PostCallRecordCmdSetPerformanceStreamMarkerINTEL(
     VkCommandBuffer                             commandBuffer,
     const VkPerformanceStreamMarkerInfoINTEL*   pMarkerInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCmdSetPerformanceOverrideINTEL(
     VkCommandBuffer                             commandBuffer,
-    const VkPerformanceOverrideInfoINTEL*       pOverrideInfo) const;
-
+    const VkPerformanceOverrideInfoINTEL*       pOverrideInfo) const { return false; }
 
 virtual void PreCallRecordCmdSetPerformanceOverrideINTEL(
     VkCommandBuffer                             commandBuffer,
-    const VkPerformanceOverrideInfoINTEL*       pOverrideInfo);
-
+    const VkPerformanceOverrideInfoINTEL*       pOverrideInfo) {}
 
 virtual void PostCallRecordCmdSetPerformanceOverrideINTEL(
     VkCommandBuffer                             commandBuffer,
     const VkPerformanceOverrideInfoINTEL*       pOverrideInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateAcquirePerformanceConfigurationINTEL(
     VkDevice                                    device,
     const VkPerformanceConfigurationAcquireInfoINTEL* pAcquireInfo,
-    VkPerformanceConfigurationINTEL*            pConfiguration) const;
-
+    VkPerformanceConfigurationINTEL*            pConfiguration) const { return false; }
 
 virtual void PreCallRecordAcquirePerformanceConfigurationINTEL(
     VkDevice                                    device,
     const VkPerformanceConfigurationAcquireInfoINTEL* pAcquireInfo,
-    VkPerformanceConfigurationINTEL*            pConfiguration);
-
+    VkPerformanceConfigurationINTEL*            pConfiguration) {}
 
 virtual void PostCallRecordAcquirePerformanceConfigurationINTEL(
     VkDevice                                    device,
     const VkPerformanceConfigurationAcquireInfoINTEL* pAcquireInfo,
     VkPerformanceConfigurationINTEL*            pConfiguration,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateReleasePerformanceConfigurationINTEL(
     VkDevice                                    device,
-    VkPerformanceConfigurationINTEL             configuration) const;
-
+    VkPerformanceConfigurationINTEL             configuration) const { return false; }
 
 virtual void PreCallRecordReleasePerformanceConfigurationINTEL(
     VkDevice                                    device,
-    VkPerformanceConfigurationINTEL             configuration);
-
+    VkPerformanceConfigurationINTEL             configuration) {}
 
 virtual void PostCallRecordReleasePerformanceConfigurationINTEL(
     VkDevice                                    device,
     VkPerformanceConfigurationINTEL             configuration,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateQueueSetPerformanceConfigurationINTEL(
     VkQueue                                     queue,
-    VkPerformanceConfigurationINTEL             configuration) const;
-
+    VkPerformanceConfigurationINTEL             configuration) const { return false; }
 
 virtual void PreCallRecordQueueSetPerformanceConfigurationINTEL(
     VkQueue                                     queue,
-    VkPerformanceConfigurationINTEL             configuration);
-
+    VkPerformanceConfigurationINTEL             configuration) {}
 
 virtual void PostCallRecordQueueSetPerformanceConfigurationINTEL(
     VkQueue                                     queue,
     VkPerformanceConfigurationINTEL             configuration,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPerformanceParameterINTEL(
     VkDevice                                    device,
     VkPerformanceParameterTypeINTEL             parameter,
-    VkPerformanceValueINTEL*                    pValue) const;
-
+    VkPerformanceValueINTEL*                    pValue) const { return false; }
 
 virtual void PreCallRecordGetPerformanceParameterINTEL(
     VkDevice                                    device,
     VkPerformanceParameterTypeINTEL             parameter,
-    VkPerformanceValueINTEL*                    pValue);
-
+    VkPerformanceValueINTEL*                    pValue) {}
 
 virtual void PostCallRecordGetPerformanceParameterINTEL(
     VkDevice                                    device,
     VkPerformanceParameterTypeINTEL             parameter,
     VkPerformanceValueINTEL*                    pValue,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateSetLocalDimmingAMD(
     VkDevice                                    device,
     VkSwapchainKHR                              swapChain,
-    VkBool32                                    localDimmingEnable) const;
-
+    VkBool32                                    localDimmingEnable) const { return false; }
 
 virtual void PreCallRecordSetLocalDimmingAMD(
     VkDevice                                    device,
     VkSwapchainKHR                              swapChain,
-    VkBool32                                    localDimmingEnable);
-
+    VkBool32                                    localDimmingEnable) {}
 
 virtual void PostCallRecordSetLocalDimmingAMD(
     VkDevice                                    device,
     VkSwapchainKHR                              swapChain,
-    VkBool32                                    localDimmingEnable);
-
+    VkBool32                                    localDimmingEnable) {}
 
 #ifdef VK_USE_PLATFORM_FUCHSIA
 
@@ -7777,23 +6655,20 @@ virtual bool PreCallValidateCreateImagePipeSurfaceFUCHSIA(
     VkInstance                                  instance,
     const VkImagePipeSurfaceCreateInfoFUCHSIA*  pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const;
-
+    VkSurfaceKHR*                               pSurface) const { return false; }
 
 virtual void PreCallRecordCreateImagePipeSurfaceFUCHSIA(
     VkInstance                                  instance,
     const VkImagePipeSurfaceCreateInfoFUCHSIA*  pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface);
-
+    VkSurfaceKHR*                               pSurface) {}
 
 virtual void PostCallRecordCreateImagePipeSurfaceFUCHSIA(
     VkInstance                                  instance,
     const VkImagePipeSurfaceCreateInfoFUCHSIA*  pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSurfaceKHR*                               pSurface,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_FUCHSIA
 
@@ -7803,98 +6678,83 @@ virtual bool PreCallValidateCreateMetalSurfaceEXT(
     VkInstance                                  instance,
     const VkMetalSurfaceCreateInfoEXT*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const;
-
+    VkSurfaceKHR*                               pSurface) const { return false; }
 
 virtual void PreCallRecordCreateMetalSurfaceEXT(
     VkInstance                                  instance,
     const VkMetalSurfaceCreateInfoEXT*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface);
-
+    VkSurfaceKHR*                               pSurface) {}
 
 virtual void PostCallRecordCreateMetalSurfaceEXT(
     VkInstance                                  instance,
     const VkMetalSurfaceCreateInfoEXT*          pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSurfaceKHR*                               pSurface,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_METAL_EXT
 
 virtual bool PreCallValidateGetBufferDeviceAddressEXT(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfo*            pInfo) const;
-
+    const VkBufferDeviceAddressInfo*            pInfo) const { return false; }
 
 virtual void PreCallRecordGetBufferDeviceAddressEXT(
     VkDevice                                    device,
-    const VkBufferDeviceAddressInfo*            pInfo);
-
+    const VkBufferDeviceAddressInfo*            pInfo) {}
 
 virtual void PostCallRecordGetBufferDeviceAddressEXT(
     VkDevice                                    device,
     const VkBufferDeviceAddressInfo*            pInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceToolPropertiesEXT(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pToolCount,
-    VkPhysicalDeviceToolPropertiesEXT*          pToolProperties) const;
-
+    VkPhysicalDeviceToolPropertiesEXT*          pToolProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceToolPropertiesEXT(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pToolCount,
-    VkPhysicalDeviceToolPropertiesEXT*          pToolProperties);
-
+    VkPhysicalDeviceToolPropertiesEXT*          pToolProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceToolPropertiesEXT(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pToolCount,
     VkPhysicalDeviceToolPropertiesEXT*          pToolProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceCooperativeMatrixPropertiesNV(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
-    VkCooperativeMatrixPropertiesNV*            pProperties) const;
-
+    VkCooperativeMatrixPropertiesNV*            pProperties) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesNV(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
-    VkCooperativeMatrixPropertiesNV*            pProperties);
-
+    VkCooperativeMatrixPropertiesNV*            pProperties) {}
 
 virtual void PostCallRecordGetPhysicalDeviceCooperativeMatrixPropertiesNV(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pPropertyCount,
     VkCooperativeMatrixPropertiesNV*            pProperties,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pCombinationCount,
-    VkFramebufferMixedSamplesCombinationNV*     pCombinations) const;
-
+    VkFramebufferMixedSamplesCombinationNV*     pCombinations) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pCombinationCount,
-    VkFramebufferMixedSamplesCombinationNV*     pCombinations);
-
+    VkFramebufferMixedSamplesCombinationNV*     pCombinations) {}
 
 virtual void PostCallRecordGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV(
     VkPhysicalDevice                            physicalDevice,
     uint32_t*                                   pCombinationCount,
     VkFramebufferMixedSamplesCombinationNV*     pCombinations,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 
@@ -7902,23 +6762,20 @@ virtual bool PreCallValidateGetPhysicalDeviceSurfacePresentModes2EXT(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
     uint32_t*                                   pPresentModeCount,
-    VkPresentModeKHR*                           pPresentModes) const;
-
+    VkPresentModeKHR*                           pPresentModes) const { return false; }
 
 virtual void PreCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
     uint32_t*                                   pPresentModeCount,
-    VkPresentModeKHR*                           pPresentModes);
-
+    VkPresentModeKHR*                           pPresentModes) {}
 
 virtual void PostCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(
     VkPhysicalDevice                            physicalDevice,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
     uint32_t*                                   pPresentModeCount,
     VkPresentModeKHR*                           pPresentModes,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -7926,19 +6783,16 @@ virtual void PostCallRecordGetPhysicalDeviceSurfacePresentModes2EXT(
 
 virtual bool PreCallValidateAcquireFullScreenExclusiveModeEXT(
     VkDevice                                    device,
-    VkSwapchainKHR                              swapchain) const;
-
+    VkSwapchainKHR                              swapchain) const { return false; }
 
 virtual void PreCallRecordAcquireFullScreenExclusiveModeEXT(
     VkDevice                                    device,
-    VkSwapchainKHR                              swapchain);
-
+    VkSwapchainKHR                              swapchain) {}
 
 virtual void PostCallRecordAcquireFullScreenExclusiveModeEXT(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -7946,19 +6800,16 @@ virtual void PostCallRecordAcquireFullScreenExclusiveModeEXT(
 
 virtual bool PreCallValidateReleaseFullScreenExclusiveModeEXT(
     VkDevice                                    device,
-    VkSwapchainKHR                              swapchain) const;
-
+    VkSwapchainKHR                              swapchain) const { return false; }
 
 virtual void PreCallRecordReleaseFullScreenExclusiveModeEXT(
     VkDevice                                    device,
-    VkSwapchainKHR                              swapchain);
-
+    VkSwapchainKHR                              swapchain) {}
 
 virtual void PostCallRecordReleaseFullScreenExclusiveModeEXT(
     VkDevice                                    device,
     VkSwapchainKHR                              swapchain,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -7967,21 +6818,18 @@ virtual void PostCallRecordReleaseFullScreenExclusiveModeEXT(
 virtual bool PreCallValidateGetDeviceGroupSurfacePresentModes2EXT(
     VkDevice                                    device,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
-    VkDeviceGroupPresentModeFlagsKHR*           pModes) const;
-
+    VkDeviceGroupPresentModeFlagsKHR*           pModes) const { return false; }
 
 virtual void PreCallRecordGetDeviceGroupSurfacePresentModes2EXT(
     VkDevice                                    device,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
-    VkDeviceGroupPresentModeFlagsKHR*           pModes);
-
+    VkDeviceGroupPresentModeFlagsKHR*           pModes) {}
 
 virtual void PostCallRecordGetDeviceGroupSurfacePresentModes2EXT(
     VkDevice                                    device,
     const VkPhysicalDeviceSurfaceInfo2KHR*      pSurfaceInfo,
     VkDeviceGroupPresentModeFlagsKHR*           pModes,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_USE_PLATFORM_WIN32_KHR
 
@@ -7989,230 +6837,195 @@ virtual bool PreCallValidateCreateHeadlessSurfaceEXT(
     VkInstance                                  instance,
     const VkHeadlessSurfaceCreateInfoEXT*       pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface) const;
-
+    VkSurfaceKHR*                               pSurface) const { return false; }
 
 virtual void PreCallRecordCreateHeadlessSurfaceEXT(
     VkInstance                                  instance,
     const VkHeadlessSurfaceCreateInfoEXT*       pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkSurfaceKHR*                               pSurface);
-
+    VkSurfaceKHR*                               pSurface) {}
 
 virtual void PostCallRecordCreateHeadlessSurfaceEXT(
     VkInstance                                  instance,
     const VkHeadlessSurfaceCreateInfoEXT*       pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkSurfaceKHR*                               pSurface,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateCmdSetLineStippleEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    lineStippleFactor,
-    uint16_t                                    lineStipplePattern) const;
-
+    uint16_t                                    lineStipplePattern) const { return false; }
 
 virtual void PreCallRecordCmdSetLineStippleEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    lineStippleFactor,
-    uint16_t                                    lineStipplePattern);
-
+    uint16_t                                    lineStipplePattern) {}
 
 virtual void PostCallRecordCmdSetLineStippleEXT(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    lineStippleFactor,
-    uint16_t                                    lineStipplePattern);
-
+    uint16_t                                    lineStipplePattern) {}
 
 virtual bool PreCallValidateResetQueryPoolEXT(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
-    uint32_t                                    queryCount) const;
-
+    uint32_t                                    queryCount) const { return false; }
 
 virtual void PreCallRecordResetQueryPoolEXT(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
-    uint32_t                                    queryCount);
-
+    uint32_t                                    queryCount) {}
 
 virtual void PostCallRecordResetQueryPoolEXT(
     VkDevice                                    device,
     VkQueryPool                                 queryPool,
     uint32_t                                    firstQuery,
-    uint32_t                                    queryCount);
-
+    uint32_t                                    queryCount) {}
 
 virtual bool PreCallValidateGetGeneratedCommandsMemoryRequirementsNV(
     VkDevice                                    device,
     const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements) const;
-
+    VkMemoryRequirements2*                      pMemoryRequirements) const { return false; }
 
 virtual void PreCallRecordGetGeneratedCommandsMemoryRequirementsNV(
     VkDevice                                    device,
     const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements);
-
+    VkMemoryRequirements2*                      pMemoryRequirements) {}
 
 virtual void PostCallRecordGetGeneratedCommandsMemoryRequirementsNV(
     VkDevice                                    device,
     const VkGeneratedCommandsMemoryRequirementsInfoNV* pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements);
-
+    VkMemoryRequirements2*                      pMemoryRequirements) {}
 
 virtual bool PreCallValidateCmdPreprocessGeneratedCommandsNV(
     VkCommandBuffer                             commandBuffer,
-    const VkGeneratedCommandsInfoNV*            pGeneratedCommandsInfo) const;
-
+    const VkGeneratedCommandsInfoNV*            pGeneratedCommandsInfo) const { return false; }
 
 virtual void PreCallRecordCmdPreprocessGeneratedCommandsNV(
     VkCommandBuffer                             commandBuffer,
-    const VkGeneratedCommandsInfoNV*            pGeneratedCommandsInfo);
-
+    const VkGeneratedCommandsInfoNV*            pGeneratedCommandsInfo) {}
 
 virtual void PostCallRecordCmdPreprocessGeneratedCommandsNV(
     VkCommandBuffer                             commandBuffer,
-    const VkGeneratedCommandsInfoNV*            pGeneratedCommandsInfo);
-
+    const VkGeneratedCommandsInfoNV*            pGeneratedCommandsInfo) {}
 
 virtual bool PreCallValidateCmdExecuteGeneratedCommandsNV(
     VkCommandBuffer                             commandBuffer,
     VkBool32                                    isPreprocessed,
-    const VkGeneratedCommandsInfoNV*            pGeneratedCommandsInfo) const;
-
+    const VkGeneratedCommandsInfoNV*            pGeneratedCommandsInfo) const { return false; }
 
 virtual void PreCallRecordCmdExecuteGeneratedCommandsNV(
     VkCommandBuffer                             commandBuffer,
     VkBool32                                    isPreprocessed,
-    const VkGeneratedCommandsInfoNV*            pGeneratedCommandsInfo);
-
+    const VkGeneratedCommandsInfoNV*            pGeneratedCommandsInfo) {}
 
 virtual void PostCallRecordCmdExecuteGeneratedCommandsNV(
     VkCommandBuffer                             commandBuffer,
     VkBool32                                    isPreprocessed,
-    const VkGeneratedCommandsInfoNV*            pGeneratedCommandsInfo);
-
+    const VkGeneratedCommandsInfoNV*            pGeneratedCommandsInfo) {}
 
 virtual bool PreCallValidateCmdBindPipelineShaderGroupNV(
     VkCommandBuffer                             commandBuffer,
     VkPipelineBindPoint                         pipelineBindPoint,
     VkPipeline                                  pipeline,
-    uint32_t                                    groupIndex) const;
-
+    uint32_t                                    groupIndex) const { return false; }
 
 virtual void PreCallRecordCmdBindPipelineShaderGroupNV(
     VkCommandBuffer                             commandBuffer,
     VkPipelineBindPoint                         pipelineBindPoint,
     VkPipeline                                  pipeline,
-    uint32_t                                    groupIndex);
-
+    uint32_t                                    groupIndex) {}
 
 virtual void PostCallRecordCmdBindPipelineShaderGroupNV(
     VkCommandBuffer                             commandBuffer,
     VkPipelineBindPoint                         pipelineBindPoint,
     VkPipeline                                  pipeline,
-    uint32_t                                    groupIndex);
-
+    uint32_t                                    groupIndex) {}
 
 virtual bool PreCallValidateCreateIndirectCommandsLayoutNV(
     VkDevice                                    device,
     const VkIndirectCommandsLayoutCreateInfoNV* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkIndirectCommandsLayoutNV*                 pIndirectCommandsLayout) const;
-
+    VkIndirectCommandsLayoutNV*                 pIndirectCommandsLayout) const { return false; }
 
 virtual void PreCallRecordCreateIndirectCommandsLayoutNV(
     VkDevice                                    device,
     const VkIndirectCommandsLayoutCreateInfoNV* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkIndirectCommandsLayoutNV*                 pIndirectCommandsLayout);
-
+    VkIndirectCommandsLayoutNV*                 pIndirectCommandsLayout) {}
 
 virtual void PostCallRecordCreateIndirectCommandsLayoutNV(
     VkDevice                                    device,
     const VkIndirectCommandsLayoutCreateInfoNV* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkIndirectCommandsLayoutNV*                 pIndirectCommandsLayout,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyIndirectCommandsLayoutNV(
     VkDevice                                    device,
     VkIndirectCommandsLayoutNV                  indirectCommandsLayout,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyIndirectCommandsLayoutNV(
     VkDevice                                    device,
     VkIndirectCommandsLayoutNV                  indirectCommandsLayout,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyIndirectCommandsLayoutNV(
     VkDevice                                    device,
     VkIndirectCommandsLayoutNV                  indirectCommandsLayout,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateCreatePrivateDataSlotEXT(
     VkDevice                                    device,
     const VkPrivateDataSlotCreateInfoEXT*       pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkPrivateDataSlotEXT*                       pPrivateDataSlot) const;
-
+    VkPrivateDataSlotEXT*                       pPrivateDataSlot) const { return false; }
 
 virtual void PreCallRecordCreatePrivateDataSlotEXT(
     VkDevice                                    device,
     const VkPrivateDataSlotCreateInfoEXT*       pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkPrivateDataSlotEXT*                       pPrivateDataSlot);
-
+    VkPrivateDataSlotEXT*                       pPrivateDataSlot) {}
 
 virtual void PostCallRecordCreatePrivateDataSlotEXT(
     VkDevice                                    device,
     const VkPrivateDataSlotCreateInfoEXT*       pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkPrivateDataSlotEXT*                       pPrivateDataSlot,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateDestroyPrivateDataSlotEXT(
     VkDevice                                    device,
     VkPrivateDataSlotEXT                        privateDataSlot,
-    const VkAllocationCallbacks*                pAllocator) const;
-
+    const VkAllocationCallbacks*                pAllocator) const { return false; }
 
 virtual void PreCallRecordDestroyPrivateDataSlotEXT(
     VkDevice                                    device,
     VkPrivateDataSlotEXT                        privateDataSlot,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual void PostCallRecordDestroyPrivateDataSlotEXT(
     VkDevice                                    device,
     VkPrivateDataSlotEXT                        privateDataSlot,
-    const VkAllocationCallbacks*                pAllocator);
-
+    const VkAllocationCallbacks*                pAllocator) {}
 
 virtual bool PreCallValidateSetPrivateDataEXT(
     VkDevice                                    device,
     VkObjectType                                objectType,
     uint64_t                                    objectHandle,
     VkPrivateDataSlotEXT                        privateDataSlot,
-    uint64_t                                    data) const;
-
+    uint64_t                                    data) const { return false; }
 
 virtual void PreCallRecordSetPrivateDataEXT(
     VkDevice                                    device,
     VkObjectType                                objectType,
     uint64_t                                    objectHandle,
     VkPrivateDataSlotEXT                        privateDataSlot,
-    uint64_t                                    data);
-
+    uint64_t                                    data) {}
 
 virtual void PostCallRecordSetPrivateDataEXT(
     VkDevice                                    device,
@@ -8220,32 +7033,28 @@ virtual void PostCallRecordSetPrivateDataEXT(
     uint64_t                                    objectHandle,
     VkPrivateDataSlotEXT                        privateDataSlot,
     uint64_t                                    data,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 virtual bool PreCallValidateGetPrivateDataEXT(
     VkDevice                                    device,
     VkObjectType                                objectType,
     uint64_t                                    objectHandle,
     VkPrivateDataSlotEXT                        privateDataSlot,
-    uint64_t*                                   pData) const;
-
+    uint64_t*                                   pData) const { return false; }
 
 virtual void PreCallRecordGetPrivateDataEXT(
     VkDevice                                    device,
     VkObjectType                                objectType,
     uint64_t                                    objectHandle,
     VkPrivateDataSlotEXT                        privateDataSlot,
-    uint64_t*                                   pData);
-
+    uint64_t*                                   pData) {}
 
 virtual void PostCallRecordGetPrivateDataEXT(
     VkDevice                                    device,
     VkObjectType                                objectType,
     uint64_t                                    objectHandle,
     VkPrivateDataSlotEXT                        privateDataSlot,
-    uint64_t*                                   pData);
-
+    uint64_t*                                   pData) {}
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
@@ -8253,23 +7062,20 @@ virtual bool PreCallValidateCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkAccelerationStructureKHR*                 pAccelerationStructure) const;
-
+    VkAccelerationStructureKHR*                 pAccelerationStructure) const { return false; }
 
 virtual void PreCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
-    VkAccelerationStructureKHR*                 pAccelerationStructure);
-
+    VkAccelerationStructureKHR*                 pAccelerationStructure) {}
 
 virtual void PostCallRecordCreateAccelerationStructureKHR(
     VkDevice                                    device,
     const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkAccelerationStructureKHR*                 pAccelerationStructure,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -8278,20 +7084,17 @@ virtual void PostCallRecordCreateAccelerationStructureKHR(
 virtual bool PreCallValidateGetAccelerationStructureMemoryRequirementsKHR(
     VkDevice                                    device,
     const VkAccelerationStructureMemoryRequirementsInfoKHR* pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements) const;
-
+    VkMemoryRequirements2*                      pMemoryRequirements) const { return false; }
 
 virtual void PreCallRecordGetAccelerationStructureMemoryRequirementsKHR(
     VkDevice                                    device,
     const VkAccelerationStructureMemoryRequirementsInfoKHR* pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements);
-
+    VkMemoryRequirements2*                      pMemoryRequirements) {}
 
 virtual void PostCallRecordGetAccelerationStructureMemoryRequirementsKHR(
     VkDevice                                    device,
     const VkAccelerationStructureMemoryRequirementsInfoKHR* pInfo,
-    VkMemoryRequirements2*                      pMemoryRequirements);
-
+    VkMemoryRequirements2*                      pMemoryRequirements) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -8301,22 +7104,19 @@ virtual bool PreCallValidateCmdBuildAccelerationStructureKHR(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos) const;
-
+    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos) const { return false; }
 
 virtual void PreCallRecordCmdBuildAccelerationStructureKHR(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos);
-
+    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos) {}
 
 virtual void PostCallRecordCmdBuildAccelerationStructureKHR(
     VkCommandBuffer                             commandBuffer,
     uint32_t                                    infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos);
-
+    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -8327,24 +7127,21 @@ virtual bool PreCallValidateCmdBuildAccelerationStructureIndirectKHR(
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfo,
     VkBuffer                                    indirectBuffer,
     VkDeviceSize                                indirectOffset,
-    uint32_t                                    indirectStride) const;
-
+    uint32_t                                    indirectStride) const { return false; }
 
 virtual void PreCallRecordCmdBuildAccelerationStructureIndirectKHR(
     VkCommandBuffer                             commandBuffer,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfo,
     VkBuffer                                    indirectBuffer,
     VkDeviceSize                                indirectOffset,
-    uint32_t                                    indirectStride);
-
+    uint32_t                                    indirectStride) {}
 
 virtual void PostCallRecordCmdBuildAccelerationStructureIndirectKHR(
     VkCommandBuffer                             commandBuffer,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfo,
     VkBuffer                                    indirectBuffer,
     VkDeviceSize                                indirectOffset,
-    uint32_t                                    indirectStride);
-
+    uint32_t                                    indirectStride) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -8354,23 +7151,20 @@ virtual bool PreCallValidateBuildAccelerationStructureKHR(
     VkDevice                                    device,
     uint32_t                                    infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos) const;
-
+    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos) const { return false; }
 
 virtual void PreCallRecordBuildAccelerationStructureKHR(
     VkDevice                                    device,
     uint32_t                                    infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos);
-
+    const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos) {}
 
 virtual void PostCallRecordBuildAccelerationStructureKHR(
     VkDevice                                    device,
     uint32_t                                    infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
     const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -8378,19 +7172,16 @@ virtual void PostCallRecordBuildAccelerationStructureKHR(
 
 virtual bool PreCallValidateCopyAccelerationStructureKHR(
     VkDevice                                    device,
-    const VkCopyAccelerationStructureInfoKHR*   pInfo) const;
-
+    const VkCopyAccelerationStructureInfoKHR*   pInfo) const { return false; }
 
 virtual void PreCallRecordCopyAccelerationStructureKHR(
     VkDevice                                    device,
-    const VkCopyAccelerationStructureInfoKHR*   pInfo);
-
+    const VkCopyAccelerationStructureInfoKHR*   pInfo) {}
 
 virtual void PostCallRecordCopyAccelerationStructureKHR(
     VkDevice                                    device,
     const VkCopyAccelerationStructureInfoKHR*   pInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -8398,19 +7189,16 @@ virtual void PostCallRecordCopyAccelerationStructureKHR(
 
 virtual bool PreCallValidateCopyAccelerationStructureToMemoryKHR(
     VkDevice                                    device,
-    const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) const;
-
+    const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) const { return false; }
 
 virtual void PreCallRecordCopyAccelerationStructureToMemoryKHR(
     VkDevice                                    device,
-    const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo);
-
+    const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) {}
 
 virtual void PostCallRecordCopyAccelerationStructureToMemoryKHR(
     VkDevice                                    device,
     const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -8418,19 +7206,16 @@ virtual void PostCallRecordCopyAccelerationStructureToMemoryKHR(
 
 virtual bool PreCallValidateCopyMemoryToAccelerationStructureKHR(
     VkDevice                                    device,
-    const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) const;
-
+    const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) const { return false; }
 
 virtual void PreCallRecordCopyMemoryToAccelerationStructureKHR(
     VkDevice                                    device,
-    const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo);
-
+    const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) {}
 
 virtual void PostCallRecordCopyMemoryToAccelerationStructureKHR(
     VkDevice                                    device,
     const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -8443,8 +7228,7 @@ virtual bool PreCallValidateWriteAccelerationStructuresPropertiesKHR(
     VkQueryType                                 queryType,
     size_t                                      dataSize,
     void*                                       pData,
-    size_t                                      stride) const;
-
+    size_t                                      stride) const { return false; }
 
 virtual void PreCallRecordWriteAccelerationStructuresPropertiesKHR(
     VkDevice                                    device,
@@ -8453,8 +7237,7 @@ virtual void PreCallRecordWriteAccelerationStructuresPropertiesKHR(
     VkQueryType                                 queryType,
     size_t                                      dataSize,
     void*                                       pData,
-    size_t                                      stride);
-
+    size_t                                      stride) {}
 
 virtual void PostCallRecordWriteAccelerationStructuresPropertiesKHR(
     VkDevice                                    device,
@@ -8464,8 +7247,7 @@ virtual void PostCallRecordWriteAccelerationStructuresPropertiesKHR(
     size_t                                      dataSize,
     void*                                       pData,
     size_t                                      stride,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -8473,18 +7255,15 @@ virtual void PostCallRecordWriteAccelerationStructuresPropertiesKHR(
 
 virtual bool PreCallValidateCmdCopyAccelerationStructureKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkCopyAccelerationStructureInfoKHR*   pInfo) const;
-
+    const VkCopyAccelerationStructureInfoKHR*   pInfo) const { return false; }
 
 virtual void PreCallRecordCmdCopyAccelerationStructureKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkCopyAccelerationStructureInfoKHR*   pInfo);
-
+    const VkCopyAccelerationStructureInfoKHR*   pInfo) {}
 
 virtual void PostCallRecordCmdCopyAccelerationStructureKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkCopyAccelerationStructureInfoKHR*   pInfo);
-
+    const VkCopyAccelerationStructureInfoKHR*   pInfo) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -8492,18 +7271,15 @@ virtual void PostCallRecordCmdCopyAccelerationStructureKHR(
 
 virtual bool PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) const;
-
+    const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) const { return false; }
 
 virtual void PreCallRecordCmdCopyAccelerationStructureToMemoryKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo);
-
+    const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) {}
 
 virtual void PostCallRecordCmdCopyAccelerationStructureToMemoryKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo);
-
+    const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -8511,18 +7287,15 @@ virtual void PostCallRecordCmdCopyAccelerationStructureToMemoryKHR(
 
 virtual bool PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) const;
-
+    const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) const { return false; }
 
 virtual void PreCallRecordCmdCopyMemoryToAccelerationStructureKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo);
-
+    const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) {}
 
 virtual void PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(
     VkCommandBuffer                             commandBuffer,
-    const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo);
-
+    const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -8536,8 +7309,7 @@ virtual bool PreCallValidateCmdTraceRaysKHR(
     const VkStridedBufferRegionKHR*             pCallableShaderBindingTable,
     uint32_t                                    width,
     uint32_t                                    height,
-    uint32_t                                    depth) const;
-
+    uint32_t                                    depth) const { return false; }
 
 virtual void PreCallRecordCmdTraceRaysKHR(
     VkCommandBuffer                             commandBuffer,
@@ -8547,8 +7319,7 @@ virtual void PreCallRecordCmdTraceRaysKHR(
     const VkStridedBufferRegionKHR*             pCallableShaderBindingTable,
     uint32_t                                    width,
     uint32_t                                    height,
-    uint32_t                                    depth);
-
+    uint32_t                                    depth) {}
 
 virtual void PostCallRecordCmdTraceRaysKHR(
     VkCommandBuffer                             commandBuffer,
@@ -8558,8 +7329,7 @@ virtual void PostCallRecordCmdTraceRaysKHR(
     const VkStridedBufferRegionKHR*             pCallableShaderBindingTable,
     uint32_t                                    width,
     uint32_t                                    height,
-    uint32_t                                    depth);
-
+    uint32_t                                    depth) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -8572,8 +7342,7 @@ virtual bool PreCallValidateCreateRayTracingPipelinesKHR(
     const VkRayTracingPipelineCreateInfoKHR*    pCreateInfos,
     const VkAllocationCallbacks*                pAllocator,
     VkPipeline*                                 pPipelines,
-    void*                                       state_data) const;
-
+    void*                                       state_data) const { return false; }
 
 virtual void PreCallRecordCreateRayTracingPipelinesKHR(
     VkDevice                                    device,
@@ -8582,8 +7351,7 @@ virtual void PreCallRecordCreateRayTracingPipelinesKHR(
     const VkRayTracingPipelineCreateInfoKHR*    pCreateInfos,
     const VkAllocationCallbacks*                pAllocator,
     VkPipeline*                                 pPipelines,
-    void*                                       state_data);
-
+    void*                                       state_data) {}
 
 virtual void PostCallRecordCreateRayTracingPipelinesKHR(
     VkDevice                                    device,
@@ -8593,8 +7361,7 @@ virtual void PostCallRecordCreateRayTracingPipelinesKHR(
     const VkAllocationCallbacks*                pAllocator,
     VkPipeline*                                 pPipelines,
     VkResult                                    result,
-    void*                                       state_data);
-
+    void*                                       state_data) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -8602,19 +7369,16 @@ virtual void PostCallRecordCreateRayTracingPipelinesKHR(
 
 virtual bool PreCallValidateGetAccelerationStructureDeviceAddressKHR(
     VkDevice                                    device,
-    const VkAccelerationStructureDeviceAddressInfoKHR* pInfo) const;
-
+    const VkAccelerationStructureDeviceAddressInfoKHR* pInfo) const { return false; }
 
 virtual void PreCallRecordGetAccelerationStructureDeviceAddressKHR(
     VkDevice                                    device,
-    const VkAccelerationStructureDeviceAddressInfoKHR* pInfo);
-
+    const VkAccelerationStructureDeviceAddressInfoKHR* pInfo) {}
 
 virtual void PostCallRecordGetAccelerationStructureDeviceAddressKHR(
     VkDevice                                    device,
     const VkAccelerationStructureDeviceAddressInfoKHR* pInfo,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -8626,8 +7390,7 @@ virtual bool PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
     uint32_t                                    firstGroup,
     uint32_t                                    groupCount,
     size_t                                      dataSize,
-    void*                                       pData) const;
-
+    void*                                       pData) const { return false; }
 
 virtual void PreCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(
     VkDevice                                    device,
@@ -8635,8 +7398,7 @@ virtual void PreCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(
     uint32_t                                    firstGroup,
     uint32_t                                    groupCount,
     size_t                                      dataSize,
-    void*                                       pData);
-
+    void*                                       pData) {}
 
 virtual void PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(
     VkDevice                                    device,
@@ -8645,8 +7407,7 @@ virtual void PostCallRecordGetRayTracingCaptureReplayShaderGroupHandlesKHR(
     uint32_t                                    groupCount,
     size_t                                      dataSize,
     void*                                       pData,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -8659,8 +7420,7 @@ virtual bool PreCallValidateCmdTraceRaysIndirectKHR(
     const VkStridedBufferRegionKHR*             pHitShaderBindingTable,
     const VkStridedBufferRegionKHR*             pCallableShaderBindingTable,
     VkBuffer                                    buffer,
-    VkDeviceSize                                offset) const;
-
+    VkDeviceSize                                offset) const { return false; }
 
 virtual void PreCallRecordCmdTraceRaysIndirectKHR(
     VkCommandBuffer                             commandBuffer,
@@ -8669,8 +7429,7 @@ virtual void PreCallRecordCmdTraceRaysIndirectKHR(
     const VkStridedBufferRegionKHR*             pHitShaderBindingTable,
     const VkStridedBufferRegionKHR*             pCallableShaderBindingTable,
     VkBuffer                                    buffer,
-    VkDeviceSize                                offset);
-
+    VkDeviceSize                                offset) {}
 
 virtual void PostCallRecordCmdTraceRaysIndirectKHR(
     VkCommandBuffer                             commandBuffer,
@@ -8679,8 +7438,7 @@ virtual void PostCallRecordCmdTraceRaysIndirectKHR(
     const VkStridedBufferRegionKHR*             pHitShaderBindingTable,
     const VkStridedBufferRegionKHR*             pCallableShaderBindingTable,
     VkBuffer                                    buffer,
-    VkDeviceSize                                offset);
-
+    VkDeviceSize                                offset) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 
@@ -8688,19 +7446,16 @@ virtual void PostCallRecordCmdTraceRaysIndirectKHR(
 
 virtual bool PreCallValidateGetDeviceAccelerationStructureCompatibilityKHR(
     VkDevice                                    device,
-    const VkAccelerationStructureVersionKHR*    version) const;
-
+    const VkAccelerationStructureVersionKHR*    version) const { return false; }
 
 virtual void PreCallRecordGetDeviceAccelerationStructureCompatibilityKHR(
     VkDevice                                    device,
-    const VkAccelerationStructureVersionKHR*    version);
-
+    const VkAccelerationStructureVersionKHR*    version) {}
 
 virtual void PostCallRecordGetDeviceAccelerationStructureCompatibilityKHR(
     VkDevice                                    device,
     const VkAccelerationStructureVersionKHR*    version,
-    VkResult                                    result);
-
+    VkResult                                    result) {}
 
 #endif // VK_ENABLE_BETA_EXTENSIONS
 

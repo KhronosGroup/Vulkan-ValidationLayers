@@ -253,10 +253,10 @@ class BestPracticesChassisOutputGenerator(OutputGenerator):
         pre_decl = pre_decl.split("VKAPI_CALL ")[1]
         if cmdname in self.extra_parameter_list:
             pre_decl = pre_decl.replace(')', ',\n    void*                                       state_data)')
-        pre_decl = pre_decl.replace(')', ') const {\n')
+        pre_decl = pre_decl.replace(')', ') const {')
         pre_decl = 'virtual bool BestPracticesAPICallHookInterface::PreCallValidate' + pre_decl[2:]
-        func_decl = pre_decl.replace(' {',';\n');
-        func_decl = func_decl.replace('BestPracticesAPICallHookInterface::', '')
+        func_decl = pre_decl.replace('BestPracticesAPICallHookInterface::', '')
+        func_decl += ' return false; }\n'
         self.otwrite('hdr', func_decl)
 
     def genPreCallRecordCmd(self, cmdinfo, cmdname, alias):
@@ -269,10 +269,10 @@ class BestPracticesChassisOutputGenerator(OutputGenerator):
         pre_decl = pre_decl.split("VKAPI_CALL ")[1]
         if cmdname in self.extra_parameter_list:
             pre_decl = pre_decl.replace(')', ',\n    void*                                       state_data)')
-        pre_decl = pre_decl.replace(')', ') {\n')
+        pre_decl = pre_decl.replace(')', ') {')
         pre_decl = 'virtual void BestPracticesAPICallHookInterface::PreCallRecord' + pre_decl[2:]
-        func_decl = pre_decl.replace(' {',';\n');
-        func_decl = func_decl.replace('BestPracticesAPICallHookInterface::', '')
+        func_decl = pre_decl.replace('BestPracticesAPICallHookInterface::', '')
+        func_decl += '}\n'
         self.otwrite('hdr', func_decl)
 
     def genPostCallRecordCmd(self, cmdinfo, cmdname, alias):
@@ -292,10 +292,10 @@ class BestPracticesChassisOutputGenerator(OutputGenerator):
             pre_decl = pre_decl.replace(')', ',\n    VkResult                                    result)')
         if cmdname in self.extra_parameter_list:
             pre_decl = pre_decl.replace(')', ',\n    void*                                       state_data)')
-        pre_decl = pre_decl.replace(')', ') {\n')
+        pre_decl = pre_decl.replace(')', ') {')
         pre_decl = 'virtual void BestPracticesAPICallHookInterface::PostCallRecord' + pre_decl[2:]
-        func_decl = pre_decl.replace(' {',';\n');
-        func_decl = func_decl.replace('BestPracticesAPICallHookInterface::', '')
+        func_decl = pre_decl.replace('BestPracticesAPICallHookInterface::', '')
+        func_decl += '}\n'
         self.otwrite('hdr', func_decl)
 
     #
