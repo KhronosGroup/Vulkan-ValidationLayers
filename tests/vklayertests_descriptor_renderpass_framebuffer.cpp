@@ -2599,19 +2599,7 @@ TEST_F(VkLayerTest, RenderPassDestroyWhileInUse) {
 }
 
 TEST_F(VkLayerTest, FramebufferCreateErrors) {
-    TEST_DESCRIPTION(
-        "Hit errors when attempting to create a framebuffer :\n"
-        " 1. Mismatch between framebuffer & renderPass attachmentCount\n"
-        " 2. Use a color image as depthStencil attachment\n"
-        " 3. Mismatch framebuffer & renderPass attachment formats\n"
-        " 4. Mismatch framebuffer & renderPass attachment #samples\n"
-        " 5. Framebuffer attachment w/ non-1 mip-levels\n"
-        " 6. Framebuffer with more than 1 layer with a multiview renderpass\n"
-        " 7. Framebuffer attachment where dimensions don't match\n"
-        " 8. Framebuffer attachment where dimensions don't match\n"
-        " 9. Framebuffer attachment w/o identity swizzle\n"
-        " 10. framebuffer dimensions exceed physical device limits\n"
-        " 11. null pAttachments\n");
+    TEST_DESCRIPTION("VUIDs related to framebuffer creation");
 
     // Check for VK_KHR_get_physical_device_properties2
     bool push_physical_device_properties_2_support =
@@ -2704,6 +2692,35 @@ TEST_F(VkLayerTest, FramebufferCreateErrors) {
         vk::DestroyFramebuffer(m_device->device(), fb, NULL);
     }
     vk::DestroyRenderPass(m_device->device(), rp_ds, NULL);
+
+    {
+        VkImageCreateInfo image_ci = {};
+        image_ci.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        image_ci.pNext = NULL;
+        image_ci.imageType = VK_IMAGE_TYPE_3D;
+        image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
+        image_ci.extent.width = 256;
+        image_ci.extent.height = 256;
+        image_ci.extent.depth = 1;
+        image_ci.mipLevels = 1;
+        image_ci.arrayLayers = 1;
+        image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+        image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+        image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        image_ci.flags = 0;
+        VkImageObj image(m_device);
+        image.init(&image_ci);
+
+        VkImageView view = image.targetView(VK_FORMAT_D16_UNORM);
+
+        VkFramebufferCreateInfo fci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, m_renderPass, 1, &view, 256, 256, 1};
+        VkFramebuffer framebuffer;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkFramebufferCreateInfo-pAttachments-00891");
+        m_errorMonitor->SetUnexpectedError("VUID-VkFramebufferCreateInfo-pAttachments-00880");
+        vk::CreateFramebuffer(m_device->device(), &fci, nullptr, &framebuffer);
+        m_errorMonitor->VerifyFound();
+    }
 
     // Create new renderpass with alternate attachment format from fb
     attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
