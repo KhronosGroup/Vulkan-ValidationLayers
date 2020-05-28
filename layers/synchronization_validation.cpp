@@ -102,6 +102,33 @@ static constexpr SyncOrderingBarrier kAttachmentRasterOrder = {kDepthStencilAtta
 // Sometimes we have an internal access conflict, and we using the kCurrentCommandTag to set and detect in temporary/proxy contexts
 static const ResourceUsageTag kCurrentCommandTag(ResourceUsageTag::kMaxIndex);
 
+static constexpr VkAccessFlags ALLReadAccessMask =
+    VK_ACCESS_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_INDEX_READ_BIT | VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
+    VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT |
+    VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT |
+    VK_ACCESS_HOST_READ_BIT | VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_READ_BIT_EXT |
+    VK_ACCESS_CONDITIONAL_RENDERING_READ_BIT_EXT | VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT |
+    VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV |
+    VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT | VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV |
+    VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
+
+static constexpr VkAccessFlags ALLWriteAccessMask =
+    VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
+    VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_MEMORY_WRITE_BIT |
+    VK_ACCESS_TRANSFORM_FEEDBACK_WRITE_BIT_EXT | VK_ACCESS_TRANSFORM_FEEDBACK_COUNTER_WRITE_BIT_EXT |
+    VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV |
+    VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV;
+
+inline VkAccessFlags GetMemoryAccessMask(VkAccessFlags accessMask) {
+    if (accessMask & VK_ACCESS_MEMORY_READ_BIT) {
+        accessMask |= ALLReadAccessMask;
+    }
+    if (accessMask & VK_ACCESS_MEMORY_WRITE_BIT) {
+        accessMask |= ALLWriteAccessMask;
+    }
+    return accessMask;
+}
+
 inline VkDeviceSize GetRealWholeSize(VkDeviceSize offset, VkDeviceSize size, VkDeviceSize whole_size) {
     if (size == VK_WHOLE_SIZE) {
         return (whole_size - offset);
@@ -845,7 +872,7 @@ SyncStageAccessFlags SyncStageAccess::AccessScopeByStage(VkPipelineStageFlags st
 }
 
 SyncStageAccessFlags SyncStageAccess::AccessScopeByAccess(VkAccessFlags accesses) {
-    return AccessScopeImpl(accesses, syncStageAccessMaskByAccessBit);
+    return AccessScopeImpl(GetMemoryAccessMask(accesses), syncStageAccessMaskByAccessBit);
 }
 
 // Getting from stage mask and access mask to stage/acess masks is something we need to be good at...
