@@ -799,60 +799,59 @@ void ValidationStateTracker::UpdateDrawState(CMD_BUFFER_STATE *cb_state, const V
             uint32_t setIndex = set_binding_pair.first;
             // Pull the set node
             cvdescriptorset::DescriptorSet *descriptor_set = state.per_set[setIndex].bound_descriptor_set;
-            if (!descriptor_set->IsPushDescriptor()) {
-                // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor binding
 
-                // TODO: If recreating the reduced_map here shows up in profilinging, need to find a way of sharing with the
-                // Validate pass.  Though in the case of "many" descriptors, typically the descriptor count >> binding count
-                cvdescriptorset::PrefilterBindRequestMap reduced_map(*descriptor_set, set_binding_pair.second);
-                const auto &binding_req_map = reduced_map.FilteredMap(*cb_state, *pPipe);
+            // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor binding
 
-                if (reduced_map.IsManyDescriptors()) {
-                    // Only update validate binding tags if we meet the "many" criteria in the Prefilter class
-                    descriptor_set->UpdateValidationCache(*cb_state, *pPipe, binding_req_map);
+            // TODO: If recreating the reduced_map here shows up in profilinging, need to find a way of sharing with the
+            // Validate pass.  Though in the case of "many" descriptors, typically the descriptor count >> binding count
+            cvdescriptorset::PrefilterBindRequestMap reduced_map(*descriptor_set, set_binding_pair.second);
+            const auto &binding_req_map = reduced_map.FilteredMap(*cb_state, *pPipe);
+
+            if (reduced_map.IsManyDescriptors()) {
+                // Only update validate binding tags if we meet the "many" criteria in the Prefilter class
+                descriptor_set->UpdateValidationCache(*cb_state, *pPipe, binding_req_map);
+            }
+
+            // We can skip updating the state if "nothing" has changed since the last validation.
+            // See CoreChecks::ValidateCmdBufDrawState for more details.
+            bool descriptor_set_changed =
+                !reduced_map.IsManyDescriptors() ||
+                // Update if descriptor set (or contents) has changed
+                state.per_set[setIndex].validated_set != descriptor_set ||
+                state.per_set[setIndex].validated_set_change_count != descriptor_set->GetChangeCount() ||
+                (!disabled[image_layout_validation] &&
+                 state.per_set[setIndex].validated_set_image_layout_change_count != cb_state->image_layout_change_count);
+            bool need_update = descriptor_set_changed ||
+                               // Update if previous bindingReqMap doesn't include new bindingReqMap
+                               !std::includes(state.per_set[setIndex].validated_set_binding_req_map.begin(),
+                                              state.per_set[setIndex].validated_set_binding_req_map.end(), binding_req_map.begin(),
+                                              binding_req_map.end());
+
+            if (need_update) {
+                // Bind this set and its active descriptor resources to the command buffer
+                if (!descriptor_set_changed && reduced_map.IsManyDescriptors()) {
+                    // Only record the bindings that haven't already been recorded
+                    BindingReqMap delta_reqs;
+                    std::set_difference(binding_req_map.begin(), binding_req_map.end(),
+                                        state.per_set[setIndex].validated_set_binding_req_map.begin(),
+                                        state.per_set[setIndex].validated_set_binding_req_map.end(),
+                                        std::inserter(delta_reqs, delta_reqs.begin()));
+                    descriptor_set->UpdateDrawState(this, cb_state, pPipe, delta_reqs);
+                } else {
+                    descriptor_set->UpdateDrawState(this, cb_state, pPipe, binding_req_map);
                 }
 
-                // We can skip updating the state if "nothing" has changed since the last validation.
-                // See CoreChecks::ValidateCmdBufDrawState for more details.
-                bool descriptor_set_changed =
-                    !reduced_map.IsManyDescriptors() ||
-                    // Update if descriptor set (or contents) has changed
-                    state.per_set[setIndex].validated_set != descriptor_set ||
-                    state.per_set[setIndex].validated_set_change_count != descriptor_set->GetChangeCount() ||
-                    (!disabled[image_layout_validation] &&
-                     state.per_set[setIndex].validated_set_image_layout_change_count != cb_state->image_layout_change_count);
-                bool need_update = descriptor_set_changed ||
-                                   // Update if previous bindingReqMap doesn't include new bindingReqMap
-                                   !std::includes(state.per_set[setIndex].validated_set_binding_req_map.begin(),
-                                                  state.per_set[setIndex].validated_set_binding_req_map.end(),
-                                                  binding_req_map.begin(), binding_req_map.end());
-
-                if (need_update) {
-                    // Bind this set and its active descriptor resources to the command buffer
-                    if (!descriptor_set_changed && reduced_map.IsManyDescriptors()) {
-                        // Only record the bindings that haven't already been recorded
-                        BindingReqMap delta_reqs;
-                        std::set_difference(binding_req_map.begin(), binding_req_map.end(),
-                                            state.per_set[setIndex].validated_set_binding_req_map.begin(),
-                                            state.per_set[setIndex].validated_set_binding_req_map.end(),
-                                            std::inserter(delta_reqs, delta_reqs.begin()));
-                        descriptor_set->UpdateDrawState(this, cb_state, pPipe, delta_reqs);
-                    } else {
-                        descriptor_set->UpdateDrawState(this, cb_state, pPipe, binding_req_map);
+                state.per_set[setIndex].validated_set = descriptor_set;
+                state.per_set[setIndex].validated_set_change_count = descriptor_set->GetChangeCount();
+                state.per_set[setIndex].validated_set_image_layout_change_count = cb_state->image_layout_change_count;
+                if (reduced_map.IsManyDescriptors()) {
+                    // Check whether old == new before assigning, the equality check is much cheaper than
+                    // freeing and reallocating the map.
+                    if (state.per_set[setIndex].validated_set_binding_req_map != set_binding_pair.second) {
+                        state.per_set[setIndex].validated_set_binding_req_map = set_binding_pair.second;
                     }
-
-                    state.per_set[setIndex].validated_set = descriptor_set;
-                    state.per_set[setIndex].validated_set_change_count = descriptor_set->GetChangeCount();
-                    state.per_set[setIndex].validated_set_image_layout_change_count = cb_state->image_layout_change_count;
-                    if (reduced_map.IsManyDescriptors()) {
-                        // Check whether old == new before assigning, the equality check is much cheaper than
-                        // freeing and reallocating the map.
-                        if (state.per_set[setIndex].validated_set_binding_req_map != set_binding_pair.second) {
-                            state.per_set[setIndex].validated_set_binding_req_map = set_binding_pair.second;
-                        }
-                    } else {
-                        state.per_set[setIndex].validated_set_binding_req_map = BindingReqMap();
-                    }
+                } else {
+                    state.per_set[setIndex].validated_set_binding_req_map = BindingReqMap();
                 }
             }
         }
