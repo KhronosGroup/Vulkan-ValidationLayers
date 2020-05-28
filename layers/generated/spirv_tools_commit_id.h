@@ -26,4 +26,4 @@
  ****************************************************************************/
 #pragma once
 
-#define SPIRV_TOOLS_COMMIT_ID "e157435c1e777aa1052f446dafed162b4a722e03"
+#define SPIRV_TOOLS_COMMIT_ID "e00d27c6d65b7d3e72506a311d7f053da4051295"
