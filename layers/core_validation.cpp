@@ -7593,15 +7593,6 @@ bool CoreChecks::MatchUsage(uint32_t count, const VkAttachmentReference2KHR *att
     return skip;
 }
 
-// Validate VkFramebufferCreateInfo which includes:
-// 1. attachmentCount equals renderPass attachmentCount
-// 2. corresponding framebuffer and renderpass attachments have matching formats
-// 3. corresponding framebuffer and renderpass attachments have matching sample counts
-// 4. fb attachments only have a single mip level
-// 5. fb attachment dimensions are each at least as large as the fb
-// 6. fb attachments use idenity swizzle
-// 7. fb attachments used by renderPass for color/input/ds have correct usage bit set
-// 8. fb dimensions are within physical device limits
 bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pCreateInfo) const {
     bool skip = false;
 
@@ -7751,6 +7742,23 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                 "a swizzle = %s\n",
                                 i, string_VkComponentSwizzle(ivci.components.r), string_VkComponentSwizzle(ivci.components.g),
                                 string_VkComponentSwizzle(ivci.components.b), string_VkComponentSwizzle(ivci.components.a));
+                        }
+                        if ((ivci.viewType == VK_IMAGE_VIEW_TYPE_2D) || (ivci.viewType == VK_IMAGE_VIEW_TYPE_2D)) {
+                            const auto image_state = GetImageState(ivci.image);
+                            if (image_state->createInfo.imageType == VK_IMAGE_TYPE_3D) {
+                                if (FormatIsDepthOrStencil(ivci.format)) {
+                                    LogObjectList objlist(device);
+                                    objlist.add(ivci.image);
+                                    skip |= LogError(
+                                        objlist, "VUID-VkFramebufferCreateInfo-pAttachments-00891",
+                                        "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has an image view type of "
+                                        "%s "
+                                        "which was taken from image %s of type VK_IMAGE_TYPE_3D, but the image view format is a "
+                                        "depth/stencil format %s",
+                                        i, string_VkImageViewType(ivci.viewType), report_data->FormatHandle(ivci.image).c_str(),
+                                        string_VkFormat(ivci.format));
+                                }
+                            }
                         }
                     }
                 }
