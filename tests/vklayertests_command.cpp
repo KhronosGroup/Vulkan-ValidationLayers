@@ -2048,7 +2048,8 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
             // buffer offset must be a multiple of texel block size (16)
             vuid = mp_extensions ? "VUID-VkBufferImageCopy-None-01738" : "VUID-VkBufferImageCopy-bufferOffset-00206";
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferImageCopy-bufferOffset-00193");
+            vuid = mp_extensions ? "VUID-VkBufferImageCopy-bufferOffset-01558" : "VUID-VkBufferImageCopy-bufferOffset-00193";
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, vuid);
             region.imageExtent = {64, 64, 1};
             region.bufferOffset = 24;
             vk::CmdCopyImageToBuffer(m_commandBuffer->handle(), image_16k_4x4comp.handle(), VK_IMAGE_LAYOUT_GENERAL,

@@ -5161,8 +5161,11 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
 bool CoreChecks::ValidateBufferImageCopyData(uint32_t regionCount, const VkBufferImageCopy *pRegions,
                                              const IMAGE_STATE *image_state, const char *function) const {
     bool skip = false;
+    assert(image_state != nullptr);
+    const VkFormat image_format = image_state->createInfo.format;
 
     for (uint32_t i = 0; i < regionCount; i++) {
+        const VkImageAspectFlags region_aspect_mask = pRegions[i].imageSubresource.aspectMask;
         if (image_state->createInfo.imageType == VK_IMAGE_TYPE_1D) {
             if ((pRegions[i].imageOffset.y != 0) || (pRegions[i].imageExtent.height != 1)) {
                 skip |=
@@ -5193,10 +5196,14 @@ bool CoreChecks::ValidateBufferImageCopyData(uint32_t regionCount, const VkBuffe
 
         // If the the calling command's VkImage parameter's format is not a depth/stencil format,
         // then bufferOffset must be a multiple of the calling command's VkImage parameter's element size
-        uint32_t element_size = FormatElementSize(image_state->createInfo.format, pRegions[i].imageSubresource.aspectMask);
+        uint32_t element_size = FormatElementSize(image_format, region_aspect_mask);
 
-        if (!FormatIsDepthAndStencil(image_state->createInfo.format) && SafeModulo(pRegions[i].bufferOffset, element_size) != 0) {
-            skip |= LogError(image_state->image, "VUID-VkBufferImageCopy-bufferOffset-00193",
+        // If not depth/stencil and not multi-plane
+        if ((!FormatIsDepthAndStencil(image_format) && !FormatIsMultiplane(image_format)) &&
+            SafeModulo(pRegions[i].bufferOffset, element_size) != 0) {
+            const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion) ? "VUID-VkBufferImageCopy-bufferOffset-01558"
+                                                                                   : "VUID-VkBufferImageCopy-bufferOffset-00193";
+            skip |= LogError(image_state->image, vuid,
                              "%s(): pRegion[%d] bufferOffset 0x%" PRIxLEAST64
                              " must be a multiple of this format's texel size (%" PRIu32 ").",
                              function, i, pRegions[i].bufferOffset, element_size);
@@ -5262,23 +5269,23 @@ bool CoreChecks::ValidateBufferImageCopyData(uint32_t regionCount, const VkBuffe
 
         // subresource aspectMask must have exactly 1 bit set
         const int num_bits = sizeof(VkFlags) * CHAR_BIT;
-        std::bitset<num_bits> aspect_mask_bits(pRegions[i].imageSubresource.aspectMask);
+        std::bitset<num_bits> aspect_mask_bits(region_aspect_mask);
         if (aspect_mask_bits.count() != 1) {
             skip |= LogError(image_state->image, "VUID-VkBufferImageCopy-aspectMask-00212",
                              "%s: aspectMasks for imageSubresource in each region must have only a single bit set.", function);
         }
 
         // image subresource aspect bit must match format
-        if (!VerifyAspectsPresent(pRegions[i].imageSubresource.aspectMask, image_state->createInfo.format)) {
+        if (!VerifyAspectsPresent(region_aspect_mask, image_format)) {
             skip |= LogError(
                 image_state->image, "VUID-VkBufferImageCopy-aspectMask-00211",
                 "%s(): pRegion[%d] subresource aspectMask 0x%x specifies aspects that are not present in image format 0x%x.",
-                function, i, pRegions[i].imageSubresource.aspectMask, image_state->createInfo.format);
+                function, i, region_aspect_mask, image_format);
         }
 
         // Checks that apply only to compressed images
-        if (FormatIsCompressed(image_state->createInfo.format) || FormatIsSinglePlane_422(image_state->createInfo.format)) {
-            auto block_size = FormatTexelBlockExtent(image_state->createInfo.format);
+        if (FormatIsCompressed(image_format) || FormatIsSinglePlane_422(image_format)) {
+            auto block_size = FormatTexelBlockExtent(image_format);
 
             //  BufferRowLength must be a multiple of block width
             if (SafeModulo(pRegions[i].bufferRowLength, block_size.width) != 0) {
@@ -5316,7 +5323,7 @@ bool CoreChecks::ValidateBufferImageCopyData(uint32_t regionCount, const VkBuffe
             }
 
             // bufferOffset must be a multiple of block size (linear bytes)
-            uint32_t block_size_in_bytes = FormatElementSize(image_state->createInfo.format);
+            uint32_t block_size_in_bytes = FormatElementSize(image_format);
             if (SafeModulo(pRegions[i].bufferOffset, block_size_in_bytes) != 0) {
                 const char *vuid = (device_extensions.vk_khr_sampler_ycbcr_conversion)
                                        ? "VUID-VkBufferImageCopy-None-01738"
@@ -5366,10 +5373,9 @@ bool CoreChecks::ValidateBufferImageCopyData(uint32_t regionCount, const VkBuffe
         }
 
         // Checks that apply only to multi-planar format images
-        if (FormatIsMultiplane(image_state->createInfo.format)) {
+        if (FormatIsMultiplane(image_format)) {
             // VK_IMAGE_ASPECT_PLANE_2_BIT valid only for image formats with three planes
-            if ((FormatPlaneCount(image_state->createInfo.format) < 3) &&
-                (pRegions[i].imageSubresource.aspectMask == VK_IMAGE_ASPECT_PLANE_2_BIT)) {
+            if ((FormatPlaneCount(image_format) < 3) && (region_aspect_mask == VK_IMAGE_ASPECT_PLANE_2_BIT)) {
                 skip |= LogError(image_state->image, "VUID-VkBufferImageCopy-aspectMask-01560",
                                  "%s(): pRegion[%d] subresource aspectMask cannot be VK_IMAGE_ASPECT_PLANE_2_BIT unless image "
                                  "format has three planes.",
@@ -5377,12 +5383,24 @@ bool CoreChecks::ValidateBufferImageCopyData(uint32_t regionCount, const VkBuffe
             }
 
             // image subresource aspectMask must be VK_IMAGE_ASPECT_PLANE_*_BIT
-            if (0 == (pRegions[i].imageSubresource.aspectMask &
-                      (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT))) {
+            if (0 ==
+                (region_aspect_mask & (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT))) {
                 skip |= LogError(image_state->image, "VUID-VkBufferImageCopy-aspectMask-01560",
                                  "%s(): pRegion[%d] subresource aspectMask for multi-plane image formats must have a "
                                  "VK_IMAGE_ASPECT_PLANE_*_BIT when copying to or from.",
                                  function, i);
+            } else {
+                // Know aspect mask is valid
+                const VkFormat compatible_format = FindMultiplaneCompatibleFormat(image_format, region_aspect_mask);
+                const uint32_t compatible_size = FormatElementSize(compatible_format);
+                if (SafeModulo(pRegions[i].bufferOffset, compatible_size) != 0) {
+                    skip |= LogError(
+                        image_state->image, "VUID-VkBufferImageCopy-bufferOffset-01559",
+                        "%s(): pRegion[%d]->bufferOffset is 0x%" PRIxLEAST64
+                        " but must be a multiple of the multi-plane compatible format's texel size (%u) for plane %u (%s).",
+                        function, i, pRegions[i].bufferOffset, element_size, GetPlaneIndex(region_aspect_mask),
+                        string_VkFormat(compatible_format));
+                }
             }
         }
     }
