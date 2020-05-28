@@ -701,6 +701,9 @@ def CrossReferenceTable(table_name, table_desc, key_type, mapped_type, key_vec, 
             table.append( '{tab}{{ {}, (\n{tab}{tab}{}\n{tab})}},'.format(mask_key, sep.join(mask_vec), tab=indent))
         else:
             table.append( '{}{{ {}, {}}},'.format(indent, mask_key, mask_vec[0]))
+    if(table_name == 'StageAccessMaskByAccessBit'):
+            table.append( '{}{{ {}, {}}},'.format(indent, 'VK_ACCESS_MEMORY_READ_BIT', 'syncStageAccessReadMask'))
+            table.append( '{}{{ {}, {}}},'.format(indent, 'VK_ACCESS_MEMORY_WRITE_BIT', 'syncStageAccessWriteMask'))
     table.append('};')
     table.append('')
 
@@ -857,9 +860,9 @@ def GenSyncTypeHelper(gen) :
     stage_access_combinations = CreateStageAccessCombinations(config, stage_order, stage_access_table)
     lines.extend(StageAccessEnums(stage_access_combinations, config))
 
-    lines.extend(StageAccessCrossReference(gen.sync_enum, stage_access_combinations, config))
     lines.extend(ReadWriteMasks(stage_access_combinations, config))
 
+    lines.extend(StageAccessCrossReference(gen.sync_enum, stage_access_combinations, config))
     lines.extend(AllCommandsByQueueCapability(stage_order, stage_queue_cap_table, config))
     lines.extend(PipelineOrderMaskMap(stage_order, stage_order_map, config))
     return  '\n'.join(lines)
