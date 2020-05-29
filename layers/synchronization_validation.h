@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <limits>
 #include <map>
 #include <memory>
 #include <unordered_map>
@@ -67,6 +68,7 @@ struct SyncStageAccess {
 
 struct ResourceUsageTag {
     uint64_t index;
+    const static uint64_t kMaxIndex = std::numeric_limits<uint64_t>::max();
     ResourceUsageTag &operator++() {
         index++;
         return *this;
@@ -75,6 +77,7 @@ struct ResourceUsageTag {
     bool operator==(const ResourceUsageTag &rhs) const { return (index == rhs.index); }
     bool operator!=(const ResourceUsageTag &rhs) const { return !(*this == rhs); }
     ResourceUsageTag() : index(0) {}
+    ResourceUsageTag(uint64_t index_) : index(index_) {}
 };
 
 struct HazardResult {
@@ -221,8 +224,7 @@ class AccessContext {
                                           DetectOptions options) const;
     HazardResult DetectImageBarrierHazard(const IMAGE_STATE &image, VkPipelineStageFlags src_exec_scope,
                                           SyncStageAccessFlags src_stage_accesses, const VkImageMemoryBarrier &barrier) const;
-    HazardResult DetectSubpassTransitionHazard(const RENDER_PASS_STATE::AttachmentTransition &transitions,
-                                               const std::vector<const IMAGE_VIEW_STATE *> &attachments) const;
+    HazardResult DetectSubpassTransitionHazard(const TrackBack &track_back, const IMAGE_VIEW_STATE *attach_view) const;
 
     const TrackBack &GetDstExternalTrackBack() const { return dst_external_; }
     void Reset() {
@@ -249,9 +251,14 @@ class AccessContext {
     void UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
                            const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset, const VkExtent3D &extent,
                            const ResourceUsageTag &tag);
+    void UpdateAccessState(const IMAGE_VIEW_STATE *view, SyncStageAccessIndex current_usage, const VkOffset3D &offset,
+                           const VkExtent3D &extent, VkImageAspectFlags aspect_mask, const ResourceUsageTag &tag);
     void UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
                            const VkImageSubresourceLayers &subresource, const VkOffset3D &offset, const VkExtent3D &extent,
                            const ResourceUsageTag &tag);
+    void UpdateAttachmentResolveAccess(const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
+                                       const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, uint32_t subpass,
+                                       const ResourceUsageTag &tag);
 
     void ResolveChildContexts(const std::vector<AccessContext> &contexts);
 
@@ -280,6 +287,7 @@ class AccessContext {
                   const std::vector<AccessContext> &contexts, AccessContext *external_context);
 
     AccessContext() { Reset(); }
+    AccessContext(const AccessContext &copy_from) = default;
 
     ResourceAccessRangeMap &GetAccessStateMap(AddressType type) { return access_state_maps_[type]; }
     const ResourceAccessRangeMap &GetAccessStateMap(AddressType type) const { return access_state_maps_[type]; }
@@ -296,12 +304,17 @@ class AccessContext {
         }
     }
 
-    bool ValidateLayoutTransitions(const SyncValidator &sync_state, const RENDER_PASS_STATE &rp_state,
-                                   const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name,
-                                   uint32_t subpass) const;
+    bool ValidateLayoutTransitions(const SyncValidator &sync_state,
+
+                                   const RENDER_PASS_STATE &rp_state,
+
+                                   const VkRect2D &render_area,
+
+                                   uint32_t subpass, const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
+                                   const char *func_name) const;
     bool ValidateLoadOperation(const SyncValidator &sync_state, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
-                               const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name,
-                               uint32_t subpass) const;
+                               uint32_t subpass, const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
+                               const char *func_name) const;
     bool ValidateResolveOperations(const SyncValidator &sync_state, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
                                    const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name,
                                    uint32_t subpass) const;
@@ -337,20 +350,23 @@ class RenderPassAccessContext {
         : external_context_(external_context), rp_state_(nullptr), current_subpass_(0) {}
 
     bool ValidateNextSubpass(const SyncValidator &sync_state, const VkRect2D &render_area, const char *command_name) const;
-    bool ValidateFinalSubpassLayoutTransitions(const SyncValidator &sync_state, const char *func_name) const;
+    bool ValidateEndRenderPass(const SyncValidator &sync_state, const VkRect2D &render_area, const char *func_name) const;
+    bool ValidateFinalSubpassLayoutTransitions(const SyncValidator &sync_state, const VkRect2D &render_area,
+                                               const char *func_name) const;
 
     void RecordLayoutTransitions(const ResourceUsageTag &tag);
     void RecordLoadOperations(const VkRect2D &render_area, const ResourceUsageTag &tag);
     void RecordBeginRenderPass(const SyncValidator &state, const CMD_BUFFER_STATE &cb_state, VkQueueFlags queue_flags,
                                const ResourceUsageTag &tag);
     void RecordNextSubpass(const VkRect2D &render_area, const ResourceUsageTag &tag);
-    void RecordEndRenderPass(const ResourceUsageTag &tag);
+    void RecordEndRenderPass(const VkRect2D &render_area, const ResourceUsageTag &tag);
 
     AccessContext &CurrentContext() { return subpass_contexts_[current_subpass_]; }
     const AccessContext &CurrentContext() const { return subpass_contexts_[current_subpass_]; }
     const std::vector<AccessContext> &GetContexts() const { return subpass_contexts_; }
     uint32_t GetCurrentSubpass() const { return current_subpass_; }
     const RENDER_PASS_STATE *GetRenderPassState() const { return rp_state_; }
+    AccessContext *CreateStoreResolveProxy(const VkRect2D &render_area) const;
 
   private:
     AccessContext *external_context_;
