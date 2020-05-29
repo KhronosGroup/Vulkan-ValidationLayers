@@ -739,6 +739,22 @@ TEST_F(VkLayerTest, CommandBufferResetErrors) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, CommandBufferPrimaryFlags) {
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    // Calls AllocateCommandBuffers
+    VkCommandBufferObj commandBuffer(m_device, m_commandPool);
+
+    VkCommandBufferBeginInfo cmd_buf_info = {};
+    cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    cmd_buf_info.pNext = NULL;
+    cmd_buf_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkBeginCommandBuffer-commandBuffer-02840");
+    vk::BeginCommandBuffer(commandBuffer.handle(), &cmd_buf_info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, ClearColorAttachmentsOutsideRenderPass) {
     // Call CmdClearAttachmentss outside of an active RenderPass
 
