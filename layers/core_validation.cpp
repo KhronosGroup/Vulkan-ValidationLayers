@@ -1495,32 +1495,30 @@ bool CoreChecks::ValidatePipelineUnlocked(const PIPELINE_STATE *pPipeline, uint3
                                                                       &multisample_prop);
                     const VkExtent2D max_grid_size = multisample_prop.maxSampleLocationGridSize;
 
-                    if ((grid_size.width % max_grid_size.width) != 0) {
+                    // Note order or "divide" in "sampleLocationsInfo must evenly divide VkMultisamplePropertiesEXT"
+                    if (SafeModulo(max_grid_size.width, grid_size.width) != 0) {
                         skip |= LogError(
                             device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01521",
                             "vkCreateGraphicsPipelines() pCreateInfo[%u]: Because there is no dynamic state for Sample Location "
-                            "and "
-                            "sampleLocationEnable is true, the "
+                            "and sampleLocationEnable is true, the "
                             "VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsInfo::sampleLocationGridSize.width (%u) "
-                            "must be be a multiple of VkMultisamplePropertiesEXT::sampleLocationGridSize.width (%u).",
+                            "must be evenly divided by VkMultisamplePropertiesEXT::sampleLocationGridSize.width (%u).",
                             pipelineIndex, grid_size.width, max_grid_size.width);
                     }
-                    if ((grid_size.height % max_grid_size.height) != 0) {
+                    if (SafeModulo(max_grid_size.height, grid_size.height) != 0) {
                         skip |= LogError(
                             device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01522",
                             "vkCreateGraphicsPipelines() pCreateInfo[%u]: Because there is no dynamic state for Sample Location "
-                            "and "
-                            "sampleLocationEnable is true, the "
+                            "and sampleLocationEnable is true, the "
                             "VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsInfo::sampleLocationGridSize.height (%u) "
-                            "must be be a multiple of VkMultisamplePropertiesEXT::sampleLocationGridSize.height (%u).",
+                            "must be evenly divided by VkMultisamplePropertiesEXT::sampleLocationGridSize.height (%u).",
                             pipelineIndex, grid_size.height, max_grid_size.height);
                     }
                     if (sample_location_info.sampleLocationsPerPixel != multisample_state->rasterizationSamples) {
                         skip |= LogError(
                             device, "VUID-VkGraphicsPipelineCreateInfo-pDynamicStates-01523",
                             "vkCreateGraphicsPipelines() pCreateInfo[%u]: Because there is no dynamic state for Sample Location "
-                            "and "
-                            "sampleLocationEnable is true, the "
+                            "and sampleLocationEnable is true, the "
                             "VkPipelineSampleLocationsStateCreateInfoEXT::sampleLocationsInfo::sampleLocationsPerPixel (%s) must "
                             "be the same as the VkPipelineMultisampleStateCreateInfo::rasterizationSamples (%s).",
                             pipelineIndex, string_VkSampleCountFlagBits(sample_location_info.sampleLocationsPerPixel),
