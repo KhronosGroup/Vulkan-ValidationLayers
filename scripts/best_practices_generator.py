@@ -333,7 +333,7 @@ class BestPracticesOutputGenerator(OutputGenerator):
         # if cmdname in self.manual_postcallrecord_list:
         #     intercept += '    ManualPostCallRecord'+cmdname[2:] + '(' + params_text
         intercept += self.genBestPracticeHarnessCode(False, True, 'PostCallRecord', cmdinfo, cmdname, alias) + '\n'
-        if resulttype == 'VkResult':
+        if resulttype.text == 'VkResult':
             error_codes = cmdinfo.elem.attrib.get('errorcodes')
             success_codes = cmdinfo.elem.attrib.get('successcodes')
             success_codes = success_codes.replace('VK_SUCCESS,','')

@@ -59,3 +59,17 @@ const std::map<BPVendorFlagBits, std::set<std::string>> BestPracticesTracker::in
         {kBPVendorExample2, {MyExampleBestPractices::ID}},
     };
 }
+
+void BestPracticesTracker::ValidateReturnCodes(const char* api_name, VkResult result, const std::vector<VkResult>& error_codes,
+                                               const std::vector<VkResult>& success_codes) const {
+    auto error = std::find(error_codes.begin(), error_codes.end(), result);
+    if (error != error_codes.end()) {
+        LogWarning(instance, kVUID_BestPractices_Error_Result, "%s(): Returned error %s.", api_name, string_VkResult(result));
+        return;
+    }
+    auto success = std::find(success_codes.begin(), success_codes.end(), result);
+    if (success != success_codes.end()) {
+        LogInfo(instance, kVUID_BestPractices_NonSuccess_Result, "%s(): Returned non-success return code %s.", api_name,
+                string_VkResult(result));
+    }
+}

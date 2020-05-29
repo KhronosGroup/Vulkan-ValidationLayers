@@ -387,24 +387,23 @@ bool MyExampleBestPractices::PreCallValidateAllocateDescriptorSets(VkDevice devi
     return skip;
 }
 
-// void MyExampleBestPractices::ManualPostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo*
-// pAllocateInfo,
-//                                                                VkDescriptorSet* pDescriptorSets, VkResult result, void*
-//                                                                ads_state) {
-//     if (result == VK_SUCCESS) {
-//         // find the free count for the pool we allocated into
-//         auto iter = descriptor_pool_freed_count.find(pAllocateInfo->descriptorPool);
-//         if (iter != descriptor_pool_freed_count.end()) {
-//             // we record successful allocations by subtracting the allocation count from the last recorded free count
-//             const auto alloc_count = pAllocateInfo->descriptorSetCount;
-//             // clamp the unsigned subtraction to the range [0, last_free_count]
-//             if (iter->second > alloc_count)
-//                 iter->second -= alloc_count;
-//             else
-//                 iter->second = 0;
-//         }
-//     }
-// }
+void MyExampleBestPractices::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                                                  VkDescriptorSet* pDescriptorSets, VkResult result,
+                                                                  void* ads_state) {
+    if (result == VK_SUCCESS) {
+        // find the free count for the pool we allocated into
+        auto iter = descriptor_pool_freed_count.find(pAllocateInfo->descriptorPool);
+        if (iter != descriptor_pool_freed_count.end()) {
+            // we record successful allocations by subtracting the allocation count from the last recorded free count
+            const auto alloc_count = pAllocateInfo->descriptorSetCount;
+            // clamp the unsigned subtraction to the range [0, last_free_count]
+            if (iter->second > alloc_count)
+                iter->second -= alloc_count;
+            else
+                iter->second = 0;
+        }
+    }
+}
 
 void MyExampleBestPractices::PostCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool descriptorPool,
                                                               uint32_t descriptorSetCount, const VkDescriptorSet* pDescriptorSets,
@@ -444,33 +443,18 @@ bool MyExampleBestPractices::PreCallValidateAllocateMemory(VkDevice device, cons
     return skip;
 }
 
-// void MyExampleBestPractices::ManualPostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
-//                                                        const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
-//                                                        VkResult result) {
-//     if (result != VK_SUCCESS) {
-//         static std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY,
-//                                                     VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_INVALID_EXTERNAL_HANDLE,
-//                                                     VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR};
-//         static std::vector<VkResult> success_codes = {};
-//         ValidateReturnCodes("vkReleaseFullScreenExclusiveModeEXT", result, error_codes, success_codes);
-//         return;
-//     }
-//     num_mem_objects++;
-// }
-
-void MyExampleBestPractices::ValidateReturnCodes(const char* api_name, VkResult result, const std::vector<VkResult>& error_codes,
-                                                 const std::vector<VkResult>& success_codes) const {
-    auto error = std::find(error_codes.begin(), error_codes.end(), result);
-    if (error != error_codes.end()) {
-        tracker.LogWarning(tracker.instance, kVUID_BestPractices_Error_Result, "%s(): Returned error %s.", api_name,
-                           string_VkResult(result));
+void MyExampleBestPractices::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
+                                                          const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory,
+                                                          VkResult result) {
+    if (result != VK_SUCCESS) {
+        static std::vector<VkResult> error_codes = {VK_ERROR_OUT_OF_HOST_MEMORY, VK_ERROR_OUT_OF_DEVICE_MEMORY,
+                                                    VK_ERROR_TOO_MANY_OBJECTS, VK_ERROR_INVALID_EXTERNAL_HANDLE,
+                                                    VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS_KHR};
+        static std::vector<VkResult> success_codes = {};
+        tracker.ValidateReturnCodes("vkReleaseFullScreenExclusiveModeEXT", result, error_codes, success_codes);
         return;
     }
-    auto success = std::find(success_codes.begin(), success_codes.end(), result);
-    if (success != success_codes.end()) {
-        tracker.LogInfo(tracker.instance, kVUID_BestPractices_NonSuccess_Result, "%s(): Returned non-success return code %s.",
-                        api_name, string_VkResult(result));
-    }
+    num_mem_objects++;
 }
 
 bool MyExampleBestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory,
@@ -787,21 +771,20 @@ bool MyExampleBestPractices::CheckPipelineStageFlags(std::string api_name, const
     return skip;
 }
 
-// void MyExampleBestPractices::ManualPostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkResult
-// result) {
-//     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
-//         auto swapchains_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : result;
-//         if (swapchains_result == VK_SUBOPTIMAL_KHR) {
-//             tracker.LogPerformanceWarning(
-//                 pPresentInfo->pSwapchains[i], kVUID_BestPractices_SuboptimalSwapchain,
-//                 "vkQueuePresentKHR: %s :VK_SUBOPTIMAL_KHR was returned. VK_SUBOPTIMAL_KHR - Presentation will still succeed, "
-//                 "subject to the window resize behavior, but the swapchain is no longer configured optimally for the surface it "
-//                 "targets. Applications should query updated surface information and recreate their swapchain at the next "
-//                 "convenient opportunity.",
-//                 tracker.report_data->FormatHandle(pPresentInfo->pSwapchains[i]).c_str());
-//         }
-//     }
-// }
+void MyExampleBestPractices::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* pPresentInfo, VkResult result) {
+    for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
+        auto swapchains_result = pPresentInfo->pResults ? pPresentInfo->pResults[i] : result;
+        if (swapchains_result == VK_SUBOPTIMAL_KHR) {
+            tracker.LogPerformanceWarning(
+                pPresentInfo->pSwapchains[i], kVUID_BestPractices_SuboptimalSwapchain,
+                "vkQueuePresentKHR: %s :VK_SUBOPTIMAL_KHR was returned. VK_SUBOPTIMAL_KHR - Presentation will still succeed, "
+                "subject to the window resize behavior, but the swapchain is no longer configured optimally for the surface it "
+                "targets. Applications should query updated surface information and recreate their swapchain at the next "
+                "convenient opportunity.",
+                tracker.report_data->FormatHandle(pPresentInfo->pSwapchains[i]).c_str());
+        }
+    }
+}
 
 bool MyExampleBestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits,
                                                         VkFence fence) const {
@@ -1536,28 +1519,27 @@ bool MyExampleBestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint3
     return skip;
 }
 
-// void MyExampleBestPractices::ManualPostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo*
-// pBindInfo,
-//                                                         VkFence fence, VkResult result) {
-//     if (result != VK_SUCCESS) {
-//         return;
-//     }
+void MyExampleBestPractices::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
+                                                           VkFence fence, VkResult result) {
+    if (result != VK_SUCCESS) {
+        return;
+    }
 
-//     for (uint32_t bindIdx = 0; bindIdx < bindInfoCount; bindIdx++) {
-//         const VkBindSparseInfo& bindInfo = pBindInfo[bindIdx];
-//         for (uint32_t i = 0; i < bindInfo.imageOpaqueBindCount; ++i) {
-//             const auto& image_opaque_bind = bindInfo.pImageOpaqueBinds[i];
-//             auto image_state = tracker.GetImageState(bindInfo.pImageOpaqueBinds[i].image);
-//             if (!image_state)
-//                 continue;  // Param/Object validation should report image_bind.image handles being invalid, so just skip here.
-//             for (uint32_t j = 0; j < image_opaque_bind.bindCount; ++j) {
-//                 if (image_opaque_bind.pBinds[j].flags & VK_SPARSE_MEMORY_BIND_METADATA_BIT) {
-//                     image_state->sparse_metadata_bound = true;
-//                 }
-//             }
-//         }
-//     }
-// }
+    for (uint32_t bindIdx = 0; bindIdx < bindInfoCount; bindIdx++) {
+        const VkBindSparseInfo& bindInfo = pBindInfo[bindIdx];
+        for (uint32_t i = 0; i < bindInfo.imageOpaqueBindCount; ++i) {
+            const auto& image_opaque_bind = bindInfo.pImageOpaqueBinds[i];
+            auto image_state = tracker.GetImageState(bindInfo.pImageOpaqueBinds[i].image);
+            if (!image_state)
+                continue;  // Param/Object validation should report image_bind.image handles being invalid, so just skip here.
+            for (uint32_t j = 0; j < image_opaque_bind.bindCount; ++j) {
+                if (image_opaque_bind.pBinds[j].flags & VK_SPARSE_MEMORY_BIND_METADATA_BIT) {
+                    image_state->sparse_metadata_bound = true;
+                }
+            }
+        }
+    }
+}
 
 bool MyExampleBestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                                 const VkClearAttachment* pAttachments, uint32_t rectCount,
