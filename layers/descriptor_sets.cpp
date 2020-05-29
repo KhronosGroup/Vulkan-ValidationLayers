@@ -1932,11 +1932,11 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t write_count, const VkWrit
             }
         }
         if (p_wds[i].pNext) {
-            const auto *pNext_struct = lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureKHR>(p_wds[i].pNext);
-            if (pNext_struct) {
-                for (uint32_t j = 0; j < pNext_struct->accelerationStructureCount; ++j) {
+            const auto *pnext_struct = lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureKHR>(p_wds[i].pNext);
+            if (pnext_struct) {
+                for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
                     const ACCELERATION_STRUCTURE_STATE *as_state =
-                        GetAccelerationStructureState(pNext_struct->pAccelerationStructures[j]);
+                        GetAccelerationStructureState(pnext_struct->pAccelerationStructures[j]);
                     if (as_state && (as_state->create_infoKHR.sType == VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR &&
                                      as_state->create_infoKHR.type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR)) {
                         skip |=

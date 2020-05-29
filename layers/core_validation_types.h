@@ -488,7 +488,7 @@ class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
     bool built = false;
     safe_VkAccelerationStructureInfoNV build_info;
     uint64_t opaque_handle = 0;
-    const VkAllocationCallbacks *pAllocator = NULL;
+    const VkAllocationCallbacks *allocator = NULL;
     ACCELERATION_STRUCTURE_STATE(VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci)
         : acceleration_structure(as),
           create_infoNV(ci),

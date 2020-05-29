@@ -5621,7 +5621,7 @@ bool CoreChecks::PreCallValidateDestroyAccelerationStructureKHR(VkDevice device,
         skip |= ValidateObjectNotInUse(as_state, obj_struct, "vkDestroyAccelerationStructureKHR",
                                        "VUID-vkDestroyAccelerationStructureKHR-accelerationStructure-02442");
     }
-    if (pAllocator && !as_state->pAllocator) {
+    if (pAllocator && !as_state->allocator) {
         skip |= LogError(device, "VUID-vkDestroyAccelerationStructureKHR-accelerationStructure-02444",
                          "vkDestroyAccelerationStructureKH:If no VkAllocationCallbacks were provided when accelerationStructure"
                          "was created, pAllocator must be NULL.");

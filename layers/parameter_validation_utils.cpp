@@ -2889,26 +2889,26 @@ bool StatelessValidation::validate_WriteDescriptorSet(const char *vkCallingFunct
             // or VkWriteDescriptorSetInlineUniformBlockEX
             if (pDescriptorWrites[i].pNext) {
                 if (pDescriptorWrites[i].descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
-                    const auto *pNext_struct =
+                    const auto *pnext_struct =
                         lvl_find_in_chain<VkWriteDescriptorSetAccelerationStructureKHR>(pDescriptorWrites[i].pNext);
-                    if (!pNext_struct || (pNext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount)) {
+                    if (!pnext_struct || (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount)) {
                         skip |= LogError(device, "VUID-VkWriteDescriptorSet-descriptorType-02382",
                                          "%s(): If descriptorType is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, the pNext"
                                          "chain must include a VkWriteDescriptorSetAccelerationStructureKHR structure whose "
                                          "accelerationStructureCount %d member equals descriptorCount %d.",
-                                         vkCallingFunction, pNext_struct ? pNext_struct->accelerationStructureCount : -1,
+                                         vkCallingFunction, pnext_struct ? pnext_struct->accelerationStructureCount : -1,
                                          pDescriptorWrites[i].descriptorCount);
                     }
                     // further checks only if we have right structtype
-                    if (pNext_struct) {
-                        if (pNext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount) {
+                    if (pnext_struct) {
+                        if (pnext_struct->accelerationStructureCount != pDescriptorWrites[i].descriptorCount) {
                             skip |= LogError(
                                 device, "VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-02236",
                                 "%s(): accelerationStructureCount %d must be equal to descriptorCount %d in the extended structure "
                                 ".",
-                                vkCallingFunction, pNext_struct->accelerationStructureCount, pDescriptorWrites[i].descriptorCount);
+                                vkCallingFunction, pnext_struct->accelerationStructureCount, pDescriptorWrites[i].descriptorCount);
                         }
-                        if (pNext_struct->accelerationStructureCount == 0) {
+                        if (pnext_struct->accelerationStructureCount == 0) {
                             skip |= LogError(
                                 device, "VUID-VkWriteDescriptorSetAccelerationStructureKHR-accelerationStructureCount-arraylength",
                                 "%s(): accelerationStructureCount must be greater than 0 .");
@@ -4095,7 +4095,7 @@ bool StatelessValidation::ValidateGeometryNV(const VkGeometryNV &geometry, VkAcc
 
 bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerationStructureInfoNV &info,
                                                               VkAccelerationStructureNV object_handle, const char *func_name,
-                                                              bool isCmd) const {
+                                                              bool is_cmd) const {
     bool skip = false;
     if (info.type == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV && info.geometryCount != 0) {
         skip |= LogError(object_handle, "VUID-VkAccelerationStructureInfoNV-type-02425",
@@ -4115,8 +4115,8 @@ bool StatelessValidation::ValidateAccelerationStructureInfoNV(const VkAccelerati
     }
     if (info.geometryCount > phys_dev_ext_props.ray_tracing_propsNV.maxGeometryCount) {
         skip |= LogError(object_handle,
-                         isCmd ? "VUID-vkCmdBuildAccelerationStructureNV-geometryCount-02241"
-                               : "VUID-VkAccelerationStructureInfoNV-geometryCount-02422",
+                         is_cmd ? "VUID-vkCmdBuildAccelerationStructureNV-geometryCount-02241"
+                                : "VUID-VkAccelerationStructureInfoNV-geometryCount-02422",
                          "VkAccelerationStructureInfoNV: geometryCount must be less than or equal to "
                          "VkPhysicalDeviceRayTracingPropertiesNV::maxGeometryCount.");
     }
@@ -4911,8 +4911,8 @@ bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureToMe
             LogError(commandBuffer, "VUID-VkCopyAccelerationStructureToMemoryInfoKHR-mode-03412",
                      "vkCmdCopyAccelerationStructureToMemoryKHR: mode must be VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR.");
     }
-    const auto *pNext_struct = lvl_find_in_chain<VkDeferredOperationInfoKHR>(pInfo->pNext);
-    if (pNext_struct) {
+    const auto *pnext_struct = lvl_find_in_chain<VkDeferredOperationInfoKHR>(pInfo->pNext);
+    if (pnext_struct) {
         skip |= LogError(
             commandBuffer, "VUID-vkCmdCopyAccelerationStructureToMemoryKHR-pNext-03560",
             "vkCmdCopyAccelerationStructureToMemoryKHR: The VkDeferredOperationInfoKHR structure must not be included in the"
@@ -4951,8 +4951,8 @@ bool StatelessValidation::manual_PreCallValidateCopyAccelerationStructureKHR(
 bool StatelessValidation::manual_PreCallValidateCmdCopyAccelerationStructureKHR(
     VkCommandBuffer commandBuffer, const VkCopyAccelerationStructureInfoKHR *pInfo) const {
     bool skip = false;
-    const auto *pNext_struct = lvl_find_in_chain<VkDeferredOperationInfoKHR>(pInfo->pNext);
-    if (pNext_struct) {
+    const auto *pnext_struct = lvl_find_in_chain<VkDeferredOperationInfoKHR>(pInfo->pNext);
+    if (pnext_struct) {
         skip |= LogError(device, "VUID-vkCmdCopyAccelerationStructureKHR-pNext-03557",
                          "vkCmdCopyAccelerationStructureKHR(): The VkDeferredOperationInfoKHR structure must not be included in "
                          "the pNext chain of the VkCopyAccelerationStructureInfoKHR structure.");
@@ -4990,8 +4990,8 @@ bool StatelessValidation::manual_PreCallValidateCopyMemoryToAccelerationStructur
 bool StatelessValidation::manual_PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(
     VkCommandBuffer commandBuffer, const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo) const {
     bool skip = false;
-    const auto *pNext_struct = lvl_find_in_chain<VkDeferredOperationInfoKHR>(pInfo->pNext);
-    if (pNext_struct) {
+    const auto *pnext_struct = lvl_find_in_chain<VkDeferredOperationInfoKHR>(pInfo->pNext);
+    if (pnext_struct) {
         skip |= LogError(device, "VUID-vkCmdCopyMemoryToAccelerationStructureKHR-pNext-03564",
                          "vkCmdCopyMemoryToAccelerationStructureKHR: The VkDeferredOperationInfoKHR structure must"
                          "not be included in the pNext chain of the VkCopyMemoryToAccelerationStructureInfoKHR structure.");
@@ -5283,8 +5283,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructureInd
             "vkCmdBuildAccelerationStructureIndirectKHR: The "
             "VkPhysicalDeviceRayTracingFeaturesKHR::rayTracingIndirectAccelerationStructureBuild feature must be enabled.");
     }
-    const auto *pNext_struct = lvl_find_in_chain<VkDeferredOperationInfoKHR>(pInfo->pNext);
-    if (pNext_struct) {
+    const auto *pnext_struct = lvl_find_in_chain<VkDeferredOperationInfoKHR>(pInfo->pNext);
+    if (pnext_struct) {
         skip |=
             LogError(device, "VUID-vkCmdBuildAccelerationStructureIndirectKHR-pNext-03536",
                      "vkCmdBuildAccelerationStructureIndirectKHR: The VkDeferredOperationInfoKHR structure must not be included in "
@@ -5322,8 +5322,8 @@ bool StatelessValidation::manual_PreCallValidateCmdBuildAccelerationStructureKHR
     const VkAccelerationStructureBuildOffsetInfoKHR *const *ppOffsetInfos) const {
     bool skip = false;
     for (uint32_t i = 0; i < infoCount; ++i) {
-        const auto *pNext_struct = lvl_find_in_chain<VkDeferredOperationInfoKHR>(pInfos->pNext);
-        if (pNext_struct) {
+        const auto *pnext_struct = lvl_find_in_chain<VkDeferredOperationInfoKHR>(pInfos->pNext);
+        if (pnext_struct) {
             skip |=
                 LogError(commandBuffer, "VUID-vkCmdBuildAccelerationStructureKHR-pNext-03532",
                          "vkCmdBuildAccelerationStructureKHR: The VkDeferredOperationInfoKHR structure must not be included in the"
