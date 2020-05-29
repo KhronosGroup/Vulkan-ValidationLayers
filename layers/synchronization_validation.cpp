@@ -99,6 +99,8 @@ static constexpr SyncOrderingBarrier kDepthStencilAttachmentRasterOrder = {kDept
                                                                            kDepthStencilAttachmentAccessScope};
 static constexpr SyncOrderingBarrier kAttachmentRasterOrder = {kDepthStencilAttachmentExecScope | kColorAttachmentExecScope,
                                                                kDepthStencilAttachmentAccessScope | kColorAttachmentAccessScope};
+// Sometimes we have an internal access conflict, and we using the kCurrentCommandTag to set and detect in temporary/proxy contexts
+static const ResourceUsageTag kCurrentCommandTag(ResourceUsageTag::kMaxIndex);
 
 inline VkDeviceSize GetRealWholeSize(VkDeviceSize offset, VkDeviceSize size, VkDeviceSize whole_size) {
     if (size == VK_WHOLE_SIZE) {
@@ -160,6 +162,125 @@ static const ResourceAccessRange full_range(std::numeric_limits<VkDeviceSize>::m
 // Class AccessContext stores the state of accesses specific to a Command, Subpass, or Queue
 const std::array<AccessContext::AddressType, AccessContext::kAddressTypeCount> AccessContext::kAddressTypes = {
     AccessContext::AddressType::kLinearAddress, AccessContext::AddressType::kIdealizedAddress};
+
+// Tranverse the attachment resolves for this a specific subpass, and do action() to them.
+// Used by both validation and record operations
+//
+// The signature for Action() reflect the needs of both uses.
+template <typename Action>
+void ResolveOperation(Action &action, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
+                      const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, uint32_t subpass) {
+    VkExtent3D extent = CastTo3D(render_area.extent);
+    VkOffset3D offset = CastTo3D(render_area.offset);
+    const auto &rp_ci = rp_state.createInfo;
+    const auto *attachment_ci = rp_ci.pAttachments;
+    const auto &subpass_ci = rp_ci.pSubpasses[subpass];
+
+    // Color resolves -- require an inuse color attachment and a matching inuse resolve attachment
+    const auto *color_attachments = subpass_ci.pColorAttachments;
+    const auto *color_resolve = subpass_ci.pResolveAttachments;
+    if (color_resolve && color_attachments) {
+        for (uint32_t i = 0; i < subpass_ci.colorAttachmentCount; i++) {
+            const auto &color_attach = color_attachments[i].attachment;
+            const auto &resolve_attach = subpass_ci.pResolveAttachments[i].attachment;
+            if ((color_attach != VK_ATTACHMENT_UNUSED) && (resolve_attach != VK_ATTACHMENT_UNUSED)) {
+                action("color", "resolve read", color_attach, resolve_attach, attachment_views[color_attach],
+                       SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ, kColorAttachmentRasterOrder, offset, extent, 0);
+                action("color", "resolve write", color_attach, resolve_attach, attachment_views[resolve_attach],
+                       SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, kColorAttachmentRasterOrder, offset, extent, 0);
+            }
+        }
+    }
+
+    // Depth stencil resolve only if the extension is present
+    const auto ds_resolve = lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolve>(subpass_ci.pNext);
+    if (ds_resolve && ds_resolve->pDepthStencilResolveAttachment &&
+        (ds_resolve->pDepthStencilResolveAttachment->attachment != VK_ATTACHMENT_UNUSED) && subpass_ci.pDepthStencilAttachment &&
+        (subpass_ci.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED)) {
+        const auto src_at = subpass_ci.pDepthStencilAttachment->attachment;
+        const auto src_ci = attachment_ci[src_at];
+        // The formats are required to match so we can pick either
+        const bool resolve_depth = (ds_resolve->depthResolveMode != VK_RESOLVE_MODE_NONE) && FormatHasDepth(src_ci.format);
+        const bool resolve_stencil = (ds_resolve->stencilResolveMode != VK_RESOLVE_MODE_NONE) && FormatHasStencil(src_ci.format);
+        const auto dst_at = ds_resolve->pDepthStencilResolveAttachment->attachment;
+        VkImageAspectFlags aspect_mask = 0u;
+
+        // Figure out which aspects are actually touched during resolve operations
+        const char *aspect_string = nullptr;
+        if (resolve_depth && resolve_stencil) {
+            // Validate all aspects together
+            aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+            aspect_string = "depth/stencil";
+        } else if (resolve_depth) {
+            // Validate depth only
+            aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT;
+            aspect_string = "depth";
+        } else if (resolve_stencil) {
+            // Validate all stencil only
+            aspect_mask = VK_IMAGE_ASPECT_STENCIL_BIT;
+            aspect_string = "stencil";
+        }
+
+        if (aspect_mask) {
+            action(aspect_string, "resolve read", src_at, dst_at, attachment_views[src_at],
+                   SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ, kDepthStencilAttachmentRasterOrder, offset, extent,
+                   aspect_mask);
+            action(aspect_string, "resolve write", src_at, dst_at, attachment_views[dst_at],
+                   SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, kAttachmentRasterOrder, offset, extent, aspect_mask);
+        }
+    }
+}
+
+// Action for validating resolve operations
+class ValidateResolveAction {
+  public:
+    ValidateResolveAction(VkRenderPass render_pass, uint32_t subpass, const AccessContext &context, const SyncValidator &sync_state,
+                          const char *func_name)
+        : render_pass_(render_pass),
+          subpass_(subpass),
+          context_(context),
+          sync_state_(sync_state),
+          func_name_(func_name),
+          skip_(false) {}
+    void operator()(const char *aspect_name, const char *attachment_name, uint32_t src_at, uint32_t dst_at,
+                    const IMAGE_VIEW_STATE *view, SyncStageAccessIndex current_usage, const SyncOrderingBarrier &ordering,
+                    const VkOffset3D &offset, const VkExtent3D &extent, VkImageAspectFlags aspect_mask) {
+        HazardResult hazard;
+        hazard = context_.DetectHazard(view, current_usage, ordering, offset, extent, aspect_mask);
+        if (hazard.hazard) {
+            skip_ |= sync_state_.LogError(
+                render_pass_, string_SyncHazardVUID(hazard.hazard),
+                "%s: Hazard %s in subpass %" PRIu32 "during %s %s, from attachment %" PRIu32 " to resolve attachment %" PRIu32 ".",
+                func_name_, string_SyncHazard(hazard.hazard), subpass_, aspect_name, attachment_name, src_at, dst_at);
+        }
+    }
+    // Providing a mechanism for the constructing caller to get the result of the validation
+    bool GetSkip() const { return skip_; }
+
+  private:
+    VkRenderPass render_pass_;
+    const uint32_t subpass_;
+    const AccessContext &context_;
+    const SyncValidator &sync_state_;
+    const char *func_name_;
+    bool skip_;
+};
+
+// Update action for resolve operations
+class UpdateStateResolveAction {
+  public:
+    UpdateStateResolveAction(AccessContext &context, const ResourceUsageTag &tag) : context_(context), tag_(tag) {}
+    void operator()(const char *aspect_name, const char *attachment_name, uint32_t src_at, uint32_t dst_at,
+                    const IMAGE_VIEW_STATE *view, SyncStageAccessIndex current_usage, const SyncOrderingBarrier &ordering,
+                    const VkOffset3D &offset, const VkExtent3D &extent, VkImageAspectFlags aspect_mask) {
+        // Ignores validation only arguments...
+        context_.UpdateAccessState(view, current_usage, offset, extent, aspect_mask, tag_);
+    }
+
+  private:
+    AccessContext &context_;
+    const ResourceUsageTag &tag_;
+};
 
 AccessContext::AccessContext(uint32_t subpass, VkQueueFlags queue_flags,
                              const std::vector<SubpassDependencyGraphNode> &dependencies,
@@ -392,6 +513,16 @@ static SyncStageAccessIndex DepthStencilLoadUsage(VkAttachmentLoadOp load_op) {
     return stage_access;
 }
 
+// Caller must manage returned pointer
+static AccessContext *CreateStoreResolveProxyContext(const AccessContext &context, const RENDER_PASS_STATE &rp_state,
+                                                     uint32_t subpass, const VkRect2D &render_area,
+                                                     std::vector<const IMAGE_VIEW_STATE *> attachment_views) {
+    auto *proxy = new AccessContext(context);
+    proxy->UpdateAttachmentResolveAccess(rp_state, render_area, attachment_views, subpass, kCurrentCommandTag);
+    // PHASE1 TODO add store operations
+    return proxy;
+}
+
 void AccessContext::ResolvePreviousAccess(const IMAGE_STATE &image_state, const VkImageSubresourceRange &subresource_range_arg,
                                           AddressType address_type, ResourceAccessRangeMap *descent_map,
                                           const ResourceAccessState *infill_state) const {
@@ -406,13 +537,36 @@ void AccessContext::ResolvePreviousAccess(const IMAGE_STATE &image_state, const 
     }
 }
 
+// Layout transitions are handled as if the were occuring in the beginning of the next subpass
 bool AccessContext::ValidateLayoutTransitions(const SyncValidator &sync_state, const RENDER_PASS_STATE &rp_state,
-                                              const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name,
-                                              uint32_t subpass) const {
+                                              const VkRect2D &render_area, uint32_t subpass,
+                                              const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
+                                              const char *func_name) const {
     bool skip = false;
+    // As validation methods are const and precede the record/update phase, for any tranistions from the immediately
+    // previous subpass, we have to validate them against a copy of the AccessContext, with resolve operations applied, as
+    // those affects have not been recorded yet.
+    //
+    // Note: we could be more efficient by tracking whether or not we actually *have* any changes (e.g. attachment resolve)
+    // to apply and only copy then, if this proves a hot spot.
+    std::unique_ptr<AccessContext> proxy_for_prev;
+    TrackBack proxy_track_back;
+
     const auto &transitions = rp_state.subpass_transitions[subpass];
     for (const auto &transition : transitions) {
-        auto hazard = DetectSubpassTransitionHazard(transition, attachment_views);
+        const bool prev_needs_proxy = transition.prev_pass != VK_SUBPASS_EXTERNAL && (transition.prev_pass + 1 == subpass);
+
+        const auto *track_back = GetTrackBackFromSubpass(transition.prev_pass);
+        if (prev_needs_proxy) {
+            if (!proxy_for_prev) {
+                proxy_for_prev.reset(CreateStoreResolveProxyContext(*track_back->context, rp_state, transition.prev_pass,
+                                                                    render_area, attachment_views));
+                proxy_track_back = *track_back;
+                proxy_track_back.context = proxy_for_prev.get();
+            }
+            track_back = &proxy_track_back;
+        }
+        auto hazard = DetectSubpassTransitionHazard(*track_back, attachment_views[transition.attachment]);
         if (hazard.hazard) {
             skip |= sync_state.LogError(rp_state.renderPass, string_SyncHazardVUID(hazard.hazard),
                                         "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32 " image layout transition.",
@@ -423,9 +577,9 @@ bool AccessContext::ValidateLayoutTransitions(const SyncValidator &sync_state, c
 }
 
 bool AccessContext::ValidateLoadOperation(const SyncValidator &sync_state, const RENDER_PASS_STATE &rp_state,
-                                          const VkRect2D &render_area,
-                                          const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name,
-                                          uint32_t subpass) const {
+                                          const VkRect2D &render_area, uint32_t subpass,
+                                          const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
+                                          const char *func_name) const {
     bool skip = false;
     const auto *attachment_ci = rp_state.createInfo.pAttachments;
     VkExtent3D extent = CastTo3D(render_area.extent);
@@ -523,87 +677,9 @@ bool AccessContext::ValidateResolveOperations(const SyncValidator &sync_state, c
                                               const VkRect2D &render_area,
                                               const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name,
                                               uint32_t subpass) const {
-    bool skip = false;
-    VkExtent3D extent = CastTo3D(render_area.extent);
-    VkOffset3D offset = CastTo3D(render_area.offset);
-    const auto &rp_ci = rp_state.createInfo;
-    const auto *attachment_ci = rp_ci.pAttachments;
-    const auto &subpass_ci = rp_ci.pSubpasses[subpass];
-
-    // Color resolves
-    const auto *color_attachments = subpass_ci.pColorAttachments;
-    const auto *color_resolve = subpass_ci.pResolveAttachments;
-    if (color_resolve && color_attachments) {
-        for (uint32_t i = 0; i < subpass_ci.colorAttachmentCount; i++) {
-            const auto &color_attach = color_attachments[i].attachment;
-            const auto &resolve_attach = subpass_ci.pResolveAttachments[i].attachment;
-            if ((color_attach != VK_ATTACHMENT_UNUSED) && (resolve_attach != VK_ATTACHMENT_UNUSED)) {
-                const char *resolve_op = "color attachment read";
-                auto hazard = DetectHazard(attachment_views[color_attach], SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ,
-                                           kColorAttachmentRasterOrder, offset, extent);
-
-                if (!hazard.hazard) {
-                    resolve_op = "resolve attachment write";
-                    hazard = DetectHazard(attachment_views[resolve_attach], SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
-                                          kColorAttachmentRasterOrder, offset, extent);
-                }
-                if (hazard.hazard) {
-                    skip |= sync_state.LogError(rp_state.renderPass, string_SyncHazardVUID(hazard.hazard),
-                                                "%s: Hazard %s in subpass %" PRIu32 "during %s, from color attachment %" PRIu32
-                                                " to resolve attachment %" PRIu32 " during %.",
-                                                func_name, string_SyncHazard(hazard.hazard), subpass, resolve_op, color_attach,
-                                                resolve_attach);
-                }
-            }
-        }
-    }
-    const auto ds_resolve = lvl_find_in_chain<VkSubpassDescriptionDepthStencilResolve>(subpass_ci.pNext);
-    if (ds_resolve && ds_resolve->pDepthStencilResolveAttachment &&
-        (ds_resolve->pDepthStencilResolveAttachment->attachment != VK_ATTACHMENT_UNUSED) && subpass_ci.pDepthStencilAttachment &&
-        (subpass_ci.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED)) {
-        const auto src_at = subpass_ci.pDepthStencilAttachment->attachment;
-        const auto src_ci = attachment_ci[src_at];
-        // The formats are required to match so we can pick either
-        const bool resolve_depth = (ds_resolve->depthResolveMode != VK_RESOLVE_MODE_NONE) && FormatHasDepth(src_ci.format);
-        const bool resolve_stencil = (ds_resolve->stencilResolveMode != VK_RESOLVE_MODE_NONE) && FormatHasStencil(src_ci.format);
-        const auto dst_at = ds_resolve->pDepthStencilResolveAttachment->attachment;
-        VkImageAspectFlags aspect_mask = 0u;
-
-        const char *aspect_string = nullptr;
-        if (resolve_depth && resolve_stencil) {
-            // Validate all aspects together
-            aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-            aspect_string = "depth/stencil";
-        } else if (resolve_depth) {
-            // Validate depth only
-            aspect_mask = VK_IMAGE_ASPECT_DEPTH_BIT;
-            aspect_string = "depth";
-        } else if (resolve_stencil) {
-            // Validate all stencil only
-            aspect_mask = VK_IMAGE_ASPECT_STENCIL_BIT;
-            aspect_string = "stencil";
-        }
-
-        if (aspect_mask) {
-            const char *resolve_op = "attachment read";
-            auto hazard = DetectHazard(attachment_views[src_at], SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ,
-                                       kDepthStencilAttachmentRasterOrder, offset, extent);
-            if (!hazard.hazard) {
-                // Use the broader ordering guarantee as d/s resolve uses the color stage, to process depth/stencil information
-                resolve_op = "resolve attachment write";
-                hazard = DetectHazard(attachment_views[dst_at], SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
-                                      kAttachmentRasterOrder, offset, extent);
-            }
-            if (hazard.hazard) {
-                skip |= sync_state.LogError(
-                    rp_state.renderPass, string_SyncHazardVUID(hazard.hazard),
-                    "%s: Hazard %s in subpass %" PRIu32 "during %s %s, from depth/stencil attachment %" PRIu32
-                    " to resolve attachment %" PRIu32 " during %.",
-                    func_name, string_SyncHazard(hazard.hazard), subpass, aspect_string, resolve_op, src_at, dst_at);
-            }
-        }
-    }
-    return skip;
+    ValidateResolveAction validate_action(rp_state.renderPass, subpass, *this, sync_state, func_name);
+    ResolveOperation(validate_action, rp_state, render_area, attachment_views, subpass);
+    return validate_action.GetSkip();
 }
 
 class HazardDetector {
@@ -780,7 +856,8 @@ SyncStageAccessFlags SyncStageAccess::AccessScope(VkPipelineStageFlags stages, V
 
 template <typename Action>
 void UpdateMemoryAccessState(ResourceAccessRangeMap *accesses, const ResourceAccessRange &range, const Action &action) {
-    // TODO -- region/mem-range accuracte update
+    // TODO: Optimization for operations that do a pure overwrite (i.e. WRITE usages which rewrite the state, vs READ usages
+    //       that do incrementalupdates
     auto pos = accesses->lower_bound(range);
     if (pos == accesses->end() || !pos->first.intersects(range)) {
         // The range is empty, fill it with a default value.
@@ -919,11 +996,26 @@ void AccessContext::UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessI
         UpdateMemoryAccessState(&GetAccessStateMap(address_type), (*range_gen + base_address), action);
     }
 }
+void AccessContext::UpdateAccessState(const IMAGE_VIEW_STATE *view, SyncStageAccessIndex current_usage, const VkOffset3D &offset,
+                                      const VkExtent3D &extent, VkImageAspectFlags aspect_mask, const ResourceUsageTag &tag) {
+    if (view != nullptr) {
+        const IMAGE_STATE *image = view->image_state.get();
+        if (image != nullptr) {
+            auto *update_range = &view->normalized_subresource_range;
+            VkImageSubresourceRange masked_range;
+            if (aspect_mask) {  // If present and non-zero, restrict the normalized range to aspects present in aspect_mask
+                masked_range = view->normalized_subresource_range;
+                masked_range.aspectMask = aspect_mask & masked_range.aspectMask;
+                update_range = &masked_range;
+            }
+            UpdateAccessState(*image, current_usage, *update_range, offset, extent, tag);
+        }
+    }
+}
 
 void AccessContext::UpdateAccessState(const IMAGE_STATE &image, SyncStageAccessIndex current_usage,
                                       const VkImageSubresourceLayers &subresource, const VkOffset3D &offset,
                                       const VkExtent3D &extent, const ResourceUsageTag &tag) {
-    // TODO: replace the encoder/generator with offset3D aware versions
     VkImageSubresourceRange subresource_range = {subresource.aspectMask, subresource.mipLevel, 1, subresource.baseArrayLayer,
                                                  subresource.layerCount};
     UpdateAccessState(image, current_usage, subresource_range, offset, extent, tag);
@@ -952,6 +1044,13 @@ void AccessContext::UpdateMemoryAccess(const IMAGE_STATE &image, const VkImageSu
     }
 }
 
+void AccessContext::UpdateAttachmentResolveAccess(const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
+                                                  const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, uint32_t subpass,
+                                                  const ResourceUsageTag &tag) {
+    UpdateStateResolveAction update(*this, tag);
+    ResolveOperation(update, rp_state, render_area, attachment_views, subpass);
+}
+
 template <typename Action>
 void AccessContext::ApplyGlobalBarriers(const Action &barrier_action) {
     // Note: Barriers do *not* cross context boundaries, applying to accessess within.... (at least for renderpass subpasses)
@@ -977,8 +1076,7 @@ void AccessContext::ApplyImageBarrier(const IMAGE_STATE &image, VkPipelineStageF
     UpdateMemoryAccess(image, subresource_range, barrier_action);
 }
 
-// TODO: Plumb offset/extent throughout the image call stacks, with default injector overloads to preserved backwards compatiblity
-//       as needed
+// Note: ImageBarriers do not operate at offset/extent resolution, only at the whole subreources level
 void AccessContext::ApplyImageBarrier(const IMAGE_STATE &image, VkPipelineStageFlags src_exec_scope,
                                       SyncStageAccessFlags src_access_scope, VkPipelineStageFlags dst_exec_scope,
                                       SyncStageAccessFlags dst_access_scope, const VkImageSubresourceRange &subresource_range,
@@ -993,6 +1091,7 @@ void AccessContext::ApplyImageBarrier(const IMAGE_STATE &image, VkPipelineStageF
     }
 }
 
+// Note: ImageBarriers do not operate at offset/extent resolution, only at the whole subreources level
 void AccessContext::ApplyImageBarrier(const IMAGE_STATE &image, const SyncBarrier &barrier,
                                       const VkImageSubresourceRange &subresource_range, bool layout_transition,
                                       const ResourceUsageTag &tag) {
@@ -1001,25 +1100,21 @@ void AccessContext::ApplyImageBarrier(const IMAGE_STATE &image, const SyncBarrie
 }
 
 // Suitable only for *subpass* access contexts
-HazardResult AccessContext::DetectSubpassTransitionHazard(const RENDER_PASS_STATE::AttachmentTransition &transition,
-                                                          const std::vector<const IMAGE_VIEW_STATE *> &attachments) const {
-    const auto *attach_view = attachments[transition.attachment];
+HazardResult AccessContext::DetectSubpassTransitionHazard(const TrackBack &track_back, const IMAGE_VIEW_STATE *attach_view) const {
     if (!attach_view) return HazardResult();
     const auto image_state = attach_view->image_state.get();
     if (!image_state) return HazardResult();
 
-    const auto *track_back = GetTrackBackFromSubpass(transition.prev_pass);
     // We should never ask for a transition from a context we don't have
-    assert(track_back);
-    assert(track_back->context);
+    assert(track_back.context);
 
     // Do the detection against the specific prior context independent of other contexts.  (Synchronous only)
-    auto hazard = track_back->context->DetectImageBarrierHazard(*image_state, track_back->barrier.src_exec_scope,
-                                                                track_back->barrier.src_access_scope,
-                                                                attach_view->normalized_subresource_range, kDetectPrevious);
+    auto hazard = track_back.context->DetectImageBarrierHazard(*image_state, track_back.barrier.src_exec_scope,
+                                                               track_back.barrier.src_access_scope,
+                                                               attach_view->normalized_subresource_range, kDetectPrevious);
     if (!hazard.hazard) {
         // The Async hazard check is against the current context's async set.
-        hazard = DetectImageBarrierHazard(*image_state, track_back->barrier.src_exec_scope, track_back->barrier.src_access_scope,
+        hazard = DetectImageBarrierHazard(*image_state, track_back.barrier.src_exec_scope, track_back.barrier.src_access_scope,
                                           attach_view->normalized_subresource_range, kDetectAsync);
     }
     return hazard;
@@ -1059,15 +1154,13 @@ bool CommandBufferAccessContext::ValidateBeginRenderPass(const RENDER_PASS_STATE
             views[transition.attachment] = sync_state_->Get<IMAGE_VIEW_STATE>(attachments[transition.attachment]);
         }
 
-        skip |= temp_context.ValidateLayoutTransitions(*sync_state_, rp_state, views, func_name, 0);
-        skip |= temp_context.ValidateLoadOperation(*sync_state_, rp_state, pRenderPassBegin->renderArea, views, func_name, 0);
+        skip |= temp_context.ValidateLayoutTransitions(*sync_state_, rp_state, pRenderPassBegin->renderArea, 0, views, func_name);
+        skip |= temp_context.ValidateLoadOperation(*sync_state_, rp_state, pRenderPassBegin->renderArea, 0, views, func_name);
     }
     return skip;
 }
 
 bool CommandBufferAccessContext::ValidateNextSubpass(const char *func_name) const {
-    // TODO: Things to add here.
-    // Validate Preserve/Resolve attachments
     bool skip = false;
     skip |=
         current_renderpass_context_->ValidateNextSubpass(*sync_state_, cb_state_->activeRenderPassBeginInfo.renderArea, func_name);
@@ -1077,9 +1170,10 @@ bool CommandBufferAccessContext::ValidateNextSubpass(const char *func_name) cons
 
 bool CommandBufferAccessContext::ValidateEndRenderpass(const char *func_name) const {
     // TODO: Things to add here.
-    // Validate Preserve/Resolve attachments
+    // Validate Preserve attachments
     bool skip = false;
-    skip |= current_renderpass_context_->ValidateFinalSubpassLayoutTransitions(*sync_state_, func_name);
+    skip |= current_renderpass_context_->ValidateEndRenderPass(*sync_state_, cb_state_->activeRenderPassBeginInfo.renderArea,
+                                                               func_name);
 
     return skip;
 }
@@ -1102,29 +1196,49 @@ void CommandBufferAccessContext::RecordNextSubpass(const RENDER_PASS_STATE &rp_s
 }
 
 void CommandBufferAccessContext::RecordEndRenderPass(const RENDER_PASS_STATE &render_pass, const ResourceUsageTag &tag) {
-    // TODO: Add layout load/store/resolve access (here or in RenderPassContext)
     assert(current_renderpass_context_);
     if (!current_renderpass_context_) return;
 
-    current_renderpass_context_->RecordEndRenderPass(tag);
+    current_renderpass_context_->RecordEndRenderPass(cb_state_->activeRenderPassBeginInfo.renderArea, tag);
     current_context_ = &cb_access_context_;
     current_renderpass_context_ = nullptr;
 }
 
 bool RenderPassAccessContext::ValidateNextSubpass(const SyncValidator &sync_state, const VkRect2D &render_area,
                                                   const char *func_name) const {
+    // PHASE1 TODO: Add Validate Preserve/Store attachments
     bool skip = false;
     skip |= CurrentContext().ValidateResolveOperations(sync_state, *rp_state_, render_area, attachment_views_, func_name,
                                                        current_subpass_);
     const auto next_subpass = current_subpass_ + 1;
     const auto &next_context = subpass_contexts_[next_subpass];
-    skip |= next_context.ValidateLayoutTransitions(sync_state, *rp_state_, attachment_views_, func_name, next_subpass);
-    skip |= next_context.ValidateLoadOperation(sync_state, *rp_state_, render_area, attachment_views_, func_name, next_subpass);
+    skip |= next_context.ValidateLayoutTransitions(sync_state, *rp_state_, render_area, next_subpass, attachment_views_, func_name);
+    skip |= next_context.ValidateLoadOperation(sync_state, *rp_state_, render_area, next_subpass, attachment_views_, func_name);
+    return skip;
+}
+bool RenderPassAccessContext::ValidateEndRenderPass(const SyncValidator &sync_state, const VkRect2D &render_area,
+                                                    const char *func_name) const {
+    // PHASE1 TODO: Validate Preserve/Store
+    bool skip = false;
+    skip |= CurrentContext().ValidateResolveOperations(sync_state, *rp_state_, render_area, attachment_views_, func_name,
+                                                       current_subpass_);
+    skip |= ValidateFinalSubpassLayoutTransitions(sync_state, render_area, func_name);
     return skip;
 }
 
-bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const SyncValidator &sync_state, const char *func_name) const {
+AccessContext *RenderPassAccessContext::CreateStoreResolveProxy(const VkRect2D &render_area) const {
+    return CreateStoreResolveProxyContext(CurrentContext(), *rp_state_, current_subpass_, render_area, attachment_views_);
+}
+
+bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const SyncValidator &sync_state, const VkRect2D &render_area,
+                                                                    const char *func_name) const {
     bool skip = false;
+
+    // As validation methods are const and precede the record/update phase, for any tranistions from the current (last)
+    // subpass, we have to validate them against a copy of the current AccessContext, with resolve operations applied.
+    // Note: we could be more efficient by tracking whether or not we actually *have* any changes (e.g. attachment resolve)
+    // to apply and only copy then, if this proves a hot spot.
+    std::unique_ptr<AccessContext> proxy_for_current;
 
     // Validate the "finalLayout" transitions to external
     // Get them from where there we're hidding in the extra entry.
@@ -1133,7 +1247,17 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const SyncVa
         const auto &attach_view = attachment_views_[transition.attachment];
         const auto &trackback = subpass_contexts_[transition.prev_pass].GetDstExternalTrackBack();
         assert(trackback.context);  // Transitions are given implicit transitions if the StateTracker is working correctly
-        auto hazard = trackback.context->DetectImageBarrierHazard(
+        auto *context = trackback.context;
+
+        if (transition.prev_pass == current_subpass_) {
+            if (!proxy_for_current) {
+                // We haven't recorded resolve ofor the current_subpass, so we need to copy current and update it *as if*
+                proxy_for_current.reset(CreateStoreResolveProxy(render_area));
+            }
+            context = proxy_for_current.get();
+        }
+
+        auto hazard = context->DetectImageBarrierHazard(
             *attach_view->image_state, trackback.barrier.src_exec_scope, trackback.barrier.src_access_scope,
             attach_view->normalized_subresource_range, AccessContext::DetectOptions::kDetectPrevious);
         if (hazard.hazard) {
@@ -1226,13 +1350,21 @@ void RenderPassAccessContext::RecordBeginRenderPass(const SyncValidator &state, 
 }
 
 void RenderPassAccessContext::RecordNextSubpass(const VkRect2D &render_area, const ResourceUsageTag &tag) {
+    // Resolves are against *prior* subpass context and thus *before* the subpass increment
+    CurrentContext().UpdateAttachmentResolveAccess(*rp_state_, render_area, attachment_views_, current_subpass_, tag);
+
     current_subpass_++;
     assert(current_subpass_ < subpass_contexts_.size());
     RecordLayoutTransitions(tag);
     RecordLoadOperations(render_area, tag);
 }
 
-void RenderPassAccessContext::RecordEndRenderPass(const ResourceUsageTag &tag) {
+void RenderPassAccessContext::RecordEndRenderPass(const VkRect2D &render_area, const ResourceUsageTag &tag) {
+    // Add the resolve accesses
+    CurrentContext().UpdateAttachmentResolveAccess(*rp_state_, render_area, attachment_views_, current_subpass_, tag);
+
+    // PHASE1 TODO add *store* access update
+
     // Export the accesses from the renderpass...
     external_context_->ResolveChildContexts(subpass_contexts_);
 
@@ -1500,7 +1632,6 @@ void SyncValidator::ApplyBufferBarriers(AccessContext *context, VkPipelineStageF
                                         SyncStageAccessFlags src_stage_accesses, VkPipelineStageFlags dst_exec_scope,
                                         SyncStageAccessFlags dst_stage_accesses, uint32_t barrier_count,
                                         const VkBufferMemoryBarrier *barriers) {
-    // TODO Implement this at subresource/memory_range accuracy
     for (uint32_t index = 0; index < barrier_count; index++) {
         auto barrier = barriers[index];
         const auto *buffer = Get<BUFFER_STATE>(barrier.buffer);
@@ -1540,8 +1671,6 @@ bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, 
     const auto *context = cb_context->GetCurrentAccessContext();
 
     // If we have no previous accesses, we have no hazards
-    // TODO: make this sub-resource capable
-    // TODO: make this general, and stuff it into templates/utility functions
     const auto *src_buffer = Get<BUFFER_STATE>(srcBuffer);
     const auto *dst_buffer = Get<BUFFER_STATE>(dstBuffer);
 
@@ -1695,7 +1824,7 @@ bool SyncValidator::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuf
         if (!image_state) continue;
         const auto hazard = context->DetectImageBarrierHazard(*image_state, src_exec_scope, src_stage_accesses, barrier);
         if (hazard.hazard) {
-            // TODO -- add tag information to log msg when useful.
+            // PHASE1 TODO -- add tag information to log msg when useful.
             skip |= LogError(barrier.image, string_SyncHazardVUID(hazard.hazard),
                              "vkCmdPipelineBarrier: Hazard %s for image barrier %" PRIu32 " %s", string_SyncHazard(hazard.hazard),
                              index, report_data->FormatHandle(barrier.image).c_str());
@@ -1991,7 +2120,7 @@ bool SyncValidator::PreCallValidateCmdCopyBufferToImage(VkCommandBuffer commandB
                 MakeRange(copy_region.bufferOffset, GetBufferSizeFromCopyImage(copy_region, dst_image->createInfo.format));
             auto hazard = context->DetectHazard(*src_buffer, SYNC_TRANSFER_TRANSFER_READ, src_range);
             if (hazard.hazard) {
-                // TODO -- add tag information to log msg when useful.
+                // PHASE1 TODO -- add tag information to log msg when useful.
                 skip |= LogError(srcBuffer, string_SyncHazardVUID(hazard.hazard),
                                  "vkCmdCopyBufferToImage: Hazard %s for srcBuffer %s, region %" PRIu32,
                                  string_SyncHazard(hazard.hazard), report_data->FormatHandle(srcBuffer).c_str(), region);
