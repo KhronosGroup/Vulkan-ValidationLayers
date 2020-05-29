@@ -539,6 +539,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
         SetValidationFlags(local_disables, validation_flags_ext);
     }
     ProcessConfigAndEnvSettings(OBJECT_LAYER_DESCRIPTION, local_enables, local_disables, report_data->filter_message_ids);
+    layer_debug_messenger_actions(report_data, pAllocator, OBJECT_LAYER_DESCRIPTION);
 
     // Create temporary dispatch vector for pre-calls until instance is created
     std::vector<ValidationObject*> local_object_dispatch;
@@ -597,8 +598,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateInstance(const VkInstanceCreateInfo *pCreat
     framework->report_data = report_data;
     framework->api_version = api_version;
     framework->instance_extensions.InitFromInstanceCreateInfo(specified_version, pCreateInfo);
-
-    layer_debug_messenger_actions(framework->report_data, pAllocator, OBJECT_LAYER_DESCRIPTION);
 
     OutputLayerStatusInfo(framework);
 
