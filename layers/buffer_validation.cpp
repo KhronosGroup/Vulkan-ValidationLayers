@@ -3182,20 +3182,25 @@ bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, V
         }
 
         if (src_image_state->createInfo.format != dst_image_state->createInfo.format) {
-            char const str[] = "vkCmdResolveImage called with unmatched source and dest formats.";
-            skip |= LogWarning(cb_node->commandBuffer, kVUID_Core_DrawState_MismatchedImageFormat, str);
+            skip |=
+                LogError(cb_node->commandBuffer, "VUID-vkCmdResolveImage-srcImage-01386",
+                         "vkCmdResolveImage(): srcImage format (%s) and dstImage format (%s) are not the same.",
+                         string_VkFormat(src_image_state->createInfo.format), string_VkFormat(dst_image_state->createInfo.format));
         }
         if (src_image_state->createInfo.imageType != dst_image_state->createInfo.imageType) {
-            char const str[] = "vkCmdResolveImage called with unmatched source and dest image types.";
-            skip |= LogWarning(cb_node->commandBuffer, kVUID_Core_DrawState_MismatchedImageType, str);
+            skip |= LogWarning(cb_node->commandBuffer, kVUID_Core_DrawState_MismatchedImageType,
+                               "vkCmdResolveImage(): srcImage type (%s) and dstImage type (%s) are not the same.",
+                               string_VkImageType(src_image_state->createInfo.imageType),
+                               string_VkImageType(dst_image_state->createInfo.imageType));
         }
         if (src_image_state->createInfo.samples == VK_SAMPLE_COUNT_1_BIT) {
-            char const str[] = "vkCmdResolveImage called with source sample count less than 2.";
-            skip |= LogError(cb_node->commandBuffer, "VUID-vkCmdResolveImage-srcImage-00257", "%s.", str);
+            skip |= LogError(cb_node->commandBuffer, "VUID-vkCmdResolveImage-srcImage-00257",
+                             "vkCmdResolveImage(): srcImage sample count is VK_SAMPLE_COUNT_1_BIT.");
         }
         if (dst_image_state->createInfo.samples != VK_SAMPLE_COUNT_1_BIT) {
-            char const str[] = "vkCmdResolveImage called with dest sample count greater than 1.";
-            skip |= LogError(cb_node->commandBuffer, "VUID-vkCmdResolveImage-dstImage-00259", "%s.", str);
+            skip |= LogError(cb_node->commandBuffer, "VUID-vkCmdResolveImage-dstImage-00259",
+                             "vkCmdResolveImage(): dstImage sample count (%s) is not VK_SAMPLE_COUNT_1_BIT.",
+                             string_VkSampleCountFlagBits(dst_image_state->createInfo.samples));
         }
     } else {
         assert(0);
