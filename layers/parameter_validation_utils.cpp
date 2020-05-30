@@ -486,6 +486,29 @@ bool StatelessValidation::manual_PreCallValidateCreateDevice(VkPhysicalDevice ph
                          "If variablePointers is VK_TRUE then variablePointersStorageBuffer also needs to be VK_TRUE");
     }
 
+    // feature dependencies for VK_KHR_multiview
+    const auto *multiview_features = lvl_find_in_chain<VkPhysicalDeviceMultiviewFeatures>(pCreateInfo->pNext);
+    VkBool32 multiview = VK_FALSE;
+    VkBool32 multiviewGeometryShader = VK_FALSE;
+    VkBool32 multiviewTessellationShader = VK_FALSE;
+    if (vulkan_11_features) {
+        multiview = vulkan_11_features->multiview;
+        multiviewGeometryShader = vulkan_11_features->multiviewGeometryShader;
+        multiviewTessellationShader = vulkan_11_features->multiviewTessellationShader;
+    } else if (multiview_features) {
+        multiview = multiview_features->multiview;
+        multiviewGeometryShader = multiview_features->multiviewGeometryShader;
+        multiviewTessellationShader = multiview_features->multiviewTessellationShader;
+    }
+    if ((multiview == VK_FALSE) && (multiviewGeometryShader == VK_TRUE)) {
+        skip |= LogError(instance, "VUID-VkPhysicalDeviceMultiviewFeatures-multiviewGeometryShader-00580",
+                         "If multiviewGeometryShader is VK_TRUE then multiview also needs to be VK_TRUE");
+    }
+    if ((multiview == VK_FALSE) && (multiviewTessellationShader == VK_TRUE)) {
+        skip |= LogError(instance, "VUID-VkPhysicalDeviceMultiviewFeatures-multiviewTessellationShader-00581",
+                         "If multiviewTessellationShader is VK_TRUE then multiview also needs to be VK_TRUE");
+    }
+
     return skip;
 }
 
