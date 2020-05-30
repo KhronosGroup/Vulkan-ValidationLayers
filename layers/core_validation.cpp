@@ -643,21 +643,21 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
         for (size_t i = 0; i < pPipeline->vertex_binding_descriptions_.size(); i++) {
             const auto vertex_binding = pPipeline->vertex_binding_descriptions_[i].binding;
             if (current_vtx_bfr_binding_info.size() < (vertex_binding + 1)) {
-                skip |=
-                    LogError(pCB->commandBuffer, vuid.vertex_binding,
-                             "%s expects that this Command Buffer's vertex binding Index %u should be set via "
-                             "vkCmdBindVertexBuffers. This is because VkVertexInputBindingDescription struct at "
-                             "index " PRINTF_SIZE_T_SPECIFIER " of pVertexBindingDescriptions has a binding value of %u.",
-                             report_data->FormatHandle(state.pipeline_state->pipeline).c_str(), vertex_binding, i, vertex_binding);
+                skip |= LogError(pCB->commandBuffer, vuid.vertex_binding,
+                                 "%s: %s expects that this Command Buffer's vertex binding Index %u should be set via "
+                                 "vkCmdBindVertexBuffers. This is because VkVertexInputBindingDescription struct at "
+                                 "index " PRINTF_SIZE_T_SPECIFIER " of pVertexBindingDescriptions has a binding value of %u.",
+                                 caller, report_data->FormatHandle(state.pipeline_state->pipeline).c_str(), vertex_binding, i,
+                                 vertex_binding);
             } else if ((current_vtx_bfr_binding_info[vertex_binding].buffer == VK_NULL_HANDLE) &&
                        !enabled_features.robustness2_features.nullDescriptor) {
                 skip |= LogError(pCB->commandBuffer, vuid.vertex_binding_null,
-                                 "Vertex binding %d must not be VK_NULL_HANDLE %s expects that this Command Buffer's vertex "
+                                 "%s: Vertex binding %d must not be VK_NULL_HANDLE %s expects that this Command Buffer's vertex "
                                  "binding Index %u should be set via "
                                  "vkCmdBindVertexBuffers. This is because VkVertexInputBindingDescription struct at "
                                  "index " PRINTF_SIZE_T_SPECIFIER " of pVertexBindingDescriptions has a binding value of %u.",
-                                 vertex_binding, report_data->FormatHandle(state.pipeline_state->pipeline).c_str(), vertex_binding,
-                                 i, vertex_binding);
+                                 caller, vertex_binding, report_data->FormatHandle(state.pipeline_state->pipeline).c_str(),
+                                 vertex_binding, i, vertex_binding);
             }
         }
 
@@ -683,9 +683,9 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                     LogObjectList objlist(current_vtx_bfr_binding_info[vertex_binding].buffer);
                     objlist.add(state.pipeline_state->pipeline);
                     skip |= LogError(objlist, kVUID_Core_DrawState_InvalidVtxAttributeAlignment,
-                                     "Invalid attribAddress alignment for vertex attribute " PRINTF_SIZE_T_SPECIFIER
+                                     "%s: Invalid attribAddress alignment for vertex attribute " PRINTF_SIZE_T_SPECIFIER
                                      " from %s and vertex %s.",
-                                     i, report_data->FormatHandle(state.pipeline_state->pipeline).c_str(),
+                                     caller, i, report_data->FormatHandle(state.pipeline_state->pipeline).c_str(),
                                      report_data->FormatHandle(current_vtx_bfr_binding_info[vertex_binding].buffer).c_str());
                 }
             }
@@ -705,7 +705,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             const auto missingViewportMask = ~pCB->viewportMask & requiredViewportsMask;
             if (missingViewportMask) {
                 std::stringstream ss;
-                ss << "Dynamic viewport(s) ";
+                ss << caller << ": Dynamic viewport(s) ";
                 ListBits(ss, missingViewportMask);
                 ss << " are used by pipeline state object, but were not provided via calls to vkCmdSetViewport().";
                 skip |= LogError(device, kVUID_Core_DrawState_ViewportScissorMismatch, "%s", ss.str().c_str());
@@ -717,7 +717,7 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
             const auto missingScissorMask = ~pCB->scissorMask & requiredScissorMask;
             if (missingScissorMask) {
                 std::stringstream ss;
-                ss << "Dynamic scissor(s) ";
+                ss << caller << ": Dynamic scissor(s) ";
                 ListBits(ss, missingScissorMask);
                 ss << " are used by pipeline state object, but were not provided via calls to vkCmdSetScissor().";
                 skip |= LogError(device, kVUID_Core_DrawState_ViewportScissorMismatch, "%s", ss.str().c_str());
@@ -753,15 +753,15 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                 LogObjectList objlist(pPipeline->pipeline);
                 objlist.add(pCB->activeRenderPass->renderPass);
                 skip |= LogError(objlist, kVUID_Core_DrawState_NumSamplesMismatch,
-                                 "Num samples mismatch! At draw-time in %s with %u samples while current %s w/ "
+                                 "%s: Num samples mismatch! At draw-time in %s with %u samples while current %s w/ "
                                  "%u samples!",
-                                 report_data->FormatHandle(pPipeline->pipeline).c_str(), pso_num_samples,
+                                 caller, report_data->FormatHandle(pPipeline->pipeline).c_str(), pso_num_samples,
                                  report_data->FormatHandle(pCB->activeRenderPass->renderPass).c_str(), subpass_num_samples);
             }
         } else {
-            skip |=
-                LogError(pPipeline->pipeline, kVUID_Core_DrawState_NoActiveRenderpass,
-                         "No active render pass found at draw-time in %s!", report_data->FormatHandle(pPipeline->pipeline).c_str());
+            skip |= LogError(pPipeline->pipeline, kVUID_Core_DrawState_NoActiveRenderpass,
+                             "%s: No active render pass found at draw-time in %s!", caller,
+                             report_data->FormatHandle(pPipeline->pipeline).c_str());
         }
     }
     // Verify that PSO creation renderPass is compatible with active renderPass
@@ -773,8 +773,9 @@ bool CoreChecks::ValidatePipelineDrawtimeState(const LAST_BOUND_STATE &state, co
                                                     pPipeline->rp_state.get(), caller, vuid.render_pass_compatible);
         }
         if (pPipeline->graphicsPipelineCI.subpass != pCB->activeSubpass) {
-            skip |= LogError(pPipeline->pipeline, vuid.subpass_index, "Pipeline was built for subpass %u but used in subpass %u.",
-                             pPipeline->graphicsPipelineCI.subpass, pCB->activeSubpass);
+            skip |=
+                LogError(pPipeline->pipeline, vuid.subpass_index, "%s: Pipeline was built for subpass %u but used in subpass %u.",
+                         caller, pPipeline->graphicsPipelineCI.subpass, pCB->activeSubpass);
         }
         // Check if depth stencil attachment was created with sample location compatible bit
         if (pPipeline->sample_location_enabled == VK_TRUE) {
@@ -2297,8 +2298,8 @@ bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *
                 objlist.add(queue);
                 skip |= LogError(objlist,
                                  pSemaphore->scope == kSyncScopeInternal ? vuid_error : kVUID_Core_DrawState_QueueForwardProgress,
-                                 "%s is waiting on %s that has no way to be signaled.", report_data->FormatHandle(queue).c_str(),
-                                 report_data->FormatHandle(semaphore).c_str());
+                                 "vkQueueSubmit: %s is waiting on %s that has no way to be signaled.",
+                                 report_data->FormatHandle(queue).c_str(), report_data->FormatHandle(semaphore).c_str());
             } else {
                 signaled_semaphores.erase(semaphore);
                 unsignaled_semaphores.insert(semaphore);
@@ -2338,7 +2339,7 @@ bool CoreChecks::ValidateSemaphoresForSubmit(VkQueue queue, const VkSubmitInfo *
                 objlist.add(queue);
                 objlist.add(pSemaphore->signaler.first);
                 skip |= LogError(objlist, kVUID_Core_DrawState_QueueForwardProgress,
-                                 "%s is signaling %s that was previously signaled by %s but has not since "
+                                 "vkQueueSubmit: %s is signaling %s that was previously signaled by %s but has not since "
                                  "been waited on by any queue.",
                                  report_data->FormatHandle(queue).c_str(), report_data->FormatHandle(semaphore).c_str(),
                                  report_data->FormatHandle(pSemaphore->signaler.first).c_str());
@@ -2992,9 +2993,9 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                                                const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory) const {
     bool skip = false;
     if (memObjMap.size() >= phys_dev_props.limits.maxMemoryAllocationCount) {
-        skip |=
-            LogError(device, kVUIDUndefined, "Number of currently valid memory objects is not less than the maximum allowed (%u).",
-                     phys_dev_props.limits.maxMemoryAllocationCount);
+        skip |= LogError(device, kVUIDUndefined,
+                         "vkAllocateMemory: Number of currently valid memory objects is not less than the maximum allowed (%u).",
+                         phys_dev_props.limits.maxMemoryAllocationCount);
     }
 
     if (device_extensions.vk_android_external_memory_android_hardware_buffer) {
@@ -3054,30 +3055,33 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
     if (dedicated_allocate_info) {
         if ((dedicated_allocate_info->buffer != VK_NULL_HANDLE) && (dedicated_allocate_info->image != VK_NULL_HANDLE)) {
             skip |= LogError(device, "VUID-VkMemoryDedicatedAllocateInfo-image-01432",
-                             "Either buffer or image has to be VK_NULL_HANDLE in VkMemoryDedicatedAllocateInfo");
+                             "vkAllocateMemory: Either buffer or image has to be VK_NULL_HANDLE in VkMemoryDedicatedAllocateInfo");
         } else if (dedicated_allocate_info->image != VK_NULL_HANDLE) {
             // Dedicated VkImage
             const IMAGE_STATE *image_state = GetImageState(dedicated_allocate_info->image);
             if (image_state->disjoint == true) {
-                skip |= LogError(device, "VUID-VkMemoryDedicatedAllocateInfo-image-01797",
-                                 "VkImage %s can't be used in VkMemoryDedicatedAllocateInfo because it was created with "
-                                 "VK_IMAGE_CREATE_DISJOINT_BIT",
-                                 report_data->FormatHandle(dedicated_allocate_info->image).c_str());
+                skip |= LogError(
+                    device, "VUID-VkMemoryDedicatedAllocateInfo-image-01797",
+                    "vkAllocateMemory: VkImage %s can't be used in VkMemoryDedicatedAllocateInfo because it was created with "
+                    "VK_IMAGE_CREATE_DISJOINT_BIT",
+                    report_data->FormatHandle(dedicated_allocate_info->image).c_str());
             } else {
                 if ((pAllocateInfo->allocationSize != image_state->requirements.size) && (imported_ahb == false)) {
                     const char *vuid = (device_extensions.vk_android_external_memory_android_hardware_buffer)
                                            ? "VUID-VkMemoryDedicatedAllocateInfo-image-02964"
                                            : "VUID-VkMemoryDedicatedAllocateInfo-image-01433";
                     skip |= LogError(
-                        device, vuid, "Allocation Size (%u) needs to be equal to VkImage %s VkMemoryRequirements::size (%u)",
+                        device, vuid,
+                        "vkAllocateMemory: Allocation Size (%u) needs to be equal to VkImage %s VkMemoryRequirements::size (%u)",
                         pAllocateInfo->allocationSize, report_data->FormatHandle(dedicated_allocate_info->image).c_str(),
                         image_state->requirements.size);
                 }
                 if ((image_state->createInfo.flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0) {
-                    skip |= LogError(device, "VUID-VkMemoryDedicatedAllocateInfo-image-01434",
-                                     "VkImage %s can't be used in VkMemoryDedicatedAllocateInfo because it was created with "
-                                     "VK_IMAGE_CREATE_SPARSE_BINDING_BIT",
-                                     report_data->FormatHandle(dedicated_allocate_info->image).c_str());
+                    skip |= LogError(
+                        device, "VUID-VkMemoryDedicatedAllocateInfo-image-01434",
+                        "vkAllocateMemory: VkImage %s can't be used in VkMemoryDedicatedAllocateInfo because it was created with "
+                        "VK_IMAGE_CREATE_SPARSE_BINDING_BIT",
+                        report_data->FormatHandle(dedicated_allocate_info->image).c_str());
                 }
             }
         } else if (dedicated_allocate_info->buffer != VK_NULL_HANDLE) {
@@ -3087,16 +3091,18 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                 const char *vuid = (device_extensions.vk_android_external_memory_android_hardware_buffer)
                                        ? "VUID-VkMemoryDedicatedAllocateInfo-buffer-02965"
                                        : "VUID-VkMemoryDedicatedAllocateInfo-buffer-01435";
-                skip |=
-                    LogError(device, vuid, "Allocation Size (%u) needs to be equal to VkBuffer %s VkMemoryRequirements::size (%u)",
-                             pAllocateInfo->allocationSize, report_data->FormatHandle(dedicated_allocate_info->buffer).c_str(),
-                             buffer_state->requirements.size);
+                skip |= LogError(
+                    device, vuid,
+                    "vkAllocateMemory: Allocation Size (%u) needs to be equal to VkBuffer %s VkMemoryRequirements::size (%u)",
+                    pAllocateInfo->allocationSize, report_data->FormatHandle(dedicated_allocate_info->buffer).c_str(),
+                    buffer_state->requirements.size);
             }
             if ((buffer_state->createInfo.flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0) {
-                skip |= LogError(device, "VUID-VkMemoryDedicatedAllocateInfo-buffer-01436",
-                                 "VkBuffer %s can't be used in VkMemoryDedicatedAllocateInfo because it was created with "
-                                 "VK_BUFFER_CREATE_SPARSE_BINDING_BIT",
-                                 report_data->FormatHandle(dedicated_allocate_info->buffer).c_str());
+                skip |= LogError(
+                    device, "VUID-VkMemoryDedicatedAllocateInfo-buffer-01436",
+                    "vkAllocateMemory: VkBuffer %s can't be used in VkMemoryDedicatedAllocateInfo because it was created with "
+                    "VK_BUFFER_CREATE_SPARSE_BINDING_BIT",
+                    report_data->FormatHandle(dedicated_allocate_info->buffer).c_str());
             }
         }
     }
@@ -3156,8 +3162,9 @@ bool CoreChecks::ValidateMapMemRange(const DEVICE_MEMORY_STATE *mem_info, VkDevi
     if (size != VK_WHOLE_SIZE) {
         if ((offset + size) > mem_info->alloc_info.allocationSize) {
             skip = LogError(mem, "VUID-vkMapMemory-size-00681",
-                            "Mapping Memory from 0x%" PRIx64 " to 0x%" PRIx64 " oversteps total array size 0x%" PRIx64 ".", offset,
-                            size + offset, mem_info->alloc_info.allocationSize);
+                            "VkMapMemory: Mapping Memory from 0x%" PRIx64 " to 0x%" PRIx64 " oversteps total array size 0x%" PRIx64
+                            ".",
+                            offset, size + offset, mem_info->alloc_info.allocationSize);
         }
     }
     return skip;
@@ -3626,10 +3633,10 @@ bool CoreChecks::PreCallValidateGetImageMemoryRequirements(VkDevice device, VkIm
     if (image_state) {
         // Checks for no disjoint bit
         if (image_state->disjoint == true) {
-            skip |= LogError(
-                image, "VUID-vkGetImageMemoryRequirements-image-01588",
-                "%s must not have been created with the VK_IMAGE_CREATE_DISJOINT_BIT (need to use vkGetImageMemoryRequirements2).",
-                report_data->FormatHandle(image).c_str());
+            skip |= LogError(image, "VUID-vkGetImageMemoryRequirements-image-01588",
+                             "vkGetImageMemoryRequirements(): %s must not have been created with the VK_IMAGE_CREATE_DISJOINT_BIT "
+                             "(need to use vkGetImageMemoryRequirements2).",
+                             report_data->FormatHandle(image).c_str());
         }
     }
     return skip;
@@ -3830,35 +3837,39 @@ bool CoreChecks::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPo
     if (pCreateInfo && pCreateInfo->queryType == VK_QUERY_TYPE_PIPELINE_STATISTICS) {
         if (!enabled_features.core.pipelineStatisticsQuery) {
             skip |= LogError(device, "VUID-VkQueryPoolCreateInfo-queryType-00791",
-                             "Query pool with type VK_QUERY_TYPE_PIPELINE_STATISTICS created on a device with "
+                             "vkCreateQueryPool(): Query pool with type VK_QUERY_TYPE_PIPELINE_STATISTICS created on a device with "
                              "VkDeviceCreateInfo.pEnabledFeatures.pipelineStatisticsQuery == VK_FALSE.");
         }
     }
     if (pCreateInfo && pCreateInfo->queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
         if (!enabled_features.performance_query_features.performanceCounterQueryPools) {
-            skip |= LogError(device, "VUID-VkQueryPoolPerformanceCreateInfoKHR-performanceCounterQueryPools-03237",
-                             "Query pool with type VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR created on a device with "
-                             "VkPhysicalDevicePerformanceQueryFeaturesKHR.performanceCounterQueryPools == VK_FALSE.");
+            skip |=
+                LogError(device, "VUID-VkQueryPoolPerformanceCreateInfoKHR-performanceCounterQueryPools-03237",
+                         "vkCreateQueryPool(): Query pool with type VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR created on a device with "
+                         "VkPhysicalDevicePerformanceQueryFeaturesKHR.performanceCounterQueryPools == VK_FALSE.");
         }
 
         auto perf_ci = lvl_find_in_chain<VkQueryPoolPerformanceCreateInfoKHR>(pCreateInfo->pNext);
         if (!perf_ci) {
-            skip |= LogError(device, "VUID-VkQueryPoolCreateInfo-queryType-03222",
-                             "Query pool with type VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR created but the pNext chain of "
-                             "pCreateInfo does not contain in instance of VkQueryPoolPerformanceCreateInfoKHR.");
+            skip |= LogError(
+                device, "VUID-VkQueryPoolCreateInfo-queryType-03222",
+                "vkCreateQueryPool(): Query pool with type VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR created but the pNext chain of "
+                "pCreateInfo does not contain in instance of VkQueryPoolPerformanceCreateInfoKHR.");
         } else {
             const auto &perf_counter_iter = physical_device_state->perf_counters.find(perf_ci->queueFamilyIndex);
             if (perf_counter_iter == physical_device_state->perf_counters.end()) {
-                skip |= LogError(device, "VUID-VkQueryPoolPerformanceCreateInfoKHR-queueFamilyIndex-03236",
-                                 "VkQueryPerformanceCreateInfoKHR::queueFamilyIndex is not a valid queue family index.");
+                skip |= LogError(
+                    device, "VUID-VkQueryPoolPerformanceCreateInfoKHR-queueFamilyIndex-03236",
+                    "vkCreateQueryPool(): VkQueryPerformanceCreateInfoKHR::queueFamilyIndex is not a valid queue family index.");
             } else {
                 const QUEUE_FAMILY_PERF_COUNTERS *perf_counters = perf_counter_iter->second.get();
                 for (uint32_t idx = 0; idx < perf_ci->counterIndexCount; idx++) {
                     if (perf_ci->pCounterIndices[idx] >= perf_counters->counters.size()) {
-                        skip |= LogError(device, "VUID-VkQueryPoolPerformanceCreateInfoKHR-pCounterIndices-03321",
-                                         "VkQueryPerformanceCreateInfoKHR::pCounterIndices[%u] = %u is not a valid "
-                                         "counter index.",
-                                         idx, perf_ci->pCounterIndices[idx]);
+                        skip |= LogError(
+                            device, "VUID-VkQueryPoolPerformanceCreateInfoKHR-pCounterIndices-03321",
+                            "vkCreateQueryPool(): VkQueryPerformanceCreateInfoKHR::pCounterIndices[%u] = %u is not a valid "
+                            "counter index.",
+                            idx, perf_ci->pCounterIndices[idx]);
                     }
                 }
             }
@@ -4982,7 +4993,7 @@ bool CoreChecks::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer) 
     skip |= ValidateCmd(cb_state, CMD_ENDCOMMANDBUFFER, "vkEndCommandBuffer()");
     for (auto query : cb_state->activeQueries) {
         skip |= LogError(commandBuffer, "VUID-vkEndCommandBuffer-commandBuffer-00061",
-                         "Ending command buffer with in progress query: %s, query %d.",
+                         "vkEndCommandBuffer(): Ending command buffer with in progress query: %s, query %d.",
                          report_data->FormatHandle(query.pool).c_str(), query.query);
     }
     return skip;
@@ -4999,7 +5010,7 @@ bool CoreChecks::PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer
         LogObjectList objlist(commandBuffer);
         objlist.add(cmdPool);
         skip |= LogError(objlist, "VUID-vkResetCommandBuffer-commandBuffer-00046",
-                         "Attempt to reset %s created from %s that does NOT have the "
+                         "vkResetCommandBuffer(): Attempt to reset %s created from %s that does NOT have the "
                          "VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT bit set.",
                          report_data->FormatHandle(commandBuffer).c_str(), report_data->FormatHandle(cmdPool).c_str());
     }
@@ -5772,11 +5783,11 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
         if (descriptor_set) {
             // Verify that set being bound is compatible with overlapping setLayout of pipelineLayout
             if (!VerifySetLayoutCompatibility(report_data, descriptor_set, pipeline_layout, set_idx + firstSet, error_string)) {
-                skip |=
-                    LogError(pDescriptorSets[set_idx], "VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358",
-                             "descriptorSet #%u being bound is not compatible with overlapping descriptorSetLayout at index %u of "
-                             "%s due to: %s.",
-                             set_idx, set_idx + firstSet, report_data->FormatHandle(layout).c_str(), error_string.c_str());
+                skip |= LogError(pDescriptorSets[set_idx], "VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358",
+                                 "vkCmdBindDescriptorSets(): descriptorSet #%u being bound is not compatible with overlapping "
+                                 "descriptorSetLayout at index %u of "
+                                 "%s due to: %s.",
+                                 set_idx, set_idx + firstSet, report_data->FormatHandle(layout).c_str(), error_string.c_str());
             }
 
             auto set_dynamic_descriptor_count = descriptor_set->GetDynamicDescriptorCount();
@@ -5786,7 +5797,8 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                     // Test/report this here, such that we don't run past the end of pDynamicOffsets in the else clause
                     skip |=
                         LogError(pDescriptorSets[set_idx], "VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359",
-                                 "descriptorSet #%u (%s) requires %u dynamicOffsets, but only %u dynamicOffsets are left in "
+                                 "vkCmdBindDescriptorSets(): descriptorSet #%u (%s) requires %u dynamicOffsets, but only %u "
+                                 "dynamicOffsets are left in "
                                  "pDynamicOffsets array. There must be one dynamic offset for each dynamic descriptor being bound.",
                                  set_idx, report_data->FormatHandle(pDescriptorSets[set_idx]).c_str(),
                                  descriptor_set->GetDynamicDescriptorCount(), (dynamicOffsetCount - total_dynamic_descriptors));
@@ -5814,25 +5826,26 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuf
                 }
             }
         } else {
-            skip |= LogError(pDescriptorSets[set_idx], kVUID_Core_DrawState_InvalidSet, "Attempt to bind %s that doesn't exist!",
+            skip |= LogError(pDescriptorSets[set_idx], kVUID_Core_DrawState_InvalidSet,
+                             "vkCmdBindDescriptorSets(): Attempt to bind %s that doesn't exist!",
                              report_data->FormatHandle(pDescriptorSets[set_idx]).c_str());
         }
     }
     //  dynamicOffsetCount must equal the total number of dynamic descriptors in the sets being bound
     if (total_dynamic_descriptors != dynamicOffsetCount) {
-        skip |=
-            LogError(cb_state->commandBuffer, "VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359",
-                     "Attempting to bind %u descriptorSets with %u dynamic descriptors, but dynamicOffsetCount is %u. It should "
-                     "exactly match the number of dynamic descriptors.",
-                     setCount, total_dynamic_descriptors, dynamicOffsetCount);
+        skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359",
+                         "vkCmdBindDescriptorSets(): Attempting to bind %u descriptorSets with %u dynamic descriptors, but "
+                         "dynamicOffsetCount is %u. It should "
+                         "exactly match the number of dynamic descriptors.",
+                         setCount, total_dynamic_descriptors, dynamicOffsetCount);
     }
     // firstSet and descriptorSetCount sum must be less than setLayoutCount
     if ((firstSet + setCount) > static_cast<uint32_t>(pipeline_layout->set_layouts.size())) {
-        skip |=
-            LogError(cb_state->commandBuffer, "VUID-vkCmdBindDescriptorSets-firstSet-00360",
-                     "Sum of firstSet (%u) and descriptorSetCount (%u) is greater than VkPipelineLayoutCreateInfo::setLayoutCount "
-                     "(%zu) when pipeline layout was created",
-                     firstSet, setCount, pipeline_layout->set_layouts.size());
+        skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdBindDescriptorSets-firstSet-00360",
+                         "vkCmdBindDescriptorSets(): Sum of firstSet (%u) and descriptorSetCount (%u) is greater than "
+                         "VkPipelineLayoutCreateInfo::setLayoutCount "
+                         "(%zu) when pipeline layout was created",
+                         firstSet, setCount, pipeline_layout->set_layouts.size());
     }
     return skip;
 }
@@ -8783,11 +8796,11 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
     if (pMultiviewInfo) {
         if (pMultiviewInfo->subpassCount && pMultiviewInfo->subpassCount != pCreateInfo->subpassCount) {
             skip |= LogError(device, "VUID-VkRenderPassCreateInfo-pNext-01928",
-                             "Subpass count is %u but multiview info has a subpass count of %u.", pCreateInfo->subpassCount,
-                             pMultiviewInfo->subpassCount);
+                             "vkCreateRenderPass(): Subpass count is %u but multiview info has a subpass count of %u.",
+                             pCreateInfo->subpassCount, pMultiviewInfo->subpassCount);
         } else if (pMultiviewInfo->dependencyCount && pMultiviewInfo->dependencyCount != pCreateInfo->dependencyCount) {
             skip |= LogError(device, "VUID-VkRenderPassCreateInfo-pNext-01929",
-                             "Dependency count is %u but multiview info has a dependency count of %u.",
+                             "vkCreateRenderPass(): Dependency count is %u but multiview info has a dependency count of %u.",
                              pCreateInfo->dependencyCount, pMultiviewInfo->dependencyCount);
         }
     }
@@ -8799,12 +8812,14 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
             uint32_t attachment = pInputAttachmentAspectInfo->pAspectReferences[i].inputAttachmentIndex;
             if (subpass >= pCreateInfo->subpassCount) {
                 skip |= LogError(device, "VUID-VkRenderPassCreateInfo-pNext-01926",
-                                 "Subpass index %u specified by input attachment aspect info %u is greater than the subpass "
+                                 "vkCreateRenderPass(): Subpass index %u specified by input attachment aspect info %u is greater "
+                                 "than the subpass "
                                  "count of %u for this render pass.",
                                  subpass, i, pCreateInfo->subpassCount);
             } else if (pCreateInfo->pSubpasses && attachment >= pCreateInfo->pSubpasses[subpass].inputAttachmentCount) {
                 skip |= LogError(device, "VUID-VkRenderPassCreateInfo-pNext-01927",
-                                 "Input attachment index %u specified by input attachment aspect info %u is greater than the "
+                                 "vkCreateRenderPass(): Input attachment index %u specified by input attachment aspect info %u is "
+                                 "greater than the "
                                  "input attachment count of %u for this subpass.",
                                  attachment, i, pCreateInfo->pSubpasses[subpass].inputAttachmentCount);
             }
@@ -8816,14 +8831,15 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
         if (pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment != VK_ATTACHMENT_UNUSED) {
             if (pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment >= pCreateInfo->attachmentCount) {
                 skip |= LogError(device, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02547",
-                                 "fragmentDensityMapAttachment %u must be less than attachmentCount %u of for this render pass.",
+                                 "vkCreateRenderPass(): fragmentDensityMapAttachment %u must be less than attachmentCount %u of "
+                                 "for this render pass.",
                                  pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment, pCreateInfo->attachmentCount);
             } else {
                 if (!(pFragmentDensityMapInfo->fragmentDensityMapAttachment.layout ==
                           VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT ||
                       pFragmentDensityMapInfo->fragmentDensityMapAttachment.layout == VK_IMAGE_LAYOUT_GENERAL)) {
                     skip |= LogError(device, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02549",
-                                     "Layout of fragmentDensityMapAttachment %u' must be equal to "
+                                     "vkCreateRenderPass(): Layout of fragmentDensityMapAttachment %u' must be equal to "
                                      "VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT, or VK_IMAGE_LAYOUT_GENERAL.",
                                      pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment);
                 }
@@ -8831,17 +8847,19 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
                           VK_ATTACHMENT_LOAD_OP_LOAD ||
                       pCreateInfo->pAttachments[pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment].loadOp ==
                           VK_ATTACHMENT_LOAD_OP_DONT_CARE)) {
-                    skip |= LogError(device, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02550",
-                                     "FragmentDensityMapAttachment %u' must reference an attachment with a loadOp "
-                                     "equal to VK_ATTACHMENT_LOAD_OP_LOAD or VK_ATTACHMENT_LOAD_OP_DONT_CARE.",
-                                     pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment);
+                    skip |= LogError(
+                        device, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02550",
+                        "vkCreateRenderPass(): FragmentDensityMapAttachment %u' must reference an attachment with a loadOp "
+                        "equal to VK_ATTACHMENT_LOAD_OP_LOAD or VK_ATTACHMENT_LOAD_OP_DONT_CARE.",
+                        pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment);
                 }
                 if (pCreateInfo->pAttachments[pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment].storeOp !=
                     VK_ATTACHMENT_STORE_OP_DONT_CARE) {
-                    skip |= LogError(device, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02551",
-                                     "FragmentDensityMapAttachment %u' must reference an attachment with a storeOp "
-                                     "equal to VK_ATTACHMENT_STORE_OP_DONT_CARE.",
-                                     pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment);
+                    skip |= LogError(
+                        device, "VUID-VkRenderPassFragmentDensityMapCreateInfoEXT-fragmentDensityMapAttachment-02551",
+                        "vkCreateRenderPass(): FragmentDensityMapAttachment %u' must reference an attachment with a storeOp "
+                        "equal to VK_ATTACHMENT_STORE_OP_DONT_CARE.",
+                        pFragmentDensityMapInfo->fragmentDensityMapAttachment.attachment);
                 }
             }
         }
@@ -8850,14 +8868,14 @@ bool CoreChecks::PreCallValidateCreateRenderPass(VkDevice device, const VkRender
     if (!skip) {
         safe_VkRenderPassCreateInfo2 create_info_2;
         ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo, &create_info_2);
-        skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_1, create_info_2.ptr(), "ValidateCreateRenderPass()");
+        skip |= ValidateCreateRenderPass(device, RENDER_PASS_VERSION_1, create_info_2.ptr(), "vkCreateRenderPass()");
     }
 
     return skip;
 }
 
 bool CoreChecks::ValidateDepthStencilResolve(const VkPhysicalDeviceVulkan12Properties &core12_props,
-                                             const VkRenderPassCreateInfo2 *pCreateInfo) const {
+                                             const VkRenderPassCreateInfo2 *pCreateInfo, const char *function_name) const {
     bool skip = false;
 
     // If the pNext list of VkSubpassDescription2 includes a VkSubpassDescriptionDepthStencilResolve structure,
@@ -8883,35 +8901,35 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkPhysicalDeviceVulkan12Prope
         if (resolve_attachment_not_unused && subpass.pDepthStencilAttachment != nullptr &&
             subpass.pDepthStencilAttachment->attachment == VK_ATTACHMENT_UNUSED) {
             skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03177",
-                             "vkCreateRenderPass2KHR(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
+                             "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                              "structure with resolve attachment %u, but pDepthStencilAttachment=VK_ATTACHMENT_UNUSED.",
-                             i, resolve->pDepthStencilResolveAttachment->attachment);
+                             function_name, i, resolve->pDepthStencilResolveAttachment->attachment);
         }
 
         if (resolve_attachment_not_unused && resolve->depthResolveMode == VK_RESOLVE_MODE_NONE_KHR &&
             resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE_KHR) {
             skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03178",
-                             "vkCreateRenderPass2KHR(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
+                             "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                              "structure with resolve attachment %u, but both depth and stencil resolve modes are "
                              "VK_RESOLVE_MODE_NONE_KHR.",
-                             i, resolve->pDepthStencilResolveAttachment->attachment);
+                             function_name, i, resolve->pDepthStencilResolveAttachment->attachment);
         }
 
         if (resolve_attachment_not_unused && valid_ds_attachment_index &&
             pCreateInfo->pAttachments[subpass.pDepthStencilAttachment->attachment].samples == VK_SAMPLE_COUNT_1_BIT) {
             skip |= LogError(
                 device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03179",
-                "vkCreateRenderPass2(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
+                "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                 "structure with resolve attachment %u. However pDepthStencilAttachment has sample count=VK_SAMPLE_COUNT_1_BIT.",
-                i, resolve->pDepthStencilResolveAttachment->attachment);
+                function_name, i, resolve->pDepthStencilResolveAttachment->attachment);
         }
 
         if (valid_resolve_attachment_index &&
             pCreateInfo->pAttachments[resolve->pDepthStencilResolveAttachment->attachment].samples != VK_SAMPLE_COUNT_1_BIT) {
             skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03180",
-                             "vkCreateRenderPass2(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
+                             "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                              "structure with resolve attachment %u which has sample count=VK_SAMPLE_COUNT_1_BIT.",
-                             i, resolve->pDepthStencilResolveAttachment->attachment);
+                             function_name, i, resolve->pDepthStencilResolveAttachment->attachment);
         }
 
         VkFormat pDepthStencilAttachmentFormat =
@@ -8927,10 +8945,10 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkPhysicalDeviceVulkan12Prope
               FormatDepthNumericalType(pDepthStencilResolveAttachmentFormat)))) {
             skip |=
                 LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03181",
-                         "vkCreateRenderPass2(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
+                         "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                          "structure with resolve attachment %u which has a depth component (size %u). The depth component "
                          "of pDepthStencilAttachment must have the same number of bits (currently %u) and the same numerical type.",
-                         i, resolve->pDepthStencilResolveAttachment->attachment,
+                         function_name, i, resolve->pDepthStencilResolveAttachment->attachment,
                          FormatDepthSize(pDepthStencilResolveAttachmentFormat), FormatDepthSize(pDepthStencilAttachmentFormat));
         }
 
@@ -8940,36 +8958,36 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkPhysicalDeviceVulkan12Prope
               FormatStencilNumericalType(pDepthStencilResolveAttachmentFormat)))) {
             skip |=
                 LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03182",
-                         "vkCreateRenderPass2(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
+                         "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                          "structure with resolve attachment %u which has a stencil component (size %u). The stencil component "
                          "of pDepthStencilAttachment must have the same number of bits (currently %u) and the same numerical type.",
-                         i, resolve->pDepthStencilResolveAttachment->attachment,
+                         function_name, i, resolve->pDepthStencilResolveAttachment->attachment,
                          FormatStencilSize(pDepthStencilResolveAttachmentFormat), FormatStencilSize(pDepthStencilAttachmentFormat));
         }
 
         if (!(resolve->depthResolveMode == VK_RESOLVE_MODE_NONE_KHR ||
               resolve->depthResolveMode & core12_props.supportedDepthResolveModes)) {
             skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-depthResolveMode-03183",
-                             "vkCreateRenderPass2(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
+                             "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                              "structure with invalid depthResolveMode=%u.",
-                             i, resolve->depthResolveMode);
+                             function_name, i, resolve->depthResolveMode);
         }
 
         if (!(resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE_KHR ||
               resolve->stencilResolveMode & core12_props.supportedStencilResolveModes)) {
             skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-stencilResolveMode-03184",
-                             "vkCreateRenderPass2(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
+                             "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                              "structure with invalid stencilResolveMode=%u.",
-                             i, resolve->stencilResolveMode);
+                             function_name, i, resolve->stencilResolveMode);
         }
 
         if (valid_resolve_attachment_index && FormatIsDepthAndStencil(pDepthStencilResolveAttachmentFormat) &&
             core12_props.independentResolve == VK_FALSE && core12_props.independentResolveNone == VK_FALSE &&
             !(resolve->depthResolveMode == resolve->stencilResolveMode)) {
             skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03185",
-                             "vkCreateRenderPass2(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
+                             "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                              "structure. The values of depthResolveMode (%u) and stencilResolveMode (%u) must be identical.",
-                             i, resolve->depthResolveMode, resolve->stencilResolveMode);
+                             function_name, i, resolve->depthResolveMode, resolve->stencilResolveMode);
         }
 
         if (valid_resolve_attachment_index && FormatIsDepthAndStencil(pDepthStencilResolveAttachmentFormat) &&
@@ -8977,10 +8995,10 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkPhysicalDeviceVulkan12Prope
             !(resolve->depthResolveMode == resolve->stencilResolveMode || resolve->depthResolveMode == VK_RESOLVE_MODE_NONE_KHR ||
               resolve->stencilResolveMode == VK_RESOLVE_MODE_NONE_KHR)) {
             skip |= LogError(device, "VUID-VkSubpassDescriptionDepthStencilResolve-pDepthStencilResolveAttachment-03186",
-                             "vkCreateRenderPass2(): Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
+                             "%s: Subpass %u includes a VkSubpassDescriptionDepthStencilResolve "
                              "structure. The values of depthResolveMode (%u) and stencilResolveMode (%u) must be identical, or "
                              "one of them must be %u.",
-                             i, resolve->depthResolveMode, resolve->stencilResolveMode, VK_RESOLVE_MODE_NONE_KHR);
+                             function_name, i, resolve->depthResolveMode, resolve->stencilResolveMode, VK_RESOLVE_MODE_NONE_KHR);
         }
     }
 
@@ -8993,7 +9011,7 @@ bool CoreChecks::ValidateCreateRenderPass2(VkDevice device, const VkRenderPassCr
     bool skip = false;
 
     if (device_extensions.vk_khr_depth_stencil_resolve) {
-        skip |= ValidateDepthStencilResolve(phys_dev_props_core12, pCreateInfo);
+        skip |= ValidateDepthStencilResolve(phys_dev_props_core12, pCreateInfo, function_name);
     }
 
     safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
@@ -9004,12 +9022,12 @@ bool CoreChecks::ValidateCreateRenderPass2(VkDevice device, const VkRenderPassCr
 
 bool CoreChecks::PreCallValidateCreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateInfo2KHR *pCreateInfo,
                                                      const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const {
-    return ValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, "CreateRenderPass2KHR()");
+    return ValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, "vkCreateRenderPass2KHR()");
 }
 
 bool CoreChecks::PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo2 *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) const {
-    return ValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, "CreateRenderPass2()");
+    return ValidateCreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass, "vkCreateRenderPass2()");
 }
 
 bool CoreChecks::ValidatePrimaryCommandBuffer(const CMD_BUFFER_STATE *pCB, char const *cmd_name, const char *error_code) const {
@@ -9226,10 +9244,11 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
                     pSampleLocationsBeginInfo->pAttachmentInitialSampleLocations[i];
                 skip |= ValidateSampleLocationsInfo(&sample_location.sampleLocationsInfo, function_name);
                 if (sample_location.attachmentIndex >= render_pass_state->createInfo.attachmentCount) {
-                    skip |= LogError(device, "VUID-VkAttachmentSampleLocationsEXT-attachmentIndex-01531",
-                                     "Attachment index %u specified by attachment sample locations %u is greater than the "
-                                     "attachment count of %u for the render pass being begun.",
-                                     sample_location.attachmentIndex, i, render_pass_state->createInfo.attachmentCount);
+                    skip |=
+                        LogError(device, "VUID-VkAttachmentSampleLocationsEXT-attachmentIndex-01531",
+                                 "%s: Attachment index %u specified by attachment sample locations %u is greater than the "
+                                 "attachment count of %u for the render pass being begun.",
+                                 function_name, sample_location.attachmentIndex, i, render_pass_state->createInfo.attachmentCount);
                 }
             }
 
@@ -9237,10 +9256,11 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
                 const VkSubpassSampleLocationsEXT &sample_location = pSampleLocationsBeginInfo->pPostSubpassSampleLocations[i];
                 skip |= ValidateSampleLocationsInfo(&sample_location.sampleLocationsInfo, function_name);
                 if (sample_location.subpassIndex >= render_pass_state->createInfo.subpassCount) {
-                    skip |= LogError(device, "VUID-VkSubpassSampleLocationsEXT-subpassIndex-01532",
-                                     "Subpass index %u specified by subpass sample locations %u is greater than the subpass count "
-                                     "of %u for the render pass being begun.",
-                                     sample_location.subpassIndex, i, render_pass_state->createInfo.subpassCount);
+                    skip |=
+                        LogError(device, "VUID-VkSubpassSampleLocationsEXT-subpassIndex-01532",
+                                 "%s: Subpass index %u specified by subpass sample locations %u is greater than the subpass count "
+                                 "of %u for the render pass being begun.",
+                                 function_name, sample_location.subpassIndex, i, render_pass_state->createInfo.subpassCount);
                 }
             }
         }
@@ -9298,8 +9318,8 @@ bool CoreChecks::ValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, Rende
         if (chained_device_group_struct->deviceRenderAreaCount != 0 &&
             chained_device_group_struct->deviceRenderAreaCount != physical_device_count) {
             skip |= LogError(pRenderPassBegin->renderPass, "VUID-VkDeviceGroupRenderPassBeginInfo-deviceRenderAreaCount-00908",
-                             "deviceRenderAreaCount[%" PRIu32 "] is invaild. Physical device count is %" PRIu32 ".",
-                             chained_device_group_struct->deviceRenderAreaCount, physical_device_count);
+                             "%s: deviceRenderAreaCount[%" PRIu32 "] is invaild. Physical device count is %" PRIu32 ".",
+                             function_name, chained_device_group_struct->deviceRenderAreaCount, physical_device_count);
         }
     }
     return skip;
@@ -9637,25 +9657,27 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                            "VUID-vkCmdExecuteCommands-pCommandBuffers-00089");
         if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
             if (sub_cb_state->in_use.load()) {
-                skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdExecuteCommands-pCommandBuffers-00091",
-                                 "Cannot execute pending %s without VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
-                                 report_data->FormatHandle(sub_cb_state->commandBuffer).c_str());
+                skip |= LogError(
+                    cb_state->commandBuffer, "VUID-vkCmdExecuteCommands-pCommandBuffers-00091",
+                    "vkCmdExecuteCommands(): Cannot execute pending %s without VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
+                    report_data->FormatHandle(sub_cb_state->commandBuffer).c_str());
             }
             // We use an const_cast, because one cannot query a container keyed on a non-const pointer using a const pointer
             if (cb_state->linkedCommandBuffers.count(const_cast<CMD_BUFFER_STATE *>(sub_cb_state))) {
                 LogObjectList objlist(cb_state->commandBuffer);
                 objlist.add(sub_cb_state->commandBuffer);
-                skip |= LogError(
-                    objlist, "VUID-vkCmdExecuteCommands-pCommandBuffers-00092",
-                    "Cannot execute %s without VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set if previously executed in %s",
-                    report_data->FormatHandle(sub_cb_state->commandBuffer).c_str(),
-                    report_data->FormatHandle(cb_state->commandBuffer).c_str());
+                skip |= LogError(objlist, "VUID-vkCmdExecuteCommands-pCommandBuffers-00092",
+                                 "vkCmdExecuteCommands(): Cannot execute %s without VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT "
+                                 "set if previously executed in %s",
+                                 report_data->FormatHandle(sub_cb_state->commandBuffer).c_str(),
+                                 report_data->FormatHandle(cb_state->commandBuffer).c_str());
             }
 
             const auto insert_pair = linked_command_buffers.insert(sub_cb_state);
             if (!insert_pair.second) {
                 skip |= LogError(cb_state->commandBuffer, "VUID-vkCmdExecuteCommands-pCommandBuffers-00093",
-                                 "Cannot duplicate %s in pCommandBuffers without VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
+                                 "vkCmdExecuteCommands(): Cannot duplicate %s in pCommandBuffers without "
+                                 "VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT set.",
                                  report_data->FormatHandle(cb_state->commandBuffer).c_str());
             }
 
@@ -9914,7 +9936,8 @@ bool CoreChecks::PreCallValidateGetDeviceMemoryCommitment(VkDevice device, VkDev
         if ((phys_dev_mem_props.memoryTypes[mem_info->alloc_info.memoryTypeIndex].propertyFlags &
              VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) == 0) {
             skip = LogError(mem, "VUID-vkGetDeviceMemoryCommitment-memory-00690",
-                            "Querying commitment for memory without VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT set: %s.",
+                            "vkGetDeviceMemoryCommitment(): Querying commitment for memory without "
+                            "VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT set: %s.",
                             report_data->FormatHandle(mem).c_str());
         }
     }
@@ -10940,7 +10963,8 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
                                                                ? "VUID-VkPresentInfoKHR-pImageIndices-01430"
                                                                : "VUID-VkPresentInfoKHR-pImageIndices-01296";
                             skip |= LogError(queue, validation_error,
-                                             "Images passed to present must be in layout VK_IMAGE_LAYOUT_PRESENT_SRC_KHR or "
+                                             "vkQueuePresentKHR(): Images passed to present must be in layout "
+                                             "VK_IMAGE_LAYOUT_PRESENT_SRC_KHR or "
                                              "VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR but is in %s.",
                                              string_VkImageLayout(layout));
                         }
@@ -11652,14 +11676,15 @@ bool CoreChecks::ValidateGetBufferDeviceAddress(VkDevice device, const VkBufferD
 
     if (!enabled_features.core12.bufferDeviceAddress && !enabled_features.buffer_device_address_ext.bufferDeviceAddress) {
         skip |= LogError(pInfo->buffer, "VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324",
-                         "The bufferDeviceAddress feature must: be enabled.");
+                         "%s: The bufferDeviceAddress feature must: be enabled.", apiName);
     }
 
     if (physical_device_count > 1 && !enabled_features.core12.bufferDeviceAddressMultiDevice &&
         !enabled_features.buffer_device_address_ext.bufferDeviceAddressMultiDevice) {
         skip |= LogError(pInfo->buffer, "VUID-vkGetBufferDeviceAddress-device-03325",
-                         "If device was created with multiple physical devices, then the "
-                         "bufferDeviceAddressMultiDevice feature must: be enabled.");
+                         "%s: If device was created with multiple physical devices, then the "
+                         "bufferDeviceAddressMultiDevice feature must: be enabled.",
+                         apiName);
     }
 
     const auto buffer_state = GetBufferState(pInfo->buffer);

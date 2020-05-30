@@ -267,7 +267,7 @@ class CoreChecks : public ValidationStateTracker {
     bool ValidateDeviceMaskToRenderPass(const CMD_BUFFER_STATE* pCB, uint32_t deviceMask, const char* VUID) const;
 
     bool ValidateDepthStencilResolve(const VkPhysicalDeviceVulkan12Properties& core12_props,
-                                     const VkRenderPassCreateInfo2* pCreateInfo) const;
+                                     const VkRenderPassCreateInfo2* pCreateInfo, const char* function_name) const;
 
     bool ValidateBindAccelerationStructureMemory(VkDevice device, const VkBindAccelerationStructureMemoryInfoKHR& info) const;
     // Prototypes for CoreChecks accessor functions
