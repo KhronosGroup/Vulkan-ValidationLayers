@@ -3733,7 +3733,7 @@ TEST_F(VkLayerTest, CopyImageAspectMismatch) {
 }
 
 TEST_F(VkLayerTest, ResolveImageLowSampleCount) {
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "vkCmdResolveImage called with source sample count less than 2.");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcImage-00257");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -3789,7 +3789,7 @@ TEST_F(VkLayerTest, ResolveImageLowSampleCount) {
 }
 
 TEST_F(VkLayerTest, ResolveImageHighSampleCount) {
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "vkCmdResolveImage called with dest sample count greater than 1.");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-dstImage-00259");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -3851,7 +3851,7 @@ TEST_F(VkLayerTest, ResolveImageHighSampleCount) {
 }
 
 TEST_F(VkLayerTest, ResolveImageFormatMismatch) {
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "vkCmdResolveImage called with unmatched source and dest formats.");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdResolveImage-srcImage-01386");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
@@ -3915,7 +3915,7 @@ TEST_F(VkLayerTest, ResolveImageFormatMismatch) {
 }
 
 TEST_F(VkLayerTest, ResolveImageTypeMismatch) {
-    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "vkCmdResolveImage called with unmatched source and dest image types.");
+    m_errorMonitor->SetDesiredFailureMsg(kWarningBit, "UNASSIGNED-CoreValidation-DrawState-MismatchedImageType");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
