@@ -2375,28 +2375,6 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const VkImage
                              region.srcOffset.z);
         }
 
-        if (device_extensions.vk_khr_maintenance1) {
-            if (src_state->createInfo.imageType == VK_IMAGE_TYPE_3D) {
-                if ((0 != region.srcSubresource.baseArrayLayer) || (1 != region.srcSubresource.layerCount)) {
-                    skip |=
-                        LogError(src_state->image, "VUID-VkImageCopy-srcImage-00141",
-                                 "vkCmdCopyImage(): pRegion[%d] srcSubresource.baseArrayLayer is %d and srcSubresource.layerCount "
-                                 "is %d. For VK_IMAGE_TYPE_3D images these must be 0 and 1, respectively.",
-                                 i, region.srcSubresource.baseArrayLayer, region.srcSubresource.layerCount);
-                }
-            }
-        } else {  // Pre maint 1
-            if (src_state->createInfo.imageType == VK_IMAGE_TYPE_3D || dst_state->createInfo.imageType == VK_IMAGE_TYPE_3D) {
-                if ((0 != region.srcSubresource.baseArrayLayer) || (1 != region.srcSubresource.layerCount)) {
-                    skip |= LogError(src_state->image, "VUID-VkImageCopy-srcImage-00141",
-                                     "vkCmdCopyImage(): pRegion[%d] srcSubresource.baseArrayLayer is %d and "
-                                     "srcSubresource.layerCount is %d. For copies with either source or dest of type "
-                                     "VK_IMAGE_TYPE_3D, these must be 0 and 1, respectively.",
-                                     i, region.srcSubresource.baseArrayLayer, region.srcSubresource.layerCount);
-                }
-            }
-        }
-
         // Source checks that apply only to compressed images (or to _422 images if ycbcr enabled)
         bool ext_ycbcr = IsExtEnabled(device_extensions.vk_khr_sampler_ycbcr_conversion);
         if (FormatIsCompressed(src_state->createInfo.format) ||
@@ -2471,16 +2449,17 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const VkImage
                              region.dstOffset.z);
         }
 
-        if (dst_state->createInfo.imageType == VK_IMAGE_TYPE_3D) {
-            if ((0 != region.dstSubresource.baseArrayLayer) || (1 != region.dstSubresource.layerCount)) {
-                skip |= LogError(dst_state->image, "VUID-VkImageCopy-srcImage-00141",
-                                 "vkCmdCopyImage(): pRegion[%d] dstSubresource.baseArrayLayer is %d and dstSubresource.layerCount "
-                                 "is %d. For VK_IMAGE_TYPE_3D images these must be 0 and 1, respectively.",
-                                 i, region.dstSubresource.baseArrayLayer, region.dstSubresource.layerCount);
-            }
-        }
-        // VU01199 changed with mnt1
+        // Handle difference between Maintenance 1
         if (device_extensions.vk_khr_maintenance1) {
+            if (src_state->createInfo.imageType == VK_IMAGE_TYPE_3D) {
+                if ((0 != region.srcSubresource.baseArrayLayer) || (1 != region.srcSubresource.layerCount)) {
+                    skip |=
+                        LogError(src_state->image, "VUID-VkImageCopy-srcImage-00141",
+                                 "vkCmdCopyImage(): pRegion[%d] srcSubresource.baseArrayLayer is %d and srcSubresource.layerCount "
+                                 "is %d. For VK_IMAGE_TYPE_3D images these must be 0 and 1, respectively.",
+                                 i, region.srcSubresource.baseArrayLayer, region.srcSubresource.layerCount);
+                }
+            }
             if (dst_state->createInfo.imageType == VK_IMAGE_TYPE_3D) {
                 if ((0 != region.dstSubresource.baseArrayLayer) || (1 != region.dstSubresource.layerCount)) {
                     skip |=
@@ -2492,8 +2471,15 @@ bool CoreChecks::ValidateImageCopyData(const uint32_t regionCount, const VkImage
             }
         } else {  // Pre maint 1
             if (src_state->createInfo.imageType == VK_IMAGE_TYPE_3D || dst_state->createInfo.imageType == VK_IMAGE_TYPE_3D) {
+                if ((0 != region.srcSubresource.baseArrayLayer) || (1 != region.srcSubresource.layerCount)) {
+                    skip |= LogError(src_state->image, "VUID-VkImageCopy-srcImage-00139",
+                                     "vkCmdCopyImage(): pRegion[%d] srcSubresource.baseArrayLayer is %d and "
+                                     "srcSubresource.layerCount is %d. For copies with either source or dest of type "
+                                     "VK_IMAGE_TYPE_3D, these must be 0 and 1, respectively.",
+                                     i, region.srcSubresource.baseArrayLayer, region.srcSubresource.layerCount);
+                }
                 if ((0 != region.dstSubresource.baseArrayLayer) || (1 != region.dstSubresource.layerCount)) {
-                    skip |= LogError(dst_state->image, "VUID-VkImageCopy-srcImage-00141",
+                    skip |= LogError(dst_state->image, "VUID-VkImageCopy-srcImage-00139",
                                      "vkCmdCopyImage(): pRegion[%d] dstSubresource.baseArrayLayer is %d and "
                                      "dstSubresource.layerCount is %d. For copies with either source or dest of type "
                                      "VK_IMAGE_TYPE_3D, these must be 0 and 1, respectively.",
@@ -2679,19 +2665,18 @@ bool CoreChecks::PreCallValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkIm
                     (VK_IMAGE_TYPE_3D == dst_image_state->createInfo.imageType ? dst_copy_extent.depth
                                                                                : region.dstSubresource.layerCount);
                 if (src_slices != dst_slices) {
-                    std::stringstream ss;
-                    ss << "vkCmdCopyImage(): number of depth slices in source and destination subresources for pRegions[" << i
-                       << "] do not match";
-                    skip |= LogError(command_buffer, "VUID-VkImageCopy-extent-00140", "%s.", ss.str().c_str());
+                    skip |= LogError(command_buffer, "VUID-VkImageCopy-extent-00140",
+                                     "vkCmdCopyImage(): number of depth slices in source and destination subresources for "
+                                     "pRegions[%u] do not match.",
+                                     i);
                 }
             }
         } else {
             // For each region the layerCount member of srcSubresource and dstSubresource must match
             if (region.srcSubresource.layerCount != region.dstSubresource.layerCount) {
-                std::stringstream ss;
-                ss << "vkCmdCopyImage(): number of layers in source and destination subresources for pRegions[" << i
-                   << "] do not match";
-                skip |= LogError(command_buffer, "VUID-VkImageCopy-extent-00140", "%s.", ss.str().c_str());
+                skip |= LogError(
+                    command_buffer, "VUID-VkImageCopy-layerCount-00138",
+                    "vkCmdCopyImage(): number of layers in source and destination subresources for pRegions[%u] do not match", i);
             }
         }
 
