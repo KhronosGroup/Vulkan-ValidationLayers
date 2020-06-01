@@ -513,7 +513,7 @@ static AccessContext *CreateStoreResolveProxyContext(const AccessContext &contex
                                                      std::vector<const IMAGE_VIEW_STATE *> attachment_views) {
     auto *proxy = new AccessContext(context);
     proxy->UpdateAttachmentResolveAccess(rp_state, render_area, attachment_views, subpass, kCurrentCommandTag);
-    // PHASE1 TODO add store operations
+    proxy->UpdateAttachmentStoreAccess(rp_state, render_area, attachment_views, subpass, kCurrentCommandTag);
     return proxy;
 }
 
@@ -579,7 +579,6 @@ bool AccessContext::ValidateLoadOperation(const SyncValidator &sync_state, const
     VkExtent3D extent = CastTo3D(render_area.extent);
     VkOffset3D offset = CastTo3D(render_area.offset);
     const auto external_access_scope = src_external_.barrier.dst_access_scope;
-    HazardResult hazard;
 
     for (uint32_t i = 0; i < rp_state.createInfo.attachmentCount; i++) {
         if (subpass == rp_state.attachment_first_subpass[i]) {
@@ -605,6 +604,7 @@ bool AccessContext::ValidateLoadOperation(const SyncValidator &sync_state, const
             const SyncStageAccessIndex stencil_load_index = has_stencil ? DepthStencilLoadUsage(ci.stencilLoadOp) : load_index;
             const SyncStageAccessFlags stencil_mask = has_stencil ? SyncStageAccess::Flags(stencil_load_index) : 0U;
 
+            HazardResult hazard;
             const char *aspect = nullptr;
             if (is_transition) {
                 // For transition w
@@ -661,6 +661,74 @@ bool AccessContext::ValidateLoadOperation(const SyncValidator &sync_state, const
                                                 " aspect %s during load with loadOp %s.",
                                                 func_name, string_SyncHazard(hazard.hazard), subpass, i, aspect, load_op_string);
                 }
+            }
+        }
+    }
+    return skip;
+}
+
+// Store operation validation can ignore resolve (before it) and layout tranistions after it.  The first is ignored
+// because of the ordering guarantees w.r.t. sample access and that the resolve validation hasn't altered the state, because
+// store is part of the same Next/End operation.
+// The latter is handled in layout transistion validation directly
+bool AccessContext::ValidateStoreOperation(const SyncValidator &sync_state, const RENDER_PASS_STATE &rp_state,
+                                           const VkRect2D &render_area, uint32_t subpass,
+                                           const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
+                                           const char *func_name) const {
+    bool skip = false;
+    const auto *attachment_ci = rp_state.createInfo.pAttachments;
+    VkExtent3D extent = CastTo3D(render_area.extent);
+    VkOffset3D offset = CastTo3D(render_area.offset);
+
+    for (uint32_t i = 0; i < rp_state.createInfo.attachmentCount; i++) {
+        if (subpass == rp_state.attachment_last_subpass[i]) {
+            if (attachment_views[i] == nullptr) continue;
+            const IMAGE_VIEW_STATE &view = *attachment_views[i];
+            const IMAGE_STATE *image = view.image_state.get();
+            if (image == nullptr) continue;
+            const auto &ci = attachment_ci[i];
+
+            // The spec states that "don't care" is an operation with VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            // so we assume that an implementation is *free* to write in that case, meaning that for correctness
+            // sake, we treat DONT_CARE as writing.
+            const bool has_depth = FormatHasDepth(ci.format);
+            const bool has_stencil = FormatHasStencil(ci.format);
+            const bool is_color = !(has_depth || has_stencil);
+            const bool store_op_stores = ci.storeOp != VK_ATTACHMENT_STORE_OP_NONE_QCOM;
+            if (!has_stencil && !store_op_stores) continue;
+
+            HazardResult hazard;
+            const char *aspect = nullptr;
+            bool checked_stencil = false;
+            if (is_color) {
+                hazard = DetectHazard(*image, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
+                                      view.normalized_subresource_range, kAttachmentRasterOrder, offset, extent);
+                aspect = "color";
+            } else {
+                const bool stencil_op_stores = ci.stencilStoreOp != VK_ATTACHMENT_STORE_OP_NONE_QCOM;
+                auto hazard_range = view.normalized_subresource_range;
+                if (has_depth && store_op_stores) {
+                    hazard_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                    hazard = DetectHazard(*image, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, hazard_range,
+                                          kAttachmentRasterOrder, offset, extent);
+                    aspect = "depth";
+                }
+                if (!hazard.hazard && has_stencil && stencil_op_stores) {
+                    hazard_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+                    hazard = DetectHazard(*image, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, hazard_range,
+                                          kAttachmentRasterOrder, offset, extent);
+                    aspect = "stencil";
+                    checked_stencil = true;
+                }
+            }
+
+            if (hazard.hazard) {
+                const char *const op_type_string = checked_stencil ? "stencilStoreOp" : "storeOp";
+                const char *const store_op_string = string_VkAttachmentStoreOp(checked_stencil ? ci.stencilStoreOp : ci.storeOp);
+                skip |= sync_state.LogError(
+                    rp_state.renderPass, string_SyncHazardVUID(hazard.hazard),
+                    "%s: Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32 " %s aspect during store with %s %s.", func_name,
+                    string_SyncHazard(hazard.hazard), subpass, i, aspect, op_type_string, store_op_string);
             }
         }
     }
@@ -1045,6 +1113,47 @@ void AccessContext::UpdateAttachmentResolveAccess(const RENDER_PASS_STATE &rp_st
     ResolveOperation(update, rp_state, render_area, attachment_views, subpass);
 }
 
+void AccessContext::UpdateAttachmentStoreAccess(const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
+                                                const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, uint32_t subpass,
+                                                const ResourceUsageTag &tag) {
+    const auto *attachment_ci = rp_state.createInfo.pAttachments;
+    VkExtent3D extent = CastTo3D(render_area.extent);
+    VkOffset3D offset = CastTo3D(render_area.offset);
+
+    for (uint32_t i = 0; i < rp_state.createInfo.attachmentCount; i++) {
+        if (rp_state.attachment_last_subpass[i] == subpass) {
+            if (attachment_views[i] == nullptr) continue;  // UNUSED
+            const auto &view = *attachment_views[i];
+            const IMAGE_STATE *image = view.image_state.get();
+            if (image == nullptr) continue;
+
+            const auto &ci = attachment_ci[i];
+            const bool has_depth = FormatHasDepth(ci.format);
+            const bool has_stencil = FormatHasStencil(ci.format);
+            const bool is_color = !(has_depth || has_stencil);
+            const bool store_op_stores = ci.storeOp != VK_ATTACHMENT_STORE_OP_NONE_QCOM;
+
+            if (is_color && store_op_stores) {
+                UpdateAccessState(*image, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, view.normalized_subresource_range,
+                                  offset, extent, tag);
+            } else {
+                auto update_range = view.normalized_subresource_range;
+                if (has_depth && store_op_stores) {
+                    update_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                    UpdateAccessState(*image, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, update_range, offset, extent,
+                                      tag);
+                }
+                const bool stencil_op_stores = ci.stencilStoreOp != VK_ATTACHMENT_STORE_OP_NONE_QCOM;
+                if (has_stencil && stencil_op_stores) {
+                    update_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+                    UpdateAccessState(*image, SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, update_range, offset, extent,
+                                      tag);
+                }
+            }
+        }
+    }
+}
+
 template <typename Action>
 void AccessContext::ApplyGlobalBarriers(const Action &barrier_action) {
     // Note: Barriers do *not* cross context boundaries, applying to accessess within.... (at least for renderpass subpasses)
@@ -1200,10 +1309,13 @@ void CommandBufferAccessContext::RecordEndRenderPass(const RENDER_PASS_STATE &re
 
 bool RenderPassAccessContext::ValidateNextSubpass(const SyncValidator &sync_state, const VkRect2D &render_area,
                                                   const char *func_name) const {
-    // PHASE1 TODO: Add Validate Preserve/Store attachments
+    // PHASE1 TODO: Add Validate Preserve attachments
     bool skip = false;
     skip |= CurrentContext().ValidateResolveOperations(sync_state, *rp_state_, render_area, attachment_views_, func_name,
                                                        current_subpass_);
+    skip |= CurrentContext().ValidateStoreOperation(sync_state, *rp_state_, render_area, current_subpass_, attachment_views_,
+                                                    func_name);
+
     const auto next_subpass = current_subpass_ + 1;
     const auto &next_context = subpass_contexts_[next_subpass];
     skip |= next_context.ValidateLayoutTransitions(sync_state, *rp_state_, render_area, next_subpass, attachment_views_, func_name);
@@ -1212,10 +1324,12 @@ bool RenderPassAccessContext::ValidateNextSubpass(const SyncValidator &sync_stat
 }
 bool RenderPassAccessContext::ValidateEndRenderPass(const SyncValidator &sync_state, const VkRect2D &render_area,
                                                     const char *func_name) const {
-    // PHASE1 TODO: Validate Preserve/Store
+    // PHASE1 TODO: Validate Preserve
     bool skip = false;
     skip |= CurrentContext().ValidateResolveOperations(sync_state, *rp_state_, render_area, attachment_views_, func_name,
                                                        current_subpass_);
+    skip |= CurrentContext().ValidateStoreOperation(sync_state, *rp_state_, render_area, current_subpass_, attachment_views_,
+                                                    func_name);
     skip |= ValidateFinalSubpassLayoutTransitions(sync_state, render_area, func_name);
     return skip;
 }
@@ -1346,6 +1460,7 @@ void RenderPassAccessContext::RecordBeginRenderPass(const SyncValidator &state, 
 void RenderPassAccessContext::RecordNextSubpass(const VkRect2D &render_area, const ResourceUsageTag &tag) {
     // Resolves are against *prior* subpass context and thus *before* the subpass increment
     CurrentContext().UpdateAttachmentResolveAccess(*rp_state_, render_area, attachment_views_, current_subpass_, tag);
+    CurrentContext().UpdateAttachmentStoreAccess(*rp_state_, render_area, attachment_views_, current_subpass_, tag);
 
     current_subpass_++;
     assert(current_subpass_ < subpass_contexts_.size());
@@ -1354,10 +1469,9 @@ void RenderPassAccessContext::RecordNextSubpass(const VkRect2D &render_area, con
 }
 
 void RenderPassAccessContext::RecordEndRenderPass(const VkRect2D &render_area, const ResourceUsageTag &tag) {
-    // Add the resolve accesses
+    // Add the resolve and store accesses
     CurrentContext().UpdateAttachmentResolveAccess(*rp_state_, render_area, attachment_views_, current_subpass_, tag);
-
-    // PHASE1 TODO add *store* access update
+    CurrentContext().UpdateAttachmentStoreAccess(*rp_state_, render_area, attachment_views_, current_subpass_, tag);
 
     // Export the accesses from the renderpass...
     external_context_->ResolveChildContexts(subpass_contexts_);
