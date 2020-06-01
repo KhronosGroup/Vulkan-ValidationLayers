@@ -211,10 +211,9 @@ void ResolveOperation(Action &action, const RENDER_PASS_STATE &rp_state, const V
             const auto &color_attach = color_attachments[i].attachment;
             const auto &resolve_attach = subpass_ci.pResolveAttachments[i].attachment;
             if ((color_attach != VK_ATTACHMENT_UNUSED) && (resolve_attach != VK_ATTACHMENT_UNUSED)) {
-                const char *resolve_op = "color attachment read";
-                action("color", "read", color_attach, resolve_attach, attachment_views[color_attach],
+                action("color", "resolve read", color_attach, resolve_attach, attachment_views[color_attach],
                        SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ, kColorAttachmentRasterOrder, offset, extent, 0);
-                action("resolve", "write", color_attach, resolve_attach, attachment_views[resolve_attach],
+                action("color", "resolve write", color_attach, resolve_attach, attachment_views[resolve_attach],
                        SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, kColorAttachmentRasterOrder, offset, extent, 0);
             }
         }
@@ -250,10 +249,10 @@ void ResolveOperation(Action &action, const RENDER_PASS_STATE &rp_state, const V
         }
 
         if (aspect_mask) {
-            action("depth/stencil", "read", src_at, dst_at, attachment_views[src_at],
+            action(aspect_string, "resolve read", src_at, dst_at, attachment_views[src_at],
                    SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_READ, kDepthStencilAttachmentRasterOrder, offset, extent,
                    aspect_mask);
-            action("depth/stencil resolve", "write", src_at, dst_at, attachment_views[dst_at],
+            action(aspect_string, "resolve write", src_at, dst_at, attachment_views[dst_at],
                    SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, kAttachmentRasterOrder, offset, extent, aspect_mask);
         }
     }
@@ -583,7 +582,6 @@ bool AccessContext::ValidateLayoutTransitions(const SyncValidator &sync_state, c
     const auto &transitions = rp_state.subpass_transitions[subpass];
     for (const auto &transition : transitions) {
         const bool prev_needs_proxy = transition.prev_pass != VK_SUBPASS_EXTERNAL && (transition.prev_pass + 1 == subpass);
-        auto use_this = this;
 
         const auto *track_back = GetTrackBackFromSubpass(transition.prev_pass);
         if (prev_needs_proxy) {
