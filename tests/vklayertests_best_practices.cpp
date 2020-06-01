@@ -92,6 +92,40 @@ TEST_F(VkBestPracticesLayerTest, ValidateReturnCodes) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkBestPracticesLayerTest, CreateInstanceWithNullApplicationInfo) {
+    TEST_DESCRIPTION("Attempt to create a Vulkan instance with a null VkApplicationInfo. This should not cause an error.");
+
+    InitBestPracticesFramework();
+
+    VkInstanceCreateInfo ici = GetInstanceCreateInfo();
+    ici.pApplicationInfo = nullptr;
+
+    VkInstance instance;
+    m_errorMonitor->ExpectSuccess();
+    VkResult result = vk::CreateInstance(&ici, nullptr, &instance);
+    ASSERT_VK_SUCCESS(result);
+    m_errorMonitor->VerifyNotFound();
+}
+
+TEST_F(VkBestPracticesLayerTest, CreateInstanceWithNullApplicationInfoWithExtensions) {
+    TEST_DESCRIPTION(
+        "Attempt to create a Vulkan instance with a null VkApplicationInfo and some enabled extensions. This should not cause an "
+        "error.");
+
+    InitBestPracticesFramework();
+
+    VkInstanceCreateInfo ici = GetInstanceCreateInfo();
+    ici.pApplicationInfo = nullptr;
+    ici.ppEnabledExtensionNames = m_instance_extension_names.data();
+    ici.enabledExtensionCount = m_instance_extension_names.size();
+
+    VkInstance instance;
+    m_errorMonitor->ExpectSuccess();
+    VkResult result = vk::CreateInstance(&ici, nullptr, &instance);
+    ASSERT_VK_SUCCESS(result);
+    m_errorMonitor->VerifyNotFound();
+}
+
 TEST_F(VkBestPracticesLayerTest, UseDeprecatedInstanceExtensions) {
     TEST_DESCRIPTION("Create an instance with a deprecated extension.");
 
