@@ -286,16 +286,16 @@ void SetValidationFeatures(CHECK_DISABLED &disable_data, CHECK_ENABLED &enable_d
     }
 }
 
-std::string GetNextToken(std::string &token_list, std::string &delimiter, size_t &pos) {
+std::string GetNextToken(std::string *token_list, const std::string &delimiter, size_t *pos) {
     std::string token;
-    pos = token_list.find(delimiter);
-    if (pos != std::string::npos) {
-        token = token_list.substr(0, pos);
+    *pos = token_list->find(delimiter);
+    if (*pos != std::string::npos) {
+        token = token_list->substr(0, *pos);
     } else {
-        pos = token_list.length() - delimiter.length();
-        token = token_list;
+        *pos = token_list->length() - delimiter.length();
+        token = *token_list;
     }
-    token_list.erase(0, pos + delimiter.length());
+    token_list->erase(0, *pos + delimiter.length());
     return token;
 }
 
@@ -304,7 +304,7 @@ void SetLocalEnableSetting(std::string list_of_enables, std::string delimiter, C
     size_t pos = 0;
     std::string token;
     while (list_of_enables.length() != 0) {
-        token = GetNextToken(list_of_enables, delimiter, pos);
+        token = GetNextToken(&list_of_enables, delimiter, &pos);
         if (token.find("VK_VALIDATION_FEATURE_ENABLE_") != std::string::npos) {
             auto result = VkValFeatureEnableLookup.find(token);
             if (result != VkValFeatureEnableLookup.end()) {
@@ -324,7 +324,7 @@ void SetLocalDisableSetting(std::string list_of_disables, std::string delimiter,
     size_t pos = 0;
     std::string token;
     while (list_of_disables.length() != 0) {
-        token = GetNextToken(list_of_disables, delimiter, pos);
+        token = GetNextToken(&list_of_disables, delimiter, &pos);
         if (token.find("VK_VALIDATION_FEATURE_DISABLE_") != std::string::npos) {
             auto result = VkValFeatureDisableLookup.find(token);
             if (result != VkValFeatureDisableLookup.end()) {
@@ -343,7 +343,7 @@ void CreateFilterMessageIdList(std::string raw_id_list, std::string delimiter, s
     size_t pos = 0;
     std::string token;
     while (raw_id_list.length() != 0) {
-        token = GetNextToken(raw_id_list, delimiter, pos);
+        token = GetNextToken(&raw_id_list, delimiter, &pos);
         uint32_t int_id = 0;
         if (token.find("0x") == 0) {                                             // Handle hex number
             int_id = std::strtoul(token.c_str(), nullptr, 16);
