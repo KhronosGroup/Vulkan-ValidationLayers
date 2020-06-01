@@ -132,16 +132,17 @@ bool BestPractices::ValidateDeprecatedExtensions(const char* api_name, const cha
 bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                                   VkInstance* pInstance) const {
     bool skip = false;
-
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         if (white_list(pCreateInfo->ppEnabledExtensionNames[i], kDeviceExtensionNames)) {
             skip |= LogWarning(instance, kVUID_BestPractices_CreateInstance_ExtensionMismatch,
                                "vkCreateInstance(): Attempting to enable Device Extension %s at CreateInstance time.",
                                pCreateInfo->ppEnabledExtensionNames[i]);
         }
-        skip |= ValidateDeprecatedExtensions("CreateInstance", pCreateInfo->ppEnabledExtensionNames[i],
-                                             pCreateInfo->pApplicationInfo->apiVersion,
-                                             kVUID_BestPractices_CreateInstance_DeprecatedExtension);
+        if (pCreateInfo->pApplicationInfo != nullptr) {
+            skip |= ValidateDeprecatedExtensions("CreateInstance", pCreateInfo->ppEnabledExtensionNames[i],
+                                                 pCreateInfo->pApplicationInfo->apiVersion,
+                                                 kVUID_BestPractices_CreateInstance_DeprecatedExtension);
+        }
     }
 
     return skip;
