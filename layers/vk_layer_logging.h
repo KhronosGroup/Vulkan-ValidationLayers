@@ -201,6 +201,8 @@ typedef struct _debug_report_data {
     // This mutex is defined as mutable since the normal usage for a debug report object is as 'const'. The mutable keyword allows
     // the layers to continue this pattern, but also allows them to use/change this specific member for synchronization purposes.
     mutable std::mutex debug_output_mutex;
+    int32_t duplicate_message_limit = 0;
+    mutable std::unordered_map<uint32_t, int32_t> duplicate_message_count_map{};
     const void *instance_pnext_chain{};
 
     void DebugReportSetUtilsObjectName(const VkDebugUtilsObjectNameInfoEXT *pNameInfo) {
@@ -334,6 +336,22 @@ static inline void RemoveAllMessageCallbacks(debug_report_data *debug_data, std:
     callbacks.clear();
 }
 
+// Returns TRUE if the number of times this message has been logged is over the set limit
+static inline bool UpdateLogMsgCounts(const debug_report_data *debug_data, int32_t vuid_hash) {
+    auto vuid_count_it = debug_data->duplicate_message_count_map.find(vuid_hash);
+    if (vuid_count_it == debug_data->duplicate_message_count_map.end()) {
+        debug_data->duplicate_message_count_map.insert({vuid_hash, 1});
+        return false;
+    } else {
+        if (vuid_count_it->second >= debug_data->duplicate_message_limit) {
+            return true;
+        } else {
+            vuid_count_it->second++;
+            return false;
+        }
+    }
+}
+
 static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags msg_flags, const LogObjectList &objects,
                                  const char *layer_prefix, const char *message, const char *text_vuid) {
     bool bail = false;
@@ -384,10 +402,14 @@ static inline bool debug_log_msg(const debug_report_data *debug_data, VkFlags ms
         }
     }
 
-    size_t location = 0;
+    int32_t location = 0;
     if (text_vuid != nullptr) {
         // Hash for vuid text
         location = XXH32(text_vuid, strlen(text_vuid), 8);
+        if ((debug_data->duplicate_message_limit > 0) && UpdateLogMsgCounts(debug_data, location)) {
+            // Count for this particular message is over the limit, ignore it
+            return false;
+        }
     }
 
     VkDebugUtilsMessengerCallbackDataEXT callback_data;
