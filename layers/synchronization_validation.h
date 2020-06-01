@@ -259,6 +259,9 @@ class AccessContext {
     void UpdateAttachmentResolveAccess(const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
                                        const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, uint32_t subpass,
                                        const ResourceUsageTag &tag);
+    void UpdateAttachmentStoreAccess(const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
+                                     const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, uint32_t subpass,
+                                     const ResourceUsageTag &tag);
 
     void ResolveChildContexts(const std::vector<AccessContext> &contexts);
 
@@ -315,6 +318,9 @@ class AccessContext {
     bool ValidateLoadOperation(const SyncValidator &sync_state, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
                                uint32_t subpass, const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
                                const char *func_name) const;
+    bool ValidateStoreOperation(const SyncValidator &sync_state, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
+                                uint32_t subpass, const std::vector<const IMAGE_VIEW_STATE *> &attachment_views,
+                                const char *func_name) const;
     bool ValidateResolveOperations(const SyncValidator &sync_state, const RENDER_PASS_STATE &rp_state, const VkRect2D &render_area,
                                    const std::vector<const IMAGE_VIEW_STATE *> &attachment_views, const char *func_name,
                                    uint32_t subpass) const;
