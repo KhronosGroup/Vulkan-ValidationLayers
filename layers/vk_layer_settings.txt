@@ -55,6 +55,13 @@
 #    a validation message, for example:
 #        0xdf3391a2 or 3744698786.
 #
+#   DUPLICATE_MESSAGE_LIMIT:
+#   =======================
+#   <LayerIdentifier>.duplicate_message_limit: This is an unsigned integer
+#    which signifies the limit for the number of times any validation
+#    message can be output by the layers. Any non-zero value will be respected,
+#    and the default is no limit.
+#
 #   LOG_FILENAME:
 #   =============
 #   <LayerIdentifier>.log_filename : output filename. Can be relative to
@@ -119,7 +126,10 @@ khronos_validation.log_filename = stdout
 #khronos_validation.message_id_filter = 3744698786,0xdf3391a2,"VUID-vkCmdPipelineBarrier-image-02635"
 
 # Example entry showing how to declare custom non-Vulkan structure types
-khronos_validation.custom_stype_list=1100297000,32,0x478b1428,0x20
+#khronos_validation.custom_stype_list=1100297000,32,0x478b1428,0x20
+
+# Example entry showing how to limit the number of repeated validation messages
+#khronos_validation.duplicate_message_limit = 25
 
 # Example entry showing how to disable threading checks and validation at DestroyPipeline time
 #khronos_validation.disables = VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT,VALIDATION_CHECK_DISABLE_DESTROY_PIPELINE
