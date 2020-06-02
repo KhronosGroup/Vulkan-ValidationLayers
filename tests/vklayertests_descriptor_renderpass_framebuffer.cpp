@@ -6103,6 +6103,130 @@ TEST_F(VkLayerTest, InvalidPushDescriptorSetLayout) {
     }
 }
 
+TEST_F(VkLayerTest, InvalidPushDescriptorImageLayout) {
+    TEST_DESCRIPTION("Use a push descriptor with a mismatched image layout.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s Did not find VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME; skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+        return;
+    }
+
+    auto push_descriptor_prop = GetPushDescriptorProperties(instance(), gpu());
+    if (push_descriptor_prop.maxPushDescriptors < 1) {
+        // Some implementations report an invalid maxPushDescriptors of 0
+        printf("%s maxPushDescriptors is zero, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    ASSERT_NO_FATAL_FAILURE(InitViewport());
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    VkDescriptorSetLayoutBinding dsl_binding = {};
+    dsl_binding.binding = 0;
+    dsl_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    dsl_binding.descriptorCount = 1;
+    dsl_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    dsl_binding.pImmutableSamplers = NULL;
+
+    const VkDescriptorSetLayoutObj ds_layout(m_device, {dsl_binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR);
+    auto pipeline_layout = VkPipelineLayoutObj(m_device, {&ds_layout});
+
+    char const *fsSource =
+        "#version 450\n"
+        "\n"
+        "layout(set=0, binding=0) uniform sampler2D tex;\n"
+        "layout(location=0) out vec4 color;\n"
+        "void main(){\n"
+        "   color = textureLod(tex, vec2(0.5, 0.5), 0.0);\n"
+        "}\n";
+    VkShaderObj vs(m_device, bindStateVertShaderText, VK_SHADER_STAGE_VERTEX_BIT, this);
+    VkShaderObj fs(m_device, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    VkPipelineObj pipe(m_device);
+    pipe.SetViewport(m_viewports);
+    pipe.SetScissor(m_scissors);
+    pipe.AddDefaultColorAttachment();
+    pipe.AddShader(&vs);
+    pipe.AddShader(&fs);
+    pipe.CreateVKPipeline(pipeline_layout.handle(), m_renderPass);
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    VkSampler sampler;
+
+    auto err = vk::CreateSampler(m_device->device(), &sampler_ci, NULL, &sampler);
+    ASSERT_VK_SUCCESS(err);
+    VkImageObj image(m_device);
+    image.Init(32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    VkImageView image_view = image.targetView(VK_FORMAT_B8G8R8A8_UNORM);
+    image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
+    VkDescriptorImageInfo img_info = {};
+    img_info.sampler = sampler;
+    img_info.imageView = image_view;
+    img_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    VkWriteDescriptorSet descriptor_write = {};
+    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_write.pNext = NULL;
+    descriptor_write.dstSet = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptor_write.pImageInfo = &img_info;
+    descriptor_write.dstArrayElement = 0;
+    descriptor_write.dstBinding = 0;
+
+    auto vkCmdPushDescriptorSetKHR =
+        (PFN_vkCmdPushDescriptorSetKHR)vk::GetDeviceProcAddr(m_device->device(), "vkCmdPushDescriptorSetKHR");
+
+    for (uint32_t i = 0; i < 2; i++) {
+        m_commandBuffer->begin();
+        if (i == 1) {
+            // Test path where image layout in command buffer is known at draw time
+            image.ImageMemoryBarrier(m_commandBuffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_ACCESS_SHADER_WRITE_BIT,
+                                     VK_ACCESS_SHADER_WRITE_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+        }
+        m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+        vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.handle());
+        vkCmdPushDescriptorSetKHR(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
+                                  &descriptor_write);
+        vk::CmdSetViewport(m_commandBuffer->handle(), 0, 1, &m_viewports[0]);
+        vk::CmdSetScissor(m_commandBuffer->handle(), 0, 1, &m_scissors[0]);
+
+        if (i == 1) {
+            // Test path where image layout in command buffer is known at draw time
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                                 "Image layout specified at vkUpdateDescriptorSet* or vkCmdPushDescriptorSet* "
+                                                 "time doesn't match actual image layout at time descriptor is used");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                                 "with specific layout VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL that doesn't match "
+                                                 "the previous known layout VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL");
+            m_commandBuffer->Draw(1, 1, 0, 0);
+            m_errorMonitor->VerifyFound();
+            break;
+        }
+        m_errorMonitor->SetDesiredFailureMsg(
+            kErrorBit,
+            "to be in layout VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL--instead, current layout is VK_IMAGE_LAYOUT_GENERAL.");
+        m_commandBuffer->Draw(1, 1, 0, 0);
+        m_commandBuffer->EndRenderPass();
+        m_commandBuffer->end();
+
+        m_commandBuffer->QueueCommandBuffer(false);
+        m_errorMonitor->VerifyFound();
+    }
+
+    vk::DestroySampler(m_device->device(), sampler, NULL);
+}
+
 TEST_F(VkLayerTest, PushDescriptorSetLayoutWithoutExtension) {
     TEST_DESCRIPTION("Create a push descriptor set layout without loading the needed extension.");
     ASSERT_NO_FATAL_FAILURE(Init());
