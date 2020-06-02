@@ -1616,6 +1616,70 @@ TEST_F(VkLayerTest, FeaturesVariablePointer) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, FeaturesMultiview) {
+    TEST_DESCRIPTION("Checks VK_KHR_multiview features.");
+
+    if (InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    } else {
+        printf("%s %s Extension not supported, skipping tests\n", kSkipPrefix,
+               VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        return;
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    std::vector<const char *> device_extensions;
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MULTIVIEW_EXTENSION_NAME)) {
+        device_extensions.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+    } else {
+        printf("%s Multiview Extension not supported, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2KHR != nullptr);
+
+    auto multiview_features = lvl_init_struct<VkPhysicalDeviceMultiviewFeatures>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&multiview_features);
+    vkGetPhysicalDeviceFeatures2KHR(gpu(), &features2);
+
+    // Set false to trigger VUs
+    multiview_features.multiview = VK_FALSE;
+
+    vk_testing::PhysicalDevice physical_device(gpu());
+    vk_testing::QueueCreateInfoArray queue_info(physical_device.queue_properties());
+    std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
+    auto qci = queue_info.data();
+    for (uint32_t i = 0; i < queue_info.size(); ++i) {
+        if (qci[i].queueCount) {
+            create_queue_infos.push_back(qci[i]);
+        }
+    }
+
+    VkDeviceCreateInfo device_create_info = {};
+    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    device_create_info.pNext = &features2;
+    device_create_info.queueCreateInfoCount = queue_info.size();
+    device_create_info.pQueueCreateInfos = queue_info.data();
+    device_create_info.ppEnabledExtensionNames = device_extensions.data();
+    device_create_info.enabledExtensionCount = device_extensions.size();
+    VkDevice testDevice;
+
+    if ((multiview_features.multiviewGeometryShader == VK_FALSE) && (multiview_features.multiviewTessellationShader == VK_FALSE)) {
+        printf("%s multiviewGeometryShader and  multiviewTessellationShader feature not supported, skipping tests\n", kSkipPrefix);
+        return;
+    }
+
+    if (multiview_features.multiviewGeometryShader == VK_TRUE) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceMultiviewFeatures-multiviewGeometryShader-00580");
+    }
+    if (multiview_features.multiviewTessellationShader == VK_TRUE) {
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkPhysicalDeviceMultiviewFeatures-multiviewTessellationShader-00581");
+    }
+    vk::CreateDevice(gpu(), &device_create_info, NULL, &testDevice);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(VkLayerTest, BeginQueryOnTimestampPool) {
     TEST_DESCRIPTION("Call CmdBeginQuery on a TIMESTAMP query pool.");
 
