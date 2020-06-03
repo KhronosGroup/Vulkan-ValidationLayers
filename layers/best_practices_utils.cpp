@@ -25,9 +25,12 @@ BestPracticesTracker::BestPracticesTracker() {
     container_type = LayerObjectTypeBestPractices;
 
     // here we add best practices
-    auto example_practice = std::unique_ptr<BestPracticeBase>(new MyExampleBestPractices(*this));
-    practices.emplace_back(std::move(example_practice));
+    addPractice(std::unique_ptr<BestPracticeBase>(new MyExampleBestPractices(*this)));
 
+    initReverseLookup();
+}
+
+void BestPracticesTracker::initReverseLookup() {
     // add reverse lookups for vendors which agree with particular checks
     // TODO: maybe reverse lookup is unneeded, we could define vendor agreement within each check class itself?
     for (const auto& practice : practices) {
@@ -40,6 +43,8 @@ BestPracticesTracker::BestPracticesTracker() {
     }
 }
 
+void BestPracticesTracker::addPractice(std::unique_ptr<BestPracticeBase> practice) { practices.emplace_back(std::move(practice)); }
+
 const std::map<BPVendorFlagBits, VendorSpecificInfo> BestPracticesTracker::initVendorInfo() {
     return {
         // here we define the names and enablements of each vendor
@@ -50,13 +55,16 @@ const std::map<BPVendorFlagBits, VendorSpecificInfo> BestPracticesTracker::initV
     };
 }
 
-const std::map<BPVendorFlagBits, std::set<std::string>> BestPracticesTracker::initVendorPractices() {
+const std::map<BPVendorFlagBits, std::set<BestPracticeBase::id_t>> BestPracticesTracker::initVendorPractices() {
     return {
         // here we define vendors which agree with particular best practices
-        {kBPVendorKhronos, {MyExampleBestPractices::ID}},
-        {kBPVendorArm, {MyExampleBestPractices::ID}},
-        {kBPVendorExample1, {MyExampleBestPractices::ID}},
-        {kBPVendorExample2, {MyExampleBestPractices::ID}},
+        /* TODO: we could use typeid(CheckImplClass) as the IDs, this would save us a lot of work, but would require RTTI, this is
+           currently disabled, why?
+        */
+        {kBPVendorKhronos, {BestPracticeBase::check_id<MyExampleBestPractices>}},
+        {kBPVendorArm, {BestPracticeBase::check_id<MyExampleBestPractices>}},
+        {kBPVendorExample1, {BestPracticeBase::check_id<MyExampleBestPractices>}},
+        {kBPVendorExample2, {BestPracticeBase::check_id<MyExampleBestPractices>}},
     };
 }
 

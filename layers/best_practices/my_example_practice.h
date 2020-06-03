@@ -29,10 +29,6 @@ class MyExampleBestPractices : public BestPracticeBase {
   public:
     MyExampleBestPractices(BestPracticesTracker& tracker) : BestPracticeBase(tracker) {}
 
-    static const std::string ID;
-
-    virtual const std::string id() const override;
-
   private:
     using StateTracker = ValidationStateTracker;
     std::string GetAPIVersionName(uint32_t version) const;

@@ -59,11 +59,22 @@ class ManualFnAPICallHookInterface {
 // forward declaration of BestPractices for BestPracticeBase
 class BestPracticesTracker;
 
+// TODO: what's the best way to have a SELF template?
 class BestPracticeBase : public BestPracticesAPICallHookInterface {
   public:
-    BestPracticeBase(BestPracticesTracker& tracker) : tracker(tracker) {}
+    // the type used to define IDs for best practice checks
+    using id_t = void (*)();
 
-    virtual const std::string id() const = 0;
+    // a template for generating function pointers which act as IDs for the implementation class
+    template <typename>
+    static void check_id() {}
+
+    id_t id() {
+        // this ensures that a function called check_id is generated for all derived types
+        return check_id<decltype(*this)>;
+    }
+
+    BestPracticeBase(BestPracticesTracker& tracker) : tracker(tracker) {}
 
     void agree(BPVendorFlagBits vendors) { _agreeing_vendors |= vendors; }
 
@@ -82,16 +93,19 @@ class BestPracticesTracker : public ValidationStateTracker {
   public:
     BestPracticesTracker();
 
+    void initReverseLookup();
+    void addPractice(std::unique_ptr<BestPracticeBase> practice);
+
     // extra helper functions
 
     void ValidateReturnCodes(const char* api_name, VkResult result, const std::vector<VkResult>& success_codes,
                              const std::vector<VkResult>& error_codes) const;
 
     const std::map<BPVendorFlagBits, VendorSpecificInfo> vendor_info = initVendorInfo();
-    const std::map<BPVendorFlagBits, std::set<std::string>> vendor_practices = initVendorPractices();
+    const std::map<BPVendorFlagBits, std::set<BestPracticeBase::id_t>> vendor_practices = initVendorPractices();
 
     const std::map<BPVendorFlagBits, VendorSpecificInfo> initVendorInfo();
-    const std::map<BPVendorFlagBits, std::set<std::string>> initVendorPractices();
+    const std::map<BPVendorFlagBits, std::set<BestPracticeBase::id_t>> initVendorPractices();
 
     bool VendorCheckEnabled(BPVendorFlags vendors) const {
         for (const auto& vendor : vendor_info) {

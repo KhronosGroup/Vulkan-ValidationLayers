@@ -6,10 +6,6 @@
 #include <iomanip>
 #include <bitset>
 
-const std::string MyExampleBestPractices::ID = "MyExampleBestPractices";
-
-const std::string MyExampleBestPractices::id() const { return MyExampleBestPractices::ID; }
-
 // get the API name is proper format
 std::string MyExampleBestPractices::GetAPIVersionName(uint32_t version) const {
     std::stringstream version_name;
