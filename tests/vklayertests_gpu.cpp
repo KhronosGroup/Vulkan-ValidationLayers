@@ -2,12 +2,13 @@
 
 bool VkGpuAssistedLayerTest::InitGpuAssistedFramework(bool request_descriptor_indexing) {
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
-    VkValidationFeatureDisableEXT disables[] = {VK_VALIDATION_FEATURE_DISABLE_ALL_EXT};
-
+    VkValidationFeatureDisableEXT disables[] = {
+        VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
+        VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
     VkValidationFeaturesEXT features = {};
     features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
     features.enabledValidationFeatureCount = 1;
-    features.disabledValidationFeatureCount = 1;
+    features.disabledValidationFeatureCount = 4;
     features.pEnabledValidationFeatures = enables;
     features.pDisabledValidationFeatures = disables;
 
@@ -1505,12 +1506,13 @@ TEST_F(VkGpuAssistedLayerTest, ValidationFeatures) {
 
 void VkDebugPrintfTest::InitDebugPrintfFramework() {
     VkValidationFeatureEnableEXT enables[] = {VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT};
-    VkValidationFeatureDisableEXT disables[] = {VK_VALIDATION_FEATURE_DISABLE_ALL_EXT};
-
+    VkValidationFeatureDisableEXT disables[] = {
+        VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
+        VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
     VkValidationFeaturesEXT features = {};
     features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
     features.enabledValidationFeatureCount = 1;
-    features.disabledValidationFeatureCount = 1;
+    features.disabledValidationFeatureCount = 4;
     features.pEnabledValidationFeatures = enables;
     features.pDisabledValidationFeatures = disables;
 
