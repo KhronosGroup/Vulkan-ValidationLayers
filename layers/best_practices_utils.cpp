@@ -139,8 +139,9 @@ bool BestPractices::PreCallValidateCreateInstance(const VkInstanceCreateInfo* pC
                                "vkCreateInstance(): Attempting to enable Device Extension %s at CreateInstance time.",
                                pCreateInfo->ppEnabledExtensionNames[i]);
         }
-        skip |= ValidateDeprecatedExtensions("CreateInstance", pCreateInfo->ppEnabledExtensionNames[i],
-                                             pCreateInfo->pApplicationInfo->apiVersion,
+        uint32_t specified_version =
+            (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
+        skip |= ValidateDeprecatedExtensions("CreateInstance", pCreateInfo->ppEnabledExtensionNames[i], specified_version,
                                              kVUID_BestPractices_CreateInstance_DeprecatedExtension);
     }
 
