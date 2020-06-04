@@ -889,12 +889,14 @@ std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescr
             interface_var v = {};
             v.id = insn.word(2);
             v.type_id = insn.word(1);
-            out.emplace_back(std::make_pair(set, binding), v);
+            v.is_writable = false;
 
             if (!(d.flags & decoration_set::nonwritable_bit) &&
                 IsWritableDescriptorType(src, insn.word(1), insn.word(3) == spv::StorageClassStorageBuffer)) {
                 *has_writable_descriptor = true;
+                v.is_writable = true;
             }
+            out.emplace_back(std::make_pair(set, binding), v);
         }
     }
 
