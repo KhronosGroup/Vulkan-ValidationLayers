@@ -2127,6 +2127,16 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
             vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_multi_planar.handle(),
                                      VK_IMAGE_LAYOUT_GENERAL, 1, &mp_region);
             m_errorMonitor->VerifyFound();
+
+            // buffer offset must be a multiple of texel block size for VK_FORMAT_R8G8_UNORM (2)
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferImageCopy-bufferOffset-01559");
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferImageCopy-bufferOffset-00194");
+            mp_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
+            mp_region.bufferOffset = 5;
+            mp_region.imageExtent = {8, 8, 1};
+            vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer_16k.handle(), image_multi_planar.handle(),
+                                     VK_IMAGE_LAYOUT_GENERAL, 1, &mp_region);
+            m_errorMonitor->VerifyFound();
         }
     }
 }
