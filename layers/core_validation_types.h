@@ -779,6 +779,7 @@ struct interface_var {
     bool is_patch;
     bool is_block_member;
     bool is_relaxed_precision;
+    bool is_writable;
     // TODO: collect the name, too? Isn't required to be present.
 };
 typedef std::pair<unsigned, unsigned> descriptor_slot_t;
@@ -842,6 +843,7 @@ class PIPELINE_STATE : public BASE_NODE {
         std::unordered_set<uint32_t> accessible_ids;
         std::vector<std::pair<descriptor_slot_t, interface_var>> descriptor_uses;
         bool has_writable_descriptor;
+        VkShaderStageFlagBits stage_flag;
     };
 
     VkPipeline pipeline;
