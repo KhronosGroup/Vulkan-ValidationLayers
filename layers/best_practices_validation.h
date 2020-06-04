@@ -39,7 +39,7 @@ typedef enum {
 typedef VkFlags BPVendorFlags;
 
 struct VendorSpecificInfo {
-    bool CHECK_ENABLED::*check;
+    bool *check;
     std::string name;
 };
 
@@ -117,7 +117,7 @@ class BestPracticesTracker : public ValidationStateTracker {
 
     bool VendorCheckEnabled(BPVendorFlags vendors) const {
         for (const auto& vendor : vendor_info) {
-            if (vendors & vendor.first && enabled.*(vendor.second.check)) {
+            if (vendors & vendor.first && vendor.second.check && *(vendor.second.check)) {
                 return true;
             }
         }
@@ -157,7 +157,7 @@ class BestPracticesTracker : public ValidationStateTracker {
         for (const auto& vendor : vendor_info) {
             // for each enabled vendor
             // (khronos is always enabled)
-            const bool vendor_enabled = enabled.*(vendor.second.check);
+            const bool vendor_enabled = vendor.second.check ? *(vendor.second.check) : false;
             const bool vendor_agrees = vendor.first & agreement;
             if (vendor_enabled && vendor_agrees) {
                 return true;

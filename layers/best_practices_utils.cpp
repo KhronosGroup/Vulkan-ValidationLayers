@@ -24,6 +24,9 @@
 BestPracticesTracker::BestPracticesTracker() {
     container_type = LayerObjectTypeBestPractices;
 
+    // always enable the default vendor
+    enabled[vendor_specific_khronos] = true;
+
     // here we add best practices
     addPractice(std::unique_ptr<BestPracticesCheck>(new MyExampleBestPractices(*this)));
 
@@ -50,10 +53,10 @@ void BestPracticesTracker::addPractice(std::unique_ptr<BestPracticesCheck> pract
 const std::map<BPVendorFlagBits, VendorSpecificInfo> BestPracticesTracker::initVendorInfo() {
     return {
         // here we define the names and enablements of each vendor
-        {kBPVendorKhronos, {&CHECK_ENABLED::vendor_specific_khronos, "Khronos"}},
-        {kBPVendorArm, {&CHECK_ENABLED::vendor_specific_arm, "Arm"}},
-        {kBPVendorExample1, {&CHECK_ENABLED::vendor_specific_test, "Example1"}},
-        {kBPVendorExample2, {&CHECK_ENABLED::vendor_specific_test2, "Example2"}},
+      {kBPVendorKhronos, {&enabled[vendor_specific_khronos], "Khronos"}},
+        {kBPVendorArm, {&enabled[vendor_specific_arm], "Arm"}},
+        {kBPVendorExample1, {&enabled[vendor_specific_test1], "Example1"}},
+        {kBPVendorExample2, {&enabled[vendor_specific_test2], "Example2"}},
     };
 }
 
