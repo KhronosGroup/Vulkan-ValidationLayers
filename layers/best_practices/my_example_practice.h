@@ -25,9 +25,12 @@ static const int kSmallIndexedDrawcallIndices = 10;
 // Maximum sample count for full throughput on Mali GPUs
 static const VkSampleCountFlagBits kMaxEfficientSamplesArm = VK_SAMPLE_COUNT_4_BIT;
 
-class MyExampleBestPractices : public BestPracticeBase {
+// This "check" is identifiable by its own class type
+// TODO: does this mean that another check could identify itself using other check classes? Could this be useful for creating
+// separate groups of checks identified by the same ID?
+class MyExampleBestPractices : public BestPracticesIdentifiableCheck<MyExampleBestPractices> {
   public:
-    MyExampleBestPractices(BestPracticesTracker& tracker) : BestPracticeBase(tracker) {}
+    MyExampleBestPractices(BestPracticesTracker& tracker) : BestPracticesIdentifiableCheck<MyExampleBestPractices>(tracker) {}
 
   private:
     using StateTracker = ValidationStateTracker;

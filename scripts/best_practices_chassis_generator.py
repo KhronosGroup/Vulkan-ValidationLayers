@@ -237,11 +237,11 @@ class BestPracticesChassisOutputGenerator(OutputGenerator):
         params_text = params_text[:-2]
         output = ''
         if isValidation:
-            output = '    std::function<bool(BestPracticeBase&)> f = [=](BestPracticeBase& practice) { return practice.' + prefix + cmdname[2:] + '(' + params_text + '); };\n'
+            output = '    std::function<bool(BestPracticesCheck&)> f = [=](BestPracticesCheck& practice) { return practice.' + prefix + cmdname[2:] + '(' + params_text + '); };\n'
             output += '    skip |= tracker.foreachPractice(f);'
             return output
         else:
-            return '    tracker.foreachPractice([=](BestPracticeBase& practice) { practice.' + prefix + cmdname[2:] + '(' + params_text + '); });'
+            return '    tracker.foreachPractice([=](BestPracticesCheck& practice) { practice.' + prefix + cmdname[2:] + '(' + params_text + '); });'
 
     def genPreCallValidateCmd(self, cmdinfo, cmdname, alias):
         intercept = ''

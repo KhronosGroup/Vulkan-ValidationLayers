@@ -25,7 +25,7 @@ BestPracticesTracker::BestPracticesTracker() {
     container_type = LayerObjectTypeBestPractices;
 
     // here we add best practices
-    addPractice(std::unique_ptr<BestPracticeBase>(new MyExampleBestPractices(*this)));
+    addPractice(std::unique_ptr<BestPracticesCheck>(new MyExampleBestPractices(*this)));
 
     initReverseLookup();
 }
@@ -43,7 +43,9 @@ void BestPracticesTracker::initReverseLookup() {
     }
 }
 
-void BestPracticesTracker::addPractice(std::unique_ptr<BestPracticeBase> practice) { practices.emplace_back(std::move(practice)); }
+void BestPracticesTracker::addPractice(std::unique_ptr<BestPracticesCheck> practice) {
+    practices.emplace_back(std::move(practice));
+}
 
 const std::map<BPVendorFlagBits, VendorSpecificInfo> BestPracticesTracker::initVendorInfo() {
     return {
@@ -55,16 +57,16 @@ const std::map<BPVendorFlagBits, VendorSpecificInfo> BestPracticesTracker::initV
     };
 }
 
-const std::map<BPVendorFlagBits, std::set<BestPracticeBase::id_t>> BestPracticesTracker::initVendorPractices() {
+const std::map<BPVendorFlagBits, std::set<BestPracticesCheckID>> BestPracticesTracker::initVendorPractices() {
     return {
         // here we define vendors which agree with particular best practices
         /* TODO: we could use typeid(CheckImplClass) as the IDs, this would save us a lot of work, but would require RTTI, this is
            currently disabled, why?
         */
-        {kBPVendorKhronos, {BestPracticeBase::check_id<MyExampleBestPractices>}},
-        {kBPVendorArm, {BestPracticeBase::check_id<MyExampleBestPractices>}},
-        {kBPVendorExample1, {BestPracticeBase::check_id<MyExampleBestPractices>}},
-        {kBPVendorExample2, {BestPracticeBase::check_id<MyExampleBestPractices>}},
+        {kBPVendorKhronos, {MyExampleBestPractices::ID}},
+        {kBPVendorArm, {MyExampleBestPractices::ID}},
+        {kBPVendorExample1, {MyExampleBestPractices::ID}},
+        {kBPVendorExample2, {MyExampleBestPractices::ID}},
     };
 }
 

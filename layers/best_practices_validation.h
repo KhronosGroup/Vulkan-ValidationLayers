@@ -59,22 +59,18 @@ class ManualFnAPICallHookInterface {
 // forward declaration of BestPractices for BestPracticeBase
 class BestPracticesTracker;
 
-// TODO: what's the best way to have a SELF template?
-class BestPracticeBase : public BestPracticesAPICallHookInterface {
+typedef void (*BestPracticesCheckID)();
+
+class BestPracticesCheck : public BestPracticesAPICallHookInterface {
   public:
+    BestPracticesCheck(BestPracticesTracker& tracker) : tracker(tracker) {}
+
     // the type used to define IDs for best practice checks
-    using id_t = void (*)();
+    using id_t = BestPracticesCheckID;
 
-    // a template for generating function pointers which act as IDs for the implementation class
-    template <typename>
-    static void check_id() {}
-
-    id_t id() {
-        // this ensures that a function called check_id is generated for all derived types
-        return check_id<decltype(*this)>;
-    }
-
-    BestPracticeBase(BestPracticesTracker& tracker) : tracker(tracker) {}
+    // the base type doesn't define an ID, derived classes need to define this in order to be comparable in terms of vendor
+    // agreement
+    virtual id_t id() = 0;
 
     void agree(BPVendorFlagBits vendors) { _agreeing_vendors |= vendors; }
 
@@ -89,12 +85,24 @@ class BestPracticeBase : public BestPracticesAPICallHookInterface {
     BPVendorFlags _agreeing_vendors = 0;
 };
 
+template <typename T>
+class BestPracticesIdentifiableCheck : public BestPracticesCheck {
+  public:
+    BestPracticesIdentifiableCheck(BestPracticesTracker& tracker) : BestPracticesCheck(tracker) {}
+
+    static void check_id() {}
+
+    constexpr static BestPracticesCheckID ID = check_id;
+
+    id_t id() override { return check_id; }
+};
+
 class BestPracticesTracker : public ValidationStateTracker {
   public:
     BestPracticesTracker();
 
     void initReverseLookup();
-    void addPractice(std::unique_ptr<BestPracticeBase> practice);
+    void addPractice(std::unique_ptr<BestPracticesCheck> practice);
 
     // extra helper functions
 
@@ -102,10 +110,10 @@ class BestPracticesTracker : public ValidationStateTracker {
                              const std::vector<VkResult>& error_codes) const;
 
     const std::map<BPVendorFlagBits, VendorSpecificInfo> vendor_info = initVendorInfo();
-    const std::map<BPVendorFlagBits, std::set<BestPracticeBase::id_t>> vendor_practices = initVendorPractices();
+    const std::map<BPVendorFlagBits, std::set<BestPracticesCheckID>> vendor_practices = initVendorPractices();
 
     const std::map<BPVendorFlagBits, VendorSpecificInfo> initVendorInfo();
-    const std::map<BPVendorFlagBits, std::set<BestPracticeBase::id_t>> initVendorPractices();
+    const std::map<BPVendorFlagBits, std::set<BestPracticesCheckID>> initVendorPractices();
 
     bool VendorCheckEnabled(BPVendorFlags vendors) const {
         for (const auto& vendor : vendor_info) {
@@ -159,7 +167,7 @@ class BestPracticesTracker : public ValidationStateTracker {
     }
 
     template <typename T>
-    T foreachPractice(std::function<T(T, T)> accumulator, std::function<T(BestPracticeBase&)> f) const {
+    T foreachPractice(std::function<T(T, T)> accumulator, std::function<T(BestPracticesCheck&)> f) const {
         T acc = T();
         for (size_t i = 0; i < practices.size(); i++) {
             if (!shouldCheckPractice(practices[i]->agreeing_vendors())) continue;
@@ -171,16 +179,16 @@ class BestPracticesTracker : public ValidationStateTracker {
         return acc;
     }
 
-    bool foreachPractice(std::function<bool(BestPracticeBase&)> f) const {
+    bool foreachPractice(std::function<bool(BestPracticesCheck&)> f) const {
         return foreachPractice<bool>([](bool a, bool b) { return a | b; }, f);
     }
 
-    void foreachPractice(std::function<void(BestPracticeBase&)> f) const {
+    void foreachPractice(std::function<void(BestPracticesCheck&)> f) const {
         for (auto& practice : practices) {
             if (shouldCheckPractice(practice->agreeing_vendors())) f(*practice);
         }
     }
 
   private:
-    std::vector<std::unique_ptr<BestPracticeBase>> practices = {};
+    std::vector<std::unique_ptr<BestPracticesCheck>> practices = {};
 };
