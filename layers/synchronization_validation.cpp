@@ -2428,6 +2428,65 @@ void SyncValidator::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkI
     }
 }
 
+using SyncShaderStageAccessTypeFlags = uint64_t;
+enum SyncShaderStageAccessTypeFlagBits {
+    Shader_Read_bit = 1 << 0,
+    Shader_Write_bit = 1 << 1,
+    Uniform_Read_bit = 1 << 2,
+};
+
+std::vector<SyncStageAccessIndex> AccessScopeByShaderStage(VkShaderStageFlagBits shader_flag,
+                                                           SyncShaderStageAccessTypeFlags type_flags) {
+    std::vector<SyncStageAccessIndex> scope;
+
+    for (const auto &bit_scope : syncStageAccessMaskByShaderStage) {
+        if (shader_flag < bit_scope.first) break;
+
+        if (shader_flag & bit_scope.first) {
+            if (type_flags & Shader_Read_bit) {
+                scope.emplace_back(bit_scope.second.shader_read);
+            }
+            if (type_flags & Shader_Write_bit) {
+                scope.emplace_back(bit_scope.second.shader_write);
+            }
+            if (type_flags & Uniform_Read_bit) {
+                scope.emplace_back(bit_scope.second.uniform_read);
+            }
+        }
+    }
+    return scope;
+}
+
+std::vector<SyncStageAccessIndex> GetSyncStageAccessIndexsByDescriptorSet(
+    VkDescriptorType descriptor_type, const std::vector<PIPELINE_STATE::StageState> &stage_states, uint32_t set, uint32_t binding) {
+    std::vector<SyncStageAccessIndex> rtn;
+
+    SyncShaderStageAccessTypeFlags type_flags = Shader_Read_bit;
+    if (descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
+        return {SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ};
+    } else if (descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
+               descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
+        type_flags = Uniform_Read_bit;
+    }
+    for (const auto &stage : stage_states) {
+        for (const auto &uses : stage.descriptor_uses) {
+            if (uses.first.first == set && uses.first.second == binding) {
+                std::vector<SyncStageAccessIndex> stageAccessIndexs;
+                if (!(type_flags & Uniform_Read_bit)) {
+                    if (uses.second.is_writable) {
+                        type_flags |= Shader_Write_bit;
+                    } else {
+                        type_flags &= ~Shader_Write_bit;
+                    }
+                }
+                stageAccessIndexs = AccessScopeByShaderStage(stage.stage_flag, type_flags);
+                rtn.insert(rtn.end(), stageAccessIndexs.begin(), stageAccessIndexs.end());
+            }
+        }
+    }
+    return rtn;
+}
+
 bool SyncValidator::DetectDescriptorSetHazard(const AccessContext &context, const CMD_BUFFER_STATE &cmd,
                                               VkPipelineBindPoint pipelineBindPoint, const char *function) const {
     bool skip = false;
@@ -2462,9 +2521,13 @@ bool SyncValidator::DetectDescriptorSetHazard(const AccessContext &context, cons
             if (binding_it.IsVariableDescriptorCount()) {
                 index_range.end = index_range.start + descriptor_set->GetVariableDescriptorCount();
             }
+            std::vector<SyncStageAccessIndex> sync_indexs =
+                GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, pPipe->stage_state, setIndex, binding);
+
             for (uint32_t i = index_range.start; i < index_range.end; ++i, ++array_idx) {
                 uint32_t index = i - index_range.start;
                 const auto *descriptor = descriptor_set->GetDescriptorFromGlobalIndex(i);
+
                 if (descriptor->GetClass() == DescriptorClass::ImageSampler || descriptor->GetClass() == DescriptorClass::Image) {
                     const IMAGE_VIEW_STATE *img_view_state = nullptr;
                     if (descriptor->GetClass() == DescriptorClass::ImageSampler) {
@@ -2473,22 +2536,19 @@ bool SyncValidator::DetectDescriptorSetHazard(const AccessContext &context, cons
                         img_view_state = static_cast<const ImageDescriptor *>(descriptor)->GetImageViewState();
                     }
                     if (!img_view_state) continue;
-                    SyncStageAccessIndex sync_index;
-                    if (descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
-                        sync_index = SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ;
-                    } else {
-                        sync_index = SYNC_VERTEX_SHADER_SHADER_READ;
-                    }
                     const IMAGE_STATE *img_state = img_view_state->image_state.get();
-                    auto hazard = context.DetectHazard(*img_state, sync_index, img_view_state->normalized_subresource_range,
-                                                       {0, 0, 0}, img_state->createInfo.extent);
-                    if (hazard.hazard) {
-                        skip |= LogError(img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
-                                         "%s: Hazard %s for %s in %s and %s binding #%d index %d", function,
-                                         string_SyncHazard(hazard.hazard),
-                                         report_data->FormatHandle(img_view_state->image_view).c_str(),
-                                         report_data->FormatHandle(cmd.commandBuffer).c_str(),
-                                         report_data->FormatHandle(descriptor_set->GetSet()).c_str(), binding, index);
+                    for (auto sync_index : sync_indexs) {
+                        auto hazard = context.DetectHazard(*img_state, sync_index, img_view_state->normalized_subresource_range,
+                                                           {0, 0, 0}, img_state->createInfo.extent);
+                        if (hazard.hazard) {
+                            skip |= LogError(img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
+                                             "%s: Hazard %s for %s in %s and %s binding #%d index %d", function,
+                                             string_SyncHazard(hazard.hazard),
+                                             report_data->FormatHandle(img_view_state->image_view).c_str(),
+                                             report_data->FormatHandle(cmd.commandBuffer).c_str(),
+                                             report_data->FormatHandle(descriptor_set->GetSet()).c_str(), binding, index);
+                            break;
+                        }
                     }
                 } else if (descriptor->GetClass() == DescriptorClass::TexelBuffer) {
                     auto buf_view_state = static_cast<const TexelDescriptor *>(descriptor)->GetBufferViewState();
@@ -2498,35 +2558,35 @@ bool SyncValidator::DetectDescriptorSetHazard(const AccessContext &context, cons
                         MakeRange(buf_view_state->create_info.offset,
                                   GetRealWholeSize(buf_view_state->create_info.offset, buf_view_state->create_info.range,
                                                    buf_state->createInfo.size));
-                    auto hazard = context.DetectHazard(*buf_state, SYNC_VERTEX_SHADER_SHADER_READ, range);
-                    if (hazard.hazard) {
-                        skip |= LogError(buf_view_state->buffer_view, string_SyncHazardVUID(hazard.hazard),
-                                         "%s: Hazard %s for %s in %s and %s binding #%d index %d", function,
-                                         string_SyncHazard(hazard.hazard),
-                                         report_data->FormatHandle(buf_view_state->buffer_view).c_str(),
-                                         report_data->FormatHandle(cmd.commandBuffer).c_str(),
-                                         report_data->FormatHandle(descriptor_set->GetSet()).c_str(), binding, index);
+                    for (auto sync_index : sync_indexs) {
+                        auto hazard = context.DetectHazard(*buf_state, sync_index, range);
+                        if (hazard.hazard) {
+                            skip |= LogError(buf_view_state->buffer_view, string_SyncHazardVUID(hazard.hazard),
+                                             "%s: Hazard %s for %s in %s and %s binding #%d index %d", function,
+                                             string_SyncHazard(hazard.hazard),
+                                             report_data->FormatHandle(buf_view_state->buffer_view).c_str(),
+                                             report_data->FormatHandle(cmd.commandBuffer).c_str(),
+                                             report_data->FormatHandle(descriptor_set->GetSet()).c_str(), binding, index);
+                            break;
+                        }
                     }
                 } else if (descriptor->GetClass() == DescriptorClass::GeneralBuffer) {
                     auto buf_state = static_cast<const BufferDescriptor *>(descriptor)->GetBufferState();
                     if (!buf_state) continue;
                     ResourceAccessRange range = MakeRange(0, buf_state->createInfo.size);
-                    SyncStageAccessIndex sync_index;
-                    if (descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
-                        descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
-                        sync_index = SYNC_VERTEX_SHADER_UNIFORM_READ;
-                    } else {
-                        sync_index = SYNC_VERTEX_SHADER_SHADER_READ;
-                    }
-                    auto hazard = context.DetectHazard(*buf_state, sync_index, range);
-                    if (hazard.hazard) {
-                        skip |= LogError(buf_state->buffer, string_SyncHazardVUID(hazard.hazard),
-                                         "%s: Hazard %s for %s in %s and %s binding #%d index %d", function,
-                                         string_SyncHazard(hazard.hazard), report_data->FormatHandle(buf_state->buffer).c_str(),
-                                         report_data->FormatHandle(cmd.commandBuffer).c_str(),
-                                         report_data->FormatHandle(descriptor_set->GetSet()).c_str(), binding, index);
+                    for (auto sync_index : sync_indexs) {
+                        auto hazard = context.DetectHazard(*buf_state, sync_index, range);
+                        if (hazard.hazard) {
+                            skip |= LogError(buf_state->buffer, string_SyncHazardVUID(hazard.hazard),
+                                             "%s: Hazard %s for %s in %s and %s binding #%d index %d", function,
+                                             string_SyncHazard(hazard.hazard), report_data->FormatHandle(buf_state->buffer).c_str(),
+                                             report_data->FormatHandle(cmd.commandBuffer).c_str(),
+                                             report_data->FormatHandle(descriptor_set->GetSet()).c_str(), binding, index);
+                            break;
+                        }
                     }
                 }
+                // TODO: INLINE_UNIFORM_BLOCK_EXT, ACCELERATION_STRUCTURE_KHR
             }
         }
     }
@@ -2555,8 +2615,8 @@ void SyncValidator::UpdateDescriptorSetAccessState(AccessContext &context, const
         uint32_t setIndex = set_binding_pair.first;
         const cvdescriptorset::DescriptorSet *descriptor_set = state.per_set[setIndex].bound_descriptor_set;
         for (auto binding_pair : set_binding_pair.second) {
-            cvdescriptorset::DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(),
-                                                                                  binding_pair.first);
+            auto binding = binding_pair.first;
+            cvdescriptorset::DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(), binding);
             const auto descriptor_type = binding_it.GetType();
             cvdescriptorset::IndexRange index_range = binding_it.GetGlobalIndexRange();
             auto array_idx = 0;
@@ -2564,9 +2624,12 @@ void SyncValidator::UpdateDescriptorSetAccessState(AccessContext &context, const
             if (binding_it.IsVariableDescriptorCount()) {
                 index_range.end = index_range.start + descriptor_set->GetVariableDescriptorCount();
             }
+            std::vector<SyncStageAccessIndex> sync_indexs =
+                GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, pPipe->stage_state, setIndex, binding);
 
             for (uint32_t i = index_range.start; i < index_range.end; ++i, ++array_idx) {
                 const auto *descriptor = descriptor_set->GetDescriptorFromGlobalIndex(i);
+
                 if (descriptor->GetClass() == DescriptorClass::ImageSampler || descriptor->GetClass() == DescriptorClass::Image) {
                     const IMAGE_VIEW_STATE *img_view_state = nullptr;
                     if (descriptor->GetClass() == DescriptorClass::ImageSampler) {
@@ -2575,36 +2638,28 @@ void SyncValidator::UpdateDescriptorSetAccessState(AccessContext &context, const
                         img_view_state = static_cast<const ImageDescriptor *>(descriptor)->GetImageViewState();
                     }
                     if (!img_view_state) continue;
-                    SyncStageAccessIndex sync_index;
-                    if (descriptor_type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
-                        sync_index = SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ;
-                    } else {
-                        sync_index = SYNC_VERTEX_SHADER_SHADER_READ;
-                    }
                     const IMAGE_STATE *img_state = img_view_state->image_state.get();
-                    context.UpdateAccessState(*img_state, sync_index, img_view_state->normalized_subresource_range, {0, 0, 0},
-                                              img_state->createInfo.extent, tag);
-
+                    for (auto sync_index : sync_indexs) {
+                        context.UpdateAccessState(*img_state, sync_index, img_view_state->normalized_subresource_range, {0, 0, 0},
+                                                  img_state->createInfo.extent, tag);
+                    }
                 } else if (descriptor->GetClass() == DescriptorClass::TexelBuffer) {
                     auto buf_view_state = static_cast<const TexelDescriptor *>(descriptor)->GetBufferViewState();
                     if (!buf_view_state) continue;
                     const BUFFER_STATE *buf_state = buf_view_state->buffer_state.get();
                     ResourceAccessRange range = MakeRange(buf_view_state->create_info.offset, buf_view_state->create_info.range);
-                    context.UpdateAccessState(*buf_state, SYNC_VERTEX_SHADER_SHADER_READ, range, tag);
-
+                    for (auto sync_index : sync_indexs) {
+                        context.UpdateAccessState(*buf_state, sync_index, range, tag);
+                    }
                 } else if (descriptor->GetClass() == DescriptorClass::GeneralBuffer) {
                     auto buf_state = static_cast<const BufferDescriptor *>(descriptor)->GetBufferState();
                     if (!buf_state) continue;
-                    SyncStageAccessIndex sync_index;
-                    if (descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
-                        descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
-                        sync_index = SYNC_VERTEX_SHADER_UNIFORM_READ;
-                    } else {
-                        sync_index = SYNC_VERTEX_SHADER_SHADER_READ;
-                    }
                     ResourceAccessRange range = MakeRange(0, buf_state->createInfo.size);
-                    context.UpdateAccessState(*buf_state, sync_index, range, tag);
+                    for (auto sync_index : sync_indexs) {
+                        context.UpdateAccessState(*buf_state, sync_index, range, tag);
+                    }
                 }
+                // TODO: INLINE_UNIFORM_BLOCK_EXT, ACCELERATION_STRUCTURE_KHR
             }
         }
     }
