@@ -5587,6 +5587,8 @@ void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCrea
     auto entrypoint = FindEntrypoint(module, pStage->pName, pStage->stage);
     if (entrypoint == module->end()) return;
 
+    stage_state->stage_flag = pStage->stage;
+
     // Mark accessible ids
     stage_state->accessible_ids = MarkAccessibleIds(module, entrypoint);
     ProcessExecutionModes(module, entrypoint, pipeline);
