@@ -12290,3 +12290,116 @@ TEST_F(VkLayerTest, SyncCmdQuery) {
     // TODO:CmdWriteTimestamp
     vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
+
+TEST_F(VkLayerTest, ValidateDeviceFeatureShaderArrayDynamicIndexing) {
+    TEST_DESCRIPTION("Validate device features about shaderArrayDynamicIndexing");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    VkPhysicalDeviceFeatures deviceFeatures = {};
+    deviceFeatures.fragmentStoresAndAtomics = VK_TRUE;
+    deviceFeatures.shaderUniformBufferArrayDynamicIndexing = VK_FALSE;
+    deviceFeatures.shaderSampledImageArrayDynamicIndexing = VK_FALSE;
+    deviceFeatures.shaderStorageBufferArrayDynamicIndexing = VK_FALSE;
+    deviceFeatures.shaderStorageImageArrayDynamicIndexing = VK_FALSE;
+
+    VkPhysicalDeviceVulkan12Features deviceFeatures12 = lvl_init_struct<VkPhysicalDeviceVulkan12Features>();
+    deviceFeatures12.shaderInputAttachmentArrayDynamicIndexing = VK_FALSE;
+    deviceFeatures12.shaderUniformTexelBufferArrayDynamicIndexing = VK_FALSE;
+    deviceFeatures12.shaderStorageTexelBufferArrayDynamicIndexing = VK_FALSE;
+
+    ASSERT_NO_FATAL_FAILURE(InitState(&deviceFeatures, &deviceFeatures12));
+
+    if (m_device->props.apiVersion < VK_API_VERSION_1_2) {
+        printf("%s Vulkan 1.2 not supported, skipping InputAttachment, UniformTexelBuffer, StorageTexelBuffer test\n", kSkipPrefix);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitRenderTarget());
+
+    std::string fsSource =
+        "#version 450\n"
+        "layout(set=0, binding=0) uniform foo { int x; } ub0[2];\n"
+        "layout(set=0, binding=1) uniform foo1 { int x; } ubd1[2];\n"
+        "layout(set=0, binding=2) uniform sampler s2[2];\n"
+        "layout(set=0, binding=3) uniform sampler2D cis3[2];\n"
+        "layout(set=0, binding=4) uniform texture2D si4[2];\n"
+        "layout(set=0, binding=5) buffer readonly foo2 { int x; } sb5[2];\n"
+        "layout(set=0, binding=6) buffer foo3 { int x; } sbd6[2];\n"
+        "layout(set=0, binding=7, rgba8) uniform image2D si7[2];\n";
+
+    //if (m_device->props.apiVersion >= VK_API_VERSION_1_2) {
+        fsSource.append(
+            "layout(input_attachment_index = 0, set = 0, binding = 8) uniform subpassInput ia8[2];\n"
+            "layout(set = 0, binding = 9) uniform samplerBuffer utb9[2];\n"
+            "layout(set = 0, binding = 10, rgba8) uniform readonly imageBuffer stb10[2];\n");
+    //}
+    fsSource.append(
+        "layout(location = 0) out vec4 uFragColor;\n"
+        "void main(){\n"
+        "   int index = 0;\n"
+        "   int value = 0;\n"
+        "   value = ub0[index].x;\n"
+        "   value = ubd1[index].x;\n"
+        "   uFragColor = texture(cis3[index], vec2(0));\n"
+        "   uFragColor = texture(sampler2D(si4[index], s2[index]), vec2(0));\n"
+        "   value = sb5[index].x;\n"
+        "   sbd6[index].x = value;\n"
+        "   imageStore(si7[index], ivec2(0), vec4(0));\n");
+    //if (m_device->props.apiVersion >= VK_API_VERSION_1_2) {
+        fsSource.append(
+            "   uFragColor = subpassLoad(ia8[index]).rgba;\n"
+            "   uFragColor = texelFetch(utb9[index], 0);\n"
+            "   uFragColor = imageLoad(stb10[index], 0);\n"
+            "   uFragColor = imageLoad(stb10[index], 0);\n"
+            "   uFragColor = imageLoad(stb10[index], 0);\n");
+    //}
+    fsSource.append("}\n");
+    VkShaderObj fs(m_device, fsSource.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT, this);
+    // clang-format off
+    // The shader compiler
+    // in shaderInputAttachmentArrayDynamicIndexing,
+    // shaderUniformTexelBufferArrayDynamicIndexing,
+    // shaderStorageTexelBufferArrayDynamicIndexing cases,
+    // generates Capability InputAttachmentArrayDynamicIndexingEXT,
+    // Capability UniformTexelBufferArrayDynamicIndexingEXT,
+    // Capability StorageTexelBufferArrayDynamicIndexingEXT.
+
+    // BUT in shaderUniformBufferArrayDynamicIndexing,
+    // shaderSampledImageArrayDynamicIndexing,
+    // shaderStorageBufferArrayDynamicIndexing,
+    // shaderStorageImageArrayDynamicIndexing cases,
+    // doesn't generate Capability UniformBufferArrayDynamicIndexing,
+    // Capability SampledImageArrayDynamicIndexing,
+    // Capability StorageBufferArrayDynamicIndexing,
+    // Capability StorageImageArrayDynamicIndexing.
+    // clang-format on
+
+    auto set_info = [&](CreatePipelineHelper &helper) {
+        helper.dsl_bindings_ = {
+            // shaderUniformBufferArrayDynamicIndexing, UniformBufferArrayDynamicIndexing
+            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
+            {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 2, VK_SHADER_STAGE_ALL, nullptr},
+            // shaderSampledImageArrayDynamicIndexing, SampledImageArrayDynamicIndexing
+            {2, VK_DESCRIPTOR_TYPE_SAMPLER, 10, VK_SHADER_STAGE_ALL, nullptr},
+            {3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
+            {4, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr},
+            // shaderStorageBufferArrayDynamicIndexing, StorageBufferArrayDynamicIndexing
+            {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
+            {6, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 2, VK_SHADER_STAGE_ALL, nullptr},
+            // shaderStorageImageArrayDynamicIndexing, StorageImageArrayDynamicIndexing
+            {7, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 2, VK_SHADER_STAGE_ALL, nullptr},
+        };
+        //if (m_device->props.apiVersion >= VK_API_VERSION_1_2) {
+            // shaderInputAttachmentArrayDynamicIndexing , InputAttachmentArrayDynamicIndexing
+            helper.dsl_bindings_.emplace_back(
+                VkDescriptorSetLayoutBinding{8, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_ALL, nullptr});
+            // shaderUniformTexelBufferArrayDynamicIndexing , UniformTexelBufferArrayDynamicIndexing
+            helper.dsl_bindings_.emplace_back(
+                VkDescriptorSetLayoutBinding{9, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr});
+            // shaderStorageTexelBufferArrayDynamicIndexing , StorageTexelBufferArrayDynamicIndexing
+            helper.dsl_bindings_.emplace_back(
+                VkDescriptorSetLayoutBinding{10, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr});
+        //}
+        helper.shader_stages_ = {fs.GetStageCreateInfo(), helper.vs_->GetStageCreateInfo()};
+    };
+    CreatePipelineHelper::OneshotTest(*this, set_info, VK_DEBUG_REPORT_ERROR_BIT_EXT, "", true);
+}
