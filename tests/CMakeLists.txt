@@ -123,14 +123,16 @@ if(WIN32)
     set_target_properties(gtest PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
     set_target_properties(gtest_main PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
     target_link_libraries(vk_layer_validation_tests
-                          PRIVATE gtest
+                          PRIVATE VkLayer_khronos_validation
+                                  gtest
                                   gtest_main
                                   ${GLSLANG_LIBRARIES})
 else()
     target_compile_options(vk_layer_validation_tests PRIVATE "-Wno-sign-compare")
     if(BUILD_WSI_XCB_SUPPORT OR BUILD_WSI_XLIB_SUPPORT)
         target_link_libraries(vk_layer_validation_tests
-                              PRIVATE ${XCB_LIBRARIES}
+                              PRIVATE VkLayer_khronos_validation
+                                      ${XCB_LIBRARIES}
                                       ${X11_LIBRARIES}
                                       gtest
                                       gtest_main
@@ -138,7 +140,8 @@ else()
                                       ${GLSLANG_LIBRARIES})
     else()
         target_link_libraries(vk_layer_validation_tests
-                              PRIVATE gtest
+                              PRIVATE VkLayer_khronos_validation
+                                      gtest
                                       gtest_main
                                       dl
                                       ${GLSLANG_LIBRARIES})
