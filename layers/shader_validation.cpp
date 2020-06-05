@@ -833,7 +833,8 @@ static std::vector<std::pair<uint32_t, interface_var>> CollectInterfaceByInputAt
     return out;
 }
 
-static bool IsWritableDescriptorType(SHADER_MODULE_STATE const *module, uint32_t type_id, bool is_storage_buffer) {
+static bool IsWritableDescriptorType(SHADER_MODULE_STATE const *module, const spirv_inst_iter &id_it, bool is_storage_buffer) {
+    uint32_t type_id = id_it.word(1);
     auto type = module->get_def(type_id);
 
     // Strip off any array or ptrs. Where we remove array levels, adjust the  descriptor count for each dimension.
@@ -844,12 +845,57 @@ static bool IsWritableDescriptorType(SHADER_MODULE_STATE const *module, uint32_t
             type = module->get_def(type.word(3));  // Pointee type
         }
     }
-
     switch (type.opcode()) {
         case spv::OpTypeImage: {
             auto dim = type.word(3);
             auto sampled = type.word(7);
-            return sampled == 2 && dim != spv::DimSubpassData;
+            if (sampled == 2 && dim != spv::DimSubpassData) {
+                std::vector<unsigned> imagwrite_members;
+                std::unordered_map<unsigned, unsigned> load_members;
+                std::unordered_map<unsigned, unsigned> accesschain_members;
+                unsigned int id = id_it.word(2);
+
+                for (auto insn : *module) {
+                    switch (insn.opcode()) {
+                        case spv::OpImageWrite: {
+                            imagwrite_members.emplace_back(insn.word(1));  // Load id
+                            break;
+                        }
+                        case spv::OpLoad: {
+                            // 2: Load id, 3: object id or AccessChain id
+                            load_members.insert(std::make_pair(insn.word(2), insn.word(3)));
+                            break;
+                        }
+                        case spv::OpAccessChain: {
+                            // 2: AccessChain id, 3: object id
+                            if (insn.word(3) == id) {
+                                accesschain_members.insert(std::make_pair(insn.word(2), insn.word(3)));
+                            }
+                            break;
+                        }
+                        default:
+                            break;
+                    }
+                }
+                if (imagwrite_members.empty() || load_members.empty()) {
+                    return false;
+                }
+                for (auto load_id : imagwrite_members) {
+                    auto load_it = load_members.find(load_id);
+                    if (load_it == load_members.end()) {
+                        continue;
+                    }
+                    if (load_it->second == id) {
+                        return true;
+                    }
+                    auto accesschain_it = accesschain_members.find(load_it->second);
+                    if (accesschain_it == accesschain_members.end()) {
+                        continue;
+                    }
+                    return true;
+                }
+            }
+            return false;
         }
 
         case spv::OpTypeStruct: {
@@ -864,7 +910,44 @@ static bool IsWritableDescriptorType(SHADER_MODULE_STATE const *module, uint32_t
 
             // A buffer is writable if it's either flavor of storage buffer, and has any member not decorated
             // as nonwritable.
-            return is_storage_buffer && nonwritable_members.size() != type.len() - 2;
+            if (is_storage_buffer && nonwritable_members.size() != type.len() - 2) {
+                std::vector<unsigned> store_members;
+                std::unordered_map<unsigned, unsigned> accesschain_members;
+                unsigned int id = id_it.word(2);
+
+                for (auto insn : *module) {
+                    switch (insn.opcode()) {
+                        case spv::OpStore:
+                        case spv::OpAtomicStore: {
+                            if (insn.word(1) == id) {
+                                return true;
+                            }
+                            store_members.emplace_back(insn.word(1));  // object id or AccessChain id
+                            break;
+                        }
+                        case spv::OpAccessChain: {
+                            // 2: AccessChain id, 3: object id
+                            if (insn.word(3) == id) {
+                                accesschain_members.insert(std::make_pair(insn.word(2), insn.word(3)));
+                            }
+                            break;
+                        }
+                        default:
+                            break;
+                    }
+                }
+                if (store_members.empty() || accesschain_members.empty()) {
+                    return false;
+                }
+                for (auto oid : store_members) {
+                    auto accesschain_it = accesschain_members.find(oid);
+                    if (accesschain_it == accesschain_members.end()) {
+                        continue;
+                    }
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -892,7 +975,7 @@ std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescr
             v.is_writable = false;
 
             if (!(d.flags & decoration_set::nonwritable_bit) &&
-                IsWritableDescriptorType(src, insn.word(1), insn.word(3) == spv::StorageClassStorageBuffer)) {
+                IsWritableDescriptorType(src, insn, insn.word(3) == spv::StorageClassStorageBuffer)) {
                 *has_writable_descriptor = true;
                 v.is_writable = true;
             }
