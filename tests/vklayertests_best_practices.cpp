@@ -101,7 +101,7 @@ TEST_F(BestPracticesChassisTest, SingleCheckWithEnabledVendor) {
 
         virtual bool PreCallValidateEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
                                                              VkPhysicalDevice* pPhysicalDevices) const override {
-            return tracker.LogPerformanceWarning(tracker.device, "test-uuid", "this is a test warning, it should not be thrown");
+            return tracker.LogPerformanceWarning(tracker.device, "test-uuid", "this is a test warning which should be thrown");
         }
     };
 
