@@ -109,11 +109,11 @@ class BestPracticesTracker : public ValidationStateTracker {
     void ValidateReturnCodes(const char* api_name, VkResult result, const std::vector<VkResult>& success_codes,
                              const std::vector<VkResult>& error_codes) const;
 
-    const std::map<BPVendorFlagBits, VendorSpecificInfo> vendor_info = initVendorInfo();
-    const std::map<BPVendorFlagBits, std::set<BestPracticesCheckID>> vendor_practices = initVendorPractices();
+    std::map<BPVendorFlagBits, VendorSpecificInfo> vendor_info = initVendorInfo();
+    std::map<BPVendorFlagBits, std::set<BestPracticesCheckID>> vendor_practices = initVendorPractices();
 
-    const std::map<BPVendorFlagBits, VendorSpecificInfo> initVendorInfo();
-    const std::map<BPVendorFlagBits, std::set<BestPracticesCheckID>> initVendorPractices();
+    std::map<BPVendorFlagBits, VendorSpecificInfo> initVendorInfo();
+    std::map<BPVendorFlagBits, std::set<BestPracticesCheckID>> initVendorPractices();
 
     bool VendorCheckEnabled(BPVendorFlags vendors) const {
         for (const auto& vendor : vendor_info) {

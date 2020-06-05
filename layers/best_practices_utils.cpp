@@ -50,17 +50,17 @@ void BestPracticesTracker::addPractice(std::unique_ptr<BestPracticesCheck> pract
     practices.emplace_back(std::move(practice));
 }
 
-const std::map<BPVendorFlagBits, VendorSpecificInfo> BestPracticesTracker::initVendorInfo() {
+std::map<BPVendorFlagBits, VendorSpecificInfo> BestPracticesTracker::initVendorInfo() {
     return {
         // here we define the names and enablements of each vendor
-      {kBPVendorKhronos, {&enabled[vendor_specific_khronos], "Khronos"}},
+        {kBPVendorKhronos, {&enabled[vendor_specific_khronos], "Khronos"}},
         {kBPVendorArm, {&enabled[vendor_specific_arm], "Arm"}},
         {kBPVendorExample1, {&enabled[vendor_specific_test1], "Example1"}},
         {kBPVendorExample2, {&enabled[vendor_specific_test2], "Example2"}},
     };
 }
 
-const std::map<BPVendorFlagBits, std::set<BestPracticesCheckID>> BestPracticesTracker::initVendorPractices() {
+std::map<BPVendorFlagBits, std::set<BestPracticesCheckID>> BestPracticesTracker::initVendorPractices() {
     return {
         // here we define vendors which agree with particular best practices
         /* TODO: we could use typeid(CheckImplClass) as the IDs, this would save us a lot of work, but would require RTTI, this is
