@@ -4737,7 +4737,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
 
     // Dedicated allocation with unmatched usage bits
     ahb_desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
-    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT;
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER;
     ahb_desc.height = 64;
     recreate_ahb();
     mai.allocationSize = ahb_props.allocationSize;
