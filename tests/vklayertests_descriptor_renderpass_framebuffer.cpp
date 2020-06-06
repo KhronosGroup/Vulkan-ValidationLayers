@@ -3426,6 +3426,46 @@ TEST_F(VkLayerTest, WriteDescriptorSetIntegrityCheck) {
     vk::DestroySampler(m_device->device(), sampler, NULL);
 }
 
+TEST_F(VkLayerTest, WriteDescriptorSetIdentitySwizzle) {
+    TEST_DESCRIPTION("Test descriptors that need to have identity swizzle set");
+    ASSERT_NO_FATAL_FAILURE(Init());
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                       });
+
+    VkImageObj image_obj(m_device);
+    image_obj.Init(64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT, VK_IMAGE_TILING_OPTIMAL);
+    ASSERT_TRUE(image_obj.initialized());
+    VkImage image = image_obj.image();
+
+    VkImageViewCreateInfo image_view_ci = {};
+    image_view_ci.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    image_view_ci.image = image;
+    image_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_ci.subresourceRange.layerCount = 1;
+    image_view_ci.subresourceRange.baseArrayLayer = 0;
+    image_view_ci.subresourceRange.levelCount = 1;
+    image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    // G and B are swizzled
+    image_view_ci.components.r = VK_COMPONENT_SWIZZLE_R;
+    image_view_ci.components.g = VK_COMPONENT_SWIZZLE_B;
+    image_view_ci.components.b = VK_COMPONENT_SWIZZLE_G;
+    image_view_ci.components.a = VK_COMPONENT_SWIZZLE_A;
+
+    VkImageView image_view;
+    vk::CreateImageView(m_device->device(), &image_view_ci, NULL, &image_view);
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-00336");
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+    vk::DestroyImageView(m_device->device(), image_view, NULL);
+}
+
 TEST_F(VkLayerTest, WriteDescriptorSetConsecutiveUpdates) {
     TEST_DESCRIPTION(
         "Verifies that updates rolling over to next descriptor work correctly by destroying buffer from consecutive update known "
