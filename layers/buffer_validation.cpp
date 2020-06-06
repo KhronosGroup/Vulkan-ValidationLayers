@@ -1410,17 +1410,14 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo *cre
         }
 
         // Errors in create_info swizzles
-        if (((create_info->components.r != VK_COMPONENT_SWIZZLE_IDENTITY) &&
-             (create_info->components.r != VK_COMPONENT_SWIZZLE_R)) ||
-            ((create_info->components.g != VK_COMPONENT_SWIZZLE_IDENTITY) &&
-             (create_info->components.g != VK_COMPONENT_SWIZZLE_G)) ||
-            ((create_info->components.b != VK_COMPONENT_SWIZZLE_IDENTITY) &&
-             (create_info->components.b != VK_COMPONENT_SWIZZLE_B)) ||
-            ((create_info->components.a != VK_COMPONENT_SWIZZLE_IDENTITY) &&
-             (create_info->components.a != VK_COMPONENT_SWIZZLE_A))) {
-            skip |= LogError(create_info->image, "VUID-VkImageViewCreateInfo-image-02401",
-                             "vkCreateImageView(): VkImageViewCreateInfo struct has a chained VkExternalFormatANDROID struct, but "
-                             "includes one or more non-identity component swizzles.");
+        if (IsIdentitySwizzle(create_info->components) == false) {
+            skip |= LogError(
+                create_info->image, "VUID-VkImageViewCreateInfo-image-02401",
+                "vkCreateImageView(): VkImageViewCreateInfo struct has a chained VkExternalFormatANDROID struct, but "
+                "includes one or more non-identity component swizzles, r swizzle = %s, g swizzle = %s, b swizzle = %s, a swizzle "
+                "= %s.",
+                string_VkComponentSwizzle(create_info->components.r), string_VkComponentSwizzle(create_info->components.g),
+                string_VkComponentSwizzle(create_info->components.b), string_VkComponentSwizzle(create_info->components.a));
         }
     }
 
