@@ -3142,39 +3142,102 @@ bool CoreChecks::PreCallValidateCmdResolveImage(VkCommandBuffer commandBuffer, V
         // For each region, the number of layers in the image subresource should not be zero
         // For each region, src and dest image aspect must be color only
         for (uint32_t i = 0; i < regionCount; i++) {
-            skip |=
-                ValidateImageSubresourceLayers(cb_node, &pRegions[i].srcSubresource, "vkCmdResolveImage()", "srcSubresource", i);
-            skip |=
-                ValidateImageSubresourceLayers(cb_node, &pRegions[i].dstSubresource, "vkCmdResolveImage()", "dstSubresource", i);
-            skip |= VerifyImageLayout(cb_node, src_image_state, pRegions[i].srcSubresource, srcImageLayout,
+            const VkImageSubresourceLayers src_subresource = pRegions[i].srcSubresource;
+            const VkImageSubresourceLayers dst_subresource = pRegions[i].dstSubresource;
+            skip |= ValidateImageSubresourceLayers(cb_node, &src_subresource, "vkCmdResolveImage()", "srcSubresource", i);
+            skip |= ValidateImageSubresourceLayers(cb_node, &dst_subresource, "vkCmdResolveImage()", "dstSubresource", i);
+            skip |= VerifyImageLayout(cb_node, src_image_state, src_subresource, srcImageLayout,
                                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, "vkCmdResolveImage()", invalid_src_layout_vuid,
                                       "VUID-vkCmdResolveImage-srcImageLayout-00260", &hit_error);
-            skip |= VerifyImageLayout(cb_node, dst_image_state, pRegions[i].dstSubresource, dstImageLayout,
+            skip |= VerifyImageLayout(cb_node, dst_image_state, dst_subresource, dstImageLayout,
                                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, "vkCmdResolveImage()", invalid_dst_layout_vuid,
                                       "VUID-vkCmdResolveImage-dstImageLayout-00262", &hit_error);
-            skip |= ValidateImageMipLevel(cb_node, src_image_state, pRegions[i].srcSubresource.mipLevel, i, "vkCmdResolveImage()",
+            skip |= ValidateImageMipLevel(cb_node, src_image_state, src_subresource.mipLevel, i, "vkCmdResolveImage()",
                                           "srcSubresource", "VUID-vkCmdResolveImage-srcSubresource-01709");
-            skip |= ValidateImageMipLevel(cb_node, dst_image_state, pRegions[i].dstSubresource.mipLevel, i, "vkCmdResolveImage()",
+            skip |= ValidateImageMipLevel(cb_node, dst_image_state, dst_subresource.mipLevel, i, "vkCmdResolveImage()",
                                           "dstSubresource", "VUID-vkCmdResolveImage-dstSubresource-01710");
-            skip |= ValidateImageArrayLayerRange(cb_node, src_image_state, pRegions[i].srcSubresource.baseArrayLayer,
-                                                 pRegions[i].srcSubresource.layerCount, i, "vkCmdResolveImage()", "srcSubresource",
+            skip |= ValidateImageArrayLayerRange(cb_node, src_image_state, src_subresource.baseArrayLayer,
+                                                 src_subresource.layerCount, i, "vkCmdResolveImage()", "srcSubresource",
                                                  "VUID-vkCmdResolveImage-srcSubresource-01711");
-            skip |= ValidateImageArrayLayerRange(cb_node, dst_image_state, pRegions[i].dstSubresource.baseArrayLayer,
-                                                 pRegions[i].dstSubresource.layerCount, i, "vkCmdResolveImage()", "srcSubresource",
+            skip |= ValidateImageArrayLayerRange(cb_node, dst_image_state, dst_subresource.baseArrayLayer,
+                                                 dst_subresource.layerCount, i, "vkCmdResolveImage()", "srcSubresource",
                                                  "VUID-vkCmdResolveImage-dstSubresource-01712");
 
             // layer counts must match
-            if (pRegions[i].srcSubresource.layerCount != pRegions[i].dstSubresource.layerCount) {
+            if (src_subresource.layerCount != dst_subresource.layerCount) {
                 skip |= LogError(
                     cb_node->commandBuffer, "VUID-VkImageResolve-layerCount-00267",
-                    "vkCmdResolveImage(): layerCount in source and destination subresource of pRegions[%d] does not match.", i);
+                    "vkCmdResolveImage(): layerCount in source and destination subresource of pRegions[%u] does not match.", i);
             }
             // For each region, src and dest image aspect must be color only
-            if ((pRegions[i].srcSubresource.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT) ||
-                (pRegions[i].dstSubresource.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT)) {
-                char const str[] =
-                    "vkCmdResolveImage(): src and dest aspectMasks for each region must specify only VK_IMAGE_ASPECT_COLOR_BIT";
-                skip |= LogError(cb_node->commandBuffer, "VUID-VkImageResolve-aspectMask-00266", "%s.", str);
+            if ((src_subresource.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT) ||
+                (dst_subresource.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT)) {
+                skip |= LogError(
+                    cb_node->commandBuffer, "VUID-VkImageResolve-aspectMask-00266",
+                    "vkCmdResolveImage(): src and dest aspectMasks for pRegions[%u] must specify only VK_IMAGE_ASPECT_COLOR_BIT.",
+                    i);
+            }
+
+            const VkImageType src_image_type = src_image_state->createInfo.imageType;
+            const VkImageType dst_image_type = dst_image_state->createInfo.imageType;
+
+            if ((VK_IMAGE_TYPE_3D == src_image_type) || (VK_IMAGE_TYPE_3D == dst_image_type)) {
+                if ((0 != src_subresource.baseArrayLayer) || (1 != src_subresource.layerCount) ||
+                    (0 != dst_subresource.baseArrayLayer) || (1 != dst_subresource.layerCount)) {
+                    LogObjectList objlist(cb_node->commandBuffer);
+                    objlist.add(src_image_state->image);
+                    objlist.add(dst_image_state->image);
+                    skip |= LogError(objlist, "VUID-VkImageResolve-srcImage-00268",
+                                     "vkCmdResolveImage(): pRegions[%u] baseArrayLayer must be 0 and layerCount must be 1 for all "
+                                     "subresources if the src or dst image is 3D.",
+                                     i);
+                }
+            }
+
+            if (VK_IMAGE_TYPE_1D == src_image_type) {
+                if ((pRegions[i].srcOffset.y != 0) || (pRegions[i].extent.height != 1)) {
+                    LogObjectList objlist(cb_node->commandBuffer);
+                    objlist.add(src_image_state->image);
+                    skip |= LogError(objlist, "VUID-VkImageResolve-srcImage-00271",
+                                     "vkCmdResolveImage(): srcImage (%s) is 1D but pRegions[%u] srcOffset.y (%d) is not 0 or "
+                                     "extent.height (%u) is not 1.",
+                                     report_data->FormatHandle(src_image_state->image).c_str(), i, pRegions[i].srcOffset.y,
+                                     pRegions[i].extent.height);
+                }
+            }
+            if ((VK_IMAGE_TYPE_1D == src_image_type) || (VK_IMAGE_TYPE_2D == src_image_type)) {
+                if ((pRegions[i].srcOffset.z != 0) || (pRegions[i].extent.depth != 1)) {
+                    LogObjectList objlist(cb_node->commandBuffer);
+                    objlist.add(src_image_state->image);
+                    skip |= LogError(objlist, "VUID-VkImageResolve-srcImage-00273",
+                                     "vkCmdResolveImage(): srcImage (%s) is 2D but pRegions[%u] srcOffset.z (%d) is not 0 or "
+                                     "extent.depth (%u) is not 1.",
+                                     report_data->FormatHandle(src_image_state->image).c_str(), i, pRegions[i].srcOffset.z,
+                                     pRegions[i].extent.depth);
+                }
+            }
+
+            if (VK_IMAGE_TYPE_1D == dst_image_type) {
+                if ((pRegions[i].dstOffset.y != 0) || (pRegions[i].extent.height != 1)) {
+                    LogObjectList objlist(cb_node->commandBuffer);
+                    objlist.add(dst_image_state->image);
+                    skip |= LogError(objlist, "VUID-VkImageResolve-dstImage-00276",
+                                     "vkCmdResolveImage(): dstImage (%s) is 1D but pRegions[%u] dstOffset.y (%d) is not 0 or "
+                                     "extent.height (%u) is not 1.",
+                                     report_data->FormatHandle(dst_image_state->image).c_str(), i, pRegions[i].dstOffset.y,
+                                     pRegions[i].extent.height);
+                }
+            }
+            if ((VK_IMAGE_TYPE_1D == dst_image_type) || (VK_IMAGE_TYPE_2D == dst_image_type)) {
+                if ((pRegions[i].dstOffset.z != 0) || (pRegions[i].extent.depth != 1)) {
+                    LogObjectList objlist(cb_node->commandBuffer);
+                    objlist.add(dst_image_state->image);
+                    skip |= LogError(objlist, "VUID-VkImageResolve-dstImage-00278",
+                                     "vkCmdResolveImage(): dstImage (%s) is 2D but pRegions[%u] dstOffset.z (%d) is not 0 or "
+                                     "extent.depth (%u) is not 1.",
+                                     report_data->FormatHandle(dst_image_state->image).c_str(), i, pRegions[i].dstOffset.z,
+                                     pRegions[i].extent.depth);
+                }
             }
         }
 
