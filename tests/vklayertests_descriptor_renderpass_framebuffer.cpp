@@ -3568,6 +3568,117 @@ TEST_F(VkLayerTest, WriteDescriptorSetConsecutiveUpdates) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(VkLayerTest, WriteDescriptorSetYcbcr) {
+    TEST_DESCRIPTION("Attempt to use VkSamplerYcbcrConversion ImageView to update descriptors that are not allowed.");
+
+    // Enable KHR multiplane req'd extensions
+    bool mp_extensions = InstanceExtensionSupported(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+                                                    VK_KHR_GET_MEMORY_REQUIREMENTS_2_SPEC_VERSION);
+    if (mp_extensions == true) {
+        m_instance_extension_names.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    mp_extensions = mp_extensions && DeviceExtensionSupported(gpu(), nullptr, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    if (mp_extensions == true) {
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+    } else {
+        printf("%s test requires KHR multiplane extensions, not available.  Skipping.\n", kSkipPrefix);
+        return;
+    }
+
+    // Enable Sampler YCbCr Conversion
+    PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2Function =
+        (PFN_vkGetPhysicalDeviceFeatures2KHR)vk::GetInstanceProcAddr(instance(), "vkGetPhysicalDeviceFeatures2KHR");
+    ASSERT_TRUE(vkGetPhysicalDeviceFeatures2Function != nullptr);
+    auto ycbcr_features = lvl_init_struct<VkPhysicalDeviceSamplerYcbcrConversionFeatures>();
+    auto features2 = lvl_init_struct<VkPhysicalDeviceFeatures2KHR>(&ycbcr_features);
+    vkGetPhysicalDeviceFeatures2Function(gpu(), &features2);
+    if (ycbcr_features.samplerYcbcrConversion == VK_FALSE) {
+        printf("%s samplerYcbcrConversion feature not supported. Skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkCreateSamplerYcbcrConversionKHR vkCreateSamplerYcbcrConversionFunction =
+        (PFN_vkCreateSamplerYcbcrConversionKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkCreateSamplerYcbcrConversionKHR");
+    PFN_vkDestroySamplerYcbcrConversionKHR vkDestroySamplerYcbcrConversionFunction =
+        (PFN_vkDestroySamplerYcbcrConversionKHR)vk::GetDeviceProcAddr(m_device->handle(), "vkDestroySamplerYcbcrConversionKHR");
+    ASSERT_NE(vkCreateSamplerYcbcrConversionFunction, nullptr);
+    ASSERT_NE(vkDestroySamplerYcbcrConversionFunction, nullptr);
+
+    // Create Ycbcr conversion
+    VkFormat mp_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;  // guaranteed sampling support
+    VkSamplerYcbcrConversionCreateInfo ycbcr_create_info = {VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO,
+                                                            NULL,
+                                                            mp_format,
+                                                            VK_SAMPLER_YCBCR_MODEL_CONVERSION_RGB_IDENTITY,
+                                                            VK_SAMPLER_YCBCR_RANGE_ITU_FULL,
+                                                            {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
+                                                             VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY},
+                                                            VK_CHROMA_LOCATION_COSITED_EVEN,
+                                                            VK_CHROMA_LOCATION_COSITED_EVEN,
+                                                            VK_FILTER_NEAREST,
+                                                            false};
+    VkSamplerYcbcrConversion conversion;
+    vkCreateSamplerYcbcrConversionFunction(m_device->handle(), &ycbcr_create_info, nullptr, &conversion);
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+
+    VkImageObj image_obj(m_device);
+    VkImageCreateInfo image_ci = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                                  nullptr,
+                                  VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT,  // need for multi-planar
+                                  VK_IMAGE_TYPE_2D,
+                                  mp_format,
+                                  {64, 64, 1},
+                                  1,
+                                  1,
+                                  VK_SAMPLE_COUNT_1_BIT,
+                                  VK_IMAGE_TILING_OPTIMAL,
+                                  VK_IMAGE_USAGE_SAMPLED_BIT,
+                                  VK_SHARING_MODE_EXCLUSIVE,
+                                  0,
+                                  nullptr,
+                                  VK_IMAGE_LAYOUT_UNDEFINED};
+    image_obj.init(&image_ci);
+    ASSERT_TRUE(image_obj.initialized());
+
+    VkSamplerYcbcrConversionInfo ycbcr_info = {};
+    ycbcr_info.sType = VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_INFO;
+    ycbcr_info.pNext = nullptr;
+    ycbcr_info.conversion = conversion;
+
+    VkImageView image_view;
+    VkImageViewCreateInfo image_view_create_info = {};
+    image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    image_view_create_info.pNext = &ycbcr_info;
+    image_view_create_info.image = image_obj.handle();
+    image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    image_view_create_info.format = mp_format;
+    image_view_create_info.subresourceRange.layerCount = 1;
+    image_view_create_info.subresourceRange.baseMipLevel = 0;
+    image_view_create_info.subresourceRange.levelCount = 1;
+    image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vk::CreateImageView(m_device->device(), &image_view_create_info, nullptr, &image_view);
+
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkWriteDescriptorSet-descriptorType-01946");
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyImageView(m_device->device(), image_view, NULL);
+}
+
 TEST_F(VkLayerTest, InvalidCmdBufferDescriptorSetBufferDestroyed) {
     TEST_DESCRIPTION(
         "Attempt to draw with a command buffer that is invalid due to a bound descriptor set with a buffer dependency being "
