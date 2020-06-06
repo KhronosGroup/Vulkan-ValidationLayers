@@ -1606,6 +1606,15 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     const char *error_usage_bit = nullptr;
     switch (type) {
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+            if (iv_state->samplerConversion != VK_NULL_HANDLE) {
+                *error_code = "VUID-VkWriteDescriptorSet-descriptorType-01946";
+                std::stringstream error_str;
+                error_str << "ImageView (" << report_data->FormatHandle(image_view) << ")"
+                          << "used as a VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE can't be created with VkSamplerYcbcrConversion";
+                *error_msg = error_str.str();
+                return false;
+            }
+            // drop through
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
             if (!(usage & VK_IMAGE_USAGE_SAMPLED_BIT)) {
                 error_usage_bit = "VK_IMAGE_USAGE_SAMPLED_BIT";
