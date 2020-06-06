@@ -7770,14 +7770,7 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                 }
                             }
                         }
-                        if (((ivci.components.r != VK_COMPONENT_SWIZZLE_IDENTITY) &&
-                             (ivci.components.r != VK_COMPONENT_SWIZZLE_R)) ||
-                            ((ivci.components.g != VK_COMPONENT_SWIZZLE_IDENTITY) &&
-                             (ivci.components.g != VK_COMPONENT_SWIZZLE_G)) ||
-                            ((ivci.components.b != VK_COMPONENT_SWIZZLE_IDENTITY) &&
-                             (ivci.components.b != VK_COMPONENT_SWIZZLE_B)) ||
-                            ((ivci.components.a != VK_COMPONENT_SWIZZLE_IDENTITY) &&
-                             (ivci.components.a != VK_COMPONENT_SWIZZLE_A))) {
+                        if (IsIdentitySwizzle(ivci.components) == false) {
                             skip |= LogError(
                                 device, "VUID-VkFramebufferCreateInfo-pAttachments-00884",
                                 "vkCreateFramebuffer(): VkFramebufferCreateInfo attachment #%u has non-identy swizzle. All "
@@ -9173,14 +9166,7 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                                          i, pImageViewCreateInfo->subresourceRange.levelCount);
                     }
 
-                    if (((pImageViewCreateInfo->components.r != VK_COMPONENT_SWIZZLE_IDENTITY) &&
-                         (pImageViewCreateInfo->components.r != VK_COMPONENT_SWIZZLE_R)) ||
-                        ((pImageViewCreateInfo->components.g != VK_COMPONENT_SWIZZLE_IDENTITY) &&
-                         (pImageViewCreateInfo->components.g != VK_COMPONENT_SWIZZLE_G)) ||
-                        ((pImageViewCreateInfo->components.b != VK_COMPONENT_SWIZZLE_IDENTITY) &&
-                         (pImageViewCreateInfo->components.b != VK_COMPONENT_SWIZZLE_B)) ||
-                        ((pImageViewCreateInfo->components.a != VK_COMPONENT_SWIZZLE_IDENTITY) &&
-                         (pImageViewCreateInfo->components.a != VK_COMPONENT_SWIZZLE_A))) {
+                    if (IsIdentitySwizzle(pImageViewCreateInfo->components) == false) {
                         skip |= LogError(
                             pRenderPassAttachmentBeginInfo->pAttachments[i],
                             "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03219",

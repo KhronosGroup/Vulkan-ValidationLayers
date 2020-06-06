@@ -166,6 +166,17 @@ static inline uint32_t SampleCountSize(VkSampleCountFlagBits sample_count) {
     return size;
 }
 
+static inline bool IsIdentitySwizzle(VkComponentMapping components) {
+    // clang-format off
+    return (
+        ((components.r == VK_COMPONENT_SWIZZLE_IDENTITY) || (components.r == VK_COMPONENT_SWIZZLE_R)) &&
+        ((components.g == VK_COMPONENT_SWIZZLE_IDENTITY) || (components.g == VK_COMPONENT_SWIZZLE_G)) &&
+        ((components.b == VK_COMPONENT_SWIZZLE_IDENTITY) || (components.b == VK_COMPONENT_SWIZZLE_B)) &&
+        ((components.a == VK_COMPONENT_SWIZZLE_IDENTITY) || (components.a == VK_COMPONENT_SWIZZLE_A))
+    );
+    // clang-format on
+}
+
 extern "C" {
 #endif
 

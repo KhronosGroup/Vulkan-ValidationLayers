@@ -1601,8 +1601,6 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     //  As we're switching per-type, if any type has specific layout requirements, check those here as well
     // TODO : The various image usage bit requirements are in general spec language for VkImageUsageFlags bit block in 11.3 Images
     // under vkCreateImage()
-    // TODO : Need to also validate case "VUID-VkWriteDescriptorSet-descriptorType-00336" where STORAGE_IMAGE & INPUT_ATTACH types
-    // must have been created with identify swizzle
     const char *error_usage_bit = nullptr;
     switch (type) {
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
@@ -1698,6 +1696,21 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
                     error_str << ", " << string_VkImageLayout(ext_layout.layout);
                 }
             }
+            *error_msg = error_str.str();
+            return false;
+        }
+    }
+
+    if ((type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) || (type == VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT)) {
+        const VkComponentMapping components = iv_state->create_info.components;
+        if (IsIdentitySwizzle(components) == false) {
+            *error_code = "VUID-VkWriteDescriptorSet-descriptorType-00336";
+            std::stringstream error_str;
+            error_str << "ImageView (" << report_data->FormatHandle(image_view) << ") has a non-identiy swizzle component, "
+                      << " r swizzle = " << string_VkComponentSwizzle(components.r) << ","
+                      << " g swizzle = " << string_VkComponentSwizzle(components.g) << ","
+                      << " b swizzle = " << string_VkComponentSwizzle(components.b) << ","
+                      << " a swizzle = " << string_VkComponentSwizzle(components.a) << ".";
             *error_msg = error_str.str();
             return false;
         }
