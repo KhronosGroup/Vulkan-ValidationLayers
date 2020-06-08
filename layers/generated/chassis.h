@@ -37,6 +37,7 @@
 
 #include "vk_loader_platform.h"
 #include "vulkan/vulkan.h"
+#include "vk_layer_settings_ext.h"
 #include "vk_layer_config.h"
 #include "vk_layer_data.h"
 #include "vk_layer_logging.h"

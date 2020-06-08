@@ -152,6 +152,7 @@ chassis_sources = [
   "layers/generated/thread_safety.h",
   "layers/generated/chassis.cpp",
   "layers/generated/chassis.h",
+  "layers/vk_layer_settings_ext.h",
   "layers/generated/layer_chassis_dispatch.cpp",
   "layers/generated/layer_chassis_dispatch.h",
   "$vulkan_headers_dir/include/vulkan/vk_layer.h",
