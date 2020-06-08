@@ -2343,6 +2343,11 @@ TEST_F(VkLayerTest, InvalidQuerySizes) {
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
+    if (IsPlatform(kPixel2XL)) {
+        printf("%s This test should not run on Pixel 2 XL\n", kSkipPrefix);
+        return;
+    }
+
     uint32_t queue_count;
     vk::GetPhysicalDeviceQueueFamilyProperties(gpu(), &queue_count, NULL);
     VkQueueFamilyProperties *queue_props = new VkQueueFamilyProperties[queue_count];

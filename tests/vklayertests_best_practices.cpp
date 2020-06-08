@@ -483,6 +483,12 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
     InitBestPracticesFramework();
     InitState();
 
+    if (IsPlatform(kPixel2XL) || IsPlatform(kPixel3) || IsPlatform(kPixel3aXL) || IsPlatform(kShieldTV) ||
+        IsPlatform(kNexusPlayer)) {
+        printf("%s This test seems super-picky on Android platforms\n", kSkipPrefix);
+        return;
+    }
+
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "UNASSIGNED-BestPractices-vkCreateFramebuffer-attachment-should-not-be-transient");
 
@@ -801,6 +807,10 @@ TEST_F(VkArmBestPracticesLayerTest, AttachmentNeedsReadback) {
 TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     InitBestPracticesFramework();
     InitState();
+
+    if (IsPlatform(kNexusPlayer)) {
+        return;
+    }
 
     m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT,
                                          "UNASSIGNED-BestPractices-vkCmdDrawIndexed-many-small-indexed-drawcalls");
