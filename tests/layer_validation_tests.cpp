@@ -2332,7 +2332,7 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
     storage_buffer.init(*m_device, storage_buffer_size, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, {ray_tracing_queue_family_index});
 
-    VkDeviceSize shader_binding_table_buffer_size = ray_tracing_properties.shaderGroupHandleSize * 4ull;
+    VkDeviceSize shader_binding_table_buffer_size = ray_tracing_properties.shaderGroupBaseAlignment * 4ull;
     VkBufferObj shader_binding_table_buffer;
     shader_binding_table_buffer.init(*m_device, shader_binding_table_buffer_size,
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -3090,7 +3090,43 @@ void VkLayerTest::OOBRayTracingShadersTestBody(bool gpu_assisted) {
                              shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupBaseAlignment,
                              ray_tracing_properties.shaderGroupHandleSize,
                              /*width=*/1, /*height=*/1, /*depth=*/1);
+
             m_errorMonitor->VerifyFound();
+            const auto &limits = m_device->props.limits;
+
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysNV-width-02469");
+            uint32_t invalid_width = limits.maxComputeWorkGroupCount[0] + 1;
+            vkCmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
+                             ray_tracing_properties.shaderGroupBaseAlignment * 0ull, shader_binding_table_buffer.handle(),
+                             ray_tracing_properties.shaderGroupBaseAlignment * 1ull, ray_tracing_properties.shaderGroupHandleSize,
+                             shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
+                             ray_tracing_properties.shaderGroupHandleSize, shader_binding_table_buffer.handle(),
+                             ray_tracing_properties.shaderGroupBaseAlignment, ray_tracing_properties.shaderGroupHandleSize,
+                             /*width=*/invalid_width, /*height=*/1, /*depth=*/1);
+            m_errorMonitor->VerifyFound();
+
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysNV-height-02470");
+            uint32_t invalid_height = limits.maxComputeWorkGroupCount[1] + 1;
+            vkCmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
+                             ray_tracing_properties.shaderGroupBaseAlignment * 0ull, shader_binding_table_buffer.handle(),
+                             ray_tracing_properties.shaderGroupBaseAlignment * 1ull, ray_tracing_properties.shaderGroupHandleSize,
+                             shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
+                             ray_tracing_properties.shaderGroupHandleSize, shader_binding_table_buffer.handle(),
+                             ray_tracing_properties.shaderGroupBaseAlignment, ray_tracing_properties.shaderGroupHandleSize,
+                             /*width=*/1, /*height=*/invalid_height, /*depth=*/1);
+            m_errorMonitor->VerifyFound();
+
+            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdTraceRaysNV-depth-02471");
+            uint32_t invalid_depth = limits.maxComputeWorkGroupCount[2] + 1;
+            vkCmdTraceRaysNV(ray_tracing_command_buffer.handle(), shader_binding_table_buffer.handle(),
+                             ray_tracing_properties.shaderGroupBaseAlignment * 0ull, shader_binding_table_buffer.handle(),
+                             ray_tracing_properties.shaderGroupBaseAlignment * 1ull, ray_tracing_properties.shaderGroupHandleSize,
+                             shader_binding_table_buffer.handle(), ray_tracing_properties.shaderGroupBaseAlignment * 2ull,
+                             ray_tracing_properties.shaderGroupHandleSize, shader_binding_table_buffer.handle(),
+                             ray_tracing_properties.shaderGroupBaseAlignment, ray_tracing_properties.shaderGroupHandleSize,
+                             /*width=*/1, /*height=*/1, /*depth=*/invalid_depth);
+            m_errorMonitor->VerifyFound();
+
             ray_tracing_command_buffer.end();
         }
         vk::DestroyPipeline(m_device->handle(), pipeline, nullptr);

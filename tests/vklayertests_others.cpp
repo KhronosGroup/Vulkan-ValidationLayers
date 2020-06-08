@@ -5972,11 +5972,14 @@ TEST_F(VkLayerTest, ValidateCreateAccelerationStructureKHR) {
 
     // If type is VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR
     // and compactedSize is 0, maxGeometryCount must be 1
+    // also tests If compactedSize is 0 then maxGeometryCount must not be 0
     {
         VkAccelerationStructureCreateInfoKHR bad_top_level_create_info = as_create_info;
         bad_top_level_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
         bad_top_level_create_info.maxGeometryCount = 0;
         bad_top_level_create_info.compactedSize = 0;
+        m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT,
+                                             "VUID-VkAccelerationStructureCreateInfoKHR-compactedSize-02993");
         m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "VUID-VkAccelerationStructureCreateInfoKHR-type-03495");
         vkCreateAccelerationStructureKHR(m_device->handle(), &bad_top_level_create_info, nullptr, &as);
         m_errorMonitor->VerifyFound();
