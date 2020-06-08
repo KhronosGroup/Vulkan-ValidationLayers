@@ -1102,7 +1102,11 @@ struct CMD_BUFFER_STATE : public BASE_NODE {
     // Store last bound state for Gfx & Compute pipeline bind points
     std::map<uint32_t, LAST_BOUND_STATE> lastBound;
 
-    using Bindings = std::map<uint32_t, descriptor_req>;
+    struct BindingInfo {
+        descriptor_req requirements;
+        CMD_TYPE cmd_type;
+    };
+    using Bindings = std::map<uint32_t, BindingInfo>;
     using Pipelines_Bindings = std::map<VkPipeline, Bindings>;
     std::unordered_map<VkDescriptorSet, Pipelines_Bindings> validate_descriptorsets_in_queuesubmit;
 

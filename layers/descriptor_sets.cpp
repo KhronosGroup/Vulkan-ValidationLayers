@@ -1338,9 +1338,9 @@ void cvdescriptorset::DescriptorSet::PerformCopyUpdate(ValidationStateTracker *d
 // TODO: Modify the UpdateDrawState virtural functions to *only* set initial layout and not change layouts
 // Prereq: This should be called for a set that has been confirmed to be active for the given cb_node, meaning it's going
 //   to be used in a draw by the given cb_node
-void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *device_data, CMD_BUFFER_STATE *cb_node,
-                                                     const PIPELINE_STATE *pipe,
-                                                     const std::map<uint32_t, descriptor_req> &binding_req_map) {
+void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *device_data,
+ CMD_BUFFER_STATE *cb_node, CMD_TYPE cmd_type,
+                                                     const PIPELINE_STATE *pipe, const std::map<uint32_t, descriptor_req> &binding_req_map) {
     if (!device_data->disabled[command_buffer_state] && !IsPushDescriptor()) {
         // bind cb to this descriptor set
         // Add bindings for descriptor set, the set's pool, and individual objects in the set
@@ -1368,7 +1368,8 @@ void cvdescriptorset::DescriptorSet::UpdateDrawState(ValidationStateTracker *dev
         auto flags = p_layout_->GetDescriptorBindingFlagsFromIndex(index);
         if (flags & (VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT_EXT)) {
             if (!(flags & VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT)) {
-                cb_node->validate_descriptorsets_in_queuesubmit[set_][pipe->pipeline][binding] = binding_req_pair.second;
+                cb_node->validate_descriptorsets_in_queuesubmit[set_][pipe->pipeline].insert(
+                    {binding, {binding_req_pair.second, cmd_type}});
             }
             continue;
         }
