@@ -627,7 +627,7 @@ class DescriptorSet : public BASE_NODE {
     VkDescriptorSet GetSet() const { return set_; };
     // Bind given cmd_buffer to this descriptor set and
     // update CB image layout map with image/imagesampler descriptor image layouts
-    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *, const PIPELINE_STATE *,
+    void UpdateDrawState(ValidationStateTracker *, CMD_BUFFER_STATE *, CMD_TYPE cmd_type, const PIPELINE_STATE *,
                          const std::map<uint32_t, descriptor_req> &);
 
     // Track work that has been bound or validated to avoid duplicate work, important when large descriptor arrays
