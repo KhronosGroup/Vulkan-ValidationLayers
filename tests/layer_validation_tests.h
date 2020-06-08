@@ -34,6 +34,7 @@
 #endif
 
 #include "layers/vk_device_profile_api_layer.h"
+#include "vk_layer_settings_ext.h"
 
 #if defined(ANDROID)
 #include <android/log.h>
@@ -162,8 +163,6 @@ static const char bindStateFragUniformShaderText[] =
     "void main(){\n"
     "   x = vec4(bar.y);\n"
     "}\n";
-
-void SetEnvVar(const char *env_var, const char *value);
 
 // Static arrays helper
 template <class ElementT, size_t array_size>

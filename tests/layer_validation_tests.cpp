@@ -26,14 +26,6 @@
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
 
-void SetEnvVar(const char *env_var, const char *value) {
-#if defined(_WIN32)
-    SetEnvironmentVariable(env_var, value);
-#else
-    setenv(env_var, value, true);
-#endif
-}
-
 VkFormat FindSupportedDepthOnlyFormat(VkPhysicalDevice phy) {
     const VkFormat ds_formats[] = {VK_FORMAT_D16_UNORM, VK_FORMAT_X8_D24_UNORM_PACK32, VK_FORMAT_D32_SFLOAT};
     for (uint32_t i = 0; i < size(ds_formats); ++i) {
