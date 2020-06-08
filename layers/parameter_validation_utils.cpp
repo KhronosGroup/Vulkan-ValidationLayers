@@ -4278,6 +4278,11 @@ bool StatelessValidation::manual_PreCallValidateCreateAccelerationStructureKHR(
                              "VkAccelerationStructureCreateInfoKHR: If type is VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR"
                              "and compactedSize is 0, maxGeometryCount must be 1.");
         }
+        // or VUID-VkAccelerationStructureCreateInfoKHR-compactedSize-03490
+        if (pCreateInfo->compactedSize == 0 && pCreateInfo->maxGeometryCount == 0) {
+            skip |= LogError(device, "VUID-VkAccelerationStructureCreateInfoKHR-compactedSize-02993",
+                             "VkAccelerationStructureCreateInfoKHR: If compactedSize is 0 then maxGeometryCount must not be 0.");
+        }
 
         if (pCreateInfo->flags & VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR &&
             pCreateInfo->flags & VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR) {
@@ -5290,7 +5295,22 @@ bool StatelessValidation::manual_PreCallValidateCmdTraceRaysNV(
     if (SafeModulo(raygenShaderBindingOffset, phys_dev_ext_props.ray_tracing_propsNV.shaderGroupBaseAlignment) != 0) {
         skip |= LogError(device, "VUID-vkCmdTraceRaysNV-raygenShaderBindingOffset-02456",
                          "vkCmdTraceRaysNV: raygenShaderBindingOffset must be a multiple of "
-                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment .");
+                         "VkPhysicalDeviceRayTracingPropertiesNV::shaderGroupBaseAlignment.");
+    }
+    if (width > device_limits.maxComputeWorkGroupCount[0]) {
+        skip |=
+            LogError(device, "VUID-vkCmdTraceRaysNV-width-02469",
+                     "vkCmdTraceRaysNV: width must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[o].");
+    }
+    if (height > device_limits.maxComputeWorkGroupCount[1]) {
+        skip |=
+            LogError(device, "VUID-vkCmdTraceRaysNV-height-02470",
+                     "vkCmdTraceRaysNV: height must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[1].");
+    }
+    if (depth > device_limits.maxComputeWorkGroupCount[2]) {
+        skip |=
+            LogError(device, "VUID-vkCmdTraceRaysNV-depth-02471",
+                     "vkCmdTraceRaysNV: depth must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[2].");
     }
     return skip;
 }

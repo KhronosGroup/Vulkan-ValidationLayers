@@ -5408,8 +5408,8 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureKHR(
                         !(src_as_state->build_info.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR)) {
                         skip |= LogError(
                             commandBuffer, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-update-03538",
-                            "vkCmdBuildAccelerationStructureKHR(): If update is VK_TRUE, srcAccelerationStructure must have"
-                            "been built before with VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR set"
+                            "vkCmdBuildAccelerationStructureKHR(): If update is VK_TRUE, srcAccelerationStructure must have "
+                            "been built before with VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR set "
                             "in VkAccelerationStructureBuildGeometryInfoKHR flags");
                     }
                 }
@@ -11991,8 +11991,8 @@ bool CoreChecks::PreCallValidateCmdWriteAccelerationStructuresPropertiesKHR(
             if (!(as_state->create_infoKHR.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)) {
                 skip |=
                     LogError(device, "VUID-vkCmdWriteAccelerationStructuresPropertiesKHR-accelerationStructures-03431",
-                             "vkCmdWriteAccelerationStructuresPropertiesKHR: All acceleration structures in accelerationStructures"
-                             "must have been built with VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR if queryType is"
+                             "vkCmdWriteAccelerationStructuresPropertiesKHR: All acceleration structures in accelerationStructures "
+                             "must have been built with VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR if queryType is "
                              "VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR.");
             }
         }
@@ -12015,6 +12015,11 @@ bool CoreChecks::PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice devi
                          "VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupHandleSize.",
                          dataSize);
     }
+    if (firstGroup >= pipeline_state->raytracingPipelineCI.groupCount) {
+        skip |=
+            LogError(device, "VUID-vkGetRayTracingShaderGroupHandlesKHR-firstGroup-04050",
+                     "vkGetRayTracingShaderGroupHandlesKHR: firstGroup must be less than the number of shader groups in pipeline.");
+    }
     if ((firstGroup + groupCount) > pipeline_state->raytracingPipelineCI.groupCount) {
         skip |= LogError(
             device, "VUID-vkGetRayTracingShaderGroupHandlesKHR-firstGroup-02419",
@@ -12034,10 +12039,15 @@ bool CoreChecks::PreCallValidateGetRayTracingCaptureReplayShaderGroupHandlesKHR(
                          dataSize);
     }
     const PIPELINE_STATE *pipeline_state = GetPipelineState(pipeline);
+    if (firstGroup >= pipeline_state->raytracingPipelineCI.groupCount) {
+        skip |= LogError(device, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-04051",
+                         "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR: firstGroup must be less than the number of shader "
+                         "groups in pipeline.");
+    }
     if ((firstGroup + groupCount) > pipeline_state->raytracingPipelineCI.groupCount) {
         skip |= LogError(device, "VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-03483",
                          "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR: The sum of firstGroup and groupCount must be less "
-                         "than or equal the number of shader groups in pipeline.");
+                         "than or equal to the number of shader groups in pipeline.");
     }
     return skip;
 }

@@ -434,6 +434,36 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
                                                uint32_t width, uint32_t height, uint32_t depth) const {
     bool skip = ValidateCmdDrawType(commandBuffer, true, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, CMD_TRACERAYSNV,
                                     "vkCmdTraceRaysNV()", VK_QUEUE_COMPUTE_BIT);
+    const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    skip |= InsideRenderPass(cb_state, "vkCmdTraceRaysNV()", "VUID-vkCmdTraceRaysNV-renderpass");
+    auto callable_shader_buffer_state = (BUFFER_STATE *)GetBufferState(callableShaderBindingTableBuffer);
+    if (callable_shader_buffer_state && callableShaderBindingOffset >= callable_shader_buffer_state->createInfo.size) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdTraceRaysNV-callableShaderBindingOffset-02461",
+                         "vkCmdTraceRaysNV: callableShaderBindingOffset %" PRIu64
+                         " must be less than the size of callableShaderBindingTableBuffer %" PRIu64 " .",
+                         callableShaderBindingOffset, callable_shader_buffer_state->createInfo.size);
+    }
+    auto hit_shader_buffer_state = (BUFFER_STATE *)GetBufferState(hitShaderBindingTableBuffer);
+    if (hit_shader_buffer_state && hitShaderBindingOffset >= hit_shader_buffer_state->createInfo.size) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdTraceRaysNV-hitShaderBindingOffset-02459",
+                         "vkCmdTraceRaysNV: hitShaderBindingOffset %" PRIu64
+                         " must be less than the size of hitShaderBindingTableBuffer %" PRIu64 " .",
+                         hitShaderBindingOffset, hit_shader_buffer_state->createInfo.size);
+    }
+    auto miss_shader_buffer_state = (BUFFER_STATE *)GetBufferState(missShaderBindingTableBuffer);
+    if (miss_shader_buffer_state && missShaderBindingOffset >= miss_shader_buffer_state->createInfo.size) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdTraceRaysNV-missShaderBindingOffset-02457",
+                         "vkCmdTraceRaysNV: missShaderBindingOffset %" PRIu64
+                         " must be less than the size of missShaderBindingTableBuffer" PRIu64 " .",
+                         missShaderBindingOffset, miss_shader_buffer_state->createInfo.size);
+    }
+    auto raygen_shader_buffer_state = (BUFFER_STATE *)GetBufferState(raygenShaderBindingTableBuffer);
+    if (raygenShaderBindingOffset >= raygen_shader_buffer_state->createInfo.size) {
+        skip |= LogError(commandBuffer, "VUID-vkCmdTraceRaysNV-raygenShaderBindingOffset-02455",
+                         "vkCmdTraceRaysNV: raygenShaderBindingOffset %" PRIu64
+                         " must be less than the size of raygenShaderBindingTableBuffer" PRIu64 " .",
+                         raygenShaderBindingOffset, raygen_shader_buffer_state->createInfo.size);
+    }
     return skip;
 }
 
