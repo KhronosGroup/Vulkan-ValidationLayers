@@ -176,6 +176,7 @@ set(CHASSIS_LIBRARY_FILES
     image_layout_map.cpp
     image_layout_map.h
     range_vector.h
+    vk_layer_settings_ext.h
     subresource_adapter.cpp
     subresource_adapter.h)
 
