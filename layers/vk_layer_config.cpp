@@ -40,6 +40,11 @@
 
 #if defined(_WIN32)
 #include <windows.h>
+#include <direct.h>
+#define GetCurrentDir _getcwd
+#else
+#include <unistd.h>
+#define GetCurrentDir getcwd
 #endif
 
 using std::string;
@@ -52,6 +57,7 @@ class ConfigFile {
     const char *GetOption(const string &option);
     void SetOption(const string &option, const string &value);
     string vk_layer_disables_env_var;
+    SettingsFileInfo settings_info{};
 
   private:
     bool file_is_parsed_;
@@ -87,6 +93,8 @@ VK_LAYER_EXPORT const char *GetLayerEnvVar(const char *option) {
     layer_config.vk_layer_disables_env_var = GetEnvironment(option);
     return layer_config.vk_layer_disables_env_var.c_str();
 }
+
+VK_LAYER_EXPORT const SettingsFileInfo *GetLayerSettingsFileInfo() { return &layer_config.settings_info; }
 
 // If option is NULL or stdout, return stdout, otherwise try to open option
 // as a filename. If successful, return file handle, otherwise stdout
@@ -188,6 +196,7 @@ string ConfigFile::FindSettings() {
     struct stat info;
 
 #if defined(WIN32)
+    // Look for VkConfig-specific settings location specified in the windows registry
     HKEY hive;
     LSTATUS err = RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Khronos\\Vulkan\\Settings", 0, KEY_READ, &hive);
     if (err == ERROR_SUCCESS) {
@@ -207,12 +216,15 @@ string ConfigFile::FindSettings() {
 
             // Use this file
             RegCloseKey(hive);
+            settings_info.source = kVkConfig;
+            settings_info.location = name;
             return name;
         }
 
         RegCloseKey(hive);
     }
 #else
+    // Look for VkConfig-specific settings location specified in a specific spot in the linux settings store
     string search_path = GetEnvironment("XDG_DATA_HOME");
     if (search_path == "") {
         search_path = GetEnvironment("HOME");
@@ -220,28 +232,40 @@ string ConfigFile::FindSettings() {
             search_path += "/.local/share";
         }
     }
-
     // Use the vk_layer_settings.txt file from here, if it is present
     if (search_path != "") {
         string home_file = search_path + "/vulkan/settings.d/vk_layer_settings.txt";
         if (stat(home_file.c_str(), &info) == 0) {
             if (info.st_mode & S_IFREG) {
+                settings_info.source = kVkConfig;
+                settings_info.location = home_file;
                 return home_file;
             }
         }
     }
 
 #endif
-
+    // Look for an enviornment variable override for the settings file location
     string env_path = GetEnvironment("VK_LAYER_SETTINGS_PATH");
 
     // If the path exists use it, else use vk_layer_settings
     if (stat(env_path.c_str(), &info) == 0) {
-        // If this is a directory, look for vk_layer_settings within the directory
+        // If this is a directory, append settings file name
         if (info.st_mode & S_IFDIR) {
-            return env_path + "/vk_layer_settings.txt";
+            env_path.append("/vk_layer_settings.txt");
         }
+        settings_info.source = kEnvVar;
+        settings_info.location = env_path;
         return env_path;
+    }
+
+    // Default -- use the current working directory for the settings file location
+    settings_info.source = kLocal;
+    char buff[512];
+    auto buf_ptr = GetCurrentDir(buff, 512);
+    if (buf_ptr) {
+        settings_info.location = buf_ptr;
+        settings_info.location.append("\\vk_layer_settings.txt");
     }
     return "vk_layer_settings.txt";
 }
@@ -249,18 +273,21 @@ string ConfigFile::FindSettings() {
 void ConfigFile::ParseFile(const char *filename) {
     file_is_parsed_ = true;
 
-    // extract option = value pairs from a file
+    // Extract option = value pairs from a file
     std::ifstream file(filename);
-    for (string line; std::getline(file, line);) {
-        // discard comments, which start with '#'
-        const auto comments_pos = line.find_first_of('#');
-        if (comments_pos != string::npos) line.erase(comments_pos);
+    if (file.good()) {
+        settings_info.file_found = true;
+        for (string line; std::getline(file, line);) {
+            // discard comments, which start with '#'
+            const auto comments_pos = line.find_first_of('#');
+            if (comments_pos != string::npos) line.erase(comments_pos);
 
-        const auto value_pos = line.find_first_of('=');
-        if (value_pos != string::npos) {
-            const string option = string_trim(line.substr(0, value_pos));
-            const string value = string_trim(line.substr(value_pos + 1));
-            value_map_[option] = value;
+            const auto value_pos = line.find_first_of('=');
+            if (value_pos != string::npos) {
+                const string option = string_trim(line.substr(0, value_pos));
+                const string value = string_trim(line.substr(value_pos + 1));
+                value_map_[option] = value;
+            }
         }
     }
 }

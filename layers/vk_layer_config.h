@@ -31,6 +31,18 @@ extern "C" {
 #endif
 
 typedef enum {
+    kVkConfig,
+    kEnvVar,
+    kLocal,
+} SettingsFileSource;
+
+typedef struct SettingsFileInfo {
+    bool file_found = false;
+    std::string location{};
+    SettingsFileSource source = kLocal;
+} SettingsFileInfo;
+
+typedef enum {
     kInformationBit = 0x00000001,
     kWarningBit = 0x00000002,
     kPerformanceWarningBit = 0x00000004,
@@ -75,6 +87,7 @@ const std::unordered_map<std::string, VkFlags> log_msg_type_option_definitions =
 
 VK_LAYER_EXPORT const char *getLayerOption(const char *option);
 VK_LAYER_EXPORT const char *GetLayerEnvVar(const char *option);
+VK_LAYER_EXPORT const SettingsFileInfo *GetLayerSettingsFileInfo();
 
 VK_LAYER_EXPORT FILE *getLayerLogOutput(const char *option, const char *layer_name);
 VK_LAYER_EXPORT VkFlags GetLayerOptionFlags(std::string option, std::unordered_map<std::string, VkFlags> const &enum_data,
