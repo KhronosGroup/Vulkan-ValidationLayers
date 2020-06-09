@@ -2442,14 +2442,10 @@ void SyncValidator::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkI
 bool SyncValidator::DetectDescriptorSetHazard(const AccessContext &context, const CMD_BUFFER_STATE &cmd,
                                               VkPipelineBindPoint pipelineBindPoint, const char *function) const {
     bool skip = false;
-
-    const auto last_bound_it = cmd.lastBound.find(pipelineBindPoint);
-    if (last_bound_it == cmd.lastBound.cend()) {
-        return skip;
-    }
-    auto const &state = last_bound_it->second;
-    const auto *pPipe = state.pipeline_state;
-    if (!pPipe) {
+    const PIPELINE_STATE *pPipe = nullptr;
+    const std::vector<LAST_BOUND_STATE::PER_SET> *per_sets = nullptr;
+    GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(cmd, pipelineBindPoint, &pPipe, &per_sets);
+    if (!pPipe || !per_sets) {
         return skip;
     }
 
@@ -2461,7 +2457,7 @@ bool SyncValidator::DetectDescriptorSetHazard(const AccessContext &context, cons
 
     for (const auto &set_binding_pair : pPipe->active_slots) {
         uint32_t setIndex = set_binding_pair.first;
-        cvdescriptorset::DescriptorSet *descriptor_set = state.per_set[setIndex].bound_descriptor_set;
+        cvdescriptorset::DescriptorSet *descriptor_set = (*per_sets)[setIndex].bound_descriptor_set;
         for (auto binding_pair : set_binding_pair.second) {
             auto binding = binding_pair.first;
             cvdescriptorset::DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(),
@@ -2546,13 +2542,10 @@ bool SyncValidator::DetectDescriptorSetHazard(const AccessContext &context, cons
 
 void SyncValidator::UpdateDescriptorSetAccessState(AccessContext &context, const ResourceUsageTag &tag, const CMD_BUFFER_STATE &cmd,
                                                    VkPipelineBindPoint pipelineBindPoint) {
-    const auto last_bound_it = cmd.lastBound.find(pipelineBindPoint);
-    if (last_bound_it == cmd.lastBound.cend()) {
-        return;
-    }
-    auto const &state = last_bound_it->second;
-    const auto *pPipe = state.pipeline_state;
-    if (!pPipe) {
+    const PIPELINE_STATE *pPipe = nullptr;
+    const std::vector<LAST_BOUND_STATE::PER_SET> *per_sets = nullptr;
+    GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(cmd, pipelineBindPoint, &pPipe, &per_sets);
+    if (!pPipe || !per_sets) {
         return;
     }
 
@@ -2564,7 +2557,7 @@ void SyncValidator::UpdateDescriptorSetAccessState(AccessContext &context, const
 
     for (const auto &set_binding_pair : pPipe->active_slots) {
         uint32_t setIndex = set_binding_pair.first;
-        const cvdescriptorset::DescriptorSet *descriptor_set = state.per_set[setIndex].bound_descriptor_set;
+        const cvdescriptorset::DescriptorSet *descriptor_set = (*per_sets)[setIndex].bound_descriptor_set;
         for (auto binding_pair : set_binding_pair.second) {
             cvdescriptorset::DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(),
                                                                                   binding_pair.first);
@@ -2624,12 +2617,7 @@ void SyncValidator::UpdateDescriptorSetAccessState(AccessContext &context, const
 bool SyncValidator::DetectVertexHazard(const AccessContext &context, const CMD_BUFFER_STATE &cmd, uint32_t vertexCount,
                                        uint32_t firstVertex, const char *function) const {
     bool skip = false;
-    const auto last_bound_it = cmd.lastBound.find(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    if (last_bound_it == cmd.lastBound.cend()) {
-        return skip;
-    }
-    auto const &state = last_bound_it->second;
-    const auto *pPipe = state.pipeline_state;
+    const auto *pPipe = GetCurrentPipelineFromCommandBuffer(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS);
     if (!pPipe) {
         return skip;
     }
@@ -2663,16 +2651,10 @@ bool SyncValidator::DetectVertexHazard(const AccessContext &context, const CMD_B
 
 void SyncValidator::UpdateVertexAccessState(AccessContext &context, const ResourceUsageTag &tag, const CMD_BUFFER_STATE &cmd,
                                             uint32_t vertexCount, uint32_t firstVertex) {
-    const auto last_bound_it = cmd.lastBound.find(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    if (last_bound_it == cmd.lastBound.cend()) {
-        return;
-    }
-    auto const &state = last_bound_it->second;
-    const auto *pPipe = state.pipeline_state;
+    const auto *pPipe = GetCurrentPipelineFromCommandBuffer(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS);
     if (!pPipe) {
         return;
     }
-
     const auto &binding_buffers = cmd.current_vertex_buffer_binding_info.vertex_buffer_bindings;
     const auto &binding_buffers_size = binding_buffers.size();
     const auto &binding_descriptions_size = pPipe->vertex_binding_descriptions_.size();

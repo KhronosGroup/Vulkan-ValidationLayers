@@ -146,6 +146,25 @@ std::vector<const IMAGE_VIEW_STATE *> ValidationStateTracker::GetCurrentAttachme
     return GetAttachmentViews(rp_begin, *fb_state);
 }
 
+PIPELINE_STATE *GetCurrentPipelineFromCommandBuffer(const CMD_BUFFER_STATE &cmd, VkPipelineBindPoint pipelineBindPoint) {
+    const auto last_bound_it = cmd.lastBound.find(pipelineBindPoint);
+    if (last_bound_it == cmd.lastBound.cend()) {
+        return nullptr;
+    }
+    return last_bound_it->second.pipeline_state;
+}
+
+void GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(const CMD_BUFFER_STATE &cmd, VkPipelineBindPoint pipelineBindPoint,
+                                                         const PIPELINE_STATE **rtn_pipe,
+                                                         const std::vector<LAST_BOUND_STATE::PER_SET> **rtn_sets) {
+    const auto last_bound_it = cmd.lastBound.find(pipelineBindPoint);
+    if (last_bound_it == cmd.lastBound.cend()) {
+        return;
+    }
+    *rtn_pipe = last_bound_it->second.pipeline_state;
+    *rtn_sets = &(last_bound_it->second.per_set);
+}
+
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 // Android-specific validation that uses types defined only with VK_USE_PLATFORM_ANDROID_KHR
 // This could also move into a seperate core_validation_android.cpp file... ?
