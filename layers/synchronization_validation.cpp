@@ -2885,9 +2885,9 @@ void SyncValidator::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkI
     }
 }
 
-bool SyncValidator::DetectIndirectBufferHazard(const AccessContext &context, VkCommandBuffer commandBuffer,
-                                               const VkDeviceSize struct_size, const VkBuffer buffer, const VkDeviceSize offset,
-                                               const uint32_t drawCount, const uint32_t stride, const char *function) const {
+bool SyncValidator::ValidateIndirectBuffer(const AccessContext &context, VkCommandBuffer commandBuffer,
+                                           const VkDeviceSize struct_size, const VkBuffer buffer, const VkDeviceSize offset,
+                                           const uint32_t drawCount, const uint32_t stride, const char *function) const {
     bool skip = false;
     if (drawCount == 0) return skip;
 
@@ -2917,9 +2917,9 @@ bool SyncValidator::DetectIndirectBufferHazard(const AccessContext &context, VkC
     return skip;
 }
 
-void SyncValidator::UpdateIndirectBufferAccessState(AccessContext &context, const ResourceUsageTag &tag,
-                                                    const VkDeviceSize struct_size, const VkBuffer buffer,
-                                                    const VkDeviceSize offset, const uint32_t drawCount, uint32_t stride) {
+void SyncValidator::RecordIndirectBuffer(AccessContext &context, const ResourceUsageTag &tag, const VkDeviceSize struct_size,
+                                         const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount,
+                                         uint32_t stride) {
     const auto *buf_state = Get<BUFFER_STATE>(buffer);
     VkDeviceSize size = struct_size;
     if (drawCount == 1 || stride == size) {
@@ -2934,8 +2934,8 @@ void SyncValidator::UpdateIndirectBufferAccessState(AccessContext &context, cons
     }
 }
 
-bool SyncValidator::DetectCountBufferHazard(const AccessContext &context, VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                            VkDeviceSize offset, const char *function) const {
+bool SyncValidator::ValidateCountBuffer(const AccessContext &context, VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                        VkDeviceSize offset, const char *function) const {
     bool skip = false;
 
     const auto *count_buf_state = Get<BUFFER_STATE>(buffer);
@@ -2949,8 +2949,7 @@ bool SyncValidator::DetectCountBufferHazard(const AccessContext &context, VkComm
     return skip;
 }
 
-void SyncValidator::UpdateCountBufferAccessState(AccessContext &context, const ResourceUsageTag &tag, VkBuffer buffer,
-                                                 VkDeviceSize offset) {
+void SyncValidator::RecordCountBuffer(AccessContext &context, const ResourceUsageTag &tag, VkBuffer buffer, VkDeviceSize offset) {
     const auto *count_buf_state = Get<BUFFER_STATE>(buffer);
     ResourceAccessRange range = MakeRange(offset, 4);
     context.UpdateAccessState(*count_buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range, tag);
@@ -2986,8 +2985,8 @@ bool SyncValidator::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBu
     if (!context) return skip;
 
     skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, "vkCmdDispatchIndirect");
-    skip |= DetectIndirectBufferHazard(*context, commandBuffer, sizeof(VkDispatchIndirectCommand), buffer, offset, 1,
-                                       sizeof(VkDispatchIndirectCommand), "vkCmdDispatchIndirect");
+    skip |= ValidateIndirectBuffer(*context, commandBuffer, sizeof(VkDispatchIndirectCommand), buffer, offset, 1,
+                                   sizeof(VkDispatchIndirectCommand), "vkCmdDispatchIndirect");
     return skip;
 }
 
@@ -2999,8 +2998,7 @@ void SyncValidator::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuff
     assert(context);
 
     cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, tag);
-    UpdateIndirectBufferAccessState(*context, tag, sizeof(VkDispatchIndirectCommand), buffer, offset, 1,
-                                    sizeof(VkDispatchIndirectCommand));
+    RecordIndirectBuffer(*context, tag, sizeof(VkDispatchIndirectCommand), buffer, offset, 1, sizeof(VkDispatchIndirectCommand));
 }
 
 bool SyncValidator::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
@@ -3066,8 +3064,8 @@ bool SyncValidator::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer
 
     skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDrawIndirect");
     skip |= cb_access_context->ValidateDrawSubpassAttachment("vkCmdDrawIndirect");
-    skip |= DetectIndirectBufferHazard(*context, commandBuffer, sizeof(VkDrawIndirectCommand), buffer, offset, drawCount, stride,
-                                       "vkCmdDrawIndirect");
+    skip |= ValidateIndirectBuffer(*context, commandBuffer, sizeof(VkDrawIndirectCommand), buffer, offset, drawCount, stride,
+                                   "vkCmdDrawIndirect");
 
     // TODO: For now, we validate the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
@@ -3087,7 +3085,7 @@ void SyncValidator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, 
 
     cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
     cb_access_context->RecordDrawSubpassAttachment(tag);
-    UpdateIndirectBufferAccessState(*context, tag, sizeof(VkDrawIndirectCommand), buffer, offset, drawCount, stride);
+    RecordIndirectBuffer(*context, tag, sizeof(VkDrawIndirectCommand), buffer, offset, drawCount, stride);
 
     // TODO: For now, we record the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
@@ -3109,8 +3107,8 @@ bool SyncValidator::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer comman
 
     skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDrawIndexedIndirect");
     skip |= cb_access_context->ValidateDrawSubpassAttachment("vkCmdDrawIndexedIndirect");
-    skip |= DetectIndirectBufferHazard(*context, commandBuffer, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, drawCount,
-                                       stride, "vkCmdDrawIndexedIndirect");
+    skip |= ValidateIndirectBuffer(*context, commandBuffer, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, drawCount, stride,
+                                   "vkCmdDrawIndexedIndirect");
 
     // TODO: For now, we validate the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
@@ -3129,7 +3127,7 @@ void SyncValidator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandB
 
     cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
     cb_access_context->RecordDrawSubpassAttachment(tag);
-    UpdateIndirectBufferAccessState(*context, tag, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, drawCount, stride);
+    RecordIndirectBuffer(*context, tag, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, drawCount, stride);
 
     // TODO: For now, we record the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
@@ -3151,9 +3149,9 @@ bool SyncValidator::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, 
 
     skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, function);
     skip |= cb_access_context->ValidateDrawSubpassAttachment(function);
-    skip |= DetectIndirectBufferHazard(*context, commandBuffer, sizeof(VkDrawIndirectCommand), buffer, offset, maxDrawCount, stride,
-                                       function);
-    skip |= DetectCountBufferHazard(*context, commandBuffer, countBuffer, countBufferOffset, function);
+    skip |= ValidateIndirectBuffer(*context, commandBuffer, sizeof(VkDrawIndirectCommand), buffer, offset, maxDrawCount, stride,
+                                   function);
+    skip |= ValidateCountBuffer(*context, commandBuffer, countBuffer, countBufferOffset, function);
 
     // TODO: For now, we validate the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
@@ -3180,8 +3178,8 @@ void SyncValidator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuf
 
     cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
     cb_access_context->RecordDrawSubpassAttachment(tag);
-    UpdateIndirectBufferAccessState(*context, tag, sizeof(VkDrawIndirectCommand), buffer, offset, 1, stride);
-    UpdateCountBufferAccessState(*context, tag, countBuffer, countBufferOffset);
+    RecordIndirectBuffer(*context, tag, sizeof(VkDrawIndirectCommand), buffer, offset, 1, stride);
+    RecordCountBuffer(*context, tag, countBuffer, countBufferOffset);
 
     // TODO: For now, we record the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
@@ -3229,9 +3227,9 @@ bool SyncValidator::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandB
 
     skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, function);
     skip |= cb_access_context->ValidateDrawSubpassAttachment(function);
-    skip |= DetectIndirectBufferHazard(*context, commandBuffer, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, maxDrawCount,
-                                       stride, function);
-    skip |= DetectCountBufferHazard(*context, commandBuffer, countBuffer, countBufferOffset, function);
+    skip |= ValidateIndirectBuffer(*context, commandBuffer, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, maxDrawCount,
+                                   stride, function);
+    skip |= ValidateCountBuffer(*context, commandBuffer, countBuffer, countBufferOffset, function);
 
     // TODO: For now, we validate the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
@@ -3258,8 +3256,8 @@ void SyncValidator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer com
 
     cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
     cb_access_context->RecordDrawSubpassAttachment(tag);
-    UpdateIndirectBufferAccessState(*context, tag, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, 1, stride);
-    UpdateCountBufferAccessState(*context, tag, countBuffer, countBufferOffset);
+    RecordIndirectBuffer(*context, tag, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, 1, stride);
+    RecordCountBuffer(*context, tag, countBuffer, countBufferOffset);
 
     // TODO: For now, we record the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.

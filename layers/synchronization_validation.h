@@ -605,16 +605,15 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit *pRegions,
                                    VkFilter filter);
 
-    bool DetectIndirectBufferHazard(const AccessContext &context, VkCommandBuffer commandBuffer, const VkDeviceSize struct_size,
-                                    const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount,
-                                    const uint32_t stride, const char *function) const;
-    void UpdateIndirectBufferAccessState(AccessContext &context, const ResourceUsageTag &tag, const VkDeviceSize struct_size,
-                                         const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount,
-                                         uint32_t stride);
+    bool ValidateIndirectBuffer(const AccessContext &context, VkCommandBuffer commandBuffer, const VkDeviceSize struct_size,
+                                const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount, const uint32_t stride,
+                                const char *function) const;
+    void RecordIndirectBuffer(AccessContext &context, const ResourceUsageTag &tag, const VkDeviceSize struct_size,
+                              const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount, uint32_t stride);
 
-    bool DetectCountBufferHazard(const AccessContext &context, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                 const char *function) const;
-    void UpdateCountBufferAccessState(AccessContext &context, const ResourceUsageTag &tag, VkBuffer buffer, VkDeviceSize offset);
+    bool ValidateCountBuffer(const AccessContext &context, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                             const char *function) const;
+    void RecordCountBuffer(AccessContext &context, const ResourceUsageTag &tag, VkBuffer buffer, VkDeviceSize offset);
 
     bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) const;
     void PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z);
