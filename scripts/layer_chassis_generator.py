@@ -1041,9 +1041,35 @@ void OutputLayerStatusInfo(ValidationObject *context) {
     if (list_of_disables.size() == 0) {
         list_of_disables.append("None");
     }
+
+    auto settings_info = GetLayerSettingsFileInfo();
+    std::string settings_status;
+    if (!settings_info->file_found) {
+        settings_status = "None. Default location is ";
+        settings_status.append(settings_info->location);
+        settings_status.append(".");
+    } else {
+        settings_status = "Found at ";
+        settings_status.append(settings_info->location);
+        settings_status.append(" specified by ");
+        switch (settings_info->source) {
+            case kEnvVar:
+                settings_status.append("environment variable (VK_LAYER_SETTINGS_PATH).");
+                break;
+            case kVkConfig:
+                settings_status.append("VkConfig application override.");
+                break;
+            case kLocal:    // Intentionally fall through
+            default:
+                settings_status.append("default location (current working directory).");
+                break;
+        }
+    }
+
+    // Output layer status information message
     context->LogInfo(context->instance, kVUID_Core_CreatInstance_Status,
-        "Khronos Validation Layer Active: Current Enables: %s; Current Disables: %s;",
-        list_of_enables.c_str(), list_of_disables.c_str());
+        "Khronos Validation Layer Active:\\n    Settings File: %s\\n    Current Enables: %s.\\n    Current Disables: %s.\\n",
+        settings_status.c_str(), list_of_enables.c_str(), list_of_disables.c_str());
 
     // Create warning message if user is running debug layers.
 #ifndef NDEBUG
