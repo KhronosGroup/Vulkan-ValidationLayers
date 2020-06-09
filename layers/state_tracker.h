@@ -47,6 +47,10 @@ VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo& image
 std::pair<uint32_t, const VkImageView*> GetFramebufferAttachments(const VkRenderPassBeginInfo& rp_begin,
                                                                   const FRAMEBUFFER_STATE& fb_state);
 VkImageSubresourceRange NormalizeSubresourceRange(const IMAGE_STATE& image_state, const VkImageSubresourceRange& range);
+PIPELINE_STATE* GetCurrentPipelineFromCommandBuffer(const CMD_BUFFER_STATE& cmd, VkPipelineBindPoint pipelineBindPoint);
+void GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(const CMD_BUFFER_STATE& cmd, VkPipelineBindPoint pipelineBindPoint,
+                                                         const PIPELINE_STATE** rtn_pipe,
+                                                         const std::vector<LAST_BOUND_STATE::PER_SET>** rtn_sets);
 
 enum SyncScope {
     kSyncScopeInternal,
