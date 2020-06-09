@@ -7727,6 +7727,12 @@ bool CoreChecks::ValidateFramebufferCreateInfo(const VkFramebufferCreateInfo *pC
                                          string_VkSampleCountFlagBits(rpci->pAttachments[i].samples),
                                          report_data->FormatHandle(pCreateInfo->renderPass).c_str());
                         }
+
+                        // Verify that image memory is valid
+                        auto image_data = GetImageState(ivci.image);
+                        skip |= ValidateMemoryIsBoundToImage(image_data, "vkCreateFramebuffer()",
+                                                             "UNASSIGNED-CoreValidation-BoundResourceFreedMemoryAccess");
+
                         // Verify that view only has a single mip level
                         if (ivci.subresourceRange.levelCount != 1) {
                             skip |= LogError(
