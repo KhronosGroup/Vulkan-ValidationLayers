@@ -355,6 +355,9 @@ class RenderPassAccessContext {
     RenderPassAccessContext(AccessContext *external_context)
         : external_context_(external_context), rp_state_(nullptr), current_subpass_(0) {}
 
+    bool ValidateDrawSubpassAttachment(const SyncValidator &sync_state, const CMD_BUFFER_STATE &cmd, const VkRect2D &render_area,
+                                       const char *func_name) const;
+    void RecordDrawSubpassAttachment(const VkRect2D &render_area, const ResourceUsageTag &tag);
     bool ValidateNextSubpass(const SyncValidator &sync_state, const VkRect2D &render_area, const char *command_name) const;
     bool ValidateEndRenderPass(const SyncValidator &sync_state, const VkRect2D &render_area, const char *func_name) const;
     bool ValidateFinalSubpassLayoutTransitions(const SyncValidator &sync_state, const VkRect2D &render_area,
@@ -414,6 +417,14 @@ class CommandBufferAccessContext {
     void RecordBeginRenderPass(const ResourceUsageTag &tag);
     bool ValidateBeginRenderPass(const RENDER_PASS_STATE &render_pass, const VkRenderPassBeginInfo *pRenderPassBegin,
                                  const VkSubpassBeginInfoKHR *pSubpassBeginInfo, const char *func_name) const;
+    bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const char *func_name) const;
+    void RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const ResourceUsageTag &tag);
+    bool ValidateDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const char *func_name) const;
+    void RecordDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const ResourceUsageTag &tag);
+    bool ValidateDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const char *func_name) const;
+    void RecordDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const ResourceUsageTag &tag);
+    bool ValidateDrawSubpassAttachment(const char *func_name) const;
+    void RecordDrawSubpassAttachment(const ResourceUsageTag &tag);
     bool ValidateNextSubpass(const char *func_name) const;
     bool ValidateEndRenderpass(const char *func_name) const;
     void RecordNextSubpass(const RENDER_PASS_STATE &render_pass, const ResourceUsageTag &tag);
@@ -594,34 +605,15 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit *pRegions,
                                    VkFilter filter);
 
-    bool DetectDescriptorSetHazard(const AccessContext &context, const CMD_BUFFER_STATE &cmd, VkPipelineBindPoint pipelineBindPoint,
-                                   const char *function) const;
-    void UpdateDescriptorSetAccessState(AccessContext &context, const ResourceUsageTag &tag, const CMD_BUFFER_STATE &cmd,
-                                        VkPipelineBindPoint pipelineBindPoint);
+    bool ValidateIndirectBuffer(const AccessContext &context, VkCommandBuffer commandBuffer, const VkDeviceSize struct_size,
+                                const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount, const uint32_t stride,
+                                const char *function) const;
+    void RecordIndirectBuffer(AccessContext &context, const ResourceUsageTag &tag, const VkDeviceSize struct_size,
+                              const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount, uint32_t stride);
 
-    bool DetectVertexHazard(const AccessContext &context, const CMD_BUFFER_STATE &cmd, uint32_t vertexCount, uint32_t firstVertex,
-                            const char *function) const;
-    void UpdateVertexAccessState(AccessContext &context, const ResourceUsageTag &tag, const CMD_BUFFER_STATE &cmd,
-                                 uint32_t vertexCount, uint32_t firstVertex);
-
-    bool DetectVertexIndexHazard(const AccessContext &context, const CMD_BUFFER_STATE &cmd, uint32_t indexCount,
-                                 uint32_t firstIndex, const char *function) const;
-    void UpdateVertexIndexAccessState(AccessContext &context, const ResourceUsageTag &tag, const CMD_BUFFER_STATE &cmd,
-                                      uint32_t indexCount, uint32_t firstIndex);
-
-    bool DetectSubpassAttachmentHazard(const AccessContext &context, const CMD_BUFFER_STATE &cmd, const char *function) const;
-    void UpdateSubpassAttachmentAccessState(AccessContext &context, const ResourceUsageTag &tag, const CMD_BUFFER_STATE &cmd);
-
-    bool DetectIndirectBufferHazard(const AccessContext &context, VkCommandBuffer commandBuffer, const VkDeviceSize struct_size,
-                                    const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount,
-                                    const uint32_t stride, const char *function) const;
-    void UpdateIndirectBufferAccessState(AccessContext &context, const ResourceUsageTag &tag, const VkDeviceSize struct_size,
-                                         const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount,
-                                         uint32_t stride);
-
-    bool DetectCountBufferHazard(const AccessContext &context, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                 const char *function) const;
-    void UpdateCountBufferAccessState(AccessContext &context, const ResourceUsageTag &tag, VkBuffer buffer, VkDeviceSize offset);
+    bool ValidateCountBuffer(const AccessContext &context, VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                             const char *function) const;
+    void RecordCountBuffer(AccessContext &context, const ResourceUsageTag &tag, VkBuffer buffer, VkDeviceSize offset);
 
     bool PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) const;
     void PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z);
