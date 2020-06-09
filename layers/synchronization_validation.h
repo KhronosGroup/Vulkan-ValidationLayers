@@ -417,6 +417,12 @@ class CommandBufferAccessContext {
     void RecordBeginRenderPass(const ResourceUsageTag &tag);
     bool ValidateBeginRenderPass(const RENDER_PASS_STATE &render_pass, const VkRenderPassBeginInfo *pRenderPassBegin,
                                  const VkSubpassBeginInfoKHR *pSubpassBeginInfo, const char *func_name) const;
+    bool ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const char *func_name) const;
+    void RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint, const ResourceUsageTag &tag);
+    bool ValidateDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const char *func_name) const;
+    void RecordDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const ResourceUsageTag &tag);
+    bool ValidateDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const char *func_name) const;
+    void RecordDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const ResourceUsageTag &tag);
     bool ValidateDrawSubpassAttachment(const char *func_name) const;
     void RecordDrawSubpassAttachment(const ResourceUsageTag &tag);
     bool ValidateNextSubpass(const char *func_name) const;
@@ -598,21 +604,6 @@ class SyncValidator : public ValidationStateTracker, public SyncStageAccess {
     void PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit *pRegions,
                                    VkFilter filter);
-
-    bool DetectDescriptorSetHazard(const AccessContext &context, const CMD_BUFFER_STATE &cmd, VkPipelineBindPoint pipelineBindPoint,
-                                   const char *function) const;
-    void UpdateDescriptorSetAccessState(AccessContext &context, const ResourceUsageTag &tag, const CMD_BUFFER_STATE &cmd,
-                                        VkPipelineBindPoint pipelineBindPoint);
-
-    bool DetectVertexHazard(const AccessContext &context, const CMD_BUFFER_STATE &cmd, uint32_t vertexCount, uint32_t firstVertex,
-                            const char *function) const;
-    void UpdateVertexAccessState(AccessContext &context, const ResourceUsageTag &tag, const CMD_BUFFER_STATE &cmd,
-                                 uint32_t vertexCount, uint32_t firstVertex);
-
-    bool DetectVertexIndexHazard(const AccessContext &context, const CMD_BUFFER_STATE &cmd, uint32_t indexCount,
-                                 uint32_t firstIndex, const char *function) const;
-    void UpdateVertexIndexAccessState(AccessContext &context, const ResourceUsageTag &tag, const CMD_BUFFER_STATE &cmd,
-                                      uint32_t indexCount, uint32_t firstIndex);
 
     bool DetectIndirectBufferHazard(const AccessContext &context, VkCommandBuffer commandBuffer, const VkDeviceSize struct_size,
                                     const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount,
