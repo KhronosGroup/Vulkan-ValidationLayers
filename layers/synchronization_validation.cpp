@@ -1297,6 +1297,317 @@ bool CommandBufferAccessContext::ValidateBeginRenderPass(const RENDER_PASS_STATE
     return skip;
 }
 
+bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint,
+                                                                   const char *func_name) const {
+    bool skip = false;
+    const PIPELINE_STATE *pPipe = nullptr;
+    const std::vector<LAST_BOUND_STATE::PER_SET> *per_sets = nullptr;
+    GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(*cb_state_.get(), pipelineBindPoint, &pPipe, &per_sets);
+    if (!pPipe || !per_sets) {
+        return skip;
+    }
+
+    using DescriptorClass = cvdescriptorset::DescriptorClass;
+    using BufferDescriptor = cvdescriptorset::BufferDescriptor;
+    using ImageDescriptor = cvdescriptorset::ImageDescriptor;
+    using ImageSamplerDescriptor = cvdescriptorset::ImageSamplerDescriptor;
+    using TexelDescriptor = cvdescriptorset::TexelDescriptor;
+
+    for (const auto &stage_state : pPipe->stage_state) {
+        for (const auto &set_binding : stage_state.descriptor_uses) {
+            cvdescriptorset::DescriptorSet *descriptor_set = (*per_sets)[set_binding.first.first].bound_descriptor_set;
+            cvdescriptorset::DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(),
+                                                                                  set_binding.first.second);
+            const auto descriptor_type = binding_it.GetType();
+            cvdescriptorset::IndexRange index_range = binding_it.GetGlobalIndexRange();
+            auto array_idx = 0;
+
+            if (binding_it.IsVariableDescriptorCount()) {
+                index_range.end = index_range.start + descriptor_set->GetVariableDescriptorCount();
+            }
+            SyncStageAccessIndex sync_index =
+                GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, set_binding.second, stage_state.stage_flag);
+
+            for (uint32_t i = index_range.start; i < index_range.end; ++i, ++array_idx) {
+                uint32_t index = i - index_range.start;
+                const auto *descriptor = descriptor_set->GetDescriptorFromGlobalIndex(i);
+                switch (descriptor->GetClass()) {
+                    case DescriptorClass::ImageSampler:
+                    case DescriptorClass::Image: {
+                        const IMAGE_VIEW_STATE *img_view_state = nullptr;
+                        if (descriptor->GetClass() == DescriptorClass::ImageSampler) {
+                            img_view_state = static_cast<const ImageSamplerDescriptor *>(descriptor)->GetImageViewState();
+                        } else {
+                            img_view_state = static_cast<const ImageDescriptor *>(descriptor)->GetImageViewState();
+                        }
+                        if (!img_view_state) continue;
+                        const IMAGE_STATE *img_state = img_view_state->image_state.get();
+                        VkExtent3D extent = {};
+                        VkOffset3D offset = {};
+                        if (sync_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ) {
+                            extent = CastTo3D(cb_state_->activeRenderPassBeginInfo.renderArea.extent);
+                            offset = CastTo3D(cb_state_->activeRenderPassBeginInfo.renderArea.offset);
+                        } else {
+                            extent = img_state->createInfo.extent;
+                        }
+                        auto hazard = current_context_->DetectHazard(*img_state, sync_index,
+                                                                     img_view_state->normalized_subresource_range, offset, extent);
+                        if (hazard.hazard) {
+                            skip |=
+                                sync_state_->LogError(img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
+                                                      "%s: Hazard %s for %s in %s, %s, and %s binding #%d index %d", func_name,
+                                                      string_SyncHazard(hazard.hazard),
+                                                      sync_state_->report_data->FormatHandle(img_view_state->image_view).c_str(),
+                                                      sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(),
+                                                      sync_state_->report_data->FormatHandle(pPipe->pipeline).c_str(),
+                                                      sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
+                                                      set_binding.first.second, index);
+                        }
+                        break;
+                    }
+                    case DescriptorClass::TexelBuffer: {
+                        auto buf_view_state = static_cast<const TexelDescriptor *>(descriptor)->GetBufferViewState();
+                        if (!buf_view_state) continue;
+                        const BUFFER_STATE *buf_state = buf_view_state->buffer_state.get();
+                        ResourceAccessRange range =
+                            MakeRange(buf_view_state->create_info.offset,
+                                      GetRealWholeSize(buf_view_state->create_info.offset, buf_view_state->create_info.range,
+                                                       buf_state->createInfo.size));
+                        auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
+                        if (hazard.hazard) {
+                            skip |=
+                                sync_state_->LogError(buf_view_state->buffer_view, string_SyncHazardVUID(hazard.hazard),
+                                                      "%s: Hazard %s for %s in %s, %s, and %s binding #%d index %d", func_name,
+                                                      string_SyncHazard(hazard.hazard),
+                                                      sync_state_->report_data->FormatHandle(buf_view_state->buffer_view).c_str(),
+                                                      sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(),
+                                                      sync_state_->report_data->FormatHandle(pPipe->pipeline).c_str(),
+                                                      sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
+                                                      set_binding.first.second, index);
+                        }
+                        break;
+                    }
+                    case DescriptorClass::GeneralBuffer: {
+                        const auto *buffer_descriptor = static_cast<const BufferDescriptor *>(descriptor);
+                        auto buf_state = buffer_descriptor->GetBufferState();
+                        if (!buf_state) continue;
+                        ResourceAccessRange range = MakeRange(buffer_descriptor->GetOffset(), buffer_descriptor->GetRange());
+                        auto hazard = current_context_->DetectHazard(*buf_state, sync_index, range);
+                        if (hazard.hazard) {
+                            skip |= sync_state_->LogError(buf_state->buffer, string_SyncHazardVUID(hazard.hazard),
+                                                          "%s: Hazard %s for %s in %s, %s, and %s binding #%d index %d", func_name,
+                                                          string_SyncHazard(hazard.hazard),
+                                                          sync_state_->report_data->FormatHandle(buf_state->buffer).c_str(),
+                                                          sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str(),
+                                                          sync_state_->report_data->FormatHandle(pPipe->pipeline).c_str(),
+                                                          sync_state_->report_data->FormatHandle(descriptor_set->GetSet()).c_str(),
+                                                          set_binding.first.second, index);
+                        }
+                        break;
+                    }
+                    // TODO: INLINE_UNIFORM_BLOCK_EXT, ACCELERATION_STRUCTURE_KHR
+                    default:
+                        break;
+                }
+            }
+        }
+    }
+    return skip;
+}
+
+void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindPoint pipelineBindPoint,
+                                                                 const ResourceUsageTag &tag) {
+    const PIPELINE_STATE *pPipe = nullptr;
+    const std::vector<LAST_BOUND_STATE::PER_SET> *per_sets = nullptr;
+    GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(*cb_state_.get(), pipelineBindPoint, &pPipe, &per_sets);
+    if (!pPipe || !per_sets) {
+        return;
+    }
+
+    using DescriptorClass = cvdescriptorset::DescriptorClass;
+    using BufferDescriptor = cvdescriptorset::BufferDescriptor;
+    using ImageDescriptor = cvdescriptorset::ImageDescriptor;
+    using ImageSamplerDescriptor = cvdescriptorset::ImageSamplerDescriptor;
+    using TexelDescriptor = cvdescriptorset::TexelDescriptor;
+
+    for (const auto &stage_state : pPipe->stage_state) {
+        for (const auto &set_binding : stage_state.descriptor_uses) {
+            cvdescriptorset::DescriptorSet *descriptor_set = (*per_sets)[set_binding.first.first].bound_descriptor_set;
+            cvdescriptorset::DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(),
+                                                                                  set_binding.first.second);
+            const auto descriptor_type = binding_it.GetType();
+            cvdescriptorset::IndexRange index_range = binding_it.GetGlobalIndexRange();
+            auto array_idx = 0;
+
+            if (binding_it.IsVariableDescriptorCount()) {
+                index_range.end = index_range.start + descriptor_set->GetVariableDescriptorCount();
+            }
+            SyncStageAccessIndex sync_index =
+                GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, set_binding.second, stage_state.stage_flag);
+
+            for (uint32_t i = index_range.start; i < index_range.end; ++i, ++array_idx) {
+                const auto *descriptor = descriptor_set->GetDescriptorFromGlobalIndex(i);
+                switch (descriptor->GetClass()) {
+                    case DescriptorClass::ImageSampler:
+                    case DescriptorClass::Image: {
+                        const IMAGE_VIEW_STATE *img_view_state = nullptr;
+                        if (descriptor->GetClass() == DescriptorClass::ImageSampler) {
+                            img_view_state = static_cast<const ImageSamplerDescriptor *>(descriptor)->GetImageViewState();
+                        } else {
+                            img_view_state = static_cast<const ImageDescriptor *>(descriptor)->GetImageViewState();
+                        }
+                        if (!img_view_state) continue;
+                        const IMAGE_STATE *img_state = img_view_state->image_state.get();
+                        VkExtent3D extent = {};
+                        VkOffset3D offset = {};
+                        if (sync_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ) {
+                            extent = CastTo3D(cb_state_->activeRenderPassBeginInfo.renderArea.extent);
+                            offset = CastTo3D(cb_state_->activeRenderPassBeginInfo.renderArea.offset);
+                        } else {
+                            extent = img_state->createInfo.extent;
+                        }
+                        current_context_->UpdateAccessState(*img_state, sync_index, img_view_state->normalized_subresource_range,
+                                                            offset, extent, tag);
+                        break;
+                    }
+                    case DescriptorClass::TexelBuffer: {
+                        auto buf_view_state = static_cast<const TexelDescriptor *>(descriptor)->GetBufferViewState();
+                        if (!buf_view_state) continue;
+                        const BUFFER_STATE *buf_state = buf_view_state->buffer_state.get();
+                        ResourceAccessRange range =
+                            MakeRange(buf_view_state->create_info.offset, buf_view_state->create_info.range);
+                        current_context_->UpdateAccessState(*buf_state, sync_index, range, tag);
+                        break;
+                    }
+                    case DescriptorClass::GeneralBuffer: {
+                        const auto *buffer_descriptor = static_cast<const BufferDescriptor *>(descriptor);
+                        auto buf_state = buffer_descriptor->GetBufferState();
+                        if (!buf_state) continue;
+                        ResourceAccessRange range = MakeRange(buffer_descriptor->GetOffset(), buffer_descriptor->GetRange());
+                        current_context_->UpdateAccessState(*buf_state, sync_index, range, tag);
+                        break;
+                    }
+                    // TODO: INLINE_UNIFORM_BLOCK_EXT, ACCELERATION_STRUCTURE_KHR
+                    default:
+                        break;
+                }
+            }
+        }
+    }
+}
+
+bool CommandBufferAccessContext::ValidateDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const char *func_name) const {
+    bool skip = false;
+    const auto *pPipe = GetCurrentPipelineFromCommandBuffer(*cb_state_.get(), VK_PIPELINE_BIND_POINT_GRAPHICS);
+    if (!pPipe) {
+        return skip;
+    }
+
+    const auto &binding_buffers = cb_state_->current_vertex_buffer_binding_info.vertex_buffer_bindings;
+    const auto &binding_buffers_size = binding_buffers.size();
+    const auto &binding_descriptions_size = pPipe->vertex_binding_descriptions_.size();
+
+    for (size_t i = 0; i < binding_descriptions_size; ++i) {
+        const auto &binding_description = pPipe->vertex_binding_descriptions_[i];
+        if (binding_description.binding < binding_buffers_size) {
+            const auto &binding_buffer = binding_buffers[binding_description.binding];
+            if (binding_buffer.buffer == VK_NULL_HANDLE) continue;
+
+            auto *buf_state = sync_state_->Get<BUFFER_STATE>(binding_buffer.buffer);
+            VkDeviceSize range_start = 0;
+            VkDeviceSize range_size = 0;
+            GetBufferRange(range_start, range_size, binding_buffer.offset, buf_state->createInfo.size, firstVertex, vertexCount,
+                           binding_description.stride);
+            ResourceAccessRange range = MakeRange(range_start, range_size);
+            auto hazard = current_context_->DetectHazard(*buf_state, SYNC_VERTEX_INPUT_VERTEX_ATTRIBUTE_READ, range);
+            if (hazard.hazard) {
+                skip |= sync_state_->LogError(buf_state->buffer, string_SyncHazardVUID(hazard.hazard),
+                                              "%s: Hazard %s for vertex %s in %s", func_name, string_SyncHazard(hazard.hazard),
+                                              sync_state_->report_data->FormatHandle(buf_state->buffer).c_str(),
+                                              sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str());
+            }
+        }
+    }
+    return skip;
+}
+
+void CommandBufferAccessContext::RecordDrawVertex(uint32_t vertexCount, uint32_t firstVertex, const ResourceUsageTag &tag) {
+    const auto *pPipe = GetCurrentPipelineFromCommandBuffer(*cb_state_.get(), VK_PIPELINE_BIND_POINT_GRAPHICS);
+    if (!pPipe) {
+        return;
+    }
+    const auto &binding_buffers = cb_state_->current_vertex_buffer_binding_info.vertex_buffer_bindings;
+    const auto &binding_buffers_size = binding_buffers.size();
+    const auto &binding_descriptions_size = pPipe->vertex_binding_descriptions_.size();
+
+    for (size_t i = 0; i < binding_descriptions_size; ++i) {
+        const auto &binding_description = pPipe->vertex_binding_descriptions_[i];
+        if (binding_description.binding < binding_buffers_size) {
+            const auto &binding_buffer = binding_buffers[binding_description.binding];
+            if (binding_buffer.buffer == VK_NULL_HANDLE) continue;
+
+            auto *buf_state = sync_state_->Get<BUFFER_STATE>(binding_buffer.buffer);
+            VkDeviceSize range_start = 0;
+            VkDeviceSize range_size = 0;
+            GetBufferRange(range_start, range_size, binding_buffer.offset, buf_state->createInfo.size, firstVertex, vertexCount,
+                           binding_description.stride);
+            ResourceAccessRange range = MakeRange(range_start, range_size);
+            current_context_->UpdateAccessState(*buf_state, SYNC_VERTEX_INPUT_VERTEX_ATTRIBUTE_READ, range, tag);
+        }
+    }
+}
+
+bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const char *func_name) const {
+    bool skip = false;
+    if (cb_state_->index_buffer_binding.buffer == VK_NULL_HANDLE) return skip;
+
+    auto *index_buf_state = sync_state_->Get<BUFFER_STATE>(cb_state_->index_buffer_binding.buffer);
+    const auto index_size = GetIndexAlignment(cb_state_->index_buffer_binding.index_type);
+    VkDeviceSize range_start = 0;
+    VkDeviceSize range_size = 0;
+    GetBufferRange(range_start, range_size, cb_state_->index_buffer_binding.offset, index_buf_state->createInfo.size, firstIndex,
+                   indexCount, index_size);
+    ResourceAccessRange range = MakeRange(range_start, range_size);
+    auto hazard = current_context_->DetectHazard(*index_buf_state, SYNC_VERTEX_INPUT_INDEX_READ, range);
+    if (hazard.hazard) {
+        skip |= sync_state_->LogError(index_buf_state->buffer, string_SyncHazardVUID(hazard.hazard),
+                                      "%s: Hazard %s for index %s in %s", func_name, string_SyncHazard(hazard.hazard),
+                                      sync_state_->report_data->FormatHandle(index_buf_state->buffer).c_str(),
+                                      sync_state_->report_data->FormatHandle(cb_state_->commandBuffer).c_str());
+    }
+
+    // TODO: For now, we detect the whole vertex buffer. Index buffer could be changed until SubmitQueue.
+    //       We will detect more accurate range in the future.
+    skip |= ValidateDrawVertex(UINT32_MAX, 0, func_name);
+    return skip;
+}
+
+void CommandBufferAccessContext::RecordDrawVertexIndex(uint32_t indexCount, uint32_t firstIndex, const ResourceUsageTag &tag) {
+    if (cb_state_->index_buffer_binding.buffer == VK_NULL_HANDLE) return;
+
+    auto *index_buf_state = sync_state_->Get<BUFFER_STATE>(cb_state_->index_buffer_binding.buffer);
+    const auto index_size = GetIndexAlignment(cb_state_->index_buffer_binding.index_type);
+    VkDeviceSize range_start = 0;
+    VkDeviceSize range_size = 0;
+    GetBufferRange(range_start, range_size, cb_state_->index_buffer_binding.offset, index_buf_state->createInfo.size, firstIndex,
+                   indexCount, index_size);
+    ResourceAccessRange range = MakeRange(range_start, range_size);
+    current_context_->UpdateAccessState(*index_buf_state, SYNC_VERTEX_INPUT_INDEX_READ, range, tag);
+
+    // TODO: For now, we detect the whole vertex buffer. Index buffer could be changed until SubmitQueue.
+    //       We will detect more accurate range in the future.
+    RecordDrawVertex(UINT32_MAX, 0, tag);
+}
+
+bool CommandBufferAccessContext::ValidateDrawSubpassAttachment(const char *func_name) const {
+    return current_renderpass_context_->ValidateDrawSubpassAttachment(*sync_state_, *cb_state_.get(),
+                                                                      cb_state_->activeRenderPassBeginInfo.renderArea, func_name);
+}
+
+void CommandBufferAccessContext::RecordDrawSubpassAttachment(const ResourceUsageTag &tag) {
+    current_renderpass_context_->RecordDrawSubpassAttachment(cb_state_->activeRenderPassBeginInfo.renderArea, tag);
+}
+
 bool CommandBufferAccessContext::ValidateNextSubpass(const char *func_name) const {
     bool skip = false;
     skip |=
@@ -1339,6 +1650,118 @@ void CommandBufferAccessContext::RecordEndRenderPass(const RENDER_PASS_STATE &re
     current_renderpass_context_->RecordEndRenderPass(cb_state_->activeRenderPassBeginInfo.renderArea, tag);
     current_context_ = &cb_access_context_;
     current_renderpass_context_ = nullptr;
+}
+
+bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncValidator &sync_state, const CMD_BUFFER_STATE &cmd,
+                                                            const VkRect2D &render_area, const char *func_name) const {
+    bool skip = false;
+    const auto &subpass = rp_state_->createInfo.pSubpasses[current_subpass_];
+    VkExtent3D extent = CastTo3D(render_area.extent);
+    VkOffset3D offset = CastTo3D(render_area.offset);
+
+    if (subpass.inputAttachmentCount && subpass.pInputAttachments) {
+        for (uint32_t i = 0; i < subpass.inputAttachmentCount; ++i) {
+            if (subpass.pInputAttachments[i].attachment == VK_ATTACHMENT_UNUSED) continue;
+            const IMAGE_VIEW_STATE *img_view_state = attachment_views_[subpass.pInputAttachments[i].attachment];
+            if (!img_view_state) continue;
+            const IMAGE_STATE *img_state = img_view_state->image_state.get();
+            if (!img_state) continue;
+            HazardResult hazard = external_context_->DetectHazard(*img_state, SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ,
+                                                                  img_view_state->normalized_subresource_range, offset, extent);
+            if (hazard.hazard) {
+                skip |= sync_state.LogError(img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
+                                            "%s: Hazard %s for %s in %s, Subpass #%d, and pInputAttachments ##d", func_name,
+                                            string_SyncHazard(hazard.hazard),
+                                            sync_state.report_data->FormatHandle(img_view_state->image_view).c_str(),
+                                            sync_state.report_data->FormatHandle(cmd.commandBuffer).c_str(), cmd.activeSubpass, i);
+            }
+        }
+    }
+    if (subpass.colorAttachmentCount) {
+        if (subpass.pColorAttachments) {
+            for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
+                if (subpass.pColorAttachments[i].attachment == VK_ATTACHMENT_UNUSED) continue;
+                const IMAGE_VIEW_STATE *img_view_state = attachment_views_[subpass.pColorAttachments[i].attachment];
+                HazardResult hazard =
+                    external_context_->DetectHazard(img_view_state, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
+                                                    kColorAttachmentRasterOrder, offset, extent);
+                if (hazard.hazard) {
+                    skip |= sync_state.LogError(
+                        img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
+                        "%s: Hazard %s for %s in %s, Subpass #%d, and pColorAttachments #%d", func_name,
+                        string_SyncHazard(hazard.hazard), sync_state.report_data->FormatHandle(img_view_state->image_view).c_str(),
+                        sync_state.report_data->FormatHandle(cmd.commandBuffer).c_str(), cmd.activeSubpass, i);
+                }
+            }
+        }
+        if (subpass.pResolveAttachments) {
+            for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
+                if (subpass.pResolveAttachments[i].attachment == VK_ATTACHMENT_UNUSED) continue;
+                const IMAGE_VIEW_STATE *img_view_state = attachment_views_[subpass.pResolveAttachments[i].attachment];
+                HazardResult hazard =
+                    external_context_->DetectHazard(img_view_state, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
+                                                    kColorAttachmentRasterOrder, offset, extent);
+                if (hazard.hazard) {
+                    skip |= sync_state.LogError(
+                        img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
+                        "%s: Hazard %s for %s in %s, Subpass #%d, and pResolveAttachments #%d", func_name,
+                        string_SyncHazard(hazard.hazard), sync_state.report_data->FormatHandle(img_view_state->image_view).c_str(),
+                        sync_state.report_data->FormatHandle(cmd.commandBuffer).c_str(), cmd.activeSubpass, i);
+                }
+            }
+        }
+    }
+    if (subpass.pDepthStencilAttachment && subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
+        const IMAGE_VIEW_STATE *img_view_state = attachment_views_[subpass.pDepthStencilAttachment->attachment];
+        HazardResult hazard = external_context_->DetectHazard(img_view_state, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
+                                                              kDepthStencilAttachmentRasterOrder, offset, extent);
+        if (hazard.hazard) {
+            skip |= sync_state.LogError(img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
+                                        "%s: Hazard %s for %s in %s, Subpass #%d, and pDepthStencilAttachment", func_name,
+                                        string_SyncHazard(hazard.hazard),
+                                        sync_state.report_data->FormatHandle(img_view_state->image_view).c_str(),
+                                        sync_state.report_data->FormatHandle(cmd.commandBuffer).c_str(), cmd.activeSubpass);
+        }
+    }
+    return skip;
+}
+
+void RenderPassAccessContext::RecordDrawSubpassAttachment(const VkRect2D &render_area, const ResourceUsageTag &tag) {
+    const auto &subpass = rp_state_->createInfo.pSubpasses[current_subpass_];
+    VkExtent3D extent = CastTo3D(render_area.extent);
+    VkOffset3D offset = CastTo3D(render_area.offset);
+
+    if (subpass.inputAttachmentCount && subpass.pInputAttachments) {
+        for (uint32_t i = 0; i < subpass.inputAttachmentCount; ++i) {
+            if (subpass.pInputAttachments[i].attachment == VK_ATTACHMENT_UNUSED) continue;
+            const IMAGE_VIEW_STATE *img_view_state = attachment_views_[subpass.pInputAttachments[i].attachment];
+            external_context_->UpdateAccessState(img_view_state, SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ, offset, extent, 0,
+                                                 tag);
+        }
+    }
+    if (subpass.colorAttachmentCount) {
+        if (subpass.pColorAttachments) {
+            for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
+                if (subpass.pColorAttachments[i].attachment == VK_ATTACHMENT_UNUSED) continue;
+                const IMAGE_VIEW_STATE *img_view_state = attachment_views_[subpass.pColorAttachments[i].attachment];
+                external_context_->UpdateAccessState(img_view_state, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, offset,
+                                                     extent, 0, tag);
+            }
+        }
+        if (subpass.pResolveAttachments) {
+            for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
+                if (subpass.pResolveAttachments[i].attachment == VK_ATTACHMENT_UNUSED) continue;
+                const IMAGE_VIEW_STATE *img_view_state = attachment_views_[subpass.pResolveAttachments[i].attachment];
+                external_context_->UpdateAccessState(img_view_state, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, offset,
+                                                     extent, 0, tag);
+            }
+        }
+    }
+    if (subpass.pDepthStencilAttachment && subpass.pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
+        const IMAGE_VIEW_STATE *img_view_state = attachment_views_[subpass.pDepthStencilAttachment->attachment];
+        external_context_->UpdateAccessState(img_view_state, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, offset, extent, 0,
+                                             tag);
+    }
 }
 
 bool RenderPassAccessContext::ValidateNextSubpass(const SyncValidator &sync_state, const VkRect2D &render_area,
@@ -2456,407 +2879,9 @@ void SyncValidator::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkI
     }
 }
 
-bool SyncValidator::DetectDescriptorSetHazard(const AccessContext &context, const CMD_BUFFER_STATE &cmd,
-                                              VkPipelineBindPoint pipelineBindPoint, const char *function) const {
-    bool skip = false;
-    const PIPELINE_STATE *pPipe = nullptr;
-    const std::vector<LAST_BOUND_STATE::PER_SET> *per_sets = nullptr;
-    GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(cmd, pipelineBindPoint, &pPipe, &per_sets);
-    if (!pPipe || !per_sets) {
-        return skip;
-    }
-
-    using DescriptorClass = cvdescriptorset::DescriptorClass;
-    using BufferDescriptor = cvdescriptorset::BufferDescriptor;
-    using ImageDescriptor = cvdescriptorset::ImageDescriptor;
-    using ImageSamplerDescriptor = cvdescriptorset::ImageSamplerDescriptor;
-    using TexelDescriptor = cvdescriptorset::TexelDescriptor;
-
-    for (const auto &stage_state : pPipe->stage_state) {
-        for (const auto &set_binding : stage_state.descriptor_uses) {
-            cvdescriptorset::DescriptorSet *descriptor_set = (*per_sets)[set_binding.first.first].bound_descriptor_set;
-            cvdescriptorset::DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(),
-                                                                                  set_binding.first.second);
-            const auto descriptor_type = binding_it.GetType();
-            cvdescriptorset::IndexRange index_range = binding_it.GetGlobalIndexRange();
-            auto array_idx = 0;
-
-            if (binding_it.IsVariableDescriptorCount()) {
-                index_range.end = index_range.start + descriptor_set->GetVariableDescriptorCount();
-            }
-            SyncStageAccessIndex sync_index =
-                GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, set_binding.second, stage_state.stage_flag);
-
-            for (uint32_t i = index_range.start; i < index_range.end; ++i, ++array_idx) {
-                uint32_t index = i - index_range.start;
-                const auto *descriptor = descriptor_set->GetDescriptorFromGlobalIndex(i);
-                switch (descriptor->GetClass()) {
-                    case DescriptorClass::ImageSampler:
-                    case DescriptorClass::Image: {
-                        const IMAGE_VIEW_STATE *img_view_state = nullptr;
-                        if (descriptor->GetClass() == DescriptorClass::ImageSampler) {
-                            img_view_state = static_cast<const ImageSamplerDescriptor *>(descriptor)->GetImageViewState();
-                        } else {
-                            img_view_state = static_cast<const ImageDescriptor *>(descriptor)->GetImageViewState();
-                        }
-                        if (!img_view_state) continue;
-                        const IMAGE_STATE *img_state = img_view_state->image_state.get();
-                        auto hazard = context.DetectHazard(*img_state, sync_index, img_view_state->normalized_subresource_range,
-                                                           {0, 0, 0}, img_state->createInfo.extent);
-                        if (hazard.hazard) {
-                            skip |= LogError(
-                                img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
-                                "%s: Hazard %s for %s in %s, %s, and %s binding #%d index %d", function,
-                                string_SyncHazard(hazard.hazard), report_data->FormatHandle(img_view_state->image_view).c_str(),
-                                report_data->FormatHandle(cmd.commandBuffer).c_str(),
-                                report_data->FormatHandle(pPipe->pipeline).c_str(),
-                                report_data->FormatHandle(descriptor_set->GetSet()).c_str(), set_binding.first.second, index);
-                        }
-                        break;
-                    }
-                    case DescriptorClass::TexelBuffer: {
-                        auto buf_view_state = static_cast<const TexelDescriptor *>(descriptor)->GetBufferViewState();
-                        if (!buf_view_state) continue;
-                        const BUFFER_STATE *buf_state = buf_view_state->buffer_state.get();
-                        ResourceAccessRange range =
-                            MakeRange(buf_view_state->create_info.offset,
-                                      GetRealWholeSize(buf_view_state->create_info.offset, buf_view_state->create_info.range,
-                                                       buf_state->createInfo.size));
-                        auto hazard = context.DetectHazard(*buf_state, sync_index, range);
-                        if (hazard.hazard) {
-                            skip |= LogError(
-                                buf_view_state->buffer_view, string_SyncHazardVUID(hazard.hazard),
-                                "%s: Hazard %s for %s in %s, %s, and %s binding #%d index %d", function,
-                                string_SyncHazard(hazard.hazard), report_data->FormatHandle(buf_view_state->buffer_view).c_str(),
-                                report_data->FormatHandle(cmd.commandBuffer).c_str(),
-                                report_data->FormatHandle(pPipe->pipeline).c_str(),
-                                report_data->FormatHandle(descriptor_set->GetSet()).c_str(), set_binding.first.second, index);
-                        }
-                        break;
-                    }
-                    case DescriptorClass::GeneralBuffer: {
-                        const auto *buffer_descriptor = static_cast<const BufferDescriptor *>(descriptor);
-                        auto buf_state = buffer_descriptor->GetBufferState();
-                        if (!buf_state) continue;
-                        ResourceAccessRange range = MakeRange(buffer_descriptor->GetOffset(), buffer_descriptor->GetRange());
-                        auto hazard = context.DetectHazard(*buf_state, sync_index, range);
-                        if (hazard.hazard) {
-                            skip |= LogError(buf_state->buffer, string_SyncHazardVUID(hazard.hazard),
-                                             "%s: Hazard %s for %s in %s, %s, and %s binding #%d index %d", function,
-                                             string_SyncHazard(hazard.hazard), report_data->FormatHandle(buf_state->buffer).c_str(),
-                                             report_data->FormatHandle(cmd.commandBuffer).c_str(),
-                                             report_data->FormatHandle(pPipe->pipeline).c_str(),
-                                             report_data->FormatHandle(descriptor_set->GetSet()).c_str(), set_binding.first.second,
-                                             index);
-                        }
-                        break;
-                    }
-                    // TODO: INLINE_UNIFORM_BLOCK_EXT, ACCELERATION_STRUCTURE_KHR
-                    default:
-                        break;
-                }
-            }
-        }
-    }
-    return skip;
-}
-
-void SyncValidator::UpdateDescriptorSetAccessState(AccessContext &context, const ResourceUsageTag &tag, const CMD_BUFFER_STATE &cmd,
-                                                   VkPipelineBindPoint pipelineBindPoint) {
-    const PIPELINE_STATE *pPipe = nullptr;
-    const std::vector<LAST_BOUND_STATE::PER_SET> *per_sets = nullptr;
-    GetCurrentPipelineAndDesriptorSetsFromCommandBuffer(cmd, pipelineBindPoint, &pPipe, &per_sets);
-    if (!pPipe || !per_sets) {
-        return;
-    }
-
-    using DescriptorClass = cvdescriptorset::DescriptorClass;
-    using BufferDescriptor = cvdescriptorset::BufferDescriptor;
-    using ImageDescriptor = cvdescriptorset::ImageDescriptor;
-    using ImageSamplerDescriptor = cvdescriptorset::ImageSamplerDescriptor;
-    using TexelDescriptor = cvdescriptorset::TexelDescriptor;
-
-    for (const auto &stage_state : pPipe->stage_state) {
-        for (const auto &set_binding : stage_state.descriptor_uses) {
-            cvdescriptorset::DescriptorSet *descriptor_set = (*per_sets)[set_binding.first.first].bound_descriptor_set;
-            cvdescriptorset::DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(),
-                                                                                  set_binding.first.second);
-            const auto descriptor_type = binding_it.GetType();
-            cvdescriptorset::IndexRange index_range = binding_it.GetGlobalIndexRange();
-            auto array_idx = 0;
-
-            if (binding_it.IsVariableDescriptorCount()) {
-                index_range.end = index_range.start + descriptor_set->GetVariableDescriptorCount();
-            }
-            SyncStageAccessIndex sync_index =
-                GetSyncStageAccessIndexsByDescriptorSet(descriptor_type, set_binding.second, stage_state.stage_flag);
-
-            for (uint32_t i = index_range.start; i < index_range.end; ++i, ++array_idx) {
-                const auto *descriptor = descriptor_set->GetDescriptorFromGlobalIndex(i);
-                switch (descriptor->GetClass()) {
-                    case DescriptorClass::ImageSampler:
-                    case DescriptorClass::Image: {
-                        const IMAGE_VIEW_STATE *img_view_state = nullptr;
-                        if (descriptor->GetClass() == DescriptorClass::ImageSampler) {
-                            img_view_state = static_cast<const ImageSamplerDescriptor *>(descriptor)->GetImageViewState();
-                        } else {
-                            img_view_state = static_cast<const ImageDescriptor *>(descriptor)->GetImageViewState();
-                        }
-                        if (!img_view_state) continue;
-                        const IMAGE_STATE *img_state = img_view_state->image_state.get();
-                        context.UpdateAccessState(*img_state, sync_index, img_view_state->normalized_subresource_range, {0, 0, 0},
-                                                  img_state->createInfo.extent, tag);
-                        break;
-                    }
-                    case DescriptorClass::TexelBuffer: {
-                        auto buf_view_state = static_cast<const TexelDescriptor *>(descriptor)->GetBufferViewState();
-                        if (!buf_view_state) continue;
-                        const BUFFER_STATE *buf_state = buf_view_state->buffer_state.get();
-                        ResourceAccessRange range =
-                            MakeRange(buf_view_state->create_info.offset, buf_view_state->create_info.range);
-                        context.UpdateAccessState(*buf_state, sync_index, range, tag);
-                        break;
-                    }
-                    case DescriptorClass::GeneralBuffer: {
-                        const auto *buffer_descriptor = static_cast<const BufferDescriptor *>(descriptor);
-                        auto buf_state = buffer_descriptor->GetBufferState();
-                        if (!buf_state) continue;
-                        ResourceAccessRange range = MakeRange(buffer_descriptor->GetOffset(), buffer_descriptor->GetRange());
-                        context.UpdateAccessState(*buf_state, sync_index, range, tag);
-                        break;
-                    }
-                    // TODO: INLINE_UNIFORM_BLOCK_EXT, ACCELERATION_STRUCTURE_KHR
-                    default:
-                        break;
-                }
-            }
-        }
-    }
-}
-
-bool SyncValidator::DetectVertexHazard(const AccessContext &context, const CMD_BUFFER_STATE &cmd, uint32_t vertexCount,
-                                       uint32_t firstVertex, const char *function) const {
-    bool skip = false;
-    const auto *pPipe = GetCurrentPipelineFromCommandBuffer(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS);
-    if (!pPipe) {
-        return skip;
-    }
-
-    const auto &binding_buffers = cmd.current_vertex_buffer_binding_info.vertex_buffer_bindings;
-    const auto &binding_buffers_size = binding_buffers.size();
-    const auto &binding_descriptions_size = pPipe->vertex_binding_descriptions_.size();
-
-    for (size_t i = 0; i < binding_descriptions_size; ++i) {
-        const auto &binding_description = pPipe->vertex_binding_descriptions_[i];
-        if (binding_description.binding < binding_buffers_size) {
-            const auto &binding_buffer = binding_buffers[binding_description.binding];
-            if (binding_buffer.buffer == VK_NULL_HANDLE) continue;
-
-            auto *buf_state = Get<BUFFER_STATE>(binding_buffer.buffer);
-            VkDeviceSize range_start = 0;
-            VkDeviceSize range_size = 0;
-            GetBufferRange(range_start, range_size, binding_buffer.offset, buf_state->createInfo.size, firstVertex, vertexCount,
-                           binding_description.stride);
-            ResourceAccessRange range = MakeRange(range_start, range_size);
-            auto hazard = context.DetectHazard(*buf_state, SYNC_VERTEX_INPUT_VERTEX_ATTRIBUTE_READ, range);
-            if (hazard.hazard) {
-                skip |= LogError(buf_state->buffer, string_SyncHazardVUID(hazard.hazard), "%s: Hazard %s for vertex %s in %s",
-                                 function, string_SyncHazard(hazard.hazard), report_data->FormatHandle(buf_state->buffer).c_str(),
-                                 report_data->FormatHandle(cmd.commandBuffer).c_str());
-            }
-        }
-    }
-    return skip;
-}
-
-void SyncValidator::UpdateVertexAccessState(AccessContext &context, const ResourceUsageTag &tag, const CMD_BUFFER_STATE &cmd,
-                                            uint32_t vertexCount, uint32_t firstVertex) {
-    const auto *pPipe = GetCurrentPipelineFromCommandBuffer(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS);
-    if (!pPipe) {
-        return;
-    }
-    const auto &binding_buffers = cmd.current_vertex_buffer_binding_info.vertex_buffer_bindings;
-    const auto &binding_buffers_size = binding_buffers.size();
-    const auto &binding_descriptions_size = pPipe->vertex_binding_descriptions_.size();
-
-    for (size_t i = 0; i < binding_descriptions_size; ++i) {
-        const auto &binding_description = pPipe->vertex_binding_descriptions_[i];
-        if (binding_description.binding < binding_buffers_size) {
-            const auto &binding_buffer = binding_buffers[binding_description.binding];
-            if (binding_buffer.buffer == VK_NULL_HANDLE) continue;
-
-            auto *buf_state = Get<BUFFER_STATE>(binding_buffer.buffer);
-            VkDeviceSize range_start = 0;
-            VkDeviceSize range_size = 0;
-            GetBufferRange(range_start, range_size, binding_buffer.offset, buf_state->createInfo.size, firstVertex, vertexCount,
-                           binding_description.stride);
-            ResourceAccessRange range = MakeRange(range_start, range_size);
-            context.UpdateAccessState(*buf_state, SYNC_VERTEX_INPUT_VERTEX_ATTRIBUTE_READ, range, tag);
-        }
-    }
-}
-
-bool SyncValidator::DetectVertexIndexHazard(const AccessContext &context, const CMD_BUFFER_STATE &cmd, uint32_t indexCount,
-                                            uint32_t firstIndex, const char *function) const {
-    bool skip = false;
-    if (cmd.index_buffer_binding.buffer == VK_NULL_HANDLE) return skip;
-
-    auto *index_buf_state = Get<BUFFER_STATE>(cmd.index_buffer_binding.buffer);
-    const auto index_size = GetIndexAlignment(cmd.index_buffer_binding.index_type);
-    VkDeviceSize range_start = 0;
-    VkDeviceSize range_size = 0;
-    GetBufferRange(range_start, range_size, cmd.index_buffer_binding.offset, index_buf_state->createInfo.size, firstIndex,
-                   indexCount, index_size);
-    ResourceAccessRange range = MakeRange(range_start, range_size);
-    auto hazard = context.DetectHazard(*index_buf_state, SYNC_VERTEX_INPUT_INDEX_READ, range);
-    if (hazard.hazard) {
-        skip |= LogError(index_buf_state->buffer, string_SyncHazardVUID(hazard.hazard), "%s: Hazard %s for index %s in %s",
-                         function, string_SyncHazard(hazard.hazard), report_data->FormatHandle(index_buf_state->buffer).c_str(),
-                         report_data->FormatHandle(cmd.commandBuffer).c_str());
-    }
-
-    // TODO: For now, we detect the whole vertex buffer. Index buffer could be changed until SubmitQueue.
-    //       We will detect more accurate range in the future.
-    skip |= DetectVertexHazard(context, cmd, UINT32_MAX, 0, function);
-    return skip;
-}
-
-void SyncValidator::UpdateVertexIndexAccessState(AccessContext &context, const ResourceUsageTag &tag, const CMD_BUFFER_STATE &cmd,
-                                                 uint32_t indexCount, uint32_t firstIndex) {
-    if (cmd.index_buffer_binding.buffer == VK_NULL_HANDLE) return;
-
-    auto *index_buf_state = Get<BUFFER_STATE>(cmd.index_buffer_binding.buffer);
-    const auto index_size = GetIndexAlignment(cmd.index_buffer_binding.index_type);
-    VkDeviceSize range_start = 0;
-    VkDeviceSize range_size = 0;
-    GetBufferRange(range_start, range_size, cmd.index_buffer_binding.offset, index_buf_state->createInfo.size, firstIndex,
-                   indexCount, index_size);
-    ResourceAccessRange range = MakeRange(range_start, range_size);
-    context.UpdateAccessState(*index_buf_state, SYNC_VERTEX_INPUT_INDEX_READ, range, tag);
-
-    // TODO: For now, we detect the whole vertex buffer. Index buffer could be changed until SubmitQueue.
-    //       We will detect more accurate range in the future.
-    UpdateVertexAccessState(context, tag, cmd, UINT32_MAX, 0);
-}
-
-bool SyncValidator::DetectSubpassAttachmentHazard(const AccessContext &context, const CMD_BUFFER_STATE &cmd,
-                                                  const char *function) const {
-    bool skip = false;
-
-    const auto &subpass = cmd.activeRenderPass->createInfo.pSubpasses[cmd.activeSubpass];
-    const auto *framebuffer = cmd.activeFramebuffer.get();
-    VkExtent3D framebuffer_extent = {framebuffer->createInfo.width, framebuffer->createInfo.height, framebuffer->createInfo.layers};
-
-    auto dtct_fn = [&cmd, &function, &framebuffer, &framebuffer_extent, &context](
-                       const SyncValidator &this_, const safe_VkAttachmentReference2 &attachment_ref,
-                       const SyncStageAccessIndex sync_index, const std::string &attachment_desription) {
-        if (attachment_ref.attachment == VK_ATTACHMENT_UNUSED) return false;
-        auto attachment_index = attachment_ref.attachment;
-        if (framebuffer->createInfo.attachmentCount > attachment_index) {
-            const IMAGE_VIEW_STATE *img_view_state =
-                this_.Get<IMAGE_VIEW_STATE>(framebuffer->createInfo.pAttachments[attachment_index]);
-            if (!img_view_state) return false;
-            const IMAGE_STATE *img_state = img_view_state->image_state.get();
-            HazardResult hazard;
-            if (sync_index == SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ) {
-                hazard = context.DetectHazard(*img_state, sync_index, img_view_state->normalized_subresource_range, {0, 0, 0},
-                                              framebuffer_extent);
-            } else if (sync_index == SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE) {
-                if (attachment_desription.compare("pDepthStencilAttachment") == 0) {
-                    hazard = context.DetectHazard(*img_state, sync_index, img_view_state->normalized_subresource_range,
-                                                  kDepthStencilAttachmentRasterOrder, {0, 0, 0}, framebuffer_extent);
-                } else {
-                    hazard = context.DetectHazard(*img_state, sync_index, img_view_state->normalized_subresource_range,
-                                                  kColorAttachmentRasterOrder, {0, 0, 0}, framebuffer_extent);
-                }
-            }
-
-            if (hazard.hazard) {
-                return this_.LogError(img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
-                                      "%s: Hazard %s for %s in %s, Subpass #%d, and %s", function, string_SyncHazard(hazard.hazard),
-                                      this_.report_data->FormatHandle(img_view_state->image_view).c_str(),
-                                      this_.report_data->FormatHandle(cmd.commandBuffer).c_str(), cmd.activeSubpass,
-                                      attachment_desription.c_str());
-            }
-        }
-        return false;
-    };
-
-    if (subpass.inputAttachmentCount && subpass.pInputAttachments) {
-        for (uint32_t i = 0; i < subpass.inputAttachmentCount; ++i) {
-            std::string attachment_desription = "pInputAttachments #" + std::to_string(i);
-            skip |= dtct_fn(*this, subpass.pInputAttachments[i], SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ, attachment_desription);
-        }
-    }
-    if (subpass.colorAttachmentCount) {
-        if (subpass.pColorAttachments) {
-            for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
-                std::string attachment_desription = "pColorAttachments #" + std::to_string(i);
-                skip |= dtct_fn(*this, subpass.pColorAttachments[i], SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
-                                attachment_desription);
-            }
-        }
-        if (subpass.pResolveAttachments) {
-            for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
-                std::string attachment_desription = "pResolveAttachments #" + std::to_string(i);
-                skip |= dtct_fn(*this, subpass.pResolveAttachments[i], SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
-                                attachment_desription);
-            }
-        }
-    }
-    if (subpass.pDepthStencilAttachment) {
-        skip |= dtct_fn(*this, *subpass.pDepthStencilAttachment, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE,
-                        "pDepthStencilAttachment");
-    }
-    return skip;
-}
-
-void SyncValidator::UpdateSubpassAttachmentAccessState(AccessContext &context, const ResourceUsageTag &tag,
-                                                       const CMD_BUFFER_STATE &cmd) {
-    const auto &subpass = cmd.activeRenderPass->createInfo.pSubpasses[cmd.activeSubpass];
-    const auto *framebuffer = cmd.activeFramebuffer.get();
-    VkExtent3D framebuffer_extent = {framebuffer->createInfo.width, framebuffer->createInfo.height, framebuffer->createInfo.layers};
-
-    auto updt_fn = [&framebuffer, &framebuffer_extent, &context, &tag](const SyncValidator &this_,
-                                                                       const safe_VkAttachmentReference2 &attachment_ref,
-                                                                       const SyncStageAccessIndex sync_index) {
-        if (attachment_ref.attachment == VK_ATTACHMENT_UNUSED) return;
-        auto attachment_index = attachment_ref.attachment;
-        if (framebuffer->createInfo.attachmentCount > attachment_index) {
-            const IMAGE_VIEW_STATE *img_view_state =
-                this_.Get<IMAGE_VIEW_STATE>(framebuffer->createInfo.pAttachments[attachment_index]);
-            if (!img_view_state) return;
-            const IMAGE_STATE *img_state = img_view_state->image_state.get();
-            context.UpdateAccessState(*img_state, sync_index, img_view_state->normalized_subresource_range, {0, 0, 0},
-                                      framebuffer_extent, tag);
-        }
-    };
-
-    if (subpass.inputAttachmentCount && subpass.pInputAttachments) {
-        for (uint32_t i = 0; i < subpass.inputAttachmentCount; ++i) {
-            updt_fn(*this, subpass.pInputAttachments[i], SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ);
-        }
-    }
-    if (subpass.colorAttachmentCount) {
-        if (subpass.pColorAttachments) {
-            for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
-                updt_fn(*this, subpass.pColorAttachments[i], SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE);
-            }
-        }
-        if (subpass.pResolveAttachments) {
-            for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
-                updt_fn(*this, subpass.pResolveAttachments[i], SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE);
-            }
-        }
-    }
-    if (subpass.pDepthStencilAttachment) {
-        updt_fn(*this, *subpass.pDepthStencilAttachment, SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE);
-    }
-}
-
-bool SyncValidator::DetectIndirectBufferHazard(const AccessContext &context, VkCommandBuffer commandBuffer,
-                                               const VkDeviceSize struct_size, const VkBuffer buffer, const VkDeviceSize offset,
-                                               const uint32_t drawCount, const uint32_t stride, const char *function) const {
+bool SyncValidator::ValidateIndirectBuffer(const AccessContext &context, VkCommandBuffer commandBuffer,
+                                           const VkDeviceSize struct_size, const VkBuffer buffer, const VkDeviceSize offset,
+                                           const uint32_t drawCount, const uint32_t stride, const char *function) const {
     bool skip = false;
     if (drawCount == 0) return skip;
 
@@ -2886,9 +2911,9 @@ bool SyncValidator::DetectIndirectBufferHazard(const AccessContext &context, VkC
     return skip;
 }
 
-void SyncValidator::UpdateIndirectBufferAccessState(AccessContext &context, const ResourceUsageTag &tag,
-                                                    const VkDeviceSize struct_size, const VkBuffer buffer,
-                                                    const VkDeviceSize offset, const uint32_t drawCount, uint32_t stride) {
+void SyncValidator::RecordIndirectBuffer(AccessContext &context, const ResourceUsageTag &tag, const VkDeviceSize struct_size,
+                                         const VkBuffer buffer, const VkDeviceSize offset, const uint32_t drawCount,
+                                         uint32_t stride) {
     const auto *buf_state = Get<BUFFER_STATE>(buffer);
     VkDeviceSize size = struct_size;
     if (drawCount == 1 || stride == size) {
@@ -2903,8 +2928,8 @@ void SyncValidator::UpdateIndirectBufferAccessState(AccessContext &context, cons
     }
 }
 
-bool SyncValidator::DetectCountBufferHazard(const AccessContext &context, VkCommandBuffer commandBuffer, VkBuffer buffer,
-                                            VkDeviceSize offset, const char *function) const {
+bool SyncValidator::ValidateCountBuffer(const AccessContext &context, VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                        VkDeviceSize offset, const char *function) const {
     bool skip = false;
 
     const auto *count_buf_state = Get<BUFFER_STATE>(buffer);
@@ -2918,8 +2943,7 @@ bool SyncValidator::DetectCountBufferHazard(const AccessContext &context, VkComm
     return skip;
 }
 
-void SyncValidator::UpdateCountBufferAccessState(AccessContext &context, const ResourceUsageTag &tag, VkBuffer buffer,
-                                                 VkDeviceSize offset) {
+void SyncValidator::RecordCountBuffer(AccessContext &context, const ResourceUsageTag &tag, VkBuffer buffer, VkDeviceSize offset) {
     const auto *count_buf_state = Get<BUFFER_STATE>(buffer);
     ResourceAccessRange range = MakeRange(offset, 4);
     context.UpdateAccessState(*count_buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range, tag);
@@ -2928,33 +2952,24 @@ void SyncValidator::UpdateCountBufferAccessState(AccessContext &context, const R
 bool SyncValidator::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) const {
     bool skip = false;
     ;
-    const auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     const auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
     if (!cb_access_context) return skip;
 
-    const auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
-    if (!context) return skip;
-
-    skip |= DetectDescriptorSetHazard(*context, *cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, "vkCmdDispatch");
+    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, "vkCmdDispatch");
     return skip;
 }
 
 void SyncValidator::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
-    const auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
     const auto tag = cb_access_context->NextCommandTag(CMD_DISPATCH);
-    auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
 
-    UpdateDescriptorSetAccessState(*context, tag, *cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
+    cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, tag);
 }
 
 bool SyncValidator::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) const {
     bool skip = false;
-    const auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     const auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
     if (!cb_access_context) return skip;
@@ -2963,87 +2978,69 @@ bool SyncValidator::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBu
     assert(context);
     if (!context) return skip;
 
-    skip |= DetectDescriptorSetHazard(*context, *cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, "vkCmdDispatchIndirect");
-    skip |= DetectIndirectBufferHazard(*context, commandBuffer, sizeof(VkDispatchIndirectCommand), buffer, offset, 1,
-                                       sizeof(VkDispatchIndirectCommand), "vkCmdDispatchIndirect");
+    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, "vkCmdDispatchIndirect");
+    skip |= ValidateIndirectBuffer(*context, commandBuffer, sizeof(VkDispatchIndirectCommand), buffer, offset, 1,
+                                   sizeof(VkDispatchIndirectCommand), "vkCmdDispatchIndirect");
     return skip;
 }
 
 void SyncValidator::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset) {
-    const auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
     const auto tag = cb_access_context->NextCommandTag(CMD_DISPATCHINDIRECT);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
-    UpdateDescriptorSetAccessState(*context, tag, *cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
-    UpdateIndirectBufferAccessState(*context, tag, sizeof(VkDispatchIndirectCommand), buffer, offset, 1,
-                                    sizeof(VkDispatchIndirectCommand));
+    cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, tag);
+    RecordIndirectBuffer(*context, tag, sizeof(VkDispatchIndirectCommand), buffer, offset, 1, sizeof(VkDispatchIndirectCommand));
 }
 
 bool SyncValidator::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
                                            uint32_t firstVertex, uint32_t firstInstance) const {
     bool skip = false;
-    const auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     const auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
     if (!cb_access_context) return skip;
 
-    const auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
-    if (!context) return skip;
-
-    skip |= DetectDescriptorSetHazard(*context, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDraw");
-    skip |= DetectVertexHazard(*context, *cb_state, vertexCount, firstVertex, "vkCmdDraw");
-    skip |= DetectSubpassAttachmentHazard(*context, *cb_state, "vkCmdDraw");
+    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDraw");
+    skip |= cb_access_context->ValidateDrawVertex(vertexCount, firstVertex, "vkCmdDraw");
+    skip |= cb_access_context->ValidateDrawSubpassAttachment("vkCmdDraw");
     return skip;
 }
 
 void SyncValidator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
                                          uint32_t firstVertex, uint32_t firstInstance) {
-    const auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
     const auto tag = cb_access_context->NextCommandTag(CMD_DRAW);
-    auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
 
-    UpdateDescriptorSetAccessState(*context, tag, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
-    UpdateVertexAccessState(*context, tag, *cb_state, vertexCount, firstVertex);
-    UpdateSubpassAttachmentAccessState(*context, tag, *cb_state);
+    cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
+    cb_access_context->RecordDrawVertex(vertexCount, firstVertex, tag);
+    cb_access_context->RecordDrawSubpassAttachment(tag);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                                   uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) const {
     bool skip = false;
-    const auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     const auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
     if (!cb_access_context) return skip;
 
-    const auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
-    if (!context) return skip;
-
-    skip |= DetectDescriptorSetHazard(*context, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDrawIndexed");
-    skip |= DetectVertexIndexHazard(*context, *cb_state, indexCount, firstIndex, "vkCmdDrawIndexed");
-    skip |= DetectSubpassAttachmentHazard(*context, *cb_state, "vkCmdDrawIndexed");
+    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDrawIndexed");
+    skip |= cb_access_context->ValidateDrawVertexIndex(indexCount, firstIndex, "vkCmdDrawIndexed");
+    skip |= cb_access_context->ValidateDrawSubpassAttachment("vkCmdDrawIndexed");
     return skip;
 }
 
 void SyncValidator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                                 uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) {
-    const auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
     const auto tag = cb_access_context->NextCommandTag(CMD_DRAWINDEXED);
-    auto *context = cb_access_context->GetCurrentAccessContext();
-    assert(context);
 
-    UpdateDescriptorSetAccessState(*context, tag, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
-    UpdateVertexAccessState(*context, tag, *cb_state, indexCount, firstIndex);
-    UpdateSubpassAttachmentAccessState(*context, tag, *cb_state);
+    cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
+    cb_access_context->RecordDrawVertexIndex(indexCount, firstIndex, tag);
+    cb_access_context->RecordDrawSubpassAttachment(tag);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -3051,7 +3048,6 @@ bool SyncValidator::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer
     bool skip = false;
     if (drawCount == 0) return skip;
 
-    const auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     const auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
     if (!cb_access_context) return skip;
@@ -3060,44 +3056,41 @@ bool SyncValidator::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer
     assert(context);
     if (!context) return skip;
 
-    skip |= DetectDescriptorSetHazard(*context, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDrawIndirect");
-    skip |= DetectSubpassAttachmentHazard(*context, *cb_state, "vkCmdDrawIndirect");
-    skip |= DetectIndirectBufferHazard(*context, commandBuffer, sizeof(VkDrawIndirectCommand), buffer, offset, drawCount, stride,
-                                       "vkCmdDrawIndirect");
+    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDrawIndirect");
+    skip |= cb_access_context->ValidateDrawSubpassAttachment("vkCmdDrawIndirect");
+    skip |= ValidateIndirectBuffer(*context, commandBuffer, sizeof(VkDrawIndirectCommand), buffer, offset, drawCount, stride,
+                                   "vkCmdDrawIndirect");
 
     // TODO: For now, we validate the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
     //       We will validate the vertex buffer in SubmitQueue in the future.
-    skip |= DetectVertexHazard(*context, *cb_state, UINT32_MAX, 0, "vkCmdDrawIndirect");
+    skip |= cb_access_context->ValidateDrawVertex(UINT32_MAX, 0, "vkCmdDrawIndirect");
     return skip;
 }
 
 void SyncValidator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                  uint32_t drawCount, uint32_t stride) {
     if (drawCount == 0) return;
-    const auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
     const auto tag = cb_access_context->NextCommandTag(CMD_DRAWINDIRECT);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
-    UpdateDescriptorSetAccessState(*context, tag, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
-    UpdateSubpassAttachmentAccessState(*context, tag, *cb_state);
-    UpdateSubpassAttachmentAccessState(*context, tag, *cb_state);
-    UpdateIndirectBufferAccessState(*context, tag, sizeof(VkDrawIndirectCommand), buffer, offset, drawCount, stride);
+    cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
+    cb_access_context->RecordDrawSubpassAttachment(tag);
+    RecordIndirectBuffer(*context, tag, sizeof(VkDrawIndirectCommand), buffer, offset, drawCount, stride);
 
     // TODO: For now, we record the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
     //       We will record the vertex buffer in SubmitQueue in the future.
-    UpdateVertexAccessState(*context, tag, *cb_state, UINT32_MAX, 0);
+    cb_access_context->RecordDrawVertex(UINT32_MAX, 0, tag);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                           uint32_t drawCount, uint32_t stride) const {
     bool skip = false;
     if (drawCount == 0) return skip;
-    const auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     const auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
     if (!cb_access_context) return skip;
@@ -3106,42 +3099,40 @@ bool SyncValidator::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer comman
     assert(context);
     if (!context) return skip;
 
-    skip |= DetectDescriptorSetHazard(*context, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDrawIndexedIndirect");
-    skip |= DetectSubpassAttachmentHazard(*context, *cb_state, "vkCmdDrawIndexedIndirect");
-    skip |= DetectIndirectBufferHazard(*context, commandBuffer, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, drawCount,
-                                       stride, "vkCmdDrawIndexedIndirect");
+    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, "vkCmdDrawIndexedIndirect");
+    skip |= cb_access_context->ValidateDrawSubpassAttachment("vkCmdDrawIndexedIndirect");
+    skip |= ValidateIndirectBuffer(*context, commandBuffer, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, drawCount, stride,
+                                   "vkCmdDrawIndexedIndirect");
 
     // TODO: For now, we validate the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
     //       We will validate the index and vertex buffer in SubmitQueue in the future.
-    skip |= DetectVertexIndexHazard(*context, *cb_state, UINT32_MAX, 0, "vkCmdDrawIndexedIndirect");
+    skip |= cb_access_context->ValidateDrawVertexIndex(UINT32_MAX, 0, "vkCmdDrawIndexedIndirect");
     return skip;
 }
 
 void SyncValidator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                         uint32_t drawCount, uint32_t stride) {
-    const auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
     const auto tag = cb_access_context->NextCommandTag(CMD_DRAWINDEXEDINDIRECT);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
-    UpdateDescriptorSetAccessState(*context, tag, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
-    UpdateSubpassAttachmentAccessState(*context, tag, *cb_state);
-    UpdateIndirectBufferAccessState(*context, tag, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, drawCount, stride);
+    cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
+    cb_access_context->RecordDrawSubpassAttachment(tag);
+    RecordIndirectBuffer(*context, tag, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, drawCount, stride);
 
     // TODO: For now, we record the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
     //       We will record the index and vertex buffer in SubmitQueue in the future.
-    UpdateVertexIndexAccessState(*context, tag, *cb_state, UINT32_MAX, 0);
+    cb_access_context->RecordDrawVertexIndex(UINT32_MAX, 0, tag);
 }
 
 bool SyncValidator::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                  VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                  uint32_t stride, const char *function) const {
     bool skip = false;
-    const auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     const auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
     if (!cb_access_context) return skip;
@@ -3150,16 +3141,16 @@ bool SyncValidator::ValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, 
     assert(context);
     if (!context) return skip;
 
-    skip |= DetectDescriptorSetHazard(*context, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, function);
-    skip |= DetectSubpassAttachmentHazard(*context, *cb_state, function);
-    skip |= DetectIndirectBufferHazard(*context, commandBuffer, sizeof(VkDrawIndirectCommand), buffer, offset, maxDrawCount, stride,
-                                       function);
-    skip |= DetectCountBufferHazard(*context, commandBuffer, countBuffer, countBufferOffset, function);
+    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, function);
+    skip |= cb_access_context->ValidateDrawSubpassAttachment(function);
+    skip |= ValidateIndirectBuffer(*context, commandBuffer, sizeof(VkDrawIndirectCommand), buffer, offset, maxDrawCount, stride,
+                                   function);
+    skip |= ValidateCountBuffer(*context, commandBuffer, countBuffer, countBufferOffset, function);
 
     // TODO: For now, we validate the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
     //       We will validate the vertex buffer in SubmitQueue in the future.
-    skip |= DetectVertexHazard(*context, *cb_state, UINT32_MAX, 0, "vkCmdDrawIndirectCount");
+    skip |= cb_access_context->ValidateDrawVertex(UINT32_MAX, 0, function);
     return skip;
 }
 
@@ -3173,22 +3164,21 @@ bool SyncValidator::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandB
 void SyncValidator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                       VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                       uint32_t stride) {
-    const auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
     const auto tag = cb_access_context->NextCommandTag(CMD_DRAWINDIRECTCOUNT);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
-    UpdateDescriptorSetAccessState(*context, tag, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
-    UpdateSubpassAttachmentAccessState(*context, tag, *cb_state);
-    UpdateIndirectBufferAccessState(*context, tag, sizeof(VkDrawIndirectCommand), buffer, offset, 1, stride);
-    UpdateCountBufferAccessState(*context, tag, countBuffer, countBufferOffset);
+    cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
+    cb_access_context->RecordDrawSubpassAttachment(tag);
+    RecordIndirectBuffer(*context, tag, sizeof(VkDrawIndirectCommand), buffer, offset, 1, stride);
+    RecordCountBuffer(*context, tag, countBuffer, countBufferOffset);
 
     // TODO: For now, we record the whole vertex buffer. It might cause some false positive.
     //       VkDrawIndirectCommand buffer could be changed until SubmitQueue.
     //       We will record the vertex buffer in SubmitQueue in the future.
-    UpdateVertexAccessState(*context, tag, *cb_state, UINT32_MAX, 0);
+    cb_access_context->RecordDrawVertex(UINT32_MAX, 0, tag);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -3221,7 +3211,6 @@ bool SyncValidator::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandB
                                                         VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                         uint32_t stride, const char *function) const {
     bool skip = false;
-    const auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     const auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
     if (!cb_access_context) return skip;
@@ -3230,16 +3219,16 @@ bool SyncValidator::ValidateCmdDrawIndexedIndirectCount(VkCommandBuffer commandB
     assert(context);
     if (!context) return skip;
 
-    skip |= DetectDescriptorSetHazard(*context, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, function);
-    skip |= DetectSubpassAttachmentHazard(*context, *cb_state, function);
-    skip |= DetectIndirectBufferHazard(*context, commandBuffer, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, maxDrawCount,
-                                       stride, function);
-    skip |= DetectCountBufferHazard(*context, commandBuffer, countBuffer, countBufferOffset, function);
+    skip |= cb_access_context->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, function);
+    skip |= cb_access_context->ValidateDrawSubpassAttachment(function);
+    skip |= ValidateIndirectBuffer(*context, commandBuffer, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, maxDrawCount,
+                                   stride, function);
+    skip |= ValidateCountBuffer(*context, commandBuffer, countBuffer, countBufferOffset, function);
 
     // TODO: For now, we validate the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
     //       We will validate the index and vertex buffer in SubmitQueue in the future.
-    skip |= DetectVertexIndexHazard(*context, *cb_state, UINT32_MAX, 0, "vkCmdDrawIndexedIndirectCount");
+    skip |= cb_access_context->ValidateDrawVertexIndex(UINT32_MAX, 0, function);
     return skip;
 }
 
@@ -3253,21 +3242,21 @@ bool SyncValidator::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer c
 void SyncValidator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                              uint32_t maxDrawCount, uint32_t stride) {
-    const auto *cb_state = Get<CMD_BUFFER_STATE>(commandBuffer);
     auto *cb_access_context = GetAccessContext(commandBuffer);
     assert(cb_access_context);
     const auto tag = cb_access_context->NextCommandTag(CMD_DRAWINDEXEDINDIRECTCOUNT);
     auto *context = cb_access_context->GetCurrentAccessContext();
     assert(context);
 
-    UpdateDescriptorSetAccessState(*context, tag, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS);
-    UpdateSubpassAttachmentAccessState(*context, tag, *cb_state);
-    UpdateIndirectBufferAccessState(*context, tag, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, 1, stride);
-    UpdateCountBufferAccessState(*context, tag, countBuffer, countBufferOffset);
+    cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_GRAPHICS, tag);
+    cb_access_context->RecordDrawSubpassAttachment(tag);
+    RecordIndirectBuffer(*context, tag, sizeof(VkDrawIndexedIndirectCommand), buffer, offset, 1, stride);
+    RecordCountBuffer(*context, tag, countBuffer, countBufferOffset);
 
     // TODO: For now, we record the whole index and vertex buffer. It might cause some false positive.
     //       VkDrawIndexedIndirectCommand buffer could be changed until SubmitQueue.
-    UpdateVertexIndexAccessState(*context, tag, *cb_state, UINT32_MAX, 0);
+    //       We will update the index and vertex buffer in SubmitQueue in the future.
+    cb_access_context->RecordDrawVertexIndex(UINT32_MAX, 0, tag);
 }
 
 bool SyncValidator::PreCallValidateCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer,
