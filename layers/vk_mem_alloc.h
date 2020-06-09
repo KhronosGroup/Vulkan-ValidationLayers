@@ -3136,8 +3136,8 @@ the containers.
 #endif
 
 #ifndef VMA_USE_STL_SHARED_MUTEX
-    // Minimum Visual Studio 2015 Update 2
-    #if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2
+    // Minimum Visual Studio 2015 Update 2, or libc++ with C++17
+    #if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2 && (!defined(_LIBCPP_VERSION) || __cplusplus >= 201703)
         #define VMA_USE_STL_SHARED_MUTEX 1
     #endif
 #endif
