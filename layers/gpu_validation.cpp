@@ -182,6 +182,31 @@ void GpuAssisted::ReportSetupProblem(T object, const char *const specific_messag
     LogError(object, "UNASSIGNED-GPU-Assisted Validation Error. ", "Detail: (%s)", specific_message);
 }
 
+bool GpuAssisted::CheckForDescriptorIndexing(DeviceFeatures enabled_features) const {
+    bool result =
+        (IsExtEnabled(device_extensions.vk_ext_descriptor_indexing) &&
+         (enabled_features.core12.descriptorIndexing || enabled_features.core12.shaderInputAttachmentArrayDynamicIndexing ||
+          enabled_features.core12.shaderUniformTexelBufferArrayDynamicIndexing ||
+          enabled_features.core12.shaderStorageTexelBufferArrayDynamicIndexing ||
+          enabled_features.core12.shaderUniformBufferArrayNonUniformIndexing ||
+          enabled_features.core12.shaderSampledImageArrayNonUniformIndexing ||
+          enabled_features.core12.shaderStorageBufferArrayNonUniformIndexing ||
+          enabled_features.core12.shaderStorageImageArrayNonUniformIndexing ||
+          enabled_features.core12.shaderInputAttachmentArrayNonUniformIndexing ||
+          enabled_features.core12.shaderUniformTexelBufferArrayNonUniformIndexing ||
+          enabled_features.core12.shaderStorageTexelBufferArrayNonUniformIndexing ||
+          enabled_features.core12.descriptorBindingUniformBufferUpdateAfterBind ||
+          enabled_features.core12.descriptorBindingSampledImageUpdateAfterBind ||
+          enabled_features.core12.descriptorBindingStorageImageUpdateAfterBind ||
+          enabled_features.core12.descriptorBindingStorageBufferUpdateAfterBind ||
+          enabled_features.core12.descriptorBindingUniformTexelBufferUpdateAfterBind ||
+          enabled_features.core12.descriptorBindingStorageTexelBufferUpdateAfterBind ||
+          enabled_features.core12.descriptorBindingUpdateUnusedWhilePending ||
+          enabled_features.core12.descriptorBindingPartiallyBound ||
+          enabled_features.core12.descriptorBindingVariableDescriptorCount || enabled_features.core12.runtimeDescriptorArray));
+    return result;
+}
+
 void GpuAssisted::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                             const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer, void *cb_state_data) {
     // Ray tracing acceleration structure instance buffers also need the storage buffer usage as
@@ -238,6 +263,7 @@ void GpuAssisted::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
     device_gpu_assisted->physicalDevice = physicalDevice;
     device_gpu_assisted->device = *pDevice;
     device_gpu_assisted->output_buffer_size = sizeof(uint32_t) * (spvtools::kInstMaxOutCnt + 1);
+    device_gpu_assisted->descriptor_indexing = CheckForDescriptorIndexing(device_gpu_assisted->enabled_features);
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
                                             VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT | kShaderStageAllRayTracing,
@@ -1144,14 +1170,14 @@ bool GpuAssisted::InstrumentShader(const VkShaderModuleCreateInfo *pCreateInfo, 
     // Call the optimizer to instrument the shader.
     // Use the unique_shader_module_id as a shader ID so we can look up its handle later in the shader_map.
     // If descriptor indexing is enabled, enable length checks and updated descriptor checks
-    const bool descriptor_indexing = IsExtEnabled(device_extensions.vk_ext_descriptor_indexing);
     using namespace spvtools;
     spv_target_env target_env = PickSpirvEnv(api_version, (device_extensions.vk_khr_spirv_1_4 != kNotEnabled));
     Optimizer optimizer(target_env);
     optimizer.RegisterPass(
         CreateInstBindlessCheckPass(desc_set_bind_index, unique_shader_module_id, descriptor_indexing, descriptor_indexing));
     optimizer.RegisterPass(CreateAggressiveDCEPass());
-    if ((device_extensions.vk_ext_buffer_device_address || device_extensions.vk_khr_buffer_device_address) && shaderInt64)
+    if ((device_extensions.vk_ext_buffer_device_address || device_extensions.vk_khr_buffer_device_address) && shaderInt64 &&
+        enabled_features.core12.bufferDeviceAddress)
         optimizer.RegisterPass(CreateInstBuffAddrCheckPass(desc_set_bind_index, unique_shader_module_id));
     bool pass = optimizer.Run(new_pgm.data(), new_pgm.size(), &new_pgm);
     if (!pass) {
@@ -1476,7 +1502,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
 
     // Figure out how much memory we need for the input block based on how many sets and bindings there are
     // and how big each of the bindings is
-    if (number_of_sets > 0 && device_extensions.vk_ext_descriptor_indexing) {
+    if (number_of_sets > 0 && descriptor_indexing) {
         uint32_t descriptor_count = 0;  // Number of descriptors, including all array elements
         uint32_t binding_count = 0;     // Number of bindings based on the max binding number used
         for (auto s : state.per_set) {
@@ -1605,7 +1631,7 @@ void GpuAssisted::AllocateValidationResources(const VkCommandBuffer cmd_buffer, 
     }
 
     if ((device_extensions.vk_ext_buffer_device_address || device_extensions.vk_khr_buffer_device_address) && buffer_map.size() &&
-        shaderInt64) {
+        shaderInt64 && enabled_features.core12.bufferDeviceAddress) {
         // Example BDA input buffer assuming 2 buffers using BDA:
         // Word 0 | Index of start of buffer sizes (in this case 5)
         // Word 1 | 0x0000000000000000
