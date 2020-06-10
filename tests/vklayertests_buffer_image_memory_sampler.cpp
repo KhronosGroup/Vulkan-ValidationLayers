@@ -5127,6 +5127,12 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     if (maintaince2) {
         m_device_extension_names.push_back(VK_KHR_MAINTENANCE2_EXTENSION_NAME);
     }
+    // Check for external memory device extensions
+    bool external_memory = false;
+    if (DeviceExtensionSupported(gpu(), nullptr, VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME)) {
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        external_memory = true;
+    }
 
     // Set separate depth stencil feature bit
     PFN_vkGetPhysicalDeviceFeatures2KHR vkGetPhysicalDeviceFeatures2KHR =
@@ -5138,6 +5144,7 @@ TEST_F(VkLayerTest, InvalidBarriers) {
     } else {
         separate_depth_stencil_layouts_features.separateDepthStencilLayouts = VK_FALSE;
     }
+
     ASSERT_NO_FATAL_FAILURE(InitState(nullptr, (vkGetPhysicalDeviceFeatures2KHR) ? &features2 : nullptr));
 
     auto depth_format = FindSupportedDepthStencilFormat(gpu());
@@ -5227,6 +5234,30 @@ TEST_F(VkLayerTest, InvalidBarriers) {
                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 2,
                            img_barriers);
     m_errorMonitor->VerifyFound();
+
+    if (!external_memory) {
+        printf("%s External memory extension not supported, skipping external queue family subcase\n", kSkipPrefix);
+    } else {
+        // Transitions to and from EXTERNAL within the same command buffer are valid, if pointless.
+        m_errorMonitor->ExpectSuccess();
+        img_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+        img_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        img_barrier.srcQueueFamilyIndex = submit_family;
+        img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
+        img_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+        img_barrier.dstAccessMask = 0;
+        vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                               0, 0, nullptr, 0, nullptr, 1, &img_barrier);
+        img_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+        img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
+        img_barrier.dstQueueFamilyIndex = submit_family;
+        img_barrier.srcAccessMask = 0;
+        img_barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+        vk::CmdPipelineBarrier(m_commandBuffer->handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                               0, 0, nullptr, 0, nullptr, 1, &img_barrier);
+        m_errorMonitor->VerifyNotFound();
+    }
 
     // Exceed the buffer size
     conc_test.buffer_barrier_.offset = conc_test.buffer_.create_info().size + 1;
