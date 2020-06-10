@@ -96,6 +96,7 @@ class GpuAssisted : public ValidationStateTracker {
     GpuAssisted() { container_type = LayerObjectTypeGpuAssisted; }
 
     bool aborted = false;
+    bool descriptor_indexing = false;
     VkDevice device;
     VkPhysicalDevice physicalDevice;
     uint32_t adjusted_max_desc_sets;
@@ -120,6 +121,7 @@ class GpuAssisted : public ValidationStateTracker {
   public:
     template <typename T>
     void ReportSetupProblem(T object, const char* const specific_message) const;
+    bool CheckForDescriptorIndexing(DeviceFeatures enabled_features) const;
     void PreCallRecordCreateDevice(VkPhysicalDevice gpu, const VkDeviceCreateInfo* pCreateInfo,
                                    const VkAllocationCallbacks* pAllocator, VkDevice* pDevice,
                                    safe_VkDeviceCreateInfo* modified_create_info);
