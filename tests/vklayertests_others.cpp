@@ -8855,3 +8855,123 @@ TEST_F(VkLayerTest, ValidateVkAccelerationStructureVersionKHR) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(VkLayerTest, ValidateCmdBuildAccelerationStructureKHR) {
+    TEST_DESCRIPTION("Validate acceleration structure building.");
+    if (!InitFrameworkForRayTracingTest(this, true, m_instance_extension_names, m_device_extension_names, m_errorMonitor)) {
+        return;
+    }
+
+    PFN_vkCmdBuildAccelerationStructureKHR vkCmdBuildAccelerationStructureKHR =
+        (PFN_vkCmdBuildAccelerationStructureKHR)vk::GetDeviceProcAddr(device(), "vkCmdBuildAccelerationStructureKHR");
+
+    PFN_vkGetBufferDeviceAddressKHR vkGetBufferDeviceAddressKHR =
+        (PFN_vkGetBufferDeviceAddressKHR)vk::GetDeviceProcAddr(device(), "vkGetBufferDeviceAddressKHR");
+
+    assert(vkCmdBuildAccelerationStructureKHR != nullptr);
+    VkBufferObj vbo;
+    VkBufferObj ibo;
+    VkGeometryNV geometryNV;
+    GetSimpleGeometryForAccelerationStructureTests(*m_device, &vbo, &ibo, &geometryNV);
+
+    VkAccelerationStructureCreateGeometryTypeInfoKHR geometryInfo = {};
+    geometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_GEOMETRY_TYPE_INFO_KHR;
+    geometryInfo.geometryType = geometryNV.geometryType;
+    geometryInfo.maxPrimitiveCount = 1024;
+    geometryInfo.indexType = geometryNV.geometry.triangles.indexType;
+    geometryInfo.maxVertexCount = 1024;
+    geometryInfo.vertexFormat = geometryNV.geometry.triangles.vertexFormat;
+    geometryInfo.allowsTransforms = VK_TRUE;
+
+    VkAccelerationStructureCreateInfoKHR bot_level_as_create_info = {};
+    bot_level_as_create_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+    bot_level_as_create_info.pNext = NULL;
+    bot_level_as_create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    bot_level_as_create_info.maxGeometryCount = 1;
+    bot_level_as_create_info.pGeometryInfos = &geometryInfo;
+    VkAccelerationStructureObj bot_level_as(*m_device, bot_level_as_create_info);
+
+    VkBufferDeviceAddressInfo vertexAddressInfo = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL,
+                                                   geometryNV.geometry.triangles.vertexData};
+    VkDeviceAddress vertexAddress = vkGetBufferDeviceAddressKHR(m_device->handle(), &vertexAddressInfo);
+
+    VkBufferDeviceAddressInfo indexAddressInfo = {VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, NULL,
+                                                  geometryNV.geometry.triangles.indexData};
+    VkDeviceAddress indexAddress = vkGetBufferDeviceAddressKHR(m_device->handle(), &indexAddressInfo);
+
+    VkAccelerationStructureGeometryKHR valid_geometry_triangles = {VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR};
+    valid_geometry_triangles.geometryType = geometryNV.geometryType;
+    valid_geometry_triangles.geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+    valid_geometry_triangles.geometry.triangles.pNext = NULL;
+    valid_geometry_triangles.geometry.triangles.vertexFormat = geometryNV.geometry.triangles.vertexFormat;
+    valid_geometry_triangles.geometry.triangles.vertexData.deviceAddress = vertexAddress;
+    valid_geometry_triangles.geometry.triangles.vertexStride = 8;
+    valid_geometry_triangles.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
+    valid_geometry_triangles.geometry.triangles.indexData.deviceAddress = indexAddress;
+    valid_geometry_triangles.geometry.triangles.transformData.deviceAddress = 0;
+    valid_geometry_triangles.flags = 0;
+
+    VkAccelerationStructureGeometryKHR *pGeometry_triangles = &valid_geometry_triangles;
+    VkAccelerationStructureBuildGeometryInfoKHR valid_asInfo_triangles = {
+        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR};
+    valid_asInfo_triangles.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    valid_asInfo_triangles.flags = 0;
+    valid_asInfo_triangles.update = VK_FALSE;
+    valid_asInfo_triangles.srcAccelerationStructure = VK_NULL_HANDLE;
+    valid_asInfo_triangles.dstAccelerationStructure = bot_level_as.handle();
+    valid_asInfo_triangles.geometryArrayOfPointers = VK_FALSE;
+    valid_asInfo_triangles.geometryCount = 1;
+    valid_asInfo_triangles.ppGeometries = &pGeometry_triangles;
+    valid_asInfo_triangles.scratchData.deviceAddress = 0;
+
+    VkAccelerationStructureBuildOffsetInfoKHR buildOffsetInfo = {
+        1,
+        0,
+        0,
+        0,
+    };
+    const VkAccelerationStructureBuildOffsetInfoKHR *pBuildOffsetInfo = &buildOffsetInfo;
+    m_commandBuffer->begin();
+
+    // build  valid src acc  for update VK_TRUE case with VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR set
+    VkAccelerationStructureBuildGeometryInfoKHR valid_src_asInfo_triangles = valid_asInfo_triangles;
+    valid_src_asInfo_triangles.flags = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+    valid_src_asInfo_triangles.srcAccelerationStructure = bot_level_as.handle();
+    valid_src_asInfo_triangles.dstAccelerationStructure = bot_level_as.handle();
+    vkCmdBuildAccelerationStructureKHR(m_commandBuffer->handle(), 1, &valid_src_asInfo_triangles, &pBuildOffsetInfo);
+
+    // positive test
+    {
+        VkAccelerationStructureBuildGeometryInfoKHR asInfo_validupdate = valid_asInfo_triangles;
+        asInfo_validupdate.update = VK_TRUE;
+        asInfo_validupdate.srcAccelerationStructure = bot_level_as.handle();
+        m_errorMonitor->ExpectSuccess();
+        vkCmdBuildAccelerationStructureKHR(m_commandBuffer->handle(), 1, &asInfo_validupdate, &pBuildOffsetInfo);
+        m_errorMonitor->VerifyNotFound();
+    }
+    // If update is VK_TRUE, srcAccelerationStructure must not be VK_NULL_HANDLE
+    {
+        VkAccelerationStructureBuildGeometryInfoKHR asInfo_invalidupdate = valid_asInfo_triangles;
+        asInfo_invalidupdate.update = VK_TRUE;
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-update-03537");
+        vkCmdBuildAccelerationStructureKHR(m_commandBuffer->handle(), 1, &asInfo_invalidupdate, &pBuildOffsetInfo);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        VkAccelerationStructureBuildGeometryInfoKHR invalid_src_asInfo_triangles = valid_src_asInfo_triangles;
+        invalid_src_asInfo_triangles.flags = 0;
+        invalid_src_asInfo_triangles.srcAccelerationStructure = bot_level_as.handle();
+        invalid_src_asInfo_triangles.dstAccelerationStructure = bot_level_as.handle();
+
+        // build src As without flag VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR set
+        vkCmdBuildAccelerationStructureKHR(m_commandBuffer->handle(), 1, &invalid_src_asInfo_triangles, &pBuildOffsetInfo);
+        VkAccelerationStructureBuildGeometryInfoKHR asInfo_invalidupdate = valid_asInfo_triangles;
+
+        asInfo_invalidupdate.update = VK_TRUE;
+        asInfo_invalidupdate.srcAccelerationStructure = bot_level_as.handle();
+        m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-update-03538");
+        vkCmdBuildAccelerationStructureKHR(m_commandBuffer->handle(), 1, &asInfo_invalidupdate, &pBuildOffsetInfo);
+        m_errorMonitor->VerifyFound();
+    }
+}

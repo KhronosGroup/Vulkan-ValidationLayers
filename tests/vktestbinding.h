@@ -559,14 +559,19 @@ class AccelerationStructure : public internal::NonDispHandle<VkAccelerationStruc
   public:
     explicit AccelerationStructure(const Device &dev, const VkAccelerationStructureCreateInfoNV &info, bool init_memory = true) {
         init(dev, info, init_memory);
+        isKHR = false;
+    }
+    explicit AccelerationStructure(const Device &dev, const VkAccelerationStructureCreateInfoKHR &info, bool init_memory = true) {
+        initKHR(dev, info, init_memory);
+        isKHR = true;
     }
     ~AccelerationStructure();
 
     // vkCreateAccelerationStructureNV
     void init(const Device &dev, const VkAccelerationStructureCreateInfoNV &info, bool init_memory = true);
-
+    void initKHR(const Device &dev, const VkAccelerationStructureCreateInfoKHR &info, bool init_memory = true);
     // vkGetAccelerationStructureMemoryRequirementsNV()
-    VkMemoryRequirements2 memory_requirements() const;
+    VkMemoryRequirements2 memory_requirements(bool isKHR = false) const;
     VkMemoryRequirements2 build_scratch_memory_requirements() const;
 
     uint64_t opaque_handle() const { return opaque_handle_; }
@@ -581,6 +586,7 @@ class AccelerationStructure : public internal::NonDispHandle<VkAccelerationStruc
     VkAccelerationStructureInfoNV info_;
     DeviceMemory memory_;
     uint64_t opaque_handle_;
+    bool isKHR;
 };
 
 class ShaderModule : public internal::NonDispHandle<VkShaderModule> {
