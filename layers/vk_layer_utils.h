@@ -215,13 +215,15 @@ static inline int u_ffs(int val) {
 #endif
 
 // Minimum Visual Studio 2015 Update 2, or libc++ with C++17
-#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2 && (!defined(_LIBCPP_VERSION) || __cplusplus >= 201703)
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2 && \
+    (!defined(_LIBCPP_VERSION) || __cplusplus >= 201703)
 #include <shared_mutex>
 #endif
 
 class ReadWriteLock {
   private:
-#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2 && (!defined(_LIBCPP_VERSION) || __cplusplus >= 201703)
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2 && \
+    (!defined(_LIBCPP_VERSION) || __cplusplus >= 201703)
     typedef std::shared_mutex lock_t;
 #else
     typedef std::mutex lock_t;
@@ -231,7 +233,8 @@ class ReadWriteLock {
     void lock() { m_lock.lock(); }
     bool try_lock() { return m_lock.try_lock(); }
     void unlock() { m_lock.unlock(); }
-#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2 && (!defined(_LIBCPP_VERSION) || __cplusplus >= 201703)
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2 && \
+    (!defined(_LIBCPP_VERSION) || __cplusplus >= 201703)
     void lock_shared() { m_lock.lock_shared(); }
     bool try_lock_shared() { return m_lock.try_lock_shared(); }
     void unlock_shared() { m_lock.unlock_shared(); }
@@ -244,7 +247,8 @@ class ReadWriteLock {
     lock_t m_lock;
 };
 
-#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2 && (!defined(_LIBCPP_VERSION) || __cplusplus >= 201703)
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023918 && NTDDI_VERSION > NTDDI_WIN10_RS2 && \
+    (!defined(_LIBCPP_VERSION) || __cplusplus >= 201703)
 typedef std::shared_lock<ReadWriteLock> read_lock_guard_t;
 typedef std::unique_lock<ReadWriteLock> write_lock_guard_t;
 #else
