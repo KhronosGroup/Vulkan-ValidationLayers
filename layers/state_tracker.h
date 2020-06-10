@@ -1156,7 +1156,12 @@ class ValidationStateTracker : public ValidationObject {
     void UpdateStateCmdDrawType(CMD_BUFFER_STATE* cb_state, VkPipelineBindPoint bind_point);
     void UpdateDrawState(CMD_BUFFER_STATE* cb_state, const VkPipelineBindPoint bind_point);
     void UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo*, cvdescriptorset::AllocateDescriptorSetsData*) const;
+    void PostCallRecordCmdBuildAccelerationStructureKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
+                                                        const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+                                                        const VkAccelerationStructureBuildOffsetInfoKHR* const* ppOffsetInfos);
 
+    void PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
+                                                       const VkCopyAccelerationStructureInfoKHR* pInfo);
     DeviceFeatures enabled_features = {};
     // Device specific data
     VkPhysicalDeviceMemoryProperties phys_dev_mem_props = {};
