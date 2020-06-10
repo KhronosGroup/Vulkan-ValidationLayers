@@ -2130,7 +2130,6 @@ TEST_F(VkLayerTest, ImageBufferCopyTests) {
 
             // buffer offset must be a multiple of texel block size for VK_FORMAT_R8G8_UNORM (2)
             m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferImageCopy-bufferOffset-01559");
-            m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferImageCopy-bufferOffset-00194");
             mp_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
             mp_region.bufferOffset = 5;
             mp_region.imageExtent = {8, 8, 1};
@@ -2208,14 +2207,6 @@ TEST_F(VkLayerTest, MiscImageLayerTests) {
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferImageCopy-bufferOffset-00193");
     vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                              &region);
-    m_errorMonitor->VerifyFound();
-
-    // BufferOffset must be a multiple of 4
-    // Introduce failure by setting bufferOffset to a value not divisible by 4
-    region2.bufferOffset = 6;
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkBufferImageCopy-bufferOffset-00194");
-    vk::CmdCopyBufferToImage(m_commandBuffer->handle(), buffer2.handle(), image2.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
-                             &region2);
     m_errorMonitor->VerifyFound();
 
     // BufferRowLength must be 0, or greater than or equal to the width member of imageExtent

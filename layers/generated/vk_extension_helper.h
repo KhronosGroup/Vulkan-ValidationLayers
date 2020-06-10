@@ -719,7 +719,8 @@ struct DeviceExtensions : public InstanceExtensions {
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
             std::make_pair(VK_KHR_PERFORMANCE_QUERY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_performance_query, {{
                            {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
-            std::make_pair(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_pipeline_executable_properties, {})),
+            std::make_pair(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_pipeline_executable_properties, {{
+                           {&DeviceExtensions::vk_khr_get_physical_device_properties_2, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})),
 #ifdef VK_ENABLE_BETA_EXTENSIONS
             std::make_pair(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME, DeviceInfo(&DeviceExtensions::vk_khr_pipeline_library, {})),
 #endif
