@@ -1659,24 +1659,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncValidator 
     VkExtent3D extent = CastTo3D(render_area.extent);
     VkOffset3D offset = CastTo3D(render_area.offset);
 
-    if (subpass.inputAttachmentCount && subpass.pInputAttachments) {
-        for (uint32_t i = 0; i < subpass.inputAttachmentCount; ++i) {
-            if (subpass.pInputAttachments[i].attachment == VK_ATTACHMENT_UNUSED) continue;
-            const IMAGE_VIEW_STATE *img_view_state = attachment_views_[subpass.pInputAttachments[i].attachment];
-            if (!img_view_state) continue;
-            const IMAGE_STATE *img_state = img_view_state->image_state.get();
-            if (!img_state) continue;
-            HazardResult hazard = external_context_->DetectHazard(*img_state, SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ,
-                                                                  img_view_state->normalized_subresource_range, offset, extent);
-            if (hazard.hazard) {
-                skip |= sync_state.LogError(img_view_state->image_view, string_SyncHazardVUID(hazard.hazard),
-                                            "%s: Hazard %s for %s in %s, Subpass #%d, and pInputAttachments ##d", func_name,
-                                            string_SyncHazard(hazard.hazard),
-                                            sync_state.report_data->FormatHandle(img_view_state->image_view).c_str(),
-                                            sync_state.report_data->FormatHandle(cmd.commandBuffer).c_str(), cmd.activeSubpass, i);
-            }
-        }
-    }
+    // Subpass's inputAttachment has been done in ValidateDispatchDrawDescriptorSet
     if (subpass.colorAttachmentCount) {
         if (subpass.pColorAttachments) {
             for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
@@ -1731,14 +1714,7 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const VkRect2D &render
     VkExtent3D extent = CastTo3D(render_area.extent);
     VkOffset3D offset = CastTo3D(render_area.offset);
 
-    if (subpass.inputAttachmentCount && subpass.pInputAttachments) {
-        for (uint32_t i = 0; i < subpass.inputAttachmentCount; ++i) {
-            if (subpass.pInputAttachments[i].attachment == VK_ATTACHMENT_UNUSED) continue;
-            const IMAGE_VIEW_STATE *img_view_state = attachment_views_[subpass.pInputAttachments[i].attachment];
-            external_context_->UpdateAccessState(img_view_state, SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ, offset, extent, 0,
-                                                 tag);
-        }
-    }
+    // Subpass's inputAttachment has been done in RecordDispatchDrawDescriptorSet
     if (subpass.colorAttachmentCount) {
         if (subpass.pColorAttachments) {
             for (uint32_t i = 0; i < subpass.colorAttachmentCount; ++i) {
