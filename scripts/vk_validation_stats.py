@@ -649,8 +649,7 @@ static const vuid_spec_text_pair vuid_spec_text[] = {
                 hfile.write('    {"%s", "%s", "%s"},\n' % (vuid, db_text, spec_url_id))
                 # For multiply-defined VUIDs, include versions with extension appended
                 if len(self.vj.vuid_db[vuid]) > 1:
-                    print('Error: Found a duplicate VUID: %s' % vuid)
-                    sys.exit(-1)
+                    print('Warning: Found a duplicate VUID: %s' % vuid)
                 if 'commandBuffer must be in the recording state' in db_text:
                     cmd_dict[vuid] = db_text
             hfile.write(self.header_postamble)
