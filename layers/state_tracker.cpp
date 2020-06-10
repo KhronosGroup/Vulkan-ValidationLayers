@@ -5610,6 +5610,10 @@ void ValidationStateTracker::RecordPipelineShaderStage(VkPipelineShaderStageCrea
         reqs = descriptor_req(reqs | DescriptorTypeToReqs(module, use.second.type_id));
         pipeline->max_active_slot = std::max(pipeline->max_active_slot, slot);
     }
+
+    if (pStage->stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
+        pipeline->fragmentShader_writable_output_location_list = CollectWritableOutputLocationinFS(*module, *pStage);
+    }
 }
 
 void ValidationStateTracker::ResetCommandBufferPushConstantDataIfIncompatible(CMD_BUFFER_STATE *cb_state, VkPipelineLayout layout) {

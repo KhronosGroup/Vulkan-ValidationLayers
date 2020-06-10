@@ -860,6 +860,7 @@ class PIPELINE_STATE : public BASE_NODE {
     uint32_t max_active_slot;  // the highest set number in active_slots for pipeline layout compatibility checks
     // Additional metadata needed by pipeline_state initialization and validation
     std::vector<StageState> stage_state;
+    std::unordered_set<uint32_t> fragmentShader_writable_output_location_list;
     // Vtx input info (if any)
     std::vector<VkVertexInputBindingDescription> vertex_binding_descriptions_;
     std::vector<VkVertexInputAttributeDescription> vertex_attribute_descriptions_;
@@ -899,6 +900,7 @@ class PIPELINE_STATE : public BASE_NODE {
         VkRayTracingPipelineCreateInfoKHR emptyRayTracingCI = {};
         raytracingPipelineCI.initialize(&emptyRayTracingCI);
         stage_state.clear();
+        fragmentShader_writable_output_location_list.clear();
     }
 
     void initGraphicsPipeline(const ValidationStateTracker *state_data, const VkGraphicsPipelineCreateInfo *pCreateInfo,
