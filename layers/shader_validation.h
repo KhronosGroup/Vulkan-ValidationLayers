@@ -333,6 +333,9 @@ void ProcessExecutionModes(SHADER_MODULE_STATE const *src, const spirv_inst_iter
 std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescriptorSlot(
     SHADER_MODULE_STATE const *src, std::unordered_set<uint32_t> const &accessible_ids, bool *has_writable_descriptor);
 
+std::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const SHADER_MODULE_STATE &module,
+                                                               const VkPipelineShaderStageCreateInfo &stage_info);
+
 uint32_t DescriptorTypeToReqs(SHADER_MODULE_STATE const *module, uint32_t type_id);
 
 #endif  // VULKAN_SHADER_VALIDATION_H

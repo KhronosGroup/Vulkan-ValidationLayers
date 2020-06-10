@@ -986,6 +986,60 @@ std::vector<std::pair<descriptor_slot_t, interface_var>> CollectInterfaceByDescr
     return out;
 }
 
+std::unordered_set<uint32_t> CollectWritableOutputLocationinFS(const SHADER_MODULE_STATE &module,
+                                                               const VkPipelineShaderStageCreateInfo &stage_info) {
+    std::unordered_set<uint32_t> location_list;
+    if (stage_info.stage != VK_SHADER_STAGE_FRAGMENT_BIT) return location_list;
+    const auto entrypoint = FindEntrypoint(&module, stage_info.pName, stage_info.stage);
+    const auto outputs = CollectInterfaceByLocation(&module, entrypoint, spv::StorageClassOutput, false);
+    std::unordered_set<unsigned> store_members;
+    std::unordered_map<unsigned, unsigned> accesschain_members;
+
+    for (auto insn : module) {
+        switch (insn.opcode()) {
+            case spv::OpStore:
+            case spv::OpAtomicStore: {
+                store_members.insert(insn.word(1));  // object id or AccessChain id
+                break;
+            }
+            case spv::OpAccessChain: {
+                // 2: AccessChain id, 3: object id
+                if (insn.word(3)) accesschain_members.insert(std::make_pair(insn.word(2), insn.word(3)));
+                break;
+            }
+            default:
+                break;
+        }
+    }
+    if (store_members.empty()) {
+        return location_list;
+    }
+    for (auto output : outputs) {
+        auto store_it = store_members.find(output.second.id);
+        if (store_it != store_members.end()) {
+            location_list.insert(output.first.first);
+            store_members.erase(store_it);
+            continue;
+        }
+        store_it = store_members.begin();
+        while (store_it != store_members.end()) {
+            auto accesschain_it = accesschain_members.find(*store_it);
+            if (accesschain_it == accesschain_members.end()) {
+                ++store_it;
+                continue;
+            }
+            if (accesschain_it->second == output.second.id) {
+                location_list.insert(output.first.first);
+                store_members.erase(store_it);
+                accesschain_members.erase(accesschain_it);
+                break;
+            }
+            ++store_it;
+        }
+    }
+    return location_list;
+}
+
 bool CoreChecks::ValidateViConsistency(VkPipelineVertexInputStateCreateInfo const *vi) const {
     // Walk the binding descriptions, which describe the step rate and stride of each vertex buffer.  Each binding should
     // be specified only once.
