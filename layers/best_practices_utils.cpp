@@ -284,6 +284,17 @@ bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkS
                        pCreateInfo->queueFamilyIndexCount);
     }
 
+    if (pCreateInfo->minImageCount == 2) {
+        skip |= LogPerformanceWarning(
+            device, kVUID_BestPractices_SuboptimalSwapchainImageCount,
+            "Warning: A Swapchain is being created with minImageCount set to %" PRIu32
+            ", which means double buffering is going "
+            "to be used. Using double buffering and vsync locks rendering to an integer fraction of the vsync rate. In turn, "
+            "reducing the performance of the application if rendering is slower than vsync. Consider setting minImageCount to "
+            "3 to use triple buffering to maximize performance in such cases.",
+            pCreateInfo->minImageCount);
+    }
+
     return skip;
 }
 
