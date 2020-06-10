@@ -5361,3 +5361,40 @@ void ValidationStateTracker::PostCallRecordGetSwapchainImagesKHR(VkDevice device
         swapchain_state->get_swapchain_image_count = *pSwapchainImageCount;
     }
 }
+
+void ValidationStateTracker::PostCallRecordCmdBuildAccelerationStructureKHR(
+    VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
+    const VkAccelerationStructureBuildOffsetInfoKHR *const *ppOffsetInfos) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    if (cb_state == nullptr) {
+        return;
+    }
+    for (uint32_t i = 0; i < infoCount; ++i) {
+        ACCELERATION_STRUCTURE_STATE *dst_as_state = GetAccelerationStructureState(pInfos[i].dstAccelerationStructure);
+        ACCELERATION_STRUCTURE_STATE *src_as_state = GetAccelerationStructureState(pInfos[i].srcAccelerationStructure);
+        if (dst_as_state != nullptr) {
+            dst_as_state->built = true;
+            dst_as_state->build_info_khr.initialize(pInfos);
+            AddCommandBufferBindingAccelerationStructure(cb_state, dst_as_state);
+        }
+        if (src_as_state != nullptr) {
+            AddCommandBufferBindingAccelerationStructure(cb_state, src_as_state);
+        }
+    }
+    cb_state->hasBuildAccelerationStructureCmd = true;
+}
+
+void ValidationStateTracker::PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
+                                                                           const VkCopyAccelerationStructureInfoKHR *pInfo) {
+    CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
+    if (cb_state) {
+        ACCELERATION_STRUCTURE_STATE *src_as_state = GetAccelerationStructureState(pInfo->src);
+        ACCELERATION_STRUCTURE_STATE *dst_as_state = GetAccelerationStructureState(pInfo->dst);
+        if (dst_as_state != nullptr && src_as_state != nullptr) {
+            dst_as_state->built = true;
+            dst_as_state->build_info_khr = src_as_state->build_info_khr;
+            AddCommandBufferBindingAccelerationStructure(cb_state, dst_as_state);
+            AddCommandBufferBindingAccelerationStructure(cb_state, src_as_state);
+        }
+    }
+}

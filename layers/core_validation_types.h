@@ -487,6 +487,7 @@ class ACCELERATION_STRUCTURE_STATE : public BINDABLE {
     VkMemoryRequirements2KHR update_scratch_memory_requirements;
     bool built = false;
     safe_VkAccelerationStructureInfoNV build_info;
+    safe_VkAccelerationStructureBuildGeometryInfoKHR build_info_khr;
     uint64_t opaque_handle = 0;
     const VkAllocationCallbacks *allocator = NULL;
     ACCELERATION_STRUCTURE_STATE(VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci)

@@ -5405,7 +5405,7 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureKHR(
                                      "not be VK_NULL_HANDLE");
                 } else {
                     if (src_as_state == nullptr || !src_as_state->built ||
-                        !(src_as_state->build_info.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR)) {
+                        !(src_as_state->build_info_khr.flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR)) {
                         skip |= LogError(
                             commandBuffer, "VUID-VkAccelerationStructureBuildGeometryInfoKHR-update-03538",
                             "vkCmdBuildAccelerationStructureKHR(): If update is VK_TRUE, srcAccelerationStructure must have"
