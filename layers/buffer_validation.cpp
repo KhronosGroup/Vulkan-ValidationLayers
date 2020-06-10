@@ -864,7 +864,7 @@ bool CoreChecks::ValidateBarriersToImages(const CMD_BUFFER_STATE *cb_state, uint
                 // TODO: Set memory invalid which is in mem_tracker currently
                 // Not sure if this needs to be in the ForRange traversal, pulling it out as it is currently invariant with
                 // subresource.
-            } else if (subresource_map) {
+            } else if (subresource_map && !QueueFamilyIsExternal(img_barrier.srcQueueFamilyIndex)) {
                 bool subres_skip = false;
                 LayoutUseCheckAndMessage layout_check(subresource_map);
                 VkImageSubresourceRange normalized_isr = NormalizeSubresourceRange(*image_state, img_barrier.subresourceRange);
@@ -943,14 +943,14 @@ bool CoreChecks::ValidateQFOTransferBarrierUniqueness(const char *func_name, con
         if (!IsTransferOp(&barriers[b])) continue;
         const BarrierRecord *barrier_record = nullptr;
         if (TempIsReleaseOp<Barrier, true /* Assume IsTransfer */>(pool, &barriers[b]) &&
-            !QueueFamilyIsSpecial(barriers[b].dstQueueFamilyIndex)) {
+            !QueueFamilyIsExternal(barriers[b].dstQueueFamilyIndex)) {
             const auto found = barrier_sets.release.find(barriers[b]);
             if (found != barrier_sets.release.cend()) {
                 barrier_record = &(*found);
                 transfer_type = "releasing";
             }
         } else if (IsAcquireOp<Barrier, true /*Assume IsTransfer */>(pool, &barriers[b]) &&
-                   !QueueFamilyIsSpecial(barriers[b].srcQueueFamilyIndex)) {
+                   !QueueFamilyIsExternal(barriers[b].srcQueueFamilyIndex)) {
             const auto found = barrier_sets.acquire.find(barriers[b]);
             if (found != barrier_sets.acquire.cend()) {
                 barrier_record = &(*found);
@@ -996,10 +996,10 @@ void CoreChecks::RecordBarrierArrayValidationInfo(const char *func_name, CMD_BUF
         auto &barrier = barriers[b];
         if (IsTransferOp(&barrier)) {
             if (TempIsReleaseOp<Barrier, true /* Assume IsTransfer*/>(pool, &barrier) &&
-                !QueueFamilyIsSpecial(barrier.dstQueueFamilyIndex)) {
+                !QueueFamilyIsExternal(barrier.dstQueueFamilyIndex)) {
                 barrier_sets.release.emplace(barrier);
             } else if (IsAcquireOp<Barrier, true /*Assume IsTransfer */>(pool, &barrier) &&
-                       !QueueFamilyIsSpecial(barrier.srcQueueFamilyIndex)) {
+                       !QueueFamilyIsExternal(barrier.srcQueueFamilyIndex)) {
                 barrier_sets.acquire.emplace(barrier);
             }
         }
@@ -1193,7 +1193,7 @@ void CoreChecks::RecordTransitionImageLayout(CMD_BUFFER_STATE *cb_state, const I
     VkImageLayout initial_layout = mem_barrier.oldLayout;
 
     // Layout transitions in external instance are not tracked, so don't validate initial layout.
-    if (QueueFamilyIsSpecial(mem_barrier.srcQueueFamilyIndex)) {
+    if (QueueFamilyIsExternal(mem_barrier.srcQueueFamilyIndex)) {
         initial_layout = VK_IMAGE_LAYOUT_UNDEFINED;
     }
 
