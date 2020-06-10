@@ -54,9 +54,19 @@ class HelperFileOutputGeneratorOptions(GeneratorOptions):
                  library_name = '',
                  expandEnumerants = True,
                  helper_file_type = ''):
-        GeneratorOptions.__init__(self, conventions, filename, directory, apiname, profile,
-                                  versions, emitversions, defaultExtensions,
-                                  addExtensions, removeExtensions, emitExtensions, sortProcedure)
+        GeneratorOptions.__init__(self,
+                conventions = conventions,
+                filename = filename,
+                directory = directory,
+                apiname = apiname,
+                profile = profile,
+                versions = versions,
+                emitversions = emitversions,
+                defaultExtensions = defaultExtensions,
+                addExtensions = addExtensions,
+                removeExtensions = removeExtensions,
+                emitExtensions = emitExtensions,
+                sortProcedure = sortProcedure)
         self.prefixText       = prefixText
         self.genFuncPointers  = genFuncPointers
         self.protectFile      = protectFile
