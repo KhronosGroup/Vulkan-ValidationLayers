@@ -7480,6 +7480,12 @@ bool CoreChecks::PreCallValidateCmdCopyQueryPoolResults(VkCommandBuffer commandB
                                  report_data->FormatHandle(queryPool).c_str());
             }
         }
+        if ((query_pool_state->createInfo.queryType == VK_QUERY_TYPE_TIMESTAMP) && ((flags & VK_QUERY_RESULT_PARTIAL_BIT) != 0)) {
+            skip |= LogError(commandBuffer, "VUID-vkCmdCopyQueryPoolResults-queryType-00827",
+                             "vkCmdCopyQueryPoolResults() query pool %s was created with VK_QUERY_TYPE_TIMESTAMP so flags must not "
+                             "contain VK_QUERY_RESULT_PARTIAL_BIT.",
+                             report_data->FormatHandle(queryPool).c_str());
+        }
     }
 
     return skip;
