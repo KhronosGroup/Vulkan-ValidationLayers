@@ -28,7 +28,7 @@ void VkBestPracticesLayerTest::InitBestPracticesFramework() {
 
 class BestPracticesChassisTest : public VkLayerTest {
   private:
-  class TestBestPracticesTracker : public BestPracticesTracker {
+    class TestBestPracticesTracker : public BestPracticesTracker {
       public:
         // give access to certain private/protected methods for test fixture setup
         void addPractice(std::unique_ptr<BestPracticesCheck> practice) { BestPracticesTracker::addPractice(std::move(practice)); }
@@ -42,17 +42,17 @@ class BestPracticesChassisTest : public VkLayerTest {
 };
 
 TEST_F(BestPracticesChassisTest, NoChecks) {
-  TEST_DESCRIPTION("Testing for success behaviour when no checks are registered with the system.");
+    TEST_DESCRIPTION("Testing for success behaviour when no checks are registered with the system.");
 
-  // Enable all vendor-specific checks
-  SetEnvVar("VK_LAYER_ENABLES", "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL");
-  InitFramework(m_errorMonitor);
+    // Enable all vendor-specific checks
+    SetEnvVar("VK_LAYER_ENABLES", "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL");
+    InitFramework(m_errorMonitor);
 
-  trackerImplementation->initReverseLookup();
+    trackerImplementation->initReverseLookup();
 
-  m_errorMonitor->ExpectSuccess();
-  // there should be no best practice validation warning
-  m_errorMonitor->VerifyNotFound();
+    m_errorMonitor->ExpectSuccess();
+    // there should be no best practice validation warning
+    m_errorMonitor->VerifyNotFound();
 }
 
 TEST_F(BestPracticesChassisTest, SingleCheckNoVendors) {
@@ -110,7 +110,7 @@ TEST_F(BestPracticesChassisTest, SingleCheckWithEnabledVendor) {
 
     // make the default vendor agree with SimpleCheck
     trackerImplementation->vendor_practices = {
-      {kBPVendorKhronos, {SimpleCheck::ID}},
+        {kBPVendorKhronos, {SimpleCheck::ID}},
     };
 
     trackerImplementation->initReverseLookup();
@@ -123,7 +123,6 @@ TEST_F(BestPracticesChassisTest, SingleCheckWithEnabledVendor) {
 
     m_errorMonitor->VerifyFound();
 }
-
 
 TEST_F(VkBestPracticesLayerTest, ValidateReturnCodes) {
     uint32_t version = SetTargetApiVersion(VK_API_VERSION_1_2);
