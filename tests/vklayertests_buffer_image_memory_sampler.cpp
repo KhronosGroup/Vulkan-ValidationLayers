@@ -11095,7 +11095,6 @@ TEST_F(VkLayerTest, InvalidExportExternalBufferHandleType) {
 }
 
 TEST_F(VkSyncValTest, SyncBufferCopyHazards) {
-    // TODO: Add code to enable sync validation
     ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
     ASSERT_NO_FATAL_FAILURE(InitState());
 
@@ -11169,9 +11168,9 @@ TEST_F(VkSyncValTest, SyncBufferCopyHazards) {
     m_commandBuffer->end();
 }
 
-TEST_F(VkLayerTest, SyncCopyImageHazards) {
-    // TODO: Add code to enable sync validation
-    ASSERT_NO_FATAL_FAILURE(Init());
+TEST_F(VkSyncValTest, SyncCopyImageHazards) {
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState());
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
