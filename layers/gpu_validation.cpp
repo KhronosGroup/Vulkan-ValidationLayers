@@ -1388,6 +1388,57 @@ void GpuAssisted::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuf
     AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 }
 
+void GpuAssisted::PreCallRecordCmdDrawIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                       VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                       uint32_t stride) {
+    ValidationStateTracker::PreCallRecordCmdDrawIndirectCountKHR(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
+                                                                 maxDrawCount, stride);
+    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
+void GpuAssisted::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                    VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
+                                                    uint32_t stride) {
+    ValidationStateTracker::PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
+                                                              maxDrawCount, stride);
+    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
+void GpuAssisted::PreCallRecordCmdDrawIndexedIndirectCountKHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                              uint32_t maxDrawCount, uint32_t stride) {
+    ValidationStateTracker::PreCallRecordCmdDrawIndexedIndirectCountKHR(commandBuffer, buffer, offset, countBuffer,
+                                                                        countBufferOffset, maxDrawCount, stride);
+    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
+void GpuAssisted::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                           VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                           uint32_t maxDrawCount, uint32_t stride) {
+    ValidationStateTracker::PreCallRecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
+                                                                     maxDrawCount, stride);
+    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
+void GpuAssisted::PreCallRecordCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer, uint32_t taskCount, uint32_t firstTask) {
+    ValidationStateTracker::PreCallRecordCmdDrawMeshTasksNV(commandBuffer, taskCount, firstTask);
+    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
+void GpuAssisted::PreCallRecordCmdDrawMeshTasksIndirectNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                          uint32_t drawCount, uint32_t stride) {
+    ValidationStateTracker::PreCallRecordCmdDrawMeshTasksIndirectNV(commandBuffer, buffer, offset, drawCount, stride);
+    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
+void GpuAssisted::PreCallRecordCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                               VkBuffer countBuffer, VkDeviceSize countBufferOffset,
+                                                               uint32_t maxDrawCount, uint32_t stride) {
+    ValidationStateTracker::PreCallRecordCmdDrawMeshTasksIndirectCountNV(commandBuffer, buffer, offset, countBuffer,
+                                                                         countBufferOffset, maxDrawCount, stride);
+    AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+}
+
 void GpuAssisted::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z) {
     AllocateValidationResources(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE);
 }
