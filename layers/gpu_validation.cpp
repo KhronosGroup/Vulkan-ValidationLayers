@@ -265,7 +265,9 @@ void GpuAssisted::PostCallRecordCreateDevice(VkPhysicalDevice physicalDevice, co
     device_gpu_assisted->descriptor_indexing = CheckForDescriptorIndexing(device_gpu_assisted->enabled_features);
     std::vector<VkDescriptorSetLayoutBinding> bindings;
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
-                                            VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT | kShaderStageAllRayTracing,
+                                            VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT |
+                                                VK_SHADER_STAGE_MESH_BIT_NV | VK_SHADER_STAGE_TASK_BIT_NV |
+                                                kShaderStageAllRayTracing,
                                             NULL};
     bindings.push_back(binding);
     for (auto i = 1; i < 3; i++) {

@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2019 LunarG, Inc. -->
+<!-- Copyright 2015-2020 LunarG, Inc. -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -675,6 +675,8 @@ The Stage is the integer value used in SPIR-V for each of the Execution Models:
 |Geometry       |3      |
 |Fragment       |4      |
 |Compute        |5      |
+|Task           |5267   |
+|Mesh           |5268   |
 |RayGenerationNV|5313   |
 |IntersectionNV |5314   |
 |AnyHitNV       |5315   |
@@ -695,6 +697,8 @@ Here are words for each stage:
 |Geometry       |PrimitiveID       |InvocationID   | unused        |
 |Fragment       |FragCoord.x       |FragCoord.y    | unused        |
 |Compute        |GlobalInvocID.x   |GlobalInvocID.y|GlobalInvocID.z|
+|Task           |GlobalInvocID.x   |GlobalInvocID.y|GlobalInvocID.z|
+|Mesh           |GlobalInvocID.x   |GlobalInvocID.y|GlobalInvocID.z|
 |RayGenerationNV|LaunchIdNV.x      |LaunchIdNV.y   |LaunchIdNV.z   |
 |IntersectionNV |LaunchIdNV.x      |LaunchIdNV.y   |LaunchIdNV.z   |
 |AnyHitNV       |LaunchIdNV.x      |LaunchIdNV.y   |LaunchIdNV.z   |
