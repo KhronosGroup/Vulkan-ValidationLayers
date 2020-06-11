@@ -52,6 +52,7 @@ typedef struct {
     const char* vuid_profile_lock;
     const char* vuid_scope_not_first;
     const char* vuid_scope_in_rp;
+    const char* vuid_dup_query_type;
 } ValidateBeginQueryVuids;
 
 class CoreChecks : public ValidationStateTracker {

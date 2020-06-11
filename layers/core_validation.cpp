@@ -7117,6 +7117,24 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE *cb_state, const Quer
                          "%s: The querypool's query type must not be VK_QUERY_TYPE_TIMESTAMP.", cmd_name);
     }
 
+    // Check for nexted queries
+    if (cb_state->activeQueries.size()) {
+        for (auto a_query : cb_state->activeQueries) {
+            auto active_query_pool_state = GetQueryPoolState(a_query.pool);
+            if (active_query_pool_state->createInfo.queryType == query_pool_ci.queryType) {
+                LogObjectList obj_list(cb_state->commandBuffer);
+                obj_list.add(query_obj.pool);
+                obj_list.add(a_query.pool);
+                skip |= LogError(obj_list, vuids->vuid_dup_query_type,
+                                 "%s: Within the same command buffer %s, query %d from pool %s has same queryType as active query "
+                                 "%d from pool %s.",
+                                 cmd_name, report_data->FormatHandle(cb_state->commandBuffer).c_str(), query_obj.index,
+                                 report_data->FormatHandle(query_obj.pool).c_str(), a_query.index,
+                                 report_data->FormatHandle(a_query.pool).c_str());
+            }
+        }
+    }
+
     // There are tighter queue constraints to test for certain query pools
     if (query_pool_ci.queryType == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT) {
         skip |= ValidateCmdQueueFlags(cb_state, cmd_name, VK_QUEUE_GRAPHICS_BIT, vuids->vuid_queue_feedback);
@@ -7180,10 +7198,11 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
     const CMD_BUFFER_STATE *cb_state = GetCBState(commandBuffer);
     assert(cb_state);
     QueryObject query_obj(queryPool, slot);
-    ValidateBeginQueryVuids vuids{"VUID-vkCmdBeginQuery-commandBuffer-cmdpool", "VUID-vkCmdBeginQuery-queryType-02327",
-                                  "VUID-vkCmdBeginQuery-queryType-00803",       "VUID-vkCmdBeginQuery-queryType-00800",
-                                  "VUID-vkCmdBeginQuery-query-00802",           "VUID-vkCmdBeginQuery-queryPool-03223",
-                                  "VUID-vkCmdBeginQuery-queryPool-03224",       "VUID-vkCmdBeginQuery-queryPool-03225"};
+    ValidateBeginQueryVuids vuids = {"VUID-vkCmdBeginQuery-commandBuffer-cmdpool", "VUID-vkCmdBeginQuery-queryType-02327",
+                                     "VUID-vkCmdBeginQuery-queryType-00803",       "VUID-vkCmdBeginQuery-queryType-00800",
+                                     "VUID-vkCmdBeginQuery-query-00802",           "VUID-vkCmdBeginQuery-queryPool-03223",
+                                     "VUID-vkCmdBeginQuery-queryPool-03224",       "VUID-vkCmdBeginQuery-queryPool-03225",
+                                     "VUID-vkCmdBeginQuery-queryPool-01922"};
     return ValidateBeginQuery(cb_state, query_obj, flags, CMD_BEGINQUERY, "vkCmdBeginQuery()", &vuids);
 }
 
@@ -11408,11 +11427,12 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
     assert(cb_state);
     QueryObject query_obj(queryPool, query, index);
     const char *cmd_name = "vkCmdBeginQueryIndexedEXT()";
-    ValidateBeginQueryVuids vuids{
+    ValidateBeginQueryVuids vuids = {
         "VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-cmdpool", "VUID-vkCmdBeginQueryIndexedEXT-queryType-02338",
         "VUID-vkCmdBeginQueryIndexedEXT-queryType-00803",       "VUID-vkCmdBeginQueryIndexedEXT-queryType-00800",
         "VUID-vkCmdBeginQueryIndexedEXT-query-00802",           "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03223",
-        "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03224",       "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03225"};
+        "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03224",       "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03225",
+        "VUID-vkCmdBeginQueryIndexedEXT-queryPool-01922"};
 
     bool skip = ValidateBeginQuery(cb_state, query_obj, flags, CMD_BEGINQUERYINDEXEDEXT, cmd_name, &vuids);
 
