@@ -7126,31 +7126,25 @@ bool CoreChecks::ValidateBeginQuery(const CMD_BUFFER_STATE *cb_state, const Quer
     }
     if (query_pool_ci.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
         if (!cb_state->performance_lock_acquired) {
-            skip |= LogError(
-                cb_state->commandBuffer,
-                query_obj.indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03223" : "VUID-vkCmdBeginQuery-queryPool-03223",
-                "%s: profiling lock must be held before vkBeginCommandBuffer is called on "
-                "a command buffer where performance queries are recorded.",
-                cmd_name);
+            skip |= LogError(cb_state->commandBuffer, vuids->vuid_profile_lock,
+                             "%s: profiling lock must be held before vkBeginCommandBuffer is called on "
+                             "a command buffer where performance queries are recorded.",
+                             cmd_name);
         }
 
         if (query_pool_state->has_perf_scope_command_buffer && cb_state->commandCount > 0) {
-            skip |= LogError(
-                cb_state->commandBuffer,
-                query_obj.indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03224" : "VUID-vkCmdBeginQuery-queryPool-03224",
-                "%s: Query pool %s was created with a counter of scope "
-                "VK_QUERY_SCOPE_COMMAND_BUFFER_KHR but %s is not the first recorded "
-                "command in the command buffer.",
-                cmd_name, report_data->FormatHandle(query_obj.pool).c_str(), cmd_name);
+            skip |= LogError(cb_state->commandBuffer, vuids->vuid_scope_not_first,
+                             "%s: Query pool %s was created with a counter of scope "
+                             "VK_QUERY_SCOPE_COMMAND_BUFFER_KHR but %s is not the first recorded "
+                             "command in the command buffer.",
+                             cmd_name, report_data->FormatHandle(query_obj.pool).c_str(), cmd_name);
         }
 
         if (query_pool_state->has_perf_scope_render_pass && cb_state->activeRenderPass) {
-            skip |= LogError(
-                cb_state->commandBuffer,
-                query_obj.indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03225" : "VUID-vkCmdBeginQuery-queryPool-03225",
-                "%s: Query pool %s was created with a counter of scope "
-                "VK_QUERY_SCOPE_RENDER_PASS_KHR but %s is inside a render pass.",
-                cmd_name, report_data->FormatHandle(query_obj.pool).c_str(), cmd_name);
+            skip |= LogError(cb_state->commandBuffer, vuids->vuid_scope_in_rp,
+                             "%s: Query pool %s was created with a counter of scope "
+                             "VK_QUERY_SCOPE_RENDER_PASS_KHR but %s is inside a render pass.",
+                             cmd_name, report_data->FormatHandle(query_obj.pool).c_str(), cmd_name);
         }
     }
 
@@ -7187,8 +7181,9 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
     assert(cb_state);
     QueryObject query_obj(queryPool, slot);
     ValidateBeginQueryVuids vuids{"VUID-vkCmdBeginQuery-commandBuffer-cmdpool", "VUID-vkCmdBeginQuery-queryType-02327",
-                                  "VUID-vkCmdBeginQuery-queryType-00803", "VUID-vkCmdBeginQuery-queryType-00800",
-                                  "VUID-vkCmdBeginQuery-query-00802"};
+                                  "VUID-vkCmdBeginQuery-queryType-00803",       "VUID-vkCmdBeginQuery-queryType-00800",
+                                  "VUID-vkCmdBeginQuery-query-00802",           "VUID-vkCmdBeginQuery-queryPool-03223",
+                                  "VUID-vkCmdBeginQuery-queryPool-03224",       "VUID-vkCmdBeginQuery-queryPool-03225"};
     return ValidateBeginQuery(cb_state, query_obj, flags, CMD_BEGINQUERY, "vkCmdBeginQuery()", &vuids);
 }
 
@@ -11413,10 +11408,11 @@ bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandB
     assert(cb_state);
     QueryObject query_obj(queryPool, query, index);
     const char *cmd_name = "vkCmdBeginQueryIndexedEXT()";
-    ValidateBeginQueryVuids vuids{"VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-cmdpool",
-                                  "VUID-vkCmdBeginQueryIndexedEXT-queryType-02338",
-                                  "VUID-vkCmdBeginQueryIndexedEXT-queryType-00803",
-                                  "VUID-vkCmdBeginQueryIndexedEXT-queryType-00800", "VUID-vkCmdBeginQueryIndexedEXT-query-00802"};
+    ValidateBeginQueryVuids vuids{
+        "VUID-vkCmdBeginQueryIndexedEXT-commandBuffer-cmdpool", "VUID-vkCmdBeginQueryIndexedEXT-queryType-02338",
+        "VUID-vkCmdBeginQueryIndexedEXT-queryType-00803",       "VUID-vkCmdBeginQueryIndexedEXT-queryType-00800",
+        "VUID-vkCmdBeginQueryIndexedEXT-query-00802",           "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03223",
+        "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03224",       "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03225"};
 
     bool skip = ValidateBeginQuery(cb_state, query_obj, flags, CMD_BEGINQUERYINDEXEDEXT, cmd_name, &vuids);
 
