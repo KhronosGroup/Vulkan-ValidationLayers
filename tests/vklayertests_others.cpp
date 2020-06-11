@@ -3072,6 +3072,9 @@ TEST_F(VkLayerTest, QueryPoolPartialTimestamp) {
         return;
     }
 
+    VkBufferObj buffer;
+    buffer.init(*m_device, 128, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
     VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_ci{};
     query_pool_ci.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
@@ -3084,6 +3087,13 @@ TEST_F(VkLayerTest, QueryPoolPartialTimestamp) {
     m_commandBuffer->begin();
     vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 1);
     vk::CmdWriteTimestamp(m_commandBuffer->handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 0);
+    m_errorMonitor->VerifyNotFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdCopyQueryPoolResults-queryType-00827");
+    vk::CmdCopyQueryPoolResults(m_commandBuffer->handle(), query_pool, 0, 1, buffer.handle(), 0, 8, VK_QUERY_RESULT_PARTIAL_BIT);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->ExpectSuccess();
     m_commandBuffer->end();
 
     // Submit cmd buffer and wait for it.
