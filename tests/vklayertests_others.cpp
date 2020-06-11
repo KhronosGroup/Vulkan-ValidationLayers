@@ -2414,39 +2414,36 @@ TEST_F(VkLayerTest, InvalidQuerySizes) {
     vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
 
-TEST_F(VkLayerTest, UnclosedQuery) {
-    TEST_DESCRIPTION("End a command buffer with a query still in progress.");
-
-    const char *invalid_query = "VUID-vkEndCommandBuffer-commandBuffer-00061";
+TEST_F(VkLayerTest, UnclosedAndDuplicateQueries) {
+    TEST_DESCRIPTION("End a command buffer with a query still in progress, create nested queries.");
 
     ASSERT_NO_FATAL_FAILURE(Init());
 
-    VkEvent event;
-    VkEventCreateInfo event_create_info{};
-    event_create_info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
-    vk::CreateEvent(m_device->device(), &event_create_info, nullptr, &event);
-
     VkQueue queue = VK_NULL_HANDLE;
     vk::GetDeviceQueue(m_device->device(), m_device->graphics_queue_node_index_, 0, &queue);
-
-    m_commandBuffer->begin();
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, invalid_query);
 
     VkQueryPool query_pool;
     VkQueryPoolCreateInfo query_pool_create_info = {};
     query_pool_create_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
     query_pool_create_info.queryType = VK_QUERY_TYPE_OCCLUSION;
-    query_pool_create_info.queryCount = 1;
+    query_pool_create_info.queryCount = 5;
     vk::CreateQueryPool(m_device->device(), &query_pool_create_info, nullptr, &query_pool);
+    m_commandBuffer->begin();
+    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0, 5);
 
-    vk::CmdResetQueryPool(m_commandBuffer->handle(), query_pool, 0 /*startQuery*/, 1 /*queryCount*/);
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkCmdBeginQuery-queryPool-01922");
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 1, 0);
+    // Attempt to begin a query that has the same type as an active query
+    vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 3, 0);
+    vk::CmdEndQuery(m_commandBuffer->handle(), query_pool, 1);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-vkEndCommandBuffer-commandBuffer-00061");
     vk::CmdBeginQuery(m_commandBuffer->handle(), query_pool, 0, 0);
-
     vk::EndCommandBuffer(m_commandBuffer->handle());
     m_errorMonitor->VerifyFound();
 
     vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
-    vk::DestroyEvent(m_device->device(), event, nullptr);
 }
 
 TEST_F(VkLayerTest, QueryPreciseBit) {
