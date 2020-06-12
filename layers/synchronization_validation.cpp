@@ -1320,6 +1320,10 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
     using TexelDescriptor = cvdescriptorset::TexelDescriptor;
 
     for (const auto &stage_state : pPipe->stage_state) {
+        if (stage_state.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT &&
+            pPipe->graphicsPipelineCI.pRasterizationState &&
+            pPipe->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable)
+            continue;
         for (const auto &set_binding : stage_state.descriptor_uses) {
             cvdescriptorset::DescriptorSet *descriptor_set = (*per_sets)[set_binding.first.first].bound_descriptor_set;
             cvdescriptorset::DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(),
@@ -1437,6 +1441,9 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
     using TexelDescriptor = cvdescriptorset::TexelDescriptor;
 
     for (const auto &stage_state : pPipe->stage_state) {
+        if (stage_state.stage_flag == VK_SHADER_STAGE_FRAGMENT_BIT && pPipe->graphicsPipelineCI.pRasterizationState &&
+            pPipe->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable)
+            continue;
         for (const auto &set_binding : stage_state.descriptor_uses) {
             cvdescriptorset::DescriptorSet *descriptor_set = (*per_sets)[set_binding.first.first].bound_descriptor_set;
             cvdescriptorset::DescriptorSetLayout::ConstBindingIterator binding_it(descriptor_set->GetLayout().get(),
@@ -1663,7 +1670,8 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncValidator 
                                                             const VkRect2D &render_area, const char *func_name) const {
     bool skip = false;
     const auto *pPipe = GetCurrentPipelineFromCommandBuffer(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS);
-    if (!pPipe) {
+    if (!pPipe ||
+        (pPipe->graphicsPipelineCI.pRasterizationState && pPipe->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable)) {
         return skip;
     }
     const auto &list = pPipe->fragmentShader_writable_output_location_list;
@@ -1705,7 +1713,8 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const SyncValidator 
 void RenderPassAccessContext::RecordDrawSubpassAttachment(const CMD_BUFFER_STATE &cmd, const VkRect2D &render_area,
                                                           const ResourceUsageTag &tag) {
     const auto *pPipe = GetCurrentPipelineFromCommandBuffer(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS);
-    if (!pPipe) {
+    if (!pPipe ||
+        (pPipe->graphicsPipelineCI.pRasterizationState && pPipe->graphicsPipelineCI.pRasterizationState->rasterizerDiscardEnable)) {
         return;
     }
     const auto &list = pPipe->fragmentShader_writable_output_location_list;
