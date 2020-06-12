@@ -4180,6 +4180,95 @@ TEST_F(VkLayerTest, ResolveInvalidSubresource) {
     m_commandBuffer->end();
 }
 
+TEST_F(VkLayerTest, ResolveImageImageType) {
+    ASSERT_NO_FATAL_FAILURE(Init());
+    // Create images of different types and try to resolve between them
+    VkImageObj srcImage2D(m_device);
+    VkImageObj dstImage1D(m_device);
+    VkImageObj dstImage3D(m_device);
+
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = NULL;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 32;
+    image_create_info.extent.height = 1;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 4;  // more than 1 to not trip other validation
+    image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage =
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    // Note: Some implementations expect color attachment usage for any
+    // multisample surface
+    image_create_info.flags = 0;
+
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    srcImage2D.init(&image_create_info);
+    ASSERT_TRUE(srcImage2D.initialized());
+
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.imageType = VK_IMAGE_TYPE_1D;
+    dstImage1D.init(&image_create_info);
+    ASSERT_TRUE(dstImage1D.initialized());
+
+    image_create_info.imageType = VK_IMAGE_TYPE_3D;
+    image_create_info.extent.height = 16;
+    image_create_info.extent.depth = 16;
+    image_create_info.arrayLayers = 1;
+    dstImage3D.init(&image_create_info);
+    ASSERT_TRUE(dstImage3D.initialized());
+
+    m_commandBuffer->begin();
+
+    VkImageResolve resolveRegion;
+    resolveRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    resolveRegion.srcSubresource.mipLevel = 0;
+    resolveRegion.srcSubresource.baseArrayLayer = 0;
+    resolveRegion.srcSubresource.layerCount = 1;
+    resolveRegion.srcOffset.x = 0;
+    resolveRegion.srcOffset.y = 0;
+    resolveRegion.srcOffset.z = 0;
+    resolveRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    resolveRegion.dstSubresource.mipLevel = 0;
+    resolveRegion.dstSubresource.baseArrayLayer = 0;
+    resolveRegion.dstSubresource.layerCount = 1;
+    resolveRegion.dstOffset.x = 0;
+    resolveRegion.dstOffset.y = 0;
+    resolveRegion.dstOffset.z = 0;
+    resolveRegion.extent.width = 1;
+    resolveRegion.extent.height = 1;
+    resolveRegion.extent.depth = 1;
+
+    // non-zero value baseArrayLayer
+    resolveRegion.srcSubresource.baseArrayLayer = 2;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageResolve-srcImage-00268");
+    m_commandBuffer->ResolveImage(srcImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, dstImage3D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                  &resolveRegion);
+    m_errorMonitor->VerifyFound();
+    resolveRegion.srcSubresource.baseArrayLayer = 0;
+
+    // Set height with 1D dstImage
+    resolveRegion.extent.height = 2;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageResolve-dstImage-00276");
+    m_commandBuffer->ResolveImage(srcImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, dstImage1D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                  &resolveRegion);
+    m_errorMonitor->VerifyFound();
+    resolveRegion.extent.height = 1;
+
+    // Set depth with 1D dstImage and 2D srcImage
+    resolveRegion.extent.depth = 2;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageResolve-dstImage-00278");
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImageResolve-srcImage-00273");
+    m_commandBuffer->ResolveImage(srcImage2D.image(), VK_IMAGE_LAYOUT_GENERAL, dstImage1D.image(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                                  &resolveRegion);
+    m_errorMonitor->VerifyFound();
+    resolveRegion.extent.depth = 1;
+
+    m_commandBuffer->end();
+}
+
 TEST_F(VkLayerTest, ClearImageErrors) {
     TEST_DESCRIPTION("Call ClearColorImage w/ a depth|stencil image and ClearDepthStencilImage with a color image.");
 
