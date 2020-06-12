@@ -6034,9 +6034,9 @@ bool CoreChecks::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEve
                                       "VUID-vkCmdSetEvent-commandBuffer-cmdpool");
     skip |= ValidateCmd(cb_state, CMD_SETEVENT, "vkCmdSetEvent()");
     skip |= InsideRenderPass(cb_state, "vkCmdSetEvent()", "VUID-vkCmdSetEvent-renderpass");
-    skip |= ValidateStageMaskGsTsEnables(stageMask, "vkCmdSetEvent()", "VUID-vkCmdSetEvent-stageMask-01150",
-                                         "VUID-vkCmdSetEvent-stageMask-01151", "VUID-vkCmdSetEvent-stageMask-02107",
-                                         "VUID-vkCmdSetEvent-stageMask-02108");
+    skip |= ValidateStageMaskGsTsEnables(stageMask, "vkCmdSetEvent()", "VUID-vkCmdSetEvent-None-04090",
+                                         "VUID-vkCmdSetEvent-None-04091", "VUID-vkCmdSetEvent-None-04095",
+                                         "VUID-vkCmdSetEvent-None-04096");
     skip |= ValidateStageMaskHost(stageMask, "vkCmdSetEvent()", "VUID-vkCmdSetEvent-stageMask-01149");
     return skip;
 }
@@ -6049,9 +6049,9 @@ bool CoreChecks::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkE
                                       "VUID-vkCmdResetEvent-commandBuffer-cmdpool");
     skip |= ValidateCmd(cb_state, CMD_RESETEVENT, "vkCmdResetEvent()");
     skip |= InsideRenderPass(cb_state, "vkCmdResetEvent()", "VUID-vkCmdResetEvent-renderpass");
-    skip |= ValidateStageMaskGsTsEnables(stageMask, "vkCmdResetEvent()", "VUID-vkCmdResetEvent-stageMask-01154",
-                                         "VUID-vkCmdResetEvent-stageMask-01155", "VUID-vkCmdResetEvent-stageMask-02109",
-                                         "VUID-vkCmdResetEvent-stageMask-02110");
+    skip |= ValidateStageMaskGsTsEnables(stageMask, "vkCmdResetEvent()", "VUID-vkCmdResetEvent-None-04090",
+                                         "VUID-vkCmdResetEvent-None-04091", "VUID-vkCmdResetEvent-None-04095",
+                                         "VUID-vkCmdResetEvent-None-04096");
     skip |= ValidateStageMaskHost(stageMask, "vkCmdResetEvent()", "VUID-vkCmdResetEvent-stageMask-01153");
     return skip;
 }
@@ -6212,7 +6212,7 @@ bool CoreChecks::ValidateImageBarrierAttachment(const char *funcName, CMD_BUFFER
             }
         }
         if (!sub_image_found) {
-            skip |= LogError(rp_handle, "VUID-vkCmdPipelineBarrier-image-02635",
+            skip |= LogError(rp_handle, "VUID-vkCmdPipelineBarrier-image-04073",
                              "%s: Barrier pImageMemoryBarriers[%d].%s is not referenced by the VkSubpassDescription for "
                              "active subpass (%d) of current %s.",
                              funcName, img_index, report_data->FormatHandle(img_bar_image).c_str(), active_subpass,
@@ -6220,7 +6220,7 @@ bool CoreChecks::ValidateImageBarrierAttachment(const char *funcName, CMD_BUFFER
         }
     } else {  // !image_match
         skip |=
-            LogError(fb_state->framebuffer, "VUID-vkCmdPipelineBarrier-image-02635",
+            LogError(fb_state->framebuffer, "VUID-vkCmdPipelineBarrier-image-04073",
                      "%s: Barrier pImageMemoryBarriers[%d].%s does not match an image from the current %s.", funcName, img_index,
                      report_data->FormatHandle(img_bar_image).c_str(), report_data->FormatHandle(fb_state->framebuffer).c_str());
     }
@@ -6234,7 +6234,7 @@ bool CoreChecks::ValidateImageBarrierAttachment(const char *funcName, CMD_BUFFER
         if (sub_image_found && sub_image_layout != img_barrier.oldLayout) {
             LogObjectList objlist(rp_handle);
             objlist.add(img_bar_image);
-            skip |= LogError(objlist, "VUID-vkCmdPipelineBarrier-oldLayout-02636",
+            skip |= LogError(objlist, "VUID-vkCmdPipelineBarrier-oldLayout-01181",
                              "%s: Barrier pImageMemoryBarriers[%d].%s is referenced by the VkSubpassDescription for active "
                              "subpass (%d) of current %s as having layout %s, but image barrier has layout %s.",
                              funcName, img_index, report_data->FormatHandle(img_bar_image).c_str(), active_subpass,
@@ -6978,13 +6978,13 @@ bool CoreChecks::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uin
     auto barrier_op_type = ComputeBarrierOperationsType(cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                                                         imageMemoryBarrierCount, pImageMemoryBarriers);
     bool skip = ValidateStageMasksAgainstQueueCapabilities(cb_state, sourceStageMask, dstStageMask, barrier_op_type,
-                                                           "vkCmdWaitEvents", "VUID-vkCmdWaitEvents-srcStageMask-01164");
-    skip |= ValidateStageMaskGsTsEnables(sourceStageMask, "vkCmdWaitEvents()", "VUID-vkCmdWaitEvents-srcStageMask-01159",
-                                         "VUID-vkCmdWaitEvents-srcStageMask-01161", "VUID-vkCmdWaitEvents-srcStageMask-02111",
-                                         "VUID-vkCmdWaitEvents-srcStageMask-02112");
-    skip |= ValidateStageMaskGsTsEnables(dstStageMask, "vkCmdWaitEvents()", "VUID-vkCmdWaitEvents-dstStageMask-01160",
-                                         "VUID-vkCmdWaitEvents-dstStageMask-01162", "VUID-vkCmdWaitEvents-dstStageMask-02113",
-                                         "VUID-vkCmdWaitEvents-dstStageMask-02114");
+                                                           "vkCmdWaitEvents", "VUID-vkCmdWaitEvents-queueFamilyIndex-4098");
+    skip |= ValidateStageMaskGsTsEnables(sourceStageMask, "vkCmdWaitEvents()", "VUID-vkCmdWaitEvents-None-04090",
+                                         "VUID-vkCmdWaitEvents-None-04091", "VUID-vkCmdWaitEvents-None-04095",
+                                         "VUID-vkCmdWaitEvents-None-04096");
+    skip |= ValidateStageMaskGsTsEnables(dstStageMask, "vkCmdWaitEvents()", "VUID-vkCmdWaitEvents-None-04090",
+                                         "VUID-vkCmdWaitEvents-None-04091", "VUID-vkCmdWaitEvents-None-04095",
+                                         "VUID-vkCmdWaitEvents-None-04096");
     skip |= ValidateCmdQueueFlags(cb_state, "vkCmdWaitEvents()", VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdWaitEvents-commandBuffer-cmdpool");
     skip |= ValidateCmd(cb_state, CMD_WAITEVENTS, "vkCmdWaitEvents()");
@@ -7043,20 +7043,20 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer
         auto barrier_op_type = ComputeBarrierOperationsType(cb_state, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                                                             imageMemoryBarrierCount, pImageMemoryBarriers);
         skip |= ValidateStageMasksAgainstQueueCapabilities(cb_state, srcStageMask, dstStageMask, barrier_op_type,
-                                                           "vkCmdPipelineBarrier", "VUID-vkCmdPipelineBarrier-srcStageMask-01183");
+                                                           "vkCmdPipelineBarrier", "VUID-vkCmdPipelineBarrier-queueFamilyIndex-4098");
     }
     skip |= ValidateCmdQueueFlags(cb_state, "vkCmdPipelineBarrier()",
                                   VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT,
                                   "VUID-vkCmdPipelineBarrier-commandBuffer-cmdpool");
     skip |= ValidateCmd(cb_state, CMD_PIPELINEBARRIER, "vkCmdPipelineBarrier()");
     skip |=
-        ValidateStageMaskGsTsEnables(srcStageMask, "vkCmdPipelineBarrier()", "VUID-vkCmdPipelineBarrier-srcStageMask-01168",
-                                     "VUID-vkCmdPipelineBarrier-srcStageMask-01170", "VUID-vkCmdPipelineBarrier-srcStageMask-02115",
-                                     "VUID-vkCmdPipelineBarrier-srcStageMask-02116");
+        ValidateStageMaskGsTsEnables(srcStageMask, "vkCmdPipelineBarrier()", "VUID-vkCmdPipelineBarrier-None-04090",
+                                     "VUID-vkCmdPipelineBarrier-None-04091", "VUID-vkCmdPipelineBarrier-None-04095",
+                                     "VUID-vkCmdPipelineBarrier-None-04096");
     skip |=
-        ValidateStageMaskGsTsEnables(dstStageMask, "vkCmdPipelineBarrier()", "VUID-vkCmdPipelineBarrier-dstStageMask-01169",
-                                     "VUID-vkCmdPipelineBarrier-dstStageMask-01171", "VUID-vkCmdPipelineBarrier-dstStageMask-02117",
-                                     "VUID-vkCmdPipelineBarrier-dstStageMask-02118");
+        ValidateStageMaskGsTsEnables(dstStageMask, "vkCmdPipelineBarrier()", "VUID-vkCmdPipelineBarrier-None-04090",
+                                     "VUID-vkCmdPipelineBarrier-None-04091", "VUID-vkCmdPipelineBarrier-None-04095",
+                                     "VUID-vkCmdPipelineBarrier-None-04096");
     if (cb_state->activeRenderPass) {
         skip |= ValidateRenderPassPipelineBarriers("vkCmdPipelineBarrier()", cb_state, srcStageMask, dstStageMask, dependencyFlags,
                                                    memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount,
