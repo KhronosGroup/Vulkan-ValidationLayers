@@ -13,115 +13,14 @@
  * Author: Camden Stocker <camden@lunarg.com>
  */
 
-#include <memory>
-
 #include "cast_utils.h"
 #include "layer_validation_tests.h"
-#include "best_practices_validation.h"
 
 void VkBestPracticesLayerTest::InitBestPracticesFramework() {
     // Enable all vendor-specific checks
     SetEnvVar("VK_LAYER_ENABLES", "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL");
 
     InitFramework(m_errorMonitor, &features_);
-}
-
-class BestPracticesChassisTest : public VkLayerTest {
-  private:
-    class TestBestPracticesTracker : public BestPracticesTracker {
-      public:
-        // give access to certain private/protected methods for test fixture setup
-        void addPractice(std::unique_ptr<BestPracticesCheck> practice) { BestPracticesTracker::addPractice(std::move(practice)); }
-        void initReverseLookup() { BestPracticesTracker::initReverseLookup(); }
-    };
-
-  protected:
-    std::unique_ptr<BestPracticesTracker> trackerImplementation;
-
-    virtual void SetUp() { trackerImplementation = std::unique_ptr<BestPracticesTracker>(new BestPracticesTracker()); }
-};
-
-TEST_F(BestPracticesChassisTest, NoChecks) {
-    TEST_DESCRIPTION("Testing for success behaviour when no checks are registered with the system.");
-
-    // Enable all vendor-specific checks
-    SetEnvVar("VK_LAYER_ENABLES", "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL");
-    InitFramework(m_errorMonitor);
-
-    trackerImplementation->initReverseLookup();
-
-    m_errorMonitor->ExpectSuccess();
-    // there should be no best practice validation warning
-    m_errorMonitor->VerifyNotFound();
-}
-
-TEST_F(BestPracticesChassisTest, SingleCheckNoVendors) {
-    TEST_DESCRIPTION("Testing for success behaviour when no checks are registered with the system.");
-
-    // Enable all vendor-specific checks
-    SetEnvVar("VK_LAYER_ENABLES", "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL");
-    InitFramework(m_errorMonitor);
-
-    // a simple check which emits a warning unconditionally for a basic API call
-    class SimpleCheck : public BestPracticesIdentifiableCheck<SimpleCheck> {
-      public:
-        SimpleCheck(BestPracticesTracker& tracker) : BestPracticesIdentifiableCheck<SimpleCheck>(tracker) {}
-
-        virtual bool PreCallValidateEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
-                                                             VkPhysicalDevice* pPhysicalDevices) const override {
-            return tracker.LogPerformanceWarning(tracker.device, "test-uuid", "this is a test warning, it should not be thrown");
-        }
-    };
-
-    // add the check to the list of registered checks
-    trackerImplementation->addPractice(std::unique_ptr<SimpleCheck>(new SimpleCheck(*trackerImplementation)));
-
-    trackerImplementation->initReverseLookup();
-
-    // since the check is not registered with any enabled vendor, it should not run or emit a warning
-    m_errorMonitor->ExpectSuccess();
-
-    uint32_t device_count = 0;
-    vk::EnumeratePhysicalDevices(instance(), &device_count, nullptr);
-
-    m_errorMonitor->VerifyNotFound();
-}
-
-TEST_F(BestPracticesChassisTest, SingleCheckWithEnabledVendor) {
-    TEST_DESCRIPTION("Testing for success behaviour when no checks are registered with the system.");
-
-    // Enable all vendor-specific checks
-    SetEnvVar("VK_LAYER_ENABLES", "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL");
-    InitFramework(m_errorMonitor);
-
-    // a simple check which emits a warning unconditionally for a basic API call
-    class SimpleCheck : public BestPracticesIdentifiableCheck<SimpleCheck> {
-      public:
-        SimpleCheck(BestPracticesTracker& tracker) : BestPracticesIdentifiableCheck<SimpleCheck>(tracker) {}
-
-        virtual bool PreCallValidateEnumeratePhysicalDevices(VkInstance instance, uint32_t* pPhysicalDeviceCount,
-                                                             VkPhysicalDevice* pPhysicalDevices) const override {
-            return tracker.LogPerformanceWarning(tracker.device, "test-uuid", "this is a test warning which should be thrown");
-        }
-    };
-
-    // add the check to the list of registered checks
-    trackerImplementation->addPractice(std::unique_ptr<SimpleCheck>(new SimpleCheck(*trackerImplementation)));
-
-    // make the default vendor agree with SimpleCheck
-    trackerImplementation->vendor_practices = {
-        {kBPVendorKhronos, {SimpleCheck::ID}},
-    };
-
-    trackerImplementation->initReverseLookup();
-
-    // since the check is registered with an enabled vendor, it should run when we call EnumeratePhysicalDevices
-    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT, "test-uuid");
-
-    uint32_t device_count = 0;
-    vk::EnumeratePhysicalDevices(instance(), &device_count, nullptr);
-
-    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkBestPracticesLayerTest, ValidateReturnCodes) {

@@ -96,32 +96,6 @@ add_executable(vk_layer_validation_tests
                ../layers/convert_to_renderpass2.cpp
                ../layers/generated/vk_safe_struct.cpp
                ../layers/generated/lvt_function_pointers.cpp
-               ../layers/generated/chassis.cpp
-               ../layers/generated/layer_chassis_dispatch.cpp
-               ../layers/generated/parameter_validation.cpp
-               ../layers/generated/thread_safety.cpp
-               ../layers/generated/object_tracker.cpp
-               ../layers/generated/best_practices.cpp
-               ../layers/generated/command_counter_helper.cpp
-               ../layers/vk_layer_utils.cpp
-               ../layers/vk_layer_config.cpp
-               ../layers/vk_layer_extension_utils.cpp
-               ../layers/core_validation.cpp
-               ../layers/buffer_validation.cpp
-               ../layers/shader_validation.cpp
-               ../layers/gpu_validation.cpp
-               ../layers/gpu_utils.cpp
-               ../layers/parameter_validation_utils.cpp
-               ../layers/image_layout_map.cpp
-               ../layers/subresource_adapter.cpp
-               ../layers/xxhash.c
-               ../layers/descriptor_sets.cpp
-               ../layers/state_tracker.cpp
-               ../layers/debug_printf.cpp
-               ../layers/drawdispatch.cpp
-               ../layers/object_tracker_utils.cpp
-               ../layers/best_practices_utils.cpp
-               ../layers/best_practices/my_example_practice.cpp
                ${COMMON_CPP})
 add_test(NAME vk_layer_validation_tests COMMAND vk_layer_validation_tests)
 add_dependencies(vk_layer_validation_tests VkLayer_khronos_validation VkLayer_khronos_validation-json)
@@ -149,16 +123,14 @@ if(WIN32)
     set_target_properties(gtest PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
     set_target_properties(gtest_main PROPERTIES FOLDER ${LAYERS_HELPER_FOLDER})
     target_link_libraries(vk_layer_validation_tests
-                          PRIVATE VkLayer_khronos_validation
-                                  gtest
+                          PRIVATE gtest
                                   gtest_main
                                   ${GLSLANG_LIBRARIES})
 else()
     target_compile_options(vk_layer_validation_tests PRIVATE "-Wno-sign-compare")
     if(BUILD_WSI_XCB_SUPPORT OR BUILD_WSI_XLIB_SUPPORT)
         target_link_libraries(vk_layer_validation_tests
-                              PRIVATE VkLayer_khronos_validation
-                                      ${XCB_LIBRARIES}
+                              PRIVATE ${XCB_LIBRARIES}
                                       ${X11_LIBRARIES}
                                       gtest
                                       gtest_main
@@ -166,8 +138,7 @@ else()
                                       ${GLSLANG_LIBRARIES})
     else()
         target_link_libraries(vk_layer_validation_tests
-                              PRIVATE VkLayer_khronos_validation
-                                      gtest
+                              PRIVATE gtest
                                       gtest_main
                                       dl
                                       ${GLSLANG_LIBRARIES})
