@@ -5293,13 +5293,6 @@ bool CoreChecks::ValidateBufferImageCopyData(uint32_t regionCount, const VkBuffe
                              function, i, pRegions[i].bufferOffset, element_size);
         }
 
-        //  BufferOffset must be a multiple of 4
-        if (SafeModulo(pRegions[i].bufferOffset, 4) != 0) {
-            skip |= LogError(image_state->image, "VUID-VkBufferImageCopy-bufferOffset-00194",
-                             "%s(): pRegion[%d] bufferOffset 0x%" PRIxLEAST64 " must be a multiple of 4.", function, i,
-                             pRegions[i].bufferOffset);
-        }
-
         //  BufferRowLength must be 0, or greater than or equal to the width member of imageExtent
         if ((pRegions[i].bufferRowLength != 0) && (pRegions[i].bufferRowLength < pRegions[i].imageExtent.width)) {
             skip |=
