@@ -9777,4 +9777,126 @@ TEST_F(VkPositiveLayerTest, AndroidHardwareBufferMemoryRequirements) {
     vk::DestroyBuffer(m_device->device(), buffer, nullptr);
     vk::FreeMemory(m_device->device(), memory, nullptr);
 }
+
+TEST_F(VkPositiveLayerTest, AndroidHardwareBufferDepthStencil) {
+    TEST_DESCRIPTION("Verify AndroidHardwareBuffer can import Depth/Stencil");
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    if (IsPlatform(kGalaxyS10)) {
+        printf("%s This test should not run on Galaxy S10\n", kSkipPrefix);
+        return;
+    }
+
+    if ((DeviceExtensionSupported(gpu(), nullptr, VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME)) &&
+        // Also skip on devices that advertise AHB, but not the pre-requisite foreign_queue extension
+        (DeviceExtensionSupported(gpu(), nullptr, VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME))) {
+        m_device_extension_names.push_back(VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+        m_device_extension_names.push_back(VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME);
+    } else {
+        printf("%s %s extension not supported, skipping tests\n", kSkipPrefix,
+               VK_ANDROID_EXTERNAL_MEMORY_ANDROID_HARDWARE_BUFFER_EXTENSION_NAME);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitState());
+
+    PFN_vkGetAndroidHardwareBufferPropertiesANDROID pfn_GetAHBProps =
+        (PFN_vkGetAndroidHardwareBufferPropertiesANDROID)vk::GetDeviceProcAddr(m_device->device(),
+                                                                               "vkGetAndroidHardwareBufferPropertiesANDROID");
+    ASSERT_TRUE(pfn_GetAHBProps != nullptr);
+
+    // Allocate an AHardwareBuffer
+    AHardwareBuffer *ahb;
+    AHardwareBuffer_Desc ahb_desc = {};
+    ahb_desc.format = AHARDWAREBUFFER_FORMAT_D16_UNORM;
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER;
+    ahb_desc.width = 64;
+    ahb_desc.height = 1;
+    ahb_desc.layers = 1;
+    ahb_desc.stride = 1;
+    AHardwareBuffer_allocate(&ahb_desc, &ahb);
+
+    VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = {};
+    ahb_fmt_props.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID;
+
+    VkAndroidHardwareBufferPropertiesANDROID ahb_props = {};
+    ahb_props.sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_PROPERTIES_ANDROID;
+    ahb_props.pNext = &ahb_fmt_props;
+    pfn_GetAHBProps(m_device->device(), ahb, &ahb_props);
+
+    VkExternalMemoryImageCreateInfo ext_image_info = {};
+    ext_image_info.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
+    ext_image_info.pNext = nullptr;
+    ext_image_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+
+    // Create a Depth/Stencil image
+    VkImage dsImage;
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.pNext = &ext_image_info;
+    image_create_info.flags = 0;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = ahb_fmt_props.format;
+    image_create_info.extent = {64, 1, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    vk::CreateImage(m_device->device(), &image_create_info, nullptr, &dsImage);
+
+    VkMemoryDedicatedAllocateInfo memory_dedicated_info = {};
+    memory_dedicated_info.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
+    memory_dedicated_info.pNext = nullptr;
+    memory_dedicated_info.image = dsImage;
+    memory_dedicated_info.buffer = VK_NULL_HANDLE;
+
+    VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info = {};
+    import_ahb_Info.sType = VK_STRUCTURE_TYPE_IMPORT_ANDROID_HARDWARE_BUFFER_INFO_ANDROID;
+    import_ahb_Info.pNext = &memory_dedicated_info;
+    import_ahb_Info.buffer = ahb;
+
+    VkMemoryAllocateInfo memory_allocate_info = {};
+    memory_allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memory_allocate_info.pNext = &import_ahb_Info;
+    memory_allocate_info.allocationSize = ahb_props.allocationSize;
+
+    // Set index to match one of the bits in ahb_props that is also only Device Local
+    // Android implemenetations "should have" a DEVICE_LOCAL only index designed for AHB
+    VkMemoryPropertyFlagBits property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    VkPhysicalDeviceMemoryProperties gpu_memory_props;
+    vk::GetPhysicalDeviceMemoryProperties(gpu(), &gpu_memory_props);
+    memory_allocate_info.memoryTypeIndex = gpu_memory_props.memoryTypeCount + 1;
+    for (uint32_t i = 0; i < gpu_memory_props.memoryTypeCount; i++) {
+        if ((ahb_props.memoryTypeBits & (1 << i)) && ((gpu_memory_props.memoryTypes[i].propertyFlags & property) == property)) {
+            memory_allocate_info.memoryTypeIndex = i;
+            break;
+        }
+    }
+
+    if (memory_allocate_info.memoryTypeIndex >= gpu_memory_props.memoryTypeCount) {
+        printf("%s No invalid memory type index could be found; skipped.\n", kSkipPrefix);
+        AHardwareBuffer_release(ahb);
+        vk::DestroyImage(m_device->device(), dsImage, nullptr);
+        return;
+    }
+
+    VkDeviceMemory memory;
+    m_errorMonitor->ExpectSuccess();
+    vk::AllocateMemory(m_device->device(), &memory_allocate_info, nullptr, &memory);
+    vk::BindImageMemory(m_device->device(), dsImage, memory, 0);
+    m_errorMonitor->VerifyNotFound();
+
+    vk::DestroyImage(m_device->device(), dsImage, nullptr);
+    vk::FreeMemory(m_device->device(), memory, nullptr);
+}
+
 #endif  // VK_USE_PLATFORM_ANDROID_KHR

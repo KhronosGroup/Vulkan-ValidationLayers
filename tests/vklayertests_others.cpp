@@ -4735,8 +4735,19 @@ TEST_F(VkLayerTest, AndroidHardwareBufferMemoryAllocation) {
     mdai.pNext = mai.pNext;
     mai.pNext = &mdai;
 
-    // Dedicated allocation with unmatched usage bits
+    // Dedicated allocation with unmatched usage bits for Color
     ahb_desc.format = AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM;
+    ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER;
+    ahb_desc.height = 64;
+    recreate_ahb();
+    mai.allocationSize = ahb_props.allocationSize;
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-02390");
+    vk::AllocateMemory(dev, &mai, NULL, &mem_handle);
+    m_errorMonitor->VerifyFound();
+    reset_mem();
+
+    // Dedicated allocation with unmatched usage bits for Depth/Stencil
+    ahb_desc.format = AHARDWAREBUFFER_FORMAT_S8_UINT;
     ahb_desc.usage = AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER;
     ahb_desc.height = 64;
     recreate_ahb();
