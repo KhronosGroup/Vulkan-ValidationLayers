@@ -11614,6 +11614,12 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
                                               const VkAllocationCallbacks *pAllocator, VkSampler *pSampler) const {
     bool skip = false;
 
+    if (samplerMap.size() >= phys_dev_props.limits.maxSamplerAllocationCount) {
+        skip |= LogError(device, kVUIDUndefined,
+                         "vkCreateSampler(): Number of currently valid sampler objects is not less than the maximum allowed (%u).",
+                         phys_dev_props.limits.maxSamplerAllocationCount);
+    }
+
     if (enabled_features.core11.samplerYcbcrConversion == VK_TRUE) {
         const VkSamplerYcbcrConversionInfo *conversion_info = lvl_find_in_chain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext);
         if (conversion_info != nullptr) {
