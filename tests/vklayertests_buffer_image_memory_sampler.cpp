@@ -2591,6 +2591,53 @@ TEST_F(VkLayerTest, ExceedMemoryAllocationCount) {
     }
 }
 
+TEST_F(VkLayerTest, ExceedSamplerAllocationCount) {
+    VkResult err = VK_SUCCESS;
+    const int max_samplers = 32;
+    VkSampler samplers[max_samplers + 1];
+
+    if (!EnableDeviceProfileLayer()) {
+        printf("%s Failed to enable device profile layer.\n", kSkipPrefix);
+        return;
+    }
+
+    ASSERT_NO_FATAL_FAILURE(InitFramework(m_errorMonitor));
+
+    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT =
+        (PFN_vkSetPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkSetPhysicalDeviceLimitsEXT");
+    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT =
+        (PFN_vkGetOriginalPhysicalDeviceLimitsEXT)vk::GetInstanceProcAddr(instance(), "vkGetOriginalPhysicalDeviceLimitsEXT");
+
+    if (!(fpvkSetPhysicalDeviceLimitsEXT) || !(fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
+        printf("%s Can't find device_profile_api functions; skipped.\n", kSkipPrefix);
+        return;
+    }
+    VkPhysicalDeviceProperties props;
+    fpvkGetOriginalPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    if (props.limits.maxSamplerAllocationCount > max_samplers) {
+        props.limits.maxSamplerAllocationCount = max_samplers;
+        fpvkSetPhysicalDeviceLimitsEXT(gpu(), &props.limits);
+    }
+    ASSERT_NO_FATAL_FAILURE(InitState());
+    m_errorMonitor->SetDesiredFailureMsg(kErrorBit,
+                                         "Number of currently valid sampler objects is not less than the maximum allowed");
+
+    VkSamplerCreateInfo sampler_create_info = SafeSaneSamplerCreateInfo();
+
+    int i;
+    for (i = 0; i <= max_samplers; i++) {
+        err = vk::CreateSampler(m_device->device(), &sampler_create_info, NULL, &samplers[i]);
+        if (err != VK_SUCCESS) {
+            break;
+        }
+    }
+    m_errorMonitor->VerifyFound();
+
+    for (int j = 0; j < i; j++) {
+        vk::DestroySampler(m_device->device(), samplers[j], NULL);
+    }
+}
+
 TEST_F(VkLayerTest, ImageSampleCounts) {
     TEST_DESCRIPTION("Use bad sample counts in image transfer calls to trigger validation errors.");
     ASSERT_NO_FATAL_FAILURE(Init(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
