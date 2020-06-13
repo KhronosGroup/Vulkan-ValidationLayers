@@ -3525,42 +3525,43 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
         const VulkanTypedHandle obj_struct(buffer, kVulkanObjectTypeBuffer);
         skip = ValidateSetMemBinding(mem, obj_struct, api_name);
 
-        if (buffer_state->external_ahb) {
-            // TODO check what is valid to cover with external AHB below
-            return skip;
-        }
-
-        // Validate memory requirements alignment
-        if (SafeModulo(memoryOffset, buffer_state->requirements.alignment) != 0) {
-            const char *vuid =
-                bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memoryOffset-01600" : "VUID-vkBindBufferMemory-memoryOffset-01036";
-            skip |= LogError(buffer, vuid,
-                             "%s: memoryOffset is 0x%" PRIxLEAST64
-                             " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
-                             ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
-                             api_name, memoryOffset, buffer_state->requirements.alignment);
-        }
-
         const auto mem_info = GetDevMemState(mem);
-        if (mem_info) {
-            // Validate bound memory range information
-            skip |= ValidateInsertBufferMemoryRange(buffer, mem_info, memoryOffset, api_name);
 
-            const char *mem_type_vuid =
-                bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01599" : "VUID-vkBindBufferMemory-memory-01035";
-            skip |= ValidateMemoryTypes(mem_info, buffer_state->requirements.memoryTypeBits, api_name, mem_type_vuid);
-
-            // Validate memory requirements size
-            if (buffer_state->requirements.size > (mem_info->alloc_info.allocationSize - memoryOffset)) {
+        // All validation using the buffer_state->requirements for external AHB is check in android only section
+        if (buffer_state->external_ahb == false) {
+            // Validate memory requirements alignment
+            if (SafeModulo(memoryOffset, buffer_state->requirements.alignment) != 0) {
                 const char *vuid =
-                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-size-01601" : "VUID-vkBindBufferMemory-size-01037";
+                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memoryOffset-01600" : "VUID-vkBindBufferMemory-memoryOffset-01036";
                 skip |= LogError(buffer, vuid,
-                                 "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
-                                 " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
-                                 ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
-                                 api_name, mem_info->alloc_info.allocationSize - memoryOffset, buffer_state->requirements.size);
+                                "%s: memoryOffset is 0x%" PRIxLEAST64
+                                " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
+                                ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
+                                api_name, memoryOffset, buffer_state->requirements.alignment);
             }
 
+            if (mem_info) {
+                // Validate bound memory range information
+                skip |= ValidateInsertBufferMemoryRange(buffer, mem_info, memoryOffset, api_name);
+
+                const char *mem_type_vuid =
+                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memory-01599" : "VUID-vkBindBufferMemory-memory-01035";
+                skip |= ValidateMemoryTypes(mem_info, buffer_state->requirements.memoryTypeBits, api_name, mem_type_vuid);
+
+                // Validate memory requirements size
+                if (buffer_state->requirements.size > (mem_info->alloc_info.allocationSize - memoryOffset)) {
+                    const char *vuid =
+                        bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-size-01601" : "VUID-vkBindBufferMemory-size-01037";
+                    skip |= LogError(buffer, vuid,
+                                    "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
+                                    " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
+                                    ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
+                                    api_name, mem_info->alloc_info.allocationSize - memoryOffset, buffer_state->requirements.size);
+                }
+            }
+        }
+
+        if (mem_info) {
             // Validate dedicated allocation
             if (mem_info->is_dedicated && ((mem_info->dedicated_buffer != buffer) || (memoryOffset != 0))) {
                 const char *vuid =
@@ -9976,11 +9977,6 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
             // Track objects tied to memory
             skip |= ValidateSetMemBinding(bindInfo.memory, VulkanTypedHandle(bindInfo.image, kVulkanObjectTypeImage), error_prefix);
 
-            if (image_state->external_ahb) {
-                // TODO check what is valid to cover with external AHB below
-                return skip;
-            }
-
             const auto plane_info = lvl_find_in_chain<VkBindImagePlaneMemoryInfo>(bindInfo.pNext);
             const auto mem_info = GetDevMemState(bindInfo.memory);
 
@@ -9988,55 +9984,59 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
             // no 'else' case as if that happens another VUID is already being triggered for it being invalid
             if ((plane_info == nullptr) && (image_state->disjoint == false)) {
                 // Check non-disjoint images VkMemoryRequirements
-                VkMemoryRequirements mem_req = image_state->requirements;
 
-                // Validate memory requirements alignment
-                if (SafeModulo(bindInfo.memoryOffset, mem_req.alignment) != 0) {
-                    const char *validation_error;
-                    if (bind_image_mem_2 == false) {
-                        validation_error = "VUID-vkBindImageMemory-memoryOffset-01048";
-                    } else if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
-                        validation_error = "VUID-VkBindImageMemoryInfo-pNext-01616";
-                    } else {
-                        validation_error = "VUID-VkBindImageMemoryInfo-memoryOffset-01613";
-                    }
-                    skip |= LogError(bindInfo.image, validation_error,
-                                     "%s: memoryOffset is 0x%" PRIxLEAST64
-                                     " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
-                                     ", returned from a call to vkGetImageMemoryRequirements with image.",
-                                     error_prefix, bindInfo.memoryOffset, mem_req.alignment);
-                }
+                // All validation using the image_state->requirements for external AHB is check in android only section
+                if (image_state->external_ahb == false) {
+                    const VkMemoryRequirements mem_req = image_state->requirements;
 
-                if (mem_info) {
-                    safe_VkMemoryAllocateInfo alloc_info = mem_info->alloc_info;
-                    // Validate memory requirements size
-                    if (mem_req.size > alloc_info.allocationSize - bindInfo.memoryOffset) {
+                    // Validate memory requirements alignment
+                    if (SafeModulo(bindInfo.memoryOffset, mem_req.alignment) != 0) {
                         const char *validation_error;
                         if (bind_image_mem_2 == false) {
-                            validation_error = "VUID-vkBindImageMemory-size-01049";
+                            validation_error = "VUID-vkBindImageMemory-memoryOffset-01048";
                         } else if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
-                            validation_error = "VUID-VkBindImageMemoryInfo-pNext-01617";
+                            validation_error = "VUID-VkBindImageMemoryInfo-pNext-01616";
                         } else {
-                            validation_error = "VUID-VkBindImageMemoryInfo-memory-01614";
+                            validation_error = "VUID-VkBindImageMemoryInfo-memoryOffset-01613";
                         }
                         skip |= LogError(bindInfo.image, validation_error,
-                                         "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
-                                         " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
-                                         ", returned from a call to vkGetImageMemoryRequirements with image.",
-                                         error_prefix, alloc_info.allocationSize - bindInfo.memoryOffset, mem_req.size);
+                                        "%s: memoryOffset is 0x%" PRIxLEAST64
+                                        " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
+                                        ", returned from a call to vkGetImageMemoryRequirements with image.",
+                                        error_prefix, bindInfo.memoryOffset, mem_req.alignment);
                     }
 
-                    // Validate memory type used
-                    {
-                        const char *validation_error;
-                        if (bind_image_mem_2 == false) {
-                            validation_error = "VUID-vkBindImageMemory-memory-01047";
-                        } else if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
-                            validation_error = "VUID-VkBindImageMemoryInfo-pNext-01615";
-                        } else {
-                            validation_error = "VUID-VkBindImageMemoryInfo-memory-01612";
+                    if (mem_info) {
+                        safe_VkMemoryAllocateInfo alloc_info = mem_info->alloc_info;
+                        // Validate memory requirements size
+                        if (mem_req.size > alloc_info.allocationSize - bindInfo.memoryOffset) {
+                            const char *validation_error;
+                            if (bind_image_mem_2 == false) {
+                                validation_error = "VUID-vkBindImageMemory-size-01049";
+                            } else if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
+                                validation_error = "VUID-VkBindImageMemoryInfo-pNext-01617";
+                            } else {
+                                validation_error = "VUID-VkBindImageMemoryInfo-memory-01614";
+                            }
+                            skip |= LogError(bindInfo.image, validation_error,
+                                            "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
+                                            " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
+                                            ", returned from a call to vkGetImageMemoryRequirements with image.",
+                                            error_prefix, alloc_info.allocationSize - bindInfo.memoryOffset, mem_req.size);
                         }
-                        skip |= ValidateMemoryTypes(mem_info, mem_req.memoryTypeBits, error_prefix, validation_error);
+
+                        // Validate memory type used
+                        {
+                            const char *validation_error;
+                            if (bind_image_mem_2 == false) {
+                                validation_error = "VUID-vkBindImageMemory-memory-01047";
+                            } else if (device_extensions.vk_khr_sampler_ycbcr_conversion) {
+                                validation_error = "VUID-VkBindImageMemoryInfo-pNext-01615";
+                            } else {
+                                validation_error = "VUID-VkBindImageMemoryInfo-memory-01612";
+                            }
+                            skip |= ValidateMemoryTypes(mem_info, mem_req.memoryTypeBits, error_prefix, validation_error);
+                        }
                     }
                 }
 
@@ -10056,54 +10056,58 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
             } else if ((plane_info != nullptr) && (image_state->disjoint == true)) {
                 // Check disjoint images VkMemoryRequirements for given plane
                 int plane = 0;
-                VkMemoryRequirements disjoint_mem_req = {};
-                VkImageAspectFlagBits aspect = plane_info->planeAspect;
-                switch (aspect) {
-                    case VK_IMAGE_ASPECT_PLANE_0_BIT:
-                        plane = 0;
-                        disjoint_mem_req = image_state->plane0_requirements;
-                        break;
-                    case VK_IMAGE_ASPECT_PLANE_1_BIT:
-                        plane = 1;
-                        disjoint_mem_req = image_state->plane1_requirements;
-                        break;
-                    case VK_IMAGE_ASPECT_PLANE_2_BIT:
-                        plane = 2;
-                        disjoint_mem_req = image_state->plane2_requirements;
-                        break;
-                    default:
-                        assert(false);  // parameter validation should have caught this
-                        break;
-                }
 
-                // Validate memory requirements alignment
-                if (SafeModulo(bindInfo.memoryOffset, disjoint_mem_req.alignment) != 0) {
-                    skip |= LogError(
-                        bindInfo.image, "VUID-VkBindImageMemoryInfo-pNext-01620",
-                        "%s: memoryOffset is 0x%" PRIxLEAST64
-                        " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
-                        ", returned from a call to vkGetImageMemoryRequirements2 with disjoint image for aspect plane %s.",
-                        error_prefix, bindInfo.memoryOffset, disjoint_mem_req.alignment, string_VkImageAspectFlagBits(aspect));
-                }
-
-                if (mem_info) {
-                    safe_VkMemoryAllocateInfo alloc_info = mem_info->alloc_info;
-
-                    // Validate memory requirements size
-                    if (disjoint_mem_req.size > alloc_info.allocationSize - bindInfo.memoryOffset) {
-                        skip |= LogError(
-                            bindInfo.image, "VUID-VkBindImageMemoryInfo-pNext-01621",
-                            "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
-                            " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
-                            ", returned from a call to vkGetImageMemoryRequirements with disjoint image for aspect plane %s.",
-                            error_prefix, alloc_info.allocationSize - bindInfo.memoryOffset, disjoint_mem_req.size,
-                            string_VkImageAspectFlagBits(aspect));
+                // All validation using the image_state->plane*_requirements for external AHB is check in android only section
+                if (image_state->external_ahb == false) {
+                    VkMemoryRequirements disjoint_mem_req = {};
+                    const VkImageAspectFlagBits aspect = plane_info->planeAspect;
+                    switch (aspect) {
+                        case VK_IMAGE_ASPECT_PLANE_0_BIT:
+                            plane = 0;
+                            disjoint_mem_req = image_state->plane0_requirements;
+                            break;
+                        case VK_IMAGE_ASPECT_PLANE_1_BIT:
+                            plane = 1;
+                            disjoint_mem_req = image_state->plane1_requirements;
+                            break;
+                        case VK_IMAGE_ASPECT_PLANE_2_BIT:
+                            plane = 2;
+                            disjoint_mem_req = image_state->plane2_requirements;
+                            break;
+                        default:
+                            assert(false);  // parameter validation should have caught this
+                            break;
                     }
 
-                    // Validate memory type used
-                    {
-                        skip |= ValidateMemoryTypes(mem_info, disjoint_mem_req.memoryTypeBits, error_prefix,
-                                                    "VUID-VkBindImageMemoryInfo-pNext-01619");
+                    // Validate memory requirements alignment
+                    if (SafeModulo(bindInfo.memoryOffset, disjoint_mem_req.alignment) != 0) {
+                        skip |= LogError(
+                            bindInfo.image, "VUID-VkBindImageMemoryInfo-pNext-01620",
+                            "%s: memoryOffset is 0x%" PRIxLEAST64
+                            " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
+                            ", returned from a call to vkGetImageMemoryRequirements2 with disjoint image for aspect plane %s.",
+                            error_prefix, bindInfo.memoryOffset, disjoint_mem_req.alignment, string_VkImageAspectFlagBits(aspect));
+                    }
+
+                    if (mem_info) {
+                        safe_VkMemoryAllocateInfo alloc_info = mem_info->alloc_info;
+
+                        // Validate memory requirements size
+                        if (disjoint_mem_req.size > alloc_info.allocationSize - bindInfo.memoryOffset) {
+                            skip |= LogError(
+                                bindInfo.image, "VUID-VkBindImageMemoryInfo-pNext-01621",
+                                "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
+                                " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
+                                ", returned from a call to vkGetImageMemoryRequirements with disjoint image for aspect plane %s.",
+                                error_prefix, alloc_info.allocationSize - bindInfo.memoryOffset, disjoint_mem_req.size,
+                                string_VkImageAspectFlagBits(aspect));
+                        }
+
+                        // Validate memory type used
+                        {
+                            skip |= ValidateMemoryTypes(mem_info, disjoint_mem_req.memoryTypeBits, error_prefix,
+                                                        "VUID-VkBindImageMemoryInfo-pNext-01619");
+                        }
                     }
                 }
 
