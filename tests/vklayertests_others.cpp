@@ -5247,9 +5247,7 @@ TEST_F(VkLayerTest, AndroidHardwareBufferImportBuffer) {
         return;
     }
 
-    // Import as buffer requires format AHB_FMT_BLOB and usage AHB_USAGE_GPU_DATA_BUFFER
-    // VUID prints out once for invalid Format and invalid Usage
-    m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01881");
+    // Import as buffer requires usage AHB_USAGE_GPU_DATA_BUFFER
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01881");
     // Also causes "non-dedicated allocation format/usage" error
     m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkMemoryAllocateInfo-pNext-02384");
