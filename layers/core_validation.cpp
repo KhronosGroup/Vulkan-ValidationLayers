@@ -2659,8 +2659,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
         AHardwareBuffer_Desc ahb_desc = {};
         AHardwareBuffer_describe(import_ahb_info->buffer, &ahb_desc);
 
-        //  If buffer is not NULL, it must be a valid Android hardware buffer object with AHardwareBuffer_Desc::format and
-        //  AHardwareBuffer_Desc::usage compatible with Vulkan as described in Android Hardware Buffers.
+        //  Validate AHardwareBuffer_Desc::usage is a valid usage for imported AHB
         //
         //  BLOB & GPU_DATA_BUFFER combo specifically allowed
         if ((AHARDWAREBUFFER_FORMAT_BLOB != ahb_desc.format) || (0 == (ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_DATA_BUFFER))) {
@@ -2674,12 +2673,6 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
                     LogError(device, "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01881",
                              "vkAllocateMemory: The AHardwareBuffer_Desc's usage (0x%" PRIx64 ") is not compatible with Vulkan.",
                              ahb_desc.usage);
-            }
-            if (0 == ahb_format_map_a2v.count(ahb_desc.format)) {
-                skip |=
-                    LogError(device, "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01881",
-                             "vkAllocateMemory: The AHardwareBuffer_Desc's format (0x%" PRIx32 ") is not compatible with Vulkan.",
-                             ahb_desc.format);
             }
         }
 
@@ -2698,40 +2691,40 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo *alloc
 
         DispatchGetPhysicalDeviceExternalBufferProperties(physical_device, &pdebi, &ext_buf_props);
 
-        // Collect external format info
-        VkPhysicalDeviceExternalImageFormatInfo pdeifi = {};
-        pdeifi.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO;
-        pdeifi.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
-        VkPhysicalDeviceImageFormatInfo2 pdifi2 = {};
-        pdifi2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2;
-        pdifi2.pNext = &pdeifi;
-        if (0 < ahb_format_map_a2v.count(ahb_desc.format)) pdifi2.format = ahb_format_map_a2v[ahb_desc.format];
-        pdifi2.type = VK_IMAGE_TYPE_2D;           // Seems likely
-        pdifi2.tiling = VK_IMAGE_TILING_OPTIMAL;  // Ditto
-        if (AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE & ahb_desc.usage) {
-            pdifi2.usage |= ahb_usage_map_a2v[AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE];
-        }
-        if (AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT & ahb_desc.usage) {
-            pdifi2.usage |= ahb_usage_map_a2v[AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT];
-        }
-        if (AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP & ahb_desc.usage) {
-            pdifi2.flags |= ahb_create_map_a2v[AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP];
-        }
-        if (AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT & ahb_desc.usage) {
-            pdifi2.flags |= ahb_create_map_a2v[AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT];
-        }
-
-        VkExternalImageFormatProperties ext_img_fmt_props = {};
-        ext_img_fmt_props.sType = VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES;
-        VkImageFormatProperties2 ifp2 = {};
-        ifp2.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2;
-        ifp2.pNext = &ext_img_fmt_props;
-
-        VkResult fmt_lookup_result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &pdifi2, &ifp2);
-
         //  If buffer is not NULL, Android hardware buffers must be supported for import, as reported by
         //  VkExternalImageFormatProperties or VkExternalBufferProperties.
         if (0 == (ext_buf_props.externalMemoryProperties.externalMemoryFeatures & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT)) {
+            // Collect external format info
+            VkPhysicalDeviceExternalImageFormatInfo pdeifi = {};
+            pdeifi.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO;
+            pdeifi.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
+            VkPhysicalDeviceImageFormatInfo2 pdifi2 = {};
+            pdifi2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2;
+            pdifi2.pNext = &pdeifi;
+            if (0 < ahb_format_map_a2v.count(ahb_desc.format)) pdifi2.format = ahb_format_map_a2v[ahb_desc.format];
+            pdifi2.type = VK_IMAGE_TYPE_2D;           // Seems likely
+            pdifi2.tiling = VK_IMAGE_TILING_OPTIMAL;  // Ditto
+            if (AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE & ahb_desc.usage) {
+                pdifi2.usage |= ahb_usage_map_a2v[AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE];
+            }
+            if (AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT & ahb_desc.usage) {
+                pdifi2.usage |= ahb_usage_map_a2v[AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT];
+            }
+            if (AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP & ahb_desc.usage) {
+                pdifi2.flags |= ahb_create_map_a2v[AHARDWAREBUFFER_USAGE_GPU_CUBE_MAP];
+            }
+            if (AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT & ahb_desc.usage) {
+                pdifi2.flags |= ahb_create_map_a2v[AHARDWAREBUFFER_USAGE_PROTECTED_CONTENT];
+            }
+
+            VkExternalImageFormatProperties ext_img_fmt_props = {};
+            ext_img_fmt_props.sType = VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES;
+            VkImageFormatProperties2 ifp2 = {};
+            ifp2.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2;
+            ifp2.pNext = &ext_img_fmt_props;
+
+            VkResult fmt_lookup_result = DispatchGetPhysicalDeviceImageFormatProperties2(physical_device, &pdifi2, &ifp2);
+
             if ((VK_SUCCESS != fmt_lookup_result) || (0 == (ext_img_fmt_props.externalMemoryProperties.externalMemoryFeatures &
                                                             VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT))) {
                 skip |= LogError(device, "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01880",
