@@ -3531,13 +3531,13 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
         if (buffer_state->external_ahb == false) {
             // Validate memory requirements alignment
             if (SafeModulo(memoryOffset, buffer_state->requirements.alignment) != 0) {
-                const char *vuid =
-                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memoryOffset-01600" : "VUID-vkBindBufferMemory-memoryOffset-01036";
+                const char *vuid = bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memoryOffset-01600"
+                                                     : "VUID-vkBindBufferMemory-memoryOffset-01036";
                 skip |= LogError(buffer, vuid,
-                                "%s: memoryOffset is 0x%" PRIxLEAST64
-                                " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
-                                ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
-                                api_name, memoryOffset, buffer_state->requirements.alignment);
+                                 "%s: memoryOffset is 0x%" PRIxLEAST64
+                                 " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
+                                 ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
+                                 api_name, memoryOffset, buffer_state->requirements.alignment);
             }
 
             if (mem_info) {
@@ -3553,10 +3553,10 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                     const char *vuid =
                         bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-size-01601" : "VUID-vkBindBufferMemory-size-01037";
                     skip |= LogError(buffer, vuid,
-                                    "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
-                                    " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
-                                    ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
-                                    api_name, mem_info->alloc_info.allocationSize - memoryOffset, buffer_state->requirements.size);
+                                     "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
+                                     " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
+                                     ", returned from a call to vkGetBufferMemoryRequirements with buffer.",
+                                     api_name, mem_info->alloc_info.allocationSize - memoryOffset, buffer_state->requirements.size);
                 }
             }
         }
@@ -3585,6 +3585,22 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem, V
                                  "%s: If buffer was created with the VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR bit set, "
                                  "memory must have been allocated with the VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR bit set.",
                                  api_name);
+            }
+
+            // Validate export memory handles
+            if ((mem_info->export_handle_type_flags != 0) &&
+                ((mem_info->export_handle_type_flags & buffer_state->external_memory_handle) == 0)) {
+                const char *vuid =
+                    bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-handleTypes-02791" : "VUID-vkBindBufferMemory-memory-02726";
+                LogObjectList objlist(buffer);
+                objlist.add(mem);
+                skip |= LogError(objlist, vuid,
+                                 "%s: The VkDeviceMemory (%s) has an external handleType of %s which does not include at least one "
+                                 "handle from VkBuffer (%s) handleType %s.",
+                                 api_name, report_data->FormatHandle(mem).c_str(),
+                                 string_VkExternalMemoryHandleTypeFlags(mem_info->export_handle_type_flags).c_str(),
+                                 report_data->FormatHandle(buffer).c_str(),
+                                 string_VkExternalMemoryHandleTypeFlags(buffer_state->external_memory_handle).c_str());
             }
         }
     }
@@ -9999,11 +10015,12 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                         } else {
                             validation_error = "VUID-VkBindImageMemoryInfo-memoryOffset-01613";
                         }
-                        skip |= LogError(bindInfo.image, validation_error,
-                                        "%s: memoryOffset is 0x%" PRIxLEAST64
-                                        " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
-                                        ", returned from a call to vkGetImageMemoryRequirements with image.",
-                                        error_prefix, bindInfo.memoryOffset, mem_req.alignment);
+                        skip |=
+                            LogError(bindInfo.image, validation_error,
+                                     "%s: memoryOffset is 0x%" PRIxLEAST64
+                                     " but must be an integer multiple of the VkMemoryRequirements::alignment value 0x%" PRIxLEAST64
+                                     ", returned from a call to vkGetImageMemoryRequirements with image.",
+                                     error_prefix, bindInfo.memoryOffset, mem_req.alignment);
                     }
 
                     if (mem_info) {
@@ -10019,10 +10036,10 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                 validation_error = "VUID-VkBindImageMemoryInfo-memory-01614";
                             }
                             skip |= LogError(bindInfo.image, validation_error,
-                                            "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
-                                            " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
-                                            ", returned from a call to vkGetImageMemoryRequirements with image.",
-                                            error_prefix, alloc_info.allocationSize - bindInfo.memoryOffset, mem_req.size);
+                                             "%s: memory size minus memoryOffset is 0x%" PRIxLEAST64
+                                             " but must be at least as large as VkMemoryRequirements::size value 0x%" PRIxLEAST64
+                                             ", returned from a call to vkGetImageMemoryRequirements with image.",
+                                             error_prefix, alloc_info.allocationSize - bindInfo.memoryOffset, mem_req.size);
                         }
 
                         // Validate memory type used
@@ -10177,6 +10194,22 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                 report_data->FormatHandle(bindInfo.image).c_str(), bindInfo.memoryOffset);
                         }
                     }
+                }
+
+                // Validate export memory handles
+                if ((mem_info->export_handle_type_flags != 0) &&
+                    ((mem_info->export_handle_type_flags & image_state->external_memory_handle) == 0)) {
+                    const char *vuid =
+                        bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-handleTypes-02793" : "VUID-vkBindImageMemory-memory-02728";
+                    LogObjectList objlist(bindInfo.image);
+                    objlist.add(bindInfo.memory);
+                    skip |= LogError(objlist, vuid,
+                                     "%s: The VkDeviceMemory (%s) has an external handleType of %s which does not include at least "
+                                     "one handle from VkImage (%s) handleType %s.",
+                                     error_prefix, report_data->FormatHandle(bindInfo.memory).c_str(),
+                                     string_VkExternalMemoryHandleTypeFlags(mem_info->export_handle_type_flags).c_str(),
+                                     report_data->FormatHandle(bindInfo.image).c_str(),
+                                     string_VkExternalMemoryHandleTypeFlags(image_state->external_memory_handle).c_str());
                 }
             }
 
