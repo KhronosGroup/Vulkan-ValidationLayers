@@ -6419,8 +6419,7 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     rpci.pAttachments = &attach_desc;
     rpci.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     VkRenderPass rp;
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
-                                         "Layout for input attachment is GENERAL but should be READ_ONLY_OPTIMAL.");
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
     vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
     m_errorMonitor->VerifyFound();
     // error w/ non-general layout
@@ -6436,8 +6435,7 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     subpass.pColorAttachments = &attach;
     attach.layout = VK_IMAGE_LAYOUT_GENERAL;
     // perf warning for GENERAL layout on color attachment
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
-                                         "Layout for color attachment is GENERAL but should be COLOR_ATTACHMENT_OPTIMAL.");
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
     vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
     m_errorMonitor->VerifyFound();
     // error w/ non-color opt or GENERAL layout for color attachment
@@ -6451,8 +6449,7 @@ TEST_F(VkLayerTest, InvalidImageLayout) {
     subpass.pDepthStencilAttachment = &attach;
     attach.layout = VK_IMAGE_LAYOUT_GENERAL;
     // perf warning for GENERAL layout on DS attachment
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
-                                         "GENERAL layout for depth attachment may not give optimal performance.");
+    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "UNASSIGNED-CoreValidation-DrawState-InvalidImageLayout");
     vk::CreateRenderPass(m_device->device(), &rpci, NULL, &rp);
     m_errorMonitor->VerifyFound();
     // error w/ non-ds opt or GENERAL layout for color attachment
