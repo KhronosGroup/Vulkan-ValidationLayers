@@ -40,12 +40,8 @@ action("vulkan_clean_old_validation_layer_objects") {
   script = "build-gn/remove_files.py"
 
   # inputs is a (random) new file since the vvl roll, used to ensure the cleanup is done only once
-  inputs = [
-    "layers/gpu_validation.cpp",
-  ]
-  outputs = [
-    "$vulkan_gen_dir/old_vvl_files_are_removed",
-  ]
+  inputs = [ "layers/gpu_validation.cpp" ]
+  outputs = [ "$vulkan_gen_dir/old_vvl_files_are_removed" ]
   args = [
     "$raw_vulkan_gen_dir/old_vvl_files_are_removed",
     "$raw_root_out_dir/libVkLayer*",
@@ -85,11 +81,9 @@ config("vulkan_layer_config") {
 core_validation_sources = [
   "layers/buffer_validation.cpp",
   "layers/buffer_validation.h",
-  "layers/state_tracker.cpp",
-  "layers/state_tracker.h",
+  "layers/convert_to_renderpass2.cpp",
   "layers/core_validation.cpp",
   "layers/core_validation.h",
-  "layers/convert_to_renderpass2.cpp",
   "layers/descriptor_sets.cpp",
   "layers/descriptor_sets.h",
   "layers/drawdispatch.cpp",
@@ -97,15 +91,17 @@ core_validation_sources = [
   "layers/gpu_utils.h",
   "layers/gpu_validation.cpp",
   "layers/gpu_validation.h",
-  "layers/shader_validation.cpp",
-  "layers/shader_validation.h",
-  "layers/xxhash.c",
-  "layers/xxhash.h",
   "layers/image_layout_map.cpp",
   "layers/image_layout_map.h",
   "layers/range_vector.h",
+  "layers/shader_validation.cpp",
+  "layers/shader_validation.h",
+  "layers/state_tracker.cpp",
+  "layers/state_tracker.h",
   "layers/subresource_adapter.cpp",
   "layers/subresource_adapter.h",
+  "layers/xxhash.c",
+  "layers/xxhash.h",
 ]
 
 object_lifetimes_sources = [
@@ -128,34 +124,34 @@ thread_safety_sources = [
 unique_objects_sources = []
 
 best_practices_sources = [
-  "layers/generated/best_practices.cpp",
-  "layers/generated/best_practices.h",
+  "layers/best_practices_error_enums.h",
   "layers/best_practices_utils.cpp",
   "layers/best_practices_validation.h",
-  "layers/best_practices_error_enums.h",
+  "layers/generated/best_practices.cpp",
+  "layers/generated/best_practices.h",
 ]
 
 debug_printf_sources = [
   "layers/debug_printf.cpp",
-  "layers/debug_printf.h"
+  "layers/debug_printf.h",
 ]
 
 command_counter_sources = [
+  "layers/command_counter.h",
   "layers/generated/command_counter_helper.cpp",
   "layers/generated/command_counter_helper.h",
-  "layers/command_counter.h",
 ]
 
 chassis_sources = [
-  "layers/generated/vk_safe_struct.cpp",
-  "layers/generated/vk_safe_struct.h",
-  "layers/generated/thread_safety.h",
+  "$vulkan_headers_dir/include/vulkan/vk_layer.h",
+  "$vulkan_headers_dir/include/vulkan/vulkan.h",
   "layers/generated/chassis.cpp",
   "layers/generated/chassis.h",
   "layers/generated/layer_chassis_dispatch.cpp",
   "layers/generated/layer_chassis_dispatch.h",
-  "$vulkan_headers_dir/include/vulkan/vk_layer.h",
-  "$vulkan_headers_dir/include/vulkan/vulkan.h",
+  "layers/generated/thread_safety.h",
+  "layers/generated/vk_safe_struct.cpp",
+  "layers/generated/vk_safe_struct.h",
 ]
 
 layers = [ [
@@ -173,15 +169,9 @@ if (!is_android) {
     script = "build-gn/generate_vulkan_layers_json.py"
 
     # Make sure that the cleanup of old layer JSON files happens before the new ones are generated.
-    deps = [
-      ":vulkan_clean_old_validation_layer_objects",
-    ]
-    json_names = [
-      "VkLayer_khronos_validation.json",
-    ]
-    sources = [
-      "$vulkan_headers_dir/include/vulkan/vulkan_core.h",
-    ]
+    deps = [ ":vulkan_clean_old_validation_layer_objects" ]
+    json_names = [ "VkLayer_khronos_validation.json" ]
+    sources = [ "$vulkan_headers_dir/include/vulkan/vulkan_core.h" ]
     outputs = []
     foreach(json_name, json_names) {
       sources += [ "layers/json/$json_name.in" ]
@@ -215,13 +205,10 @@ source_set("vulkan_layer_utils") {
     "layers/vk_layer_utils.cpp",
     "layers/vk_layer_utils.h",
   ]
-  public_configs = [
-    "$vulkan_headers_dir:vulkan_headers_config",
-    ":vulkan_internal_config",
-  ]
+  public_configs = [ ":vulkan_internal_config" ]
   configs -= [ "//build/config/compiler:chromium_code" ]
   configs += [ "//build/config/compiler:no_chromium_code" ]
-  public_deps = []
+  public_deps = [ "$vulkan_headers_dir:vulkan_headers" ]
   configs -= vulkan_undefine_configs
 }
 
