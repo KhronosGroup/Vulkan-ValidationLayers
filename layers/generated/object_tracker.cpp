@@ -46,11 +46,11 @@ bool ObjectLifetimes::ReportUndestroyedInstanceObjects(VkInstance instance, cons
 bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const std::string& error_code) const {
     bool skip = false;
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeCommandBuffer, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeBuffer, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeImage, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeSemaphore, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeFence, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeDeviceMemory, error_code);
-    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeBuffer, error_code);
-    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeImage, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeEvent, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeQueryPool, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeBufferView, error_code);
@@ -58,12 +58,12 @@ bool ObjectLifetimes::ReportUndestroyedDeviceObjects(VkDevice device, const std:
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeShaderModule, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypePipelineCache, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypePipelineLayout, error_code);
-    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeRenderPass, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypePipeline, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeRenderPass, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeDescriptorSetLayout, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeSampler, error_code);
-    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeDescriptorPool, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeDescriptorSet, error_code);
+    skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeDescriptorPool, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeFramebuffer, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeCommandPool, error_code);
     skip |= ReportLeakedDeviceObjects(device, kVulkanObjectTypeSamplerYcbcrConversion, error_code);
@@ -87,11 +87,11 @@ void ObjectLifetimes::DestroyLeakedInstanceObjects() {
 }
 void ObjectLifetimes::DestroyLeakedDeviceObjects() {
     DestroyUndestroyedObjects(kVulkanObjectTypeCommandBuffer);
+    DestroyUndestroyedObjects(kVulkanObjectTypeBuffer);
+    DestroyUndestroyedObjects(kVulkanObjectTypeImage);
     DestroyUndestroyedObjects(kVulkanObjectTypeSemaphore);
     DestroyUndestroyedObjects(kVulkanObjectTypeFence);
     DestroyUndestroyedObjects(kVulkanObjectTypeDeviceMemory);
-    DestroyUndestroyedObjects(kVulkanObjectTypeBuffer);
-    DestroyUndestroyedObjects(kVulkanObjectTypeImage);
     DestroyUndestroyedObjects(kVulkanObjectTypeEvent);
     DestroyUndestroyedObjects(kVulkanObjectTypeQueryPool);
     DestroyUndestroyedObjects(kVulkanObjectTypeBufferView);
@@ -99,12 +99,12 @@ void ObjectLifetimes::DestroyLeakedDeviceObjects() {
     DestroyUndestroyedObjects(kVulkanObjectTypeShaderModule);
     DestroyUndestroyedObjects(kVulkanObjectTypePipelineCache);
     DestroyUndestroyedObjects(kVulkanObjectTypePipelineLayout);
-    DestroyUndestroyedObjects(kVulkanObjectTypeRenderPass);
     DestroyUndestroyedObjects(kVulkanObjectTypePipeline);
+    DestroyUndestroyedObjects(kVulkanObjectTypeRenderPass);
     DestroyUndestroyedObjects(kVulkanObjectTypeDescriptorSetLayout);
     DestroyUndestroyedObjects(kVulkanObjectTypeSampler);
-    DestroyUndestroyedObjects(kVulkanObjectTypeDescriptorPool);
     DestroyUndestroyedObjects(kVulkanObjectTypeDescriptorSet);
+    DestroyUndestroyedObjects(kVulkanObjectTypeDescriptorPool);
     DestroyUndestroyedObjects(kVulkanObjectTypeFramebuffer);
     DestroyUndestroyedObjects(kVulkanObjectTypeCommandPool);
     DestroyUndestroyedObjects(kVulkanObjectTypeSamplerYcbcrConversion);
@@ -5499,8 +5499,8 @@ bool ObjectLifetimes::PreCallValidateDestroyPrivateDataSlotEXT(
     VkPrivateDataSlotEXT                        privateDataSlot,
     const VkAllocationCallbacks*                pAllocator) const {
     bool skip = false;
-    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, kVUIDUndefined, kVUIDUndefined);
-    skip |= ValidateObject(privateDataSlot, kVulkanObjectTypePrivateDataSlotEXT, true, kVUIDUndefined, kVUIDUndefined);
+    skip |= ValidateObject(device, kVulkanObjectTypeDevice, false, "VUID-vkDestroyPrivateDataSlotEXT-device-parameter", kVUIDUndefined);
+    skip |= ValidateObject(privateDataSlot, kVulkanObjectTypePrivateDataSlotEXT, true, "VUID-vkDestroyPrivateDataSlotEXT-privateDataSlot-parameter", "VUID-vkDestroyPrivateDataSlotEXT-privateDataSlot-parent");
     skip |= ValidateDestroyObject(privateDataSlot, kVulkanObjectTypePrivateDataSlotEXT, pAllocator, kVUIDUndefined, kVUIDUndefined);
 
     return skip;

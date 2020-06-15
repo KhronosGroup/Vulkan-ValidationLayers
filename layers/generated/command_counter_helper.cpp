@@ -333,7 +333,7 @@ void CommandCounter::PreCallRecordCmdBuildAccelerationStructureKHR(VkCommandBuff
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
-void CommandCounter::PreCallRecordCmdBuildAccelerationStructureIndirectKHR(VkCommandBuffer                                    commandBuffer, const VkAccelerationStructureBuildGeometryInfoKHR* pInfo, VkBuffer                                           indirectBuffer, VkDeviceSize                                       indirectOffset, uint32_t                                           indirectStride) {
+void CommandCounter::PreCallRecordCmdBuildAccelerationStructureIndirectKHR(VkCommandBuffer                  commandBuffer, const VkAccelerationStructureBuildGeometryInfoKHR* pInfo, VkBuffer                                           indirectBuffer, VkDeviceSize                                       indirectOffset, uint32_t                                           indirectStride) {
     coreChecks->IncrementCommandCount(commandBuffer);
 }
 #endif // VK_ENABLE_BETA_EXTENSIONS
