@@ -6527,7 +6527,7 @@ static const char *vu_summary[] = {"Source or destination queue family must be i
 
 static const std::string image_error_codes[] = {
     "VUID-VkImageMemoryBarrier-image-01381",  //   kSrcOrDstMustBeIgnore
-    "VUID-VkImageMemoryBarrier-image-01766",  //   kSpecialOrIgnoreOnly
+    "VUID-VkImageMemoryBarrier-image-04071",  //   kSpecialOrIgnoreOnly
     "VUID-VkImageMemoryBarrier-image-01201",  //   kSrcIgnoreRequiresDstIgnore
     "VUID-VkImageMemoryBarrier-image-01768",  //   kDstValidOrSpecialIfNotIgnore
     "VUID-VkImageMemoryBarrier-image-01767",  //   kSrcValidOrSpecialIfNotIgnore
@@ -6538,7 +6538,7 @@ static const std::string image_error_codes[] = {
 
 static const std::string buffer_error_codes[] = {
     "VUID-VkBufferMemoryBarrier-buffer-01191",  //  kSrcOrDstMustBeIgnore
-    "VUID-VkBufferMemoryBarrier-buffer-01763",  //  kSpecialOrIgnoreOnly
+    "VUID-VkBufferMemoryBarrier-buffer-04088",  //  kSpecialOrIgnoreOnly
     "VUID-VkBufferMemoryBarrier-buffer-01193",  //  kSrcIgnoreRequiresDstIgnore
     "VUID-VkBufferMemoryBarrier-buffer-01765",  //  kDstValidOrSpecialIfNotIgnore
     "VUID-VkBufferMemoryBarrier-buffer-01764",  //  kSrcValidOrSpecialIfNotIgnore
