@@ -1502,11 +1502,10 @@ bool CoreChecks::ValidateImageUpdate(VkImageView image_view, VkImageLayout image
     if (stencil_usage_info) {
         usage |= stencil_usage_info->stencilUsage;
     }
+
     // Validate that memory is bound to image
-    // TODO: This should have its own valid usage id apart from 2524 which is from CreateImageView case. The only
-    //  the error here occurs is if memory bound to a created imageView has been freed.
-    if (ValidateMemoryIsBoundToImage(image_node, func_name, "VUID-VkImageViewCreateInfo-image-01020")) {
-        *error_code = "VUID-VkImageViewCreateInfo-image-01020";
+    if (ValidateMemoryIsBoundToImage(image_node, func_name, "UNASSIGNED-CoreValidation-BoundResourceFreedMemoryAccess")) {
+        *error_code = "UNASSIGNED-CoreValidation-BoundResourceFreedMemoryAccess";
         *error_msg = "No memory bound to image.";
         return false;
     }
