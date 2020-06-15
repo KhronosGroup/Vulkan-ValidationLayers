@@ -5886,15 +5886,15 @@ TEST_F(VkLayerTest, InvalidBarrierQueueFamilyWithMemExt) {
                   VK_QUEUE_FAMILY_IGNORED, true);
 
         // core_validation::barrier_queue_families::kSpecialOrIgnoreOnly
-        conc_test("VUID-VkImageMemoryBarrier-image-01766", "VUID-VkBufferMemoryBarrier-buffer-01763", submit_family,
+        conc_test("VUID-VkImageMemoryBarrier-image-04071", "VUID-VkBufferMemoryBarrier-buffer-04088", submit_family,
                   VK_QUEUE_FAMILY_IGNORED);
-        conc_test("VUID-VkImageMemoryBarrier-image-01766", "VUID-VkBufferMemoryBarrier-buffer-01763", VK_QUEUE_FAMILY_IGNORED,
+        conc_test("VUID-VkImageMemoryBarrier-image-04071", "VUID-VkBufferMemoryBarrier-buffer-04088", VK_QUEUE_FAMILY_IGNORED,
                   submit_family);
         // This is to flag the errors that would be considered only "unexpected" in the parallel case above
         // true -> positive test
-        conc_test("VUID-VkImageMemoryBarrier-image-01766", "VUID-VkBufferMemoryBarrier-buffer-01763", VK_QUEUE_FAMILY_IGNORED,
+        conc_test("VUID-VkImageMemoryBarrier-image-04071", "VUID-VkBufferMemoryBarrier-buffer-04088", VK_QUEUE_FAMILY_IGNORED,
                   VK_QUEUE_FAMILY_EXTERNAL_KHR, true);
-        conc_test("VUID-VkImageMemoryBarrier-image-01766", "VUID-VkBufferMemoryBarrier-buffer-01763", VK_QUEUE_FAMILY_EXTERNAL_KHR,
+        conc_test("VUID-VkImageMemoryBarrier-image-04071", "VUID-VkBufferMemoryBarrier-buffer-04088", VK_QUEUE_FAMILY_EXTERNAL_KHR,
                   VK_QUEUE_FAMILY_IGNORED, true);
     }
 
