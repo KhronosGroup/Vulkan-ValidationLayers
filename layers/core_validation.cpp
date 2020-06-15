@@ -6495,8 +6495,7 @@ enum VuIndex {
     kSrcOrDstMustBeIgnore,
     kSpecialOrIgnoreOnly,
     kSrcIgnoreRequiresDstIgnore,
-    kDstValidOrSpecialIfNotIgnore,
-    kSrcValidOrSpecialIfNotIgnore,
+    kSrcAndDstValidOrSpecialIfNotIgnore,
     kSrcAndDestMustBeIgnore,
     kBothIgnoreOrBothValid,
     kSubmitQueueMustMatchSrcOrDst
@@ -6514,8 +6513,7 @@ static const std::string image_error_codes[] = {
     "VUID-VkImageMemoryBarrier-image-01381",  //   kSrcOrDstMustBeIgnore
     "VUID-VkImageMemoryBarrier-image-01766",  //   kSpecialOrIgnoreOnly
     "VUID-VkImageMemoryBarrier-image-01201",  //   kSrcIgnoreRequiresDstIgnore
-    "VUID-VkImageMemoryBarrier-image-01768",  //   kDstValidOrSpecialIfNotIgnore
-    "VUID-VkImageMemoryBarrier-image-01767",  //   kSrcValidOrSpecialIfNotIgnore
+    "VUID-VkImageMemoryBarrier-image-01767",  //   kSrcAndDstValidOrSpecialIfNotIgnore kSrcValidOrSpecialIfNotIgnore kDstValidOrSpecialIfNotIgnore
     "VUID-VkImageMemoryBarrier-image-01199",  //   kSrcAndDestMustBeIgnore
     "VUID-VkImageMemoryBarrier-image-01200",  //   kBothIgnoreOrBothValid
     "VUID-VkImageMemoryBarrier-image-01205",  //   kSubmitQueueMustMatchSrcOrDst
@@ -6525,8 +6523,7 @@ static const std::string buffer_error_codes[] = {
     "VUID-VkBufferMemoryBarrier-buffer-01191",  //  kSrcOrDstMustBeIgnore
     "VUID-VkBufferMemoryBarrier-buffer-01763",  //  kSpecialOrIgnoreOnly
     "VUID-VkBufferMemoryBarrier-buffer-01193",  //  kSrcIgnoreRequiresDstIgnore
-    "VUID-VkBufferMemoryBarrier-buffer-01765",  //  kDstValidOrSpecialIfNotIgnore
-    "VUID-VkBufferMemoryBarrier-buffer-01764",  //  kSrcValidOrSpecialIfNotIgnore
+    "VUID-VkBufferMemoryBarrier-buffer-01764",  //  kSrcAndDstValidOrSpecialIfNotIgnore
     "VUID-VkBufferMemoryBarrier-buffer-01190",  //  kSrcAndDestMustBeIgnore
     "VUID-VkBufferMemoryBarrier-buffer-01192",  //  kBothIgnoreOrBothValid
     "VUID-VkBufferMemoryBarrier-buffer-01196",  //  kSubmitQueueMustMatchSrcOrDst
@@ -6654,10 +6651,10 @@ bool Validate(const CoreChecks *device_data, const char *func_name, const CMD_BU
                 skip |= val.LogMsg(kSrcIgnoreRequiresDstIgnore, src_queue_family, dst_queue_family);
             }
             if (!dst_ignored && !val.IsValidOrSpecial(dst_queue_family)) {
-                skip |= val.LogMsg(kDstValidOrSpecialIfNotIgnore, dst_queue_family, "dstQueueFamilyIndex");
+                skip |= val.LogMsg(kSrcAndDstValidOrSpecialIfNotIgnore, dst_queue_family, "dstQueueFamilyIndex");
             }
             if (!src_ignored && !val.IsValidOrSpecial(src_queue_family)) {
-                skip |= val.LogMsg(kSrcValidOrSpecialIfNotIgnore, src_queue_family, "srcQueueFamilyIndex");
+                skip |= val.LogMsg(kSrcAndDstValidOrSpecialIfNotIgnore, src_queue_family, "srcQueueFamilyIndex");
             }
         }
     } else {
