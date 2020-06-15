@@ -13069,3 +13069,160 @@ TEST_F(VkSyncValTest, SyncCmdQuery) {
     // TODO:CmdWriteTimestamp
     vk::DestroyQueryPool(m_device->device(), query_pool, nullptr);
 }
+
+TEST_F(VkSyncValTest, SyncCmdDrawDepthStencil) {
+    ASSERT_NO_FATAL_FAILURE(InitSyncValFramework());
+    ASSERT_NO_FATAL_FAILURE(InitState(nullptr, nullptr, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT));
+    m_errorMonitor->ExpectSuccess();
+
+    const auto format_ds = FindSupportedDepthStencilFormat(gpu());
+    if (!format_ds) {
+        printf("%s No Depth + Stencil format found. Skipped.\n", kSkipPrefix);
+        return;
+    }
+    const auto format_dp = FindSupportedDepthOnlyFormat(gpu());
+    if (!format_dp) {
+        printf("%s No only Depth format found. Skipped.\n", kSkipPrefix);
+        return;
+    }
+    const auto format_st = FindSupportedStencilOnlyFormat(gpu());
+    if (!format_st) {
+        printf("%s No only Stencil format found. Skipped.\n", kSkipPrefix);
+        return;
+    }
+
+    VkDepthStencilObj image_ds(m_device), image_dp(m_device), image_st(m_device);
+    image_ds.Init(m_device, 16, 16, format_ds);
+    image_dp.Init(m_device, 16, 16, format_dp);
+    image_st.Init(m_device, 16, 16, format_st);
+
+    VkRenderpassObj rp_ds(m_device, format_ds, true), rp_dp(m_device, format_dp, true), rp_st(m_device, format_st, true);
+
+    VkFramebuffer fb_ds, fb_dp, fb_st;
+    VkFramebufferCreateInfo fbci = {
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp_ds.handle(), 1, image_ds.BindInfo(), 16, 16, 1};
+    ASSERT_VK_SUCCESS(vk::CreateFramebuffer(device(), &fbci, nullptr, &fb_ds));
+    fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp_dp.handle(), 1, image_dp.BindInfo(), 16, 16, 1};
+    ASSERT_VK_SUCCESS(vk::CreateFramebuffer(device(), &fbci, nullptr, &fb_dp));
+    fbci = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, nullptr, 0, rp_st.handle(), 1, image_st.BindInfo(), 16, 16, 1};
+    ASSERT_VK_SUCCESS(vk::CreateFramebuffer(device(), &fbci, nullptr, &fb_st));
+
+    VkStencilOpState stencil = {};
+    stencil.failOp = VK_STENCIL_OP_KEEP;
+    stencil.passOp = VK_STENCIL_OP_KEEP;
+    stencil.depthFailOp = VK_STENCIL_OP_KEEP;
+    stencil.compareOp = VK_COMPARE_OP_NEVER;
+
+    auto ds_ci = lvl_init_struct<VkPipelineDepthStencilStateCreateInfo>();
+    ds_ci.depthTestEnable = VK_TRUE;
+    ds_ci.depthWriteEnable = VK_TRUE;
+    ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
+    ds_ci.stencilTestEnable = VK_TRUE;
+    ds_ci.front = stencil;
+    ds_ci.back = stencil;
+
+    CreatePipelineHelper g_pipe_ds(*this), g_pipe_dp(*this), g_pipe_st(*this);
+    g_pipe_ds.InitInfo();
+    g_pipe_ds.gp_ci_.renderPass = rp_ds.handle();
+    g_pipe_ds.gp_ci_.pDepthStencilState = &ds_ci;
+    g_pipe_ds.InitState();
+    ASSERT_VK_SUCCESS(g_pipe_ds.CreateGraphicsPipeline());
+    g_pipe_dp.InitInfo();
+    g_pipe_dp.gp_ci_.renderPass = rp_dp.handle();
+    ds_ci.stencilTestEnable = VK_FALSE;
+    g_pipe_dp.gp_ci_.pDepthStencilState = &ds_ci;
+    g_pipe_dp.InitState();
+    ASSERT_VK_SUCCESS(g_pipe_dp.CreateGraphicsPipeline());
+    g_pipe_st.InitInfo();
+    g_pipe_st.gp_ci_.renderPass = rp_st.handle();
+    ds_ci.depthTestEnable = VK_FALSE;
+    ds_ci.stencilTestEnable = VK_TRUE;
+    g_pipe_st.gp_ci_.pDepthStencilState = &ds_ci;
+    g_pipe_st.InitState();
+    ASSERT_VK_SUCCESS(g_pipe_st.CreateGraphicsPipeline());
+
+    m_commandBuffer->begin();
+    m_renderPassBeginInfo.renderArea = {{0, 0}, {16, 16}};
+    m_renderPassBeginInfo.pClearValues = nullptr;
+    m_renderPassBeginInfo.clearValueCount = 0;
+
+    m_renderPassBeginInfo.renderPass = rp_ds.handle();
+    m_renderPassBeginInfo.framebuffer = fb_ds;
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_ds.pipeline_);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_commandBuffer->EndRenderPass();
+
+    m_renderPassBeginInfo.renderPass = rp_dp.handle();
+    m_renderPassBeginInfo.framebuffer = fb_dp;
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_dp.pipeline_);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_commandBuffer->EndRenderPass();
+
+    m_renderPassBeginInfo.renderPass = rp_st.handle();
+    m_renderPassBeginInfo.framebuffer = fb_st;
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_st.pipeline_);
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_commandBuffer->EndRenderPass();
+
+    m_commandBuffer->end();
+    m_errorMonitor->VerifyNotFound();
+
+    m_commandBuffer->reset();
+    m_commandBuffer->begin();
+
+    VkImageCopy copyRegion;
+    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    copyRegion.srcSubresource.mipLevel = 0;
+    copyRegion.srcSubresource.baseArrayLayer = 0;
+    copyRegion.srcSubresource.layerCount = 1;
+    copyRegion.srcOffset = {0, 0, 0};
+    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    copyRegion.dstSubresource.mipLevel = 0;
+    copyRegion.dstSubresource.baseArrayLayer = 0;
+    copyRegion.dstSubresource.layerCount = 1;
+    copyRegion.dstOffset = {0, 0, 0};
+    copyRegion.extent = {16, 16, 1};
+
+    m_commandBuffer->CopyImage(image_ds.handle(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, image_dp.handle(),
+                               VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, &copyRegion);
+
+    copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+    copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+    m_commandBuffer->CopyImage(image_ds.handle(), VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, image_st.handle(),
+                               VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1, &copyRegion);
+    m_renderPassBeginInfo.renderPass = rp_ds.handle();
+    m_renderPassBeginInfo.framebuffer = fb_ds;
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_ds.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_READ");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+
+    m_renderPassBeginInfo.renderPass = rp_dp.handle();
+    m_renderPassBeginInfo.framebuffer = fb_dp;
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_dp.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+
+    m_renderPassBeginInfo.renderPass = rp_st.handle();
+    m_renderPassBeginInfo.framebuffer = fb_st;
+    m_commandBuffer->BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_commandBuffer->handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe_st.pipeline_);
+    m_errorMonitor->SetDesiredFailureMsg(VK_DEBUG_REPORT_ERROR_BIT_EXT, "SYNC-HAZARD-WRITE_AFTER_WRITE");
+    vk::CmdDraw(m_commandBuffer->handle(), 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_commandBuffer->EndRenderPass();
+
+    m_commandBuffer->end();
+    vk::DestroyFramebuffer(m_device->device(), fb_ds, nullptr);
+    vk::DestroyFramebuffer(m_device->device(), fb_dp, nullptr);
+    vk::DestroyFramebuffer(m_device->device(), fb_st, nullptr);
+}

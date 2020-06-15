@@ -402,6 +402,7 @@ class VkConstantBufferObj : public VkBufferObj {
 class VkRenderpassObj {
   public:
     VkRenderpassObj(VkDeviceObj *device, VkFormat format = VK_FORMAT_B8G8R8A8_UNORM);
+    VkRenderpassObj(VkDeviceObj *device, VkFormat format, bool depthStencil);
     ~VkRenderpassObj() NOEXCEPT;
     VkRenderPass handle() { return m_renderpass; }
 
